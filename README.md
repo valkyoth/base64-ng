@@ -181,3 +181,7 @@ cargo install --locked kani-verifier
 - SIMD must prove equivalence to scalar behavior across fuzzed and deterministic inputs.
 - Compatibility modes must be visible in the type/API surface.
 - Release evidence belongs in the repository and CI, not in memory.
+
+## Contributing And Releases
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution rules and [docs/RELEASE.md](docs/RELEASE.md) for the maintainer release checklist.
