@@ -211,6 +211,20 @@ fn encode_in_place_reports_bad_lengths() {
 }
 
 #[test]
+fn deterministic_long_round_trips() {
+    let mut input = Vec::new();
+    for len in 0..=1024 {
+        input.resize(len, 0);
+        fill_deterministic(&mut input, len as u64);
+
+        assert_equivalent_round_trip(&STANDARD, &input);
+        assert_equivalent_round_trip(&STANDARD_NO_PAD, &input);
+        assert_equivalent_round_trip(&URL_SAFE, &input);
+        assert_equivalent_round_trip(&URL_SAFE_NO_PAD, &input);
+    }
+}
+
+#[test]
 fn exhaustive_short_round_trips() {
     for b0 in u8::MIN..=u8::MAX {
         let input = [b0];
@@ -545,4 +559,42 @@ fn assert_in_place_encode_matches_slice<A, const PAD: bool>(
         .encode_in_place(&mut buffer[..required], input.len())
         .unwrap();
     assert_eq!(encoded, &expected[..expected_len]);
+}
+
+fn assert_equivalent_round_trip<A, const PAD: bool>(
+    engine: &base64_ng::Engine<A, PAD>,
+    input: &[u8],
+) where
+    A: base64_ng::Alphabet,
+{
+    let encoded_len = engine.encoded_len(input.len());
+    let mut encoded = vec![0u8; encoded_len];
+    let written = engine.encode_slice(input, &mut encoded).unwrap();
+    assert_eq!(written, encoded_len);
+
+    let mut in_place_encode = vec![0u8; encoded_len];
+    in_place_encode[..input.len()].copy_from_slice(input);
+    let in_place_encoded = engine
+        .encode_in_place(&mut in_place_encode, input.len())
+        .unwrap();
+    assert_eq!(in_place_encoded, encoded);
+
+    let mut decoded = vec![0u8; input.len()];
+    let decoded_len = engine.decode_slice(&encoded, &mut decoded).unwrap();
+    assert_eq!(decoded_len, input.len());
+    assert_eq!(decoded, input);
+
+    let mut in_place_decode = encoded;
+    let in_place_decoded = engine.decode_in_place(&mut in_place_decode).unwrap();
+    assert_eq!(in_place_decoded, input);
+}
+
+fn fill_deterministic(output: &mut [u8], seed: u64) {
+    let mut state = seed ^ 0x243f_6a88_85a3_08d3;
+    for byte in output {
+        state = state
+            .wrapping_mul(0x9e37_79b9_7f4a_7c15)
+            .wrapping_add(0xbf58_476d_1ce4_e5b9);
+        *byte = (state >> 56) as u8;
+    }
 }
