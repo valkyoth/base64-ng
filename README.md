@@ -248,6 +248,8 @@ Security commitments:
 - Future unsafe SIMD isolated under `src/simd.rs`.
 - Local checks verify that `allow(unsafe_code)` is confined to the SIMD
   boundary.
+- `runtime::backend_report()` exposes the active backend, detected candidate,
+  SIMD feature status, and scalar-only security posture for audit logging.
 - Strict decoding rejects malformed padding and trailing data.
 - Runtime scalar APIs are expected to return `Result` or `Option` for malformed
   input and size errors instead of panicking.

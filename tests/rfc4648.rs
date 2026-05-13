@@ -1,6 +1,6 @@
 use base64_ng::{
     DecodeError, EncodeError, STANDARD, STANDARD_NO_PAD, URL_SAFE, URL_SAFE_NO_PAD,
-    checked_encoded_len, ct, decoded_capacity, decoded_len, encoded_len,
+    checked_encoded_len, ct, decoded_capacity, decoded_len, encoded_len, runtime,
 };
 
 #[cfg(feature = "stream")]
@@ -50,6 +50,28 @@ fn rfc4648_standard_round_trips() {
             .decode_slice(&encoded[..encoded_len], &mut decoded)
             .unwrap();
         assert_eq!(&decoded[..decoded_len], *case);
+    }
+}
+
+#[test]
+fn runtime_backend_report_keeps_scalar_active() {
+    let report = runtime::backend_report();
+
+    assert_eq!(report.active, runtime::Backend::Scalar);
+    assert!(!report.accelerated_backend_active);
+    assert!(report.unsafe_boundary_enforced);
+    assert_eq!(report.simd_feature_enabled, cfg!(feature = "simd"));
+
+    if report.candidate == runtime::Backend::Scalar {
+        assert_eq!(
+            report.security_posture,
+            runtime::SecurityPosture::ScalarOnly
+        );
+    } else {
+        assert_eq!(
+            report.security_posture,
+            runtime::SecurityPosture::SimdCandidateScalarActive
+        );
     }
 }
 

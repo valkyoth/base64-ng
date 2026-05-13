@@ -48,6 +48,113 @@ extern crate alloc;
 #[cfg(feature = "simd")]
 mod simd;
 
+/// Runtime backend reporting for security-sensitive deployments.
+///
+/// This module does not enable acceleration. It exposes the backend posture so
+/// callers can log, assert, or audit whether execution is scalar-only or merely
+/// detecting future SIMD candidates.
+pub mod runtime {
+    /// A backend that can be reported by `base64-ng`.
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+    #[non_exhaustive]
+    pub enum Backend {
+        /// The audited scalar backend.
+        Scalar,
+        /// An AVX2 candidate was detected.
+        Avx2,
+        /// An ARM NEON candidate was detected.
+        Neon,
+    }
+
+    /// Security posture for the active runtime backend.
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+    #[non_exhaustive]
+    pub enum SecurityPosture {
+        /// No accelerated backend is active.
+        ScalarOnly,
+        /// SIMD support may be detected, but execution still uses scalar.
+        SimdCandidateScalarActive,
+        /// A SIMD backend is active.
+        Accelerated,
+    }
+
+    /// Backend report for the current build and target.
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+    pub struct BackendReport {
+        /// Backend currently used for encode/decode dispatch.
+        pub active: Backend,
+        /// Strongest backend candidate visible to the current build.
+        pub candidate: Backend,
+        /// Whether the `simd` feature is enabled in this build.
+        pub simd_feature_enabled: bool,
+        /// Whether an accelerated SIMD backend is active.
+        pub accelerated_backend_active: bool,
+        /// Whether unsafe code is confined to the dedicated SIMD boundary.
+        pub unsafe_boundary_enforced: bool,
+        /// Current security posture.
+        pub security_posture: SecurityPosture,
+    }
+
+    /// Returns the runtime backend report for this build and target.
+    ///
+    /// ```
+    /// let report = base64_ng::runtime::backend_report();
+    ///
+    /// assert_eq!(report.active, base64_ng::runtime::Backend::Scalar);
+    /// assert!(!report.accelerated_backend_active);
+    /// ```
+    #[must_use]
+    pub fn backend_report() -> BackendReport {
+        let active = active_backend();
+        let candidate = detected_candidate();
+        let accelerated_backend_active = active != Backend::Scalar;
+        let security_posture = if accelerated_backend_active {
+            SecurityPosture::Accelerated
+        } else if candidate != Backend::Scalar {
+            SecurityPosture::SimdCandidateScalarActive
+        } else {
+            SecurityPosture::ScalarOnly
+        };
+
+        BackendReport {
+            active,
+            candidate,
+            simd_feature_enabled: cfg!(feature = "simd"),
+            accelerated_backend_active,
+            unsafe_boundary_enforced: true,
+            security_posture,
+        }
+    }
+
+    #[cfg(feature = "simd")]
+    fn active_backend() -> Backend {
+        match super::simd::active_backend() {
+            super::simd::ActiveBackend::Scalar => Backend::Scalar,
+        }
+    }
+
+    #[cfg(not(feature = "simd"))]
+    const fn active_backend() -> Backend {
+        Backend::Scalar
+    }
+
+    #[cfg(feature = "simd")]
+    fn detected_candidate() -> Backend {
+        match super::simd::detected_candidate() {
+            super::simd::Candidate::Scalar => Backend::Scalar,
+            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+            super::simd::Candidate::Avx2 => Backend::Avx2,
+            #[cfg(any(target_arch = "aarch64", target_arch = "arm"))]
+            super::simd::Candidate::Neon => Backend::Neon,
+        }
+    }
+
+    #[cfg(not(feature = "simd"))]
+    const fn detected_candidate() -> Backend {
+        Backend::Scalar
+    }
+}
+
 #[cfg(feature = "stream")]
 pub mod stream {
     //! Streaming Base64 wrappers for `std::io`.

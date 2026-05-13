@@ -21,6 +21,8 @@ weakening the scalar trust base.
   and NEON candidates but still activates only the scalar backend.
 - An inactive AVX2 fixed-block encode prototype exists behind the SIMD boundary
   and is tested against scalar output only when AVX2 is available.
+- `runtime::backend_report()` reports the active backend, detected candidate,
+  SIMD feature status, and scalar-only security posture.
 - Unit tests compare dispatch behavior against the scalar reference for
   canonical inputs, malformed inputs, and undersized output buffers.
 - The `simd` feature does not enable accelerated code yet.

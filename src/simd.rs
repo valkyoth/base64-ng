@@ -19,14 +19,14 @@ use core::arch::x86_64::{__m256i, _mm256_setzero_si256, _mm256_storeu_si256};
 
 /// Backend currently allowed to execute.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(super) enum ActiveBackend {
+pub(crate) enum ActiveBackend {
     /// The audited scalar implementation.
     Scalar,
 }
 
 /// SIMD candidate detected for the current target.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(super) enum Candidate {
+pub(crate) enum Candidate {
     /// No supported SIMD candidate was detected.
     Scalar,
     /// `x86`/`x86_64` AVX2 is available as a future candidate.
@@ -39,7 +39,7 @@ pub(super) enum Candidate {
 
 /// Returns the backend that is allowed to execute for this build.
 #[must_use]
-pub(super) fn active_backend() -> ActiveBackend {
+pub(crate) fn active_backend() -> ActiveBackend {
     let _candidate = detected_candidate();
     ActiveBackend::Scalar
 }
@@ -50,7 +50,7 @@ pub(super) fn active_backend() -> ActiveBackend {
 /// accelerated backend has differential tests and benchmark evidence, detected
 /// SIMD support must still execute through [`ActiveBackend::Scalar`].
 #[must_use]
-pub(super) fn detected_candidate() -> Candidate {
+pub(crate) fn detected_candidate() -> Candidate {
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     {
         if avx2_available() {

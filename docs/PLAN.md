@@ -194,6 +194,7 @@ Phase 3:
 - SIMD dispatch scaffold that detects AVX2/NEON candidates while keeping
   scalar as the only active backend.
 - Inactive AVX2 fixed-block encode prototype with scalar-equivalence tests.
+- Public runtime backend report for audit logging and deployment assertions.
 - Keep SIMD unsafe code isolated from the scalar core with documented invariants
   for every unsafe block.
 

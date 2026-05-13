@@ -27,6 +27,8 @@
   keeping scalar as the only active backend until accelerated code has evidence.
 - Added an inactive AVX2 fixed-block encode prototype with scalar-equivalence
   tests that run only when AVX2 is available.
+- Added `runtime::backend_report()` so callers can audit the active backend,
+  detected candidate, SIMD feature status, and scalar-only security posture.
 
 ## 0.3.0 - 2026-05-13
 
