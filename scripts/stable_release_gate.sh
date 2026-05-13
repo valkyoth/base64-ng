@@ -22,6 +22,13 @@ else
     echo "stable release gate: skipping nextest; cargo-nextest is not installed"
 fi
 
+if rustup run nightly cargo miri --version >/dev/null 2>&1; then
+    echo "stable release gate: Miri no_std tests"
+    cargo +nightly miri test --no-default-features
+else
+    echo "stable release gate: skipping Miri; nightly Miri is not installed"
+fi
+
 if command -v cargo-fuzz >/dev/null 2>&1 && [ -d fuzz ]; then
     echo "stable release gate: fuzz target compile check"
     cargo +nightly fuzz build

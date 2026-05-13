@@ -25,6 +25,7 @@ The release gate covers:
 - dependency graph
 - clippy
 - feature-mode tests
+- Miri no-default-features tests when nightly Miri is installed
 - docs
 - cargo-deny policy
 - RustSec audit
@@ -61,6 +62,7 @@ Create and push the git tag only after the published crate is verified.
 Optional gates may be skipped until their harnesses exist:
 
 - nextest
+- Miri when the local nightly Miri component is not installed
 - cargo-fuzz
 - Kani
 
