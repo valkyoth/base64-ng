@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0 - Unreleased
+## 0.1.0 - 2026-05-13
 
 - Initial `no_std` scalar crate scaffold.
 - Added strict standard and URL-safe Base64 engines.
