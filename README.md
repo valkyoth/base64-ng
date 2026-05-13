@@ -76,6 +76,14 @@ let written = STANDARD.decode_slice(&encoded, &mut decoded).unwrap();
 assert_eq!(&decoded[..written], input);
 ```
 
+For untrusted length metadata, use checked length calculation:
+
+```rust
+use base64_ng::checked_encoded_len;
+
+assert_eq!(checked_encoded_len(5, true), Some(8));
+```
+
 With the default `alloc` feature, vector helpers are available:
 
 ```rust

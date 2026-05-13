@@ -101,6 +101,7 @@ Any dependency addition must answer:
 - Every SIMD path must have deterministic and fuzzed differential tests against scalar.
 - Padding behavior must be canonical by default.
 - Whitespace and non-alphabet bytes are rejected by default.
+- Public buffer-size calculations must have checked variants for untrusted metadata.
 - No dependency without license and advisory review.
 
 ### Verification

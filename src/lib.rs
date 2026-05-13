@@ -27,16 +27,35 @@ pub const URL_SAFE: Engine<UrlSafe, true> = Engine::new();
 pub const URL_SAFE_NO_PAD: Engine<UrlSafe, false> = Engine::new();
 
 /// Returns the encoded length for an input length and padding policy.
+///
+/// # Panics
+///
+/// Panics if the encoded length would overflow `usize`. Use
+/// [`checked_encoded_len`] when handling untrusted length metadata without an
+/// actual input slice.
 #[must_use]
 pub const fn encoded_len(input_len: usize, padded: bool) -> usize {
-    let full = input_len / 3 * 4;
+    match checked_encoded_len(input_len, padded) {
+        Some(len) => len,
+        None => panic!("encoded base64 length overflows usize"),
+    }
+}
+
+/// Returns the encoded length, or `None` if it would overflow `usize`.
+#[must_use]
+pub const fn checked_encoded_len(input_len: usize, padded: bool) -> Option<usize> {
+    let groups = input_len / 3;
+    if groups > usize::MAX / 4 {
+        return None;
+    }
+    let full = groups * 4;
     let rem = input_len % 3;
     if rem == 0 {
-        full
+        Some(full)
     } else if padded {
-        full + 4
+        full.checked_add(4)
     } else {
-        full + rem + 1
+        full.checked_add(rem + 1)
     }
 }
 
@@ -127,9 +146,15 @@ where
         encoded_len(input_len, PAD)
     }
 
+    /// Returns the encoded length for this engine, or `None` on overflow.
+    #[must_use]
+    pub const fn checked_encoded_len(&self, input_len: usize) -> Option<usize> {
+        checked_encoded_len(input_len, PAD)
+    }
+
     /// Encodes `input` into `output`, returning the number of bytes written.
     pub fn encode_slice(&self, input: &[u8], output: &mut [u8]) -> Result<usize, EncodeError> {
-        let required = encoded_len(input.len(), PAD);
+        let required = checked_encoded_len(input.len(), PAD).ok_or(EncodeError::LengthOverflow)?;
         if output.len() < required {
             return Err(EncodeError::OutputTooSmall {
                 required,
@@ -187,7 +212,8 @@ where
     /// Encodes `input` into a newly allocated byte vector.
     #[cfg(feature = "alloc")]
     pub fn encode_vec(&self, input: &[u8]) -> Result<alloc::vec::Vec<u8>, EncodeError> {
-        let mut output = alloc::vec![0; self.encoded_len(input.len())];
+        let required = checked_encoded_len(input.len(), PAD).ok_or(EncodeError::LengthOverflow)?;
+        let mut output = alloc::vec![0; required];
         let written = self.encode_slice(input, &mut output)?;
         output.truncate(written);
         Ok(output)
@@ -267,6 +293,8 @@ where
 /// Encoding error.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum EncodeError {
+    /// The encoded output length would overflow `usize`.
+    LengthOverflow,
     /// The output buffer is too small.
     OutputTooSmall {
         /// Required output bytes.
@@ -279,6 +307,7 @@ pub enum EncodeError {
 impl core::fmt::Display for EncodeError {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
+            Self::LengthOverflow => f.write_str("base64 output length overflows usize"),
             Self::OutputTooSmall {
                 required,
                 available,

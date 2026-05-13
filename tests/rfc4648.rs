@@ -1,5 +1,6 @@
 use base64_ng::{
-    DecodeError, STANDARD, STANDARD_NO_PAD, URL_SAFE, URL_SAFE_NO_PAD, decoded_capacity,
+    DecodeError, EncodeError, STANDARD, STANDARD_NO_PAD, URL_SAFE, URL_SAFE_NO_PAD,
+    checked_encoded_len, decoded_capacity,
 };
 
 #[test]
@@ -66,6 +67,26 @@ fn decoded_capacity_is_upper_bound() {
     for encoded_len in 0..128 {
         assert!(decoded_capacity(encoded_len) <= encoded_len / 4 * 3 + 2);
     }
+}
+
+#[test]
+fn checked_encoded_len_reports_overflow() {
+    assert_eq!(checked_encoded_len(usize::MAX, true), None);
+    assert_eq!(checked_encoded_len(usize::MAX, false), None);
+    assert_eq!(STANDARD.checked_encoded_len(usize::MAX), None);
+    assert_eq!(STANDARD_NO_PAD.checked_encoded_len(usize::MAX), None);
+}
+
+#[test]
+fn encode_slice_reports_small_outputs() {
+    let mut output = [0u8; 1];
+    assert_eq!(
+        STANDARD.encode_slice(b"hi", &mut output),
+        Err(EncodeError::OutputTooSmall {
+            required: 4,
+            available: 1,
+        })
+    );
 }
 
 #[test]
