@@ -162,6 +162,25 @@ fn encode_slice_reports_small_outputs() {
 }
 
 #[test]
+fn decode_slice_reports_small_outputs() {
+    let mut output = [0u8; 1];
+    assert_eq!(
+        STANDARD.decode_slice(b"aGk=", &mut output),
+        Err(DecodeError::OutputTooSmall {
+            required: 2,
+            available: 1,
+        })
+    );
+    assert_eq!(
+        STANDARD_NO_PAD.decode_slice(b"aGk", &mut output),
+        Err(DecodeError::OutputTooSmall {
+            required: 2,
+            available: 1,
+        })
+    );
+}
+
+#[test]
 fn encodes_in_place() {
     let mut standard = [0u8; 8];
     standard[..5].copy_from_slice(b"hello");
@@ -311,6 +330,41 @@ fn reports_absolute_padding_indexes() {
     assert_eq!(
         STANDARD_NO_PAD.decode_in_place(&mut input),
         Err(DecodeError::InvalidPadding { index: 5 })
+    );
+}
+
+#[test]
+fn rejects_non_canonical_trailing_bits() {
+    let mut output = [0u8; 4];
+    assert_eq!(
+        STANDARD.decode_slice(b"Zh==", &mut output),
+        Err(DecodeError::InvalidPadding { index: 1 })
+    );
+    assert_eq!(
+        STANDARD.decode_slice(b"Zm9=", &mut output),
+        Err(DecodeError::InvalidPadding { index: 2 })
+    );
+    assert_eq!(
+        STANDARD_NO_PAD.decode_slice(b"Zh", &mut output),
+        Err(DecodeError::InvalidPadding { index: 1 })
+    );
+    assert_eq!(
+        STANDARD_NO_PAD.decode_slice(b"Zm9", &mut output),
+        Err(DecodeError::InvalidPadding { index: 2 })
+    );
+    assert_eq!(
+        URL_SAFE.decode_slice(b"-_9=", &mut output),
+        Err(DecodeError::InvalidPadding { index: 2 })
+    );
+    assert_eq!(
+        URL_SAFE_NO_PAD.decode_slice(b"-_9", &mut output),
+        Err(DecodeError::InvalidPadding { index: 2 })
+    );
+
+    let mut input = *b"Zm9";
+    assert_eq!(
+        STANDARD_NO_PAD.decode_in_place(&mut input),
+        Err(DecodeError::InvalidPadding { index: 2 })
     );
 }
 
