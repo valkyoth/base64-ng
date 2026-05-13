@@ -15,6 +15,8 @@
 - Added exhaustive invalid-byte position tests for strict standard and URL-safe
   decoding.
 - Added the constant-time decode API design document and verification bar.
+- Added isolated `cargo-fuzz` harnesses for arbitrary decode input, in-place
+  decode, and stream chunk-boundary behavior.
 
 ## 0.1.0 - 2026-05-13
 

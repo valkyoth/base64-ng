@@ -1,0 +1,33 @@
+[package]
+name = "base64-ng-fuzz"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+base64-ng = { path = "..", version = "0.2.0-alpha.0", features = ["alloc", "std", "stream"] }
+libfuzzer-sys = "0.4"
+
+[[bin]]
+name = "decode"
+path = "fuzz_targets/decode.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "in_place"
+path = "fuzz_targets/in_place.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "stream_chunks"
+path = "fuzz_targets/stream_chunks.rs"
+test = false
+doc = false
+bench = false

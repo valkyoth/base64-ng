@@ -24,6 +24,8 @@ Implemented now:
   keeping alphabet and padding validation strict.
 - `std::io` streaming encoders and decoders behind the `stream` feature.
 - Focused unit and integration tests.
+- Isolated `cargo-fuzz` harnesses for decode, in-place decode, and stream
+  chunk-boundary behavior.
 - Local check scripts, release gate, dependency policy, audit config, CI, SBOM script, and reproducible build check.
 
 Planned:
@@ -32,7 +34,7 @@ Planned:
 - Legacy compatibility profile for explicitly non-canonical inputs.
 - AVX2, AVX-512, and ARM NEON fast paths.
 - Async streaming wrappers.
-- Miri, cargo-fuzz, and Kani proof harnesses.
+- Kani proof harnesses.
 - Criterion benchmarks against the established `base64` crate.
 
 ## Install
@@ -287,6 +289,22 @@ Optional deep tools:
 cargo install --locked cargo-nextest
 cargo install --locked cargo-fuzz
 cargo install --locked kani-verifier
+```
+
+Compile fuzz targets without running a campaign:
+
+```sh
+cargo check --manifest-path fuzz/Cargo.toml --bins
+cargo audit --file fuzz/Cargo.lock
+cargo deny --manifest-path fuzz/Cargo.toml check --config fuzz/deny.toml
+```
+
+Run a target with `cargo-fuzz`:
+
+```sh
+cargo +nightly fuzz run decode
+cargo +nightly fuzz run in_place
+cargo +nightly fuzz run stream_chunks
 ```
 
 Miri is installed as a nightly Rust component, not as a Cargo package:
