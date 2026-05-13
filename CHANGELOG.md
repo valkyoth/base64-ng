@@ -25,6 +25,8 @@
   stable release gate.
 - Hardened release metadata validation so fuzz-only files cannot enter the
   published crate package.
+- Added legacy whitespace decode regression tests for original-index errors and
+  in-place decode parity.
 
 ## 0.1.0 - 2026-05-13
 

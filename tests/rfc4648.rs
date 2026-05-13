@@ -452,6 +452,69 @@ fn legacy_decode_keeps_strict_alphabet_and_padding_rules() {
 }
 
 #[test]
+fn legacy_decode_reports_original_indexes_after_whitespace() {
+    let mut output = [0u8; 16];
+    assert_eq!(
+        STANDARD.decode_slice_legacy(b" A A - A", &mut output),
+        Err(DecodeError::InvalidByte {
+            index: 5,
+            byte: b'-',
+        })
+    );
+    assert_eq!(
+        STANDARD_NO_PAD.decode_slice_legacy(b" Z h ", &mut output),
+        Err(DecodeError::InvalidPadding { index: 3 })
+    );
+    assert_eq!(
+        STANDARD.decode_slice_legacy(b"aGk= \n AAAA", &mut output),
+        Err(DecodeError::InvalidPadding { index: 7 })
+    );
+}
+
+#[test]
+fn legacy_in_place_decode_matches_slice_for_whitespace_patterns() {
+    let mut output = [0u8; 16];
+    let written = STANDARD
+        .decode_slice_legacy(b" aG\r\nVs\tbG8= ", &mut output)
+        .unwrap();
+    assert_eq!(&output[..written], b"hello");
+
+    let mut standard = *b" aG\r\nVs\tbG8= ";
+    let decoded = STANDARD.decode_in_place_legacy(&mut standard).unwrap();
+    assert_eq!(decoded, b"hello");
+
+    let mut standard_no_pad = *b" aG\r\nVs\tbG8 ";
+    let decoded = STANDARD_NO_PAD
+        .decode_in_place_legacy(&mut standard_no_pad)
+        .unwrap();
+    assert_eq!(decoded, b"hello");
+
+    let mut url_safe_no_pad = *b" - _ 8 ";
+    let decoded = URL_SAFE_NO_PAD
+        .decode_in_place_legacy(&mut url_safe_no_pad)
+        .unwrap();
+    assert_eq!(decoded, b"\xfb\xff");
+}
+
+#[test]
+fn legacy_in_place_rejects_with_original_indexes() {
+    let mut invalid_byte = *b" A A - A";
+    assert_eq!(
+        STANDARD.decode_in_place_legacy(&mut invalid_byte),
+        Err(DecodeError::InvalidByte {
+            index: 5,
+            byte: b'-',
+        })
+    );
+
+    let mut invalid_padding = *b"aGk= \n AAAA";
+    assert_eq!(
+        STANDARD.decode_in_place_legacy(&mut invalid_padding),
+        Err(DecodeError::InvalidPadding { index: 7 })
+    );
+}
+
+#[test]
 fn reports_absolute_invalid_byte_indexes() {
     let mut output = [0u8; 16];
     assert_eq!(
