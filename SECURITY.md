@@ -1,0 +1,40 @@
+# Security Policy
+
+`base64-ng` is infrastructure code. Security reports are treated as correctness reports, even when the issue is not directly exploitable.
+
+## Supported Versions
+
+Only the latest released minor line receives security fixes before `1.0`.
+
+## Reporting
+
+Please report suspected vulnerabilities privately to the maintainers. Do not open public issues for memory safety bugs, out-of-bounds behavior, data-dependent behavior in documented constant-time paths, or supply-chain compromise.
+
+Include:
+
+- Affected version or commit.
+- Reproducer or input corpus.
+- Target architecture and CPU features.
+- Whether default, `no_std`, `simd`, or future streaming features are involved.
+
+## Security Bar
+
+Required for release:
+
+- `cargo fmt --all --check`
+- `cargo clippy --all-targets --all-features -- -D warnings`
+- `cargo test --all-targets --all-features`
+- `cargo test --no-default-features`
+- `cargo deny check`
+- `cargo audit`
+- `cargo license --json`
+- SBOM generation
+- Reproducible build check
+
+Required before unsafe SIMD stabilizes:
+
+- Scalar/SIMD differential tests.
+- Fuzz targets covering strict and legacy modes.
+- Miri on scalar and in-place APIs.
+- Kani proofs for in-place bounds invariants.
+- Architecture-specific CI or documented local evidence.

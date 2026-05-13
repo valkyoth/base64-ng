@@ -1,0 +1,12 @@
+[advisories]
+ignore = []
+
+[database]
+path = "/tmp/base64-ng-cargo-audit-advisory-db"
+url = "https://github.com/RustSec/advisory-db.git"
+fetch = true
+stale = false
+
+[yanked]
+enabled = true
+update_index = false

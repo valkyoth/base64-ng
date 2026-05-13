@@ -1,0 +1,42 @@
+[package]
+name = "base64-ng"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95"
+license = "MIT OR Apache-2.0"
+description = "no_std-first Base64 encoding and decoding with strict APIs and a security-heavy release process"
+repository = "https://github.com/eldryoth/base64-ng"
+homepage = "https://github.com/eldryoth/base64-ng"
+documentation = "https://docs.rs/base64-ng"
+readme = "README.md"
+keywords = ["base64", "encoding", "no-std", "simd"]
+categories = ["encoding", "no-std"]
+include = [
+    "src/**",
+    "tests/**",
+    "benches/**",
+    "docs/**",
+    "Cargo.toml",
+    "README.md",
+    "CHANGELOG.md",
+    "SECURITY.md",
+    "LICENSE-*",
+]
+
+[features]
+default = ["alloc", "std"]
+alloc = []
+std = ["alloc"]
+simd = []
+stream = ["std"]
+tokio = ["stream"]
+kani = []
+fuzzing = []
+
+[dependencies]
+
+[dev-dependencies]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
