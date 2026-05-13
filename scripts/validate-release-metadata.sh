@@ -39,6 +39,16 @@ if ! grep -q '^license = "MIT OR Apache-2.0"$' Cargo.toml; then
     exit 1
 fi
 
+if ! grep -q '^repository = "https://github.com/valkyoth/base64-ng"$' Cargo.toml; then
+    echo "release metadata: Cargo.toml repository must be https://github.com/valkyoth/base64-ng" >&2
+    exit 1
+fi
+
+if ! grep -q '^homepage = "https://github.com/valkyoth/base64-ng"$' Cargo.toml; then
+    echo "release metadata: Cargo.toml homepage must be https://github.com/valkyoth/base64-ng" >&2
+    exit 1
+fi
+
 test -s LICENSE-MIT
 test -s LICENSE-APACHE
 test -s README.md

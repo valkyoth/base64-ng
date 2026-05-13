@@ -5,6 +5,7 @@ This checklist is for maintainers preparing a `base64-ng` release.
 ## Preflight
 
 - Confirm `Cargo.toml` has the intended version.
+- Confirm `Cargo.toml` repository and homepage point to `https://github.com/valkyoth/base64-ng`.
 - Confirm `CHANGELOG.md` has a section for that version.
 - Confirm `license = "MIT OR Apache-2.0"` remains unchanged.
 - Confirm `LICENSE-MIT` and `LICENSE-APACHE` are present at the repository root.
