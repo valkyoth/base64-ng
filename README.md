@@ -180,6 +180,7 @@ Security commitments:
 - No unsafe code in scalar code.
 - Future unsafe SIMD isolated under `src/simd/`.
 - Strict decoding rejects malformed padding and trailing data.
+- Alphabet decode uses branch-minimized scalar arithmetic, but strict decoding is not documented as a cryptographic constant-time API.
 - Legacy compatibility must be opt-in.
 - Release gates include formatting, clippy, tests, Miri when installed, docs, dependency policy, audit, license review, SBOM, and reproducible build checks.
 - Future Kani proofs target in-place decoding bounds and scalar decoder invariants.

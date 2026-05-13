@@ -790,14 +790,7 @@ impl Alphabet for Standard {
 
     #[inline]
     fn decode(byte: u8) -> Option<u8> {
-        match byte {
-            b'A'..=b'Z' => Some(byte - b'A'),
-            b'a'..=b'z' => Some(byte - b'a' + 26),
-            b'0'..=b'9' => Some(byte - b'0' + 52),
-            b'+' => Some(62),
-            b'/' => Some(63),
-            _ => None,
-        }
+        decode_ascii_base64(byte, b'+', b'/')
     }
 }
 
@@ -810,15 +803,31 @@ impl Alphabet for UrlSafe {
 
     #[inline]
     fn decode(byte: u8) -> Option<u8> {
-        match byte {
-            b'A'..=b'Z' => Some(byte - b'A'),
-            b'a'..=b'z' => Some(byte - b'a' + 26),
-            b'0'..=b'9' => Some(byte - b'0' + 52),
-            b'-' => Some(62),
-            b'_' => Some(63),
-            _ => None,
-        }
+        decode_ascii_base64(byte, b'-', b'_')
     }
+}
+
+#[inline]
+fn decode_ascii_base64(byte: u8, value_62_byte: u8, value_63_byte: u8) -> Option<u8> {
+    let upper = mask_if(byte.wrapping_sub(b'A') <= b'Z' - b'A');
+    let lower = mask_if(byte.wrapping_sub(b'a') <= b'z' - b'a');
+    let digit = mask_if(byte.wrapping_sub(b'0') <= b'9' - b'0');
+    let value_62 = mask_if(byte == value_62_byte);
+    let value_63 = mask_if(byte == value_63_byte);
+    let valid = upper | lower | digit | value_62 | value_63;
+
+    let decoded = (byte.wrapping_sub(b'A') & upper)
+        | (byte.wrapping_sub(b'a').wrapping_add(26) & lower)
+        | (byte.wrapping_sub(b'0').wrapping_add(52) & digit)
+        | (0x3e & value_62)
+        | (0x3f & value_63);
+
+    if valid == 0 { None } else { Some(decoded) }
+}
+
+#[inline]
+fn mask_if(condition: bool) -> u8 {
+    0u8.wrapping_sub(u8::from(condition))
 }
 
 /// A zero-sized Base64 engine parameterized by alphabet and padding policy.

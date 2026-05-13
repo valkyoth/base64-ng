@@ -36,6 +36,11 @@ The local release gate skips only the large deterministic sweep tests under
 Miri. Those tests still run in the normal stable test suite; Miri focuses on the
 scalar and in-place safety surface that benefits most from interpreter checks.
 
+The scalar decoder avoids obvious alphabet `match` ladders by using
+branch-minimized arithmetic for ASCII classification. This reduces easy
+data-dependent branching, but `base64-ng` does not currently claim a formally
+verified cryptographic constant-time decode API.
+
 Required before unsafe SIMD stabilizes:
 
 - Scalar/SIMD differential tests.
