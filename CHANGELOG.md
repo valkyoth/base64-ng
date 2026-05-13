@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.0-alpha.0 - Unreleased
+
+- Started the next development cycle after the `0.1.0` release.
+
 ## 0.1.0 - 2026-05-13
 
 - Initial `no_std` scalar crate scaffold.

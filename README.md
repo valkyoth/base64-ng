@@ -6,7 +6,8 @@ The crate starts conservative: a small scalar implementation, strict RFC 4648 be
 
 ## Current Status
 
-This repository is at the initial `0.1.0` scaffold stage.
+The first public release is `0.1.0`. The `main` branch now tracks the
+`0.2.0-alpha.0` development cycle.
 
 Implemented now:
 
