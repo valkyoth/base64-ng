@@ -14,6 +14,7 @@
   keeping alphabet and padding checks strict.
 - Added exhaustive invalid-byte position tests for strict standard and URL-safe
   decoding.
+- Added the constant-time decode API design document and verification bar.
 
 ## 0.1.0 - 2026-05-13
 
