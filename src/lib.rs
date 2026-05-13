@@ -715,7 +715,8 @@ pub mod ct {
         /// This path uses branch-minimized arithmetic for Base64 symbol
         /// mapping and avoids secret-indexed lookup tables. Input length,
         /// padding length, output length, and final success or failure remain
-        /// public.
+        /// public. Malformed input errors are intentionally non-localized; use
+        /// the normal strict decoder when exact error indexes are required.
         ///
         /// # Examples
         ///
@@ -2140,9 +2141,8 @@ fn ct_decode_padded<A: Alphabet>(input: &[u8], output: &mut [u8]) -> Result<usiz
         });
     }
 
-    let first_padding = input.len() - padding;
-    let mut first_invalid_byte = None;
-    let mut first_invalid_padding = None;
+    let mut invalid_byte = 0u8;
+    let mut invalid_padding = 0u8;
     let mut write = 0;
     let mut read = 0;
 
@@ -2157,22 +2157,25 @@ fn ct_decode_padded<A: Alphabet>(input: &[u8], output: &mut [u8]) -> Result<usiz
         let (v2, valid2) = ct_decode_ascii_base64::<A>(b2);
         let (v3, valid3) = ct_decode_ascii_base64::<A>(b3);
 
-        remember_invalid_byte(&mut first_invalid_byte, read, b0, valid0);
-        remember_invalid_byte(&mut first_invalid_byte, read + 1, b1, valid1);
+        invalid_byte |= u8::from(!valid0);
+        invalid_byte |= u8::from(!valid1);
 
         if is_last && padding == 2 {
-            remember_padding(&mut first_invalid_padding, read + 1, v1 & 0b0000_1111 != 0);
+            invalid_padding |= u8::from((v1 & 0b0000_1111) != 0);
             output[write] = (v0 << 2) | (v1 >> 4);
             write += 1;
         } else if is_last && padding == 1 {
-            remember_invalid_byte(&mut first_invalid_byte, read + 2, b2, valid2);
-            remember_padding(&mut first_invalid_padding, read + 2, v2 & 0b0000_0011 != 0);
+            invalid_byte |= u8::from(!valid2);
+            invalid_padding |= u8::from(b2 == b'=');
+            invalid_padding |= u8::from((v2 & 0b0000_0011) != 0);
             output[write] = (v0 << 2) | (v1 >> 4);
             output[write + 1] = (v1 << 4) | (v2 >> 2);
             write += 2;
         } else {
-            remember_invalid_byte(&mut first_invalid_byte, read + 2, b2, valid2);
-            remember_invalid_byte(&mut first_invalid_byte, read + 3, b3, valid3);
+            invalid_byte |= u8::from(!valid2);
+            invalid_byte |= u8::from(!valid3);
+            invalid_padding |= u8::from(b2 == b'=');
+            invalid_padding |= u8::from(b3 == b'=');
             output[write] = (v0 << 2) | (v1 >> 4);
             output[write + 1] = (v1 << 4) | (v2 >> 2);
             output[write + 2] = (v2 << 6) | v3;
@@ -2182,16 +2185,7 @@ fn ct_decode_padded<A: Alphabet>(input: &[u8], output: &mut [u8]) -> Result<usiz
         read += 4;
     }
 
-    if let Some(index) = input[..first_padding].iter().position(|byte| *byte == b'=') {
-        remember_padding(&mut first_invalid_padding, index, true);
-    }
-    if padding == 0
-        && let Some(index) = input.iter().position(|byte| *byte == b'=')
-    {
-        remember_padding(&mut first_invalid_padding, index, true);
-    }
-
-    report_ct_error(first_invalid_byte, first_invalid_padding)?;
+    report_ct_error(invalid_byte, invalid_padding)?;
     Ok(write)
 }
 
@@ -2208,8 +2202,8 @@ fn ct_decode_unpadded<A: Alphabet>(input: &[u8], output: &mut [u8]) -> Result<us
         });
     }
 
-    let mut first_invalid_byte = None;
-    let mut first_invalid_padding = None;
+    let mut invalid_byte = 0u8;
+    let mut invalid_padding = 0u8;
     let mut write = 0;
     let mut read = 0;
 
@@ -2223,14 +2217,14 @@ fn ct_decode_unpadded<A: Alphabet>(input: &[u8], output: &mut [u8]) -> Result<us
         let (v2, valid2) = ct_decode_ascii_base64::<A>(b2);
         let (v3, valid3) = ct_decode_ascii_base64::<A>(b3);
 
-        remember_invalid_byte(&mut first_invalid_byte, read, b0, valid0);
-        remember_invalid_byte(&mut first_invalid_byte, read + 1, b1, valid1);
-        remember_invalid_byte(&mut first_invalid_byte, read + 2, b2, valid2);
-        remember_invalid_byte(&mut first_invalid_byte, read + 3, b3, valid3);
-        remember_padding(&mut first_invalid_padding, read, b0 == b'=');
-        remember_padding(&mut first_invalid_padding, read + 1, b1 == b'=');
-        remember_padding(&mut first_invalid_padding, read + 2, b2 == b'=');
-        remember_padding(&mut first_invalid_padding, read + 3, b3 == b'=');
+        invalid_byte |= u8::from(!valid0);
+        invalid_byte |= u8::from(!valid1);
+        invalid_byte |= u8::from(!valid2);
+        invalid_byte |= u8::from(!valid3);
+        invalid_padding |= u8::from(b0 == b'=');
+        invalid_padding |= u8::from(b1 == b'=');
+        invalid_padding |= u8::from(b2 == b'=');
+        invalid_padding |= u8::from(b3 == b'=');
 
         output[write] = (v0 << 2) | (v1 >> 4);
         output[write + 1] = (v1 << 4) | (v2 >> 2);
@@ -2246,11 +2240,11 @@ fn ct_decode_unpadded<A: Alphabet>(input: &[u8], output: &mut [u8]) -> Result<us
             let b1 = input[read + 1];
             let (v0, valid0) = ct_decode_ascii_base64::<A>(b0);
             let (v1, valid1) = ct_decode_ascii_base64::<A>(b1);
-            remember_invalid_byte(&mut first_invalid_byte, read, b0, valid0);
-            remember_invalid_byte(&mut first_invalid_byte, read + 1, b1, valid1);
-            remember_padding(&mut first_invalid_padding, read, b0 == b'=');
-            remember_padding(&mut first_invalid_padding, read + 1, b1 == b'=');
-            remember_padding(&mut first_invalid_padding, read + 1, v1 & 0b0000_1111 != 0);
+            invalid_byte |= u8::from(!valid0);
+            invalid_byte |= u8::from(!valid1);
+            invalid_padding |= u8::from(b0 == b'=');
+            invalid_padding |= u8::from(b1 == b'=');
+            invalid_padding |= u8::from((v1 & 0b0000_1111) != 0);
             output[write] = (v0 << 2) | (v1 >> 4);
             write += 1;
         }
@@ -2261,13 +2255,13 @@ fn ct_decode_unpadded<A: Alphabet>(input: &[u8], output: &mut [u8]) -> Result<us
             let (v0, valid0) = ct_decode_ascii_base64::<A>(b0);
             let (v1, valid1) = ct_decode_ascii_base64::<A>(b1);
             let (v2, valid2) = ct_decode_ascii_base64::<A>(b2);
-            remember_invalid_byte(&mut first_invalid_byte, read, b0, valid0);
-            remember_invalid_byte(&mut first_invalid_byte, read + 1, b1, valid1);
-            remember_invalid_byte(&mut first_invalid_byte, read + 2, b2, valid2);
-            remember_padding(&mut first_invalid_padding, read, b0 == b'=');
-            remember_padding(&mut first_invalid_padding, read + 1, b1 == b'=');
-            remember_padding(&mut first_invalid_padding, read + 2, b2 == b'=');
-            remember_padding(&mut first_invalid_padding, read + 2, v2 & 0b0000_0011 != 0);
+            invalid_byte |= u8::from(!valid0);
+            invalid_byte |= u8::from(!valid1);
+            invalid_byte |= u8::from(!valid2);
+            invalid_padding |= u8::from(b0 == b'=');
+            invalid_padding |= u8::from(b1 == b'=');
+            invalid_padding |= u8::from(b2 == b'=');
+            invalid_padding |= u8::from((v2 & 0b0000_0011) != 0);
             output[write] = (v0 << 2) | (v1 >> 4);
             output[write + 1] = (v1 << 4) | (v2 >> 2);
             write += 2;
@@ -2275,7 +2269,7 @@ fn ct_decode_unpadded<A: Alphabet>(input: &[u8], output: &mut [u8]) -> Result<us
         _ => return Err(DecodeError::InvalidLength),
     }
 
-    report_ct_error(first_invalid_byte, first_invalid_padding)?;
+    report_ct_error(invalid_byte, invalid_padding)?;
     Ok(write)
 }
 
@@ -2308,39 +2302,13 @@ fn ct_padding_len(input: &[u8]) -> usize {
     padding
 }
 
-fn remember_invalid_byte(
-    first_invalid_byte: &mut Option<(usize, u8)>,
-    index: usize,
-    byte: u8,
-    valid: bool,
-) {
-    if !valid && first_invalid_byte.is_none() {
-        *first_invalid_byte = Some((index, byte));
-    }
-}
-
-fn remember_padding(first_invalid_padding: &mut Option<usize>, index: usize, invalid: bool) {
-    if invalid {
-        match *first_invalid_padding {
-            Some(existing) if existing <= index => {}
-            Some(_) | None => *first_invalid_padding = Some(index),
-        }
-    }
-}
-
-fn report_ct_error(
-    first_invalid_byte: Option<(usize, u8)>,
-    first_invalid_padding: Option<usize>,
-) -> Result<(), DecodeError> {
-    match (first_invalid_byte, first_invalid_padding) {
-        (Some((byte_index, _)), Some(padding_index)) if padding_index <= byte_index => {
-            Err(DecodeError::InvalidPadding {
-                index: padding_index,
-            })
-        }
-        (Some((index, byte)), _) => Err(DecodeError::InvalidByte { index, byte }),
-        (None, Some(index)) => Err(DecodeError::InvalidPadding { index }),
-        (None, None) => Ok(()),
+fn report_ct_error(invalid_byte: u8, invalid_padding: u8) -> Result<(), DecodeError> {
+    if invalid_padding != 0 {
+        Err(DecodeError::InvalidPadding { index: 0 })
+    } else if invalid_byte != 0 {
+        Err(DecodeError::InvalidByte { index: 0, byte: 0 })
+    } else {
+        Ok(())
     }
 }
 

@@ -40,9 +40,11 @@ The scalar encoder avoids input-derived alphabet table indexes, and the scalar
 decoder avoids obvious alphabet `match` ladders by using branch-minimized
 arithmetic for ASCII classification. The `ct` module provides a separate
 constant-time-oriented scalar decode path that avoids secret-indexed lookup
-tables while mapping Base64 symbols. This reduces easy timing pitfalls, but
-`base64-ng` does not currently claim a formally verified cryptographic
-constant-time encode or decode API.
+tables while mapping Base64 symbols. Its malformed-input errors are
+intentionally non-localized so error tracking does not reveal the first
+malformed byte position. This reduces easy timing pitfalls, but `base64-ng`
+does not currently claim a formally verified cryptographic constant-time encode
+or decode API.
 
 The clear-tail encode and decode APIs provide best-effort cleanup for
 caller-owned buffers by writing zero bytes over unused tail bytes on success and

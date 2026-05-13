@@ -145,29 +145,23 @@ fn ct_decoder_rejects_malformed_inputs() {
 
     assert_eq!(
         ct::STANDARD.decode_slice(b"AA-A", &mut output),
-        Err(DecodeError::InvalidByte {
-            index: 2,
-            byte: b'-',
-        })
+        Err(DecodeError::InvalidByte { index: 0, byte: 0 })
     );
     assert_eq!(
         ct::URL_SAFE.decode_slice(b"AA+A", &mut output),
-        Err(DecodeError::InvalidByte {
-            index: 2,
-            byte: b'+',
-        })
+        Err(DecodeError::InvalidByte { index: 0, byte: 0 })
     );
     assert_eq!(
         ct::STANDARD.decode_slice(b"AA=A", &mut output),
-        Err(DecodeError::InvalidPadding { index: 2 })
+        Err(DecodeError::InvalidPadding { index: 0 })
     );
     assert_eq!(
         ct::STANDARD.decode_slice(b"Zh==", &mut output),
-        Err(DecodeError::InvalidPadding { index: 1 })
+        Err(DecodeError::InvalidPadding { index: 0 })
     );
     assert_eq!(
         ct::STANDARD_NO_PAD.decode_slice(b"Zg==", &mut output),
-        Err(DecodeError::InvalidPadding { index: 2 })
+        Err(DecodeError::InvalidPadding { index: 0 })
     );
 
     let mut too_small = [0u8; 1];
@@ -178,6 +172,25 @@ fn ct_decoder_rejects_malformed_inputs() {
             available: 1,
         })
     );
+}
+
+#[test]
+fn ct_decoder_uses_non_localized_malformed_errors() {
+    let mut output = [0u8; 8];
+
+    for input in [b"$AAA", b"A$AA", b"AA$A", b"AAA$"] {
+        assert_eq!(
+            ct::STANDARD.decode_slice(input, &mut output),
+            Err(DecodeError::InvalidByte { index: 0, byte: 0 })
+        );
+    }
+
+    for input in [b"AA=A", b"Zm9=", b"Zh=="] {
+        assert_eq!(
+            ct::STANDARD.decode_slice(input, &mut output),
+            Err(DecodeError::InvalidPadding { index: 0 })
+        );
+    }
 }
 
 #[test]

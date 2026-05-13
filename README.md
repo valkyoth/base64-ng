@@ -254,8 +254,9 @@ Security commitments:
 - Scalar encode avoids input-derived alphabet table indexes, and scalar decode
   uses branch-minimized arithmetic. A separate `ct` module provides a
   constant-time-oriented scalar decode path for callers that need a narrower
-  timing target, but it is not documented as a formally verified cryptographic
-  constant-time API.
+  timing target. Its malformed-input errors are intentionally non-localized,
+  and it is not documented as a formally verified cryptographic constant-time
+  API.
 - Clear-tail encode/decode variants are available for callers that want
   best-effort cleanup of unused caller-owned buffers without adding a runtime
   dependency.

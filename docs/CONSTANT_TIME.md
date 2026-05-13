@@ -47,6 +47,7 @@ The guarantee should explicitly exclude:
 - public input length
 - selected engine/alphabet
 - final success or failure result
+- malformed-input error kind
 - output length
 - allocator behavior
 - memory cleanup and zeroization behavior
@@ -85,6 +86,8 @@ behavior entirely.
   malformed input.
 - Keep padding validation explicit and documented; padding length and final
   output length are public.
+- Return non-localized malformed-input errors from the constant-time-oriented
+  path. Use the normal strict decoder when exact error indexes are required.
 - Keep the implementation scalar and `unsafe`-free.
 - Keep the module independent from future SIMD dispatch.
 
