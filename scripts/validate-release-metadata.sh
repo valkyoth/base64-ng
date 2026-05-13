@@ -44,6 +44,16 @@ test -s LICENSE-APACHE
 test -s README.md
 test -s SECURITY.md
 
+if ! grep -q '^The MIT License (MIT)$' LICENSE-MIT; then
+    echo "release metadata: LICENSE-MIT does not look like the canonical MIT license" >&2
+    exit 1
+fi
+
+if ! grep -q 'Apache License' LICENSE-APACHE || ! grep -q 'Version 2.0, January 2004' LICENSE-APACHE; then
+    echo "release metadata: LICENSE-APACHE does not look like the canonical Apache 2.0 license" >&2
+    exit 1
+fi
+
 if ! grep -q "^## $cargo_version " CHANGELOG.md; then
     echo "release metadata: CHANGELOG.md is missing a section for Cargo version $cargo_version" >&2
     exit 1
