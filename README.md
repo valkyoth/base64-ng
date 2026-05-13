@@ -20,6 +20,8 @@ Implemented now:
 - In-place encoding when the caller provides enough spare capacity.
 - Optional `alloc` vector and string helpers.
 - In-place decode API built on the same strict scalar decoder.
+- Explicit legacy decode APIs that ignore ASCII transport whitespace while
+  keeping alphabet and padding validation strict.
 - `std::io` streaming encoders and decoders behind the `stream` feature.
 - Focused unit and integration tests.
 - Local check scripts, release gate, dependency policy, audit config, CI, SBOM script, and reproducible build check.
@@ -119,6 +121,26 @@ use base64_ng::{checked_encoded_len, decoded_len};
 assert_eq!(checked_encoded_len(5, true), Some(8));
 assert_eq!(decoded_len(b"aGVsbG8=", true).unwrap(), 5);
 ```
+
+## Legacy Whitespace Decoding
+
+Strict decoding rejects whitespace. If an existing protocol allows line-wrapped
+or spaced Base64, use the explicit legacy APIs:
+
+```rust
+use base64_ng::STANDARD;
+
+let mut output = [0u8; 5];
+let written = STANDARD
+    .decode_slice_legacy(b" aG\r\nVs\tbG8= ", &mut output)
+    .unwrap();
+
+assert_eq!(&output[..written], b"hello");
+```
+
+Legacy decoding only ignores ASCII space, tab, carriage return, and line feed.
+Alphabet selection, padding placement, trailing data after padding, and
+non-canonical trailing bits remain strict.
 
 ## Bounded Memory Use
 

@@ -10,6 +10,8 @@
 - Expanded bounded-memory documentation for checked length helpers and
   caller-owned decode buffers.
 - Added a migration guide for projects moving from the `base64` crate.
+- Added explicit legacy decode APIs that ignore ASCII transport whitespace while
+  keeping alphabet and padding checks strict.
 
 ## 0.1.0 - 2026-05-13
 

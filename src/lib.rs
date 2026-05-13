@@ -888,6 +888,15 @@ where
         decoded_len(input, PAD)
     }
 
+    /// Returns the exact decoded length for the explicit legacy profile.
+    ///
+    /// The legacy profile ignores ASCII space, tab, carriage return, and line
+    /// feed bytes before applying the same alphabet, padding, and canonical-bit
+    /// checks as strict decoding.
+    pub fn decoded_len_legacy(&self, input: &[u8]) -> Result<usize, DecodeError> {
+        validate_legacy_decode::<A, PAD>(input)
+    }
+
     /// Encodes a fixed-size input into a fixed-size output array in const contexts.
     ///
     /// Stable Rust does not yet allow this API to return an array whose length
@@ -1178,6 +1187,26 @@ where
         }
     }
 
+    /// Decodes `input` using the explicit legacy whitespace profile.
+    ///
+    /// ASCII space, tab, carriage return, and line feed bytes are ignored.
+    /// Alphabet selection, padding placement, trailing data after padding, and
+    /// non-canonical trailing bits remain strict.
+    pub fn decode_slice_legacy(
+        &self,
+        input: &[u8],
+        output: &mut [u8],
+    ) -> Result<usize, DecodeError> {
+        let required = validate_legacy_decode::<A, PAD>(input)?;
+        if output.len() < required {
+            return Err(DecodeError::OutputTooSmall {
+                required,
+                available: output.len(),
+            });
+        }
+        decode_legacy_to_slice::<A, PAD>(input, output)
+    }
+
     /// Decodes `input` into a newly allocated byte vector.
     ///
     /// This is strict decoding with the same semantics as [`Self::decode_slice`].
@@ -1186,6 +1215,23 @@ where
         let required = validate_decode::<A, PAD>(input)?;
         let mut output = alloc::vec![0; required];
         let written = match self.decode_slice(input, &mut output) {
+            Ok(written) => written,
+            Err(err) => {
+                output.fill(0);
+                return Err(err);
+            }
+        };
+        output.truncate(written);
+        Ok(output)
+    }
+
+    /// Decodes `input` into a newly allocated byte vector using the explicit
+    /// legacy whitespace profile.
+    #[cfg(feature = "alloc")]
+    pub fn decode_vec_legacy(&self, input: &[u8]) -> Result<alloc::vec::Vec<u8>, DecodeError> {
+        let required = validate_legacy_decode::<A, PAD>(input)?;
+        let mut output = alloc::vec![0; required];
+        let written = match self.decode_slice_legacy(input, &mut output) {
             Ok(written) => written,
             Err(err) => {
                 output.fill(0);
@@ -1209,6 +1255,29 @@ where
     /// ```
     pub fn decode_in_place<'a>(&self, buffer: &'a mut [u8]) -> Result<&'a mut [u8], DecodeError> {
         let len = Self::decode_slice_to_start(buffer)?;
+        Ok(&mut buffer[..len])
+    }
+
+    /// Decodes `buffer` in place using the explicit legacy whitespace profile.
+    ///
+    /// Ignored whitespace is compacted out before decoding. If validation
+    /// fails, the buffer contents are unspecified.
+    pub fn decode_in_place_legacy<'a>(
+        &self,
+        buffer: &'a mut [u8],
+    ) -> Result<&'a mut [u8], DecodeError> {
+        let _required = validate_legacy_decode::<A, PAD>(buffer)?;
+        let mut write = 0;
+        let mut read = 0;
+        while read < buffer.len() {
+            let byte = buffer[read];
+            if !is_legacy_whitespace(byte) {
+                buffer[write] = byte;
+                write += 1;
+            }
+            read += 1;
+        }
+        let len = Self::decode_slice_to_start(&mut buffer[..write])?;
         Ok(&mut buffer[..len])
     }
 
@@ -1359,6 +1428,125 @@ impl DecodeError {
 #[cfg(feature = "std")]
 impl std::error::Error for DecodeError {}
 
+fn validate_legacy_decode<A: Alphabet, const PAD: bool>(
+    input: &[u8],
+) -> Result<usize, DecodeError> {
+    let mut chunk = [0u8; 4];
+    let mut indexes = [0usize; 4];
+    let mut chunk_len = 0;
+    let mut required = 0;
+    let mut terminal_seen = false;
+
+    for (index, byte) in input.iter().copied().enumerate() {
+        if is_legacy_whitespace(byte) {
+            continue;
+        }
+        if terminal_seen {
+            return Err(DecodeError::InvalidPadding { index });
+        }
+
+        chunk[chunk_len] = byte;
+        indexes[chunk_len] = index;
+        chunk_len += 1;
+
+        if chunk_len == 4 {
+            let written =
+                validate_chunk::<A, PAD>(&chunk).map_err(|err| map_chunk_error(err, &indexes))?;
+            required += written;
+            terminal_seen = written < 3;
+            chunk_len = 0;
+        }
+    }
+
+    if chunk_len == 0 {
+        return Ok(required);
+    }
+    if PAD {
+        return Err(DecodeError::InvalidLength);
+    }
+
+    validate_tail_unpadded::<A>(&chunk[..chunk_len])
+        .map_err(|err| map_partial_chunk_error(err, &indexes, chunk_len))?;
+    Ok(required + decoded_capacity(chunk_len))
+}
+
+fn decode_legacy_to_slice<A: Alphabet, const PAD: bool>(
+    input: &[u8],
+    output: &mut [u8],
+) -> Result<usize, DecodeError> {
+    let mut chunk = [0u8; 4];
+    let mut indexes = [0usize; 4];
+    let mut chunk_len = 0;
+    let mut write = 0;
+    let mut terminal_seen = false;
+
+    for (index, byte) in input.iter().copied().enumerate() {
+        if is_legacy_whitespace(byte) {
+            continue;
+        }
+        if terminal_seen {
+            return Err(DecodeError::InvalidPadding { index });
+        }
+
+        chunk[chunk_len] = byte;
+        indexes[chunk_len] = index;
+        chunk_len += 1;
+
+        if chunk_len == 4 {
+            let written = decode_chunk::<A, PAD>(&chunk, &mut output[write..])
+                .map_err(|err| map_chunk_error(err, &indexes))?;
+            write += written;
+            terminal_seen = written < 3;
+            chunk_len = 0;
+        }
+    }
+
+    if chunk_len == 0 {
+        return Ok(write);
+    }
+    if PAD {
+        return Err(DecodeError::InvalidLength);
+    }
+
+    decode_tail_unpadded::<A>(&chunk[..chunk_len], &mut output[write..])
+        .map_err(|err| map_partial_chunk_error(err, &indexes, chunk_len))
+        .map(|n| write + n)
+}
+
+#[inline]
+const fn is_legacy_whitespace(byte: u8) -> bool {
+    matches!(byte, b' ' | b'\t' | b'\r' | b'\n')
+}
+
+fn map_chunk_error(err: DecodeError, indexes: &[usize; 4]) -> DecodeError {
+    match err {
+        DecodeError::InvalidByte { index, byte } => DecodeError::InvalidByte {
+            index: indexes[index],
+            byte,
+        },
+        DecodeError::InvalidPadding { index } => DecodeError::InvalidPadding {
+            index: indexes[index],
+        },
+        DecodeError::InvalidLength | DecodeError::OutputTooSmall { .. } => err,
+    }
+}
+
+fn map_partial_chunk_error(err: DecodeError, indexes: &[usize; 4], len: usize) -> DecodeError {
+    match err {
+        DecodeError::InvalidByte { index, byte } if index < len => DecodeError::InvalidByte {
+            index: indexes[index],
+            byte,
+        },
+        DecodeError::InvalidPadding { index } if index < len => DecodeError::InvalidPadding {
+            index: indexes[index],
+        },
+        DecodeError::InvalidByte { .. }
+        | DecodeError::InvalidPadding { .. }
+        | DecodeError::InvalidLength
+        | DecodeError::OutputTooSmall { .. } => err,
+    }
+}
+
 fn decode_padded<A: Alphabet>(input: &[u8], output: &mut [u8]) -> Result<usize, DecodeError> {
     if !input.len().is_multiple_of(4) {
         return Err(DecodeError::InvalidLength);
@@ -1493,7 +1681,6 @@ fn decoded_len_unpadded(input: &[u8]) -> Result<usize, DecodeError> {
     Ok(decoded_capacity(input.len()))
 }
 
-#[cfg(feature = "alloc")]
 fn validate_chunk<A: Alphabet, const PAD: bool>(input: &[u8]) -> Result<usize, DecodeError> {
     debug_assert_eq!(input.len(), 4);
     let _v0 = decode_byte::<A>(input[0], 0)?;
@@ -1583,7 +1770,6 @@ fn decode_chunk<A: Alphabet, const PAD: bool>(
     }
 }
 
-#[cfg(feature = "alloc")]
 fn validate_tail_unpadded<A: Alphabet>(input: &[u8]) -> Result<(), DecodeError> {
     match input.len() {
         0 => Ok(()),

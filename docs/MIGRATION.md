@@ -115,10 +115,21 @@ assert_eq!(output, b"hello");
 - non-canonical trailing bits are rejected
 - padded engines require canonical padding
 
-If the old project depends on permissive decoding, normalize the input before
-calling `base64-ng`, or wait for the planned explicit legacy compatibility mode.
-Do not silently switch permissive input paths to strict decoding without checking
-the calling protocol.
+If the old project depends on line-wrapped or spaced Base64, use the explicit
+legacy whitespace APIs:
+
+```rust
+use base64_ng::STANDARD;
+
+let decoded = STANDARD.decode_vec_legacy(b" aG\r\nVs\tbG8= ").unwrap();
+assert_eq!(decoded, b"hello");
+```
+
+The legacy profile only ignores ASCII space, tab, carriage return, and line
+feed. It still rejects mixed alphabets, malformed padding, trailing payload
+after padding, and non-canonical trailing bits. If the old project accepts
+broader non-canonical input, normalize or reject that input before calling
+`base64-ng`.
 
 ## Length And Memory Handling
 

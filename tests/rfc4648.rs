@@ -348,6 +348,58 @@ fn rejects_common_non_alphabet_bytes() {
 }
 
 #[test]
+fn legacy_decode_ignores_transport_whitespace() {
+    let input = b" aG\r\nVs\tbG8= ";
+    assert_eq!(STANDARD.decoded_len_legacy(input), Ok(5));
+
+    let mut output = [0u8; 5];
+    let written = STANDARD.decode_slice_legacy(input, &mut output).unwrap();
+    assert_eq!(&output[..written], b"hello");
+
+    #[cfg(feature = "alloc")]
+    {
+        let decoded = STANDARD.decode_vec_legacy(input).unwrap();
+        assert_eq!(decoded, b"hello");
+    }
+
+    let mut in_place = *b" aG\r\nVs\tbG8= ";
+    let decoded = STANDARD.decode_in_place_legacy(&mut in_place).unwrap();
+    assert_eq!(decoded, b"hello");
+}
+
+#[test]
+fn legacy_decode_supports_unpadded_whitespace() {
+    let input = b" aG\r\nVs\tbG8 ";
+    assert_eq!(STANDARD_NO_PAD.decoded_len_legacy(input), Ok(5));
+
+    let mut output = [0u8; 5];
+    let written = STANDARD_NO_PAD
+        .decode_slice_legacy(input, &mut output)
+        .unwrap();
+    assert_eq!(&output[..written], b"hello");
+}
+
+#[test]
+fn legacy_decode_keeps_strict_alphabet_and_padding_rules() {
+    let mut output = [0u8; 16];
+    assert_eq!(
+        STANDARD.decode_slice_legacy(b"AA -A", &mut output),
+        Err(DecodeError::InvalidByte {
+            index: 3,
+            byte: b'-',
+        })
+    );
+    assert_eq!(
+        STANDARD.decode_slice_legacy(b"Zh ==", &mut output),
+        Err(DecodeError::InvalidPadding { index: 1 })
+    );
+    assert_eq!(
+        STANDARD.decode_slice_legacy(b"aGk= AAAA", &mut output),
+        Err(DecodeError::InvalidPadding { index: 5 })
+    );
+}
+
+#[test]
 fn reports_absolute_invalid_byte_indexes() {
     let mut output = [0u8; 16];
     assert_eq!(
