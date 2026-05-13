@@ -4,6 +4,11 @@ use base64_ng::{STANDARD, STANDARD_NO_PAD, URL_SAFE, URL_SAFE_NO_PAD};
 use libfuzzer_sys::fuzz_target;
 
 fuzz_target!(|data: &[u8]| {
+    exercise_encode_in_place(data, STANDARD);
+    exercise_encode_in_place(data, STANDARD_NO_PAD);
+    exercise_encode_in_place(data, URL_SAFE);
+    exercise_encode_in_place(data, URL_SAFE_NO_PAD);
+
     exercise_in_place(data, STANDARD);
     exercise_in_place(data, STANDARD_NO_PAD);
     exercise_in_place(data, URL_SAFE);
@@ -14,6 +19,59 @@ fuzz_target!(|data: &[u8]| {
     exercise_legacy_in_place(data, URL_SAFE);
     exercise_legacy_in_place(data, URL_SAFE_NO_PAD);
 });
+
+fn exercise_encode_in_place<A, const PAD: bool>(input: &[u8], engine: base64_ng::Engine<A, PAD>)
+where
+    A: base64_ng::Alphabet,
+{
+    let encoded = engine.encode_vec(input).expect("encoded length fits");
+    let extra = input.len() % 7 + 1;
+    let mut buffer = vec![0xa5; encoded.len() + extra];
+    buffer[..input.len()].copy_from_slice(input);
+
+    let clear_tail_result = engine
+        .encode_in_place_clear_tail(&mut buffer, input.len())
+        .map(|encoded| encoded.to_vec());
+
+    match clear_tail_result {
+        Ok(in_place) => {
+            assert_eq!(in_place, encoded);
+            assert!(buffer[encoded.len()..].iter().all(|byte| *byte == 0));
+        }
+        Err(err) => panic!("encode_in_place_clear_tail rejected valid input: {err:?}"),
+    }
+
+    if !input.is_empty() {
+        let mut input_too_large = vec![0xa5; input.len() - 1];
+        let err = engine
+            .encode_in_place_clear_tail(&mut input_too_large, input.len())
+            .expect_err("input length exceeds buffer length");
+        assert_eq!(
+            err,
+            base64_ng::EncodeError::InputTooLarge {
+                input_len: input.len(),
+                buffer_len: input.len() - 1,
+            }
+        );
+        assert!(input_too_large.iter().all(|byte| *byte == 0));
+    }
+
+    if encoded.len() > 0 {
+        let mut too_small = vec![0xa5; encoded.len() - 1];
+        too_small[..input.len()].copy_from_slice(input);
+        let err = engine
+            .encode_in_place_clear_tail(&mut too_small, input.len())
+            .expect_err("encoded output exceeds buffer length");
+        assert_eq!(
+            err,
+            base64_ng::EncodeError::OutputTooSmall {
+                required: encoded.len(),
+                available: encoded.len() - 1,
+            }
+        );
+        assert!(too_small.iter().all(|byte| *byte == 0));
+    }
+}
 
 fn exercise_in_place<A, const PAD: bool>(input: &[u8], engine: base64_ng::Engine<A, PAD>)
 where

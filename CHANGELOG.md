@@ -19,6 +19,8 @@
   reduction rather than a formal zeroization guarantee.
 - Added an in-place encode variant that clears unused buffer bytes on success
   and clears the full caller buffer on error.
+- Extended in-place fuzz coverage to verify clear-tail encode result parity and
+  cleanup semantics.
 
 ## 0.2.0 - 2026-05-13
 
