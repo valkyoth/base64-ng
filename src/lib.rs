@@ -1152,8 +1152,15 @@ where
     /// This is strict decoding with the same semantics as [`Self::decode_slice`].
     #[cfg(feature = "alloc")]
     pub fn decode_vec(&self, input: &[u8]) -> Result<alloc::vec::Vec<u8>, DecodeError> {
-        let mut output = alloc::vec![0; self.decoded_len(input)?];
-        let written = self.decode_slice(input, &mut output)?;
+        let required = validate_decode::<A, PAD>(input)?;
+        let mut output = alloc::vec![0; required];
+        let written = match self.decode_slice(input, &mut output) {
+            Ok(written) => written,
+            Err(err) => {
+                output.fill(0);
+                return Err(err);
+            }
+        };
         output.truncate(written);
         Ok(output)
     }
@@ -1347,6 +1354,54 @@ fn decode_padded<A: Alphabet>(input: &[u8], output: &mut [u8]) -> Result<usize, 
     Ok(write)
 }
 
+#[cfg(feature = "alloc")]
+fn validate_decode<A: Alphabet, const PAD: bool>(input: &[u8]) -> Result<usize, DecodeError> {
+    if input.is_empty() {
+        return Ok(0);
+    }
+
+    if PAD {
+        validate_padded::<A>(input)
+    } else {
+        validate_unpadded::<A>(input)
+    }
+}
+
+#[cfg(feature = "alloc")]
+fn validate_padded<A: Alphabet>(input: &[u8]) -> Result<usize, DecodeError> {
+    if !input.len().is_multiple_of(4) {
+        return Err(DecodeError::InvalidLength);
+    }
+    let required = decoded_len_padded(input)?;
+
+    let mut read = 0;
+    while read < input.len() {
+        let written = validate_chunk::<A, true>(&input[read..read + 4])
+            .map_err(|err| err.with_index_offset(read))?;
+        read += 4;
+        if written < 3 && read != input.len() {
+            return Err(DecodeError::InvalidPadding { index: read - 4 });
+        }
+    }
+
+    Ok(required)
+}
+
+#[cfg(feature = "alloc")]
+fn validate_unpadded<A: Alphabet>(input: &[u8]) -> Result<usize, DecodeError> {
+    let required = decoded_len_unpadded(input)?;
+
+    let mut read = 0;
+    while read + 4 <= input.len() {
+        validate_chunk::<A, false>(&input[read..read + 4])
+            .map_err(|err| err.with_index_offset(read))?;
+        read += 4;
+    }
+    validate_tail_unpadded::<A>(&input[read..]).map_err(|err| err.with_index_offset(read))?;
+
+    Ok(required)
+}
+
 fn decode_unpadded<A: Alphabet>(input: &[u8], output: &mut [u8]) -> Result<usize, DecodeError> {
     let required = decoded_len_unpadded(input)?;
     if output.len() < required {
@@ -1411,6 +1466,38 @@ fn decoded_len_unpadded(input: &[u8]) -> Result<usize, DecodeError> {
     Ok(decoded_capacity(input.len()))
 }
 
+#[cfg(feature = "alloc")]
+fn validate_chunk<A: Alphabet, const PAD: bool>(input: &[u8]) -> Result<usize, DecodeError> {
+    debug_assert_eq!(input.len(), 4);
+    let _v0 = decode_byte::<A>(input[0], 0)?;
+    let v1 = decode_byte::<A>(input[1], 1)?;
+
+    match (input[2], input[3]) {
+        (b'=', b'=') if PAD => {
+            if v1 & 0b0000_1111 != 0 {
+                return Err(DecodeError::InvalidPadding { index: 1 });
+            }
+            Ok(1)
+        }
+        (b'=', _) if PAD => Err(DecodeError::InvalidPadding { index: 2 }),
+        (_, b'=') if PAD => {
+            let v2 = decode_byte::<A>(input[2], 2)?;
+            if v2 & 0b0000_0011 != 0 {
+                return Err(DecodeError::InvalidPadding { index: 2 });
+            }
+            Ok(2)
+        }
+        (b'=', _) | (_, b'=') => Err(DecodeError::InvalidPadding {
+            index: input.iter().position(|byte| *byte == b'=').unwrap_or(0),
+        }),
+        _ => {
+            decode_byte::<A>(input[2], 2)?;
+            decode_byte::<A>(input[3], 3)?;
+            Ok(3)
+        }
+    }
+}
+
 fn decode_chunk<A: Alphabet, const PAD: bool>(
     input: &[u8],
     output: &mut [u8],
@@ -1466,6 +1553,31 @@ fn decode_chunk<A: Alphabet, const PAD: bool>(
             output[2] = (v2 << 6) | v3;
             Ok(3)
         }
+    }
+}
+
+#[cfg(feature = "alloc")]
+fn validate_tail_unpadded<A: Alphabet>(input: &[u8]) -> Result<(), DecodeError> {
+    match input.len() {
+        0 => Ok(()),
+        2 => {
+            decode_byte::<A>(input[0], 0)?;
+            let v1 = decode_byte::<A>(input[1], 1)?;
+            if v1 & 0b0000_1111 != 0 {
+                return Err(DecodeError::InvalidPadding { index: 1 });
+            }
+            Ok(())
+        }
+        3 => {
+            decode_byte::<A>(input[0], 0)?;
+            decode_byte::<A>(input[1], 1)?;
+            let v2 = decode_byte::<A>(input[2], 2)?;
+            if v2 & 0b0000_0011 != 0 {
+                return Err(DecodeError::InvalidPadding { index: 2 });
+            }
+            Ok(())
+        }
+        _ => Err(DecodeError::InvalidLength),
     }
 }
 

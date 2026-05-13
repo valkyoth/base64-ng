@@ -438,6 +438,24 @@ fn alloc_helpers_round_trip() {
         STANDARD_NO_PAD.decode_vec(b"Zm8=").unwrap_err(),
         DecodeError::InvalidPadding { index: 3 }
     );
+    assert_eq!(
+        STANDARD.decode_vec(b"Zm9v$g==").unwrap_err(),
+        DecodeError::InvalidByte {
+            index: 4,
+            byte: b'$',
+        }
+    );
+    assert_eq!(
+        STANDARD.decode_vec(b"Zm9vZh==").unwrap_err(),
+        DecodeError::InvalidPadding { index: 5 }
+    );
+    assert_eq!(
+        STANDARD_NO_PAD.decode_vec(b"Zm9vYg$").unwrap_err(),
+        DecodeError::InvalidByte {
+            index: 6,
+            byte: b'$',
+        }
+    );
 }
 
 #[cfg(feature = "stream")]

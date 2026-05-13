@@ -14,6 +14,7 @@
 - Added checked encoded-length helpers.
 - Added exact decoded-length helpers.
 - Hardened decode errors to report absolute input indexes.
+- Hardened `decode_vec` to validate input before allocating decoded output.
 - Hardened stream decoders to preserve reader boundaries after terminal padding.
 - Added Miri support in CI and the local release gate when installed.
 - Added project plan, security policy, local gates, CI, dependency policy, SBOM script, and reproducible build script.
