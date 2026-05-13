@@ -25,6 +25,8 @@
   on success and clear the output buffer on error.
 - Extended decode fuzz coverage to verify clear-tail slice encode/decode result
   parity and cleanup semantics.
+- Added rustdoc examples for clear-tail slice APIs so the cleanup contract is
+  visible in generated API documentation.
 
 ## 0.2.0 - 2026-05-13
 

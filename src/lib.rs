@@ -1048,6 +1048,20 @@ where
     ///
     /// If encoding fails, the entire output buffer is cleared before the error
     /// is returned.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use base64_ng::STANDARD;
+    ///
+    /// let mut output = [0xff; 12];
+    /// let written = STANDARD
+    ///     .encode_slice_clear_tail(b"hello", &mut output)
+    ///     .unwrap();
+    ///
+    /// assert_eq!(&output[..written], b"aGVsbG8=");
+    /// assert!(output[written..].iter().all(|byte| *byte == 0));
+    /// ```
     pub fn encode_slice_clear_tail(
         &self,
         input: &[u8],
@@ -1246,6 +1260,20 @@ where
     ///
     /// If decoding fails, the entire output buffer is cleared before the error
     /// is returned.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use base64_ng::STANDARD;
+    ///
+    /// let mut output = [0xff; 8];
+    /// let written = STANDARD
+    ///     .decode_slice_clear_tail(b"aGk=", &mut output)
+    ///     .unwrap();
+    ///
+    /// assert_eq!(&output[..written], b"hi");
+    /// assert!(output[written..].iter().all(|byte| *byte == 0));
+    /// ```
     pub fn decode_slice_clear_tail(
         &self,
         input: &[u8],
@@ -1287,6 +1315,20 @@ where
     ///
     /// If validation or decoding fails, the entire output buffer is cleared
     /// before the error is returned.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use base64_ng::STANDARD;
+    ///
+    /// let mut output = [0xff; 8];
+    /// let written = STANDARD
+    ///     .decode_slice_legacy_clear_tail(b" aG\r\nk= ", &mut output)
+    ///     .unwrap();
+    ///
+    /// assert_eq!(&output[..written], b"hi");
+    /// assert!(output[written..].iter().all(|byte| *byte == 0));
+    /// ```
     pub fn decode_slice_legacy_clear_tail(
         &self,
         input: &[u8],
