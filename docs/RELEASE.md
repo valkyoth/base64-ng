@@ -33,6 +33,26 @@ The release gate covers:
 - SBOM generation
 - reproducible package/build check
 
+## Miri Setup
+
+Miri is a nightly Rust component. Install it with:
+
+```sh
+rustup toolchain install nightly --component miri
+cargo +nightly miri setup
+```
+
+The local release gate runs:
+
+```sh
+cargo +nightly miri test --no-default-features
+```
+
+If nightly Miri is not installed, the gate prints an explicit skip message. The
+large deterministic sweep tests remain part of the normal stable test suite, but
+are ignored under Miri because Miri interprets code and those sweeps are not
+practical there.
+
 ## Evidence
 
 Release evidence is generated under:

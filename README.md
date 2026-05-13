@@ -178,7 +178,7 @@ Security commitments:
 - Future unsafe SIMD isolated under `src/simd/`.
 - Strict decoding rejects malformed padding and trailing data.
 - Legacy compatibility must be opt-in.
-- Release gates include formatting, clippy, tests, docs, dependency policy, audit, license review, SBOM, and reproducible build checks.
+- Release gates include formatting, clippy, tests, Miri when installed, docs, dependency policy, audit, license review, SBOM, and reproducible build checks.
 - Future Kani proofs target in-place decoding bounds and scalar decoder invariants.
 
 See [docs/PLAN.md](docs/PLAN.md) and [SECURITY.md](SECURITY.md).
@@ -219,6 +219,25 @@ cargo install --locked cargo-nextest
 cargo install --locked cargo-fuzz
 cargo install --locked kani-verifier
 ```
+
+Miri is installed as a nightly Rust component, not as a Cargo package:
+
+```sh
+rustup toolchain install nightly --component miri
+cargo +nightly miri setup
+cargo +nightly miri test --no-default-features
+```
+
+On openSUSE Tumbleweed, install `rustup` first if it is not already present:
+
+```sh
+sudo zypper install rustup
+```
+
+The local release gate runs Miri automatically when `cargo +nightly miri` is
+available. The large deterministic sweep tests are ignored only under Miri
+because they are already covered by the normal release gate and are too slow for
+an interpreter.
 
 ## Project Principles
 

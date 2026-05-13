@@ -25,16 +25,21 @@ Required for release:
 - `cargo clippy --all-targets --all-features -- -D warnings`
 - `cargo test --all-targets --all-features`
 - `cargo test --no-default-features`
+- `cargo +nightly miri test --no-default-features` when nightly Miri is installed
 - `cargo deny check`
 - `cargo audit`
 - `cargo license --json`
 - SBOM generation
 - Reproducible build check
 
+The local release gate skips only the large deterministic sweep tests under
+Miri. Those tests still run in the normal stable test suite; Miri focuses on the
+scalar and in-place safety surface that benefits most from interpreter checks.
+
 Required before unsafe SIMD stabilizes:
 
 - Scalar/SIMD differential tests.
 - Fuzz targets covering strict and legacy modes.
-- Miri on scalar and in-place APIs.
+- Miri on scalar, in-place, and SIMD dispatch APIs.
 - Kani proofs for in-place bounds invariants.
 - Architecture-specific CI or documented local evidence.
