@@ -191,6 +191,8 @@ Phase 3:
   reference for canonical, malformed, and undersized-buffer cases.
 - Unsafe admission boundary in code and checks: crate-level `deny(unsafe_code)`
   with `allow(unsafe_code)` confined to `src/simd.rs`.
+- SIMD dispatch scaffold that detects AVX2/NEON candidates while keeping
+  scalar as the only active backend.
 - Keep SIMD unsafe code isolated from the scalar core with documented invariants
   for every unsafe block.
 

@@ -934,6 +934,11 @@ mod backend {
     where
         A: Alphabet,
     {
+        #[cfg(feature = "simd")]
+        match super::simd::active_backend() {
+            super::simd::ActiveBackend::Scalar => {}
+        }
+
         scalar_encode_slice::<A, PAD>(input, output)
     }
 
@@ -944,6 +949,11 @@ mod backend {
     where
         A: Alphabet,
     {
+        #[cfg(feature = "simd")]
+        match super::simd::active_backend() {
+            super::simd::ActiveBackend::Scalar => {}
+        }
+
         scalar_decode_slice::<A, PAD>(input, output)
     }
 
@@ -2547,6 +2557,13 @@ mod tests {
         assert_decode_backend_matches_scalar::<UrlSafe, false>(b"AA/A");
         assert_decode_backend_matches_scalar::<Standard, true>(b"AA-A");
         assert_decode_backend_matches_scalar::<Standard, false>(b"AA_A");
+    }
+
+    #[cfg(feature = "simd")]
+    #[test]
+    fn simd_dispatch_scaffold_keeps_scalar_active() {
+        assert_eq!(simd::active_backend(), simd::ActiveBackend::Scalar);
+        let _candidate = simd::detected_candidate();
     }
 
     #[test]

@@ -23,6 +23,8 @@
 - Added the SIMD unsafe admission boundary: crate-level `deny(unsafe_code)`,
   `allow(unsafe_code)` confined to `src/simd.rs`, and a release-gate check for
   that boundary.
+- Added SIMD dispatch scaffolding that detects AVX2/NEON candidates while
+  keeping scalar as the only active backend until accelerated code has evidence.
 
 ## 0.3.0 - 2026-05-13
 
