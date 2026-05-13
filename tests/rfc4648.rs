@@ -315,6 +315,57 @@ fn reports_absolute_invalid_byte_indexes() {
 }
 
 #[test]
+fn rejects_mixed_alphabet_bytes() {
+    let mut output = [0u8; 4];
+    assert_eq!(
+        STANDARD.decode_slice(b"AA-A", &mut output),
+        Err(DecodeError::InvalidByte {
+            index: 2,
+            byte: b'-',
+        })
+    );
+    assert_eq!(
+        STANDARD_NO_PAD.decode_slice(b"AA_A", &mut output),
+        Err(DecodeError::InvalidByte {
+            index: 2,
+            byte: b'_',
+        })
+    );
+    assert_eq!(
+        URL_SAFE.decode_slice(b"AA+A", &mut output),
+        Err(DecodeError::InvalidByte {
+            index: 2,
+            byte: b'+',
+        })
+    );
+    assert_eq!(
+        URL_SAFE_NO_PAD.decode_slice(b"AA/A", &mut output),
+        Err(DecodeError::InvalidByte {
+            index: 2,
+            byte: b'/',
+        })
+    );
+
+    let mut standard_input = *b"AA-A";
+    assert_eq!(
+        STANDARD.decode_in_place(&mut standard_input),
+        Err(DecodeError::InvalidByte {
+            index: 2,
+            byte: b'-',
+        })
+    );
+
+    let mut url_safe_input = *b"AA+A";
+    assert_eq!(
+        URL_SAFE.decode_in_place(&mut url_safe_input),
+        Err(DecodeError::InvalidByte {
+            index: 2,
+            byte: b'+',
+        })
+    );
+}
+
+#[test]
 fn reports_absolute_padding_indexes() {
     let mut output = [0u8; 16];
     assert_eq!(
