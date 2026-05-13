@@ -4,10 +4,10 @@ use base64_ng::{
 };
 
 #[cfg(feature = "stream")]
-use base64_ng::stream::Encoder;
+use base64_ng::stream::{Encoder, EncoderReader};
 
 #[cfg(feature = "stream")]
-use std::io::Write;
+use std::io::{Read, Write};
 
 #[test]
 fn rfc4648_standard_round_trips() {
@@ -307,6 +307,41 @@ fn stream_encoder_exposes_inner_writer() {
     encoder.write_all(b"\xfb\xff").unwrap();
     assert!(encoder.get_ref().is_empty());
     let encoded = encoder.finish().unwrap();
+    assert_eq!(encoded, b"-_8");
+}
+
+#[cfg(feature = "stream")]
+#[test]
+fn stream_encoder_reader_handles_small_reads() {
+    let mut reader = EncoderReader::new(&b"hello"[..], STANDARD);
+    let mut output = [0u8; 8];
+    let mut written = 0;
+    while written < output.len() {
+        let read = reader.read(&mut output[written..written + 1]).unwrap();
+        if read == 0 {
+            break;
+        }
+        written += read;
+    }
+    assert_eq!(&output[..written], b"aGVsbG8=");
+}
+
+#[cfg(feature = "stream")]
+#[test]
+fn stream_encoder_reader_supports_no_padding() {
+    let mut reader = EncoderReader::new(&b"hello"[..], STANDARD_NO_PAD);
+    let mut encoded = Vec::new();
+    reader.read_to_end(&mut encoded).unwrap();
+    assert_eq!(encoded, b"aGVsbG8");
+}
+
+#[cfg(feature = "stream")]
+#[test]
+fn stream_encoder_reader_supports_url_safe() {
+    let mut reader = EncoderReader::new(&b"\xfb\xff"[..], URL_SAFE_NO_PAD);
+    let mut encoded = Vec::new();
+    assert_eq!(reader.get_ref().len(), 2);
+    reader.read_to_end(&mut encoded).unwrap();
     assert_eq!(encoded, b"-_8");
 }
 

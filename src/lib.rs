@@ -46,18 +46,24 @@ pub mod stream {
     //! Streaming Base64 wrappers for `std::io`.
     //!
     //! ```
-    //! use std::io::Write;
-    //! use base64_ng::{STANDARD, stream::Encoder};
+    //! use std::io::{Read, Write};
+    //! use base64_ng::{STANDARD, stream::{Encoder, EncoderReader}};
     //!
     //! let mut encoder = Encoder::new(Vec::new(), STANDARD);
     //! encoder.write_all(b"he").unwrap();
     //! encoder.write_all(b"llo").unwrap();
     //! let encoded = encoder.finish().unwrap();
     //! assert_eq!(encoded, b"aGVsbG8=");
+    //!
+    //! let mut reader = EncoderReader::new(&b"hello"[..], STANDARD);
+    //! let mut encoded = String::new();
+    //! reader.read_to_string(&mut encoded).unwrap();
+    //! assert_eq!(encoded, "aGVsbG8=");
     //! ```
 
     use super::{Alphabet, EncodeError, Engine};
-    use std::io::{self, Write};
+    use std::collections::VecDeque;
+    use std::io::{self, Read, Write};
 
     /// A streaming Base64 encoder for `std::io::Write`.
     pub struct Encoder<W, A, const PAD: bool>
@@ -198,6 +204,148 @@ pub mod stream {
 
     fn encode_error_to_io(err: EncodeError) -> io::Error {
         io::Error::new(io::ErrorKind::InvalidInput, err)
+    }
+
+    /// A streaming Base64 encoder for `std::io::Read`.
+    pub struct EncoderReader<R, A, const PAD: bool>
+    where
+        A: Alphabet,
+    {
+        inner: R,
+        engine: Engine<A, PAD>,
+        pending: [u8; 2],
+        pending_len: usize,
+        output: VecDeque<u8>,
+        finished: bool,
+    }
+
+    impl<R, A, const PAD: bool> EncoderReader<R, A, PAD>
+    where
+        A: Alphabet,
+    {
+        /// Creates a new streaming encoder reader.
+        #[must_use]
+        pub fn new(inner: R, engine: Engine<A, PAD>) -> Self {
+            Self {
+                inner,
+                engine,
+                pending: [0; 2],
+                pending_len: 0,
+                output: VecDeque::new(),
+                finished: false,
+            }
+        }
+
+        /// Returns a shared reference to the wrapped reader.
+        #[must_use]
+        pub const fn get_ref(&self) -> &R {
+            &self.inner
+        }
+
+        /// Returns a mutable reference to the wrapped reader.
+        pub fn get_mut(&mut self) -> &mut R {
+            &mut self.inner
+        }
+
+        /// Consumes the encoder reader and returns the wrapped reader.
+        #[must_use]
+        pub fn into_inner(self) -> R {
+            self.inner
+        }
+    }
+
+    impl<R, A, const PAD: bool> Read for EncoderReader<R, A, PAD>
+    where
+        R: Read,
+        A: Alphabet,
+    {
+        fn read(&mut self, output: &mut [u8]) -> io::Result<usize> {
+            if output.is_empty() {
+                return Ok(0);
+            }
+
+            while self.output.is_empty() && !self.finished {
+                self.fill_output()?;
+            }
+
+            let mut written = 0;
+            while written < output.len() {
+                let Some(byte) = self.output.pop_front() else {
+                    break;
+                };
+                output[written] = byte;
+                written += 1;
+            }
+
+            Ok(written)
+        }
+    }
+
+    impl<R, A, const PAD: bool> EncoderReader<R, A, PAD>
+    where
+        R: Read,
+        A: Alphabet,
+    {
+        fn fill_output(&mut self) -> io::Result<()> {
+            let mut input = [0u8; 768];
+            let read = self.inner.read(&mut input)?;
+            if read == 0 {
+                self.finished = true;
+                self.push_final_pending()?;
+                return Ok(());
+            }
+
+            let mut consumed = 0;
+            if self.pending_len > 0 {
+                let needed = 3 - self.pending_len;
+                if read < needed {
+                    self.pending[self.pending_len..self.pending_len + read]
+                        .copy_from_slice(&input[..read]);
+                    self.pending_len += read;
+                    return Ok(());
+                }
+
+                let mut chunk = [0u8; 3];
+                chunk[..self.pending_len].copy_from_slice(&self.pending[..self.pending_len]);
+                chunk[self.pending_len..].copy_from_slice(&input[..needed]);
+                self.push_encoded(&chunk)?;
+                self.pending_len = 0;
+                consumed += needed;
+            }
+
+            let remaining = &input[consumed..read];
+            let full_len = remaining.len() / 3 * 3;
+            if full_len > 0 {
+                self.push_encoded(&remaining[..full_len])?;
+            }
+
+            let tail = &remaining[full_len..];
+            self.pending[..tail.len()].copy_from_slice(tail);
+            self.pending_len = tail.len();
+            Ok(())
+        }
+
+        fn push_final_pending(&mut self) -> io::Result<()> {
+            if self.pending_len == 0 {
+                return Ok(());
+            }
+
+            let mut pending = [0u8; 2];
+            pending[..self.pending_len].copy_from_slice(&self.pending[..self.pending_len]);
+            let pending_len = self.pending_len;
+            self.pending_len = 0;
+            self.push_encoded(&pending[..pending_len])
+        }
+
+        fn push_encoded(&mut self, input: &[u8]) -> io::Result<()> {
+            let mut encoded = [0u8; 1024];
+            let written = self
+                .engine
+                .encode_slice(input, &mut encoded)
+                .map_err(encode_error_to_io)?;
+            self.output.extend(&encoded[..written]);
+            Ok(())
+        }
     }
 }
 

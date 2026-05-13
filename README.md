@@ -18,7 +18,7 @@ Implemented now:
 - In-place encoding when the caller provides enough spare capacity.
 - Optional `alloc` vector helpers.
 - In-place decode API built on the same strict scalar decoder.
-- `std::io::Write` streaming encoder behind the `stream` feature.
+- `std::io::Write` and `std::io::Read` streaming encoders behind the `stream` feature.
 - Focused unit and integration tests.
 - Local check scripts, release gate, dependency policy, audit config, CI, SBOM script, and reproducible build check.
 
@@ -110,17 +110,22 @@ let decoded = STANDARD.decode_vec(&encoded).unwrap();
 assert_eq!(decoded, b"hello");
 ```
 
-With the `stream` feature, a `std::io::Write` encoder is available:
+With the `stream` feature, `std::io` encoders are available:
 
 ```rust
-use std::io::Write;
-use base64_ng::{STANDARD, stream::Encoder};
+use std::io::{Read, Write};
+use base64_ng::{STANDARD, stream::{Encoder, EncoderReader}};
 
 let mut encoder = Encoder::new(Vec::new(), STANDARD);
 encoder.write_all(b"he").unwrap();
 encoder.write_all(b"llo").unwrap();
 let encoded = encoder.finish().unwrap();
 assert_eq!(encoded, b"aGVsbG8=");
+
+let mut reader = EncoderReader::new(&b"hello"[..], STANDARD);
+let mut encoded = String::new();
+reader.read_to_string(&mut encoded).unwrap();
+assert_eq!(encoded, "aGVsbG8=");
 ```
 
 URL-safe, no-padding encoding:
