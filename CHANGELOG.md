@@ -20,6 +20,9 @@
 - Added backend differential tests that compare the dispatch entry points
   against the scalar reference for canonical inputs, malformed inputs, and
   undersized output buffers.
+- Added the SIMD unsafe admission boundary: crate-level `deny(unsafe_code)`,
+  `allow(unsafe_code)` confined to `src/simd.rs`, and a release-gate check for
+  that boundary.
 
 ## 0.3.0 - 2026-05-13
 

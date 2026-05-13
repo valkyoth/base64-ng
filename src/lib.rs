@@ -1,5 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
-#![forbid(unsafe_code)]
+#![deny(unsafe_code)]
 #![deny(missing_docs)]
 #![deny(clippy::all)]
 #![deny(clippy::pedantic)]
@@ -44,6 +44,9 @@
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
+
+#[cfg(feature = "simd")]
+mod simd;
 
 #[cfg(feature = "stream")]
 pub mod stream {

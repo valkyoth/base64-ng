@@ -44,6 +44,7 @@ The release gate runs:
 - fuzz target compile check when `cargo-fuzz` is installed
 - isolated fuzz and performance harness dependency checks
 - installed-target `no_std` checks for the reserved `simd` feature
+- unsafe-boundary validation that confines `allow(unsafe_code)` to `src/simd.rs`
 - Kani proofs through `scripts/check_kani.sh` when Kani is installed and its
   bundled compiler supports this crate's pinned `rust-version`
 - SBOM generation

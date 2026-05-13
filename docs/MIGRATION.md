@@ -170,7 +170,8 @@ Tokio wrappers are planned but are not part of `0.2`.
 
 ## Security Notes
 
-The scalar core forbids unsafe code and has no external crate dependencies.
+The scalar core denies unsafe code and has no external crate dependencies.
+Unsafe code is permitted only inside the dedicated SIMD boundary.
 Release gates include tests, clippy, docs, dependency policy, RustSec audit,
 license review, SBOM generation, reproducible package/build checks, and Miri
 when installed.

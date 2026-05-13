@@ -1,8 +1,9 @@
 # SIMD Admission Policy
 
-`base64-ng` is intentionally scalar-only in the `0.3` line. The crate currently
-uses `#![forbid(unsafe_code)]`, and the `simd` feature is reserved until unsafe
-architecture-specific code has enough evidence to justify changing that policy.
+`base64-ng` is intentionally scalar-only in the `0.3` line. On `main`, the
+crate uses `#![deny(unsafe_code)]` and permits `allow(unsafe_code)` only in the
+private `src/simd.rs` boundary. The `simd` feature remains reserved until
+architecture-specific code has enough evidence to justify enabling it.
 
 This is a security decision, not a rejection of hardware acceleration. SIMD
 must be added only when it can be isolated, tested, and reviewed without
@@ -11,6 +12,8 @@ weakening the scalar trust base.
 ## Current Status
 
 - No unsafe code is compiled by the published crate.
+- `scripts/validate-unsafe-boundary.sh` verifies that `allow(unsafe_code)` is
+  confined to `src/simd.rs`.
 - The scalar implementation is the reference behavior.
 - Encode and decode entry points already pass through an internal backend
   boundary, currently backed only by the scalar implementation.
@@ -38,9 +41,9 @@ scripts/check_targets.sh aarch64-unknown-linux-gnu
 
 Any AVX2, NEON, AVX-512, or runtime-dispatch implementation must include:
 
-- A dedicated module boundary for all architecture-specific code.
-- A deliberate change from crate-wide `forbid(unsafe_code)` to a policy that
-  still denies unsafe outside the SIMD module.
+- The dedicated `src/simd.rs` boundary for all architecture-specific code.
+- Crate-level `deny(unsafe_code)` must continue to reject unsafe outside the
+  SIMD module.
 - A local safety comment for every unsafe block.
 - Deterministic differential tests against scalar encode/decode behavior.
 - Fuzz differential coverage for strict and legacy-compatible inputs where

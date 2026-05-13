@@ -74,7 +74,7 @@ Any dependency addition must answer:
    - Future AVX2, AVX-512, and ARM NEON.
    - Runtime dispatch under `std`.
    - Compile-time target-feature paths for embedded or specialized builds.
-   - Unsafe isolated and documented.
+   - Unsafe isolated in `src/simd.rs` and documented.
 
 4. `stream`
    - `std::io::{Read, Write}` wrappers.
@@ -96,8 +96,9 @@ Any dependency addition must answer:
 
 ### Hard Rules
 
-- Scalar code forbids unsafe.
+- Scalar code denies unsafe.
 - Unsafe SIMD must live under dedicated modules.
+- `allow(unsafe_code)` must remain confined to `src/simd.rs`.
 - Every unsafe block requires a local safety explanation.
 - Every SIMD path must have deterministic and fuzzed differential tests against scalar.
 - Padding behavior must be canonical by default.
@@ -188,6 +189,8 @@ Phase 3:
 - Internal scalar backend boundary as the reference path for future dispatch.
 - Backend differential tests that compare dispatch behavior against the scalar
   reference for canonical, malformed, and undersized-buffer cases.
+- Unsafe admission boundary in code and checks: crate-level `deny(unsafe_code)`
+  with `allow(unsafe_code)` confined to `src/simd.rs`.
 - Keep SIMD unsafe code isolated from the scalar core with documented invariants
   for every unsafe block.
 

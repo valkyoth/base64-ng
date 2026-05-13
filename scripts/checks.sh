@@ -10,6 +10,9 @@ scripts/validate-release-metadata.sh
 echo "checks: minimal dependency graph"
 scripts/validate-dependencies.sh
 
+echo "checks: unsafe boundary"
+scripts/validate-unsafe-boundary.sh
+
 echo "checks: clippy default"
 cargo clippy --all-targets -- -D warnings
 

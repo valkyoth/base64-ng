@@ -244,8 +244,10 @@ Security commitments:
 
 - Stable Rust first. Current toolchain pin: Rust `1.95.0`.
 - `no_std` core by default.
-- No unsafe code in scalar code.
-- Future unsafe SIMD isolated under `src/simd/`.
+- Scalar code denies unsafe.
+- Future unsafe SIMD isolated under `src/simd.rs`.
+- Local checks verify that `allow(unsafe_code)` is confined to the SIMD
+  boundary.
 - Strict decoding rejects malformed padding and trailing data.
 - Runtime scalar APIs are expected to return `Result` or `Option` for malformed
   input and size errors instead of panicking.
