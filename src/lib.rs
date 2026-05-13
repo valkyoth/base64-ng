@@ -1476,10 +1476,8 @@ fn decoded_len_padded(input: &[u8]) -> Result<usize, DecodeError> {
     }
     if padding > 0 {
         let first_pad = input.len() - padding;
-        if input[..first_pad].contains(&b'=') {
-            return Err(DecodeError::InvalidPadding {
-                index: input.iter().position(|byte| *byte == b'=').unwrap_or(0),
-            });
+        if let Some(index) = input[..first_pad].iter().position(|byte| *byte == b'=') {
+            return Err(DecodeError::InvalidPadding { index });
         }
     }
     Ok(input.len() / 4 * 3 - padding)
@@ -1489,10 +1487,8 @@ fn decoded_len_unpadded(input: &[u8]) -> Result<usize, DecodeError> {
     if input.len() % 4 == 1 {
         return Err(DecodeError::InvalidLength);
     }
-    if input.contains(&b'=') {
-        return Err(DecodeError::InvalidPadding {
-            index: input.iter().position(|byte| *byte == b'=').unwrap_or(0),
-        });
+    if let Some(index) = input.iter().position(|byte| *byte == b'=') {
+        return Err(DecodeError::InvalidPadding { index });
     }
     Ok(decoded_capacity(input.len()))
 }

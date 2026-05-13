@@ -19,6 +19,7 @@
 - Hardened scalar encode to avoid input-derived alphabet table indexes.
 - Hardened alphabet decode to avoid branch-heavy match ladders.
 - Hardened `decode_vec` to validate input before allocating decoded output.
+- Optimized padding validation to avoid redundant scans on malformed inputs.
 - Hardened stream decoders to preserve reader boundaries after terminal padding.
 - Added Miri support in CI and the local release gate when installed.
 - Added project plan, security policy, local gates, CI, dependency policy, SBOM script, and reproducible build script.
