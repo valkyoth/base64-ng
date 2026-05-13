@@ -79,9 +79,10 @@ assert_eq!(&decoded[..written], input);
 For untrusted length metadata, use checked length calculation:
 
 ```rust
-use base64_ng::checked_encoded_len;
+use base64_ng::{checked_encoded_len, decoded_len};
 
 assert_eq!(checked_encoded_len(5, true), Some(8));
+assert_eq!(decoded_len(b"aGVsbG8=", true).unwrap(), 5);
 ```
 
 With the default `alloc` feature, vector helpers are available:

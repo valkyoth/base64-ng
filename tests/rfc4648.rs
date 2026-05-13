@@ -1,6 +1,6 @@
 use base64_ng::{
     DecodeError, EncodeError, STANDARD, STANDARD_NO_PAD, URL_SAFE, URL_SAFE_NO_PAD,
-    checked_encoded_len, decoded_capacity,
+    checked_encoded_len, decoded_capacity, decoded_len,
 };
 
 #[test]
@@ -67,6 +67,33 @@ fn decoded_capacity_is_upper_bound() {
     for encoded_len in 0..128 {
         assert!(decoded_capacity(encoded_len) <= encoded_len / 4 * 3 + 2);
     }
+}
+
+#[test]
+fn decoded_len_reports_exact_lengths() {
+    assert_eq!(decoded_len(b"", true), Ok(0));
+    assert_eq!(decoded_len(b"Zg==", true), Ok(1));
+    assert_eq!(decoded_len(b"Zm8=", true), Ok(2));
+    assert_eq!(decoded_len(b"Zm9v", true), Ok(3));
+    assert_eq!(decoded_len(b"Zg", false), Ok(1));
+    assert_eq!(decoded_len(b"Zm8", false), Ok(2));
+    assert_eq!(decoded_len(b"Zm9v", false), Ok(3));
+    assert_eq!(STANDARD.decoded_len(b"Zm9v"), Ok(3));
+    assert_eq!(STANDARD_NO_PAD.decoded_len(b"Zm9v"), Ok(3));
+}
+
+#[test]
+fn decoded_len_rejects_bad_lengths_and_padding() {
+    assert_eq!(decoded_len(b"Z", true), Err(DecodeError::InvalidLength));
+    assert_eq!(decoded_len(b"Z", false), Err(DecodeError::InvalidLength));
+    assert_eq!(
+        decoded_len(b"Zm=9", true),
+        Err(DecodeError::InvalidPadding { index: 2 })
+    );
+    assert_eq!(
+        decoded_len(b"Zm8=", false),
+        Err(DecodeError::InvalidPadding { index: 3 })
+    );
 }
 
 #[test]
@@ -144,4 +171,9 @@ fn alloc_helpers_round_trip() {
 
     let decoded = STANDARD.decode_vec(&encoded).unwrap();
     assert_eq!(decoded, b"hello");
+
+    assert_eq!(
+        STANDARD_NO_PAD.decode_vec(b"Zm8=").unwrap_err(),
+        DecodeError::InvalidPadding { index: 3 }
+    );
 }

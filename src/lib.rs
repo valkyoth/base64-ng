@@ -73,6 +73,18 @@ pub const fn decoded_capacity(encoded_len: usize) -> usize {
         }
 }
 
+/// Returns the exact decoded length implied by input length and padding.
+///
+/// This validates padding placement and impossible lengths, but it does not
+/// validate alphabet membership or non-canonical trailing bits.
+pub fn decoded_len(input: &[u8], padded: bool) -> Result<usize, DecodeError> {
+    if padded {
+        decoded_len_padded(input)
+    } else {
+        decoded_len_unpadded(input)
+    }
+}
+
 /// A Base64 alphabet.
 pub trait Alphabet {
     /// Encoding table indexed by 6-bit values.
@@ -150,6 +162,14 @@ where
     #[must_use]
     pub const fn checked_encoded_len(&self, input_len: usize) -> Option<usize> {
         checked_encoded_len(input_len, PAD)
+    }
+
+    /// Returns the exact decoded length implied by input length and padding.
+    ///
+    /// This validates padding placement and impossible lengths, but it does not
+    /// validate alphabet membership or non-canonical trailing bits.
+    pub fn decoded_len(&self, input: &[u8]) -> Result<usize, DecodeError> {
+        decoded_len(input, PAD)
     }
 
     /// Encodes `input` into `output`, returning the number of bytes written.
@@ -240,7 +260,7 @@ where
     /// This is strict decoding with the same semantics as [`Self::decode_slice`].
     #[cfg(feature = "alloc")]
     pub fn decode_vec(&self, input: &[u8]) -> Result<alloc::vec::Vec<u8>, DecodeError> {
-        let mut output = alloc::vec![0; decoded_capacity(input.len())];
+        let mut output = alloc::vec![0; self.decoded_len(input)?];
         let written = self.decode_slice(input, &mut output)?;
         output.truncate(written);
         Ok(output)
@@ -412,16 +432,7 @@ fn decode_padded<A: Alphabet>(input: &[u8], output: &mut [u8]) -> Result<usize, 
 }
 
 fn decode_unpadded<A: Alphabet>(input: &[u8], output: &mut [u8]) -> Result<usize, DecodeError> {
-    if input.len() % 4 == 1 {
-        return Err(DecodeError::InvalidLength);
-    }
-    if input.contains(&b'=') {
-        return Err(DecodeError::InvalidPadding {
-            index: input.iter().position(|byte| *byte == b'=').unwrap_or(0),
-        });
-    }
-
-    let required = decoded_capacity(input.len());
+    let required = decoded_len_unpadded(input)?;
     if output.len() < required {
         return Err(DecodeError::OutputTooSmall {
             required,
@@ -446,6 +457,9 @@ fn decoded_len_padded(input: &[u8]) -> Result<usize, DecodeError> {
     if input.is_empty() {
         return Ok(0);
     }
+    if !input.len().is_multiple_of(4) {
+        return Err(DecodeError::InvalidLength);
+    }
     let mut padding = 0;
     if input[input.len() - 1] == b'=' {
         padding += 1;
@@ -462,6 +476,18 @@ fn decoded_len_padded(input: &[u8]) -> Result<usize, DecodeError> {
         }
     }
     Ok(input.len() / 4 * 3 - padding)
+}
+
+fn decoded_len_unpadded(input: &[u8]) -> Result<usize, DecodeError> {
+    if input.len() % 4 == 1 {
+        return Err(DecodeError::InvalidLength);
+    }
+    if input.contains(&b'=') {
+        return Err(DecodeError::InvalidPadding {
+            index: input.iter().position(|byte| *byte == b'=').unwrap_or(0),
+        });
+    }
+    Ok(decoded_capacity(input.len()))
 }
 
 fn decode_chunk<A: Alphabet, const PAD: bool>(
