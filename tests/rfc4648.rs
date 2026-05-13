@@ -9,6 +9,26 @@ use base64_ng::stream::{Decoder, DecoderReader, Encoder, EncoderReader};
 #[cfg(feature = "stream")]
 use std::io::{Read, Write};
 
+#[cfg(feature = "stream")]
+struct ChunkedReader<'a> {
+    input: &'a [u8],
+    max_chunk: usize,
+}
+
+#[cfg(feature = "stream")]
+impl Read for ChunkedReader<'_> {
+    fn read(&mut self, output: &mut [u8]) -> std::io::Result<usize> {
+        let len = self.input.len().min(self.max_chunk).min(output.len());
+        if len == 0 {
+            return Ok(0);
+        }
+
+        output[..len].copy_from_slice(&self.input[..len]);
+        self.input = &self.input[len..];
+        Ok(len)
+    }
+}
+
 #[test]
 fn rfc4648_standard_round_trips() {
     let cases: &[&[u8]] = &[
@@ -347,6 +367,29 @@ fn stream_encoder_reader_supports_url_safe() {
 
 #[cfg(feature = "stream")]
 #[test]
+fn stream_encoder_reader_handles_fragmented_sources() {
+    let input = b"any carnal pleasure.";
+    let source = ChunkedReader {
+        input,
+        max_chunk: 1,
+    };
+    let mut reader = EncoderReader::new(source, STANDARD);
+    let mut encoded = Vec::new();
+    let mut scratch = [0u8; 2];
+
+    loop {
+        let read = reader.read(&mut scratch).unwrap();
+        if read == 0 {
+            break;
+        }
+        encoded.extend_from_slice(&scratch[..read]);
+    }
+
+    assert_eq!(encoded, STANDARD.encode_vec(input).unwrap());
+}
+
+#[cfg(feature = "stream")]
+#[test]
 fn stream_decoder_handles_chunk_boundaries() {
     let mut decoder = Decoder::new(Vec::new(), STANDARD);
     decoder.write_all(b"a").unwrap();
@@ -432,6 +475,29 @@ fn stream_decoder_reader_rejects_trailing_input_after_padding() {
     let mut decoded = Vec::new();
     let err = reader.read_to_end(&mut decoded).unwrap_err();
     assert_eq!(err.kind(), std::io::ErrorKind::InvalidInput);
+}
+
+#[cfg(feature = "stream")]
+#[test]
+fn stream_decoder_reader_handles_fragmented_sources() {
+    let encoded = b"YW55IGNhcm5hbCBwbGVhc3VyZS4=";
+    let source = ChunkedReader {
+        input: encoded,
+        max_chunk: 1,
+    };
+    let mut reader = DecoderReader::new(source, STANDARD);
+    let mut decoded = Vec::new();
+    let mut scratch = [0u8; 2];
+
+    loop {
+        let read = reader.read(&mut scratch).unwrap();
+        if read == 0 {
+            break;
+        }
+        decoded.extend_from_slice(&scratch[..read]);
+    }
+
+    assert_eq!(decoded, b"any carnal pleasure.");
 }
 
 fn assert_round_trip<A, const PAD: bool>(engine: &base64_ng::Engine<A, PAD>, input: &[u8])
