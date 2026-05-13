@@ -25,6 +25,9 @@ cargo test --all-targets --all-features
 echo "checks: tests no default features"
 cargo test --no-default-features --all-targets
 
+echo "checks: doctests"
+cargo test --doc --all-features
+
 echo "checks: docs"
 cargo doc --no-deps --all-features
 

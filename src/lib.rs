@@ -10,6 +10,33 @@
 //! This initial release provides strict scalar RFC 4648-style behavior and
 //! caller-owned output buffers. Future SIMD fast paths will be required to
 //! match this scalar module byte-for-byte.
+//!
+//! # Examples
+//!
+//! Encode and decode with caller-owned buffers:
+//!
+//! ```
+//! use base64_ng::{STANDARD, encoded_len};
+//!
+//! let input = b"hello";
+//! let mut encoded = [0u8; encoded_len(5, true)];
+//! let encoded_len = STANDARD.encode_slice(input, &mut encoded).unwrap();
+//! assert_eq!(&encoded[..encoded_len], b"aGVsbG8=");
+//!
+//! let mut decoded = [0u8; 5];
+//! let decoded_len = STANDARD.decode_slice(&encoded, &mut decoded).unwrap();
+//! assert_eq!(&decoded[..decoded_len], input);
+//! ```
+//!
+//! Use the URL-safe no-padding engine:
+//!
+//! ```
+//! use base64_ng::URL_SAFE_NO_PAD;
+//!
+//! let mut encoded = [0u8; 3];
+//! let encoded_len = URL_SAFE_NO_PAD.encode_slice(b"\xfb\xff", &mut encoded).unwrap();
+//! assert_eq!(&encoded[..encoded_len], b"-_8");
+//! ```
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
@@ -33,6 +60,15 @@ pub const URL_SAFE_NO_PAD: Engine<UrlSafe, false> = Engine::new();
 /// Panics if the encoded length would overflow `usize`. Use
 /// [`checked_encoded_len`] when handling untrusted length metadata without an
 /// actual input slice.
+///
+/// # Examples
+///
+/// ```
+/// use base64_ng::encoded_len;
+///
+/// assert_eq!(encoded_len(5, true), 8);
+/// assert_eq!(encoded_len(5, false), 7);
+/// ```
 #[must_use]
 pub const fn encoded_len(input_len: usize, padded: bool) -> usize {
     match checked_encoded_len(input_len, padded) {
@@ -42,6 +78,15 @@ pub const fn encoded_len(input_len: usize, padded: bool) -> usize {
 }
 
 /// Returns the encoded length, or `None` if it would overflow `usize`.
+///
+/// # Examples
+///
+/// ```
+/// use base64_ng::checked_encoded_len;
+///
+/// assert_eq!(checked_encoded_len(5, true), Some(8));
+/// assert_eq!(checked_encoded_len(usize::MAX, true), None);
+/// ```
 #[must_use]
 pub const fn checked_encoded_len(input_len: usize, padded: bool) -> Option<usize> {
     let groups = input_len / 3;
@@ -60,6 +105,15 @@ pub const fn checked_encoded_len(input_len: usize, padded: bool) -> Option<usize
 }
 
 /// Returns the maximum decoded length for an encoded input length.
+///
+/// # Examples
+///
+/// ```
+/// use base64_ng::decoded_capacity;
+///
+/// assert_eq!(decoded_capacity(8), 6);
+/// assert_eq!(decoded_capacity(7), 5);
+/// ```
 #[must_use]
 pub const fn decoded_capacity(encoded_len: usize) -> usize {
     let rem = encoded_len % 4;
@@ -77,6 +131,15 @@ pub const fn decoded_capacity(encoded_len: usize) -> usize {
 ///
 /// This validates padding placement and impossible lengths, but it does not
 /// validate alphabet membership or non-canonical trailing bits.
+///
+/// # Examples
+///
+/// ```
+/// use base64_ng::decoded_len;
+///
+/// assert_eq!(decoded_len(b"aGVsbG8=", true).unwrap(), 5);
+/// assert_eq!(decoded_len(b"aGVsbG8", false).unwrap(), 5);
+/// ```
 pub fn decoded_len(input: &[u8], padded: bool) -> Result<usize, DecodeError> {
     if padded {
         decoded_len_padded(input)
@@ -244,6 +307,17 @@ where
     /// The buffer must have enough spare capacity for the encoded output. The
     /// implementation writes from right to left, so unread input bytes are not
     /// overwritten before they are encoded.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use base64_ng::STANDARD;
+    ///
+    /// let mut buffer = [0u8; 8];
+    /// buffer[..5].copy_from_slice(b"hello");
+    /// let encoded = STANDARD.encode_in_place(&mut buffer, 5).unwrap();
+    /// assert_eq!(encoded, b"aGVsbG8=");
+    /// ```
     pub fn encode_in_place<'a>(
         &self,
         buffer: &'a mut [u8],
@@ -349,6 +423,16 @@ where
     }
 
     /// Decodes the buffer in place and returns the decoded prefix.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use base64_ng::STANDARD_NO_PAD;
+    ///
+    /// let mut buffer = *b"Zm9vYmFy";
+    /// let decoded = STANDARD_NO_PAD.decode_in_place(&mut buffer).unwrap();
+    /// assert_eq!(decoded, b"foobar");
+    /// ```
     pub fn decode_in_place<'a>(&self, buffer: &'a mut [u8]) -> Result<&'a mut [u8], DecodeError> {
         let len = Self::decode_slice_to_start(buffer)?;
         Ok(&mut buffer[..len])
