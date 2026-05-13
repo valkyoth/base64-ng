@@ -18,6 +18,12 @@ Build `base64-ng` as a modern, secure, `no_std`-first Base64 implementation for 
 
 The default position is no external crates.
 
+This policy is enforced by:
+
+```sh
+scripts/validate-dependencies.sh
+```
+
 Allowed without adding dependencies:
 
 - Base64 scalar logic.

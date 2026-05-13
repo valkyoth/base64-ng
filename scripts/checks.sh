@@ -7,6 +7,9 @@ cargo fmt --all --check
 echo "checks: release metadata"
 scripts/validate-release-metadata.sh
 
+echo "checks: minimal dependency graph"
+scripts/validate-dependencies.sh
+
 echo "checks: clippy default"
 cargo clippy --all-targets -- -D warnings
 

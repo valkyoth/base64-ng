@@ -110,6 +110,12 @@ Run the standard gate:
 scripts/checks.sh
 ```
 
+Check the zero-external-crate policy directly:
+
+```sh
+scripts/validate-dependencies.sh
+```
+
 Run the release gate:
 
 ```sh
