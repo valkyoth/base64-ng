@@ -15,6 +15,8 @@
   bytes on success and clear the full caller buffer on error.
 - Extended in-place fuzz coverage to verify clear-tail decode result parity and
   cleanup semantics.
+- Documented clear-tail decode cleanup as best-effort buffer-retention
+  reduction rather than a formal zeroization guarantee.
 
 ## 0.2.0 - 2026-05-13
 

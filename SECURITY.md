@@ -42,6 +42,15 @@ arithmetic for ASCII classification. This reduces easy timing pitfalls, but
 `base64-ng` does not currently claim a formally verified cryptographic
 constant-time encode or decode API.
 
+The in-place clear-tail decode APIs provide best-effort cleanup for
+caller-owned buffers by writing zero bytes over unused tail bytes on success and
+over the whole buffer on decode error. Because the scalar crate forbids unsafe
+code and has no runtime dependencies, this cleanup uses ordinary Rust writes,
+not volatile writes or a formally verified zeroization primitive. Treat these
+APIs as buffer-retention reduction, not as a complete secret-erasure guarantee
+against compiler optimizations, core dumps, swap, hardware observation, or
+other process memory disclosure bugs.
+
 Public encoded-length helpers report overflow with `Result` or `Option` rather
 than panicking. Code that handles untrusted length metadata should use these
 helpers before allocating or accepting framed payloads.

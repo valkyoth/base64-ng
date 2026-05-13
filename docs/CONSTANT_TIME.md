@@ -46,6 +46,7 @@ The guarantee should explicitly exclude:
 - final success or failure result
 - output length
 - allocator behavior
+- memory cleanup and zeroization behavior
 - OS scheduling, interrupts, and unrelated system noise
 
 ## API Shape
@@ -100,3 +101,10 @@ Before documenting the guarantee as supported:
 
 Until this evidence exists, README and SECURITY must continue to say that
 `base64-ng` does not claim a formally verified cryptographic constant-time API.
+
+## Memory Cleanup
+
+Clear-tail in-place decode APIs are intentionally separate from the future
+constant-time API. They reduce ordinary caller-buffer retention but do not
+provide a verified zeroization guarantee. Any future cryptographic profile must
+document memory cleanup separately from timing behavior.
