@@ -148,6 +148,8 @@ Phase 3:
 
 - Explicit legacy decode mode.
 - More exhaustive malformed-input tests.
+- Design an explicit constant-time scalar decode API for sensitive payloads,
+  separate from the default fast strict decoder.
 
 ### v0.3
 
@@ -155,6 +157,8 @@ Phase 3:
 - Runtime feature dispatch.
 - Criterion benchmarks.
 - Scalar/SIMD differential testing.
+- Prototype and verify the constant-time decode path with no secret-dependent
+  branches or secret-indexed table lookups.
 
 ### v0.4
 
@@ -170,6 +174,8 @@ Phase 3:
 ### v1.0
 
 - Kani proofs complete for scalar in-place decode.
+- Constant-time decode guarantee either formally documented with supporting
+  verification evidence or explicitly excluded from the stable API contract.
 - Fuzz corpus stabilized.
 - API freeze.
 - Release gate mandatory.
