@@ -185,6 +185,7 @@ Phase 3:
 - Cross-architecture CI evidence.
 - Initial Kani scalar proof harnesses for length helpers and bounded in-place
   decode behavior.
+- Internal scalar backend boundary as the reference path for future dispatch.
 - Keep SIMD unsafe code isolated from the scalar core with documented invariants
   for every unsafe block.
 

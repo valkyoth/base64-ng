@@ -15,6 +15,8 @@
   in-place decode behavior.
 - Added `scripts/check_kani.sh` so Kani proofs run when compatible and skip
   clearly when Kani's bundled compiler is behind the crate's pinned Rust.
+- Added an internal scalar backend boundary so future SIMD dispatch has an
+  explicit reference path without changing public behavior.
 
 ## 0.3.0 - 2026-05-13
 

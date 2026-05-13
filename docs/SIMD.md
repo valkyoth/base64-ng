@@ -12,6 +12,8 @@ weakening the scalar trust base.
 
 - No unsafe code is compiled by the published crate.
 - The scalar implementation is the reference behavior.
+- Encode and decode entry points already pass through an internal backend
+  boundary, currently backed only by the scalar implementation.
 - The `simd` feature does not enable accelerated code yet.
 - CI checks the reserved `simd` feature in `no_std` mode for x86_64, aarch64,
   wasm32, and Cortex-M targets.

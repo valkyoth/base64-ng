@@ -918,6 +918,113 @@ const fn mask_if(condition: bool) -> u8 {
     0u8.wrapping_sub(condition as u8)
 }
 
+mod backend {
+    use super::{
+        Alphabet, DecodeError, EncodeError, checked_encoded_len, decode_padded, decode_unpadded,
+        encode_base64_value,
+    };
+
+    pub(super) fn encode_slice<A, const PAD: bool>(
+        input: &[u8],
+        output: &mut [u8],
+    ) -> Result<usize, EncodeError>
+    where
+        A: Alphabet,
+    {
+        scalar_encode_slice::<A, PAD>(input, output)
+    }
+
+    pub(super) fn decode_slice<A, const PAD: bool>(
+        input: &[u8],
+        output: &mut [u8],
+    ) -> Result<usize, DecodeError>
+    where
+        A: Alphabet,
+    {
+        scalar_decode_slice::<A, PAD>(input, output)
+    }
+
+    fn scalar_encode_slice<A, const PAD: bool>(
+        input: &[u8],
+        output: &mut [u8],
+    ) -> Result<usize, EncodeError>
+    where
+        A: Alphabet,
+    {
+        let required = checked_encoded_len(input.len(), PAD).ok_or(EncodeError::LengthOverflow)?;
+        if output.len() < required {
+            return Err(EncodeError::OutputTooSmall {
+                required,
+                available: output.len(),
+            });
+        }
+
+        let mut read = 0;
+        let mut write = 0;
+        while read + 3 <= input.len() {
+            let b0 = input[read];
+            let b1 = input[read + 1];
+            let b2 = input[read + 2];
+
+            output[write] = encode_base64_value::<A>(b0 >> 2);
+            output[write + 1] = encode_base64_value::<A>(((b0 & 0b0000_0011) << 4) | (b1 >> 4));
+            output[write + 2] = encode_base64_value::<A>(((b1 & 0b0000_1111) << 2) | (b2 >> 6));
+            output[write + 3] = encode_base64_value::<A>(b2 & 0b0011_1111);
+
+            read += 3;
+            write += 4;
+        }
+
+        match input.len() - read {
+            0 => {}
+            1 => {
+                let b0 = input[read];
+                output[write] = encode_base64_value::<A>(b0 >> 2);
+                output[write + 1] = encode_base64_value::<A>((b0 & 0b0000_0011) << 4);
+                write += 2;
+                if PAD {
+                    output[write] = b'=';
+                    output[write + 1] = b'=';
+                    write += 2;
+                }
+            }
+            2 => {
+                let b0 = input[read];
+                let b1 = input[read + 1];
+                output[write] = encode_base64_value::<A>(b0 >> 2);
+                output[write + 1] = encode_base64_value::<A>(((b0 & 0b0000_0011) << 4) | (b1 >> 4));
+                output[write + 2] = encode_base64_value::<A>((b1 & 0b0000_1111) << 2);
+                write += 3;
+                if PAD {
+                    output[write] = b'=';
+                    write += 1;
+                }
+            }
+            _ => unreachable!(),
+        }
+
+        Ok(write)
+    }
+
+    fn scalar_decode_slice<A, const PAD: bool>(
+        input: &[u8],
+        output: &mut [u8],
+    ) -> Result<usize, DecodeError>
+    where
+        A: Alphabet,
+    {
+        if input.is_empty() {
+            return Ok(0);
+        }
+
+        if PAD {
+            decode_padded::<A>(input, output)
+        } else {
+            decode_unpadded::<A>(input, output)
+        }
+    }
+}
+
 /// A zero-sized Base64 engine parameterized by alphabet and padding policy.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Engine<A, const PAD: bool> {
@@ -1055,59 +1162,7 @@ where
 
     /// Encodes `input` into `output`, returning the number of bytes written.
     pub fn encode_slice(&self, input: &[u8], output: &mut [u8]) -> Result<usize, EncodeError> {
-        let required = checked_encoded_len(input.len(), PAD).ok_or(EncodeError::LengthOverflow)?;
-        if output.len() < required {
-            return Err(EncodeError::OutputTooSmall {
-                required,
-                available: output.len(),
-            });
-        }
-
-        let mut read = 0;
-        let mut write = 0;
-        while read + 3 <= input.len() {
-            let b0 = input[read];
-            let b1 = input[read + 1];
-            let b2 = input[read + 2];
-
-            output[write] = encode_base64_value::<A>(b0 >> 2);
-            output[write + 1] = encode_base64_value::<A>(((b0 & 0b0000_0011) << 4) | (b1 >> 4));
-            output[write + 2] = encode_base64_value::<A>(((b1 & 0b0000_1111) << 2) | (b2 >> 6));
-            output[write + 3] = encode_base64_value::<A>(b2 & 0b0011_1111);
-
-            read += 3;
-            write += 4;
-        }
-
-        match input.len() - read {
-            0 => {}
-            1 => {
-                let b0 = input[read];
-                output[write] = encode_base64_value::<A>(b0 >> 2);
-                output[write + 1] = encode_base64_value::<A>((b0 & 0b0000_0011) << 4);
-                write += 2;
-                if PAD {
-                    output[write] = b'=';
-                    output[write + 1] = b'=';
-                    write += 2;
-                }
-            }
-            2 => {
-                let b0 = input[read];
-                let b1 = input[read + 1];
-                output[write] = encode_base64_value::<A>(b0 >> 2);
-                output[write + 1] = encode_base64_value::<A>(((b0 & 0b0000_0011) << 4) | (b1 >> 4));
-                output[write + 2] = encode_base64_value::<A>((b1 & 0b0000_1111) << 2);
-                write += 3;
-                if PAD {
-                    output[write] = b'=';
-                    write += 1;
-                }
-            }
-            _ => unreachable!(),
-        }
-
-        Ok(write)
+        backend::encode_slice::<A, PAD>(input, output)
     }
 
     /// Encodes `input` into `output` and clears all bytes after the encoded
@@ -1311,15 +1366,7 @@ where
     /// This is strict decoding. Whitespace, mixed alphabets, malformed padding,
     /// and trailing non-padding data are rejected.
     pub fn decode_slice(&self, input: &[u8], output: &mut [u8]) -> Result<usize, DecodeError> {
-        if input.is_empty() {
-            return Ok(0);
-        }
-
-        if PAD {
-            decode_padded::<A>(input, output)
-        } else {
-            decode_unpadded::<A>(input, output)
-        }
+        backend::decode_slice::<A, PAD>(input, output)
     }
 
     /// Decodes `input` into `output` and clears all bytes after the decoded
