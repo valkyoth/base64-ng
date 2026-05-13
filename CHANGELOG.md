@@ -27,6 +27,8 @@
   parity and cleanup semantics.
 - Added rustdoc examples for clear-tail slice APIs so the cleanup contract is
   visible in generated API documentation.
+- Updated the roadmap to reflect the dependency-free clear-tail design instead
+  of adding a default cleanup dependency.
 
 ## 0.2.0 - 2026-05-13
 

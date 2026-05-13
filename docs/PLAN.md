@@ -162,9 +162,11 @@ Phase 3:
 - Maintain isolated fuzz targets for arbitrary decode input, in-place decoding,
   stream chunk boundaries, and differential checks against established Base64
   implementations for canonical inputs.
-- Consider an optional `zeroize` feature for users who want temporary buffers
-  scrubbed when handling secrets, while keeping the default crate zero
-  dependency.
+- Provide dependency-free clear-tail encode/decode APIs for callers that want
+  unused caller-owned output bytes cleared on success and full caller-owned
+  output buffers cleared on error.
+- Reconsider an optional `zeroize` feature only if users require a stronger
+  best-effort cleanup primitive with a justified dependency tradeoff.
 - Add release evidence documentation for audit, license, SBOM, and
   reproducibility artifacts.
 - AVX2 and NEON prototypes.
