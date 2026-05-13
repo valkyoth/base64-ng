@@ -89,6 +89,34 @@ jobs:
       - name: Test no default features
         run: cargo test --no-default-features --all-targets
 
+  target-build:
+    name: no_std target build (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - x86_64-unknown-linux-gnu
+          - aarch64-unknown-linux-gnu
+          - wasm32-unknown-unknown
+          - thumbv7em-none-eabihf
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install Rust target
+        run: rustup target add ${{ matrix.target }}
+
+      - name: Cache Rust build output
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+
+      - name: Check no_std simd-reserved build
+        run: cargo check --target ${{ matrix.target }} --no-default-features --features simd --lib
+
   miri:
     name: Miri
     runs-on: ubuntu-latest

@@ -13,6 +13,8 @@ weakening the scalar trust base.
 - No unsafe code is compiled by the published crate.
 - The scalar implementation is the reference behavior.
 - The `simd` feature does not enable accelerated code yet.
+- CI checks the reserved `simd` feature in `no_std` mode for x86_64, aarch64,
+  wasm32, and Cortex-M targets.
 - Performance claims must be backed by local benchmark evidence, not roadmap
   language.
 

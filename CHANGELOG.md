@@ -3,6 +3,8 @@
 ## 0.4.0-alpha.0 - Unreleased
 
 - Started the next development cycle after the `0.3.0` release.
+- Added cross-target CI checks for the reserved `simd` feature in `no_std`
+  mode across x86_64, aarch64, wasm32, and Cortex-M targets.
 
 ## 0.3.0 - 2026-05-13
 
