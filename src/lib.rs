@@ -2292,14 +2292,9 @@ fn ct_decode_ascii_base64<A: Alphabet>(byte: u8) -> (u8, bool) {
 }
 
 fn ct_padding_len(input: &[u8]) -> usize {
-    let mut padding = 0;
-    if input[input.len() - 1] == b'=' {
-        padding += 1;
-    }
-    if input[input.len() - 2] == b'=' {
-        padding += 1;
-    }
-    padding
+    let last = input[input.len() - 1];
+    let before_last = input[input.len() - 2];
+    usize::from(mask_if(last == b'=') & 1) + usize::from(mask_if(before_last == b'=') & 1)
 }
 
 fn report_ct_error(invalid_byte: u8, invalid_padding: u8) -> Result<(), DecodeError> {

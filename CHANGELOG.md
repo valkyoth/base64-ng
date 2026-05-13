@@ -13,6 +13,8 @@
   decoder for all one- and two-byte inputs across all built-in engines.
 - Changed `ct` malformed-input reporting to non-localized sentinel errors so
   error tracking does not expose the first malformed byte position.
+- Changed `ct` padding-length calculation to use mask arithmetic instead of
+  branch-based equality checks.
 - Added a SIMD admission policy that keeps hardware acceleration out of `0.3`
   until unsafe code isolation, dispatch behavior, fuzzing, CI, and benchmark
   evidence are ready.
