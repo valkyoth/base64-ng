@@ -467,6 +467,11 @@ fn decoded_len_padded(input: &[u8]) -> Result<usize, DecodeError> {
     if input[input.len() - 2] == b'=' {
         padding += 1;
     }
+    if padding == 0
+        && let Some(index) = input.iter().position(|byte| *byte == b'=')
+    {
+        return Err(DecodeError::InvalidPadding { index });
+    }
     if padding > 0 {
         let first_pad = input.len() - padding;
         if input[..first_pad].contains(&b'=') {

@@ -87,6 +87,10 @@ fn decoded_len_rejects_bad_lengths_and_padding() {
     assert_eq!(decoded_len(b"Z", true), Err(DecodeError::InvalidLength));
     assert_eq!(decoded_len(b"Z", false), Err(DecodeError::InvalidLength));
     assert_eq!(
+        decoded_len(b"Z=m9", true),
+        Err(DecodeError::InvalidPadding { index: 1 })
+    );
+    assert_eq!(
         decoded_len(b"Zm=9", true),
         Err(DecodeError::InvalidPadding { index: 2 })
     );
@@ -114,6 +118,39 @@ fn encode_slice_reports_small_outputs() {
             available: 1,
         })
     );
+}
+
+#[test]
+fn exhaustive_short_round_trips() {
+    for b0 in u8::MIN..=u8::MAX {
+        let input = [b0];
+        assert_round_trip(&STANDARD, &input);
+        assert_round_trip(&STANDARD_NO_PAD, &input);
+        assert_round_trip(&URL_SAFE, &input);
+        assert_round_trip(&URL_SAFE_NO_PAD, &input);
+    }
+
+    for b0 in u8::MIN..=u8::MAX {
+        for b1 in u8::MIN..=u8::MAX {
+            let input = [b0, b1];
+            assert_round_trip(&STANDARD, &input);
+            assert_round_trip(&STANDARD_NO_PAD, &input);
+            assert_round_trip(&URL_SAFE, &input);
+            assert_round_trip(&URL_SAFE_NO_PAD, &input);
+        }
+    }
+}
+
+#[test]
+fn rejects_common_non_alphabet_bytes() {
+    let mut output = [0u8; 4];
+    for byte in [b' ', b'\n', b'\r', b'\t', 0, 0xff] {
+        let input = [b'A', b'A', byte, b'A'];
+        assert_eq!(
+            STANDARD.decode_slice(&input, &mut output),
+            Err(DecodeError::InvalidByte { index: 2, byte })
+        );
+    }
 }
 
 #[test]
@@ -176,4 +213,17 @@ fn alloc_helpers_round_trip() {
         STANDARD_NO_PAD.decode_vec(b"Zm8=").unwrap_err(),
         DecodeError::InvalidPadding { index: 3 }
     );
+}
+
+fn assert_round_trip<A, const PAD: bool>(engine: &base64_ng::Engine<A, PAD>, input: &[u8])
+where
+    A: base64_ng::Alphabet,
+{
+    let mut encoded = [0u8; 4];
+    let encoded_len = engine.encode_slice(input, &mut encoded).unwrap();
+    let mut decoded = [0u8; 2];
+    let decoded_len = engine
+        .decode_slice(&encoded[..encoded_len], &mut decoded)
+        .unwrap();
+    assert_eq!(&decoded[..decoded_len], input);
 }
