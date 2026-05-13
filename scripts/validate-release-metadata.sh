@@ -54,8 +54,11 @@ test -s LICENSE-APACHE
 test -s README.md
 test -s CONTRIBUTING.md
 test -s SECURITY.md
+test -s docs/CONSTANT_TIME.md
+test -s docs/MIGRATION.md
 test -s docs/PLAN.md
 test -s docs/RELEASE.md
+test -s docs/RELEASE_EVIDENCE.md
 
 if ! grep -q '^The MIT License (MIT)$' LICENSE-MIT; then
     echo "release metadata: LICENSE-MIT does not look like the canonical MIT license" >&2
@@ -83,8 +86,11 @@ for required_package_file in \
     "LICENSE-MIT" \
     "README.md" \
     "SECURITY.md" \
+    "docs/CONSTANT_TIME.md" \
+    "docs/MIGRATION.md" \
     "docs/PLAN.md" \
     "docs/RELEASE.md" \
+    "docs/RELEASE_EVIDENCE.md" \
     "src/lib.rs" \
     "tests/rfc4648.rs"
 do
@@ -93,5 +99,10 @@ do
         exit 1
     fi
 done
+
+if printf '%s\n' "$package_list" | grep -q '^fuzz/'; then
+    echo "release metadata: fuzz-only harness files must not be included in the published crate" >&2
+    exit 1
+fi
 
 echo "release metadata: ok"

@@ -23,6 +23,8 @@
   dependency, and reproducibility review.
 - Added `scripts/check_fuzz.sh` and wired fuzz-only dependency checks into the
   stable release gate.
+- Hardened release metadata validation so fuzz-only files cannot enter the
+  published crate package.
 
 ## 0.1.0 - 2026-05-13
 

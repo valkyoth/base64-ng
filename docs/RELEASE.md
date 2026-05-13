@@ -24,6 +24,7 @@ The release gate covers:
 - formatting
 - metadata
 - dependency graph
+- fuzz-only dependency checks when `fuzz/` is present
 - clippy
 - feature-mode tests
 - Miri no-default-features tests when nightly Miri is installed
@@ -66,6 +67,14 @@ Expected artifacts:
 
 - `base64-ng.spdx.json`
 - `base64-ng.cyclonedx.json`
+
+Fuzz-only dependencies are checked separately with:
+
+```sh
+scripts/check_fuzz.sh
+```
+
+The `fuzz/` package is not part of the published crate.
 
 ## Publish
 

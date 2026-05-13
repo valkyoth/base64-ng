@@ -26,6 +26,12 @@ For release-facing changes, run:
 scripts/stable_release_gate.sh
 ```
 
+For fuzz harness changes, run:
+
+```sh
+scripts/check_fuzz.sh
+```
+
 The standard checks include:
 
 - `cargo fmt --all --check`
@@ -37,6 +43,7 @@ The standard checks include:
 - `cargo deny check`
 - `cargo audit`
 - `cargo license --json`
+- fuzz-only dependency checks when `fuzz/` is present
 
 ## Dependency Additions
 
@@ -49,6 +56,9 @@ Dependency additions are rejected by default. If a change needs one, include:
 - why the dependency can remain optional
 
 Do not add git dependencies.
+
+Fuzz-only dependencies must stay under `fuzz/`, must not be included in the
+published crate package, and must pass `scripts/check_fuzz.sh`.
 
 ## Testing Expectations
 
