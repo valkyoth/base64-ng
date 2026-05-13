@@ -160,7 +160,6 @@ Phase 3:
 
 ### v0.5
 
-- `std::io::Read` streaming decoder.
 - Broader chunk-boundary state machine tests.
 
 ### v0.6

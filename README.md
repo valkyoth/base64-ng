@@ -18,7 +18,7 @@ Implemented now:
 - In-place encoding when the caller provides enough spare capacity.
 - Optional `alloc` vector helpers.
 - In-place decode API built on the same strict scalar decoder.
-- `std::io::Write` and `std::io::Read` streaming encoders plus a `std::io::Write` streaming decoder behind the `stream` feature.
+- `std::io` streaming encoders and decoders behind the `stream` feature.
 - Focused unit and integration tests.
 - Local check scripts, release gate, dependency policy, audit config, CI, SBOM script, and reproducible build check.
 
@@ -114,7 +114,7 @@ With the `stream` feature, `std::io` encoders are available:
 
 ```rust
 use std::io::{Read, Write};
-use base64_ng::{STANDARD, stream::{Decoder, Encoder, EncoderReader}};
+use base64_ng::{STANDARD, stream::{Decoder, DecoderReader, Encoder, EncoderReader}};
 
 let mut encoder = Encoder::new(Vec::new(), STANDARD);
 encoder.write_all(b"he").unwrap();
@@ -131,6 +131,11 @@ let mut decoder = Decoder::new(Vec::new(), STANDARD);
 decoder.write_all(b"aGVs").unwrap();
 decoder.write_all(b"bG8=").unwrap();
 let decoded = decoder.finish().unwrap();
+assert_eq!(decoded, b"hello");
+
+let mut reader = DecoderReader::new(&b"aGVsbG8="[..], STANDARD);
+let mut decoded = Vec::new();
+reader.read_to_end(&mut decoded).unwrap();
 assert_eq!(decoded, b"hello");
 ```
 

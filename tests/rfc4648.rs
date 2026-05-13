@@ -4,7 +4,7 @@ use base64_ng::{
 };
 
 #[cfg(feature = "stream")]
-use base64_ng::stream::{Decoder, Encoder, EncoderReader};
+use base64_ng::stream::{Decoder, DecoderReader, Encoder, EncoderReader};
 
 #[cfg(feature = "stream")]
 use std::io::{Read, Write};
@@ -379,6 +379,58 @@ fn stream_decoder_rejects_bad_final_pending_input() {
 fn stream_decoder_rejects_trailing_input_after_padding() {
     let mut decoder = Decoder::new(Vec::new(), STANDARD);
     let err = decoder.write_all(b"aGk=AA").unwrap_err();
+    assert_eq!(err.kind(), std::io::ErrorKind::InvalidInput);
+}
+
+#[cfg(feature = "stream")]
+#[test]
+fn stream_decoder_reader_handles_small_reads() {
+    let mut reader = DecoderReader::new(&b"aGVsbG8="[..], STANDARD);
+    let mut output = [0u8; 5];
+    let mut written = 0;
+    while written < output.len() {
+        let read = reader.read(&mut output[written..written + 1]).unwrap();
+        if read == 0 {
+            break;
+        }
+        written += read;
+    }
+    assert_eq!(&output[..written], b"hello");
+}
+
+#[cfg(feature = "stream")]
+#[test]
+fn stream_decoder_reader_supports_no_padding() {
+    let mut reader = DecoderReader::new(&b"aGVsbG8"[..], STANDARD_NO_PAD);
+    let mut decoded = Vec::new();
+    reader.read_to_end(&mut decoded).unwrap();
+    assert_eq!(decoded, b"hello");
+}
+
+#[cfg(feature = "stream")]
+#[test]
+fn stream_decoder_reader_supports_url_safe() {
+    let mut reader = DecoderReader::new(&b"-_8"[..], URL_SAFE_NO_PAD);
+    let mut decoded = Vec::new();
+    assert_eq!(reader.get_ref().len(), 3);
+    reader.read_to_end(&mut decoded).unwrap();
+    assert_eq!(decoded, b"\xfb\xff");
+}
+
+#[cfg(feature = "stream")]
+#[test]
+fn stream_decoder_reader_rejects_bad_final_pending_input() {
+    let mut reader = DecoderReader::new(&b"a"[..], STANDARD);
+    let mut decoded = Vec::new();
+    assert!(reader.read_to_end(&mut decoded).is_err());
+}
+
+#[cfg(feature = "stream")]
+#[test]
+fn stream_decoder_reader_rejects_trailing_input_after_padding() {
+    let mut reader = DecoderReader::new(&b"aGk=AA"[..], STANDARD);
+    let mut decoded = Vec::new();
+    let err = reader.read_to_end(&mut decoded).unwrap_err();
     assert_eq!(err.kind(), std::io::ErrorKind::InvalidInput);
 }
 

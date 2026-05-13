@@ -47,7 +47,7 @@ pub mod stream {
     //!
     //! ```
     //! use std::io::{Read, Write};
-    //! use base64_ng::{STANDARD, stream::{Decoder, Encoder, EncoderReader}};
+    //! use base64_ng::{STANDARD, stream::{Decoder, DecoderReader, Encoder, EncoderReader}};
     //!
     //! let mut encoder = Encoder::new(Vec::new(), STANDARD);
     //! encoder.write_all(b"he").unwrap();
@@ -64,6 +64,11 @@ pub mod stream {
     //! decoder.write_all(b"aGVs").unwrap();
     //! decoder.write_all(b"bG8=").unwrap();
     //! let decoded = decoder.finish().unwrap();
+    //! assert_eq!(decoded, b"hello");
+    //!
+    //! let mut reader = DecoderReader::new(&b"aGVsbG8="[..], STANDARD);
+    //! let mut decoded = Vec::new();
+    //! reader.read_to_end(&mut decoded).unwrap();
     //! assert_eq!(decoded, b"hello");
     //! ```
 
@@ -369,6 +374,173 @@ pub mod stream {
 
     fn decode_error_to_io(err: DecodeError) -> io::Error {
         io::Error::new(io::ErrorKind::InvalidInput, err)
+    }
+
+    /// A streaming Base64 decoder for `std::io::Read`.
+    pub struct DecoderReader<R, A, const PAD: bool>
+    where
+        A: Alphabet,
+    {
+        inner: R,
+        engine: Engine<A, PAD>,
+        pending: [u8; 4],
+        pending_len: usize,
+        output: VecDeque<u8>,
+        finished: bool,
+        terminal_seen: bool,
+    }
+
+    impl<R, A, const PAD: bool> DecoderReader<R, A, PAD>
+    where
+        A: Alphabet,
+    {
+        /// Creates a new streaming decoder reader.
+        #[must_use]
+        pub fn new(inner: R, engine: Engine<A, PAD>) -> Self {
+            Self {
+                inner,
+                engine,
+                pending: [0; 4],
+                pending_len: 0,
+                output: VecDeque::new(),
+                finished: false,
+                terminal_seen: false,
+            }
+        }
+
+        /// Returns a shared reference to the wrapped reader.
+        #[must_use]
+        pub const fn get_ref(&self) -> &R {
+            &self.inner
+        }
+
+        /// Returns a mutable reference to the wrapped reader.
+        pub fn get_mut(&mut self) -> &mut R {
+            &mut self.inner
+        }
+
+        /// Consumes the decoder reader and returns the wrapped reader.
+        #[must_use]
+        pub fn into_inner(self) -> R {
+            self.inner
+        }
+    }
+
+    impl<R, A, const PAD: bool> Read for DecoderReader<R, A, PAD>
+    where
+        R: Read,
+        A: Alphabet,
+    {
+        fn read(&mut self, output: &mut [u8]) -> io::Result<usize> {
+            if output.is_empty() {
+                return Ok(0);
+            }
+
+            while self.output.is_empty() && !self.finished {
+                self.fill_output()?;
+            }
+
+            let mut written = 0;
+            while written < output.len() {
+                let Some(byte) = self.output.pop_front() else {
+                    break;
+                };
+                output[written] = byte;
+                written += 1;
+            }
+
+            Ok(written)
+        }
+    }
+
+    impl<R, A, const PAD: bool> DecoderReader<R, A, PAD>
+    where
+        R: Read,
+        A: Alphabet,
+    {
+        fn fill_output(&mut self) -> io::Result<()> {
+            let mut input = [0u8; 1024];
+            let read = self.inner.read(&mut input)?;
+            if read == 0 {
+                self.finished = true;
+                self.push_final_pending()?;
+                return Ok(());
+            }
+            if self.terminal_seen {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidInput,
+                    "base64 decoder received trailing input after padding",
+                ));
+            }
+
+            let mut consumed = 0;
+            if self.pending_len > 0 {
+                let needed = 4 - self.pending_len;
+                if read < needed {
+                    self.pending[self.pending_len..self.pending_len + read]
+                        .copy_from_slice(&input[..read]);
+                    self.pending_len += read;
+                    return Ok(());
+                }
+
+                let mut quad = [0u8; 4];
+                quad[..self.pending_len].copy_from_slice(&self.pending[..self.pending_len]);
+                quad[self.pending_len..].copy_from_slice(&input[..needed]);
+                self.push_decoded(&quad)?;
+                self.pending_len = 0;
+                consumed += needed;
+            }
+
+            let remaining = &input[consumed..read];
+            let full_len = remaining.len() / 4 * 4;
+            let mut offset = 0;
+            while offset < full_len {
+                let quad = [
+                    remaining[offset],
+                    remaining[offset + 1],
+                    remaining[offset + 2],
+                    remaining[offset + 3],
+                ];
+                self.push_decoded(&quad)?;
+                offset += 4;
+                if self.terminal_seen && offset < remaining.len() {
+                    return Err(io::Error::new(
+                        io::ErrorKind::InvalidInput,
+                        "base64 decoder received trailing input after padding",
+                    ));
+                }
+            }
+
+            let tail = &remaining[full_len..];
+            self.pending[..tail.len()].copy_from_slice(tail);
+            self.pending_len = tail.len();
+            Ok(())
+        }
+
+        fn push_final_pending(&mut self) -> io::Result<()> {
+            if self.pending_len == 0 {
+                return Ok(());
+            }
+
+            let mut pending = [0u8; 4];
+            pending[..self.pending_len].copy_from_slice(&self.pending[..self.pending_len]);
+            let pending_len = self.pending_len;
+            self.pending_len = 0;
+            self.push_decoded(&pending[..pending_len])
+        }
+
+        fn push_decoded(&mut self, input: &[u8]) -> io::Result<()> {
+            let mut decoded = [0u8; 3];
+            let written = self
+                .engine
+                .decode_slice(input, &mut decoded)
+                .map_err(decode_error_to_io)?;
+            self.output.extend(&decoded[..written]);
+            if input.len() == 4 && written < 3 {
+                self.terminal_seen = true;
+            }
+            Ok(())
+        }
     }
 
     /// A streaming Base64 encoder for `std::io::Read`.
