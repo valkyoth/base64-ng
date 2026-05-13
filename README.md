@@ -171,6 +171,11 @@ assert_eq!(decoded, input);
 Use `decode_slice` or `decode_in_place` when the caller needs hard memory
 limits and owns the output buffer.
 
+For sensitive payloads decoded in place, use `decode_in_place_clear_tail` to
+clear unused bytes after the decoded prefix. On decode error this variant clears
+the whole caller-provided buffer before returning the error. The legacy
+whitespace profile also provides `decode_in_place_legacy_clear_tail`.
+
 With the default `alloc` feature, vector and string helpers are available:
 
 ```rust
@@ -244,6 +249,9 @@ Security commitments:
   uses branch-minimized arithmetic. These paths are hardened against obvious
   timing pitfalls, but they are not documented as formally verified
   cryptographic constant-time APIs.
+- In-place clear-tail decode variants are available for callers that want
+  best-effort cleanup of unused caller-owned buffers without adding a runtime
+  dependency.
 - Legacy compatibility must be opt-in.
 - Release gates include formatting, clippy, tests, Miri when installed, docs, dependency policy, audit, license review, isolated fuzz/perf dependency checks, SBOM, and reproducible build checks.
 - Future Kani proofs target in-place decoding bounds and scalar decoder invariants.

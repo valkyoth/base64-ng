@@ -238,6 +238,55 @@ fn encode_in_place_reports_bad_lengths() {
 }
 
 #[test]
+fn decode_in_place_clear_tail_scrubs_unused_bytes() {
+    let mut standard = *b"aGk=";
+    let len = {
+        let decoded = STANDARD.decode_in_place_clear_tail(&mut standard).unwrap();
+        assert_eq!(decoded, b"hi");
+        decoded.len()
+    };
+    assert_eq!(&standard[len..], &[0, 0]);
+
+    let mut standard_no_pad = *b"aGk";
+    let len = {
+        let decoded = STANDARD_NO_PAD
+            .decode_in_place_clear_tail(&mut standard_no_pad)
+            .unwrap();
+        assert_eq!(decoded, b"hi");
+        decoded.len()
+    };
+    assert_eq!(&standard_no_pad[len..], &[0]);
+
+    let mut url_safe = *b"-_8=";
+    let len = {
+        let decoded = URL_SAFE.decode_in_place_clear_tail(&mut url_safe).unwrap();
+        assert_eq!(decoded, b"\xfb\xff");
+        decoded.len()
+    };
+    assert_eq!(&url_safe[len..], &[0, 0]);
+}
+
+#[test]
+fn decode_in_place_clear_tail_scrubs_buffer_on_error() {
+    let mut invalid_byte = *b"Zm9v$g==";
+    assert_eq!(
+        STANDARD.decode_in_place_clear_tail(&mut invalid_byte),
+        Err(DecodeError::InvalidByte {
+            index: 4,
+            byte: b'$',
+        })
+    );
+    assert!(invalid_byte.iter().all(|byte| *byte == 0));
+
+    let mut invalid_padding = *b"Zh==";
+    assert_eq!(
+        STANDARD.decode_in_place_clear_tail(&mut invalid_padding),
+        Err(DecodeError::InvalidPadding { index: 1 })
+    );
+    assert!(invalid_padding.iter().all(|byte| *byte == 0));
+}
+
+#[test]
 fn runtime_encode_errors_do_not_panic() {
     let checks = [
         std::panic::catch_unwind(|| encoded_len(usize::MAX, true).unwrap_err()).is_ok(),
@@ -494,6 +543,49 @@ fn legacy_in_place_decode_matches_slice_for_whitespace_patterns() {
         .decode_in_place_legacy(&mut url_safe_no_pad)
         .unwrap();
     assert_eq!(decoded, b"\xfb\xff");
+}
+
+#[test]
+fn legacy_decode_in_place_clear_tail_scrubs_unused_bytes() {
+    let mut standard = *b" aG\r\nk= ";
+    let len = {
+        let decoded = STANDARD
+            .decode_in_place_legacy_clear_tail(&mut standard)
+            .unwrap();
+        assert_eq!(decoded, b"hi");
+        decoded.len()
+    };
+    assert_eq!(&standard[len..], &[0; 6]);
+
+    let mut standard_no_pad = *b" aG\r\nk ";
+    let len = {
+        let decoded = STANDARD_NO_PAD
+            .decode_in_place_legacy_clear_tail(&mut standard_no_pad)
+            .unwrap();
+        assert_eq!(decoded, b"hi");
+        decoded.len()
+    };
+    assert_eq!(&standard_no_pad[len..], &[0; 5]);
+}
+
+#[test]
+fn legacy_decode_in_place_clear_tail_scrubs_buffer_on_error() {
+    let mut invalid_byte = *b" A A - A";
+    assert_eq!(
+        STANDARD.decode_in_place_legacy_clear_tail(&mut invalid_byte),
+        Err(DecodeError::InvalidByte {
+            index: 5,
+            byte: b'-',
+        })
+    );
+    assert!(invalid_byte.iter().all(|byte| *byte == 0));
+
+    let mut invalid_padding = *b"aGk= \n AAAA";
+    assert_eq!(
+        STANDARD.decode_in_place_legacy_clear_tail(&mut invalid_padding),
+        Err(DecodeError::InvalidPadding { index: 7 })
+    );
+    assert!(invalid_padding.iter().all(|byte| *byte == 0));
 }
 
 #[test]

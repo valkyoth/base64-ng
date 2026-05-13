@@ -11,6 +11,8 @@
   releases.
 - Documented scalar decode throughput as an explicit optimization target rather
   than a release claim.
+- Added strict and legacy in-place decode variants that clear unused buffer
+  bytes on success and clear the full caller buffer on error.
 
 ## 0.2.0 - 2026-05-13
 

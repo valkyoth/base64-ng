@@ -1258,6 +1258,37 @@ where
         Ok(&mut buffer[..len])
     }
 
+    /// Decodes the buffer in place and clears all bytes after the decoded prefix.
+    ///
+    /// If decoding fails, the entire buffer is cleared before the error is
+    /// returned. Use this variant when the encoded or partially decoded data is
+    /// sensitive and the caller wants best-effort cleanup without adding a
+    /// dependency.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use base64_ng::STANDARD;
+    ///
+    /// let mut buffer = *b"aGk=";
+    /// let decoded = STANDARD.decode_in_place_clear_tail(&mut buffer).unwrap();
+    /// assert_eq!(decoded, b"hi");
+    /// ```
+    pub fn decode_in_place_clear_tail<'a>(
+        &self,
+        buffer: &'a mut [u8],
+    ) -> Result<&'a mut [u8], DecodeError> {
+        let len = match Self::decode_slice_to_start(buffer) {
+            Ok(len) => len,
+            Err(err) => {
+                buffer.fill(0);
+                return Err(err);
+            }
+        };
+        buffer[len..].fill(0);
+        Ok(&mut buffer[..len])
+    }
+
     /// Decodes `buffer` in place using the explicit legacy whitespace profile.
     ///
     /// Ignored whitespace is compacted out before decoding. If validation
@@ -1278,6 +1309,42 @@ where
             read += 1;
         }
         let len = Self::decode_slice_to_start(&mut buffer[..write])?;
+        Ok(&mut buffer[..len])
+    }
+
+    /// Decodes `buffer` in place using the explicit legacy whitespace profile
+    /// and clears all bytes after the decoded prefix.
+    ///
+    /// If validation or decoding fails, the entire buffer is cleared before the
+    /// error is returned.
+    pub fn decode_in_place_legacy_clear_tail<'a>(
+        &self,
+        buffer: &'a mut [u8],
+    ) -> Result<&'a mut [u8], DecodeError> {
+        if let Err(err) = validate_legacy_decode::<A, PAD>(buffer) {
+            buffer.fill(0);
+            return Err(err);
+        }
+
+        let mut write = 0;
+        let mut read = 0;
+        while read < buffer.len() {
+            let byte = buffer[read];
+            if !is_legacy_whitespace(byte) {
+                buffer[write] = byte;
+                write += 1;
+            }
+            read += 1;
+        }
+
+        let len = match Self::decode_slice_to_start(&mut buffer[..write]) {
+            Ok(len) => len,
+            Err(err) => {
+                buffer.fill(0);
+                return Err(err);
+            }
+        };
+        buffer[len..].fill(0);
         Ok(&mut buffer[..len])
     }
 
