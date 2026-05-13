@@ -74,6 +74,9 @@ jobs:
       - name: Test default features
         run: cargo test --all-targets
 
+      - name: Check no_std library build
+        run: cargo check --no-default-features --lib
+
       - name: Test no default features
         run: cargo test --no-default-features --all-targets
 

@@ -16,6 +16,9 @@ cargo clippy --all-targets -- -D warnings
 echo "checks: clippy all features"
 cargo clippy --all-targets --all-features -- -D warnings
 
+echo "checks: no_std library build"
+cargo check --no-default-features --lib
+
 echo "checks: tests default"
 cargo test --all-targets
 
