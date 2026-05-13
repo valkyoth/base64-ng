@@ -1,6 +1,6 @@
 use base64_ng::{
     DecodeError, EncodeError, STANDARD, STANDARD_NO_PAD, URL_SAFE, URL_SAFE_NO_PAD,
-    checked_encoded_len, decoded_capacity, decoded_len,
+    checked_encoded_len, decoded_capacity, decoded_len, encoded_len,
 };
 
 #[cfg(feature = "stream")]
@@ -143,6 +143,14 @@ fn decoded_len_rejects_bad_lengths_and_padding() {
 
 #[test]
 fn checked_encoded_len_reports_overflow() {
+    assert_eq!(
+        encoded_len(usize::MAX, true),
+        Err(EncodeError::LengthOverflow)
+    );
+    assert_eq!(
+        STANDARD.encoded_len(usize::MAX),
+        Err(EncodeError::LengthOverflow)
+    );
     assert_eq!(checked_encoded_len(usize::MAX, true), None);
     assert_eq!(checked_encoded_len(usize::MAX, false), None);
     assert_eq!(STANDARD.checked_encoded_len(usize::MAX), None);
@@ -699,7 +707,7 @@ fn assert_in_place_encode_matches_slice<A, const PAD: bool>(
 ) where
     A: base64_ng::Alphabet,
 {
-    let required = engine.encoded_len(input.len());
+    let required = engine.encoded_len(input.len()).unwrap();
     let mut expected = [0u8; 4];
     let expected_len = engine.encode_slice(input, &mut expected).unwrap();
     assert_eq!(required, expected_len);
@@ -718,7 +726,7 @@ fn assert_equivalent_round_trip<A, const PAD: bool>(
 ) where
     A: base64_ng::Alphabet,
 {
-    let encoded_len = engine.encoded_len(input.len());
+    let encoded_len = engine.encoded_len(input.len()).unwrap();
     let mut encoded = vec![0u8; encoded_len];
     let written = engine.encode_slice(input, &mut encoded).unwrap();
     assert_eq!(written, encoded_len);

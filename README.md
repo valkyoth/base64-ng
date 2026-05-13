@@ -67,10 +67,14 @@ base64-ng = { version = "0.1", default-features = false }
 ## Example
 
 ```rust
-use base64_ng::{STANDARD, encoded_len};
+use base64_ng::{STANDARD, checked_encoded_len};
 
 let input = b"hello";
-let mut encoded = [0u8; encoded_len(5, true)];
+const ENCODED_CAPACITY: usize = match checked_encoded_len(5, true) {
+    Some(len) => len,
+    None => panic!("encoded length overflow"),
+};
+let mut encoded = [0u8; ENCODED_CAPACITY];
 let written = STANDARD.encode_slice(input, &mut encoded).unwrap();
 assert_eq!(&encoded[..written], b"aGVsbG8=");
 
@@ -180,6 +184,8 @@ Security commitments:
 - No unsafe code in scalar code.
 - Future unsafe SIMD isolated under `src/simd/`.
 - Strict decoding rejects malformed padding and trailing data.
+- Public encoded-length overflow is recoverable through `Result` or `Option`;
+  untrusted length metadata should never require a panic.
 - Scalar encode avoids input-derived alphabet table indexes, and scalar decode
   uses branch-minimized arithmetic. These paths are hardened against obvious
   timing pitfalls, but they are not documented as formally verified

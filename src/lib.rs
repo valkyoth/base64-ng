@@ -16,10 +16,14 @@
 //! Encode and decode with caller-owned buffers:
 //!
 //! ```
-//! use base64_ng::{STANDARD, encoded_len};
+//! use base64_ng::{STANDARD, checked_encoded_len};
 //!
 //! let input = b"hello";
-//! let mut encoded = [0u8; encoded_len(5, true)];
+//! const ENCODED_CAPACITY: usize = match checked_encoded_len(5, true) {
+//!     Some(len) => len,
+//!     None => panic!("encoded length overflow"),
+//! };
+//! let mut encoded = [0u8; ENCODED_CAPACITY];
 //! let encoded_len = STANDARD.encode_slice(input, &mut encoded).unwrap();
 //! assert_eq!(&encoded[..encoded_len], b"aGVsbG8=");
 //!
@@ -679,25 +683,22 @@ pub const URL_SAFE_NO_PAD: Engine<UrlSafe, false> = Engine::new();
 
 /// Returns the encoded length for an input length and padding policy.
 ///
-/// # Panics
-///
-/// Panics if the encoded length would overflow `usize`. Use
-/// [`checked_encoded_len`] when handling untrusted length metadata without an
-/// actual input slice.
+/// This function returns [`EncodeError::LengthOverflow`] instead of panicking.
+/// Use [`checked_encoded_len`] when an `Option<usize>` is more convenient.
 ///
 /// # Examples
 ///
 /// ```
 /// use base64_ng::encoded_len;
 ///
-/// assert_eq!(encoded_len(5, true), 8);
-/// assert_eq!(encoded_len(5, false), 7);
+/// assert_eq!(encoded_len(5, true).unwrap(), 8);
+/// assert_eq!(encoded_len(5, false).unwrap(), 7);
+/// assert!(encoded_len(usize::MAX, true).is_err());
 /// ```
-#[must_use]
-pub const fn encoded_len(input_len: usize, padded: bool) -> usize {
+pub const fn encoded_len(input_len: usize, padded: bool) -> Result<usize, EncodeError> {
     match checked_encoded_len(input_len, padded) {
-        Some(len) => len,
-        None => panic!("encoded base64 length overflows usize"),
+        Some(len) => Ok(len),
+        None => Err(EncodeError::LengthOverflow),
     }
 }
 
@@ -869,8 +870,7 @@ where
     }
 
     /// Returns the encoded length for this engine's padding policy.
-    #[must_use]
-    pub const fn encoded_len(&self, input_len: usize) -> usize {
+    pub const fn encoded_len(&self, input_len: usize) -> Result<usize, EncodeError> {
         encoded_len(input_len, PAD)
     }
 
@@ -890,10 +890,10 @@ where
 
     /// Encodes a fixed-size input into a fixed-size output array in const contexts.
     ///
-    /// Stable Rust does not yet allow this API to return `[u8; encoded_len(N)]`
-    /// directly. Instead, the caller supplies the output length through the
-    /// destination type and this function panics during const evaluation if the
-    /// length is wrong.
+    /// Stable Rust does not yet allow this API to return an array whose length
+    /// is computed from `INPUT_LEN` directly. Instead, the caller supplies the
+    /// output length through the destination type and this function panics
+    /// during const evaluation if the length is wrong.
     ///
     /// # Panics
     ///

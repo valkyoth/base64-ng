@@ -13,6 +13,8 @@
 - Added `std::io::Read` streaming decoder behind the `stream` feature.
 - Added checked encoded-length helpers.
 - Added exact decoded-length helpers.
+- Changed public encoded-length helpers to return recoverable overflow errors
+  instead of panicking.
 - Hardened decode errors to report absolute input indexes.
 - Hardened scalar encode to avoid input-derived alphabet table indexes.
 - Hardened alphabet decode to avoid branch-heavy match ladders.

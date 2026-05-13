@@ -42,6 +42,10 @@ arithmetic for ASCII classification. This reduces easy timing pitfalls, but
 `base64-ng` does not currently claim a formally verified cryptographic
 constant-time encode or decode API.
 
+Public encoded-length helpers report overflow with `Result` or `Option` rather
+than panicking. Code that handles untrusted length metadata should use these
+helpers before allocating or accepting framed payloads.
+
 Required before unsafe SIMD stabilizes:
 
 - Scalar/SIMD differential tests.
