@@ -25,12 +25,37 @@ where
         .decode_in_place(&mut buffer)
         .map(|decoded| decoded.to_vec());
 
-    match (in_place_result, vec_result) {
+    match (&in_place_result, &vec_result) {
         (Ok(in_place), Ok(decoded)) => assert_eq!(in_place, decoded),
         (Err(in_place_err), Err(vec_err)) => assert_eq!(in_place_err, vec_err),
         (in_place_result, vec_result) => {
             panic!(
                 "decode_in_place and decode_vec disagreed: {in_place_result:?} vs {vec_result:?}"
+            )
+        }
+    }
+
+    let mut clear_tail_buffer = input.to_vec();
+    let clear_tail_result = engine
+        .decode_in_place_clear_tail(&mut clear_tail_buffer)
+        .map(|decoded| decoded.to_vec());
+
+    match (clear_tail_result, vec_result) {
+        (Ok(clear_tail), Ok(decoded)) => {
+            assert_eq!(clear_tail, decoded);
+            assert!(
+                clear_tail_buffer[decoded.len()..]
+                    .iter()
+                    .all(|byte| *byte == 0)
+            );
+        }
+        (Err(clear_tail_err), Err(vec_err)) => {
+            assert_eq!(clear_tail_err, vec_err);
+            assert!(clear_tail_buffer.iter().all(|byte| *byte == 0));
+        }
+        (clear_tail_result, vec_result) => {
+            panic!(
+                "decode_in_place_clear_tail and decode_vec disagreed: {clear_tail_result:?} vs {vec_result:?}"
             )
         }
     }
@@ -46,11 +71,34 @@ where
         .decode_in_place_legacy(&mut buffer)
         .map(|decoded| decoded.to_vec());
 
-    match (in_place_result, vec_result) {
+    match (&in_place_result, &vec_result) {
         (Ok(in_place), Ok(decoded)) => assert_eq!(in_place, decoded),
         (Err(in_place_err), Err(vec_err)) => assert_eq!(in_place_err, vec_err),
         (in_place_result, vec_result) => panic!(
             "decode_in_place_legacy and decode_vec_legacy disagreed: {in_place_result:?} vs {vec_result:?}"
+        ),
+    }
+
+    let mut clear_tail_buffer = input.to_vec();
+    let clear_tail_result = engine
+        .decode_in_place_legacy_clear_tail(&mut clear_tail_buffer)
+        .map(|decoded| decoded.to_vec());
+
+    match (clear_tail_result, vec_result) {
+        (Ok(clear_tail), Ok(decoded)) => {
+            assert_eq!(clear_tail, decoded);
+            assert!(
+                clear_tail_buffer[decoded.len()..]
+                    .iter()
+                    .all(|byte| *byte == 0)
+            );
+        }
+        (Err(clear_tail_err), Err(vec_err)) => {
+            assert_eq!(clear_tail_err, vec_err);
+            assert!(clear_tail_buffer.iter().all(|byte| *byte == 0));
+        }
+        (clear_tail_result, vec_result) => panic!(
+            "decode_in_place_legacy_clear_tail and decode_vec_legacy disagreed: {clear_tail_result:?} vs {vec_result:?}"
         ),
     }
 }

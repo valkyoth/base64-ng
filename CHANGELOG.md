@@ -13,6 +13,8 @@
   than a release claim.
 - Added strict and legacy in-place decode variants that clear unused buffer
   bytes on success and clear the full caller buffer on error.
+- Extended in-place fuzz coverage to verify clear-tail decode result parity and
+  cleanup semantics.
 
 ## 0.2.0 - 2026-05-13
 
