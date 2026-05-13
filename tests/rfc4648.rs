@@ -7,7 +7,7 @@ use base64_ng::{
 use base64_ng::stream::{Decoder, DecoderReader, Encoder, EncoderReader};
 
 #[cfg(feature = "stream")]
-use std::io::{Read, Write};
+use std::io::{Cursor, Read, Write};
 
 #[cfg(feature = "stream")]
 struct ChunkedReader<'a> {
@@ -569,6 +569,15 @@ fn stream_decoder_rejects_trailing_input_after_padding() {
 
 #[cfg(feature = "stream")]
 #[test]
+fn stream_decoder_rejects_short_trailing_input_after_pending_padding() {
+    let mut decoder = Decoder::new(Vec::new(), STANDARD);
+    decoder.write_all(b"aG").unwrap();
+    let err = decoder.write_all(b"k=A").unwrap_err();
+    assert_eq!(err.kind(), std::io::ErrorKind::InvalidInput);
+}
+
+#[cfg(feature = "stream")]
+#[test]
 fn stream_decoder_reader_handles_small_reads() {
     let mut reader = DecoderReader::new(&b"aGVsbG8="[..], STANDARD);
     let mut output = [0u8; 5];
@@ -612,11 +621,22 @@ fn stream_decoder_reader_rejects_bad_final_pending_input() {
 
 #[cfg(feature = "stream")]
 #[test]
-fn stream_decoder_reader_rejects_trailing_input_after_padding() {
-    let mut reader = DecoderReader::new(&b"aGk=AA"[..], STANDARD);
+fn stream_decoder_reader_leaves_trailing_input_after_padding_unread() {
+    let mut reader = DecoderReader::new(Cursor::new(&b"aGk=AA"[..]), STANDARD);
     let mut decoded = Vec::new();
-    let err = reader.read_to_end(&mut decoded).unwrap_err();
-    assert_eq!(err.kind(), std::io::ErrorKind::InvalidInput);
+    reader.read_to_end(&mut decoded).unwrap();
+    assert_eq!(decoded, b"hi");
+    assert_eq!(reader.get_ref().position(), 4);
+}
+
+#[cfg(feature = "stream")]
+#[test]
+fn stream_decoder_reader_leaves_adjacent_payload_unread_after_padding() {
+    let mut reader = DecoderReader::new(Cursor::new(&b"aGk=NEXT"[..]), STANDARD);
+    let mut decoded = Vec::new();
+    reader.read_to_end(&mut decoded).unwrap();
+    assert_eq!(decoded, b"hi");
+    assert_eq!(reader.get_ref().position(), 4);
 }
 
 #[cfg(feature = "stream")]

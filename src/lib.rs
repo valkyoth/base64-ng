@@ -335,6 +335,9 @@ pub mod stream {
                 self.write_full_quad(quad)?;
                 self.pending_len = 0;
                 consumed += needed;
+                if self.finished && consumed < input.len() {
+                    return Err(trailing_input_after_padding_error());
+                }
             }
 
             let remaining = &input[consumed..];
@@ -378,6 +381,11 @@ pub mod stream {
     }
 
     /// A streaming Base64 decoder for `std::io::Read`.
+    ///
+    /// For padded engines, this reader stops at the terminal padded Base64
+    /// block and leaves later bytes unread in the wrapped reader. This preserves
+    /// boundaries for callers that decode one Base64 payload from a larger
+    /// stream.
     pub struct DecoderReader<R, A, const PAD: bool>
     where
         A: Alphabet,
@@ -460,55 +468,31 @@ pub mod stream {
         A: Alphabet,
     {
         fn fill_output(&mut self) -> io::Result<()> {
-            let mut input = [0u8; 1024];
-            let read = self.inner.read(&mut input)?;
+            if self.terminal_seen {
+                self.finished = true;
+                return Ok(());
+            }
+
+            let mut input = [0u8; 4];
+            let read = self.inner.read(&mut input[..4 - self.pending_len])?;
             if read == 0 {
                 self.finished = true;
                 self.push_final_pending()?;
                 return Ok(());
             }
+
+            self.pending[self.pending_len..self.pending_len + read].copy_from_slice(&input[..read]);
+            self.pending_len += read;
+            if self.pending_len < 4 {
+                return Ok(());
+            }
+
+            let quad = self.pending;
+            self.pending_len = 0;
+            self.push_decoded(&quad)?;
             if self.terminal_seen {
-                return Err(trailing_input_after_padding_error());
+                self.finished = true;
             }
-
-            let mut consumed = 0;
-            if self.pending_len > 0 {
-                let needed = 4 - self.pending_len;
-                if read < needed {
-                    self.pending[self.pending_len..self.pending_len + read]
-                        .copy_from_slice(&input[..read]);
-                    self.pending_len += read;
-                    return Ok(());
-                }
-
-                let mut quad = [0u8; 4];
-                quad[..self.pending_len].copy_from_slice(&self.pending[..self.pending_len]);
-                quad[self.pending_len..].copy_from_slice(&input[..needed]);
-                self.push_decoded(&quad)?;
-                self.pending_len = 0;
-                consumed += needed;
-            }
-
-            let remaining = &input[consumed..read];
-            let full_len = remaining.len() / 4 * 4;
-            let mut offset = 0;
-            while offset < full_len {
-                let quad = [
-                    remaining[offset],
-                    remaining[offset + 1],
-                    remaining[offset + 2],
-                    remaining[offset + 3],
-                ];
-                self.push_decoded(&quad)?;
-                offset += 4;
-                if self.terminal_seen && offset < remaining.len() {
-                    return Err(trailing_input_after_padding_error());
-                }
-            }
-
-            let tail = &remaining[full_len..];
-            self.pending[..tail.len()].copy_from_slice(tail);
-            self.pending_len = tail.len();
             Ok(())
         }
 
