@@ -67,6 +67,10 @@ cargo fuzz --version
 cargo kani --version
 ```
 
+The release gate detects these as Cargo subcommands, for example `cargo
+nextest --version`, not by looking for standalone binaries named
+`cargo-nextest`, `cargo-fuzz`, or `cargo-kani` on `PATH`.
+
 ## Miri Setup
 
 Miri is a nightly Rust component. Install it with:

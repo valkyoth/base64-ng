@@ -9,6 +9,8 @@
   `simd`-reserved builds can be checked locally and from CI.
 - Documented reinstall/setup commands for cross targets, nextest, cargo-fuzz,
   Kani, and release-security tooling.
+- Fixed optional release-gate tool detection to use Cargo subcommands such as
+  `cargo nextest --version`.
 
 ## 0.3.0 - 2026-05-13
 
