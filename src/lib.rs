@@ -875,6 +875,87 @@ where
         decoded_len(input, PAD)
     }
 
+    /// Encodes a fixed-size input into a fixed-size output array in const contexts.
+    ///
+    /// Stable Rust does not yet allow this API to return `[u8; encoded_len(N)]`
+    /// directly. Instead, the caller supplies the output length through the
+    /// destination type and this function panics during const evaluation if the
+    /// length is wrong.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `OUTPUT_LEN` is not exactly the encoded length for `INPUT_LEN`
+    /// and this engine's padding policy, or if that length overflows `usize`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use base64_ng::{STANDARD, URL_SAFE_NO_PAD};
+    ///
+    /// const HELLO: [u8; 8] = STANDARD.encode_array(b"hello");
+    /// const URL_SAFE: [u8; 3] = URL_SAFE_NO_PAD.encode_array(b"\xfb\xff");
+    ///
+    /// assert_eq!(&HELLO, b"aGVsbG8=");
+    /// assert_eq!(&URL_SAFE, b"-_8");
+    /// ```
+    #[must_use]
+    pub const fn encode_array<const INPUT_LEN: usize, const OUTPUT_LEN: usize>(
+        &self,
+        input: &[u8; INPUT_LEN],
+    ) -> [u8; OUTPUT_LEN] {
+        let Some(required) = checked_encoded_len(INPUT_LEN, PAD) else {
+            panic!("encoded base64 length overflows usize");
+        };
+        assert!(
+            required == OUTPUT_LEN,
+            "base64 output array has incorrect length"
+        );
+
+        let mut output = [0u8; OUTPUT_LEN];
+        let mut read = 0;
+        let mut write = 0;
+        while INPUT_LEN - read >= 3 {
+            let b0 = input[read];
+            let b1 = input[read + 1];
+            let b2 = input[read + 2];
+
+            output[write] = A::ENCODE[(b0 >> 2) as usize];
+            output[write + 1] = A::ENCODE[(((b0 & 0b0000_0011) << 4) | (b1 >> 4)) as usize];
+            output[write + 2] = A::ENCODE[(((b1 & 0b0000_1111) << 2) | (b2 >> 6)) as usize];
+            output[write + 3] = A::ENCODE[(b2 & 0b0011_1111) as usize];
+
+            read += 3;
+            write += 4;
+        }
+
+        match INPUT_LEN - read {
+            0 => {}
+            1 => {
+                let b0 = input[read];
+                output[write] = A::ENCODE[(b0 >> 2) as usize];
+                output[write + 1] = A::ENCODE[((b0 & 0b0000_0011) << 4) as usize];
+                write += 2;
+                if PAD {
+                    output[write] = b'=';
+                    output[write + 1] = b'=';
+                }
+            }
+            2 => {
+                let b0 = input[read];
+                let b1 = input[read + 1];
+                output[write] = A::ENCODE[(b0 >> 2) as usize];
+                output[write + 1] = A::ENCODE[(((b0 & 0b0000_0011) << 4) | (b1 >> 4)) as usize];
+                output[write + 2] = A::ENCODE[((b1 & 0b0000_1111) << 2) as usize];
+                if PAD {
+                    output[write + 3] = b'=';
+                }
+            }
+            _ => unreachable!(),
+        }
+
+        output
+    }
+
     /// Encodes `input` into `output`, returning the number of bytes written.
     pub fn encode_slice(&self, input: &[u8], output: &mut [u8]) -> Result<usize, EncodeError> {
         let required = checked_encoded_len(input.len(), PAD).ok_or(EncodeError::LengthOverflow)?;

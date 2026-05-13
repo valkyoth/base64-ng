@@ -89,6 +89,21 @@ fn url_safe_alphabet_is_distinct() {
 }
 
 #[test]
+fn const_array_encoding_matches_runtime_encoding() {
+    const STANDARD_HELLO: [u8; 8] = STANDARD.encode_array(b"hello");
+    const STANDARD_HELLO_NO_PAD: [u8; 7] = STANDARD_NO_PAD.encode_array(b"hello");
+    const URL_SAFE_BYTES: [u8; 4] = URL_SAFE.encode_array(b"\xfb\xff");
+    const URL_SAFE_BYTES_NO_PAD: [u8; 3] = URL_SAFE_NO_PAD.encode_array(b"\xfb\xff");
+    const EMPTY: [u8; 0] = STANDARD.encode_array(b"");
+
+    assert_eq!(&STANDARD_HELLO, b"aGVsbG8=");
+    assert_eq!(&STANDARD_HELLO_NO_PAD, b"aGVsbG8");
+    assert_eq!(&URL_SAFE_BYTES, b"-_8=");
+    assert_eq!(&URL_SAFE_BYTES_NO_PAD, b"-_8");
+    assert_eq!(&EMPTY, b"");
+}
+
+#[test]
 fn decoded_capacity_is_upper_bound() {
     for encoded_len in 0..128 {
         assert!(decoded_capacity(encoded_len) <= encoded_len / 4 * 3 + 2);
