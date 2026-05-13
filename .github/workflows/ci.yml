@@ -44,6 +44,9 @@ jobs:
       - name: Run checks
         run: scripts/checks.sh
 
+      - name: Check fuzz-only dependencies
+        run: scripts/check_fuzz.sh
+
       - name: Generate SBOM
         run: scripts/generate-sbom.sh
 

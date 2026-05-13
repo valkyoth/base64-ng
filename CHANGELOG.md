@@ -29,6 +29,7 @@
   in-place decode parity.
 - Aligned README and plan wording with the implemented stream and isolated fuzz
   harness status.
+- Added CI coverage for fuzz-only dependency audit and license policy checks.
 
 ## 0.1.0 - 2026-05-13
 
