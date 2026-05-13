@@ -19,6 +19,8 @@
   decode, and stream chunk-boundary behavior.
 - Added a fuzz-only differential harness against the established `base64` crate
   for canonical encode/decode behavior.
+- Added release evidence documentation for audit, license, SBOM, fuzz-only
+  dependency, and reproducibility review.
 
 ## 0.1.0 - 2026-05-13
 

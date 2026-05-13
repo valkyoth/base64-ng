@@ -249,7 +249,8 @@ Security commitments:
 - Release gates include formatting, clippy, tests, Miri when installed, docs, dependency policy, audit, license review, SBOM, and reproducible build checks.
 - Future Kani proofs target in-place decoding bounds and scalar decoder invariants.
 
-See [docs/PLAN.md](docs/PLAN.md), [SECURITY.md](SECURITY.md), and
+See [docs/PLAN.md](docs/PLAN.md), [SECURITY.md](SECURITY.md),
+[docs/RELEASE_EVIDENCE.md](docs/RELEASE_EVIDENCE.md), and
 [docs/CONSTANT_TIME.md](docs/CONSTANT_TIME.md).
 For adoption guidance from the established `base64` crate, see
 [docs/MIGRATION.md](docs/MIGRATION.md).
