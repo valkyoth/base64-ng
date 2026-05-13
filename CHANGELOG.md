@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.0-alpha.0 - Unreleased
+
+- Started the next development cycle after the `0.3.0` release.
+
 ## 0.3.0 - 2026-05-13
 
 - Started the next development cycle after the `0.2.0` release.
