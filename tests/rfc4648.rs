@@ -211,6 +211,7 @@ fn encode_in_place_reports_bad_lengths() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn deterministic_long_round_trips() {
     let mut input = Vec::new();
     for len in 0..=1024 {
@@ -225,6 +226,7 @@ fn deterministic_long_round_trips() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn exhaustive_short_round_trips() {
     for b0 in u8::MIN..=u8::MAX {
         let input = [b0];
