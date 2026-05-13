@@ -18,6 +18,7 @@ include = [
     "docs/**",
     "Cargo.toml",
     "README.md",
+    "CONTRIBUTING.md",
     "CHANGELOG.md",
     "SECURITY.md",
     "LICENSE-*",
