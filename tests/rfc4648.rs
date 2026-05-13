@@ -238,6 +238,59 @@ fn encode_in_place_reports_bad_lengths() {
 }
 
 #[test]
+fn runtime_encode_errors_do_not_panic() {
+    let checks = [
+        std::panic::catch_unwind(|| encoded_len(usize::MAX, true).unwrap_err()).is_ok(),
+        std::panic::catch_unwind(|| STANDARD.encoded_len(usize::MAX).unwrap_err()).is_ok(),
+        std::panic::catch_unwind(|| {
+            let mut output = [0u8; 1];
+            let _ = STANDARD.encode_slice(b"hello", &mut output);
+        })
+        .is_ok(),
+        std::panic::catch_unwind(|| {
+            let mut buffer = [0u8; 2];
+            let _ = STANDARD.encode_in_place(&mut buffer, 3);
+        })
+        .is_ok(),
+    ];
+
+    assert!(checks.into_iter().all(|passed| passed));
+}
+
+#[test]
+fn malformed_runtime_decode_inputs_do_not_panic() {
+    let malformed_inputs: &[&[u8]] = &[
+        b"a",
+        b"====",
+        b"Z=m9",
+        b"Zm=9",
+        b"Zm8=",
+        b"Zm9v$g==",
+        b"AA-A",
+        b"Zm9vZh==",
+    ];
+
+    for input in malformed_inputs {
+        assert!(std::panic::catch_unwind(|| decoded_len(input, true)).is_ok());
+        assert!(std::panic::catch_unwind(|| decoded_len(input, false)).is_ok());
+        assert!(
+            std::panic::catch_unwind(|| {
+                let mut output = [0u8; 16];
+                let _ = STANDARD.decode_slice(input, &mut output);
+            })
+            .is_ok()
+        );
+        assert!(
+            std::panic::catch_unwind(|| {
+                let mut buffer = input.to_vec();
+                let _ = STANDARD.decode_in_place(&mut buffer);
+            })
+            .is_ok()
+        );
+    }
+}
+
+#[test]
 #[cfg_attr(miri, ignore)]
 fn deterministic_long_round_trips() {
     let mut input = Vec::new();

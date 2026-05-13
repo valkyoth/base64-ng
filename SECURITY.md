@@ -46,6 +46,11 @@ Public encoded-length helpers report overflow with `Result` or `Option` rather
 than panicking. Code that handles untrusted length metadata should use these
 helpers before allocating or accepting framed payloads.
 
+Runtime scalar APIs are expected to return `Result` or `Option` for malformed
+input and size errors instead of unwinding. Compile-time array encoding is the
+exception: it intentionally fails const evaluation when the caller supplies an
+incorrect output array length.
+
 Required before unsafe SIMD stabilizes:
 
 - Scalar/SIMD differential tests.

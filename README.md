@@ -185,6 +185,8 @@ Security commitments:
 - No unsafe code in scalar code.
 - Future unsafe SIMD isolated under `src/simd/`.
 - Strict decoding rejects malformed padding and trailing data.
+- Runtime scalar APIs are expected to return `Result` or `Option` for malformed
+  input and size errors instead of panicking.
 - Public encoded-length overflow is recoverable through `Result` or `Option`;
   untrusted length metadata should never require a panic.
 - Scalar encode avoids input-derived alphabet table indexes, and scalar decode
