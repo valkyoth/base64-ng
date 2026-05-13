@@ -52,9 +52,7 @@ The fuzz harness is intentionally isolated from the published crate. Review it
 with:
 
 ```sh
-cargo check --manifest-path fuzz/Cargo.toml --bins
-cargo audit --file fuzz/Cargo.lock
-cargo deny --manifest-path fuzz/Cargo.toml check --config fuzz/deny.toml
+scripts/check_fuzz.sh
 ```
 
 `fuzz/deny.toml` allows the NCSA license only for `libfuzzer-sys`. The root

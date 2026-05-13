@@ -36,6 +36,9 @@ else
     echo "stable release gate: skipping fuzz compile check; cargo-fuzz or fuzz/ is not available"
 fi
 
+echo "stable release gate: fuzz dependency checks"
+scripts/check_fuzz.sh
+
 if command -v cargo-kani >/dev/null 2>&1 && [ -d kani ]; then
     echo "stable release gate: Kani proofs"
     cargo kani

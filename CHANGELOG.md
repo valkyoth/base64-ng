@@ -21,6 +21,8 @@
   for canonical encode/decode behavior.
 - Added release evidence documentation for audit, license, SBOM, fuzz-only
   dependency, and reproducibility review.
+- Added `scripts/check_fuzz.sh` and wired fuzz-only dependency checks into the
+  stable release gate.
 
 ## 0.1.0 - 2026-05-13
 

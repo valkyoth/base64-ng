@@ -295,9 +295,7 @@ cargo install --locked kani-verifier
 Compile fuzz targets without running a campaign:
 
 ```sh
-cargo check --manifest-path fuzz/Cargo.toml --bins
-cargo audit --file fuzz/Cargo.lock
-cargo deny --manifest-path fuzz/Cargo.toml check --config fuzz/deny.toml
+scripts/check_fuzz.sh
 ```
 
 Run a target with `cargo-fuzz`:
