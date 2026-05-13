@@ -9,6 +9,8 @@
   constant-time API.
 - Extended fuzz coverage to check `ct` decode success/error parity against the
   strict scalar decoder.
+- Extended exhaustive short canonical round-trip tests to cover the `ct`
+  decoder for all one- and two-byte inputs across all built-in engines.
 - Added an isolated no-framework scalar performance comparison harness against
   the established `base64` crate.
 - Added performance harness dependency audit and license checks to CI and the

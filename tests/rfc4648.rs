@@ -585,6 +585,10 @@ fn exhaustive_short_round_trips() {
         assert_round_trip(&STANDARD_NO_PAD, &input);
         assert_round_trip(&URL_SAFE, &input);
         assert_round_trip(&URL_SAFE_NO_PAD, &input);
+        assert_ct_round_trip(&STANDARD, &ct::STANDARD, &input);
+        assert_ct_round_trip(&STANDARD_NO_PAD, &ct::STANDARD_NO_PAD, &input);
+        assert_ct_round_trip(&URL_SAFE, &ct::URL_SAFE, &input);
+        assert_ct_round_trip(&URL_SAFE_NO_PAD, &ct::URL_SAFE_NO_PAD, &input);
         assert_in_place_encode_matches_slice(&STANDARD, &input);
         assert_in_place_encode_matches_slice(&STANDARD_NO_PAD, &input);
         assert_in_place_encode_matches_slice(&URL_SAFE, &input);
@@ -598,6 +602,10 @@ fn exhaustive_short_round_trips() {
             assert_round_trip(&STANDARD_NO_PAD, &input);
             assert_round_trip(&URL_SAFE, &input);
             assert_round_trip(&URL_SAFE_NO_PAD, &input);
+            assert_ct_round_trip(&STANDARD, &ct::STANDARD, &input);
+            assert_ct_round_trip(&STANDARD_NO_PAD, &ct::STANDARD_NO_PAD, &input);
+            assert_ct_round_trip(&URL_SAFE, &ct::URL_SAFE, &input);
+            assert_ct_round_trip(&URL_SAFE_NO_PAD, &ct::URL_SAFE_NO_PAD, &input);
             assert_in_place_encode_matches_slice(&STANDARD, &input);
             assert_in_place_encode_matches_slice(&STANDARD_NO_PAD, &input);
             assert_in_place_encode_matches_slice(&URL_SAFE, &input);
@@ -1270,6 +1278,22 @@ where
     let encoded_len = engine.encode_slice(input, &mut encoded).unwrap();
     let mut decoded = [0u8; 2];
     let decoded_len = engine
+        .decode_slice(&encoded[..encoded_len], &mut decoded)
+        .unwrap();
+    assert_eq!(&decoded[..decoded_len], input);
+}
+
+fn assert_ct_round_trip<A, const PAD: bool>(
+    engine: &base64_ng::Engine<A, PAD>,
+    ct_engine: &base64_ng::ct::CtEngine<A, PAD>,
+    input: &[u8],
+) where
+    A: base64_ng::Alphabet,
+{
+    let mut encoded = [0u8; 4];
+    let encoded_len = engine.encode_slice(input, &mut encoded).unwrap();
+    let mut decoded = [0u8; 2];
+    let decoded_len = ct_engine
         .decode_slice(&encoded[..encoded_len], &mut decoded)
         .unwrap();
     assert_eq!(&decoded[..decoded_len], input);
