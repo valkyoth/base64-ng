@@ -160,7 +160,7 @@ Phase 3:
 
 ### v0.5
 
-- `std::io` streaming encoder/decoder.
+- `std::io` streaming decoder.
 - Chunk-boundary state machine tests.
 
 ### v0.6

@@ -3,6 +3,12 @@ use base64_ng::{
     checked_encoded_len, decoded_capacity, decoded_len,
 };
 
+#[cfg(feature = "stream")]
+use base64_ng::stream::Encoder;
+
+#[cfg(feature = "stream")]
+use std::io::Write;
+
 #[test]
 fn rfc4648_standard_round_trips() {
     let cases: &[&[u8]] = &[
@@ -270,6 +276,38 @@ fn alloc_helpers_round_trip() {
         STANDARD_NO_PAD.decode_vec(b"Zm8=").unwrap_err(),
         DecodeError::InvalidPadding { index: 3 }
     );
+}
+
+#[cfg(feature = "stream")]
+#[test]
+fn stream_encoder_handles_chunk_boundaries() {
+    let mut encoder = Encoder::new(Vec::new(), STANDARD);
+    encoder.write_all(b"h").unwrap();
+    encoder.write_all(b"el").unwrap();
+    encoder.write_all(b"lo").unwrap();
+    let encoded = encoder.finish().unwrap();
+    assert_eq!(encoded, b"aGVsbG8=");
+}
+
+#[cfg(feature = "stream")]
+#[test]
+fn stream_encoder_supports_no_padding() {
+    let mut encoder = Encoder::new(Vec::new(), STANDARD_NO_PAD);
+    encoder.write_all(b"he").unwrap();
+    encoder.write_all(b"llo").unwrap();
+    let encoded = encoder.finish().unwrap();
+    assert_eq!(encoded, b"aGVsbG8");
+}
+
+#[cfg(feature = "stream")]
+#[test]
+fn stream_encoder_exposes_inner_writer() {
+    let mut encoder = Encoder::new(Vec::new(), URL_SAFE_NO_PAD);
+    assert!(encoder.get_ref().is_empty());
+    encoder.write_all(b"\xfb\xff").unwrap();
+    assert!(encoder.get_ref().is_empty());
+    let encoded = encoder.finish().unwrap();
+    assert_eq!(encoded, b"-_8");
 }
 
 fn assert_round_trip<A, const PAD: bool>(engine: &base64_ng::Engine<A, PAD>, input: &[u8])

@@ -41,6 +41,166 @@
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
+#[cfg(feature = "stream")]
+pub mod stream {
+    //! Streaming Base64 wrappers for `std::io`.
+    //!
+    //! ```
+    //! use std::io::Write;
+    //! use base64_ng::{STANDARD, stream::Encoder};
+    //!
+    //! let mut encoder = Encoder::new(Vec::new(), STANDARD);
+    //! encoder.write_all(b"he").unwrap();
+    //! encoder.write_all(b"llo").unwrap();
+    //! let encoded = encoder.finish().unwrap();
+    //! assert_eq!(encoded, b"aGVsbG8=");
+    //! ```
+
+    use super::{Alphabet, EncodeError, Engine};
+    use std::io::{self, Write};
+
+    /// A streaming Base64 encoder for `std::io::Write`.
+    pub struct Encoder<W, A, const PAD: bool>
+    where
+        A: Alphabet,
+    {
+        inner: W,
+        engine: Engine<A, PAD>,
+        pending: [u8; 2],
+        pending_len: usize,
+    }
+
+    impl<W, A, const PAD: bool> Encoder<W, A, PAD>
+    where
+        A: Alphabet,
+    {
+        /// Creates a new streaming encoder.
+        #[must_use]
+        pub const fn new(inner: W, engine: Engine<A, PAD>) -> Self {
+            Self {
+                inner,
+                engine,
+                pending: [0; 2],
+                pending_len: 0,
+            }
+        }
+
+        /// Returns a shared reference to the wrapped writer.
+        #[must_use]
+        pub const fn get_ref(&self) -> &W {
+            &self.inner
+        }
+
+        /// Returns a mutable reference to the wrapped writer.
+        pub fn get_mut(&mut self) -> &mut W {
+            &mut self.inner
+        }
+
+        /// Consumes the encoder without flushing pending input.
+        ///
+        /// Prefer [`Self::finish`] when the encoded output must be complete.
+        #[must_use]
+        pub fn into_inner(self) -> W {
+            self.inner
+        }
+    }
+
+    impl<W, A, const PAD: bool> Encoder<W, A, PAD>
+    where
+        W: Write,
+        A: Alphabet,
+    {
+        /// Writes any pending input, flushes the wrapped writer, and returns it.
+        pub fn finish(mut self) -> io::Result<W> {
+            self.write_pending_final()?;
+            self.inner.flush()?;
+            Ok(self.inner)
+        }
+
+        fn write_pending_final(&mut self) -> io::Result<()> {
+            if self.pending_len == 0 {
+                return Ok(());
+            }
+
+            let mut encoded = [0u8; 4];
+            let written = self
+                .engine
+                .encode_slice(&self.pending[..self.pending_len], &mut encoded)
+                .map_err(encode_error_to_io)?;
+            self.inner.write_all(&encoded[..written])?;
+            self.pending_len = 0;
+            Ok(())
+        }
+    }
+
+    impl<W, A, const PAD: bool> Write for Encoder<W, A, PAD>
+    where
+        W: Write,
+        A: Alphabet,
+    {
+        fn write(&mut self, input: &[u8]) -> io::Result<usize> {
+            if input.is_empty() {
+                return Ok(0);
+            }
+
+            let mut consumed = 0;
+            if self.pending_len > 0 {
+                let needed = 3 - self.pending_len;
+                if input.len() < needed {
+                    self.pending[self.pending_len..self.pending_len + input.len()]
+                        .copy_from_slice(input);
+                    self.pending_len += input.len();
+                    return Ok(input.len());
+                }
+
+                let mut chunk = [0u8; 3];
+                chunk[..self.pending_len].copy_from_slice(&self.pending[..self.pending_len]);
+                chunk[self.pending_len..].copy_from_slice(&input[..needed]);
+
+                let mut encoded = [0u8; 4];
+                let written = self
+                    .engine
+                    .encode_slice(&chunk, &mut encoded)
+                    .map_err(encode_error_to_io)?;
+                self.inner.write_all(&encoded[..written])?;
+                self.pending_len = 0;
+                consumed += needed;
+            }
+
+            let remaining = &input[consumed..];
+            let full_len = remaining.len() / 3 * 3;
+            let mut offset = 0;
+            let mut encoded = [0u8; 1024];
+            while offset < full_len {
+                let mut take = core::cmp::min(full_len - offset, 768);
+                take -= take % 3;
+                debug_assert!(take > 0);
+
+                let written = self
+                    .engine
+                    .encode_slice(&remaining[offset..offset + take], &mut encoded)
+                    .map_err(encode_error_to_io)?;
+                self.inner.write_all(&encoded[..written])?;
+                offset += take;
+            }
+
+            let tail = &remaining[full_len..];
+            self.pending[..tail.len()].copy_from_slice(tail);
+            self.pending_len = tail.len();
+
+            Ok(input.len())
+        }
+
+        fn flush(&mut self) -> io::Result<()> {
+            self.inner.flush()
+        }
+    }
+
+    fn encode_error_to_io(err: EncodeError) -> io::Error {
+        io::Error::new(io::ErrorKind::InvalidInput, err)
+    }
+}
+
 /// Standard Base64 engine with padding.
 pub const STANDARD: Engine<Standard, true> = Engine::new();
 
