@@ -17,6 +17,8 @@
   cleanup semantics.
 - Documented clear-tail decode cleanup as best-effort buffer-retention
   reduction rather than a formal zeroization guarantee.
+- Added an in-place encode variant that clears unused buffer bytes on success
+  and clears the full caller buffer on error.
 
 ## 0.2.0 - 2026-05-13
 

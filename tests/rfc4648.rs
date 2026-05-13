@@ -238,6 +238,66 @@ fn encode_in_place_reports_bad_lengths() {
 }
 
 #[test]
+fn encode_in_place_clear_tail_scrubs_unused_bytes() {
+    let mut standard = [0xff; 12];
+    standard[..5].copy_from_slice(b"hello");
+    let len = {
+        let encoded = STANDARD
+            .encode_in_place_clear_tail(&mut standard, 5)
+            .unwrap();
+        assert_eq!(encoded, b"aGVsbG8=");
+        encoded.len()
+    };
+    assert_eq!(&standard[len..], &[0; 4]);
+
+    let mut standard_no_pad = [0xff; 10];
+    standard_no_pad[..5].copy_from_slice(b"hello");
+    let len = {
+        let encoded = STANDARD_NO_PAD
+            .encode_in_place_clear_tail(&mut standard_no_pad, 5)
+            .unwrap();
+        assert_eq!(encoded, b"aGVsbG8");
+        encoded.len()
+    };
+    assert_eq!(&standard_no_pad[len..], &[0; 3]);
+
+    let mut url_safe = [0xff; 6];
+    url_safe[..2].copy_from_slice(b"\xfb\xff");
+    let len = {
+        let encoded = URL_SAFE
+            .encode_in_place_clear_tail(&mut url_safe, 2)
+            .unwrap();
+        assert_eq!(encoded, b"-_8=");
+        encoded.len()
+    };
+    assert_eq!(&url_safe[len..], &[0; 2]);
+}
+
+#[test]
+fn encode_in_place_clear_tail_scrubs_buffer_on_error() {
+    let mut too_small = [0xff; 3];
+    too_small[..2].copy_from_slice(b"hi");
+    assert_eq!(
+        STANDARD.encode_in_place_clear_tail(&mut too_small, 2),
+        Err(EncodeError::OutputTooSmall {
+            required: 4,
+            available: 3,
+        })
+    );
+    assert!(too_small.iter().all(|byte| *byte == 0));
+
+    let mut input_too_large = [0xff; 2];
+    assert_eq!(
+        STANDARD.encode_in_place_clear_tail(&mut input_too_large, 3),
+        Err(EncodeError::InputTooLarge {
+            input_len: 3,
+            buffer_len: 2,
+        })
+    );
+    assert!(input_too_large.iter().all(|byte| *byte == 0));
+}
+
+#[test]
 fn decode_in_place_clear_tail_scrubs_unused_bytes() {
     let mut standard = *b"aGk=";
     let len = {

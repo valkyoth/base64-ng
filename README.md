@@ -98,6 +98,9 @@ let encoded = STANDARD.encode_in_place(&mut buffer, 5).unwrap();
 assert_eq!(encoded, b"aGVsbG8=");
 ```
 
+For sensitive payloads, `encode_in_place_clear_tail` clears unused bytes after
+the encoded prefix and clears the whole caller buffer on encode error.
+
 Compile-time encoding:
 
 ```rust
@@ -249,9 +252,9 @@ Security commitments:
   uses branch-minimized arithmetic. These paths are hardened against obvious
   timing pitfalls, but they are not documented as formally verified
   cryptographic constant-time APIs.
-- In-place clear-tail decode variants are available for callers that want
-  best-effort cleanup of unused caller-owned buffers without adding a runtime
-  dependency.
+- In-place clear-tail encode/decode variants are available for callers that
+  want best-effort cleanup of unused caller-owned buffers without adding a
+  runtime dependency.
 - Legacy compatibility must be opt-in.
 - Release gates include formatting, clippy, tests, Miri when installed, docs, dependency policy, audit, license review, isolated fuzz/perf dependency checks, SBOM, and reproducible build checks.
 - Future Kani proofs target in-place decoding bounds and scalar decoder invariants.

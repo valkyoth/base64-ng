@@ -1171,6 +1171,39 @@ where
         Ok(&mut buffer[..required])
     }
 
+    /// Encodes the first `input_len` bytes of `buffer` in place and clears all
+    /// bytes after the encoded prefix.
+    ///
+    /// If encoding fails because `input_len` is too large, the output buffer is
+    /// too small, or the encoded length overflows `usize`, the entire buffer is
+    /// cleared before the error is returned.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use base64_ng::STANDARD;
+    ///
+    /// let mut buffer = [0xff; 12];
+    /// buffer[..5].copy_from_slice(b"hello");
+    /// let encoded = STANDARD.encode_in_place_clear_tail(&mut buffer, 5).unwrap();
+    /// assert_eq!(encoded, b"aGVsbG8=");
+    /// ```
+    pub fn encode_in_place_clear_tail<'a>(
+        &self,
+        buffer: &'a mut [u8],
+        input_len: usize,
+    ) -> Result<&'a mut [u8], EncodeError> {
+        let len = match self.encode_in_place(buffer, input_len) {
+            Ok(encoded) => encoded.len(),
+            Err(err) => {
+                buffer.fill(0);
+                return Err(err);
+            }
+        };
+        buffer[len..].fill(0);
+        Ok(&mut buffer[..len])
+    }
+
     /// Decodes `input` into `output`, returning the number of bytes written.
     ///
     /// This is strict decoding. Whitespace, mixed alphabets, malformed padding,
