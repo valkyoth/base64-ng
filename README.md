@@ -305,6 +305,7 @@ Run a target with `cargo-fuzz`:
 cargo +nightly fuzz run decode
 cargo +nightly fuzz run in_place
 cargo +nightly fuzz run stream_chunks
+cargo +nightly fuzz run differential
 ```
 
 Miri is installed as a nightly Rust component, not as a Cargo package:

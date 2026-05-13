@@ -17,6 +17,8 @@
 - Added the constant-time decode API design document and verification bar.
 - Added isolated `cargo-fuzz` harnesses for arbitrary decode input, in-place
   decode, and stream chunk-boundary behavior.
+- Added a fuzz-only differential harness against the established `base64` crate
+  for canonical encode/decode behavior.
 
 ## 0.1.0 - 2026-05-13
 
