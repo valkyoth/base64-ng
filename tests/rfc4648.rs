@@ -170,6 +170,36 @@ fn encode_slice_reports_small_outputs() {
 }
 
 #[test]
+fn encode_slice_clear_tail_scrubs_unused_output() {
+    let mut standard = [0xff; 12];
+    let written = STANDARD
+        .encode_slice_clear_tail(b"hello", &mut standard)
+        .unwrap();
+    assert_eq!(&standard[..written], b"aGVsbG8=");
+    assert_eq!(&standard[written..], &[0; 4]);
+
+    let mut standard_no_pad = [0xff; 10];
+    let written = STANDARD_NO_PAD
+        .encode_slice_clear_tail(b"hello", &mut standard_no_pad)
+        .unwrap();
+    assert_eq!(&standard_no_pad[..written], b"aGVsbG8");
+    assert_eq!(&standard_no_pad[written..], &[0; 3]);
+}
+
+#[test]
+fn encode_slice_clear_tail_scrubs_output_on_error() {
+    let mut output = [0xff; 3];
+    assert_eq!(
+        STANDARD.encode_slice_clear_tail(b"hi", &mut output),
+        Err(EncodeError::OutputTooSmall {
+            required: 4,
+            available: 3,
+        })
+    );
+    assert!(output.iter().all(|byte| *byte == 0));
+}
+
+#[test]
 fn decode_slice_reports_small_outputs() {
     let mut output = [0u8; 1];
     assert_eq!(
@@ -186,6 +216,46 @@ fn decode_slice_reports_small_outputs() {
             available: 1,
         })
     );
+}
+
+#[test]
+fn decode_slice_clear_tail_scrubs_unused_output() {
+    let mut standard = [0xff; 8];
+    let written = STANDARD
+        .decode_slice_clear_tail(b"aGk=", &mut standard)
+        .unwrap();
+    assert_eq!(&standard[..written], b"hi");
+    assert_eq!(&standard[written..], &[0; 6]);
+
+    let mut standard_no_pad = [0xff; 8];
+    let written = STANDARD_NO_PAD
+        .decode_slice_clear_tail(b"aGk", &mut standard_no_pad)
+        .unwrap();
+    assert_eq!(&standard_no_pad[..written], b"hi");
+    assert_eq!(&standard_no_pad[written..], &[0; 6]);
+}
+
+#[test]
+fn decode_slice_clear_tail_scrubs_output_on_error() {
+    let mut invalid_byte = [0xff; 8];
+    assert_eq!(
+        STANDARD.decode_slice_clear_tail(b"Zm9v$g==", &mut invalid_byte),
+        Err(DecodeError::InvalidByte {
+            index: 4,
+            byte: b'$',
+        })
+    );
+    assert!(invalid_byte.iter().all(|byte| *byte == 0));
+
+    let mut too_small = [0xff; 1];
+    assert_eq!(
+        STANDARD.decode_slice_clear_tail(b"aGk=", &mut too_small),
+        Err(DecodeError::OutputTooSmall {
+            required: 2,
+            available: 1,
+        })
+    );
+    assert!(too_small.iter().all(|byte| *byte == 0));
 }
 
 #[test]
@@ -538,6 +608,46 @@ fn legacy_decode_supports_unpadded_whitespace() {
         .decode_slice_legacy(input, &mut output)
         .unwrap();
     assert_eq!(&output[..written], b"hello");
+}
+
+#[test]
+fn legacy_decode_slice_clear_tail_scrubs_unused_output() {
+    let mut standard = [0xff; 8];
+    let written = STANDARD
+        .decode_slice_legacy_clear_tail(b" aG\r\nk= ", &mut standard)
+        .unwrap();
+    assert_eq!(&standard[..written], b"hi");
+    assert_eq!(&standard[written..], &[0; 6]);
+
+    let mut standard_no_pad = [0xff; 8];
+    let written = STANDARD_NO_PAD
+        .decode_slice_legacy_clear_tail(b" aG\r\nk ", &mut standard_no_pad)
+        .unwrap();
+    assert_eq!(&standard_no_pad[..written], b"hi");
+    assert_eq!(&standard_no_pad[written..], &[0; 6]);
+}
+
+#[test]
+fn legacy_decode_slice_clear_tail_scrubs_output_on_error() {
+    let mut invalid_byte = [0xff; 8];
+    assert_eq!(
+        STANDARD.decode_slice_legacy_clear_tail(b" A A - A", &mut invalid_byte),
+        Err(DecodeError::InvalidByte {
+            index: 5,
+            byte: b'-',
+        })
+    );
+    assert!(invalid_byte.iter().all(|byte| *byte == 0));
+
+    let mut too_small = [0xff; 1];
+    assert_eq!(
+        STANDARD.decode_slice_legacy_clear_tail(b" aG\r\nk= ", &mut too_small),
+        Err(DecodeError::OutputTooSmall {
+            required: 2,
+            available: 1,
+        })
+    );
+    assert!(too_small.iter().all(|byte| *byte == 0));
 }
 
 #[test]

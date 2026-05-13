@@ -42,7 +42,7 @@ arithmetic for ASCII classification. This reduces easy timing pitfalls, but
 `base64-ng` does not currently claim a formally verified cryptographic
 constant-time encode or decode API.
 
-The in-place clear-tail encode and decode APIs provide best-effort cleanup for
+The clear-tail encode and decode APIs provide best-effort cleanup for
 caller-owned buffers by writing zero bytes over unused tail bytes on success and
 over the whole buffer on encode/decode error. Because the scalar crate forbids
 unsafe code and has no runtime dependencies, this cleanup uses ordinary Rust

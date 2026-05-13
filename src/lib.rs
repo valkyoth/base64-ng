@@ -1043,6 +1043,27 @@ where
         Ok(write)
     }
 
+    /// Encodes `input` into `output` and clears all bytes after the encoded
+    /// prefix.
+    ///
+    /// If encoding fails, the entire output buffer is cleared before the error
+    /// is returned.
+    pub fn encode_slice_clear_tail(
+        &self,
+        input: &[u8],
+        output: &mut [u8],
+    ) -> Result<usize, EncodeError> {
+        let written = match self.encode_slice(input, output) {
+            Ok(written) => written,
+            Err(err) => {
+                output.fill(0);
+                return Err(err);
+            }
+        };
+        output[written..].fill(0);
+        Ok(written)
+    }
+
     /// Encodes `input` into a newly allocated byte vector.
     #[cfg(feature = "alloc")]
     pub fn encode_vec(&self, input: &[u8]) -> Result<alloc::vec::Vec<u8>, EncodeError> {
@@ -1220,6 +1241,27 @@ where
         }
     }
 
+    /// Decodes `input` into `output` and clears all bytes after the decoded
+    /// prefix.
+    ///
+    /// If decoding fails, the entire output buffer is cleared before the error
+    /// is returned.
+    pub fn decode_slice_clear_tail(
+        &self,
+        input: &[u8],
+        output: &mut [u8],
+    ) -> Result<usize, DecodeError> {
+        let written = match self.decode_slice(input, output) {
+            Ok(written) => written,
+            Err(err) => {
+                output.fill(0);
+                return Err(err);
+            }
+        };
+        output[written..].fill(0);
+        Ok(written)
+    }
+
     /// Decodes `input` using the explicit legacy whitespace profile.
     ///
     /// ASCII space, tab, carriage return, and line feed bytes are ignored.
@@ -1238,6 +1280,27 @@ where
             });
         }
         decode_legacy_to_slice::<A, PAD>(input, output)
+    }
+
+    /// Decodes `input` using the explicit legacy whitespace profile and clears
+    /// all bytes after the decoded prefix.
+    ///
+    /// If validation or decoding fails, the entire output buffer is cleared
+    /// before the error is returned.
+    pub fn decode_slice_legacy_clear_tail(
+        &self,
+        input: &[u8],
+        output: &mut [u8],
+    ) -> Result<usize, DecodeError> {
+        let written = match self.decode_slice_legacy(input, output) {
+            Ok(written) => written,
+            Err(err) => {
+                output.fill(0);
+                return Err(err);
+            }
+        };
+        output[written..].fill(0);
+        Ok(written)
     }
 
     /// Decodes `input` into a newly allocated byte vector.

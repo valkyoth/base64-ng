@@ -104,7 +104,7 @@ Until this evidence exists, README and SECURITY must continue to say that
 
 ## Memory Cleanup
 
-Clear-tail in-place encode and decode APIs are intentionally separate from the
-future constant-time API. They reduce ordinary caller-buffer retention but do
-not provide a verified zeroization guarantee. Any future cryptographic profile
-must document memory cleanup separately from timing behavior.
+Clear-tail encode and decode APIs are intentionally separate from the future
+constant-time API. They reduce ordinary caller-buffer retention but do not
+provide a verified zeroization guarantee. Any future cryptographic profile must
+document memory cleanup separately from timing behavior.

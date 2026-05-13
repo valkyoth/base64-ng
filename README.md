@@ -98,8 +98,9 @@ let encoded = STANDARD.encode_in_place(&mut buffer, 5).unwrap();
 assert_eq!(encoded, b"aGVsbG8=");
 ```
 
-For sensitive payloads, `encode_in_place_clear_tail` clears unused bytes after
-the encoded prefix and clears the whole caller buffer on encode error.
+For sensitive payloads, `encode_slice_clear_tail` and
+`encode_in_place_clear_tail` clear unused bytes after the encoded prefix and
+clear the caller-owned output buffer on encode error.
 
 Compile-time encoding:
 
@@ -174,10 +175,11 @@ assert_eq!(decoded, input);
 Use `decode_slice` or `decode_in_place` when the caller needs hard memory
 limits and owns the output buffer.
 
-For sensitive payloads decoded in place, use `decode_in_place_clear_tail` to
-clear unused bytes after the decoded prefix. On decode error this variant clears
-the whole caller-provided buffer before returning the error. The legacy
-whitespace profile also provides `decode_in_place_legacy_clear_tail`.
+For sensitive payloads, use `decode_slice_clear_tail` or
+`decode_in_place_clear_tail` to clear unused bytes after the decoded prefix. On
+decode error these variants clear the caller-owned output buffer before
+returning the error. The legacy whitespace profile also provides
+`decode_slice_legacy_clear_tail` and `decode_in_place_legacy_clear_tail`.
 
 With the default `alloc` feature, vector and string helpers are available:
 
@@ -252,9 +254,9 @@ Security commitments:
   uses branch-minimized arithmetic. These paths are hardened against obvious
   timing pitfalls, but they are not documented as formally verified
   cryptographic constant-time APIs.
-- In-place clear-tail encode/decode variants are available for callers that
-  want best-effort cleanup of unused caller-owned buffers without adding a
-  runtime dependency.
+- Clear-tail encode/decode variants are available for callers that want
+  best-effort cleanup of unused caller-owned buffers without adding a runtime
+  dependency.
 - Legacy compatibility must be opt-in.
 - Release gates include formatting, clippy, tests, Miri when installed, docs, dependency policy, audit, license review, isolated fuzz/perf dependency checks, SBOM, and reproducible build checks.
 - Future Kani proofs target in-place decoding bounds and scalar decoder invariants.

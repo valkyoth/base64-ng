@@ -21,6 +21,8 @@
   and clears the full caller buffer on error.
 - Extended in-place fuzz coverage to verify clear-tail encode result parity and
   cleanup semantics.
+- Added slice-output encode and decode variants that clear unused output bytes
+  on success and clear the output buffer on error.
 
 ## 0.2.0 - 2026-05-13
 
