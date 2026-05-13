@@ -265,7 +265,8 @@ Security commitments:
 
 See [docs/PLAN.md](docs/PLAN.md), [SECURITY.md](SECURITY.md),
 [docs/RELEASE_EVIDENCE.md](docs/RELEASE_EVIDENCE.md), and
-[docs/CONSTANT_TIME.md](docs/CONSTANT_TIME.md).
+[docs/CONSTANT_TIME.md](docs/CONSTANT_TIME.md). For the unsafe hardware
+acceleration gate, see [docs/SIMD.md](docs/SIMD.md).
 For adoption guidance from the established `base64` crate, see
 [docs/MIGRATION.md](docs/MIGRATION.md).
 For performance evidence guidance, see [docs/BENCHMARKS.md](docs/BENCHMARKS.md).

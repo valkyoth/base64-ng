@@ -11,6 +11,9 @@
   strict scalar decoder.
 - Extended exhaustive short canonical round-trip tests to cover the `ct`
   decoder for all one- and two-byte inputs across all built-in engines.
+- Added a SIMD admission policy that keeps hardware acceleration out of `0.3`
+  until unsafe code isolation, dispatch behavior, fuzzing, CI, and benchmark
+  evidence are ready.
 - Added an isolated no-framework scalar performance comparison harness against
   the established `base64` crate.
 - Added performance harness dependency audit and license checks to CI and the

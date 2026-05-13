@@ -69,8 +69,12 @@ decoded buffer.
 
 Required before unsafe SIMD stabilizes:
 
+- A deliberate change from crate-wide `forbid(unsafe_code)` to a policy that
+  still denies unsafe outside the SIMD module.
 - Scalar/SIMD differential tests.
 - Fuzz targets covering strict and legacy modes.
 - Miri on scalar, in-place, and SIMD dispatch APIs.
 - Kani proofs for in-place bounds invariants.
 - Architecture-specific CI or documented local evidence.
+
+See `docs/SIMD.md` for the full SIMD admission policy.

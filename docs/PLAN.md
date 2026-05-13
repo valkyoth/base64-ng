@@ -169,25 +169,27 @@ Phase 3:
   best-effort cleanup primitive with a justified dependency tradeoff.
 - Add release evidence documentation for audit, license, SBOM, and
   reproducibility artifacts.
-- AVX2 and NEON prototypes.
-- Runtime feature dispatch.
+- Document the unsafe SIMD admission bar before adding architecture-specific
+  code, keeping the `simd` feature reserved until that evidence exists.
 - Isolated scalar comparison benchmark harness first; consider Criterion only
   if its larger dependency graph is justified by better measurement quality.
-- Scalar/SIMD differential testing.
 - Prototype and verify the constant-time decode path with no secret-indexed
   table lookups during Base64 symbol mapping. Generated-code review remains
   required before making a formal cryptographic constant-time guarantee.
 
 ### v0.4
 
-- AVX-512 implementation.
-- CPU dispatch hardening.
+- AVX2 and NEON prototypes.
+- Runtime feature dispatch.
+- Scalar/SIMD differential testing.
 - Cross-architecture CI evidence.
 - Keep SIMD unsafe code isolated from the scalar core with documented invariants
   for every unsafe block.
 
 ### v0.5
 
+- AVX-512 implementation.
+- CPU dispatch hardening.
 - Tokio streaming wrappers.
 - Async cancellation and partial-read tests.
 - Streaming fuzz and regression tests for adjacent framed payloads.
