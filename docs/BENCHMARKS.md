@@ -30,3 +30,15 @@ engine,operation,input_len,iterations,elapsed_ms,throughput_mib_s
 Benchmark numbers are machine-local evidence, not portable guarantees. Release
 notes should cite hardware, OS, Rust version, CPU governor, and command output
 when publishing performance claims.
+
+## Interpreting Results
+
+The current scalar decoder uses arithmetic alphabet mapping instead of a large
+decode lookup table. That keeps the default implementation aligned with the
+side-channel hardening roadmap, but it is expected to trail highly optimized
+table-based decoders on large buffers.
+
+Treat scalar decode throughput as an optimization target for `0.3`, not as a
+release claim. Any future fast scalar or SIMD path must preserve strict error
+indexes, canonical padding rejection, Miri cleanliness, and scalar/SIMD
+differential test evidence.

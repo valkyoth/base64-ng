@@ -9,6 +9,8 @@
   release gate.
 - Documented how performance evidence should be generated and qualified for
   releases.
+- Documented scalar decode throughput as an explicit optimization target rather
+  than a release claim.
 
 ## 0.2.0 - 2026-05-13
 
