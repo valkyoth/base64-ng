@@ -12,7 +12,7 @@ Build `base64-ng` as a modern, secure, `no_std`-first Base64 implementation for 
 - License: `MIT OR Apache-2.0`.
 - Project name: `base64-ng`.
 - Runtime and dev dependency graph: zero external crates.
-- Local testing system modeled after `fluxheim`: check script, release gate, dependency policy, audit config, SBOM, reproducible build check, and CI.
+- Local testing system modeled after `fluxheim`: check script, release gate, dependency policy, audit config, Miri when installed, SBOM, reproducible build check, and CI.
 
 ## Dependency Policy
 
@@ -66,7 +66,8 @@ Any dependency addition must answer:
    - No unsafe code.
 
 2. `alloc`
-   - Future `Vec<u8>` and `String` helpers.
+   - `Vec<u8>` decode/encode helpers.
+   - Encoded `String` helper.
    - Optional feature.
 
 3. `simd`
@@ -76,7 +77,7 @@ Any dependency addition must answer:
    - Unsafe isolated and documented.
 
 4. `stream`
-   - Future `std::io::{Read, Write}` wrappers.
+   - `std::io::{Read, Write}` wrappers.
    - Chunk-boundary state machines.
 
 5. `tokio`
@@ -135,15 +136,18 @@ Phase 3:
 - Standard and URL-safe alphabets.
 - Padded and unpadded modes.
 - Caller-owned output buffers.
+- Stable compile-time encoding into caller-sized arrays.
+- `alloc` `Vec<u8>` and encoded `String` helpers.
+- `std::io` streaming wrappers.
+- Miri integrated into CI and the local release gate when installed.
+- In-place encoding.
 - In-place decoding.
 - Hardened test/release scripts.
 
 ### v0.2
 
-- `alloc` convenience APIs.
 - Explicit legacy decode mode.
 - More exhaustive malformed-input tests.
-- Miri integration.
 
 ### v0.3
 
@@ -159,10 +163,6 @@ Phase 3:
 - Cross-architecture CI evidence.
 
 ### v0.5
-
-- Broader chunk-boundary state machine tests.
-
-### v0.6
 
 - Tokio streaming wrappers.
 - Async cancellation and partial-read tests.
