@@ -14,6 +14,11 @@ fuzz_target!(|data: &[u8]| {
     exercise_decode(data, URL_SAFE);
     exercise_decode(data, URL_SAFE_NO_PAD);
 
+    exercise_ct_decode(data, STANDARD, base64_ng::ct::STANDARD);
+    exercise_ct_decode(data, STANDARD_NO_PAD, base64_ng::ct::STANDARD_NO_PAD);
+    exercise_ct_decode(data, URL_SAFE, base64_ng::ct::URL_SAFE);
+    exercise_ct_decode(data, URL_SAFE_NO_PAD, base64_ng::ct::URL_SAFE_NO_PAD);
+
     exercise_legacy_decode(data, STANDARD);
     exercise_legacy_decode(data, STANDARD_NO_PAD);
     exercise_legacy_decode(data, URL_SAFE);
@@ -100,6 +105,26 @@ where
             }
         );
         assert!(too_small.iter().all(|byte| *byte == 0));
+    }
+}
+
+fn exercise_ct_decode<A, const PAD: bool>(
+    input: &[u8],
+    engine: base64_ng::Engine<A, PAD>,
+    ct_engine: base64_ng::ct::CtEngine<A, PAD>,
+) where
+    A: base64_ng::Alphabet,
+{
+    let mut output = vec![0u8; base64_ng::decoded_capacity(input.len()) + 3];
+    let ct_result = ct_engine.decode_slice(input, &mut output);
+    let vec_result = engine.decode_vec(input);
+
+    match (&ct_result, &vec_result) {
+        (Ok(written), Ok(decoded)) => assert_eq!(&output[..*written], decoded),
+        (Err(_), Err(_)) => {}
+        (ct_result, vec_result) => {
+            panic!("ct decode and strict decode disagreed: {ct_result:?} vs {vec_result:?}")
+        }
     }
 }
 

@@ -1,6 +1,6 @@
 use base64_ng::{
     DecodeError, EncodeError, STANDARD, STANDARD_NO_PAD, URL_SAFE, URL_SAFE_NO_PAD,
-    checked_encoded_len, decoded_capacity, decoded_len, encoded_len,
+    checked_encoded_len, ct, decoded_capacity, decoded_len, encoded_len,
 };
 
 #[cfg(feature = "stream")]
@@ -86,6 +86,98 @@ fn url_safe_alphabet_is_distinct() {
         .encode_slice(b"\xfb\xff", &mut unpadded)
         .unwrap();
     assert_eq!(&unpadded[..unpadded_len], b"-_8");
+}
+
+#[test]
+fn ct_decoder_matches_strict_for_canonical_inputs() {
+    for input_len in 0..64 {
+        let mut input = [0u8; 64];
+        for (index, byte) in input.iter_mut().enumerate() {
+            *byte = (index * 29 + input_len * 3) as u8;
+        }
+        let input = &input[..input_len];
+
+        let mut encoded = [0u8; 128];
+        let mut strict = [0u8; 64];
+        let mut ct_output = [0u8; 64];
+
+        let encoded_len = STANDARD.encode_slice(input, &mut encoded).unwrap();
+        let strict_len = STANDARD
+            .decode_slice(&encoded[..encoded_len], &mut strict)
+            .unwrap();
+        let ct_len = ct::STANDARD
+            .decode_slice(&encoded[..encoded_len], &mut ct_output)
+            .unwrap();
+        assert_eq!(&ct_output[..ct_len], &strict[..strict_len]);
+
+        let encoded_len = STANDARD_NO_PAD.encode_slice(input, &mut encoded).unwrap();
+        let strict_len = STANDARD_NO_PAD
+            .decode_slice(&encoded[..encoded_len], &mut strict)
+            .unwrap();
+        let ct_len = ct::STANDARD_NO_PAD
+            .decode_slice(&encoded[..encoded_len], &mut ct_output)
+            .unwrap();
+        assert_eq!(&ct_output[..ct_len], &strict[..strict_len]);
+
+        let encoded_len = URL_SAFE.encode_slice(input, &mut encoded).unwrap();
+        let strict_len = URL_SAFE
+            .decode_slice(&encoded[..encoded_len], &mut strict)
+            .unwrap();
+        let ct_len = ct::URL_SAFE
+            .decode_slice(&encoded[..encoded_len], &mut ct_output)
+            .unwrap();
+        assert_eq!(&ct_output[..ct_len], &strict[..strict_len]);
+
+        let encoded_len = URL_SAFE_NO_PAD.encode_slice(input, &mut encoded).unwrap();
+        let strict_len = URL_SAFE_NO_PAD
+            .decode_slice(&encoded[..encoded_len], &mut strict)
+            .unwrap();
+        let ct_len = ct::URL_SAFE_NO_PAD
+            .decode_slice(&encoded[..encoded_len], &mut ct_output)
+            .unwrap();
+        assert_eq!(&ct_output[..ct_len], &strict[..strict_len]);
+    }
+}
+
+#[test]
+fn ct_decoder_rejects_malformed_inputs() {
+    let mut output = [0u8; 8];
+
+    assert_eq!(
+        ct::STANDARD.decode_slice(b"AA-A", &mut output),
+        Err(DecodeError::InvalidByte {
+            index: 2,
+            byte: b'-',
+        })
+    );
+    assert_eq!(
+        ct::URL_SAFE.decode_slice(b"AA+A", &mut output),
+        Err(DecodeError::InvalidByte {
+            index: 2,
+            byte: b'+',
+        })
+    );
+    assert_eq!(
+        ct::STANDARD.decode_slice(b"AA=A", &mut output),
+        Err(DecodeError::InvalidPadding { index: 2 })
+    );
+    assert_eq!(
+        ct::STANDARD.decode_slice(b"Zh==", &mut output),
+        Err(DecodeError::InvalidPadding { index: 1 })
+    );
+    assert_eq!(
+        ct::STANDARD_NO_PAD.decode_slice(b"Zg==", &mut output),
+        Err(DecodeError::InvalidPadding { index: 2 })
+    );
+
+    let mut too_small = [0u8; 1];
+    assert_eq!(
+        ct::STANDARD.decode_slice(b"aGk=", &mut too_small),
+        Err(DecodeError::OutputTooSmall {
+            required: 2,
+            available: 1,
+        })
+    );
 }
 
 #[test]

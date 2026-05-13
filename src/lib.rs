@@ -669,6 +669,72 @@ pub mod stream {
     }
 }
 
+/// Constant-time-oriented scalar decoding APIs.
+///
+/// This module is separate from the default decoder so callers can opt into a
+/// slower path with a narrower timing target. It avoids lookup tables indexed
+/// by secret input bytes while mapping Base64 symbols, but it is not documented
+/// as a formally verified cryptographic constant-time API.
+pub mod ct {
+    use super::{Alphabet, DecodeError, Standard, UrlSafe, ct_decode_slice};
+    use core::marker::PhantomData;
+
+    /// Standard Base64 constant-time-oriented decoder with padding.
+    pub const STANDARD: CtEngine<Standard, true> = CtEngine::new();
+
+    /// Standard Base64 constant-time-oriented decoder without padding.
+    pub const STANDARD_NO_PAD: CtEngine<Standard, false> = CtEngine::new();
+
+    /// URL-safe Base64 constant-time-oriented decoder with padding.
+    pub const URL_SAFE: CtEngine<UrlSafe, true> = CtEngine::new();
+
+    /// URL-safe Base64 constant-time-oriented decoder without padding.
+    pub const URL_SAFE_NO_PAD: CtEngine<UrlSafe, false> = CtEngine::new();
+
+    /// A zero-sized constant-time-oriented Base64 decoder.
+    #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+    pub struct CtEngine<A, const PAD: bool> {
+        alphabet: PhantomData<A>,
+    }
+
+    impl<A, const PAD: bool> CtEngine<A, PAD>
+    where
+        A: Alphabet,
+    {
+        /// Creates a new constant-time-oriented decoder engine.
+        #[must_use]
+        pub const fn new() -> Self {
+            Self {
+                alphabet: PhantomData,
+            }
+        }
+
+        /// Decodes `input` into `output`, returning the number of bytes
+        /// written.
+        ///
+        /// This path uses branch-minimized arithmetic for Base64 symbol
+        /// mapping and avoids secret-indexed lookup tables. Input length,
+        /// padding length, output length, and final success or failure remain
+        /// public.
+        ///
+        /// # Examples
+        ///
+        /// ```
+        /// use base64_ng::ct;
+        ///
+        /// let mut output = [0u8; 5];
+        /// let written = ct::STANDARD
+        ///     .decode_slice(b"aGVsbG8=", &mut output)
+        ///     .unwrap();
+        ///
+        /// assert_eq!(&output[..written], b"hello");
+        /// ```
+        pub fn decode_slice(&self, input: &[u8], output: &mut [u8]) -> Result<usize, DecodeError> {
+            ct_decode_slice::<A, PAD>(input, output)
+        }
+    }
+}
+
 /// Standard Base64 engine with padding.
 pub const STANDARD: Engine<Standard, true> = Engine::new();
 
@@ -2043,6 +2109,239 @@ fn decode_tail_unpadded<A: Alphabet>(
 
 fn decode_byte<A: Alphabet>(byte: u8, index: usize) -> Result<u8, DecodeError> {
     A::decode(byte).ok_or(DecodeError::InvalidByte { index, byte })
+}
+
+fn ct_decode_slice<A: Alphabet, const PAD: bool>(
+    input: &[u8],
+    output: &mut [u8],
+) -> Result<usize, DecodeError> {
+    if input.is_empty() {
+        return Ok(0);
+    }
+
+    if PAD {
+        ct_decode_padded::<A>(input, output)
+    } else {
+        ct_decode_unpadded::<A>(input, output)
+    }
+}
+
+fn ct_decode_padded<A: Alphabet>(input: &[u8], output: &mut [u8]) -> Result<usize, DecodeError> {
+    if !input.len().is_multiple_of(4) {
+        return Err(DecodeError::InvalidLength);
+    }
+
+    let padding = ct_padding_len(input);
+    let required = input.len() / 4 * 3 - padding;
+    if output.len() < required {
+        return Err(DecodeError::OutputTooSmall {
+            required,
+            available: output.len(),
+        });
+    }
+
+    let first_padding = input.len() - padding;
+    let mut first_invalid_byte = None;
+    let mut first_invalid_padding = None;
+    let mut write = 0;
+    let mut read = 0;
+
+    while read < input.len() {
+        let is_last = read + 4 == input.len();
+        let b0 = input[read];
+        let b1 = input[read + 1];
+        let b2 = input[read + 2];
+        let b3 = input[read + 3];
+        let (v0, valid0) = ct_decode_ascii_base64::<A>(b0);
+        let (v1, valid1) = ct_decode_ascii_base64::<A>(b1);
+        let (v2, valid2) = ct_decode_ascii_base64::<A>(b2);
+        let (v3, valid3) = ct_decode_ascii_base64::<A>(b3);
+
+        remember_invalid_byte(&mut first_invalid_byte, read, b0, valid0);
+        remember_invalid_byte(&mut first_invalid_byte, read + 1, b1, valid1);
+
+        if is_last && padding == 2 {
+            remember_padding(&mut first_invalid_padding, read + 1, v1 & 0b0000_1111 != 0);
+            output[write] = (v0 << 2) | (v1 >> 4);
+            write += 1;
+        } else if is_last && padding == 1 {
+            remember_invalid_byte(&mut first_invalid_byte, read + 2, b2, valid2);
+            remember_padding(&mut first_invalid_padding, read + 2, v2 & 0b0000_0011 != 0);
+            output[write] = (v0 << 2) | (v1 >> 4);
+            output[write + 1] = (v1 << 4) | (v2 >> 2);
+            write += 2;
+        } else {
+            remember_invalid_byte(&mut first_invalid_byte, read + 2, b2, valid2);
+            remember_invalid_byte(&mut first_invalid_byte, read + 3, b3, valid3);
+            output[write] = (v0 << 2) | (v1 >> 4);
+            output[write + 1] = (v1 << 4) | (v2 >> 2);
+            output[write + 2] = (v2 << 6) | v3;
+            write += 3;
+        }
+
+        read += 4;
+    }
+
+    if let Some(index) = input[..first_padding].iter().position(|byte| *byte == b'=') {
+        remember_padding(&mut first_invalid_padding, index, true);
+    }
+    if padding == 0
+        && let Some(index) = input.iter().position(|byte| *byte == b'=')
+    {
+        remember_padding(&mut first_invalid_padding, index, true);
+    }
+
+    report_ct_error(first_invalid_byte, first_invalid_padding)?;
+    Ok(write)
+}
+
+fn ct_decode_unpadded<A: Alphabet>(input: &[u8], output: &mut [u8]) -> Result<usize, DecodeError> {
+    if input.len() % 4 == 1 {
+        return Err(DecodeError::InvalidLength);
+    }
+
+    let required = decoded_capacity(input.len());
+    if output.len() < required {
+        return Err(DecodeError::OutputTooSmall {
+            required,
+            available: output.len(),
+        });
+    }
+
+    let mut first_invalid_byte = None;
+    let mut first_invalid_padding = None;
+    let mut write = 0;
+    let mut read = 0;
+
+    while read + 4 <= input.len() {
+        let b0 = input[read];
+        let b1 = input[read + 1];
+        let b2 = input[read + 2];
+        let b3 = input[read + 3];
+        let (v0, valid0) = ct_decode_ascii_base64::<A>(b0);
+        let (v1, valid1) = ct_decode_ascii_base64::<A>(b1);
+        let (v2, valid2) = ct_decode_ascii_base64::<A>(b2);
+        let (v3, valid3) = ct_decode_ascii_base64::<A>(b3);
+
+        remember_invalid_byte(&mut first_invalid_byte, read, b0, valid0);
+        remember_invalid_byte(&mut first_invalid_byte, read + 1, b1, valid1);
+        remember_invalid_byte(&mut first_invalid_byte, read + 2, b2, valid2);
+        remember_invalid_byte(&mut first_invalid_byte, read + 3, b3, valid3);
+        remember_padding(&mut first_invalid_padding, read, b0 == b'=');
+        remember_padding(&mut first_invalid_padding, read + 1, b1 == b'=');
+        remember_padding(&mut first_invalid_padding, read + 2, b2 == b'=');
+        remember_padding(&mut first_invalid_padding, read + 3, b3 == b'=');
+
+        output[write] = (v0 << 2) | (v1 >> 4);
+        output[write + 1] = (v1 << 4) | (v2 >> 2);
+        output[write + 2] = (v2 << 6) | v3;
+        read += 4;
+        write += 3;
+    }
+
+    match input.len() - read {
+        0 => {}
+        2 => {
+            let b0 = input[read];
+            let b1 = input[read + 1];
+            let (v0, valid0) = ct_decode_ascii_base64::<A>(b0);
+            let (v1, valid1) = ct_decode_ascii_base64::<A>(b1);
+            remember_invalid_byte(&mut first_invalid_byte, read, b0, valid0);
+            remember_invalid_byte(&mut first_invalid_byte, read + 1, b1, valid1);
+            remember_padding(&mut first_invalid_padding, read, b0 == b'=');
+            remember_padding(&mut first_invalid_padding, read + 1, b1 == b'=');
+            remember_padding(&mut first_invalid_padding, read + 1, v1 & 0b0000_1111 != 0);
+            output[write] = (v0 << 2) | (v1 >> 4);
+            write += 1;
+        }
+        3 => {
+            let b0 = input[read];
+            let b1 = input[read + 1];
+            let b2 = input[read + 2];
+            let (v0, valid0) = ct_decode_ascii_base64::<A>(b0);
+            let (v1, valid1) = ct_decode_ascii_base64::<A>(b1);
+            let (v2, valid2) = ct_decode_ascii_base64::<A>(b2);
+            remember_invalid_byte(&mut first_invalid_byte, read, b0, valid0);
+            remember_invalid_byte(&mut first_invalid_byte, read + 1, b1, valid1);
+            remember_invalid_byte(&mut first_invalid_byte, read + 2, b2, valid2);
+            remember_padding(&mut first_invalid_padding, read, b0 == b'=');
+            remember_padding(&mut first_invalid_padding, read + 1, b1 == b'=');
+            remember_padding(&mut first_invalid_padding, read + 2, b2 == b'=');
+            remember_padding(&mut first_invalid_padding, read + 2, v2 & 0b0000_0011 != 0);
+            output[write] = (v0 << 2) | (v1 >> 4);
+            output[write + 1] = (v1 << 4) | (v2 >> 2);
+            write += 2;
+        }
+        _ => return Err(DecodeError::InvalidLength),
+    }
+
+    report_ct_error(first_invalid_byte, first_invalid_padding)?;
+    Ok(write)
+}
+
+#[inline]
+fn ct_decode_ascii_base64<A: Alphabet>(byte: u8) -> (u8, bool) {
+    let upper = mask_if(byte.wrapping_sub(b'A') <= b'Z' - b'A');
+    let lower = mask_if(byte.wrapping_sub(b'a') <= b'z' - b'a');
+    let digit = mask_if(byte.wrapping_sub(b'0') <= b'9' - b'0');
+    let value_62 = mask_if(byte == A::ENCODE[62]);
+    let value_63 = mask_if(byte == A::ENCODE[63]);
+    let valid = upper | lower | digit | value_62 | value_63;
+
+    let decoded = (byte.wrapping_sub(b'A') & upper)
+        | (byte.wrapping_sub(b'a').wrapping_add(26) & lower)
+        | (byte.wrapping_sub(b'0').wrapping_add(52) & digit)
+        | (0x3e & value_62)
+        | (0x3f & value_63);
+
+    (decoded, valid != 0)
+}
+
+fn ct_padding_len(input: &[u8]) -> usize {
+    let mut padding = 0;
+    if input[input.len() - 1] == b'=' {
+        padding += 1;
+    }
+    if input[input.len() - 2] == b'=' {
+        padding += 1;
+    }
+    padding
+}
+
+fn remember_invalid_byte(
+    first_invalid_byte: &mut Option<(usize, u8)>,
+    index: usize,
+    byte: u8,
+    valid: bool,
+) {
+    if !valid && first_invalid_byte.is_none() {
+        *first_invalid_byte = Some((index, byte));
+    }
+}
+
+fn remember_padding(first_invalid_padding: &mut Option<usize>, index: usize, invalid: bool) {
+    if invalid {
+        match *first_invalid_padding {
+            Some(existing) if existing <= index => {}
+            Some(_) | None => *first_invalid_padding = Some(index),
+        }
+    }
+}
+
+fn report_ct_error(
+    first_invalid_byte: Option<(usize, u8)>,
+    first_invalid_padding: Option<usize>,
+) -> Result<(), DecodeError> {
+    match (first_invalid_byte, first_invalid_padding) {
+        (Some((byte_index, _)), Some(padding_index)) if padding_index <= byte_index => {
+            Err(DecodeError::InvalidPadding {
+                index: padding_index,
+            })
+        }
+        (Some((index, byte)), _) => Err(DecodeError::InvalidByte { index, byte }),
+        (None, Some(index)) => Err(DecodeError::InvalidPadding { index }),
+        (None, None) => Ok(()),
+    }
 }
 
 #[cfg(test)]

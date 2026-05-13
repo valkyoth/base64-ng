@@ -2,14 +2,17 @@
 
 `base64-ng` does not currently claim a formally verified cryptographic
 constant-time API. The scalar encoder and decoder avoid obvious timing pitfalls,
-but the stable API still prioritizes strict correctness, small size, and
+and the `ct` module now provides an initial constant-time-oriented scalar decode
+path. The stable API still prioritizes strict correctness, small size, and
 ordinary performance.
 
-This document defines the bar for a future constant-time-focused decode module.
+This document defines the bar for strengthening the `ct` module into a
+cryptographic constant-time API claim.
 
 ## Goal
 
-Add a clearly named API for callers that handle secret-bearing Base64 payloads:
+Provide a clearly named API for callers that handle secret-bearing Base64
+payloads:
 
 ```rust
 use base64_ng::ct;
@@ -32,8 +35,8 @@ the tradeoff explicitly.
 
 ## Proposed Guarantee
 
-The future scalar constant-time decoder should aim to document this narrow
-guarantee:
+The scalar constant-time decoder should aim to document this narrow guarantee
+once the verification requirements below are complete:
 
 > For a fixed input length and selected alphabet, the scalar constant-time
 > decoder performs no secret-dependent branches and no secret-indexed table
@@ -51,7 +54,7 @@ The guarantee should explicitly exclude:
 
 ## API Shape
 
-The initial API should prefer caller-owned buffers:
+The initial API prefers caller-owned buffers:
 
 ```rust
 pub mod ct {
@@ -70,7 +73,7 @@ pub mod ct {
 }
 ```
 
-Allocation helpers may come later, but the first version should avoid allocator
+Allocation helpers may come later, but the current version avoids allocator
 behavior entirely.
 
 ## Implementation Rules
@@ -87,7 +90,7 @@ behavior entirely.
 
 ## Verification Requirements
 
-Before documenting the guarantee as supported:
+Before documenting the guarantee as formally supported:
 
 - Unit tests for all RFC 4648 vectors.
 - Exhaustive short-input tests for all byte combinations practical under the
@@ -99,8 +102,9 @@ Before documenting the guarantee as supported:
 - Generated-code review for supported release targets.
 - A release note that states the exact guarantee and exclusions.
 
-Until this evidence exists, README and SECURITY must continue to say that
-`base64-ng` does not claim a formally verified cryptographic constant-time API.
+Until this evidence exists, README and SECURITY must continue to say that the
+`ct` module is constant-time-oriented and does not claim a formally verified
+cryptographic constant-time API.
 
 ## Memory Cleanup
 

@@ -38,7 +38,9 @@ scalar and in-place safety surface that benefits most from interpreter checks.
 
 The scalar encoder avoids input-derived alphabet table indexes, and the scalar
 decoder avoids obvious alphabet `match` ladders by using branch-minimized
-arithmetic for ASCII classification. This reduces easy timing pitfalls, but
+arithmetic for ASCII classification. The `ct` module provides a separate
+constant-time-oriented scalar decode path that avoids secret-indexed lookup
+tables while mapping Base64 symbols. This reduces easy timing pitfalls, but
 `base64-ng` does not currently claim a formally verified cryptographic
 constant-time encode or decode API.
 

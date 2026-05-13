@@ -174,8 +174,9 @@ Phase 3:
 - Isolated scalar comparison benchmark harness first; consider Criterion only
   if its larger dependency graph is justified by better measurement quality.
 - Scalar/SIMD differential testing.
-- Prototype and verify the constant-time decode path with no secret-dependent
-  branches or secret-indexed table lookups.
+- Prototype and verify the constant-time decode path with no secret-indexed
+  table lookups during Base64 symbol mapping. Generated-code review remains
+  required before making a formal cryptographic constant-time guarantee.
 
 ### v0.4
 

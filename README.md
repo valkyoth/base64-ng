@@ -22,6 +22,8 @@ Implemented now:
 - In-place decode API built on the same strict scalar decoder.
 - Explicit legacy decode APIs that ignore ASCII transport whitespace while
   keeping alphabet and padding validation strict.
+- Separate `ct` scalar decode module for sensitive payloads that avoids
+  secret-indexed lookup tables during Base64 symbol mapping.
 - `std::io` streaming encoders and decoders behind the `stream` feature.
 - Focused unit and integration tests.
 - Isolated `cargo-fuzz` harnesses for decode, in-place decode, and stream
@@ -30,7 +32,6 @@ Implemented now:
 
 Planned:
 
-- Constant-time-focused scalar decoder mode.
 - AVX2, AVX-512, and ARM NEON fast paths.
 - Async streaming wrappers.
 - Kani proof harnesses.
@@ -251,9 +252,10 @@ Security commitments:
 - Public encoded-length overflow is recoverable through `Result` or `Option`;
   untrusted length metadata should never require a panic.
 - Scalar encode avoids input-derived alphabet table indexes, and scalar decode
-  uses branch-minimized arithmetic. These paths are hardened against obvious
-  timing pitfalls, but they are not documented as formally verified
-  cryptographic constant-time APIs.
+  uses branch-minimized arithmetic. A separate `ct` module provides a
+  constant-time-oriented scalar decode path for callers that need a narrower
+  timing target, but it is not documented as a formally verified cryptographic
+  constant-time API.
 - Clear-tail encode/decode variants are available for callers that want
   best-effort cleanup of unused caller-owned buffers without adding a runtime
   dependency.

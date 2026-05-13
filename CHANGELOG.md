@@ -3,6 +3,12 @@
 ## 0.3.0-alpha.0 - Unreleased
 
 - Started the next development cycle after the `0.2.0` release.
+- Added an initial `ct` scalar decode module for caller-owned buffers. The path
+  avoids secret-indexed lookup tables during Base64 symbol mapping while
+  remaining explicit that it is not yet a formally verified cryptographic
+  constant-time API.
+- Extended fuzz coverage to check `ct` decode success/error parity against the
+  strict scalar decoder.
 - Added an isolated no-framework scalar performance comparison harness against
   the established `base64` crate.
 - Added performance harness dependency audit and license checks to CI and the
