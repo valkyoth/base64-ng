@@ -14,6 +14,7 @@ Implemented now:
 - Zero external runtime or development dependencies in `Cargo.toml`.
 - Standard and URL-safe alphabets.
 - Padded and unpadded encoding into caller-provided output buffers.
+- Stable compile-time encoding into caller-sized arrays.
 - Strict decoding into caller-provided output buffers.
 - In-place encoding when the caller provides enough spare capacity.
 - Optional `alloc` vector helpers.
@@ -27,7 +28,7 @@ Planned:
 - Constant-time-focused scalar decoder mode.
 - Legacy compatibility profile for explicitly non-canonical inputs.
 - AVX2, AVX-512, and ARM NEON fast paths.
-- Sync and async streaming wrappers.
+- Async streaming wrappers.
 - Miri, cargo-fuzz, and Kani proof harnesses.
 - Criterion benchmarks against the established `base64` crate.
 
@@ -88,6 +89,22 @@ buffer[..5].copy_from_slice(b"hello");
 let encoded = STANDARD.encode_in_place(&mut buffer, 5).unwrap();
 assert_eq!(encoded, b"aGVsbG8=");
 ```
+
+Compile-time encoding:
+
+```rust
+use base64_ng::{STANDARD, URL_SAFE_NO_PAD};
+
+const HELLO: [u8; 8] = STANDARD.encode_array(b"hello");
+const URL_BYTES: [u8; 3] = URL_SAFE_NO_PAD.encode_array(b"\xfb\xff");
+
+assert_eq!(&HELLO, b"aGVsbG8=");
+assert_eq!(&URL_BYTES, b"-_8");
+```
+
+Stable Rust cannot yet express the encoded length as the return array length
+directly, so `encode_array` uses the destination array type supplied by the
+caller. A wrong output length fails during const evaluation.
 
 For untrusted length metadata, use checked length calculation:
 

@@ -898,6 +898,14 @@ where
     /// assert_eq!(&HELLO, b"aGVsbG8=");
     /// assert_eq!(&URL_SAFE, b"-_8");
     /// ```
+    ///
+    /// Incorrect output lengths fail during const evaluation:
+    ///
+    /// ```compile_fail
+    /// use base64_ng::STANDARD;
+    ///
+    /// const TOO_SHORT: [u8; 7] = STANDARD.encode_array(b"hello");
+    /// ```
     #[must_use]
     pub const fn encode_array<const INPUT_LEN: usize, const OUTPUT_LEN: usize>(
         &self,
