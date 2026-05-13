@@ -1031,6 +1031,29 @@ where
         Ok(output)
     }
 
+    /// Encodes `input` into a newly allocated UTF-8 string.
+    ///
+    /// Base64 output is ASCII by construction. This helper is available with
+    /// the `alloc` feature and has the same encoding semantics as
+    /// [`Self::encode_slice`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use base64_ng::{STANDARD, URL_SAFE_NO_PAD};
+    ///
+    /// assert_eq!(STANDARD.encode_string(b"hello").unwrap(), "aGVsbG8=");
+    /// assert_eq!(URL_SAFE_NO_PAD.encode_string(b"\xfb\xff").unwrap(), "-_8");
+    /// ```
+    #[cfg(feature = "alloc")]
+    pub fn encode_string(&self, input: &[u8]) -> Result<alloc::string::String, EncodeError> {
+        let output = self.encode_vec(input)?;
+        match alloc::string::String::from_utf8(output) {
+            Ok(output) => Ok(output),
+            Err(_) => unreachable!("base64 encoder produced non-UTF-8 output"),
+        }
+    }
+
     /// Encodes the first `input_len` bytes of `buffer` in place.
     ///
     /// The buffer must have enough spare capacity for the encoded output. The

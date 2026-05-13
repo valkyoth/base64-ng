@@ -17,7 +17,7 @@ Implemented now:
 - Stable compile-time encoding into caller-sized arrays.
 - Strict decoding into caller-provided output buffers.
 - In-place encoding when the caller provides enough spare capacity.
-- Optional `alloc` vector helpers.
+- Optional `alloc` vector and string helpers.
 - In-place decode API built on the same strict scalar decoder.
 - `std::io` streaming encoders and decoders behind the `stream` feature.
 - Focused unit and integration tests.
@@ -49,8 +49,8 @@ license = "MIT OR Apache-2.0"
 
 | Feature | Default | Purpose |
 | --- | --- | --- |
-| `alloc` | yes | Future `Vec`/`String` convenience APIs. |
-| `std` | yes | Future `std::error::Error` and I/O support. |
+| `alloc` | yes | `Vec` and encoded `String` convenience APIs. |
+| `std` | yes | `std::error::Error` support and feature base for I/O. |
 | `simd` | no | Future hardware acceleration. |
 | `stream` | no | `std::io` streaming wrappers. |
 | `tokio` | no | Future async streaming wrappers. |
@@ -115,13 +115,16 @@ assert_eq!(checked_encoded_len(5, true), Some(8));
 assert_eq!(decoded_len(b"aGVsbG8=", true).unwrap(), 5);
 ```
 
-With the default `alloc` feature, vector helpers are available:
+With the default `alloc` feature, vector and string helpers are available:
 
 ```rust
 use base64_ng::STANDARD;
 
 let encoded = STANDARD.encode_vec(b"hello").unwrap();
 assert_eq!(encoded, b"aGVsbG8=");
+
+let encoded_string = STANDARD.encode_string(b"hello").unwrap();
+assert_eq!(encoded_string, "aGVsbG8=");
 
 let decoded = STANDARD.decode_vec(&encoded).unwrap();
 assert_eq!(decoded, b"hello");

@@ -320,6 +320,12 @@ fn alloc_helpers_round_trip() {
     let encoded = STANDARD.encode_vec(b"hello").unwrap();
     assert_eq!(encoded, b"aGVsbG8=");
 
+    let encoded_string = STANDARD.encode_string(b"hello").unwrap();
+    assert_eq!(encoded_string, "aGVsbG8=");
+
+    let url_safe_string = URL_SAFE_NO_PAD.encode_string(b"\xfb\xff").unwrap();
+    assert_eq!(url_safe_string, "-_8");
+
     let decoded = STANDARD.decode_vec(&encoded).unwrap();
     assert_eq!(decoded, b"hello");
 
