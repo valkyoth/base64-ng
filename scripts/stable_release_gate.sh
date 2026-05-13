@@ -45,12 +45,8 @@ scripts/check_perf.sh
 echo "stable release gate: installed cross-target checks"
 scripts/check_targets.sh
 
-if cargo kani --version >/dev/null 2>&1 && [ -d kani ]; then
-    echo "stable release gate: Kani proofs"
-    cargo kani
-else
-    echo "stable release gate: skipping Kani; cargo kani or kani/ is not available"
-fi
+echo "stable release gate: Kani proofs"
+scripts/check_kani.sh
 
 echo "stable release gate: SBOM"
 scripts/generate-sbom.sh

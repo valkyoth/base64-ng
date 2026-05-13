@@ -11,6 +11,10 @@
   Kani, and release-security tooling.
 - Fixed optional release-gate tool detection to use Cargo subcommands such as
   `cargo nextest --version`.
+- Added initial Kani proof harnesses for scalar length helpers and bounded
+  in-place decode behavior.
+- Added `scripts/check_kani.sh` so Kani proofs run when compatible and skip
+  clearly when Kani's bundled compiler is behind the crate's pinned Rust.
 
 ## 0.3.0 - 2026-05-13
 

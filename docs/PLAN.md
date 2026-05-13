@@ -183,6 +183,8 @@ Phase 3:
 - Runtime feature dispatch.
 - Scalar/SIMD differential testing.
 - Cross-architecture CI evidence.
+- Initial Kani scalar proof harnesses for length helpers and bounded in-place
+  decode behavior.
 - Keep SIMD unsafe code isolated from the scalar core with documented invariants
   for every unsafe block.
 

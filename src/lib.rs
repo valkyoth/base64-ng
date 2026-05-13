@@ -2307,6 +2307,51 @@ fn report_ct_error(invalid_byte: u8, invalid_padding: u8) -> Result<(), DecodeEr
     }
 }
 
+#[cfg(kani)]
+mod kani_proofs {
+    use super::{STANDARD, checked_encoded_len, decoded_capacity};
+
+    #[kani::proof]
+    fn checked_encoded_len_is_bounded_for_small_inputs() {
+        let len = usize::from(kani::any::<u8>());
+        let padded = kani::any::<bool>();
+        let encoded = checked_encoded_len(len, padded).expect("u8 input length cannot overflow");
+
+        assert!(encoded >= len);
+        assert!(encoded <= len / 3 * 4 + 4);
+    }
+
+    #[kani::proof]
+    fn decoded_capacity_is_bounded_for_small_inputs() {
+        let len = usize::from(kani::any::<u8>());
+        let capacity = decoded_capacity(len);
+
+        assert!(capacity <= len / 4 * 3 + 2);
+    }
+
+    #[kani::proof]
+    #[kani::unwind(3)]
+    fn standard_in_place_decode_returns_prefix_within_buffer() {
+        let mut buffer = kani::any::<[u8; 8]>();
+        let result = STANDARD.decode_in_place(&mut buffer);
+
+        if let Ok(decoded) = result {
+            assert!(decoded.len() <= 8);
+        }
+    }
+
+    #[kani::proof]
+    #[kani::unwind(3)]
+    fn standard_clear_tail_decode_clears_buffer_on_error() {
+        let mut buffer = kani::any::<[u8; 4]>();
+        let result = STANDARD.decode_in_place_clear_tail(&mut buffer);
+
+        if result.is_err() {
+            assert!(buffer.iter().all(|byte| *byte == 0));
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
