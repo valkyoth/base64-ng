@@ -186,6 +186,8 @@ Phase 3:
 - Initial Kani scalar proof harnesses for length helpers and bounded in-place
   decode behavior.
 - Internal scalar backend boundary as the reference path for future dispatch.
+- Backend differential tests that compare dispatch behavior against the scalar
+  reference for canonical, malformed, and undersized-buffer cases.
 - Keep SIMD unsafe code isolated from the scalar core with documented invariants
   for every unsafe block.
 

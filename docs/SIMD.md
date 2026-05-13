@@ -14,6 +14,8 @@ weakening the scalar trust base.
 - The scalar implementation is the reference behavior.
 - Encode and decode entry points already pass through an internal backend
   boundary, currently backed only by the scalar implementation.
+- Unit tests compare dispatch behavior against the scalar reference for
+  canonical inputs, malformed inputs, and undersized output buffers.
 - The `simd` feature does not enable accelerated code yet.
 - CI checks the reserved `simd` feature in `no_std` mode for x86_64, aarch64,
   wasm32, and Cortex-M targets.

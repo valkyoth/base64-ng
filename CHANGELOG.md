@@ -17,6 +17,9 @@
   clearly when Kani's bundled compiler is behind the crate's pinned Rust.
 - Added an internal scalar backend boundary so future SIMD dispatch has an
   explicit reference path without changing public behavior.
+- Added backend differential tests that compare the dispatch entry points
+  against the scalar reference for canonical inputs, malformed inputs, and
+  undersized output buffers.
 
 ## 0.3.0 - 2026-05-13
 

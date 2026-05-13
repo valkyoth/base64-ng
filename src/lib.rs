@@ -944,6 +944,28 @@ mod backend {
         scalar_decode_slice::<A, PAD>(input, output)
     }
 
+    #[cfg(test)]
+    pub(super) fn scalar_reference_encode_slice<A, const PAD: bool>(
+        input: &[u8],
+        output: &mut [u8],
+    ) -> Result<usize, EncodeError>
+    where
+        A: Alphabet,
+    {
+        scalar_encode_slice::<A, PAD>(input, output)
+    }
+
+    #[cfg(test)]
+    pub(super) fn scalar_reference_decode_slice<A, const PAD: bool>(
+        input: &[u8],
+        output: &mut [u8],
+    ) -> Result<usize, DecodeError>
+    where
+        A: Alphabet,
+    {
+        scalar_decode_slice::<A, PAD>(input, output)
+    }
+
     fn scalar_encode_slice<A, const PAD: bool>(
         input: &[u8],
         output: &mut [u8],
@@ -2402,6 +2424,127 @@ mod kani_proofs {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn fill_pattern(output: &mut [u8], seed: usize) {
+        for (index, byte) in output.iter_mut().enumerate() {
+            let value = (index * 73 + seed * 19) % 256;
+            *byte = u8::try_from(value).unwrap();
+        }
+    }
+
+    fn assert_encode_backend_matches_scalar<A, const PAD: bool>(input: &[u8])
+    where
+        A: Alphabet,
+    {
+        let engine = Engine::<A, PAD>::new();
+        let mut dispatched = [0x55; 256];
+        let mut scalar = [0xaa; 256];
+
+        let dispatched_result = engine.encode_slice(input, &mut dispatched);
+        let scalar_result = backend::scalar_reference_encode_slice::<A, PAD>(input, &mut scalar);
+
+        assert_eq!(dispatched_result, scalar_result);
+        if let Ok(written) = dispatched_result {
+            assert_eq!(&dispatched[..written], &scalar[..written]);
+        }
+
+        let required = checked_encoded_len(input.len(), PAD).unwrap();
+        if required > 0 {
+            let mut dispatched_short = [0x55; 256];
+            let mut scalar_short = [0xaa; 256];
+            let available = required - 1;
+
+            assert_eq!(
+                engine.encode_slice(input, &mut dispatched_short[..available]),
+                backend::scalar_reference_encode_slice::<A, PAD>(
+                    input,
+                    &mut scalar_short[..available],
+                )
+            );
+        }
+    }
+
+    fn assert_decode_backend_matches_scalar<A, const PAD: bool>(input: &[u8])
+    where
+        A: Alphabet,
+    {
+        let engine = Engine::<A, PAD>::new();
+        let mut dispatched = [0x55; 128];
+        let mut scalar = [0xaa; 128];
+
+        let dispatched_result = engine.decode_slice(input, &mut dispatched);
+        let scalar_result = backend::scalar_reference_decode_slice::<A, PAD>(input, &mut scalar);
+
+        assert_eq!(dispatched_result, scalar_result);
+        if let Ok(written) = dispatched_result {
+            assert_eq!(&dispatched[..written], &scalar[..written]);
+
+            if written > 0 {
+                let mut dispatched_short = [0x55; 128];
+                let mut scalar_short = [0xaa; 128];
+                let available = written - 1;
+
+                assert_eq!(
+                    engine.decode_slice(input, &mut dispatched_short[..available]),
+                    backend::scalar_reference_decode_slice::<A, PAD>(
+                        input,
+                        &mut scalar_short[..available],
+                    )
+                );
+            }
+        }
+    }
+
+    fn assert_backend_round_trip_matches_scalar<A, const PAD: bool>(input: &[u8])
+    where
+        A: Alphabet,
+    {
+        assert_encode_backend_matches_scalar::<A, PAD>(input);
+
+        let mut encoded = [0; 256];
+        let encoded_len =
+            backend::scalar_reference_encode_slice::<A, PAD>(input, &mut encoded).unwrap();
+        assert_decode_backend_matches_scalar::<A, PAD>(&encoded[..encoded_len]);
+    }
+
+    #[test]
+    fn backend_dispatch_matches_scalar_reference_for_canonical_inputs() {
+        let mut input = [0; 128];
+
+        for input_len in 0..=input.len() {
+            fill_pattern(&mut input[..input_len], input_len);
+            let input = &input[..input_len];
+
+            assert_backend_round_trip_matches_scalar::<Standard, true>(input);
+            assert_backend_round_trip_matches_scalar::<Standard, false>(input);
+            assert_backend_round_trip_matches_scalar::<UrlSafe, true>(input);
+            assert_backend_round_trip_matches_scalar::<UrlSafe, false>(input);
+        }
+    }
+
+    #[test]
+    fn backend_dispatch_matches_scalar_reference_for_malformed_inputs() {
+        for input in [
+            &b"Z"[..],
+            b"====",
+            b"AA=A",
+            b"Zh==",
+            b"Zm9=",
+            b"Zm9v$g==",
+            b"Zm9vZh==",
+        ] {
+            assert_decode_backend_matches_scalar::<Standard, true>(input);
+        }
+
+        for input in [&b"Z"[..], b"AA=A", b"Zh", b"Zm9", b"Zm9vYg$"] {
+            assert_decode_backend_matches_scalar::<Standard, false>(input);
+        }
+
+        assert_decode_backend_matches_scalar::<UrlSafe, true>(b"AA+A");
+        assert_decode_backend_matches_scalar::<UrlSafe, false>(b"AA/A");
+        assert_decode_backend_matches_scalar::<Standard, true>(b"AA-A");
+        assert_decode_backend_matches_scalar::<Standard, false>(b"AA_A");
+    }
 
     #[test]
     fn encodes_standard_vectors() {
