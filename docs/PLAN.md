@@ -11,7 +11,44 @@ Build `base64-ng` as a modern, secure, `no_std`-first Base64 implementation for 
 - Rust stable: `1.95.0`.
 - License: `MIT OR Apache-2.0`.
 - Project name: `base64-ng`.
+- Runtime and dev dependency graph: zero external crates.
 - Local testing system modeled after `fluxheim`: check script, release gate, dependency policy, audit config, SBOM, reproducible build check, and CI.
+
+## Dependency Policy
+
+The default position is no external crates.
+
+Allowed without adding dependencies:
+
+- Base64 scalar logic.
+- In-place decode.
+- `alloc` convenience APIs.
+- `std::io` streaming wrappers.
+- Architecture SIMD through `core::arch`.
+- Runtime CPU dispatch through the Rust standard library where available.
+- Deterministic tests, table tests, and handcrafted malformed-input cases.
+
+External crates require written justification before inclusion:
+
+- `tokio` may be accepted only behind the optional `tokio` feature for async stream wrappers.
+- Fuzzing crates may live only in a future `fuzz/` workspace or tool-specific harness, not in normal runtime dependencies.
+- Benchmark crates may live only in `dev-dependencies` or an isolated bench workspace.
+- Kani support must stay feature-gated and must not affect normal users.
+
+Rejected by default:
+
+- Helper crates for simple bit manipulation, table generation, feature selection, error formatting, or CLI tooling.
+- Git dependencies.
+- Runtime dependencies for the default feature set.
+- Dependencies with unclear licensing, advisories, yanked releases, or unnecessary transitive graphs.
+
+Any dependency addition must answer:
+
+- Why can this not be implemented clearly with `core`, `alloc`, or `std`?
+- Is it runtime, dev-only, fuzz-only, or CI-only?
+- What transitive dependencies does it add?
+- Does `cargo deny check`, `cargo audit`, and `cargo license --json` remain clean?
+- Can the feature remain optional?
 
 ## Architecture
 

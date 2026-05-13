@@ -11,6 +11,7 @@ This repository is at the initial `0.1.0` scaffold stage.
 Implemented now:
 
 - `no_std` core with optional `alloc` and `std` features.
+- Zero external runtime or development dependencies in `Cargo.toml`.
 - Standard and URL-safe alphabets.
 - Padded and unpadded encoding into caller-provided output buffers.
 - Strict decoding into caller-provided output buffers.
@@ -134,6 +135,7 @@ cargo install --locked kani-verifier
 
 ## Project Principles
 
+- Keep external crates to the absolute minimum. The current crate dependency graph is only `base64-ng`.
 - Correctness first, speed second, unsafe last.
 - The scalar implementation is the reference behavior.
 - SIMD must prove equivalence to scalar behavior across fuzzed and deterministic inputs.
