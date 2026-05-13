@@ -76,6 +76,10 @@ cargo publish --dry-run
 cargo publish
 ```
 
+The dry run is intentionally kept as a manual publish preflight rather than
+part of `scripts/stable_release_gate.sh`, because it updates the crates.io index
+and may require network access.
+
 Create and push the git tag only after the published crate is verified.
 
 ## Notes
