@@ -115,7 +115,7 @@ jobs:
           cache-on-failure: true
 
       - name: Check no_std simd-reserved build
-        run: cargo check --target ${{ matrix.target }} --no-default-features --features simd --lib
+        run: scripts/check_targets.sh ${{ matrix.target }}
 
   miri:
     name: Miri

@@ -26,6 +26,7 @@ The release gate runs:
 - Miri when nightly Miri is installed
 - fuzz target compile check when `cargo-fuzz` is installed
 - isolated fuzz and performance harness dependency checks
+- installed-target `no_std` checks for the reserved `simd` feature
 - Kani proofs when a `kani/` harness and `cargo-kani` are installed
 - SBOM generation
 - reproducible package/build check

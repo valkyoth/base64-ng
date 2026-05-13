@@ -18,6 +18,18 @@ weakening the scalar trust base.
 - Performance claims must be backed by local benchmark evidence, not roadmap
   language.
 
+Run the same target check locally for every installed target:
+
+```sh
+scripts/check_targets.sh
+```
+
+Run a specific target:
+
+```sh
+scripts/check_targets.sh aarch64-unknown-linux-gnu
+```
+
 ## Required Before SIMD Code Lands
 
 Any AVX2, NEON, AVX-512, or runtime-dispatch implementation must include:
