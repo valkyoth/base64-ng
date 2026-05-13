@@ -14,6 +14,7 @@
 - Added checked encoded-length helpers.
 - Added exact decoded-length helpers.
 - Hardened decode errors to report absolute input indexes.
+- Hardened scalar encode to avoid input-derived alphabet table indexes.
 - Hardened alphabet decode to avoid branch-heavy match ladders.
 - Hardened `decode_vec` to validate input before allocating decoded output.
 - Hardened stream decoders to preserve reader boundaries after terminal padding.

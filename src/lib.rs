@@ -790,7 +790,7 @@ impl Alphabet for Standard {
 
     #[inline]
     fn decode(byte: u8) -> Option<u8> {
-        decode_ascii_base64(byte, b'+', b'/')
+        decode_ascii_base64(byte, Self::ENCODE[62], Self::ENCODE[63])
     }
 }
 
@@ -803,8 +803,28 @@ impl Alphabet for UrlSafe {
 
     #[inline]
     fn decode(byte: u8) -> Option<u8> {
-        decode_ascii_base64(byte, b'-', b'_')
+        decode_ascii_base64(byte, Self::ENCODE[62], Self::ENCODE[63])
     }
+}
+
+#[inline]
+const fn encode_base64_value<A: Alphabet>(value: u8) -> u8 {
+    encode_ascii_base64(value, A::ENCODE[62], A::ENCODE[63])
+}
+
+#[inline]
+const fn encode_ascii_base64(value: u8, value_62_byte: u8, value_63_byte: u8) -> u8 {
+    let upper = mask_if(value < 26);
+    let lower = mask_if(value.wrapping_sub(26) < 26);
+    let digit = mask_if(value.wrapping_sub(52) < 10);
+    let value_62 = mask_if(value == 0x3e);
+    let value_63 = mask_if(value == 0x3f);
+
+    (value.wrapping_add(b'A') & upper)
+        | (value.wrapping_sub(26).wrapping_add(b'a') & lower)
+        | (value.wrapping_sub(52).wrapping_add(b'0') & digit)
+        | (value_62_byte & value_62)
+        | (value_63_byte & value_63)
 }
 
 #[inline]
@@ -826,8 +846,8 @@ fn decode_ascii_base64(byte: u8, value_62_byte: u8, value_63_byte: u8) -> Option
 }
 
 #[inline]
-fn mask_if(condition: bool) -> u8 {
-    0u8.wrapping_sub(u8::from(condition))
+const fn mask_if(condition: bool) -> u8 {
+    0u8.wrapping_sub(condition as u8)
 }
 
 /// A zero-sized Base64 engine parameterized by alphabet and padding policy.
@@ -920,10 +940,10 @@ where
             let b1 = input[read + 1];
             let b2 = input[read + 2];
 
-            output[write] = A::ENCODE[(b0 >> 2) as usize];
-            output[write + 1] = A::ENCODE[(((b0 & 0b0000_0011) << 4) | (b1 >> 4)) as usize];
-            output[write + 2] = A::ENCODE[(((b1 & 0b0000_1111) << 2) | (b2 >> 6)) as usize];
-            output[write + 3] = A::ENCODE[(b2 & 0b0011_1111) as usize];
+            output[write] = encode_base64_value::<A>(b0 >> 2);
+            output[write + 1] = encode_base64_value::<A>(((b0 & 0b0000_0011) << 4) | (b1 >> 4));
+            output[write + 2] = encode_base64_value::<A>(((b1 & 0b0000_1111) << 2) | (b2 >> 6));
+            output[write + 3] = encode_base64_value::<A>(b2 & 0b0011_1111);
 
             read += 3;
             write += 4;
@@ -933,8 +953,8 @@ where
             0 => {}
             1 => {
                 let b0 = input[read];
-                output[write] = A::ENCODE[(b0 >> 2) as usize];
-                output[write + 1] = A::ENCODE[((b0 & 0b0000_0011) << 4) as usize];
+                output[write] = encode_base64_value::<A>(b0 >> 2);
+                output[write + 1] = encode_base64_value::<A>((b0 & 0b0000_0011) << 4);
                 write += 2;
                 if PAD {
                     output[write] = b'=';
@@ -944,9 +964,9 @@ where
             2 => {
                 let b0 = input[read];
                 let b1 = input[read + 1];
-                output[write] = A::ENCODE[(b0 >> 2) as usize];
-                output[write + 1] = A::ENCODE[(((b0 & 0b0000_0011) << 4) | (b1 >> 4)) as usize];
-                output[write + 2] = A::ENCODE[((b1 & 0b0000_1111) << 2) as usize];
+                output[write] = encode_base64_value::<A>(b0 >> 2);
+                output[write + 1] = encode_base64_value::<A>(((b0 & 0b0000_0011) << 4) | (b1 >> 4));
+                output[write + 2] = encode_base64_value::<A>((b1 & 0b0000_1111) << 2);
                 if PAD {
                     output[write + 3] = b'=';
                 }
@@ -974,10 +994,10 @@ where
             let b1 = input[read + 1];
             let b2 = input[read + 2];
 
-            output[write] = A::ENCODE[(b0 >> 2) as usize];
-            output[write + 1] = A::ENCODE[(((b0 & 0b0000_0011) << 4) | (b1 >> 4)) as usize];
-            output[write + 2] = A::ENCODE[(((b1 & 0b0000_1111) << 2) | (b2 >> 6)) as usize];
-            output[write + 3] = A::ENCODE[(b2 & 0b0011_1111) as usize];
+            output[write] = encode_base64_value::<A>(b0 >> 2);
+            output[write + 1] = encode_base64_value::<A>(((b0 & 0b0000_0011) << 4) | (b1 >> 4));
+            output[write + 2] = encode_base64_value::<A>(((b1 & 0b0000_1111) << 2) | (b2 >> 6));
+            output[write + 3] = encode_base64_value::<A>(b2 & 0b0011_1111);
 
             read += 3;
             write += 4;
@@ -987,8 +1007,8 @@ where
             0 => {}
             1 => {
                 let b0 = input[read];
-                output[write] = A::ENCODE[(b0 >> 2) as usize];
-                output[write + 1] = A::ENCODE[((b0 & 0b0000_0011) << 4) as usize];
+                output[write] = encode_base64_value::<A>(b0 >> 2);
+                output[write + 1] = encode_base64_value::<A>((b0 & 0b0000_0011) << 4);
                 write += 2;
                 if PAD {
                     output[write] = b'=';
@@ -999,9 +1019,9 @@ where
             2 => {
                 let b0 = input[read];
                 let b1 = input[read + 1];
-                output[write] = A::ENCODE[(b0 >> 2) as usize];
-                output[write + 1] = A::ENCODE[(((b0 & 0b0000_0011) << 4) | (b1 >> 4)) as usize];
-                output[write + 2] = A::ENCODE[((b1 & 0b0000_1111) << 2) as usize];
+                output[write] = encode_base64_value::<A>(b0 >> 2);
+                output[write + 1] = encode_base64_value::<A>(((b0 & 0b0000_0011) << 4) | (b1 >> 4));
+                output[write + 2] = encode_base64_value::<A>((b1 & 0b0000_1111) << 2);
                 write += 3;
                 if PAD {
                     output[write] = b'=';
@@ -1093,14 +1113,14 @@ where
                 let b0 = buffer[read];
                 if PAD {
                     write -= 4;
-                    buffer[write] = A::ENCODE[(b0 >> 2) as usize];
-                    buffer[write + 1] = A::ENCODE[((b0 & 0b0000_0011) << 4) as usize];
+                    buffer[write] = encode_base64_value::<A>(b0 >> 2);
+                    buffer[write + 1] = encode_base64_value::<A>((b0 & 0b0000_0011) << 4);
                     buffer[write + 2] = b'=';
                     buffer[write + 3] = b'=';
                 } else {
                     write -= 2;
-                    buffer[write] = A::ENCODE[(b0 >> 2) as usize];
-                    buffer[write + 1] = A::ENCODE[((b0 & 0b0000_0011) << 4) as usize];
+                    buffer[write] = encode_base64_value::<A>(b0 >> 2);
+                    buffer[write + 1] = encode_base64_value::<A>((b0 & 0b0000_0011) << 4);
                 }
             }
             2 => {
@@ -1109,15 +1129,17 @@ where
                 let b1 = buffer[read + 1];
                 if PAD {
                     write -= 4;
-                    buffer[write] = A::ENCODE[(b0 >> 2) as usize];
-                    buffer[write + 1] = A::ENCODE[(((b0 & 0b0000_0011) << 4) | (b1 >> 4)) as usize];
-                    buffer[write + 2] = A::ENCODE[((b1 & 0b0000_1111) << 2) as usize];
+                    buffer[write] = encode_base64_value::<A>(b0 >> 2);
+                    buffer[write + 1] =
+                        encode_base64_value::<A>(((b0 & 0b0000_0011) << 4) | (b1 >> 4));
+                    buffer[write + 2] = encode_base64_value::<A>((b1 & 0b0000_1111) << 2);
                     buffer[write + 3] = b'=';
                 } else {
                     write -= 3;
-                    buffer[write] = A::ENCODE[(b0 >> 2) as usize];
-                    buffer[write + 1] = A::ENCODE[(((b0 & 0b0000_0011) << 4) | (b1 >> 4)) as usize];
-                    buffer[write + 2] = A::ENCODE[((b1 & 0b0000_1111) << 2) as usize];
+                    buffer[write] = encode_base64_value::<A>(b0 >> 2);
+                    buffer[write + 1] =
+                        encode_base64_value::<A>(((b0 & 0b0000_0011) << 4) | (b1 >> 4));
+                    buffer[write + 2] = encode_base64_value::<A>((b1 & 0b0000_1111) << 2);
                 }
             }
             _ => unreachable!(),
@@ -1130,10 +1152,10 @@ where
             let b1 = buffer[read + 1];
             let b2 = buffer[read + 2];
 
-            buffer[write] = A::ENCODE[(b0 >> 2) as usize];
-            buffer[write + 1] = A::ENCODE[(((b0 & 0b0000_0011) << 4) | (b1 >> 4)) as usize];
-            buffer[write + 2] = A::ENCODE[(((b1 & 0b0000_1111) << 2) | (b2 >> 6)) as usize];
-            buffer[write + 3] = A::ENCODE[(b2 & 0b0011_1111) as usize];
+            buffer[write] = encode_base64_value::<A>(b0 >> 2);
+            buffer[write + 1] = encode_base64_value::<A>(((b0 & 0b0000_0011) << 4) | (b1 >> 4));
+            buffer[write + 2] = encode_base64_value::<A>(((b1 & 0b0000_1111) << 2) | (b2 >> 6));
+            buffer[write + 3] = encode_base64_value::<A>(b2 & 0b0011_1111);
         }
 
         debug_assert_eq!(write, 0);
