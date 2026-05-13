@@ -25,6 +25,8 @@
   that boundary.
 - Added SIMD dispatch scaffolding that detects AVX2/NEON candidates while
   keeping scalar as the only active backend until accelerated code has evidence.
+- Added an inactive AVX2 fixed-block encode prototype with scalar-equivalence
+  tests that run only when AVX2 is available.
 
 ## 0.3.0 - 2026-05-13
 

@@ -19,6 +19,8 @@ weakening the scalar trust base.
   boundary, currently backed only by the scalar implementation.
 - With the `simd` feature enabled, the private dispatch scaffold detects AVX2
   and NEON candidates but still activates only the scalar backend.
+- An inactive AVX2 fixed-block encode prototype exists behind the SIMD boundary
+  and is tested against scalar output only when AVX2 is available.
 - Unit tests compare dispatch behavior against the scalar reference for
   canonical inputs, malformed inputs, and undersized output buffers.
 - The `simd` feature does not enable accelerated code yet.
@@ -62,6 +64,8 @@ Any AVX2, NEON, AVX-512, or runtime-dispatch implementation must include:
 - Scalar remains the fallback for every build.
 - Candidate detection must not imply activation; a detected candidate may still
   execute scalar until the accelerated backend is admitted.
+- Prototype functions may exercise target-feature and unsafe plumbing without
+  being eligible for dispatch.
 - Runtime CPU detection may be used only behind `std`.
 - Compile-time target-feature paths must be explicit and documented.
 - Unsupported CPU features must never panic at runtime.

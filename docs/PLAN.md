@@ -193,6 +193,7 @@ Phase 3:
   with `allow(unsafe_code)` confined to `src/simd.rs`.
 - SIMD dispatch scaffold that detects AVX2/NEON candidates while keeping
   scalar as the only active backend.
+- Inactive AVX2 fixed-block encode prototype with scalar-equivalence tests.
 - Keep SIMD unsafe code isolated from the scalar core with documented invariants
   for every unsafe block.
 
