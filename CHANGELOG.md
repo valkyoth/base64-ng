@@ -12,6 +12,8 @@
 - Added a migration guide for projects moving from the `base64` crate.
 - Added explicit legacy decode APIs that ignore ASCII transport whitespace while
   keeping alphabet and padding checks strict.
+- Added exhaustive invalid-byte position tests for strict standard and URL-safe
+  decoding.
 
 ## 0.1.0 - 2026-05-13
 

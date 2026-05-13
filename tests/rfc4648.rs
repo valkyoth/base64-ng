@@ -348,6 +348,58 @@ fn rejects_common_non_alphabet_bytes() {
 }
 
 #[test]
+fn rejects_all_non_alphabet_bytes_by_position() {
+    let mut output = [0u8; 4];
+    for byte in u8::MIN..=u8::MAX {
+        if is_standard_alphabet_byte(byte) || byte == b'=' {
+            continue;
+        }
+
+        for index in 0..4 {
+            let mut input = *b"AAAA";
+            input[index] = byte;
+            assert_eq!(
+                STANDARD.decode_slice(&input, &mut output),
+                Err(DecodeError::InvalidByte { index, byte }),
+                "byte {byte:#04x} at index {index}"
+            );
+        }
+    }
+}
+
+#[test]
+fn url_safe_rejects_standard_only_symbols_by_position() {
+    let mut output = [0u8; 4];
+    for byte in [b'+', b'/'] {
+        for index in 0..4 {
+            let mut input = *b"AAAA";
+            input[index] = byte;
+            assert_eq!(
+                URL_SAFE.decode_slice(&input, &mut output),
+                Err(DecodeError::InvalidByte { index, byte }),
+                "byte {byte:#04x} at index {index}"
+            );
+        }
+    }
+}
+
+#[test]
+fn standard_rejects_url_safe_only_symbols_by_position() {
+    let mut output = [0u8; 4];
+    for byte in [b'-', b'_'] {
+        for index in 0..4 {
+            let mut input = *b"AAAA";
+            input[index] = byte;
+            assert_eq!(
+                STANDARD.decode_slice(&input, &mut output),
+                Err(DecodeError::InvalidByte { index, byte }),
+                "byte {byte:#04x} at index {index}"
+            );
+        }
+    }
+}
+
+#[test]
 fn legacy_decode_ignores_transport_whitespace() {
     let input = b" aG\r\nVs\tbG8= ";
     assert_eq!(STANDARD.decoded_len_legacy(input), Ok(5));
@@ -861,4 +913,8 @@ fn fill_deterministic(output: &mut [u8], seed: u64) {
             .wrapping_add(0xbf58_476d_1ce4_e5b9);
         *byte = (state >> 56) as u8;
     }
+}
+
+fn is_standard_alphabet_byte(byte: u8) -> bool {
+    byte.is_ascii_alphanumeric() || matches!(byte, b'+' | b'/')
 }
