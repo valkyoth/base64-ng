@@ -15,6 +15,7 @@ Implemented now:
 - Standard and URL-safe alphabets.
 - Padded and unpadded encoding into caller-provided output buffers.
 - Strict decoding into caller-provided output buffers.
+- Optional `alloc` vector helpers.
 - In-place decode API built on the same strict scalar decoder.
 - Focused unit and integration tests.
 - Local check scripts, release gate, dependency policy, audit config, CI, SBOM script, and reproducible build check.
@@ -73,6 +74,18 @@ assert_eq!(&encoded[..written], b"aGVsbG8=");
 let mut decoded = [0u8; 5];
 let written = STANDARD.decode_slice(&encoded, &mut decoded).unwrap();
 assert_eq!(&decoded[..written], input);
+```
+
+With the default `alloc` feature, vector helpers are available:
+
+```rust
+use base64_ng::STANDARD;
+
+let encoded = STANDARD.encode_vec(b"hello").unwrap();
+assert_eq!(encoded, b"aGVsbG8=");
+
+let decoded = STANDARD.decode_vec(&encoded).unwrap();
+assert_eq!(decoded, b"hello");
 ```
 
 URL-safe, no-padding encoding:

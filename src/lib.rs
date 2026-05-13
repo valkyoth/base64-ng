@@ -11,6 +11,9 @@
 //! caller-owned output buffers. Future SIMD fast paths will be required to
 //! match this scalar module byte-for-byte.
 
+#[cfg(feature = "alloc")]
+extern crate alloc;
+
 /// Standard Base64 engine with padding.
 pub const STANDARD: Engine<Standard, true> = Engine::new();
 
@@ -181,6 +184,15 @@ where
         Ok(write)
     }
 
+    /// Encodes `input` into a newly allocated byte vector.
+    #[cfg(feature = "alloc")]
+    pub fn encode_vec(&self, input: &[u8]) -> Result<alloc::vec::Vec<u8>, EncodeError> {
+        let mut output = alloc::vec![0; self.encoded_len(input.len())];
+        let written = self.encode_slice(input, &mut output)?;
+        output.truncate(written);
+        Ok(output)
+    }
+
     /// Decodes `input` into `output`, returning the number of bytes written.
     ///
     /// This is strict decoding. Whitespace, mixed alphabets, malformed padding,
@@ -195,6 +207,17 @@ where
         } else {
             decode_unpadded::<A>(input, output)
         }
+    }
+
+    /// Decodes `input` into a newly allocated byte vector.
+    ///
+    /// This is strict decoding with the same semantics as [`Self::decode_slice`].
+    #[cfg(feature = "alloc")]
+    pub fn decode_vec(&self, input: &[u8]) -> Result<alloc::vec::Vec<u8>, DecodeError> {
+        let mut output = alloc::vec![0; decoded_capacity(input.len())];
+        let written = self.decode_slice(input, &mut output)?;
+        output.truncate(written);
+        Ok(output)
     }
 
     /// Decodes the buffer in place and returns the decoded prefix.
@@ -214,7 +237,8 @@ where
                 buffer[read + 2],
                 buffer[read + 3],
             ];
-            let written = decode_chunk::<A, PAD>(&chunk, &mut buffer[write..])?;
+            let written = decode_chunk::<A, PAD>(&chunk, &mut buffer[write..])
+                .map_err(|err| err.with_index_offset(read))?;
             read += 4;
             write += written;
             if written < 3 {
@@ -234,7 +258,9 @@ where
         }
         let mut tail = [0u8; 3];
         tail[..rem].copy_from_slice(&buffer[read..input_len]);
-        decode_tail_unpadded::<A>(&tail[..rem], &mut buffer[write..]).map(|n| write + n)
+        decode_tail_unpadded::<A>(&tail[..rem], &mut buffer[write..])
+            .map_err(|err| err.with_index_offset(read))
+            .map(|n| write + n)
     }
 }
 
@@ -312,6 +338,21 @@ impl core::fmt::Display for DecodeError {
     }
 }
 
+impl DecodeError {
+    fn with_index_offset(self, offset: usize) -> Self {
+        match self {
+            Self::InvalidByte { index, byte } => Self::InvalidByte {
+                index: index + offset,
+                byte,
+            },
+            Self::InvalidPadding { index } => Self::InvalidPadding {
+                index: index + offset,
+            },
+            Self::InvalidLength | Self::OutputTooSmall { .. } => self,
+        }
+    }
+}
+
 #[cfg(feature = "std")]
 impl std::error::Error for DecodeError {}
 
@@ -330,7 +371,8 @@ fn decode_padded<A: Alphabet>(input: &[u8], output: &mut [u8]) -> Result<usize, 
     let mut read = 0;
     let mut write = 0;
     while read < input.len() {
-        let written = decode_chunk::<A, true>(&input[read..read + 4], &mut output[write..])?;
+        let written = decode_chunk::<A, true>(&input[read..read + 4], &mut output[write..])
+            .map_err(|err| err.with_index_offset(read))?;
         read += 4;
         write += written;
         if written < 3 && read != input.len() {
@@ -361,11 +403,14 @@ fn decode_unpadded<A: Alphabet>(input: &[u8], output: &mut [u8]) -> Result<usize
     let mut read = 0;
     let mut write = 0;
     while read + 4 <= input.len() {
-        let written = decode_chunk::<A, false>(&input[read..read + 4], &mut output[write..])?;
+        let written = decode_chunk::<A, false>(&input[read..read + 4], &mut output[write..])
+            .map_err(|err| err.with_index_offset(read))?;
         read += 4;
         write += written;
     }
-    decode_tail_unpadded::<A>(&input[read..], &mut output[write..]).map(|n| write + n)
+    decode_tail_unpadded::<A>(&input[read..], &mut output[write..])
+        .map_err(|err| err.with_index_offset(read))
+        .map(|n| write + n)
 }
 
 fn decoded_len_padded(input: &[u8]) -> Result<usize, DecodeError> {

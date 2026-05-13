@@ -1,4 +1,6 @@
-use base64_ng::{STANDARD, STANDARD_NO_PAD, URL_SAFE, URL_SAFE_NO_PAD, decoded_capacity};
+use base64_ng::{
+    DecodeError, STANDARD, STANDARD_NO_PAD, URL_SAFE, URL_SAFE_NO_PAD, decoded_capacity,
+};
 
 #[test]
 fn rfc4648_standard_round_trips() {
@@ -64,4 +66,61 @@ fn decoded_capacity_is_upper_bound() {
     for encoded_len in 0..128 {
         assert!(decoded_capacity(encoded_len) <= encoded_len / 4 * 3 + 2);
     }
+}
+
+#[test]
+fn reports_absolute_invalid_byte_indexes() {
+    let mut output = [0u8; 16];
+    assert_eq!(
+        STANDARD.decode_slice(b"Zm9v$g==", &mut output),
+        Err(DecodeError::InvalidByte {
+            index: 4,
+            byte: b'$',
+        })
+    );
+    assert_eq!(
+        STANDARD_NO_PAD.decode_slice(b"Zm9vYg$", &mut output),
+        Err(DecodeError::InvalidByte {
+            index: 6,
+            byte: b'$',
+        })
+    );
+
+    let mut input = *b"Zm9vYg$";
+    assert_eq!(
+        STANDARD_NO_PAD.decode_in_place(&mut input),
+        Err(DecodeError::InvalidByte {
+            index: 6,
+            byte: b'$',
+        })
+    );
+}
+
+#[test]
+fn reports_absolute_padding_indexes() {
+    let mut output = [0u8; 16];
+    assert_eq!(
+        STANDARD.decode_slice(b"Zm9vZh==", &mut output),
+        Err(DecodeError::InvalidPadding { index: 5 })
+    );
+    assert_eq!(
+        STANDARD_NO_PAD.decode_slice(b"Zm9vZh", &mut output),
+        Err(DecodeError::InvalidPadding { index: 5 })
+    );
+
+    let mut input = *b"Zm9vZh";
+    assert_eq!(
+        STANDARD_NO_PAD.decode_in_place(&mut input),
+        Err(DecodeError::InvalidPadding { index: 5 })
+    );
+}
+
+#[cfg(feature = "alloc")]
+#[test]
+fn alloc_helpers_round_trip() {
+    let encoded = STANDARD.encode_vec(b"hello").unwrap();
+    assert_eq!(encoded, b"aGVsbG8=");
+
+    let decoded = STANDARD.decode_vec(&encoded).unwrap();
+    assert_eq!(decoded, b"hello");
 }
