@@ -159,10 +159,9 @@ Phase 3:
 
 ### v0.3
 
-- Expand fuzz targets for arbitrary decode input, in-place decoding, and stream
-  chunk boundaries.
-- Add differential fuzzing against established Base64 implementations for
-  canonical inputs.
+- Maintain isolated fuzz targets for arbitrary decode input, in-place decoding,
+  stream chunk boundaries, and differential checks against established Base64
+  implementations for canonical inputs.
 - Consider an optional `zeroize` feature for users who want temporary buffers
   scrubbed when handling secrets, while keeping the default crate zero
   dependency.

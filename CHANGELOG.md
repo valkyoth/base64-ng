@@ -27,6 +27,8 @@
   published crate package.
 - Added legacy whitespace decode regression tests for original-index errors and
   in-place decode parity.
+- Aligned README and plan wording with the implemented stream and isolated fuzz
+  harness status.
 
 ## 0.1.0 - 2026-05-13
 

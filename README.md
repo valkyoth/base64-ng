@@ -2,7 +2,7 @@
 
 `base64-ng` is a `no_std`-first Base64 crate focused on correctness, strict decoding, caller-owned buffers, and a security-heavy release process. The long-term goal is to provide modern hardware acceleration without making unsafe SIMD the foundation of trust.
 
-The crate starts conservative: a small scalar implementation, strict RFC 4648 behavior, and a test/release system modeled after hardened Rust service projects. SIMD, streaming, Kani proofs, and fuzzing are planned behind explicit gates.
+The crate starts conservative: a small scalar implementation, strict RFC 4648 behavior, and a test/release system modeled after hardened Rust service projects. Streaming is available behind an explicit feature, fuzz harnesses are isolated from the published crate, and future SIMD and Kani work remain gated until they have evidence.
 
 ## Current Status
 
@@ -31,7 +31,6 @@ Implemented now:
 Planned:
 
 - Constant-time-focused scalar decoder mode.
-- Legacy compatibility profile for explicitly non-canonical inputs.
 - AVX2, AVX-512, and ARM NEON fast paths.
 - Async streaming wrappers.
 - Kani proof harnesses.
@@ -60,7 +59,7 @@ license = "MIT OR Apache-2.0"
 | `stream` | no | `std::io` streaming wrappers. |
 | `tokio` | no | Future async streaming wrappers. |
 | `kani` | no | Future verifier harnesses. |
-| `fuzzing` | no | Future fuzz target support. |
+| `fuzzing` | no | Reserved for verifier and fuzz harness integration; published crate stays dependency-free. |
 
 Disable defaults for embedded or freestanding use:
 
