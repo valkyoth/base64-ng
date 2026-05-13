@@ -14,6 +14,16 @@
 
 ## Before Sending Changes
 
+For a full local setup after reinstalling Rust, install the cross targets and
+optional deep-check tools:
+
+```sh
+rustup target add aarch64-unknown-linux-gnu wasm32-unknown-unknown thumbv7em-none-eabihf
+cargo install --locked cargo-nextest
+cargo install --locked cargo-fuzz
+cargo install --locked kani-verifier
+```
+
 Run:
 
 ```sh

@@ -35,6 +35,38 @@ The release gate covers:
 - SBOM generation
 - reproducible package/build check
 
+## Local Toolchain Setup
+
+Install the cross targets used by `scripts/check_targets.sh` and CI:
+
+```sh
+rustup target add aarch64-unknown-linux-gnu wasm32-unknown-unknown thumbv7em-none-eabihf
+```
+
+Install release and deep-check tools:
+
+```sh
+cargo install --locked cargo-audit
+cargo install --locked cargo-deny
+cargo install --locked cargo-license
+cargo install --locked cargo-sbom --version 0.10.0
+cargo install --locked cargo-nextest
+cargo install --locked cargo-fuzz
+cargo install --locked kani-verifier
+```
+
+Verify installation:
+
+```sh
+cargo audit --version
+cargo deny --version
+cargo license --version
+cargo sbom --version
+cargo nextest --version
+cargo fuzz --version
+cargo kani --version
+```
+
 ## Miri Setup
 
 Miri is a nightly Rust component. Install it with:
@@ -42,6 +74,12 @@ Miri is a nightly Rust component. Install it with:
 ```sh
 rustup toolchain install nightly --component miri
 cargo +nightly miri setup
+```
+
+Kani may need a one-time setup after `cargo install --locked kani-verifier`:
+
+```sh
+cargo kani setup
 ```
 
 The local release gate runs:

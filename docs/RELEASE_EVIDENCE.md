@@ -10,6 +10,23 @@ Run the gate with:
 scripts/stable_release_gate.sh release
 ```
 
+Install the optional targets and Cargo tools that make the release gate
+exercise the deepest local paths:
+
+```sh
+rustup target add aarch64-unknown-linux-gnu wasm32-unknown-unknown thumbv7em-none-eabihf
+cargo install --locked cargo-nextest
+cargo install --locked cargo-fuzz
+cargo install --locked kani-verifier
+```
+
+`cargo-fuzz` and Miri use nightly components:
+
+```sh
+rustup toolchain install nightly --component miri
+cargo +nightly miri setup
+```
+
 ## Required Checks
 
 The release gate runs:

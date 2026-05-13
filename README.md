@@ -292,6 +292,12 @@ Run the release gate:
 scripts/stable_release_gate.sh
 ```
 
+Install cross-compilation targets used by the local and CI target checks:
+
+```sh
+rustup target add aarch64-unknown-linux-gnu wasm32-unknown-unknown thumbv7em-none-eabihf
+```
+
 Required security tools:
 
 ```sh
@@ -307,6 +313,14 @@ Optional deep tools:
 cargo install --locked cargo-nextest
 cargo install --locked cargo-fuzz
 cargo install --locked kani-verifier
+```
+
+Verify optional tool installation:
+
+```sh
+cargo nextest --version
+cargo fuzz --version
+cargo kani --version
 ```
 
 Compile fuzz targets without running a campaign:
@@ -342,6 +356,12 @@ Miri is installed as a nightly Rust component, not as a Cargo package:
 rustup toolchain install nightly --component miri
 cargo +nightly miri setup
 cargo +nightly miri test --no-default-features
+```
+
+Kani may need a one-time setup after installation:
+
+```sh
+cargo kani setup
 ```
 
 On openSUSE Tumbleweed, install `rustup` first if it is not already present:
