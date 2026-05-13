@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.2.0-alpha.0 - Unreleased
+## 0.2.0 - 2026-05-13
 
 - Started the next development cycle after the `0.1.0` release.
 - Documented the runtime scalar API expectation that malformed input and size

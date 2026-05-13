@@ -19,14 +19,14 @@ After:
 
 ```toml
 [dependencies]
-base64-ng = "0.1"
+base64-ng = "0.2"
 ```
 
 For embedded or freestanding use:
 
 ```toml
 [dependencies]
-base64-ng = { version = "0.1", default-features = false }
+base64-ng = { version = "0.2", default-features = false }
 ```
 
 ## Engine Mapping
@@ -152,7 +152,7 @@ Enable the `stream` feature for `std::io` wrappers:
 
 ```toml
 [dependencies]
-base64-ng = { version = "0.1", features = ["stream"] }
+base64-ng = { version = "0.2", features = ["stream"] }
 ```
 
 ```rust
@@ -166,7 +166,7 @@ let encoded = encoder.finish().unwrap();
 assert_eq!(encoded, b"aGVsbG8=");
 ```
 
-Tokio wrappers are planned but are not part of `0.1`.
+Tokio wrappers are planned but are not part of `0.2`.
 
 ## Security Notes
 

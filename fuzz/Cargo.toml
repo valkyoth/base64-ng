@@ -9,7 +9,7 @@ cargo-fuzz = true
 
 [dependencies]
 base64 = "0.22.1"
-base64-ng = { path = "..", version = "0.2.0-alpha.0", features = ["alloc", "std", "stream"] }
+base64-ng = { path = "..", version = "0.2.0", features = ["alloc", "std", "stream"] }
 libfuzzer-sys = "0.4"
 
 [[bin]]
