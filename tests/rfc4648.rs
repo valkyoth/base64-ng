@@ -4,7 +4,7 @@ use base64_ng::{
 };
 
 #[cfg(feature = "stream")]
-use base64_ng::stream::{Encoder, EncoderReader};
+use base64_ng::stream::{Decoder, Encoder, EncoderReader};
 
 #[cfg(feature = "stream")]
 use std::io::{Read, Write};
@@ -343,6 +343,43 @@ fn stream_encoder_reader_supports_url_safe() {
     assert_eq!(reader.get_ref().len(), 2);
     reader.read_to_end(&mut encoded).unwrap();
     assert_eq!(encoded, b"-_8");
+}
+
+#[cfg(feature = "stream")]
+#[test]
+fn stream_decoder_handles_chunk_boundaries() {
+    let mut decoder = Decoder::new(Vec::new(), STANDARD);
+    decoder.write_all(b"a").unwrap();
+    decoder.write_all(b"GVs").unwrap();
+    decoder.write_all(b"bG8=").unwrap();
+    let decoded = decoder.finish().unwrap();
+    assert_eq!(decoded, b"hello");
+}
+
+#[cfg(feature = "stream")]
+#[test]
+fn stream_decoder_supports_no_padding() {
+    let mut decoder = Decoder::new(Vec::new(), STANDARD_NO_PAD);
+    decoder.write_all(b"aGV").unwrap();
+    decoder.write_all(b"sbG8").unwrap();
+    let decoded = decoder.finish().unwrap();
+    assert_eq!(decoded, b"hello");
+}
+
+#[cfg(feature = "stream")]
+#[test]
+fn stream_decoder_rejects_bad_final_pending_input() {
+    let mut decoder = Decoder::new(Vec::new(), STANDARD);
+    decoder.write_all(b"a").unwrap();
+    assert!(decoder.finish().is_err());
+}
+
+#[cfg(feature = "stream")]
+#[test]
+fn stream_decoder_rejects_trailing_input_after_padding() {
+    let mut decoder = Decoder::new(Vec::new(), STANDARD);
+    let err = decoder.write_all(b"aGk=AA").unwrap_err();
+    assert_eq!(err.kind(), std::io::ErrorKind::InvalidInput);
 }
 
 fn assert_round_trip<A, const PAD: bool>(engine: &base64_ng::Engine<A, PAD>, input: &[u8])

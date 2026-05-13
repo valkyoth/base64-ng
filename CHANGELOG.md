@@ -8,6 +8,7 @@
 - Added in-place encoding.
 - Added optional `alloc` vector helpers.
 - Added `std::io::Write` and `std::io::Read` streaming encoders behind the `stream` feature.
+- Added `std::io::Write` streaming decoder behind the `stream` feature.
 - Added checked encoded-length helpers.
 - Added exact decoded-length helpers.
 - Hardened decode errors to report absolute input indexes.
