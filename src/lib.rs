@@ -316,10 +316,7 @@ pub mod stream {
                 return Ok(0);
             }
             if self.finished {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidInput,
-                    "base64 decoder received trailing input after padding",
-                ));
+                return Err(trailing_input_after_padding_error());
             }
 
             let mut consumed = 0;
@@ -353,10 +350,7 @@ pub mod stream {
                 self.write_full_quad(quad)?;
                 offset += 4;
                 if self.finished && offset < remaining.len() {
-                    return Err(io::Error::new(
-                        io::ErrorKind::InvalidInput,
-                        "base64 decoder received trailing input after padding",
-                    ));
+                    return Err(trailing_input_after_padding_error());
                 }
             }
 
@@ -374,6 +368,13 @@ pub mod stream {
 
     fn decode_error_to_io(err: DecodeError) -> io::Error {
         io::Error::new(io::ErrorKind::InvalidInput, err)
+    }
+
+    fn trailing_input_after_padding_error() -> io::Error {
+        io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "base64 decoder received trailing input after padding",
+        )
     }
 
     /// A streaming Base64 decoder for `std::io::Read`.
@@ -467,10 +468,7 @@ pub mod stream {
                 return Ok(());
             }
             if self.terminal_seen {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidInput,
-                    "base64 decoder received trailing input after padding",
-                ));
+                return Err(trailing_input_after_padding_error());
             }
 
             let mut consumed = 0;
@@ -504,10 +502,7 @@ pub mod stream {
                 self.push_decoded(&quad)?;
                 offset += 4;
                 if self.terminal_seen && offset < remaining.len() {
-                    return Err(io::Error::new(
-                        io::ErrorKind::InvalidInput,
-                        "base64 decoder received trailing input after padding",
-                    ));
+                    return Err(trailing_input_after_padding_error());
                 }
             }
 
