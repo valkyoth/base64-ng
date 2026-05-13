@@ -239,6 +239,88 @@ where
         Ok(output)
     }
 
+    /// Encodes the first `input_len` bytes of `buffer` in place.
+    ///
+    /// The buffer must have enough spare capacity for the encoded output. The
+    /// implementation writes from right to left, so unread input bytes are not
+    /// overwritten before they are encoded.
+    pub fn encode_in_place<'a>(
+        &self,
+        buffer: &'a mut [u8],
+        input_len: usize,
+    ) -> Result<&'a mut [u8], EncodeError> {
+        if input_len > buffer.len() {
+            return Err(EncodeError::InputTooLarge {
+                input_len,
+                buffer_len: buffer.len(),
+            });
+        }
+
+        let required = checked_encoded_len(input_len, PAD).ok_or(EncodeError::LengthOverflow)?;
+        if buffer.len() < required {
+            return Err(EncodeError::OutputTooSmall {
+                required,
+                available: buffer.len(),
+            });
+        }
+
+        let mut read = input_len;
+        let mut write = required;
+
+        match input_len % 3 {
+            0 => {}
+            1 => {
+                read -= 1;
+                let b0 = buffer[read];
+                if PAD {
+                    write -= 4;
+                    buffer[write] = A::ENCODE[(b0 >> 2) as usize];
+                    buffer[write + 1] = A::ENCODE[((b0 & 0b0000_0011) << 4) as usize];
+                    buffer[write + 2] = b'=';
+                    buffer[write + 3] = b'=';
+                } else {
+                    write -= 2;
+                    buffer[write] = A::ENCODE[(b0 >> 2) as usize];
+                    buffer[write + 1] = A::ENCODE[((b0 & 0b0000_0011) << 4) as usize];
+                }
+            }
+            2 => {
+                read -= 2;
+                let b0 = buffer[read];
+                let b1 = buffer[read + 1];
+                if PAD {
+                    write -= 4;
+                    buffer[write] = A::ENCODE[(b0 >> 2) as usize];
+                    buffer[write + 1] = A::ENCODE[(((b0 & 0b0000_0011) << 4) | (b1 >> 4)) as usize];
+                    buffer[write + 2] = A::ENCODE[((b1 & 0b0000_1111) << 2) as usize];
+                    buffer[write + 3] = b'=';
+                } else {
+                    write -= 3;
+                    buffer[write] = A::ENCODE[(b0 >> 2) as usize];
+                    buffer[write + 1] = A::ENCODE[(((b0 & 0b0000_0011) << 4) | (b1 >> 4)) as usize];
+                    buffer[write + 2] = A::ENCODE[((b1 & 0b0000_1111) << 2) as usize];
+                }
+            }
+            _ => unreachable!(),
+        }
+
+        while read > 0 {
+            read -= 3;
+            write -= 4;
+            let b0 = buffer[read];
+            let b1 = buffer[read + 1];
+            let b2 = buffer[read + 2];
+
+            buffer[write] = A::ENCODE[(b0 >> 2) as usize];
+            buffer[write + 1] = A::ENCODE[(((b0 & 0b0000_0011) << 4) | (b1 >> 4)) as usize];
+            buffer[write + 2] = A::ENCODE[(((b1 & 0b0000_1111) << 2) | (b2 >> 6)) as usize];
+            buffer[write + 3] = A::ENCODE[(b2 & 0b0011_1111) as usize];
+        }
+
+        debug_assert_eq!(write, 0);
+        Ok(&mut buffer[..required])
+    }
+
     /// Decodes `input` into `output`, returning the number of bytes written.
     ///
     /// This is strict decoding. Whitespace, mixed alphabets, malformed padding,
@@ -315,6 +397,13 @@ where
 pub enum EncodeError {
     /// The encoded output length would overflow `usize`.
     LengthOverflow,
+    /// The caller-provided input length exceeds the provided buffer.
+    InputTooLarge {
+        /// Requested input bytes.
+        input_len: usize,
+        /// Available buffer bytes.
+        buffer_len: usize,
+    },
     /// The output buffer is too small.
     OutputTooSmall {
         /// Required output bytes.
@@ -328,6 +417,13 @@ impl core::fmt::Display for EncodeError {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Self::LengthOverflow => f.write_str("base64 output length overflows usize"),
+            Self::InputTooLarge {
+                input_len,
+                buffer_len,
+            } => write!(
+                f,
+                "base64 input length {input_len} exceeds buffer length {buffer_len}"
+            ),
             Self::OutputTooSmall {
                 required,
                 available,

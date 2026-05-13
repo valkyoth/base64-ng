@@ -121,6 +121,55 @@ fn encode_slice_reports_small_outputs() {
 }
 
 #[test]
+fn encodes_in_place() {
+    let mut standard = [0u8; 8];
+    standard[..5].copy_from_slice(b"hello");
+    let encoded = STANDARD.encode_in_place(&mut standard, 5).unwrap();
+    assert_eq!(encoded, b"aGVsbG8=");
+
+    let mut standard_no_pad = [0u8; 7];
+    standard_no_pad[..5].copy_from_slice(b"hello");
+    let encoded = STANDARD_NO_PAD
+        .encode_in_place(&mut standard_no_pad, 5)
+        .unwrap();
+    assert_eq!(encoded, b"aGVsbG8");
+
+    let mut url_safe = [0u8; 4];
+    url_safe[..2].copy_from_slice(b"\xfb\xff");
+    let encoded = URL_SAFE.encode_in_place(&mut url_safe, 2).unwrap();
+    assert_eq!(encoded, b"-_8=");
+
+    let mut url_safe_no_pad = [0u8; 3];
+    url_safe_no_pad[..2].copy_from_slice(b"\xfb\xff");
+    let encoded = URL_SAFE_NO_PAD
+        .encode_in_place(&mut url_safe_no_pad, 2)
+        .unwrap();
+    assert_eq!(encoded, b"-_8");
+}
+
+#[test]
+fn encode_in_place_reports_bad_lengths() {
+    let mut too_small = [0u8; 3];
+    too_small[..2].copy_from_slice(b"hi");
+    assert_eq!(
+        STANDARD.encode_in_place(&mut too_small, 2),
+        Err(EncodeError::OutputTooSmall {
+            required: 4,
+            available: 3,
+        })
+    );
+
+    let mut buffer = [0u8; 2];
+    assert_eq!(
+        STANDARD.encode_in_place(&mut buffer, 3),
+        Err(EncodeError::InputTooLarge {
+            input_len: 3,
+            buffer_len: 2,
+        })
+    );
+}
+
+#[test]
 fn exhaustive_short_round_trips() {
     for b0 in u8::MIN..=u8::MAX {
         let input = [b0];
@@ -128,6 +177,10 @@ fn exhaustive_short_round_trips() {
         assert_round_trip(&STANDARD_NO_PAD, &input);
         assert_round_trip(&URL_SAFE, &input);
         assert_round_trip(&URL_SAFE_NO_PAD, &input);
+        assert_in_place_encode_matches_slice(&STANDARD, &input);
+        assert_in_place_encode_matches_slice(&STANDARD_NO_PAD, &input);
+        assert_in_place_encode_matches_slice(&URL_SAFE, &input);
+        assert_in_place_encode_matches_slice(&URL_SAFE_NO_PAD, &input);
     }
 
     for b0 in u8::MIN..=u8::MAX {
@@ -137,6 +190,10 @@ fn exhaustive_short_round_trips() {
             assert_round_trip(&STANDARD_NO_PAD, &input);
             assert_round_trip(&URL_SAFE, &input);
             assert_round_trip(&URL_SAFE_NO_PAD, &input);
+            assert_in_place_encode_matches_slice(&STANDARD, &input);
+            assert_in_place_encode_matches_slice(&STANDARD_NO_PAD, &input);
+            assert_in_place_encode_matches_slice(&URL_SAFE, &input);
+            assert_in_place_encode_matches_slice(&URL_SAFE_NO_PAD, &input);
         }
     }
 }
@@ -226,4 +283,23 @@ where
         .decode_slice(&encoded[..encoded_len], &mut decoded)
         .unwrap();
     assert_eq!(&decoded[..decoded_len], input);
+}
+
+fn assert_in_place_encode_matches_slice<A, const PAD: bool>(
+    engine: &base64_ng::Engine<A, PAD>,
+    input: &[u8],
+) where
+    A: base64_ng::Alphabet,
+{
+    let required = engine.encoded_len(input.len());
+    let mut expected = [0u8; 4];
+    let expected_len = engine.encode_slice(input, &mut expected).unwrap();
+    assert_eq!(required, expected_len);
+
+    let mut buffer = [0u8; 4];
+    buffer[..input.len()].copy_from_slice(input);
+    let encoded = engine
+        .encode_in_place(&mut buffer[..required], input.len())
+        .unwrap();
+    assert_eq!(encoded, &expected[..expected_len]);
 }

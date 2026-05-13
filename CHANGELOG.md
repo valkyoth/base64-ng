@@ -5,6 +5,7 @@
 - Initial `no_std` scalar crate scaffold.
 - Added strict standard and URL-safe Base64 engines.
 - Added caller-owned encode/decode buffers and in-place decode.
+- Added in-place encoding.
 - Added optional `alloc` vector helpers.
 - Added checked encoded-length helpers.
 - Added exact decoded-length helpers.

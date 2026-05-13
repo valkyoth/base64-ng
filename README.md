@@ -15,6 +15,7 @@ Implemented now:
 - Standard and URL-safe alphabets.
 - Padded and unpadded encoding into caller-provided output buffers.
 - Strict decoding into caller-provided output buffers.
+- In-place encoding when the caller provides enough spare capacity.
 - Optional `alloc` vector helpers.
 - In-place decode API built on the same strict scalar decoder.
 - Focused unit and integration tests.
@@ -74,6 +75,17 @@ assert_eq!(&encoded[..written], b"aGVsbG8=");
 let mut decoded = [0u8; 5];
 let written = STANDARD.decode_slice(&encoded, &mut decoded).unwrap();
 assert_eq!(&decoded[..written], input);
+```
+
+In-place encoding:
+
+```rust
+use base64_ng::STANDARD;
+
+let mut buffer = [0u8; 8];
+buffer[..5].copy_from_slice(b"hello");
+let encoded = STANDARD.encode_in_place(&mut buffer, 5).unwrap();
+assert_eq!(encoded, b"aGVsbG8=");
 ```
 
 For untrusted length metadata, use checked length calculation:
