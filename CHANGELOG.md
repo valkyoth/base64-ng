@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.3.0-alpha.0 - Unreleased
+## 0.3.0 - 2026-05-13
 
 - Started the next development cycle after the `0.2.0` release.
 - Added an initial `ct` scalar decode module for caller-owned buffers. The path
