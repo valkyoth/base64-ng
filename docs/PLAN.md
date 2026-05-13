@@ -146,13 +146,28 @@ Phase 3:
 
 ### v0.2
 
+- Document panic-free public API expectations for scalar encode/decode paths.
+- Add focused panic-free tests for malformed and size-boundary inputs.
+- Strengthen bounded-memory documentation around checked length helpers and
+  caller-owned output APIs.
 - Explicit legacy decode mode.
+- Migration guide for projects moving from the `base64` crate, including strict
+  defaults and compatibility differences.
 - More exhaustive malformed-input tests.
 - Design an explicit constant-time scalar decode API for sensitive payloads,
   separate from the default fast strict decoder.
 
 ### v0.3
 
+- Expand fuzz targets for arbitrary decode input, in-place decoding, and stream
+  chunk boundaries.
+- Add differential fuzzing against established Base64 implementations for
+  canonical inputs.
+- Consider an optional `zeroize` feature for users who want temporary buffers
+  scrubbed when handling secrets, while keeping the default crate zero
+  dependency.
+- Add release evidence documentation for audit, license, SBOM, and
+  reproducibility artifacts.
 - AVX2 and NEON prototypes.
 - Runtime feature dispatch.
 - Criterion benchmarks.
@@ -165,15 +180,20 @@ Phase 3:
 - AVX-512 implementation.
 - CPU dispatch hardening.
 - Cross-architecture CI evidence.
+- Keep SIMD unsafe code isolated from the scalar core with documented invariants
+  for every unsafe block.
 
 ### v0.5
 
 - Tokio streaming wrappers.
 - Async cancellation and partial-read tests.
+- Streaming fuzz and regression tests for adjacent framed payloads.
 
 ### v1.0
 
 - Kani proofs complete for scalar in-place decode.
+- Formal or tool-backed evidence for panic-free scalar public APIs.
+- Published security and migration documentation for strict-by-default adoption.
 - Constant-time decode guarantee either formally documented with supporting
   verification evidence or explicitly excluded from the stable API contract.
 - Fuzz corpus stabilized.
