@@ -3,6 +3,12 @@
 ## 0.3.0-alpha.0 - Unreleased
 
 - Started the next development cycle after the `0.2.0` release.
+- Added an isolated no-framework scalar performance comparison harness against
+  the established `base64` crate.
+- Added performance harness dependency audit and license checks to CI and the
+  release gate.
+- Documented how performance evidence should be generated and qualified for
+  releases.
 
 ## 0.2.0 - 2026-05-13
 

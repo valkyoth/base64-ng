@@ -54,6 +54,7 @@ test -s LICENSE-APACHE
 test -s README.md
 test -s CONTRIBUTING.md
 test -s SECURITY.md
+test -s docs/BENCHMARKS.md
 test -s docs/CONSTANT_TIME.md
 test -s docs/MIGRATION.md
 test -s docs/PLAN.md
@@ -86,6 +87,7 @@ for required_package_file in \
     "LICENSE-MIT" \
     "README.md" \
     "SECURITY.md" \
+    "docs/BENCHMARKS.md" \
     "docs/CONSTANT_TIME.md" \
     "docs/MIGRATION.md" \
     "docs/PLAN.md" \
@@ -102,6 +104,11 @@ done
 
 if printf '%s\n' "$package_list" | grep -q '^fuzz/'; then
     echo "release metadata: fuzz-only harness files must not be included in the published crate" >&2
+    exit 1
+fi
+
+if printf '%s\n' "$package_list" | grep -q '^perf/'; then
+    echo "release metadata: performance harness files must not be included in the published crate" >&2
     exit 1
 fi
 

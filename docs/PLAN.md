@@ -169,7 +169,8 @@ Phase 3:
   reproducibility artifacts.
 - AVX2 and NEON prototypes.
 - Runtime feature dispatch.
-- Criterion benchmarks.
+- Isolated scalar comparison benchmark harness first; consider Criterion only
+  if its larger dependency graph is justified by better measurement quality.
 - Scalar/SIMD differential testing.
 - Prototype and verify the constant-time decode path with no secret-dependent
   branches or secret-indexed table lookups.

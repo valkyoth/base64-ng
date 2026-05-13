@@ -39,6 +39,9 @@ fi
 echo "stable release gate: fuzz dependency checks"
 scripts/check_fuzz.sh
 
+echo "stable release gate: performance harness dependency checks"
+scripts/check_perf.sh
+
 if command -v cargo-kani >/dev/null 2>&1 && [ -d kani ]; then
     echo "stable release gate: Kani proofs"
     cargo kani

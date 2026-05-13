@@ -25,6 +25,7 @@ The release gate runs:
 - `cargo license --json`
 - Miri when nightly Miri is installed
 - fuzz target compile check when `cargo-fuzz` is installed
+- isolated fuzz and performance harness dependency checks
 - Kani proofs when a `kani/` harness and `cargo-kani` are installed
 - SBOM generation
 - reproducible package/build check
@@ -57,6 +58,24 @@ scripts/check_fuzz.sh
 
 `fuzz/deny.toml` allows the NCSA license only for `libfuzzer-sys`. The root
 `deny.toml` remains stricter for the published crate.
+
+## Performance Evidence
+
+The performance harness is intentionally isolated from the published crate.
+Compile and review its dependencies with:
+
+```sh
+scripts/check_perf.sh
+```
+
+Run local scalar comparison measurements with:
+
+```sh
+cargo run --release --manifest-path perf/Cargo.toml
+```
+
+Performance numbers are release notes evidence only when paired with hardware,
+OS, Rust version, CPU governor, and the exact command output.
 
 ## Reproducibility
 

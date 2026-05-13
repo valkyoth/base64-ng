@@ -1,0 +1,43 @@
+# Performance-tool dependency policy.
+#
+# The published base64-ng crate remains zero-dependency. This isolated package
+# may depend on the established base64 crate only to provide comparison
+# measurements for release evidence.
+
+[graph]
+all-features = true
+
+[licenses]
+confidence-threshold = 0.95
+include-dev = true
+include-build = true
+unused-allowed-license = "allow"
+unused-license-exception = "deny"
+
+allow = [
+    "Apache-2.0",
+    "MIT",
+]
+
+[licenses.private]
+ignore = true
+
+[bans]
+multiple-versions = "deny"
+wildcards = "deny"
+highlight = "all"
+
+[advisories]
+db-path = "/tmp/base64-ng-perf-cargo-deny-advisory-dbs"
+yanked = "deny"
+unmaintained = "workspace"
+unsound = "workspace"
+unused-ignored-advisory = "deny"
+ignore = []
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+required-git-spec = "rev"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []

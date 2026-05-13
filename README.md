@@ -245,7 +245,7 @@ Security commitments:
   timing pitfalls, but they are not documented as formally verified
   cryptographic constant-time APIs.
 - Legacy compatibility must be opt-in.
-- Release gates include formatting, clippy, tests, Miri when installed, docs, dependency policy, audit, license review, SBOM, and reproducible build checks.
+- Release gates include formatting, clippy, tests, Miri when installed, docs, dependency policy, audit, license review, isolated fuzz/perf dependency checks, SBOM, and reproducible build checks.
 - Future Kani proofs target in-place decoding bounds and scalar decoder invariants.
 
 See [docs/PLAN.md](docs/PLAN.md), [SECURITY.md](SECURITY.md),
@@ -253,6 +253,7 @@ See [docs/PLAN.md](docs/PLAN.md), [SECURITY.md](SECURITY.md),
 [docs/CONSTANT_TIME.md](docs/CONSTANT_TIME.md).
 For adoption guidance from the established `base64` crate, see
 [docs/MIGRATION.md](docs/MIGRATION.md).
+For performance evidence guidance, see [docs/BENCHMARKS.md](docs/BENCHMARKS.md).
 
 ## Local Checks
 
@@ -295,6 +296,18 @@ Compile fuzz targets without running a campaign:
 
 ```sh
 scripts/check_fuzz.sh
+```
+
+Compile and audit the isolated performance harness:
+
+```sh
+scripts/check_perf.sh
+```
+
+Run the scalar comparison benchmark:
+
+```sh
+cargo run --release --manifest-path perf/Cargo.toml
 ```
 
 Run a target with `cargo-fuzz`:
