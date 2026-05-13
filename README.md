@@ -226,6 +226,8 @@ Security commitments:
 - Future Kani proofs target in-place decoding bounds and scalar decoder invariants.
 
 See [docs/PLAN.md](docs/PLAN.md) and [SECURITY.md](SECURITY.md).
+For adoption guidance from the established `base64` crate, see
+[docs/MIGRATION.md](docs/MIGRATION.md).
 
 ## Local Checks
 

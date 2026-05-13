@@ -9,6 +9,7 @@
   decode error paths.
 - Expanded bounded-memory documentation for checked length helpers and
   caller-owned decode buffers.
+- Added a migration guide for projects moving from the `base64` crate.
 
 ## 0.1.0 - 2026-05-13
 
