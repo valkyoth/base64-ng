@@ -51,6 +51,11 @@ input and size errors instead of unwinding. Compile-time array encoding is the
 exception: it intentionally fails const evaluation when the caller supplies an
 incorrect output array length.
 
+Bounded-memory users should prefer `checked_encoded_len`, `decoded_capacity`,
+`decode_slice`, and `decode_in_place` so allocation limits are chosen by the
+caller. The `alloc` helper `decode_vec` validates input before allocating the
+decoded buffer.
+
 Required before unsafe SIMD stabilizes:
 
 - Scalar/SIMD differential tests.

@@ -7,6 +7,8 @@
   errors return `Result` or `Option` instead of panicking.
 - Added focused panic-safety regression tests for runtime scalar encode and
   decode error paths.
+- Expanded bounded-memory documentation for checked length helpers and
+  caller-owned decode buffers.
 
 ## 0.1.0 - 2026-05-13
 

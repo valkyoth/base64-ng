@@ -120,6 +120,34 @@ assert_eq!(checked_encoded_len(5, true), Some(8));
 assert_eq!(decoded_len(b"aGVsbG8=", true).unwrap(), 5);
 ```
 
+## Bounded Memory Use
+
+For untrusted payloads, size buffers before decoding or encoding. The checked
+helpers let callers reject impossible or oversized metadata before allocating:
+
+```rust
+use base64_ng::{STANDARD, checked_encoded_len, decoded_capacity};
+
+let input = b"hello";
+let encoded_len = checked_encoded_len(input.len(), true).unwrap();
+assert_eq!(encoded_len, 8);
+
+let mut encoded = vec![0u8; encoded_len];
+let written = STANDARD.encode_slice(input, &mut encoded).unwrap();
+encoded.truncate(written);
+
+let max_decoded = decoded_capacity(encoded.len());
+let mut decoded = vec![0u8; max_decoded];
+let written = STANDARD.decode_slice(&encoded, &mut decoded).unwrap();
+decoded.truncate(written);
+
+assert_eq!(decoded, input);
+```
+
+`decode_vec` validates the complete input before allocating decoded output.
+Use `decode_slice` or `decode_in_place` when the caller needs hard memory
+limits and owns the output buffer.
+
 With the default `alloc` feature, vector and string helpers are available:
 
 ```rust
