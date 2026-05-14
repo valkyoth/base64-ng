@@ -22,6 +22,8 @@
   output queue bytes before they are discarded.
 - Hardened streaming encoder readers to clear queued encoded output bytes before
   they are discarded.
+- Added focused regression tests for decoder `finish()` and `into_inner()` paths
+  after stream cleanup hardening.
 - Updated security documentation for streaming wrapper buffer cleanup behavior.
 - Updated release evidence documentation for stream fuzzing and reserved SIMD
   feature-bundle checks.

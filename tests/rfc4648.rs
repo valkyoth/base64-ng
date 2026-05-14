@@ -1460,6 +1460,26 @@ fn stream_decoder_rejects_short_trailing_input_after_pending_padding() {
 
 #[cfg(feature = "stream")]
 #[test]
+fn stream_decoder_exposes_inner_writer_after_refactor() {
+    let mut decoder = Decoder::new(Vec::new(), STANDARD);
+    assert!(decoder.get_ref().is_empty());
+    decoder.write_all(b"aGk=").unwrap();
+    assert_eq!(decoder.get_ref(), b"hi");
+    let inner = decoder.finish().unwrap();
+    assert_eq!(inner, b"hi");
+}
+
+#[cfg(feature = "stream")]
+#[test]
+fn stream_decoder_into_inner_still_returns_writer() {
+    let mut decoder = Decoder::new(Vec::new(), STANDARD);
+    decoder.write_all(b"a").unwrap();
+    let inner = decoder.into_inner();
+    assert!(inner.is_empty());
+}
+
+#[cfg(feature = "stream")]
+#[test]
 fn stream_decoder_reader_handles_small_reads() {
     let mut reader = DecoderReader::new(&b"aGVsbG8="[..], STANDARD);
     let mut output = [0u8; 5];
@@ -1499,6 +1519,19 @@ fn stream_decoder_reader_rejects_bad_final_pending_input() {
     let mut reader = DecoderReader::new(&b"a"[..], STANDARD);
     let mut decoded = Vec::new();
     assert!(reader.read_to_end(&mut decoded).is_err());
+}
+
+#[cfg(feature = "stream")]
+#[test]
+fn stream_decoder_reader_into_inner_still_returns_reader() {
+    let mut reader = DecoderReader::new(Cursor::new(&b"aGVsbG8="[..]), STANDARD);
+    let mut output = [0u8; 1];
+    let read = reader.read(&mut output).unwrap();
+    assert_eq!(read, 1);
+    assert_eq!(output, [b'h']);
+
+    let inner = reader.into_inner();
+    assert_eq!(inner.position(), 4);
 }
 
 #[cfg(feature = "stream")]
