@@ -1266,7 +1266,10 @@ pub mod stream {
 /// content through one opaque error. It is not documented as a formally
 /// verified cryptographic constant-time API.
 pub mod ct {
-    use super::{Alphabet, DecodeError, Standard, UrlSafe, ct_decode_in_place, ct_decode_slice};
+    use super::{
+        Alphabet, DecodeError, Standard, UrlSafe, ct_decode_in_place, ct_decode_slice,
+        ct_validate_decode,
+    };
     use core::marker::PhantomData;
 
     /// Standard Base64 constant-time-oriented decoder with padding.
@@ -1297,6 +1300,42 @@ pub mod ct {
             Self {
                 alphabet: PhantomData,
             }
+        }
+
+        /// Validates `input` without writing decoded bytes.
+        ///
+        /// This uses the same constant-time-oriented symbol mapping and opaque
+        /// malformed-input error behavior as [`Self::decode_slice`]. Input
+        /// length, padding length, and final success or failure remain public.
+        ///
+        /// # Examples
+        ///
+        /// ```
+        /// use base64_ng::ct;
+        ///
+        /// ct::STANDARD.validate_result(b"aGVsbG8=").unwrap();
+        /// assert!(ct::STANDARD.validate_result(b"aGVsbG8").is_err());
+        /// ```
+        pub fn validate_result(&self, input: &[u8]) -> Result<(), DecodeError> {
+            ct_validate_decode::<A, PAD>(input)
+        }
+
+        /// Returns whether `input` is valid for this constant-time-oriented
+        /// decoder.
+        ///
+        /// This is a convenience wrapper around [`Self::validate_result`].
+        ///
+        /// # Examples
+        ///
+        /// ```
+        /// use base64_ng::ct;
+        ///
+        /// assert!(ct::URL_SAFE_NO_PAD.validate(b"-_8"));
+        /// assert!(!ct::URL_SAFE_NO_PAD.validate(b"+/8"));
+        /// ```
+        #[must_use]
+        pub fn validate(&self, input: &[u8]) -> bool {
+            self.validate_result(input).is_ok()
         }
 
         /// Decodes `input` into `output`, returning the number of bytes
@@ -4343,6 +4382,126 @@ fn ct_decode_in_place<A: Alphabet, const PAD: bool>(
     } else {
         ct_decode_unpadded_in_place::<A>(buffer)
     }
+}
+
+fn ct_validate_decode<A: Alphabet, const PAD: bool>(input: &[u8]) -> Result<(), DecodeError> {
+    if input.is_empty() {
+        return Ok(());
+    }
+
+    if PAD {
+        ct_validate_padded::<A>(input)
+    } else {
+        ct_validate_unpadded::<A>(input)
+    }
+}
+
+fn ct_validate_padded<A: Alphabet>(input: &[u8]) -> Result<(), DecodeError> {
+    if !input.len().is_multiple_of(4) {
+        return Err(DecodeError::InvalidLength);
+    }
+
+    let padding = ct_padding_len(input);
+    let mut invalid_byte = 0u8;
+    let mut invalid_padding = 0u8;
+    let mut read = 0;
+
+    while read < input.len() {
+        let is_last = read + 4 == input.len();
+        let b0 = input[read];
+        let b1 = input[read + 1];
+        let b2 = input[read + 2];
+        let b3 = input[read + 3];
+        let (_, valid0) = ct_decode_ascii_base64::<A>(b0);
+        let (v1, valid1) = ct_decode_ascii_base64::<A>(b1);
+        let (v2, valid2) = ct_decode_ascii_base64::<A>(b2);
+        let (_, valid3) = ct_decode_ascii_base64::<A>(b3);
+
+        invalid_byte |= !valid0;
+        invalid_byte |= !valid1;
+
+        if is_last && padding == 2 {
+            invalid_padding |= ct_mask_nonzero_u8(v1 & 0b0000_1111);
+        } else if is_last && padding == 1 {
+            invalid_byte |= !valid2;
+            invalid_padding |= ct_mask_eq_u8(b2, b'=');
+            invalid_padding |= ct_mask_nonzero_u8(v2 & 0b0000_0011);
+        } else {
+            invalid_byte |= !valid2;
+            invalid_byte |= !valid3;
+            invalid_padding |= ct_mask_eq_u8(b2, b'=');
+            invalid_padding |= ct_mask_eq_u8(b3, b'=');
+        }
+
+        read += 4;
+    }
+
+    report_ct_error(invalid_byte, invalid_padding)
+}
+
+fn ct_validate_unpadded<A: Alphabet>(input: &[u8]) -> Result<(), DecodeError> {
+    if input.len() % 4 == 1 {
+        return Err(DecodeError::InvalidLength);
+    }
+
+    let mut invalid_byte = 0u8;
+    let mut invalid_padding = 0u8;
+    let mut read = 0;
+
+    while read + 4 <= input.len() {
+        let b0 = input[read];
+        let b1 = input[read + 1];
+        let b2 = input[read + 2];
+        let b3 = input[read + 3];
+        let (_, valid0) = ct_decode_ascii_base64::<A>(b0);
+        let (_, valid1) = ct_decode_ascii_base64::<A>(b1);
+        let (_, valid2) = ct_decode_ascii_base64::<A>(b2);
+        let (_, valid3) = ct_decode_ascii_base64::<A>(b3);
+
+        invalid_byte |= !valid0;
+        invalid_byte |= !valid1;
+        invalid_byte |= !valid2;
+        invalid_byte |= !valid3;
+        invalid_padding |= ct_mask_eq_u8(b0, b'=');
+        invalid_padding |= ct_mask_eq_u8(b1, b'=');
+        invalid_padding |= ct_mask_eq_u8(b2, b'=');
+        invalid_padding |= ct_mask_eq_u8(b3, b'=');
+
+        read += 4;
+    }
+
+    match input.len() - read {
+        0 => {}
+        2 => {
+            let b0 = input[read];
+            let b1 = input[read + 1];
+            let (_, valid0) = ct_decode_ascii_base64::<A>(b0);
+            let (v1, valid1) = ct_decode_ascii_base64::<A>(b1);
+            invalid_byte |= !valid0;
+            invalid_byte |= !valid1;
+            invalid_padding |= ct_mask_eq_u8(b0, b'=');
+            invalid_padding |= ct_mask_eq_u8(b1, b'=');
+            invalid_padding |= ct_mask_nonzero_u8(v1 & 0b0000_1111);
+        }
+        3 => {
+            let b0 = input[read];
+            let b1 = input[read + 1];
+            let b2 = input[read + 2];
+            let (_, valid0) = ct_decode_ascii_base64::<A>(b0);
+            let (_, valid1) = ct_decode_ascii_base64::<A>(b1);
+            let (v2, valid2) = ct_decode_ascii_base64::<A>(b2);
+            invalid_byte |= !valid0;
+            invalid_byte |= !valid1;
+            invalid_byte |= !valid2;
+            invalid_padding |= ct_mask_eq_u8(b0, b'=');
+            invalid_padding |= ct_mask_eq_u8(b1, b'=');
+            invalid_padding |= ct_mask_eq_u8(b2, b'=');
+            invalid_padding |= ct_mask_nonzero_u8(v2 & 0b0000_0011);
+        }
+        _ => return Err(DecodeError::InvalidLength),
+    }
+
+    report_ct_error(invalid_byte, invalid_padding)
 }
 
 fn ct_decode_padded<A: Alphabet>(input: &[u8], output: &mut [u8]) -> Result<usize, DecodeError> {

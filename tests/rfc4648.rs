@@ -439,6 +439,60 @@ fn ct_decoder_matches_strict_for_canonical_inputs() {
 }
 
 #[test]
+fn ct_validate_matches_constant_time_decode_policy() {
+    for input_len in 0..64 {
+        let mut input = [0u8; 64];
+        for (index, byte) in input.iter_mut().enumerate() {
+            *byte = (index * 17 + input_len * 7) as u8;
+        }
+        let input = &input[..input_len];
+
+        let mut encoded_buf = [0u8; 128];
+
+        let encoded_len = STANDARD.encode_slice(input, &mut encoded_buf).unwrap();
+        let encoded = &encoded_buf[..encoded_len];
+        assert_eq!(ct::STANDARD.validate_result(encoded), Ok(()));
+        assert!(ct::STANDARD.validate(encoded));
+
+        let encoded_len = STANDARD_NO_PAD
+            .encode_slice(input, &mut encoded_buf)
+            .unwrap();
+        let encoded = &encoded_buf[..encoded_len];
+        assert_eq!(ct::STANDARD_NO_PAD.validate_result(encoded), Ok(()));
+        assert!(ct::STANDARD_NO_PAD.validate(encoded));
+
+        let encoded_len = URL_SAFE.encode_slice(input, &mut encoded_buf).unwrap();
+        let encoded = &encoded_buf[..encoded_len];
+        assert_eq!(ct::URL_SAFE.validate_result(encoded), Ok(()));
+        assert!(ct::URL_SAFE.validate(encoded));
+
+        let encoded_len = URL_SAFE_NO_PAD
+            .encode_slice(input, &mut encoded_buf)
+            .unwrap();
+        let encoded = &encoded_buf[..encoded_len];
+        assert_eq!(ct::URL_SAFE_NO_PAD.validate_result(encoded), Ok(()));
+        assert!(ct::URL_SAFE_NO_PAD.validate(encoded));
+    }
+
+    assert_eq!(
+        ct::STANDARD.validate_result(b"AA-A"),
+        Err(DecodeError::InvalidInput)
+    );
+    assert_eq!(
+        ct::STANDARD.validate_result(b"Zh=="),
+        Err(DecodeError::InvalidInput)
+    );
+    assert_eq!(
+        ct::STANDARD_NO_PAD.validate_result(b"Zg=="),
+        Err(DecodeError::InvalidInput)
+    );
+    assert_eq!(
+        ct::STANDARD.validate_result(b"Zg"),
+        Err(DecodeError::InvalidLength)
+    );
+}
+
+#[test]
 fn ct_decoder_rejects_malformed_inputs() {
     let mut output = [0u8; 8];
 

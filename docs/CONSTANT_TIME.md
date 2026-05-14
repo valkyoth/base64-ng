@@ -65,6 +65,10 @@ pub mod ct {
     pub const URL_SAFE_NO_PAD: CtEngine<UrlSafe, false>;
 
     impl<A, const PAD: bool> CtEngine<A, PAD> {
+        pub fn validate_result(&self, input: &[u8]) -> Result<(), DecodeError>;
+
+        pub fn validate(&self, input: &[u8]) -> bool;
+
         pub fn decode_slice(
             &self,
             input: &[u8],

@@ -6,6 +6,8 @@
 - Added no-alloc validation-only APIs for strict and legacy profiles:
   `validate_result`, `validate`, `validate_legacy_result`, and
   `validate_legacy`.
+- Added constant-time-oriented validation-only APIs:
+  `ct::CtEngine::validate_result` and `ct::CtEngine::validate`.
 - Added dependency-free line-wrapped encoding with `LineWrap`, `LineEnding`,
   checked wrapped-length calculation, caller-owned output APIs, clear-tail
   wrapping, and `alloc` convenience helpers.

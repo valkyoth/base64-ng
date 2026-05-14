@@ -316,7 +316,7 @@ the zero-runtime-dependency stance.
   symbols, padding conflicts, ASCII constraints, and deterministic errors.
 - Add line-wrapping encode support for PEM/MIME/common caller-selected wrapping
   policies, including CRLF and LF output.
-- Add validate-only APIs for strict, legacy, profile-aware, and
+- Completed validate-only APIs for strict, legacy, profile-aware, and
   constant-time-oriented validation use cases.
 - Completed zero-dependency stack-backed output helpers for short encoded
   values.
