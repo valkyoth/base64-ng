@@ -26,6 +26,13 @@ add_ci_cargo_wrapper() {
     mkdir -p "$wrapper_dir"
     {
         printf '%s\n' '#!/usr/bin/env sh'
+        printf '%s\n' 'case "${1:-}" in'
+        printf '%s\n' '    +*)'
+        printf '%s\n' '        toolchain="${1#+}"'
+        printf '%s\n' '        shift'
+        printf '%s\n' '        exec rustup run "$toolchain" cargo "$@"'
+        printf '%s\n' '        ;;'
+        printf '%s\n' 'esac'
         printf 'exec rustup run %s cargo "$@"\n' "$toolchain"
     } > "$wrapper_dir/cargo"
     chmod +x "$wrapper_dir/cargo"
