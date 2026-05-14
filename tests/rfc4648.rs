@@ -1,5 +1,6 @@
 use base64_ng::{
-    Alphabet, AlphabetError, DecodeError, EncodeError, Engine, LineEnding, LineWrap, STANDARD,
+    Alphabet, AlphabetError, BCRYPT, BCRYPT_NO_PAD, Bcrypt, CRYPT, CRYPT_NO_PAD, Crypt,
+    DecodeError, EncodeError, Engine, LineEnding, LineWrap, MIME, PEM, PEM_CRLF, STANDARD,
     STANDARD_NO_PAD, Standard, URL_SAFE, URL_SAFE_NO_PAD, UrlSafe, checked_encoded_len, ct,
     decode_alphabet_byte, decoded_capacity, decoded_len, encoded_len, runtime, validate_alphabet,
     wrapped_encoded_len,
@@ -71,6 +72,8 @@ fn rfc4648_standard_round_trips() {
 fn validates_builtin_and_custom_alphabet_tables() {
     assert_eq!(validate_alphabet(&Standard::ENCODE), Ok(()));
     assert_eq!(validate_alphabet(&UrlSafe::ENCODE), Ok(()));
+    assert_eq!(validate_alphabet(&Bcrypt::ENCODE), Ok(()));
+    assert_eq!(validate_alphabet(&Crypt::ENCODE), Ok(()));
     assert_eq!(validate_alphabet(&ReverseAlphabet::ENCODE), Ok(()));
 
     let mut duplicate = Standard::ENCODE;
@@ -100,6 +103,95 @@ fn validates_builtin_and_custom_alphabet_tables() {
             byte: b'\n',
         })
     );
+}
+
+#[test]
+fn named_profiles_expose_expected_policies() {
+    assert_eq!(MIME.line_wrap(), Some(LineWrap::MIME));
+    assert_eq!(PEM.line_wrap(), Some(LineWrap::PEM));
+    assert_eq!(PEM_CRLF.line_wrap(), Some(LineWrap::PEM_CRLF));
+    assert_eq!(BCRYPT.line_wrap(), None);
+    assert_eq!(CRYPT.line_wrap(), None);
+
+    assert_eq!(
+        MIME.encoded_len(58),
+        wrapped_encoded_len(58, true, LineWrap::MIME)
+    );
+    assert_eq!(BCRYPT.encoded_len(3), encoded_len(3, false));
+}
+
+#[test]
+fn mime_and_pem_profiles_round_trip_with_strict_wrapping() {
+    let input = [0x5au8; 58];
+    let mut encoded = [0u8; 96];
+    let encoded_len = MIME.encode_slice(&input, &mut encoded).unwrap();
+    assert_eq!(&encoded[76..78], b"\r\n");
+    assert!(MIME.validate(&encoded[..encoded_len]));
+    assert!(!MIME.validate(b"Wlpa\nWg=="));
+
+    let mut decoded = [0u8; 64];
+    let decoded_len = MIME
+        .decode_slice(&encoded[..encoded_len], &mut decoded)
+        .unwrap();
+    assert_eq!(&decoded[..decoded_len], input);
+
+    let mut pem_encoded = [0u8; 96];
+    let pem_len = PEM.encode_slice(&input, &mut pem_encoded).unwrap();
+    assert_eq!(pem_encoded[64], b'\n');
+    assert!(PEM.validate(&pem_encoded[..pem_len]));
+    assert!(!PEM.validate(&encoded[..encoded_len]));
+
+    let mut pem_crlf = [0u8; 96];
+    let pem_crlf_len = PEM_CRLF.encode_slice(&input, &mut pem_crlf).unwrap();
+    assert_eq!(&pem_crlf[64..66], b"\r\n");
+    assert!(PEM_CRLF.validate(&pem_crlf[..pem_crlf_len]));
+}
+
+#[test]
+fn bcrypt_and_crypt_profiles_use_explicit_no_padding_alphabets() {
+    let input = [0xff, 0xff, 0xff];
+    let mut bcrypt_encoded = [0u8; 8];
+    let bcrypt_len = BCRYPT_NO_PAD
+        .encode_slice(&input, &mut bcrypt_encoded)
+        .unwrap();
+    assert_eq!(&bcrypt_encoded[..bcrypt_len], b"9999");
+    let mut bcrypt_profile_encoded = [0u8; 8];
+    let bcrypt_profile_len = BCRYPT
+        .encode_slice(&input, &mut bcrypt_profile_encoded)
+        .unwrap();
+    assert_eq!(
+        &bcrypt_encoded[..bcrypt_len],
+        &bcrypt_profile_encoded[..bcrypt_profile_len]
+    );
+    assert!(BCRYPT.validate(&bcrypt_encoded[..bcrypt_len]));
+    assert!(!BCRYPT.validate(b"9999="));
+
+    let mut crypt_encoded = [0u8; 8];
+    let crypt_len = CRYPT_NO_PAD
+        .encode_slice(&input, &mut crypt_encoded)
+        .unwrap();
+    assert_eq!(&crypt_encoded[..crypt_len], b"zzzz");
+    let mut crypt_profile_encoded = [0u8; 8];
+    let crypt_profile_len = CRYPT
+        .encode_slice(&input, &mut crypt_profile_encoded)
+        .unwrap();
+    assert_eq!(
+        &crypt_encoded[..crypt_len],
+        &crypt_profile_encoded[..crypt_profile_len]
+    );
+    assert!(CRYPT.validate(&crypt_encoded[..crypt_len]));
+
+    let mut decoded = [0u8; 3];
+    assert_eq!(
+        BCRYPT.decode_slice(&bcrypt_encoded[..bcrypt_len], &mut decoded),
+        Ok(3)
+    );
+    assert_eq!(decoded, input);
+    assert_eq!(
+        CRYPT.decode_slice(&crypt_encoded[..crypt_len], &mut decoded),
+        Ok(3)
+    );
+    assert_eq!(decoded, input);
 }
 
 #[test]

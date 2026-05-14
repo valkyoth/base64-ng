@@ -1431,6 +1431,18 @@ pub const URL_SAFE: Engine<UrlSafe, true> = Engine::new();
 /// URL-safe Base64 engine without padding.
 pub const URL_SAFE_NO_PAD: Engine<UrlSafe, false> = Engine::new();
 
+/// bcrypt-style Base64 engine without padding.
+///
+/// This uses the bcrypt alphabet with the crate's normal Base64 bit packing.
+/// It does not parse complete bcrypt password-hash strings.
+pub const BCRYPT_NO_PAD: Engine<Bcrypt, false> = Engine::new();
+
+/// Unix `crypt(3)`-style Base64 engine without padding.
+///
+/// This uses the `crypt(3)` alphabet with the crate's normal Base64 bit
+/// packing. It does not parse complete password-hash strings.
+pub const CRYPT_NO_PAD: Engine<Crypt, false> = Engine::new();
+
 /// Line ending used by wrapped Base64 output.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum LineEnding {
@@ -1490,6 +1502,164 @@ impl LineWrap {
         }
     }
 }
+
+/// A named Base64 profile with an engine and optional strict line wrapping.
+///
+/// Profiles are convenience values for protocol-shaped Base64. They keep the
+/// same strict alphabet, padding, canonical-bit, and output-buffer rules as
+/// [`Engine`], while carrying the wrapping policy for MIME/PEM-like formats.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct Profile<A, const PAD: bool> {
+    engine: Engine<A, PAD>,
+    wrap: Option<LineWrap>,
+}
+
+impl<A, const PAD: bool> Profile<A, PAD>
+where
+    A: Alphabet,
+{
+    /// Creates a profile from an engine and optional strict line wrapping.
+    #[must_use]
+    pub const fn new(engine: Engine<A, PAD>, wrap: Option<LineWrap>) -> Self {
+        Self { engine, wrap }
+    }
+
+    /// Returns the underlying engine.
+    #[must_use]
+    pub const fn engine(&self) -> Engine<A, PAD> {
+        self.engine
+    }
+
+    /// Returns the strict wrapping policy carried by this profile, if any.
+    #[must_use]
+    pub const fn line_wrap(&self) -> Option<LineWrap> {
+        self.wrap
+    }
+
+    /// Returns the encoded length for this profile.
+    pub const fn encoded_len(&self, input_len: usize) -> Result<usize, EncodeError> {
+        match self.wrap {
+            Some(wrap) => wrapped_encoded_len(input_len, PAD, wrap),
+            None => encoded_len(input_len, PAD),
+        }
+    }
+
+    /// Returns the exact decoded length for this profile.
+    pub fn decoded_len(&self, input: &[u8]) -> Result<usize, DecodeError> {
+        match self.wrap {
+            Some(wrap) => self.engine.decoded_len_wrapped(input, wrap),
+            None => self.engine.decoded_len(input),
+        }
+    }
+
+    /// Validates input according to this profile without writing decoded bytes.
+    pub fn validate_result(&self, input: &[u8]) -> Result<(), DecodeError> {
+        match self.wrap {
+            Some(wrap) => self.engine.validate_wrapped_result(input, wrap),
+            None => self.engine.validate_result(input),
+        }
+    }
+
+    /// Returns whether `input` is valid for this profile.
+    #[must_use]
+    pub fn validate(&self, input: &[u8]) -> bool {
+        self.validate_result(input).is_ok()
+    }
+
+    /// Encodes `input` into `output` according to this profile.
+    pub fn encode_slice(&self, input: &[u8], output: &mut [u8]) -> Result<usize, EncodeError> {
+        match self.wrap {
+            Some(wrap) => self.engine.encode_slice_wrapped(input, output, wrap),
+            None => self.engine.encode_slice(input, output),
+        }
+    }
+
+    /// Encodes `input` into `output` and clears all bytes after the encoded
+    /// prefix.
+    pub fn encode_slice_clear_tail(
+        &self,
+        input: &[u8],
+        output: &mut [u8],
+    ) -> Result<usize, EncodeError> {
+        match self.wrap {
+            Some(wrap) => self
+                .engine
+                .encode_slice_wrapped_clear_tail(input, output, wrap),
+            None => self.engine.encode_slice_clear_tail(input, output),
+        }
+    }
+
+    /// Decodes `input` into `output` according to this profile.
+    pub fn decode_slice(&self, input: &[u8], output: &mut [u8]) -> Result<usize, DecodeError> {
+        match self.wrap {
+            Some(wrap) => self.engine.decode_slice_wrapped(input, output, wrap),
+            None => self.engine.decode_slice(input, output),
+        }
+    }
+
+    /// Decodes `input` into `output` and clears all bytes after the decoded
+    /// prefix.
+    pub fn decode_slice_clear_tail(
+        &self,
+        input: &[u8],
+        output: &mut [u8],
+    ) -> Result<usize, DecodeError> {
+        match self.wrap {
+            Some(wrap) => self
+                .engine
+                .decode_slice_wrapped_clear_tail(input, output, wrap),
+            None => self.engine.decode_slice_clear_tail(input, output),
+        }
+    }
+
+    /// Encodes `input` into a newly allocated byte vector.
+    #[cfg(feature = "alloc")]
+    pub fn encode_vec(&self, input: &[u8]) -> Result<alloc::vec::Vec<u8>, EncodeError> {
+        match self.wrap {
+            Some(wrap) => self.engine.encode_wrapped_vec(input, wrap),
+            None => self.engine.encode_vec(input),
+        }
+    }
+
+    /// Encodes `input` into a newly allocated UTF-8 string.
+    #[cfg(feature = "alloc")]
+    pub fn encode_string(&self, input: &[u8]) -> Result<alloc::string::String, EncodeError> {
+        match self.wrap {
+            Some(wrap) => self.engine.encode_wrapped_string(input, wrap),
+            None => self.engine.encode_string(input),
+        }
+    }
+
+    /// Decodes `input` into a newly allocated byte vector.
+    #[cfg(feature = "alloc")]
+    pub fn decode_vec(&self, input: &[u8]) -> Result<alloc::vec::Vec<u8>, DecodeError> {
+        match self.wrap {
+            Some(wrap) => self.engine.decode_wrapped_vec(input, wrap),
+            None => self.engine.decode_vec(input),
+        }
+    }
+}
+
+/// MIME Base64 profile: standard alphabet, padding, 76-column CRLF wrapping.
+pub const MIME: Profile<Standard, true> = Profile::new(STANDARD, Some(LineWrap::MIME));
+
+/// PEM Base64 profile: standard alphabet, padding, 64-column LF wrapping.
+pub const PEM: Profile<Standard, true> = Profile::new(STANDARD, Some(LineWrap::PEM));
+
+/// PEM Base64 profile with CRLF line endings.
+pub const PEM_CRLF: Profile<Standard, true> = Profile::new(STANDARD, Some(LineWrap::PEM_CRLF));
+
+/// bcrypt-style no-padding Base64 profile.
+///
+/// This profile carries the bcrypt alphabet and no padding. It does not parse
+/// complete bcrypt password-hash strings.
+pub const BCRYPT: Profile<Bcrypt, false> = Profile::new(BCRYPT_NO_PAD, None);
+
+/// Unix `crypt(3)`-style no-padding Base64 profile.
+///
+/// This profile carries the `crypt(3)` alphabet and no padding. It does not
+/// parse complete password-hash strings.
+pub const CRYPT: Profile<Crypt, false> = Profile::new(CRYPT_NO_PAD, None);
 
 /// Returns the encoded length for an input length and padding policy.
 ///
@@ -1761,6 +1931,39 @@ impl Alphabet for UrlSafe {
     }
 }
 
+/// The bcrypt Base64 alphabet.
+///
+/// This alphabet is commonly used by bcrypt hash strings. It is provided as an
+/// alphabet/profile building block; `base64-ng` does not parse or verify full
+/// bcrypt password-hash records.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct Bcrypt;
+
+impl Alphabet for Bcrypt {
+    const ENCODE: [u8; 64] = *b"./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+    #[inline]
+    fn decode(byte: u8) -> Option<u8> {
+        decode_alphabet_byte(byte, &Self::ENCODE)
+    }
+}
+
+/// The Unix `crypt(3)` Base64 alphabet.
+///
+/// This alphabet is provided as an explicit legacy interoperability profile.
+/// `base64-ng` does not parse or verify complete password-hash records.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct Crypt;
+
+impl Alphabet for Crypt {
+    const ENCODE: [u8; 64] = *b"./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
+    #[inline]
+    fn decode(byte: u8) -> Option<u8> {
+        decode_alphabet_byte(byte, &Self::ENCODE)
+    }
+}
+
 #[inline]
 const fn encode_base64_value<A: Alphabet>(value: u8) -> u8 {
     encode_alphabet_value(value, &A::ENCODE)
@@ -1984,9 +2187,41 @@ mod backend {
 }
 
 /// A zero-sized Base64 engine parameterized by alphabet and padding policy.
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Engine<A, const PAD: bool> {
     alphabet: core::marker::PhantomData<A>,
+}
+
+impl<A, const PAD: bool> Clone for Engine<A, PAD> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl<A, const PAD: bool> Copy for Engine<A, PAD> {}
+
+impl<A, const PAD: bool> core::fmt::Debug for Engine<A, PAD> {
+    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        formatter
+            .debug_struct("Engine")
+            .field("padded", &PAD)
+            .finish()
+    }
+}
+
+impl<A, const PAD: bool> Default for Engine<A, PAD> {
+    fn default() -> Self {
+        Self {
+            alphabet: core::marker::PhantomData,
+        }
+    }
+}
+
+impl<A, const PAD: bool> Eq for Engine<A, PAD> {}
+
+impl<A, const PAD: bool> PartialEq for Engine<A, PAD> {
+    fn eq(&self, _other: &Self) -> bool {
+        true
+    }
 }
 
 impl<A, const PAD: bool> Engine<A, PAD>

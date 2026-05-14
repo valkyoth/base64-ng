@@ -13,6 +13,9 @@
   configured line ending and enforce configured-width non-final lines.
 - Added custom alphabet helpers: `validate_alphabet`,
   `decode_alphabet_byte`, and `AlphabetError`.
+- Added named dependency-free profiles for MIME, PEM, bcrypt-style, and
+  `crypt(3)`-style Base64 through `Profile`, `MIME`, `PEM`, `PEM_CRLF`,
+  `BCRYPT`, and `CRYPT`.
 
 ## 0.5.0 - 2026-05-14
 

@@ -29,6 +29,8 @@ Implemented now:
 - Strict line-wrapped validation and decoding profiles for MIME/PEM-style
   input.
 - Custom alphabet validation helpers for user-defined 64-byte alphabets.
+- Named dependency-free profiles for MIME, PEM, bcrypt-style, and
+  `crypt(3)`-style Base64.
 - Separate `ct` scalar decode module for sensitive payloads that avoids
   secret-indexed lookup tables during Base64 symbol mapping.
 - `std::io` streaming encoders and decoders behind the `stream` feature.
@@ -182,6 +184,20 @@ Built-in policies include `LineWrap::MIME`, `LineWrap::PEM`, and
 `LineWrap::PEM_CRLF`. Wrapping inserts line endings between encoded lines and
 does not append a trailing line ending after the final line.
 
+Named profiles carry the wrapping policy for common protocols:
+
+```rust
+use base64_ng::{MIME, PEM};
+
+assert_eq!(MIME.line_wrap().unwrap().line_len, 76);
+assert_eq!(PEM.line_wrap().unwrap().line_len, 64);
+
+let mut encoded = [0u8; 82];
+let written = MIME.encode_slice(&[0x5a; 58], &mut encoded).unwrap();
+assert_eq!(&encoded[76..78], b"\r\n");
+assert!(MIME.validate(&encoded[..written]));
+```
+
 The same policy can be used for strict wrapped decoding. Unlike legacy
 whitespace decoding, this accepts only the configured line ending and requires
 every non-final line to have the configured encoded length:
@@ -219,6 +235,23 @@ impl Alphabet for DotSlash {
 validate_alphabet(&DotSlash::ENCODE).unwrap();
 assert_eq!(DotSlash::decode(b'.'), Some(0));
 ```
+
+Built-in non-RFC alphabets are available for explicit interoperability:
+
+```rust
+use base64_ng::{BCRYPT, CRYPT};
+
+let mut bcrypt = [0u8; 4];
+let written = BCRYPT.encode_slice(&[0xff, 0xff, 0xff], &mut bcrypt).unwrap();
+assert_eq!(&bcrypt[..written], b"9999");
+
+let mut crypt = [0u8; 4];
+let written = CRYPT.encode_slice(&[0xff, 0xff, 0xff], &mut crypt).unwrap();
+assert_eq!(&crypt[..written], b"zzzz");
+```
+
+The bcrypt and `crypt(3)` profiles provide alphabets and no-padding behavior
+only. They do not parse or verify complete password-hash strings.
 
 ## Legacy Whitespace Decoding
 

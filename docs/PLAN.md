@@ -171,22 +171,12 @@ the zero-runtime-dependency stance.
 - Const encode support into caller-sized arrays.
 - Runtime backend reports and high-assurance scalar-only policy checks.
 - Reserved SIMD backends that must prove scalar equivalence before admission.
+- Named MIME, PEM, bcrypt-style, and `crypt(3)`-style profiles.
+- Custom alphabet validation helpers with duplicate-character, padding-byte,
+  and visible-ASCII checks.
 
 ### Missing Secure Core Features
 
-- Add built-in MIME and PEM profiles with strict line-length handling, custom
-  line endings, and profile-specific whitespace policy.
-- Add a built-in bcrypt alphabet/profile if its non-RFC behavior can be
-  represented clearly without weakening RFC 4648 defaults.
-- Add custom alphabet/profile constructors with duplicate-character rejection,
-  padding-character conflict checks, and deterministic error reporting.
-- Add line-wrapping encode APIs for 64-column PEM, 76-column MIME, and
-  caller-selected line endings.
-- Add validate-only APIs:
-  - `validate(input) -> bool` for quick sanitization.
-  - `validate_result(input) -> Result<(), DecodeError>` for diagnostics.
-  - profile-aware validation for strict, legacy, MIME, PEM, and constant-time
-    paths.
 - Add zero-dependency small-output helpers for common short values, such as a
   stack-backed encoded buffer type that avoids heap allocation without forcing
   callers to hand-roll arrays.
