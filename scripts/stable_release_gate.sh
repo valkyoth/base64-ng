@@ -45,6 +45,9 @@ scripts/check_perf.sh
 echo "stable release gate: installed cross-target checks"
 scripts/check_targets.sh
 
+echo "stable release gate: SIMD feature-bundle checks"
+scripts/check_simd_feature_bundles.sh
+
 echo "stable release gate: Kani proofs"
 scripts/check_kani.sh
 

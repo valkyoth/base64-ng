@@ -12,6 +12,8 @@
 - Added `BackendReport::snapshot()` for structured runtime backend audit logs.
 - Added an inactive AVX-512 fixed-block encode prototype with scalar-equivalence
   tests gated by the detected AVX-512 Base64 feature bundle.
+- Added local release-gate and CI compile checks for the reserved x86 AVX2 and
+  AVX-512 SIMD feature bundles under `no_std`.
 
 ## 0.4.1 - 2026-05-14
 

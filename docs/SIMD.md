@@ -68,6 +68,15 @@ Run a specific target:
 scripts/check_targets.sh aarch64-unknown-linux-gnu
 ```
 
+Compile-check the reserved x86 SIMD feature bundles:
+
+```sh
+scripts/check_simd_feature_bundles.sh
+```
+
+This does not execute accelerated code. It proves the reserved AVX2 and
+AVX-512 feature-gated code still compiles under `no_std`.
+
 ## Required Before SIMD Code Lands
 
 Any AVX2, NEON, AVX-512, or runtime-dispatch implementation must include:
