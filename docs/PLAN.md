@@ -82,7 +82,7 @@ Any dependency addition must answer:
 
 5. `tokio`
    - Reserved feature for future async wrappers.
-   - Explicit optional dependency only if the async API is admitted.
+   - Inert and dependency-free until the async API is admitted.
 
 ### API Policy
 

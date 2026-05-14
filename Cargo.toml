@@ -33,7 +33,7 @@ alloc = []
 std = ["alloc"]
 simd = []
 stream = ["std"]
-tokio = ["stream"]
+tokio = []
 kani = []
 fuzzing = []
 

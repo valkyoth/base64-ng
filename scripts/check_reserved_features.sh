@@ -5,7 +5,7 @@ check_reserved_feature() {
     name="$1"
     features="$2"
 
-    echo "reserved features: $name remains dependency-free and compile-only"
+    echo "reserved features: $name remains dependency-free and placeholder-only"
     cargo check --no-default-features --features "$features" --lib
 
     tree_output="$(

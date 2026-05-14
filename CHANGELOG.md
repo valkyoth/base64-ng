@@ -47,6 +47,8 @@
   be executable and use the portable `#!/usr/bin/env sh` shebang.
 - Strengthened reserved-feature placeholder checks with explicit per-feature
   dependency graph validation.
+- Made the reserved `tokio` feature truly inert until async wrappers are
+  admitted instead of enabling the existing `stream` feature.
 - Updated security documentation for streaming wrapper buffer cleanup behavior.
 - Updated release evidence documentation for stream fuzzing and reserved SIMD
   feature-bundle checks.

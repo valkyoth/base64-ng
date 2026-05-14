@@ -166,8 +166,9 @@ let encoded = encoder.finish().unwrap();
 assert_eq!(encoded, b"aGVsbG8=");
 ```
 
-The `tokio` feature is reserved for future async wrappers. It currently adds
-no dependencies or APIs.
+The `tokio` feature is reserved for future async wrappers. It is currently
+inert and dependency-free; use the explicit `stream` feature for `std::io`
+wrappers.
 
 ## Security Notes
 
