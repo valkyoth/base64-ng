@@ -1,6 +1,6 @@
 # base64-ng Professional Secure Plan
 
-Date: 2026-05-13
+Date: 2026-05-14
 
 ## Objective
 
@@ -40,8 +40,15 @@ Allowed without adding dependencies:
 External crates require written justification before inclusion:
 
 - `tokio` may be accepted only behind the optional `tokio` feature for async stream wrappers.
+- `serde` may be accepted only behind an optional feature after API and dependency review.
+- `bytes` may be accepted only behind an optional feature after API and dependency review.
+- `zeroize` remains rejected by default; the current direction is an internal
+  best-effort wiping helper and secret wrapper types before considering a
+  dependency.
 - Fuzzing crates may live only in a future `fuzz/` workspace or tool-specific harness, not in normal runtime dependencies.
 - Benchmark crates may live only in `dev-dependencies` or an isolated bench workspace.
+  The default benchmark path should remain dependency-free unless a tool such
+  as Criterion earns admission with better measurement evidence.
 - Kani support must stay feature-gated and must not affect normal users.
 
 Rejected by default:
@@ -50,6 +57,8 @@ Rejected by default:
 - Git dependencies.
 - Runtime dependencies for the default feature set.
 - Dependencies with unclear licensing, advisories, yanked releases, or unnecessary transitive graphs.
+- Crates that only replace small, auditable `core`/`alloc`/`std`
+  implementations.
 
 Any dependency addition must answer:
 
@@ -95,6 +104,11 @@ Any dependency addition must answer:
 - Use zero-sized engines and trait-based alphabets.
 - Strict decoding is default.
 - Legacy behavior must be opt-in and named.
+- Canonical decoding is default.
+- Panicking convenience APIs are avoided in favor of checked APIs for
+  untrusted sizes and untrusted input.
+- New profile APIs must expose caller-owned buffer variants before adding
+  allocation conveniences.
 
 ## Security Design
 
@@ -132,6 +146,89 @@ Phase 3:
 - SIMD equivalence fuzzing.
 - Per-architecture benchmark evidence.
 - Release evidence archived under `target/release-evidence`.
+
+## Ultimate Zero-Dependency Backlog
+
+The following backlog captures the remaining features that can make
+`base64-ng` a high-assurance, general-purpose replacement without weakening
+the zero-runtime-dependency stance.
+
+### Already Established
+
+- Standard and URL-safe alphabets.
+- Padded and unpadded engines.
+- Strict-by-default canonical decoding.
+- Explicit legacy/forgiving decode mode for whitespace-tolerant inputs.
+- Caller-owned slice APIs.
+- Allocation convenience APIs behind `alloc`.
+- In-place encode and decode APIs.
+- `std::io` streaming adapters.
+- Constant-time-oriented decode APIs for sensitive caller-owned buffers.
+- Clear-tail APIs and streaming buffer cleanup for best-effort data retention
+  reduction.
+- Detailed decode errors with offsets.
+- `no_std` scalar core.
+- Const encode support into caller-sized arrays.
+- Runtime backend reports and high-assurance scalar-only policy checks.
+- Reserved SIMD backends that must prove scalar equivalence before admission.
+
+### Missing Secure Core Features
+
+- Add built-in MIME and PEM profiles with strict line-length handling, custom
+  line endings, and profile-specific whitespace policy.
+- Add a built-in bcrypt alphabet/profile if its non-RFC behavior can be
+  represented clearly without weakening RFC 4648 defaults.
+- Add custom alphabet/profile constructors with duplicate-character rejection,
+  padding-character conflict checks, and deterministic error reporting.
+- Add line-wrapping encode APIs for 64-column PEM, 76-column MIME, and
+  caller-selected line endings.
+- Add validate-only APIs:
+  - `validate(input) -> bool` for quick sanitization.
+  - `validate_result(input) -> Result<(), DecodeError>` for diagnostics.
+  - profile-aware validation for strict, legacy, MIME, PEM, and constant-time
+    paths.
+- Add zero-dependency small-output helpers for common short values, such as a
+  stack-backed encoded buffer type that avoids heap allocation without forcing
+  callers to hand-roll arrays.
+- Add internal best-effort wipe primitives for crate-owned temporary buffers,
+  using volatile writes and compiler fences where appropriate. This must be
+  documented as retention reduction, not a hard zeroization guarantee.
+- Add secret wrapper types for sensitive decoded/encoded material with redacted
+  `Debug`/`Display`, explicit reveal APIs, and drop-time best-effort wiping for
+  owned buffers.
+- Expand panic-free policy checks for non-test scalar code, replacing unchecked
+  indexing and unwrap-like operations where practical or proving their bounds
+  where replacement would harm clarity.
+- Add a CWE/security-control mapping document that explains which classes of
+  misuse the crate mitigates and which remain caller responsibilities.
+- Add a README trust dashboard covering dependencies, audit status, Miri,
+  fuzzing, Kani status, unsafe inventory, MSRV, SBOM, reproducibility, and
+  scalar-only policy.
+
+### Missing Performance Features
+
+- Admit real AVX2, AVX-512, NEON, SSSE3/SSE4.1, and wasm `simd128` paths only
+  after scalar differential tests, fuzz evidence, target-feature checks, unsafe
+  inventory updates, and benchmark evidence are complete.
+- Keep alignment and prefetch work internal and evidence-driven. Public
+  alignment APIs are not admitted unless benchmarks show practical value and
+  the API cannot cause unsafe caller assumptions.
+- Keep scalar as the correctness reference and mandatory fallback for every
+  accelerated backend.
+- Maintain dependency-free benchmark harnesses first; only admit external
+  benchmark tooling if the added dependency graph is justified.
+
+### Admission-Gated Ecosystem Features
+
+- Async/Tokio wrappers remain gated by `docs/ASYNC.md` and the dependency
+  admission policy.
+- `serde` integration remains optional and rejected by default until a concrete
+  wrapper API and security story are reviewed.
+- `bytes` integration remains optional and rejected by default until the
+  dependency and trait surface are justified.
+- Property-test crates remain outside the runtime dependency graph. The current
+  preferred path is deterministic exhaustive tests and fuzz harnesses; add
+  property-testing only in an isolated dev/harness context if it earns review.
 
 ## Roadmap
 
@@ -230,6 +327,19 @@ Phase 3:
 
 ### v0.6
 
+- Add profile-level support for MIME, PEM, and bcrypt-compatible alphabets
+  where those profiles can remain strict, explicit, and dependency-free.
+- Add custom alphabet/profile construction with validation for duplicate
+  symbols, padding conflicts, ASCII constraints, and deterministic errors.
+- Add line-wrapping encode support for PEM/MIME/common caller-selected wrapping
+  policies, including CRLF and LF output.
+- Add validate-only APIs for strict, legacy, profile-aware, and
+  constant-time-oriented validation use cases.
+- Add zero-dependency stack-backed output helpers for short encoded values.
+- Add internal best-effort wiping helpers and secret wrapper types with redacted
+  formatting for sensitive owned buffers.
+- Add the README trust dashboard and CWE/security-control mapping
+  documentation.
 - Expand Kani proof coverage for length helpers, in-place decode bounds, and
   selected scalar decoder invariants when Kani supports the pinned Rust
   toolchain.
@@ -243,11 +353,14 @@ Phase 3:
 
 ### v0.7
 
-- Replace inactive SIMD encode prototypes with real candidate implementations
-  only when scalar differential tests, fuzz evidence, target-feature checks,
-  unsafe inventory updates, and benchmark evidence are complete.
+- Replace inactive SIMD encode prototypes with real AVX2, AVX-512, NEON,
+  SSSE3/SSE4.1, and wasm `simd128` candidate implementations only when scalar
+  differential tests, fuzz evidence, target-feature checks, unsafe inventory
+  updates, and benchmark evidence are complete.
 - Keep scalar as the default fallback and require runtime backend policy tests
   for every admitted accelerated backend.
+- Evaluate alignment and prefetch optimizations only as internal
+  benchmark-backed experiments, not as public contracts.
 - Publish per-architecture benchmark evidence for any performance claim,
   including CPU, OS, Rust version, command, and raw output.
 
@@ -257,8 +370,14 @@ Phase 3:
   requirements are met, including dependency review, cancellation behavior,
   drop cleanup behavior, chunk-boundary tests, and release evidence with the
   async feature enabled.
+- Consider optional `serde` and `bytes` integration only if a concrete user
+  need clears dependency admission; otherwise keep both out of the crate.
+- Add native Rust interoperability that needs no dependencies, such as
+  `TryFrom<&str>` for owned decoded buffer wrappers and redacted formatting for
+  secret wrapper types.
 - If async remains unjustified, keep `tokio` inert and spend this milestone on
-  stream ergonomics, documentation, and additional framed-protocol tests.
+  stream ergonomics, documentation, framed-protocol tests, and wasm/no-allocator
+  portability checks.
 
 ### v0.9
 
@@ -267,12 +386,22 @@ Phase 3:
   evidence rehearsal.
 - Decide whether constant-time decode is formally guaranteed with supporting
   evidence or explicitly documented as constant-time-oriented only.
+- Complete the panic-free public API audit for non-test scalar code and document
+  any remaining bounded internal indexing with proof or test evidence.
+- Freeze profile behavior for strict, legacy, MIME, PEM, bcrypt, custom
+  alphabets, and validation-only APIs.
+- Finalize the trust dashboard, CWE mapping, dependency admission outcomes, and
+  security policy language for enterprise review.
 - Freeze dependency policy and feature admission rules for `v1.0`.
 
 ### v1.0
 
 - Kani proofs complete for scalar in-place decode.
 - Formal or tool-backed evidence for panic-free scalar public APIs.
+- Stable profile API for RFC 4648 standard and URL-safe, MIME, PEM, bcrypt, and
+  custom alphabets.
+- Stable validate-only APIs.
+- Stable secret-buffer and best-effort cleanup API contracts.
 - Published security and migration documentation for strict-by-default adoption.
 - Constant-time decode guarantee either formally documented with supporting
   verification evidence or explicitly excluded from the stable API contract.

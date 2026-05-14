@@ -59,6 +59,10 @@
   admission-gated rather than already scheduled functionality.
 - Added `docs/DEPENDENCIES.md` to make external crate admission requirements
   explicit and packaged with release evidence.
+- Expanded the roadmap with a zero-dependency "ultimate crate" backlog covering
+  MIME/PEM/bcrypt profiles, custom alphabets, line wrapping, validation-only
+  APIs, stack-backed short outputs, secret wrappers, CWE mapping, and
+  admission-gated ecosystem integrations.
 - Updated security documentation for streaming wrapper buffer cleanup behavior.
 - Updated release evidence documentation for stream fuzzing and reserved SIMD
   feature-bundle checks.
