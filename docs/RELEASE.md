@@ -29,6 +29,8 @@ The release gate covers:
 - feature-mode tests
 - Miri no-default-features tests when nightly Miri is installed
 - docs
+- installed cross-target `no_std` checks
+- reserved x86 SIMD feature-bundle compile checks
 - cargo-deny policy
 - RustSec audit
 - license inventory
@@ -121,6 +123,20 @@ scripts/check_fuzz.sh
 ```
 
 The `fuzz/` package is not part of the published crate.
+
+Run the streaming fuzz smoke when changing stream state machines:
+
+```sh
+cargo +nightly fuzz run stream_chunks -- -runs=1000
+```
+
+Review generated local corpus files before committing.
+
+Reserved x86 SIMD feature bundles are checked with:
+
+```sh
+scripts/check_simd_feature_bundles.sh
+```
 
 ## Publish
 

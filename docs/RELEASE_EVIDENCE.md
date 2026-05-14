@@ -44,6 +44,8 @@ The release gate runs:
 - fuzz target compile check when `cargo-fuzz` is installed
 - isolated fuzz and performance harness dependency checks
 - installed-target `no_std` checks for the reserved `simd` feature
+- reserved x86 SIMD feature-bundle compile checks for AVX2 and AVX-512 VBMI
+  under `no_std`
 - unsafe-boundary validation that confines `allow(unsafe_code)` to `src/simd.rs`
 - unsafe-boundary validation that requires inventory documentation for current
   unsafe prototype sites
@@ -58,6 +60,8 @@ The release gate runs:
   undersized output, and in-place cleanup
 - stream encoder and decoder tests proving `finish()`, `into_inner()`, and
   adjacent-payload behavior remain intact after cleanup hardening
+- stream fuzz coverage for chunked writers, fragmented reader sources, and
+  adjacent framed payload boundaries
 - Kani proofs through `scripts/check_kani.sh` when Kani is installed and its
   bundled compiler supports this crate's pinned `rust-version`
 - SBOM generation
@@ -91,6 +95,35 @@ scripts/check_fuzz.sh
 
 `fuzz/deny.toml` allows the NCSA license only for `libfuzzer-sys`. The root
 `deny.toml` remains stricter for the published crate.
+
+The `stream_chunks` fuzz target covers:
+
+- chunked streaming encoders and decoders
+- fragmented `DecoderReader` sources compared with slice decoding when payload
+  boundary semantics match
+- padded `DecoderReader` payloads followed by adjacent framed bytes, proving
+  the reader leaves those bytes unread
+
+Run a bounded local smoke test with:
+
+```sh
+cargo +nightly fuzz run stream_chunks -- -runs=1000
+```
+
+LibFuzzer may generate local corpus files under `fuzz/corpus/`; review them
+before committing and discard accidental local corpus churn.
+
+## SIMD Feature-Bundle Evidence
+
+Reserved SIMD code must compile under the feature bundles that future admitted
+backends will rely on. Check x86 feature bundles with:
+
+```sh
+scripts/check_simd_feature_bundles.sh
+```
+
+This currently proves `no_std` reserved builds for AVX2 and the AVX-512 Base64
+candidate bundle: `avx512f`, `avx512bw`, `avx512vl`, and `avx512vbmi`.
 
 ## Performance Evidence
 

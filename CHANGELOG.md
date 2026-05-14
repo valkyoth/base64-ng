@@ -21,6 +21,8 @@
 - Hardened streaming decoders to clear pending input on drop and clear decoded
   output queue bytes before they are discarded.
 - Updated security documentation for streaming wrapper buffer cleanup behavior.
+- Updated release evidence documentation for stream fuzzing and reserved SIMD
+  feature-bundle checks.
 
 ## 0.4.1 - 2026-05-14
 
