@@ -328,9 +328,9 @@ the zero-runtime-dependency stance.
   corpus policy check.
 - Completed the constant-time verification plan with generated-code review
   requirements and a release-gated non-claim wording check.
-- Expand Kani proof coverage for length helpers, in-place decode bounds, and
-  selected scalar decoder invariants when Kani supports the pinned Rust
-  toolchain.
+- Expanded gated Kani proof harness definitions for length helpers, in-place
+  bounds, slice encode/decode bounds, and clear-tail decode cleanup. Execution
+  remains gated until Kani supports the pinned Rust toolchain.
 
 ### v0.7
 

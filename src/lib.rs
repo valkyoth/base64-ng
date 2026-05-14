@@ -4650,6 +4650,54 @@ mod kani_proofs {
 
     #[kani::proof]
     #[kani::unwind(3)]
+    fn standard_decode_slice_returns_written_within_output() {
+        let input = kani::any::<[u8; 4]>();
+        let mut output = kani::any::<[u8; 3]>();
+        let result = STANDARD.decode_slice(&input, &mut output);
+
+        if let Ok(written) = result {
+            assert!(written <= output.len());
+        }
+    }
+
+    #[kani::proof]
+    #[kani::unwind(3)]
+    fn standard_decode_slice_clear_tail_clears_output_on_error() {
+        let input = kani::any::<[u8; 4]>();
+        let mut output = kani::any::<[u8; 3]>();
+        let result = STANDARD.decode_slice_clear_tail(&input, &mut output);
+
+        if result.is_err() {
+            assert!(output.iter().all(|byte| *byte == 0));
+        }
+    }
+
+    #[kani::proof]
+    #[kani::unwind(3)]
+    fn standard_encode_slice_returns_written_within_output() {
+        let input = kani::any::<[u8; 3]>();
+        let mut output = kani::any::<[u8; 4]>();
+        let result = STANDARD.encode_slice(&input, &mut output);
+
+        if let Ok(written) = result {
+            assert!(written <= output.len());
+        }
+    }
+
+    #[kani::proof]
+    #[kani::unwind(4)]
+    fn standard_encode_in_place_returns_prefix_within_buffer() {
+        let mut buffer = kani::any::<[u8; 8]>();
+        let input_len = usize::from(kani::any::<u8>() % 9);
+        let result = STANDARD.encode_in_place(&mut buffer, input_len);
+
+        if let Ok(encoded) = result {
+            assert!(encoded.len() <= 8);
+        }
+    }
+
+    #[kani::proof]
+    #[kani::unwind(3)]
     fn standard_clear_tail_decode_clears_buffer_on_error() {
         let mut buffer = kani::any::<[u8; 4]>();
         let result = STANDARD.decode_in_place_clear_tail(&mut buffer);

@@ -32,6 +32,9 @@
 - Expanded `docs/CONSTANT_TIME.md` with generated-code review requirements and
   added `scripts/validate-constant-time-policy.sh` to release-gate the current
   constant-time non-claim wording.
+- Expanded gated Kani proof harness definitions for slice encode/decode,
+  clear-tail decode, and in-place encode bounds while keeping execution gated
+  on Kani's bundled compiler support.
 
 ## 0.5.0 - 2026-05-14
 
