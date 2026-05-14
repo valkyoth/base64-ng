@@ -43,6 +43,8 @@
   metadata validation to prove those gate assets are present.
 - Included the Rust toolchain pin and cargo-deny policy in the published
   package so packaged release scripts have their required policy inputs.
+- Hardened release metadata validation to require packaged release scripts to
+  be executable and use the portable `#!/usr/bin/env sh` shebang.
 - Updated security documentation for streaming wrapper buffer cleanup behavior.
 - Updated release evidence documentation for stream fuzzing and reserved SIMD
   feature-bundle checks.

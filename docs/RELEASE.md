@@ -23,6 +23,7 @@ The release gate covers:
 
 - formatting
 - metadata
+- packaged release script presence, executable-bit, and shebang validation
 - dependency graph
 - reserved feature placeholder checks
 - fuzz-only dependency checks when `fuzz/` is present

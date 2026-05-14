@@ -65,6 +65,34 @@ test -s docs/RELEASE_EVIDENCE.md
 test -s docs/SIMD.md
 test -s docs/UNSAFE.md
 
+for required_script in \
+    "scripts/check_backend_evidence.sh" \
+    "scripts/check_fuzz.sh" \
+    "scripts/check_kani.sh" \
+    "scripts/check_perf.sh" \
+    "scripts/check_reserved_features.sh" \
+    "scripts/check_simd_feature_bundles.sh" \
+    "scripts/check_targets.sh" \
+    "scripts/checks.sh" \
+    "scripts/ci_install_rust.sh" \
+    "scripts/generate-sbom.sh" \
+    "scripts/reproducible_build_check.sh" \
+    "scripts/stable_release_gate.sh" \
+    "scripts/validate-dependencies.sh" \
+    "scripts/validate-release-metadata.sh" \
+    "scripts/validate-unsafe-boundary.sh"
+do
+    if [ ! -x "$required_script" ]; then
+        echo "release metadata: $required_script must be executable" >&2
+        exit 1
+    fi
+
+    if [ "$(sed -n '1p' "$required_script")" != "#!/usr/bin/env sh" ]; then
+        echo "release metadata: $required_script must use #!/usr/bin/env sh" >&2
+        exit 1
+    fi
+done
+
 if ! grep -q '^The MIT License (MIT)$' LICENSE-MIT; then
     echo "release metadata: LICENSE-MIT does not look like the canonical MIT license" >&2
     exit 1
@@ -101,10 +129,17 @@ for required_package_file in \
     "docs/RELEASE_EVIDENCE.md" \
     "docs/SIMD.md" \
     "docs/UNSAFE.md" \
+    "scripts/check_backend_evidence.sh" \
+    "scripts/check_fuzz.sh" \
+    "scripts/check_kani.sh" \
+    "scripts/check_perf.sh" \
     "scripts/check_reserved_features.sh" \
     "scripts/check_simd_feature_bundles.sh" \
     "scripts/check_targets.sh" \
     "scripts/checks.sh" \
+    "scripts/ci_install_rust.sh" \
+    "scripts/generate-sbom.sh" \
+    "scripts/reproducible_build_check.sh" \
     "scripts/stable_release_gate.sh" \
     "scripts/validate-dependencies.sh" \
     "scripts/validate-release-metadata.sh" \
