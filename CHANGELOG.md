@@ -14,6 +14,8 @@
   tests gated by the detected AVX-512 Base64 feature bundle.
 - Added local release-gate and CI compile checks for the reserved x86 AVX2 and
   AVX-512 SIMD feature bundles under `no_std`.
+- Extended stream fuzz coverage to verify padded `DecoderReader` leaves
+  adjacent framed payload bytes unread.
 
 ## 0.4.1 - 2026-05-14
 

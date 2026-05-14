@@ -1,10 +1,10 @@
 #![no_main]
 
-use std::io::Write;
+use std::io::{Cursor, Read, Write};
 
 use base64_ng::{
     STANDARD, STANDARD_NO_PAD, URL_SAFE, URL_SAFE_NO_PAD,
-    stream::{Decoder, Encoder},
+    stream::{Decoder, DecoderReader, Encoder},
 };
 use libfuzzer_sys::fuzz_target;
 
@@ -22,6 +22,9 @@ fuzz_target!(|data: &[u8]| {
     exercise_encoder_chunks(payload, split_seed, STANDARD_NO_PAD);
     exercise_encoder_chunks(payload, split_seed, URL_SAFE);
     exercise_encoder_chunks(payload, split_seed, URL_SAFE_NO_PAD);
+
+    exercise_decoder_reader_adjacent_payload(payload, split_seed, STANDARD);
+    exercise_decoder_reader_adjacent_payload(payload, split_seed, URL_SAFE);
 });
 
 fn exercise_decoder_chunks<A, const PAD: bool>(
@@ -65,6 +68,51 @@ fn exercise_encoder_chunks<A, const PAD: bool>(
 
     let streamed = encoder.finish().unwrap();
     assert_eq!(streamed, expected);
+}
+
+fn exercise_decoder_reader_adjacent_payload<A>(
+    input: &[u8],
+    split_seed: u8,
+    engine: base64_ng::Engine<A, true>,
+) where
+    A: base64_ng::Alphabet,
+{
+    let payload_len = input
+        .len()
+        .min(usize::from(split_seed % 31) + 1)
+        .max(1);
+    let mut payload = Vec::with_capacity(payload_len);
+    if input.is_empty() {
+        payload.push(split_seed);
+    } else {
+        payload.extend_from_slice(&input[..payload_len]);
+    }
+    if payload.len() % 3 == 0 {
+        payload.push(split_seed.wrapping_add(1));
+    }
+
+    let suffix = if input.len() > payload_len {
+        &input[payload_len..]
+    } else {
+        b"NEXT"
+    };
+
+    let encoded = engine.encode_vec(&payload).unwrap();
+    assert!(encoded.contains(&b'='));
+
+    let mut stream = Vec::with_capacity(encoded.len() + suffix.len());
+    stream.extend_from_slice(&encoded);
+    stream.extend_from_slice(suffix);
+
+    let cursor = Cursor::new(stream.as_slice());
+    let mut reader = DecoderReader::new(cursor, engine);
+    let mut decoded = Vec::new();
+    reader.read_to_end(&mut decoded).unwrap();
+
+    assert_eq!(decoded, payload);
+    assert_eq!(reader.get_ref().position(), encoded.len() as u64);
+    let remaining = &reader.get_ref().get_ref()[encoded.len()..];
+    assert_eq!(remaining, suffix);
 }
 
 fn chunk_size(seed: u8) -> usize {
