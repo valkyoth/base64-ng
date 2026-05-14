@@ -25,7 +25,8 @@ The release gate covers:
 - metadata
 - packaged release script presence, executable-bit, and shebang validation
 - dependency graph
-- reserved feature placeholder checks
+- reserved feature placeholder checks with per-feature dependency graph
+  validation
 - fuzz-only dependency checks when `fuzz/` is present
 - clippy
 - feature-mode tests

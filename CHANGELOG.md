@@ -45,6 +45,8 @@
   package so packaged release scripts have their required policy inputs.
 - Hardened release metadata validation to require packaged release scripts to
   be executable and use the portable `#!/usr/bin/env sh` shebang.
+- Strengthened reserved-feature placeholder checks with explicit per-feature
+  dependency graph validation.
 - Updated security documentation for streaming wrapper buffer cleanup behavior.
 - Updated release evidence documentation for stream fuzzing and reserved SIMD
   feature-bundle checks.

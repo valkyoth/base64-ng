@@ -39,7 +39,8 @@ The release gate runs:
 - release metadata validation
 - packaged release script presence, executable-bit, and shebang validation
 - zero-dependency policy check for the published crate
-- reserved feature placeholder checks for `tokio`, `kani`, and `fuzzing`
+- reserved feature placeholder checks for `tokio`, `kani`, and `fuzzing`,
+  including per-feature dependency graph validation
 - clippy with warnings denied
 - default, all-features, and no-default-features tests
 - doctests and documentation build
