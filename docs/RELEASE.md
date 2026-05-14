@@ -138,6 +138,12 @@ Reserved x86 SIMD feature bundles are checked with:
 scripts/check_simd_feature_bundles.sh
 ```
 
+Capture local backend evidence with:
+
+```sh
+scripts/check_backend_evidence.sh
+```
+
 ## Publish
 
 After the release gate passes:

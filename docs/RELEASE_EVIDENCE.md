@@ -125,6 +125,17 @@ scripts/check_simd_feature_bundles.sh
 This currently proves `no_std` reserved builds for AVX2 and the AVX-512 Base64
 candidate bundle: `avx512f`, `avx512bw`, `avx512vl`, and `avx512vbmi`.
 
+Capture local runtime backend and prototype evidence with:
+
+```sh
+scripts/check_backend_evidence.sh
+```
+
+The script runs the runtime backend-report test and the gated SIMD prototype
+scalar-equivalence tests with `--nocapture`. On CPUs with AVX2 or the AVX-512
+candidate bundle, those prototype tests execute the inactive prototype body and
+compare it against scalar output.
+
 ## Performance Evidence
 
 The performance harness is intentionally isolated from the published crate.

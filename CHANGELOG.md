@@ -23,6 +23,8 @@
 - Updated security documentation for streaming wrapper buffer cleanup behavior.
 - Updated release evidence documentation for stream fuzzing and reserved SIMD
   feature-bundle checks.
+- Added a local backend evidence script for runtime backend reporting and gated
+  SIMD prototype tests.
 
 ## 0.4.1 - 2026-05-14
 

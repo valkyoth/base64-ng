@@ -77,6 +77,16 @@ scripts/check_simd_feature_bundles.sh
 This does not execute accelerated code. It proves the reserved AVX2 and
 AVX-512 feature-gated code still compiles under `no_std`.
 
+Capture local backend and prototype evidence:
+
+```sh
+scripts/check_backend_evidence.sh
+```
+
+This prints the runtime backend-report test and runs the gated SIMD prototype
+scalar-equivalence tests with `--nocapture`, so local CPU evidence is easy to
+copy into release notes or issue discussion.
+
 ## Required Before SIMD Code Lands
 
 Any AVX2, NEON, AVX-512, or runtime-dispatch implementation must include:
