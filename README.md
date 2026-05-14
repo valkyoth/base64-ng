@@ -307,6 +307,12 @@ Check the zero-external-crate policy directly:
 scripts/validate-dependencies.sh
 ```
 
+Check reserved feature placeholders directly:
+
+```sh
+scripts/check_reserved_features.sh
+```
+
 Run the release gate:
 
 ```sh

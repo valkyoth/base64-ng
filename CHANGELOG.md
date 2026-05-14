@@ -37,6 +37,8 @@
   to include the SIMD admission policy and unsafe inventory documents.
 - Clarified 0.5 development documentation around benchmark claims and reserved
   `tokio` feature behavior.
+- Added a reserved-feature placeholder check to prove `tokio`, `kani`, and
+  `fuzzing` remain dependency-free compile-only features until admitted.
 - Updated security documentation for streaming wrapper buffer cleanup behavior.
 - Updated release evidence documentation for stream fuzzing and reserved SIMD
   feature-bundle checks.

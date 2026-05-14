@@ -10,6 +10,9 @@ scripts/validate-release-metadata.sh
 echo "checks: minimal dependency graph"
 scripts/validate-dependencies.sh
 
+echo "checks: reserved feature placeholders"
+scripts/check_reserved_features.sh
+
 echo "checks: unsafe boundary"
 scripts/validate-unsafe-boundary.sh
 

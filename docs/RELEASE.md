@@ -24,6 +24,7 @@ The release gate covers:
 - formatting
 - metadata
 - dependency graph
+- reserved feature placeholder checks
 - fuzz-only dependency checks when `fuzz/` is present
 - clippy
 - feature-mode tests
