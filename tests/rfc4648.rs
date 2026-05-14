@@ -57,8 +57,19 @@ fn rfc4648_standard_round_trips() {
 fn runtime_backend_report_keeps_scalar_active() {
     let report = runtime::backend_report();
     let display = report.to_string();
+    let snapshot = report.snapshot();
 
     assert_eq!(report.active, runtime::Backend::Scalar);
+    assert_eq!(snapshot.active, "scalar");
+    assert_eq!(snapshot.candidate, report.candidate.as_str());
+    assert_eq!(
+        snapshot.candidate_required_cpu_features,
+        report.candidate_required_cpu_features()
+    );
+    assert_eq!(snapshot.simd_feature_enabled, cfg!(feature = "simd"));
+    assert!(!snapshot.accelerated_backend_active);
+    assert!(snapshot.unsafe_boundary_enforced);
+    assert_eq!(snapshot.security_posture, report.security_posture.as_str());
     assert_eq!(report.active.as_str(), "scalar");
     assert_eq!(report.active.to_string(), "scalar");
     assert!(runtime::Backend::Scalar.required_cpu_features().is_empty());

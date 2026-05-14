@@ -9,6 +9,7 @@
   feature bundle and exposed backend CPU feature requirements for audit logs.
 - Added detected-candidate CPU feature requirements to runtime backend report
   formatting.
+- Added `BackendReport::snapshot()` for structured runtime backend audit logs.
 
 ## 0.4.1 - 2026-05-14
 

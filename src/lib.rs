@@ -230,6 +230,25 @@ pub mod runtime {
         pub security_posture: SecurityPosture,
     }
 
+    /// Compact structured backend snapshot for logging and policy evidence.
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+    pub struct BackendSnapshot {
+        /// Stable active backend identifier.
+        pub active: &'static str,
+        /// Stable detected candidate identifier.
+        pub candidate: &'static str,
+        /// CPU features required by the detected candidate.
+        pub candidate_required_cpu_features: &'static [&'static str],
+        /// Whether the `simd` feature is enabled in this build.
+        pub simd_feature_enabled: bool,
+        /// Whether an accelerated SIMD backend is active.
+        pub accelerated_backend_active: bool,
+        /// Whether unsafe code is confined to the dedicated SIMD boundary.
+        pub unsafe_boundary_enforced: bool,
+        /// Stable security posture identifier.
+        pub security_posture: &'static str,
+    }
+
     impl core::fmt::Display for BackendReport {
         fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
             write!(
@@ -291,6 +310,27 @@ pub mod runtime {
         #[must_use]
         pub const fn candidate_required_cpu_features(self) -> &'static [&'static str] {
             self.candidate.required_cpu_features()
+        }
+
+        /// Returns a compact structured snapshot with stable string values.
+        ///
+        /// ```
+        /// let snapshot = base64_ng::runtime::backend_report().snapshot();
+        ///
+        /// assert_eq!(snapshot.active, "scalar");
+        /// assert!(!snapshot.accelerated_backend_active);
+        /// ```
+        #[must_use]
+        pub const fn snapshot(self) -> BackendSnapshot {
+            BackendSnapshot {
+                active: self.active.as_str(),
+                candidate: self.candidate.as_str(),
+                candidate_required_cpu_features: self.candidate_required_cpu_features(),
+                simd_feature_enabled: self.simd_feature_enabled,
+                accelerated_backend_active: self.accelerated_backend_active,
+                unsafe_boundary_enforced: self.unsafe_boundary_enforced,
+                security_posture: self.security_posture.as_str(),
+            }
         }
     }
 

@@ -29,6 +29,8 @@ weakening the scalar trust base.
   `runtime::Backend::required_cpu_features()`.
 - Runtime backend reports include `candidate_required_cpu_features=[...]` in
   their stable key/value display output for audit logs.
+- Runtime backend reports expose `snapshot()` for structured audit logging
+  without parsing formatted strings.
 - An inactive AVX2 fixed-block encode prototype exists behind the SIMD boundary
   and is tested against scalar output only when AVX2 is available.
 - An inactive NEON fixed-block encode prototype exists behind the same boundary
