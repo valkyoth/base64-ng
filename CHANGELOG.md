@@ -52,6 +52,8 @@
 - Hardened streaming encoders to clear plaintext pending buffers on drop, and
   after pending plaintext is consumed, while preserving `finish()` and
   `into_inner()` behavior.
+- Hardened CI Rust setup so macOS runners explicitly install the pinned
+  toolchain before invoking Cargo.
 
 ## 0.3.0 - 2026-05-13
 
