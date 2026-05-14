@@ -76,6 +76,36 @@ fn runtime_backend_report_keeps_scalar_active() {
 }
 
 #[test]
+fn runtime_backend_policy_assertions_are_explicit() {
+    assert_eq!(
+        runtime::require_backend_policy(runtime::BackendPolicy::ScalarExecutionOnly),
+        Ok(())
+    );
+
+    let simd_feature_policy =
+        runtime::require_backend_policy(runtime::BackendPolicy::SimdFeatureDisabled);
+    if cfg!(feature = "simd") {
+        assert_eq!(
+            simd_feature_policy.unwrap_err().policy,
+            runtime::BackendPolicy::SimdFeatureDisabled
+        );
+    } else {
+        assert_eq!(simd_feature_policy, Ok(()));
+    }
+
+    let no_candidate_policy =
+        runtime::require_backend_policy(runtime::BackendPolicy::NoDetectedSimdCandidate);
+    if runtime::backend_report().candidate == runtime::Backend::Scalar {
+        assert_eq!(no_candidate_policy, Ok(()));
+    } else {
+        assert_eq!(
+            no_candidate_policy.unwrap_err().policy,
+            runtime::BackendPolicy::NoDetectedSimdCandidate
+        );
+    }
+}
+
+#[test]
 fn unpadded_round_trips() {
     for input_len in 0..64 {
         let mut input = [0u8; 64];

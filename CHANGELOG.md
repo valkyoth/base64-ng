@@ -29,6 +29,8 @@
   tests that run only when AVX2 is available.
 - Added `runtime::backend_report()` so callers can audit the active backend,
   detected candidate, SIMD feature status, and scalar-only security posture.
+- Added `runtime::require_backend_policy()` for deployment assertions such as
+  scalar-only execution and no-SIMD build requirements.
 
 ## 0.3.0 - 2026-05-13
 

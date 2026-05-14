@@ -47,6 +47,8 @@ The release gate runs:
 - unsafe-boundary validation that confines `allow(unsafe_code)` to `src/simd.rs`
 - runtime backend report tests proving the public active backend remains scalar
   until an accelerated backend is explicitly admitted
+- runtime backend policy tests for scalar execution and no-SIMD deployment
+  assertions
 - Kani proofs through `scripts/check_kani.sh` when Kani is installed and its
   bundled compiler supports this crate's pinned `rust-version`
 - SBOM generation

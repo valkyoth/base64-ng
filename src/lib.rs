@@ -78,6 +78,36 @@ pub mod runtime {
         Accelerated,
     }
 
+    /// Deployment policy for runtime backend assertions.
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+    #[non_exhaustive]
+    pub enum BackendPolicy {
+        /// Require encode/decode execution to use the scalar backend.
+        ScalarExecutionOnly,
+        /// Require the crate to be built without the `simd` feature.
+        SimdFeatureDisabled,
+        /// Require no SIMD candidate to be visible to this build and target.
+        NoDetectedSimdCandidate,
+    }
+
+    /// Runtime backend policy failure.
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+    pub struct BackendPolicyError {
+        /// Policy that was requested.
+        pub policy: BackendPolicy,
+        /// Backend report observed when the policy failed.
+        pub report: BackendReport,
+    }
+
+    impl core::fmt::Display for BackendPolicyError {
+        fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+            formatter.write_str("runtime backend policy was not satisfied")
+        }
+    }
+
+    #[cfg(feature = "std")]
+    impl std::error::Error for BackendPolicyError {}
+
     /// Backend report for the current build and target.
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     pub struct BackendReport {
@@ -123,6 +153,31 @@ pub mod runtime {
             accelerated_backend_active,
             unsafe_boundary_enforced: true,
             security_posture,
+        }
+    }
+
+    /// Requires the current runtime backend report to satisfy `policy`.
+    ///
+    /// ```
+    /// base64_ng::runtime::require_backend_policy(
+    ///     base64_ng::runtime::BackendPolicy::ScalarExecutionOnly,
+    /// )
+    /// .unwrap();
+    /// ```
+    pub fn require_backend_policy(policy: BackendPolicy) -> Result<(), BackendPolicyError> {
+        let report = backend_report();
+        let satisfied = match policy {
+            BackendPolicy::ScalarExecutionOnly => {
+                report.active == Backend::Scalar && !report.accelerated_backend_active
+            }
+            BackendPolicy::SimdFeatureDisabled => !report.simd_feature_enabled,
+            BackendPolicy::NoDetectedSimdCandidate => report.candidate == Backend::Scalar,
+        };
+
+        if satisfied {
+            Ok(())
+        } else {
+            Err(BackendPolicyError { policy, report })
         }
     }
 

@@ -195,6 +195,8 @@ Phase 3:
   scalar as the only active backend.
 - Inactive AVX2 fixed-block encode prototype with scalar-equivalence tests.
 - Public runtime backend report for audit logging and deployment assertions.
+- Public runtime backend policy assertions for scalar-only and no-SIMD
+  deployment requirements.
 - Keep SIMD unsafe code isolated from the scalar core with documented invariants
   for every unsafe block.
 
