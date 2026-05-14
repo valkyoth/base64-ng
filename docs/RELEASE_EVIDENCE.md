@@ -44,8 +44,8 @@ The release gate runs:
 - fuzz target compile check when `cargo-fuzz` is installed
 - isolated fuzz and performance harness dependency checks
 - installed-target `no_std` checks for the reserved `simd` feature
-- reserved x86 SIMD feature-bundle compile checks for AVX2 and AVX-512 VBMI
-  under `no_std`
+- reserved SIMD feature-bundle compile checks for AVX2, AVX-512 VBMI, and
+  NEON under `no_std` when the corresponding Rust targets are installed
 - unsafe-boundary validation that confines `allow(unsafe_code)` to `src/simd.rs`
 - unsafe-boundary validation that confines architecture intrinsics, CPU feature
   detection, and `target_feature` gates to `src/simd.rs`
@@ -119,14 +119,15 @@ before committing and discard accidental local corpus churn.
 ## SIMD Feature-Bundle Evidence
 
 Reserved SIMD code must compile under the feature bundles that future admitted
-backends will rely on. Check x86 feature bundles with:
+backends will rely on. Check installed SIMD feature bundles with:
 
 ```sh
 scripts/check_simd_feature_bundles.sh
 ```
 
-This currently proves `no_std` reserved builds for AVX2 and the AVX-512 Base64
-candidate bundle: `avx512f`, `avx512bw`, `avx512vl`, and `avx512vbmi`.
+This currently proves `no_std` reserved builds for AVX2, the AVX-512 Base64
+candidate bundle (`avx512f`, `avx512bw`, `avx512vl`, and `avx512vbmi`), and
+NEON when the corresponding Rust targets are installed.
 
 Capture local runtime backend and prototype evidence with:
 

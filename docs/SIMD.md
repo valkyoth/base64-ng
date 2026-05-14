@@ -1,6 +1,7 @@
 # SIMD Admission Policy
 
-`base64-ng` is intentionally scalar-only in the `0.4.1` release. The crate uses
+`base64-ng` is intentionally scalar-only in the `0.5.0-alpha.0` development
+cycle. The crate uses
 `#![deny(unsafe_code)]` and permits `allow(unsafe_code)` only in the private
 `src/simd.rs` boundary. The `simd` feature remains reserved until
 architecture-specific code has enough evidence to justify enabling it.
@@ -68,14 +69,15 @@ Run a specific target:
 scripts/check_targets.sh aarch64-unknown-linux-gnu
 ```
 
-Compile-check the reserved x86 SIMD feature bundles:
+Compile-check the reserved SIMD feature bundles:
 
 ```sh
 scripts/check_simd_feature_bundles.sh
 ```
 
-This does not execute accelerated code. It proves the reserved AVX2 and
-AVX-512 feature-gated code still compiles under `no_std`.
+This does not execute accelerated code. It proves the reserved AVX2,
+AVX-512, and NEON feature-gated code still compiles under `no_std` when the
+corresponding Rust targets are installed.
 
 Capture local backend and prototype evidence:
 
