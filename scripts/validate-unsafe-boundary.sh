@@ -17,4 +17,16 @@ if [ "$matches" != "$allowed" ]; then
     exit 1
 fi
 
+if [ ! -s docs/UNSAFE.md ]; then
+    echo "unsafe boundary: docs/UNSAFE.md must document unsafe sites"
+    exit 1
+fi
+
+for symbol in encode_24_bytes_avx2 encode_12_bytes_neon; do
+    if ! grep -q "$symbol" docs/UNSAFE.md; then
+        echo "unsafe boundary: docs/UNSAFE.md must document $symbol"
+        exit 1
+    fi
+done
+
 echo "unsafe boundary: ok"

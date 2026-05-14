@@ -204,6 +204,8 @@ Phase 3:
 - Stable key/value runtime report and policy-failure display output.
 - Keep SIMD unsafe code isolated from the scalar core with documented invariants
   for every unsafe block.
+- Maintain `docs/UNSAFE.md` as a central unsafe inventory for every admitted or
+  prototype unsafe site.
 
 ### v0.5
 

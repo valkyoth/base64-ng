@@ -248,6 +248,8 @@ Security commitments:
 - Future unsafe SIMD isolated under `src/simd.rs`.
 - Local checks verify that `allow(unsafe_code)` is confined to the SIMD
   boundary.
+- [docs/UNSAFE.md](docs/UNSAFE.md) inventories every current unsafe site and
+  its safety invariants.
 - `runtime::backend_report()` exposes the active backend, detected candidate,
   SIMD feature status, and scalar-only security posture for audit logging.
 - `runtime::require_backend_policy()` lets deployments assert scalar execution,

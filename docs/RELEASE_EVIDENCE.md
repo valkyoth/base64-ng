@@ -45,6 +45,8 @@ The release gate runs:
 - isolated fuzz and performance harness dependency checks
 - installed-target `no_std` checks for the reserved `simd` feature
 - unsafe-boundary validation that confines `allow(unsafe_code)` to `src/simd.rs`
+- unsafe-boundary validation that requires inventory documentation for current
+  unsafe prototype sites
 - runtime backend report tests proving the public active backend remains scalar
   until an accelerated backend is explicitly admitted
 - runtime backend policy tests for scalar execution and no-SIMD deployment

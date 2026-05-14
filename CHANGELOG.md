@@ -29,6 +29,10 @@
   tests that run only when AVX2 is available.
 - Added an inactive NEON fixed-block encode prototype with scalar-equivalence
   tests that compile only for NEON-capable ARM targets.
+- Added `docs/UNSAFE.md` as a central unsafe-code inventory for current SIMD
+  prototype sites and their invariants.
+- Extended the unsafe-boundary validation script to require inventory entries
+  for current unsafe prototype sites.
 - Added `runtime::backend_report()` so callers can audit the active backend,
   detected candidate, SIMD feature status, and scalar-only security posture.
 - Added `runtime::require_backend_policy()` for deployment assertions such as

@@ -41,6 +41,8 @@ only inside the dedicated private SIMD admission boundary in `src/simd.rs`, and
 the release gate verifies that `allow(unsafe_code)` does not appear elsewhere.
 The reserved `simd` feature may detect CPU candidates, but it does not activate
 an accelerated backend until the SIMD admission policy is satisfied.
+`docs/UNSAFE.md` inventories every current unsafe site and its safety
+invariants.
 
 Security-sensitive deployments can call `runtime::backend_report()` to record
 the active backend, detected candidate, SIMD feature status, unsafe-boundary

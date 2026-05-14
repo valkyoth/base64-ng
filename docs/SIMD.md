@@ -11,9 +11,10 @@ weakening the scalar trust base.
 
 ## Current Status
 
-- No unsafe code is compiled by the published crate.
+- Default builds compile no unsafe code.
 - `scripts/validate-unsafe-boundary.sh` verifies that `allow(unsafe_code)` is
   confined to `src/simd.rs`.
+- `docs/UNSAFE.md` inventories every current unsafe site and its invariants.
 - The scalar implementation is the reference behavior.
 - Encode and decode entry points already pass through an internal backend
   boundary, currently backed only by the scalar implementation.
