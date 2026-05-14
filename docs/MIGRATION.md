@@ -172,8 +172,10 @@ wrappers.
 
 ## Security Notes
 
-The scalar core denies unsafe code and has no external crate dependencies.
-Unsafe code is permitted only inside the dedicated SIMD boundary.
+The scalar encode/decode core has no external crate dependencies and remains
+safe Rust. The only scalar-side unsafe code is the audited volatile wipe helper
+used by clear-tail and secret-buffer cleanup APIs; architecture-specific unsafe
+code remains limited to the dedicated SIMD boundary.
 Release gates include tests, clippy, docs, dependency policy, RustSec audit,
 license review, SBOM generation, reproducible package/build checks, and Miri
 when installed.

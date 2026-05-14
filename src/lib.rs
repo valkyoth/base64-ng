@@ -1542,8 +1542,16 @@ impl LineWrap {
     }
 }
 
+#[allow(unsafe_code)]
 fn wipe_bytes(bytes: &mut [u8]) {
-    bytes.fill(0);
+    for byte in bytes {
+        // SAFETY: `byte` comes from a unique mutable slice iterator, so the
+        // pointer is non-null, aligned, valid for one `u8` write, and does not
+        // alias another live mutable reference during this iteration.
+        unsafe {
+            core::ptr::write_volatile(byte, 0);
+        }
+    }
     core::sync::atomic::compiler_fence(core::sync::atomic::Ordering::SeqCst);
 }
 
@@ -4406,35 +4414,27 @@ fn ct_validate_padded<A: Alphabet>(input: &[u8]) -> Result<(), DecodeError> {
     let mut invalid_padding = 0u8;
     let mut read = 0;
 
-    while read < input.len() {
-        let is_last = read + 4 == input.len();
-        let b0 = input[read];
-        let b1 = input[read + 1];
-        let b2 = input[read + 2];
-        let b3 = input[read + 3];
+    while read + 4 < input.len() {
+        let [b0, b1, b2, b3] = read_quad(input, read)?;
         let (_, valid0) = ct_decode_ascii_base64::<A>(b0);
-        let (v1, valid1) = ct_decode_ascii_base64::<A>(b1);
-        let (v2, valid2) = ct_decode_ascii_base64::<A>(b2);
+        let (_, valid1) = ct_decode_ascii_base64::<A>(b1);
+        let (_, valid2) = ct_decode_ascii_base64::<A>(b2);
         let (_, valid3) = ct_decode_ascii_base64::<A>(b3);
 
         invalid_byte |= !valid0;
         invalid_byte |= !valid1;
-
-        if is_last && padding == 2 {
-            invalid_padding |= ct_mask_nonzero_u8(v1 & 0b0000_1111);
-        } else if is_last && padding == 1 {
-            invalid_byte |= !valid2;
-            invalid_padding |= ct_mask_eq_u8(b2, b'=');
-            invalid_padding |= ct_mask_nonzero_u8(v2 & 0b0000_0011);
-        } else {
-            invalid_byte |= !valid2;
-            invalid_byte |= !valid3;
-            invalid_padding |= ct_mask_eq_u8(b2, b'=');
-            invalid_padding |= ct_mask_eq_u8(b3, b'=');
-        }
-
+        invalid_byte |= !valid2;
+        invalid_byte |= !valid3;
+        invalid_padding |= ct_mask_eq_u8(b2, b'=');
+        invalid_padding |= ct_mask_eq_u8(b3, b'=');
         read += 4;
     }
+
+    let final_chunk = read_quad(input, read)?;
+    let (_, final_invalid_byte, final_invalid_padding, _) =
+        ct_padded_final_quantum::<A>(final_chunk, padding);
+    invalid_byte |= final_invalid_byte;
+    invalid_padding |= final_invalid_padding;
 
     report_ct_error(invalid_byte, invalid_padding)
 }
@@ -4504,6 +4504,36 @@ fn ct_validate_unpadded<A: Alphabet>(input: &[u8]) -> Result<(), DecodeError> {
     report_ct_error(invalid_byte, invalid_padding)
 }
 
+fn ct_padded_final_quantum<A: Alphabet>(
+    input: [u8; 4],
+    padding: usize,
+) -> ([u8; 3], u8, u8, usize) {
+    let [b0, b1, b2, b3] = input;
+    let (v0, valid0) = ct_decode_ascii_base64::<A>(b0);
+    let (v1, valid1) = ct_decode_ascii_base64::<A>(b1);
+    let (v2, valid2) = ct_decode_ascii_base64::<A>(b2);
+    let (v3, valid3) = ct_decode_ascii_base64::<A>(b3);
+
+    let padding_byte = padding.to_le_bytes()[0];
+    let no_padding = ct_mask_eq_u8(padding_byte, 0);
+    let one_padding = ct_mask_eq_u8(padding_byte, 1);
+    let two_padding = ct_mask_eq_u8(padding_byte, 2);
+    let require_v2 = no_padding | one_padding;
+    let require_v3 = no_padding;
+
+    let invalid_byte = !valid0 | !valid1 | (!valid2 & require_v2) | (!valid3 & require_v3);
+    let invalid_padding = (ct_mask_nonzero_u8(v1 & 0b0000_1111) & two_padding)
+        | ((ct_mask_eq_u8(b2, b'=') | ct_mask_nonzero_u8(v2 & 0b0000_0011)) & one_padding)
+        | ((ct_mask_eq_u8(b2, b'=') | ct_mask_eq_u8(b3, b'=')) & no_padding);
+
+    (
+        [(v0 << 2) | (v1 >> 4), (v1 << 4) | (v2 >> 2), (v2 << 6) | v3],
+        invalid_byte,
+        invalid_padding,
+        3 - padding,
+    )
+}
+
 fn ct_decode_padded<A: Alphabet>(input: &[u8], output: &mut [u8]) -> Result<usize, DecodeError> {
     if !input.len().is_multiple_of(4) {
         return Err(DecodeError::InvalidLength);
@@ -4523,12 +4553,8 @@ fn ct_decode_padded<A: Alphabet>(input: &[u8], output: &mut [u8]) -> Result<usiz
     let mut write = 0;
     let mut read = 0;
 
-    while read < input.len() {
-        let is_last = read + 4 == input.len();
-        let b0 = input[read];
-        let b1 = input[read + 1];
-        let b2 = input[read + 2];
-        let b3 = input[read + 3];
+    while read + 4 < input.len() {
+        let [b0, b1, b2, b3] = read_quad(input, read)?;
         let (v0, valid0) = ct_decode_ascii_base64::<A>(b0);
         let (v1, valid1) = ct_decode_ascii_base64::<A>(b1);
         let (v2, valid2) = ct_decode_ascii_base64::<A>(b2);
@@ -4536,31 +4562,24 @@ fn ct_decode_padded<A: Alphabet>(input: &[u8], output: &mut [u8]) -> Result<usiz
 
         invalid_byte |= !valid0;
         invalid_byte |= !valid1;
-
-        if is_last && padding == 2 {
-            invalid_padding |= ct_mask_nonzero_u8(v1 & 0b0000_1111);
-            output[write] = (v0 << 2) | (v1 >> 4);
-            write += 1;
-        } else if is_last && padding == 1 {
-            invalid_byte |= !valid2;
-            invalid_padding |= ct_mask_eq_u8(b2, b'=');
-            invalid_padding |= ct_mask_nonzero_u8(v2 & 0b0000_0011);
-            output[write] = (v0 << 2) | (v1 >> 4);
-            output[write + 1] = (v1 << 4) | (v2 >> 2);
-            write += 2;
-        } else {
-            invalid_byte |= !valid2;
-            invalid_byte |= !valid3;
-            invalid_padding |= ct_mask_eq_u8(b2, b'=');
-            invalid_padding |= ct_mask_eq_u8(b3, b'=');
-            output[write] = (v0 << 2) | (v1 >> 4);
-            output[write + 1] = (v1 << 4) | (v2 >> 2);
-            output[write + 2] = (v2 << 6) | v3;
-            write += 3;
-        }
-
+        invalid_byte |= !valid2;
+        invalid_byte |= !valid3;
+        invalid_padding |= ct_mask_eq_u8(b2, b'=');
+        invalid_padding |= ct_mask_eq_u8(b3, b'=');
+        output[write] = (v0 << 2) | (v1 >> 4);
+        output[write + 1] = (v1 << 4) | (v2 >> 2);
+        output[write + 2] = (v2 << 6) | v3;
+        write += 3;
         read += 4;
     }
+
+    let final_chunk = read_quad(input, read)?;
+    let (final_bytes, final_invalid_byte, final_invalid_padding, final_written) =
+        ct_padded_final_quantum::<A>(final_chunk, padding);
+    invalid_byte |= final_invalid_byte;
+    invalid_padding |= final_invalid_padding;
+    output[write..write + final_written].copy_from_slice(&final_bytes[..final_written]);
+    write += final_written;
 
     report_ct_error(invalid_byte, invalid_padding)?;
     Ok(write)
@@ -4580,12 +4599,8 @@ fn ct_decode_padded_in_place<A: Alphabet>(buffer: &mut [u8]) -> Result<usize, De
     let mut write = 0;
     let mut read = 0;
 
-    while read < buffer.len() {
-        let is_last = read + 4 == buffer.len();
-        let b0 = buffer[read];
-        let b1 = buffer[read + 1];
-        let b2 = buffer[read + 2];
-        let b3 = buffer[read + 3];
+    while read + 4 < buffer.len() {
+        let [b0, b1, b2, b3] = read_quad(buffer, read)?;
         let (v0, valid0) = ct_decode_ascii_base64::<A>(b0);
         let (v1, valid1) = ct_decode_ascii_base64::<A>(b1);
         let (v2, valid2) = ct_decode_ascii_base64::<A>(b2);
@@ -4593,31 +4608,24 @@ fn ct_decode_padded_in_place<A: Alphabet>(buffer: &mut [u8]) -> Result<usize, De
 
         invalid_byte |= !valid0;
         invalid_byte |= !valid1;
-
-        if is_last && padding == 2 {
-            invalid_padding |= ct_mask_nonzero_u8(v1 & 0b0000_1111);
-            buffer[write] = (v0 << 2) | (v1 >> 4);
-            write += 1;
-        } else if is_last && padding == 1 {
-            invalid_byte |= !valid2;
-            invalid_padding |= ct_mask_eq_u8(b2, b'=');
-            invalid_padding |= ct_mask_nonzero_u8(v2 & 0b0000_0011);
-            buffer[write] = (v0 << 2) | (v1 >> 4);
-            buffer[write + 1] = (v1 << 4) | (v2 >> 2);
-            write += 2;
-        } else {
-            invalid_byte |= !valid2;
-            invalid_byte |= !valid3;
-            invalid_padding |= ct_mask_eq_u8(b2, b'=');
-            invalid_padding |= ct_mask_eq_u8(b3, b'=');
-            buffer[write] = (v0 << 2) | (v1 >> 4);
-            buffer[write + 1] = (v1 << 4) | (v2 >> 2);
-            buffer[write + 2] = (v2 << 6) | v3;
-            write += 3;
-        }
-
+        invalid_byte |= !valid2;
+        invalid_byte |= !valid3;
+        invalid_padding |= ct_mask_eq_u8(b2, b'=');
+        invalid_padding |= ct_mask_eq_u8(b3, b'=');
+        buffer[write] = (v0 << 2) | (v1 >> 4);
+        buffer[write + 1] = (v1 << 4) | (v2 >> 2);
+        buffer[write + 2] = (v2 << 6) | v3;
+        write += 3;
         read += 4;
     }
+
+    let final_chunk = read_quad(buffer, read)?;
+    let (final_bytes, final_invalid_byte, final_invalid_padding, final_written) =
+        ct_padded_final_quantum::<A>(final_chunk, padding);
+    invalid_byte |= final_invalid_byte;
+    invalid_padding |= final_invalid_padding;
+    buffer[write..write + final_written].copy_from_slice(&final_bytes[..final_written]);
+    write += final_written;
 
     debug_assert_eq!(write, required);
     report_ct_error(invalid_byte, invalid_padding)?;

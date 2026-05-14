@@ -112,7 +112,9 @@ behavior entirely.
 - Generate byte masks with integer arithmetic helpers instead of a generic
   `bool`-to-mask conversion. Generated-code review is still required before a
   formal constant-time claim.
-- Keep the implementation scalar and `unsafe`-free.
+- Keep the Base64 symbol-mapping and decode logic scalar and `unsafe`-free.
+- Clear-tail cleanup uses the audited volatile wipe helper documented in
+  `docs/UNSAFE.md`.
 - Keep the module independent from future SIMD dispatch.
 
 ## Verification Requirements

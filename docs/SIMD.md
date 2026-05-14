@@ -1,9 +1,10 @@
 # SIMD Admission Policy
 
 `base64-ng` is intentionally scalar-only in the `0.5.0` release. The crate uses
-`#![deny(unsafe_code)]` and permits `allow(unsafe_code)` only in the private
-`src/simd.rs` boundary. The `simd` feature remains reserved until
-architecture-specific code has enough evidence to justify enabling it.
+`#![deny(unsafe_code)]` and permits reviewed `allow(unsafe_code)` exceptions
+only for the volatile wipe helper in `src/lib.rs` and the private `src/simd.rs`
+boundary. The `simd` feature remains reserved until architecture-specific code
+has enough evidence to justify enabling it.
 
 This is a security decision, not a rejection of hardware acceleration. SIMD
 must be added only when it can be isolated, tested, and reviewed without
@@ -11,9 +12,10 @@ weakening the scalar trust base.
 
 ## Current Status
 
-- Default builds compile no unsafe code.
+- Default builds compile one audited unsafe volatile wipe helper; scalar
+  encode/decode remains safe Rust.
 - `scripts/validate-unsafe-boundary.sh` verifies that `allow(unsafe_code)` is
-  confined to `src/simd.rs`.
+  confined to the volatile wipe helper and `src/simd.rs`.
 - `docs/UNSAFE.md` inventories every current unsafe site and its invariants.
 - The scalar implementation is the reference behavior.
 - Encode and decode entry points already pass through an internal backend
@@ -94,7 +96,7 @@ Any AVX2, NEON, AVX-512, or runtime-dispatch implementation must include:
 
 - The dedicated `src/simd.rs` boundary for all architecture-specific code.
 - Crate-level `deny(unsafe_code)` must continue to reject unsafe outside the
-  SIMD module.
+  volatile wipe helper and SIMD module.
 - A local safety comment for every unsafe block.
 - Deterministic differential tests against scalar encode/decode behavior.
 - Fuzz differential coverage for strict and legacy-compatible inputs where

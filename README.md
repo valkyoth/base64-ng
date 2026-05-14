@@ -57,7 +57,7 @@ Planned behind admission evidence:
 | License | `MIT OR Apache-2.0` |
 | MSRV | Rust `1.95.0` |
 | Runtime dependencies | Zero external crates |
-| Unsafe policy | Scalar crate denies unsafe; unsafe confined to `src/simd.rs` |
+| Unsafe policy | Scalar encode/decode remains safe Rust; audited unsafe is limited to volatile wiping and SIMD prototypes |
 | Active backend | Scalar only |
 | Strict decoding | Default, canonical, no whitespace |
 | Legacy compatibility | Explicit opt-in APIs |
@@ -428,11 +428,13 @@ Security commitments:
 
 - Stable Rust first. Current toolchain pin: Rust `1.95.0`.
 - `no_std` core by default.
-- Scalar code denies unsafe.
-- Future unsafe SIMD isolated under `src/simd.rs`.
-- Local checks verify that `allow(unsafe_code)` is confined to the SIMD
-  boundary, every SIMD-boundary unsafe function is inventoried, and every
-  unsafe block has a nearby `SAFETY:` explanation. Architecture intrinsics,
+- Scalar encode/decode remains safe Rust.
+- One audited unsafe helper in `src/lib.rs` performs volatile best-effort
+  wiping so cleanup writes are not optimized away.
+- Future unsafe SIMD remains isolated under `src/simd.rs`.
+- Local checks verify that `allow(unsafe_code)` is confined to the volatile
+  wipe helper and SIMD boundary, every unsafe function is inventoried, and
+  every unsafe block has a nearby `SAFETY:` explanation. Architecture intrinsics,
   CPU feature detection, and target-feature gates are checked against the same
   boundary.
 - [docs/UNSAFE.md](docs/UNSAFE.md) inventories every current unsafe site and

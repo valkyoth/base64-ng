@@ -11,7 +11,7 @@ each stable release.
 | Runtime dependencies | Zero external crates | `scripts/validate-dependencies.sh` |
 | Default dev dependencies | Zero external crates | `Cargo.toml` |
 | Optional runtime features | `alloc`, `std`, `stream`; reserved `simd`, `tokio`, `kani`, `fuzzing` | `Cargo.toml`, `scripts/check_reserved_features.sh` |
-| Unsafe policy | Scalar crate denies unsafe; unsafe confined to SIMD boundary | `src/lib.rs`, `src/simd.rs`, `docs/UNSAFE.md` |
+| Unsafe policy | Scalar encode/decode remains safe Rust; audited unsafe is limited to volatile wiping and SIMD prototypes | `src/lib.rs`, `src/simd.rs`, `docs/UNSAFE.md` |
 | Active backend | Scalar only | `runtime::backend_report()` tests |
 | SIMD status | Reserved prototypes only; no accelerated backend admitted | `docs/SIMD.md` |
 | Strict decoding | Default behavior rejects whitespace, mixed alphabets, malformed padding, and non-canonical trailing bits | integration tests |

@@ -36,13 +36,13 @@ The local release gate skips only the large deterministic sweep tests under
 Miri. Those tests still run in the normal stable test suite; Miri focuses on the
 scalar and in-place safety surface that benefits most from interpreter checks.
 
-The scalar library root uses `#![deny(unsafe_code)]`. Unsafe code is allowed
-only inside the dedicated private SIMD admission boundary in `src/simd.rs`, and
-the release gate verifies that `allow(unsafe_code)` does not appear elsewhere.
-The reserved `simd` feature may detect CPU candidates, but it does not activate
-an accelerated backend until the SIMD admission policy is satisfied.
-`docs/UNSAFE.md` inventories every current unsafe site and its safety
-invariants.
+The scalar encode/decode implementation remains safe Rust. The crate root uses
+`#![deny(unsafe_code)]`, with reviewed `allow(unsafe_code)` exceptions only for
+the volatile wipe helper in `src/lib.rs` and the dedicated private SIMD
+admission boundary in `src/simd.rs`. The reserved `simd` feature may detect CPU
+candidates, but it does not activate an accelerated backend until the SIMD
+admission policy is satisfied. `docs/UNSAFE.md` inventories every current
+unsafe site and its safety invariants.
 
 Security-sensitive deployments can call `runtime::backend_report()` to record
 the active backend, detected candidate, SIMD feature status, unsafe-boundary
@@ -106,7 +106,8 @@ decoded buffer.
 
 Required before unsafe SIMD stabilizes:
 
-- `allow(unsafe_code)` remains confined to `src/simd.rs`.
+- `allow(unsafe_code)` remains confined to the volatile wipe helper and
+  `src/simd.rs`.
 - Every unsafe block has a local safety explanation.
 - Scalar/SIMD differential tests.
 - Fuzz targets covering strict and legacy modes.

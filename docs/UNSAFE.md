@@ -1,24 +1,61 @@
 # Unsafe Code Inventory
 
-`base64-ng` keeps unsafe code out of the scalar implementation. The crate root
-uses `#![deny(unsafe_code)]`, and the only source file allowed to lower that
-lint is `src/simd.rs`.
+`base64-ng` keeps scalar encode/decode in safe Rust. The crate root uses
+`#![deny(unsafe_code)]`, and reviewed `allow(unsafe_code)` exceptions are
+limited to the volatile wipe helper in `src/lib.rs` and the SIMD boundary in
+`src/simd.rs`.
 
 This inventory is intentionally small and release-gate enforced. Any new unsafe
 block must be added here before an accelerated backend can be admitted.
 
 ## Policy
 
-- Default builds compile no unsafe code.
+- Default builds compile one audited unsafe volatile wipe helper.
 - Optional SIMD prototypes live only in `src/simd.rs`.
 - `scripts/validate-unsafe-boundary.sh` fails if `allow(unsafe_code)` appears
-  outside `src/simd.rs`.
+  outside the volatile wipe helper or `src/simd.rs`.
 - `scripts/validate-unsafe-boundary.sh` fails if architecture intrinsics, CPU
   feature detection, or `target_feature` gates appear outside `src/simd.rs`.
 - Every unsafe function and unsafe block must have a local safety explanation.
 - Prototype functions are not eligible for runtime dispatch.
 
 ## Current Unsafe Sites
+
+### `wipe_bytes`
+
+Location: `src/lib.rs`
+
+Status: active cleanup primitive.
+
+Purpose:
+
+- Clear initialized caller-owned and crate-owned buffers used by clear-tail,
+  stream cleanup, stack-buffer cleanup, and secret-buffer cleanup APIs.
+- Use volatile writes so the compiler must retain the cleanup writes even when
+  the memory is not read again before drop or reuse.
+
+Preconditions:
+
+- Caller must pass a valid mutable byte slice.
+
+Unsafe operation:
+
+- `core::ptr::write_volatile` writes zero to each byte in the slice.
+
+Safety argument:
+
+- Each pointer is derived from a unique `&mut [u8]` iterator item.
+- Each pointer is valid, aligned, non-null, and writable for exactly one `u8`.
+- The helper writes only within the provided slice and does not read through the
+  volatile pointer.
+- A `SeqCst` compiler fence follows the volatile write loop to prevent
+  reordering around the cleanup boundary.
+
+Limitations:
+
+- This is best-effort data-retention reduction, not a formal zeroization
+  guarantee. It cannot clear historical copies, allocator spare capacity, swap,
+  core dumps, CPU registers, or buffers outside the slice provided to the API.
 
 ### `encode_48_bytes_avx512`
 

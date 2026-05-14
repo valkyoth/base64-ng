@@ -6,21 +6,44 @@ if ! grep -q '^#!\[deny(unsafe_code)\]' src/lib.rs; then
     exit 1
 fi
 
-allowed='src/simd.rs'
-matches="$(grep -RIl 'allow(unsafe_code)' src || true)"
+simd_allowed='src/simd.rs'
+root_allowed='src/lib.rs'
+matches="$(grep -RIl 'allow(unsafe_code)' src | sort || true)"
+allowed="$(printf '%s\n%s' "$root_allowed" "$simd_allowed" | sort)"
 
 if [ "$matches" != "$allowed" ]; then
-    echo "unsafe boundary: allow(unsafe_code) may appear only in $allowed"
+    echo "unsafe boundary: allow(unsafe_code) may appear only in $root_allowed and $simd_allowed"
     if [ -n "$matches" ]; then
         echo "$matches"
     fi
     exit 1
 fi
 
+root_allow_count="$(grep -c '^#\[allow(unsafe_code)\]$' "$root_allowed" || true)"
+if [ "$root_allow_count" -ne 1 ]; then
+    echo "unsafe boundary: src/lib.rs must have exactly one reviewed allow(unsafe_code)"
+    exit 1
+fi
+
+if ! awk '
+    /^#\[allow\(unsafe_code\)\]$/ {
+        allow_line = NR
+    }
+    /^fn wipe_bytes\(/ {
+        if (allow_line != NR - 1) {
+            failed = 1
+        }
+    }
+    END { exit failed }
+' "$root_allowed"; then
+    echo "unsafe boundary: src/lib.rs allow(unsafe_code) must apply only to wipe_bytes"
+    exit 1
+fi
+
 arch_matches="$(grep -RIl -e 'core::arch' -e 'std::arch' -e 'is_x86_feature_detected!' -e 'target_feature' src || true)"
 
-if [ "$arch_matches" != "$allowed" ]; then
-    echo "unsafe boundary: architecture intrinsics and target-feature gates may appear only in $allowed"
+if [ "$arch_matches" != "$simd_allowed" ]; then
+    echo "unsafe boundary: architecture intrinsics and target-feature gates may appear only in $simd_allowed"
     if [ -n "$arch_matches" ]; then
         echo "$arch_matches"
     fi
@@ -32,7 +55,7 @@ if [ ! -s docs/UNSAFE.md ]; then
     exit 1
 fi
 
-unsafe_functions="$(sed -n 's/^[[:space:]]*pub(super)[[:space:]]*unsafe[[:space:]]*fn[[:space:]]*\([A-Za-z0-9_][A-Za-z0-9_]*\).*/\1/p' "$allowed")"
+unsafe_functions="$(sed -n 's/^[[:space:]]*pub(super)[[:space:]]*unsafe[[:space:]]*fn[[:space:]]*\([A-Za-z0-9_][A-Za-z0-9_]*\).*/\1/p' "$simd_allowed")"
 
 if [ -z "$unsafe_functions" ]; then
     echo "unsafe boundary: expected documented prototype unsafe functions in $allowed"
@@ -60,7 +83,7 @@ if ! awk '
         prev1 = $0
     }
     END { exit failed }
-' "$allowed"; then
+' "$root_allowed" "$simd_allowed"; then
     echo "unsafe boundary: every unsafe block must have a nearby SAFETY explanation"
     exit 1
 fi

@@ -114,9 +114,11 @@ Any dependency addition must answer:
 
 ### Hard Rules
 
-- Scalar code denies unsafe.
+- Scalar encode/decode remains safe Rust.
+- The scalar-side volatile wipe helper is the only non-SIMD unsafe admission.
 - Unsafe SIMD must live under dedicated modules.
-- `allow(unsafe_code)` must remain confined to `src/simd.rs`.
+- `allow(unsafe_code)` must remain confined to the volatile wipe helper and
+  `src/simd.rs`.
 - Every unsafe block requires a local safety explanation.
 - Every SIMD path must have deterministic and fuzzed differential tests against scalar.
 - Padding behavior must be canonical by default.
@@ -275,7 +277,8 @@ the zero-runtime-dependency stance.
 - Backend differential tests that compare dispatch behavior against the scalar
   reference for canonical, malformed, and undersized-buffer cases.
 - Unsafe admission boundary in code and checks: crate-level `deny(unsafe_code)`
-  with `allow(unsafe_code)` confined to `src/simd.rs`.
+  with `allow(unsafe_code)` confined to the volatile wipe helper and
+  `src/simd.rs`.
 - SIMD dispatch scaffold that detects AVX2/NEON candidates while keeping
   scalar as the only active backend.
 - Inactive AVX2 fixed-block encode prototype with scalar-equivalence tests.
@@ -338,6 +341,9 @@ the zero-runtime-dependency stance.
 - Hardened scalar chunk validation and decode internals with checked quad reads
   and typed chunk helper inputs across strict, legacy, wrapped, and in-place
   decode paths.
+- Hardened best-effort cleanup with audited volatile byte writes.
+- Reduced constant-time-oriented padded terminal handling by removing explicit
+  padding-count branch ladders from padded ct validation/decode paths.
 
 ### v0.7
 

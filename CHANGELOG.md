@@ -39,6 +39,11 @@
   on Kani's bundled compiler support.
 - Hardened scalar chunk validation and decode helpers to use checked quad
   reads and typed `[u8; 4]` inputs instead of debug-asserted slice lengths.
+- Replaced the cleanup helper's ordinary zero fill with an audited volatile
+  write loop so best-effort wiping is not optimized away.
+- Reduced constant-time-oriented padded terminal handling by replacing explicit
+  padding-count branches with masked final-quantum validation and
+  length-derived final writes.
 
 ## 0.5.0 - 2026-05-14
 
