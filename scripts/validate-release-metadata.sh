@@ -56,6 +56,7 @@ test -s deny.toml
 test -s README.md
 test -s CONTRIBUTING.md
 test -s SECURITY.md
+test -s docs/ASYNC.md
 test -s docs/BENCHMARKS.md
 test -s docs/CONSTANT_TIME.md
 test -s docs/MIGRATION.md
@@ -121,6 +122,7 @@ for required_package_file in \
     "README.md" \
     "rust-toolchain.toml" \
     "SECURITY.md" \
+    "docs/ASYNC.md" \
     "docs/BENCHMARKS.md" \
     "docs/CONSTANT_TIME.md" \
     "docs/MIGRATION.md" \

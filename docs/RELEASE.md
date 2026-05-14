@@ -32,6 +32,7 @@ The release gate covers:
 - feature-mode tests
 - Miri no-default-features tests when nightly Miri is installed
 - docs
+- packaged async admission policy while the `tokio` feature remains inert
 - installed cross-target `no_std` checks
 - reserved SIMD feature-bundle compile checks for AVX2, AVX-512 VBMI, and NEON
   when the corresponding Rust targets are installed

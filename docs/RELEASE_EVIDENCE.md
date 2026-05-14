@@ -47,6 +47,8 @@ The release gate runs:
 - `cargo deny check`
 - `cargo audit`
 - `cargo license --json`
+- async admission documentation packaged while the `tokio` feature remains
+  inert and dependency-free
 - Miri when nightly Miri is installed
 - fuzz target compile check when `cargo-fuzz` is installed
 - isolated fuzz and performance harness dependency checks

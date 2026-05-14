@@ -53,6 +53,8 @@
   to remain inert Cargo features.
 - Updated the v0.5 roadmap to reflect the reserved async-feature admission bar
   instead of promising Tokio wrappers before dependency review.
+- Added `docs/ASYNC.md` to define the admission requirements for any future
+  async/Tokio API while the `tokio` feature remains inert.
 - Updated security documentation for streaming wrapper buffer cleanup behavior.
 - Updated release evidence documentation for stream fuzzing and reserved SIMD
   feature-bundle checks.

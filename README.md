@@ -255,6 +255,8 @@ Security commitments:
   boundary.
 - [docs/UNSAFE.md](docs/UNSAFE.md) inventories every current unsafe site and
   its safety invariants.
+- [docs/ASYNC.md](docs/ASYNC.md) defines the admission bar for any future
+  async/Tokio API while the `tokio` feature remains inert.
 - `runtime::backend_report()` exposes the active backend, detected candidate,
   SIMD feature status, and scalar-only security posture for audit logging.
 - `runtime::require_backend_policy()` lets deployments assert scalar execution,
