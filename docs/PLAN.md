@@ -175,15 +175,11 @@ the zero-runtime-dependency stance.
 - Custom alphabet validation helpers with duplicate-character, padding-byte,
   and visible-ASCII checks.
 - Stack-backed encoded output helpers for short values without `alloc`.
+- Internal safe-Rust best-effort wipe helpers for initialized bytes and
+  redacted `SecretBuffer` owned outputs when `alloc` is enabled.
 
 ### Missing Secure Core Features
 
-- Add internal best-effort wipe primitives for crate-owned temporary buffers,
-  using volatile writes and compiler fences where appropriate. This must be
-  documented as retention reduction, not a hard zeroization guarantee.
-- Add secret wrapper types for sensitive decoded/encoded material with redacted
-  `Debug`/`Display`, explicit reveal APIs, and drop-time best-effort wiping for
-  owned buffers.
 - Expand panic-free policy checks for non-test scalar code, replacing unchecked
   indexing and unwrap-like operations where practical or proving their bounds
   where replacement would harm clarity.
@@ -325,8 +321,8 @@ the zero-runtime-dependency stance.
   constant-time-oriented validation use cases.
 - Completed zero-dependency stack-backed output helpers for short encoded
   values.
-- Add internal best-effort wiping helpers and secret wrapper types with redacted
-  formatting for sensitive owned buffers.
+- Completed internal best-effort wiping helpers and redacted `SecretBuffer`
+  support for sensitive owned buffers.
 - Add the README trust dashboard and CWE/security-control mapping
   documentation.
 - Expand Kani proof coverage for length helpers, in-place decode bounds, and

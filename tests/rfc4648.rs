@@ -9,6 +9,9 @@ use base64_ng::{
 #[cfg(feature = "stream")]
 use base64_ng::stream::{Decoder, DecoderReader, Encoder, EncoderReader};
 
+#[cfg(feature = "alloc")]
+use base64_ng::SecretBuffer;
+
 #[cfg(feature = "stream")]
 use std::io::{Cursor, Read, Write};
 
@@ -1775,6 +1778,52 @@ fn alloc_helpers_round_trip() {
             byte: b'$',
         }
     );
+}
+
+#[cfg(feature = "alloc")]
+#[test]
+fn secret_buffer_redacts_and_reveals_explicitly() {
+    let mut secret = SecretBuffer::from_slice(b"token");
+    assert_eq!(secret.len(), 5);
+    assert!(!secret.is_empty());
+    assert_eq!(secret.expose_secret(), b"token");
+    assert_eq!(
+        format!("{secret:?}"),
+        "SecretBuffer { bytes: \"<redacted>\", len: 5 }"
+    );
+    assert_eq!(format!("{secret}"), "<redacted>");
+
+    secret.expose_secret_mut()[0] = b'T';
+    assert_eq!(secret.expose_secret(), b"Token");
+
+    let cloned = secret.clone();
+    assert_eq!(secret, cloned);
+
+    secret.clear();
+    assert!(secret.is_empty());
+    assert_eq!(secret.expose_secret(), b"");
+}
+
+#[cfg(feature = "alloc")]
+#[test]
+fn secret_encode_and_decode_helpers_round_trip() {
+    let encoded = STANDARD.encode_secret(b"hello").unwrap();
+    assert_eq!(encoded.expose_secret(), b"aGVsbG8=");
+    assert_eq!(
+        format!("{encoded:?}"),
+        "SecretBuffer { bytes: \"<redacted>\", len: 8 }"
+    );
+
+    let decoded = STANDARD.decode_secret(encoded.expose_secret()).unwrap();
+    assert_eq!(decoded.expose_secret(), b"hello");
+
+    let bcrypt = BCRYPT.encode_secret(&[0xff, 0xff, 0xff]).unwrap();
+    assert_eq!(bcrypt.expose_secret(), b"9999");
+
+    let wrapped = MIME.encode_secret(&[0x5a; 58]).unwrap();
+    assert_eq!(&wrapped.expose_secret()[76..78], b"\r\n");
+    let unwrapped = MIME.decode_secret(wrapped.expose_secret()).unwrap();
+    assert_eq!(unwrapped.expose_secret(), &[0x5a; 58]);
 }
 
 #[cfg(feature = "stream")]

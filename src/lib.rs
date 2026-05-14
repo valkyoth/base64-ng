@@ -516,7 +516,7 @@ pub mod stream {
         }
 
         fn clear_all(&mut self) {
-            self.buffer.fill(0);
+            crate::wipe_bytes(&mut self.buffer);
             self.start = 0;
             self.len = 0;
         }
@@ -593,7 +593,7 @@ pub mod stream {
         }
 
         fn clear_pending(&mut self) {
-            self.pending.fill(0);
+            crate::wipe_bytes(&mut self.pending);
             self.pending_len = 0;
         }
     }
@@ -771,7 +771,7 @@ pub mod stream {
         }
 
         fn clear_pending(&mut self) {
-            self.pending.fill(0);
+            crate::wipe_bytes(&mut self.pending);
             self.pending_len = 0;
         }
     }
@@ -976,7 +976,7 @@ pub mod stream {
         }
 
         fn clear_pending(&mut self) {
-            self.pending.fill(0);
+            crate::wipe_bytes(&mut self.pending);
             self.pending_len = 0;
         }
     }
@@ -1148,7 +1148,7 @@ pub mod stream {
         }
 
         fn clear_pending(&mut self) {
-            self.pending.fill(0);
+            crate::wipe_bytes(&mut self.pending);
             self.pending_len = 0;
         }
     }
@@ -1354,11 +1354,11 @@ pub mod ct {
             let written = match self.decode_slice(input, output) {
                 Ok(written) => written,
                 Err(err) => {
-                    output.fill(0);
+                    crate::wipe_bytes(output);
                     return Err(err);
                 }
             };
-            output[written..].fill(0);
+            crate::wipe_tail(output, written);
             Ok(written)
         }
 
@@ -1409,11 +1409,11 @@ pub mod ct {
             let len = match ct_decode_in_place::<A, PAD>(buffer) {
                 Ok(len) => len,
                 Err(err) => {
-                    buffer.fill(0);
+                    crate::wipe_bytes(buffer);
                     return Err(err);
                 }
             };
-            buffer[len..].fill(0);
+            crate::wipe_tail(buffer, len);
             Ok(&mut buffer[..len])
         }
     }
@@ -1503,6 +1503,15 @@ impl LineWrap {
     }
 }
 
+fn wipe_bytes(bytes: &mut [u8]) {
+    bytes.fill(0);
+    core::sync::atomic::compiler_fence(core::sync::atomic::Ordering::SeqCst);
+}
+
+fn wipe_tail(bytes: &mut [u8], start: usize) {
+    wipe_bytes(&mut bytes[start..]);
+}
+
 /// Stack-backed encoded Base64 output.
 ///
 /// This type is intended for short values where heap allocation would be
@@ -1567,13 +1576,13 @@ impl<const CAP: usize> EncodedBuffer<CAP> {
 
     /// Clears the visible bytes and the full backing array.
     pub fn clear(&mut self) {
-        self.bytes.fill(0);
+        wipe_bytes(&mut self.bytes);
         self.len = 0;
     }
 
     /// Clears bytes after the visible prefix.
     pub fn clear_tail(&mut self) {
-        self.bytes[self.len..].fill(0);
+        wipe_tail(&mut self.bytes, self.len);
     }
 }
 
@@ -1620,6 +1629,116 @@ impl<const CAP: usize> Eq for EncodedBuffer<CAP> {}
 impl<const CAP: usize> PartialEq for EncodedBuffer<CAP> {
     fn eq(&self, other: &Self) -> bool {
         self.as_bytes() == other.as_bytes()
+    }
+}
+
+/// Owned sensitive bytes with redacted formatting and drop-time cleanup.
+///
+/// `SecretBuffer` is available with the `alloc` feature. It is intended for
+/// decoded keys, tokens, and other values that should not be accidentally
+/// logged. The buffer exposes contents only through explicit reveal methods.
+///
+/// On drop, initialized bytes are cleared with the crate's internal best-effort
+/// wipe helper. This is data-retention reduction, not a formal zeroization
+/// guarantee, and it cannot make claims about allocator spare capacity or
+/// historical copies outside the wrapper.
+#[cfg(feature = "alloc")]
+pub struct SecretBuffer {
+    bytes: alloc::vec::Vec<u8>,
+}
+
+#[cfg(feature = "alloc")]
+impl SecretBuffer {
+    /// Wraps an existing vector as sensitive material.
+    #[must_use]
+    pub fn from_vec(bytes: alloc::vec::Vec<u8>) -> Self {
+        Self { bytes }
+    }
+
+    /// Copies a slice into an owned sensitive buffer.
+    #[must_use]
+    pub fn from_slice(bytes: &[u8]) -> Self {
+        Self {
+            bytes: bytes.to_vec(),
+        }
+    }
+
+    /// Returns the number of initialized secret bytes.
+    #[must_use]
+    pub fn len(&self) -> usize {
+        self.bytes.len()
+    }
+
+    /// Returns whether the buffer contains no initialized secret bytes.
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.bytes.is_empty()
+    }
+
+    /// Reveals the secret bytes.
+    ///
+    /// This method is intentionally named to make secret access explicit at the
+    /// call site.
+    #[must_use]
+    pub fn expose_secret(&self) -> &[u8] {
+        &self.bytes
+    }
+
+    /// Reveals the secret bytes mutably.
+    ///
+    /// This method is intentionally named to make secret access explicit at the
+    /// call site.
+    #[must_use]
+    pub fn expose_secret_mut(&mut self) -> &mut [u8] {
+        &mut self.bytes
+    }
+
+    /// Clears the initialized bytes and makes the buffer empty.
+    pub fn clear(&mut self) {
+        wipe_bytes(&mut self.bytes);
+        self.bytes.clear();
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl Clone for SecretBuffer {
+    fn clone(&self) -> Self {
+        Self::from_slice(self.expose_secret())
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl core::fmt::Debug for SecretBuffer {
+    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        formatter
+            .debug_struct("SecretBuffer")
+            .field("bytes", &"<redacted>")
+            .field("len", &self.len())
+            .finish()
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl core::fmt::Display for SecretBuffer {
+    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        formatter.write_str("<redacted>")
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl Drop for SecretBuffer {
+    fn drop(&mut self) {
+        wipe_bytes(&mut self.bytes);
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl Eq for SecretBuffer {}
+
+#[cfg(feature = "alloc")]
+impl PartialEq for SecretBuffer {
+    fn eq(&self, other: &Self) -> bool {
+        self.expose_secret() == other.expose_secret()
     }
 }
 
@@ -1762,6 +1881,12 @@ where
         }
     }
 
+    /// Encodes `input` into a redacted owned secret buffer.
+    #[cfg(feature = "alloc")]
+    pub fn encode_secret(&self, input: &[u8]) -> Result<SecretBuffer, EncodeError> {
+        self.encode_vec(input).map(SecretBuffer::from_vec)
+    }
+
     /// Encodes `input` into a newly allocated UTF-8 string.
     #[cfg(feature = "alloc")]
     pub fn encode_string(&self, input: &[u8]) -> Result<alloc::string::String, EncodeError> {
@@ -1778,6 +1903,12 @@ where
             Some(wrap) => self.engine.decode_wrapped_vec(input, wrap),
             None => self.engine.decode_vec(input),
         }
+    }
+
+    /// Decodes `input` into a redacted owned secret buffer.
+    #[cfg(feature = "alloc")]
+    pub fn decode_secret(&self, input: &[u8]) -> Result<SecretBuffer, DecodeError> {
+        self.decode_vec(input).map(SecretBuffer::from_vec)
     }
 }
 
@@ -2692,7 +2823,7 @@ where
                     &mut column,
                     wrap,
                 );
-                scratch[..encoded].fill(0);
+                wipe_bytes(&mut scratch[..encoded]);
                 input_offset += take;
             }
 
@@ -2708,7 +2839,7 @@ where
                 write_wrapped_byte(byte, output, &mut output_offset, &mut column, wrap);
                 read += 1;
             }
-            output[required..required + encoded].fill(0);
+            wipe_bytes(&mut output[required..required + encoded]);
             Ok(output_offset)
         }
     }
@@ -2727,11 +2858,11 @@ where
         let written = match self.encode_slice_wrapped(input, output, wrap) {
             Ok(written) => written,
             Err(err) => {
-                output.fill(0);
+                wipe_bytes(output);
                 return Err(err);
             }
         };
-        output[written..].fill(0);
+        wipe_tail(output, written);
         Ok(written)
     }
 
@@ -2790,11 +2921,11 @@ where
         let written = match self.encode_slice(input, output) {
             Ok(written) => written,
             Err(err) => {
-                output.fill(0);
+                wipe_bytes(output);
                 return Err(err);
             }
         };
-        output[written..].fill(0);
+        wipe_tail(output, written);
         Ok(written)
     }
 
@@ -2836,6 +2967,15 @@ where
         let written = self.encode_slice(input, &mut output)?;
         output.truncate(written);
         Ok(output)
+    }
+
+    /// Encodes `input` into a redacted owned secret buffer.
+    ///
+    /// This is useful when the encoded representation itself is sensitive and
+    /// should not be accidentally logged through formatting.
+    #[cfg(feature = "alloc")]
+    pub fn encode_secret(&self, input: &[u8]) -> Result<SecretBuffer, EncodeError> {
+        self.encode_vec(input).map(SecretBuffer::from_vec)
     }
 
     /// Encodes `input` into a newly allocated UTF-8 string.
@@ -2983,11 +3123,11 @@ where
         let len = match self.encode_in_place(buffer, input_len) {
             Ok(encoded) => encoded.len(),
             Err(err) => {
-                buffer.fill(0);
+                wipe_bytes(buffer);
                 return Err(err);
             }
         };
-        buffer[len..].fill(0);
+        wipe_tail(buffer, len);
         Ok(&mut buffer[..len])
     }
 
@@ -3026,11 +3166,11 @@ where
         let written = match self.decode_slice(input, output) {
             Ok(written) => written,
             Err(err) => {
-                output.fill(0);
+                wipe_bytes(output);
                 return Err(err);
             }
         };
-        output[written..].fill(0);
+        wipe_tail(output, written);
         Ok(written)
     }
 
@@ -3081,11 +3221,11 @@ where
         let written = match self.decode_slice_legacy(input, output) {
             Ok(written) => written,
             Err(err) => {
-                output.fill(0);
+                wipe_bytes(output);
                 return Err(err);
             }
         };
-        output[written..].fill(0);
+        wipe_tail(output, written);
         Ok(written)
     }
 
@@ -3125,11 +3265,11 @@ where
         let written = match self.decode_slice_wrapped(input, output, wrap) {
             Ok(written) => written,
             Err(err) => {
-                output.fill(0);
+                wipe_bytes(output);
                 return Err(err);
             }
         };
-        output[written..].fill(0);
+        wipe_tail(output, written);
         Ok(written)
     }
 
@@ -3143,12 +3283,21 @@ where
         let written = match self.decode_slice(input, &mut output) {
             Ok(written) => written,
             Err(err) => {
-                output.fill(0);
+                wipe_bytes(&mut output);
                 return Err(err);
             }
         };
         output.truncate(written);
         Ok(output)
+    }
+
+    /// Decodes `input` into a redacted owned secret buffer.
+    ///
+    /// On malformed input, the intermediate output buffer is cleared before the
+    /// error is returned by [`Self::decode_vec`].
+    #[cfg(feature = "alloc")]
+    pub fn decode_secret(&self, input: &[u8]) -> Result<SecretBuffer, DecodeError> {
+        self.decode_vec(input).map(SecretBuffer::from_vec)
     }
 
     /// Decodes `input` into a newly allocated byte vector using the explicit
@@ -3160,7 +3309,7 @@ where
         let written = match self.decode_slice_legacy(input, &mut output) {
             Ok(written) => written,
             Err(err) => {
-                output.fill(0);
+                wipe_bytes(&mut output);
                 return Err(err);
             }
         };
@@ -3180,7 +3329,7 @@ where
         let written = match self.decode_slice_wrapped(input, &mut output, wrap) {
             Ok(written) => written,
             Err(err) => {
-                output.fill(0);
+                wipe_bytes(&mut output);
                 return Err(err);
             }
         };
@@ -3227,11 +3376,11 @@ where
         let len = match Self::decode_slice_to_start(buffer) {
             Ok(len) => len,
             Err(err) => {
-                buffer.fill(0);
+                wipe_bytes(buffer);
                 return Err(err);
             }
         };
-        buffer[len..].fill(0);
+        wipe_tail(buffer, len);
         Ok(&mut buffer[..len])
     }
 
@@ -3268,7 +3417,7 @@ where
         buffer: &'a mut [u8],
     ) -> Result<&'a mut [u8], DecodeError> {
         if let Err(err) = validate_legacy_decode::<A, PAD>(buffer) {
-            buffer.fill(0);
+            wipe_bytes(buffer);
             return Err(err);
         }
 
@@ -3286,11 +3435,11 @@ where
         let len = match Self::decode_slice_to_start(&mut buffer[..write]) {
             Ok(len) => len,
             Err(err) => {
-                buffer.fill(0);
+                wipe_bytes(buffer);
                 return Err(err);
             }
         };
-        buffer[len..].fill(0);
+        wipe_tail(buffer, len);
         Ok(&mut buffer[..len])
     }
 

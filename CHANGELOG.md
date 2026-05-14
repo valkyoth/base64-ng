@@ -18,6 +18,8 @@
   `BCRYPT`, and `CRYPT`.
 - Added `EncodedBuffer` and `encode_buffer` helpers for stack-backed short
   encoded output without requiring `alloc`.
+- Added `SecretBuffer`, `encode_secret`, and `decode_secret` helpers for
+  redacted owned sensitive output with dependency-free best-effort cleanup.
 
 ## 0.5.0 - 2026-05-14
 

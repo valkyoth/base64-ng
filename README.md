@@ -32,6 +32,8 @@ Implemented now:
 - Named dependency-free profiles for MIME, PEM, bcrypt-style, and
   `crypt(3)`-style Base64.
 - Stack-backed encoded output buffers for short values without `alloc`.
+- Redacted secret owned buffers for sensitive encoded or decoded bytes when
+  `alloc` is enabled.
 - Separate `ct` scalar decode module for sensitive payloads that avoids
   secret-indexed lookup tables during Base64 symbol mapping.
 - `std::io` streaming encoders and decoders behind the `stream` feature.
@@ -326,6 +328,25 @@ assert_eq!(bcrypt.as_bytes(), b"9999");
 `EncodedBuffer` exposes bytes only through `as_bytes` and `as_str`, redacts the
 payload from `Debug`, and clears its backing array when dropped as best-effort
 data-retention reduction.
+
+When an owned heap buffer is acceptable but accidental logging is not, use
+`encode_secret` and `decode_secret`:
+
+```rust
+use base64_ng::STANDARD;
+
+let encoded = STANDARD.encode_secret(b"hello").unwrap();
+assert_eq!(encoded.expose_secret(), b"aGVsbG8=");
+assert_eq!(format!("{encoded:?}"), r#"SecretBuffer { bytes: "<redacted>", len: 8 }"#);
+
+let decoded = STANDARD.decode_secret(encoded.expose_secret()).unwrap();
+assert_eq!(decoded.expose_secret(), b"hello");
+assert_eq!(format!("{decoded}"), "<redacted>");
+```
+
+`SecretBuffer` clears initialized bytes when dropped, but it does not claim
+formal zeroization and cannot clean historical copies outside the wrapper or
+allocator spare capacity.
 
 With the default `alloc` feature, vector and string helpers are available:
 
