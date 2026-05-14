@@ -252,6 +252,8 @@ Security commitments:
   SIMD feature status, and scalar-only security posture for audit logging.
 - `runtime::require_backend_policy()` lets deployments assert scalar execution,
   disabled SIMD features, or no detected SIMD candidate.
+- `BackendPolicy::HighAssuranceScalarOnly` combines the scalar/no-SIMD
+  deployment checks into one assertion.
 - Strict decoding rejects malformed padding and trailing data.
 - Runtime scalar APIs are expected to return `Result` or `Option` for malformed
   input and size errors instead of panicking.

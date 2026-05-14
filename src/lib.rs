@@ -88,6 +88,9 @@ pub mod runtime {
         SimdFeatureDisabled,
         /// Require no SIMD candidate to be visible to this build and target.
         NoDetectedSimdCandidate,
+        /// Require scalar execution, the `simd` feature disabled, no detected
+        /// SIMD candidate, and the unsafe boundary enforced.
+        HighAssuranceScalarOnly,
     }
 
     /// Runtime backend policy failure.
@@ -123,6 +126,35 @@ pub mod runtime {
         pub unsafe_boundary_enforced: bool,
         /// Current security posture.
         pub security_posture: SecurityPosture,
+    }
+
+    impl BackendReport {
+        /// Returns whether this report satisfies `policy`.
+        ///
+        /// ```
+        /// let report = base64_ng::runtime::backend_report();
+        ///
+        /// assert!(
+        ///     report.satisfies(base64_ng::runtime::BackendPolicy::ScalarExecutionOnly)
+        /// );
+        /// ```
+        #[must_use]
+        pub const fn satisfies(self, policy: BackendPolicy) -> bool {
+            match policy {
+                BackendPolicy::ScalarExecutionOnly => {
+                    matches!(self.active, Backend::Scalar) && !self.accelerated_backend_active
+                }
+                BackendPolicy::SimdFeatureDisabled => !self.simd_feature_enabled,
+                BackendPolicy::NoDetectedSimdCandidate => matches!(self.candidate, Backend::Scalar),
+                BackendPolicy::HighAssuranceScalarOnly => {
+                    matches!(self.active, Backend::Scalar)
+                        && matches!(self.candidate, Backend::Scalar)
+                        && !self.simd_feature_enabled
+                        && !self.accelerated_backend_active
+                        && self.unsafe_boundary_enforced
+                }
+            }
+        }
     }
 
     /// Returns the runtime backend report for this build and target.
@@ -166,15 +198,7 @@ pub mod runtime {
     /// ```
     pub fn require_backend_policy(policy: BackendPolicy) -> Result<(), BackendPolicyError> {
         let report = backend_report();
-        let satisfied = match policy {
-            BackendPolicy::ScalarExecutionOnly => {
-                report.active == Backend::Scalar && !report.accelerated_backend_active
-            }
-            BackendPolicy::SimdFeatureDisabled => !report.simd_feature_enabled,
-            BackendPolicy::NoDetectedSimdCandidate => report.candidate == Backend::Scalar,
-        };
-
-        if satisfied {
+        if report.satisfies(policy) {
             Ok(())
         } else {
             Err(BackendPolicyError { policy, report })

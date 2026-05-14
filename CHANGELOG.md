@@ -31,6 +31,8 @@
   detected candidate, SIMD feature status, and scalar-only security posture.
 - Added `runtime::require_backend_policy()` for deployment assertions such as
   scalar-only execution and no-SIMD build requirements.
+- Added `BackendPolicy::HighAssuranceScalarOnly` and
+  `BackendReport::satisfies()` for captured-report policy checks.
 
 ## 0.3.0 - 2026-05-13
 

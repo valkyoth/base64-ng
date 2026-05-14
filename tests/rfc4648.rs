@@ -77,30 +77,48 @@ fn runtime_backend_report_keeps_scalar_active() {
 
 #[test]
 fn runtime_backend_policy_assertions_are_explicit() {
+    let report = runtime::backend_report();
+
     assert_eq!(
         runtime::require_backend_policy(runtime::BackendPolicy::ScalarExecutionOnly),
         Ok(())
     );
+    assert!(report.satisfies(runtime::BackendPolicy::ScalarExecutionOnly));
 
     let simd_feature_policy =
         runtime::require_backend_policy(runtime::BackendPolicy::SimdFeatureDisabled);
     if cfg!(feature = "simd") {
+        assert!(!report.satisfies(runtime::BackendPolicy::SimdFeatureDisabled));
         assert_eq!(
             simd_feature_policy.unwrap_err().policy,
             runtime::BackendPolicy::SimdFeatureDisabled
         );
     } else {
+        assert!(report.satisfies(runtime::BackendPolicy::SimdFeatureDisabled));
         assert_eq!(simd_feature_policy, Ok(()));
     }
 
     let no_candidate_policy =
         runtime::require_backend_policy(runtime::BackendPolicy::NoDetectedSimdCandidate);
-    if runtime::backend_report().candidate == runtime::Backend::Scalar {
+    if report.candidate == runtime::Backend::Scalar {
+        assert!(report.satisfies(runtime::BackendPolicy::NoDetectedSimdCandidate));
         assert_eq!(no_candidate_policy, Ok(()));
     } else {
+        assert!(!report.satisfies(runtime::BackendPolicy::NoDetectedSimdCandidate));
         assert_eq!(
             no_candidate_policy.unwrap_err().policy,
             runtime::BackendPolicy::NoDetectedSimdCandidate
+        );
+    }
+
+    let high_assurance_policy =
+        runtime::require_backend_policy(runtime::BackendPolicy::HighAssuranceScalarOnly);
+    if report.satisfies(runtime::BackendPolicy::HighAssuranceScalarOnly) {
+        assert_eq!(high_assurance_policy, Ok(()));
+    } else {
+        assert_eq!(
+            high_assurance_policy.unwrap_err().policy,
+            runtime::BackendPolicy::HighAssuranceScalarOnly
         );
     }
 }

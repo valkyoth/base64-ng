@@ -49,6 +49,7 @@ The release gate runs:
   until an accelerated backend is explicitly admitted
 - runtime backend policy tests for scalar execution and no-SIMD deployment
   assertions
+- high-assurance scalar-only backend policy tests
 - Kani proofs through `scripts/check_kani.sh` when Kani is installed and its
   bundled compiler supports this crate's pinned `rust-version`
 - SBOM generation

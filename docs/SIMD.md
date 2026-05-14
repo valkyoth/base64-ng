@@ -25,6 +25,8 @@ weakening the scalar trust base.
   SIMD feature status, and scalar-only security posture.
 - `runtime::require_backend_policy()` allows deployments to enforce scalar
   execution, disabled SIMD features, or no detected SIMD candidate.
+- `BackendPolicy::HighAssuranceScalarOnly` combines scalar execution, disabled
+  SIMD features, no detected SIMD candidate, and unsafe-boundary enforcement.
 - Unit tests compare dispatch behavior against the scalar reference for
   canonical inputs, malformed inputs, and undersized output buffers.
 - The `simd` feature does not enable accelerated code yet.
