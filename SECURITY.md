@@ -36,6 +36,18 @@ The local release gate skips only the large deterministic sweep tests under
 Miri. Those tests still run in the normal stable test suite; Miri focuses on the
 scalar and in-place safety surface that benefits most from interpreter checks.
 
+The scalar library root uses `#![deny(unsafe_code)]`. Unsafe code is allowed
+only inside the dedicated private SIMD admission boundary in `src/simd.rs`, and
+the release gate verifies that `allow(unsafe_code)` does not appear elsewhere.
+The reserved `simd` feature may detect CPU candidates, but it does not activate
+an accelerated backend until the SIMD admission policy is satisfied.
+
+Security-sensitive deployments can call `runtime::backend_report()` to record
+the active backend, detected candidate, SIMD feature status, unsafe-boundary
+status, and current security posture. `runtime::require_backend_policy()` can
+enforce scalar-only execution, no-SIMD builds, no detected SIMD candidate, or
+the combined `HighAssuranceScalarOnly` policy at process startup.
+
 The scalar encoder avoids input-derived alphabet table indexes, and the scalar
 decoder avoids obvious alphabet `match` ladders by using branch-minimized
 arithmetic for ASCII classification. The `ct` module provides a separate
@@ -71,8 +83,8 @@ decoded buffer.
 
 Required before unsafe SIMD stabilizes:
 
-- A deliberate change from crate-wide `forbid(unsafe_code)` to a policy that
-  still denies unsafe outside the SIMD module.
+- `allow(unsafe_code)` remains confined to `src/simd.rs`.
+- Every unsafe block has a local safety explanation.
 - Scalar/SIMD differential tests.
 - Fuzz targets covering strict and legacy modes.
 - Miri on scalar, in-place, and SIMD dispatch APIs.

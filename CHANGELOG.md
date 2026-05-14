@@ -37,6 +37,8 @@
   backend, posture, and policy enums for audit logs and CI artifacts.
 - Added stable key/value `Display` output for runtime backend reports and
   policy failures.
+- Updated the security policy with the current unsafe boundary and runtime
+  backend policy controls.
 
 ## 0.3.0 - 2026-05-13
 
