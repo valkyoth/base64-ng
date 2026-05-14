@@ -38,7 +38,7 @@ decode lookup table. That keeps the default implementation aligned with the
 side-channel hardening roadmap, but it is expected to trail highly optimized
 table-based decoders on large buffers.
 
-Treat scalar decode throughput as an optimization target for `0.4`, not as a
+Treat scalar decode throughput as an optimization target for `0.4.1`, not as a
 release claim. Any future fast scalar or SIMD path must preserve strict error
 indexes, canonical padding rejection, Miri cleanliness, and scalar/SIMD
 differential test evidence.

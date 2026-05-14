@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.1 - 2026-05-14
+
+- Fixed published documentation examples and harness manifests to reference
+  `0.4.1` instead of stale `0.3` or `0.4.0-alpha.0` development versions.
+- Updated release documentation to describe the current `0.4.1` crate status.
+
 ## 0.4.0 - 2026-05-14
 
 - Released the `0.4.0` hardening and SIMD admission milestone.

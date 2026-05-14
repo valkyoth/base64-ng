@@ -1,6 +1,6 @@
 # SIMD Admission Policy
 
-`base64-ng` is intentionally scalar-only in the `0.4` line. The crate uses
+`base64-ng` is intentionally scalar-only in the `0.4.1` release. The crate uses
 `#![deny(unsafe_code)]` and permits `allow(unsafe_code)` only in the private
 `src/simd.rs` boundary. The `simd` feature remains reserved until
 architecture-specific code has enough evidence to justify enabling it.
