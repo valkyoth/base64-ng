@@ -40,7 +40,7 @@ Planned:
 
 ```toml
 [dependencies]
-base64-ng = "0.3"
+base64-ng = "0.4"
 ```
 
 The crate is dual-licensed:
@@ -65,7 +65,7 @@ Disable defaults for embedded or freestanding use:
 
 ```toml
 [dependencies]
-base64-ng = { version = "0.3", default-features = false }
+base64-ng = { version = "0.4", default-features = false }
 ```
 
 ## Example

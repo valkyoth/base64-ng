@@ -2,7 +2,7 @@
 
 ## 0.4.0 - 2026-05-14
 
-- Started the next development cycle after the `0.3.0` release.
+- Released the `0.4.0` hardening and SIMD admission milestone.
 - Added cross-target CI checks for the reserved `simd` feature in `no_std`
   mode across x86_64, aarch64, FreeBSD, wasm32, and Cortex-M targets.
 - Added `scripts/check_targets.sh` so installed cross-target `no_std`
