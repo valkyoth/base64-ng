@@ -24,6 +24,9 @@
   they are discarded.
 - Added focused regression tests for decoder `finish()` and `into_inner()` paths
   after stream cleanup hardening.
+- Hardened the unsafe-boundary validator so every SIMD-boundary unsafe function
+  must be documented and every unsafe block must have a nearby `SAFETY:`
+  explanation.
 - Updated security documentation for streaming wrapper buffer cleanup behavior.
 - Updated release evidence documentation for stream fuzzing and reserved SIMD
   feature-bundle checks.

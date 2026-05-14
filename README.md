@@ -249,7 +249,8 @@ Security commitments:
 - Scalar code denies unsafe.
 - Future unsafe SIMD isolated under `src/simd.rs`.
 - Local checks verify that `allow(unsafe_code)` is confined to the SIMD
-  boundary.
+  boundary, every SIMD-boundary unsafe function is inventoried, and every
+  unsafe block has a nearby `SAFETY:` explanation.
 - [docs/UNSAFE.md](docs/UNSAFE.md) inventories every current unsafe site and
   its safety invariants.
 - `runtime::backend_report()` exposes the active backend, detected candidate,

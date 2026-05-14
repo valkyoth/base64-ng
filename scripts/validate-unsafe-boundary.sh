@@ -22,11 +22,37 @@ if [ ! -s docs/UNSAFE.md ]; then
     exit 1
 fi
 
-for symbol in encode_48_bytes_avx512 encode_24_bytes_avx2 encode_12_bytes_neon; do
+unsafe_functions="$(sed -n 's/^[[:space:]]*pub(super)[[:space:]]*unsafe[[:space:]]*fn[[:space:]]*\([A-Za-z0-9_][A-Za-z0-9_]*\).*/\1/p' "$allowed")"
+
+if [ -z "$unsafe_functions" ]; then
+    echo "unsafe boundary: expected documented prototype unsafe functions in $allowed"
+    exit 1
+fi
+
+for symbol in $unsafe_functions; do
     if ! grep -q "$symbol" docs/UNSAFE.md; then
         echo "unsafe boundary: docs/UNSAFE.md must document $symbol"
         exit 1
     fi
 done
+
+if ! awk '
+    /^[[:space:]]*unsafe[[:space:]]*\{/ {
+        if (prev1 !~ /SAFETY:/ && prev2 !~ /SAFETY:/ && prev3 !~ /SAFETY:/ && prev4 !~ /SAFETY:/) {
+            print FILENAME ":" FNR ": unsafe block is missing a nearby SAFETY explanation"
+            failed = 1
+        }
+    }
+    {
+        prev4 = prev3
+        prev3 = prev2
+        prev2 = prev1
+        prev1 = $0
+    }
+    END { exit failed }
+' "$allowed"; then
+    echo "unsafe boundary: every unsafe block must have a nearby SAFETY explanation"
+    exit 1
+fi
 
 echo "unsafe boundary: ok"
