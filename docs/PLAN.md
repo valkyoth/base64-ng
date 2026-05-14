@@ -180,6 +180,8 @@ the zero-runtime-dependency stance.
 - README trust dashboard and CWE/security-control mapping documentation.
 - Panic policy documentation and release-gated panic-like-site validation for
   non-test source.
+- Checked quad reads and typed `[u8; 4]` scalar chunk helpers for strict,
+  legacy, wrapped, and in-place decode paths.
 
 ### Missing Secure Core Features
 
@@ -331,6 +333,9 @@ the zero-runtime-dependency stance.
 - Expanded gated Kani proof harness definitions for length helpers, in-place
   bounds, slice encode/decode bounds, and clear-tail decode cleanup. Execution
   remains gated until Kani supports the pinned Rust toolchain.
+- Hardened scalar chunk validation and decode internals with checked quad reads
+  and typed chunk helper inputs across strict, legacy, wrapped, and in-place
+  decode paths.
 
 ### v0.7
 

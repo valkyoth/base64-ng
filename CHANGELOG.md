@@ -35,6 +35,8 @@
 - Expanded gated Kani proof harness definitions for slice encode/decode,
   clear-tail decode, and in-place encode bounds while keeping execution gated
   on Kani's bundled compiler support.
+- Hardened scalar chunk validation and decode helpers to use checked quad
+  reads and typed `[u8; 4]` inputs instead of debug-asserted slice lengths.
 
 ## 0.5.0 - 2026-05-14
 

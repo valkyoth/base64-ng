@@ -3448,13 +3448,13 @@ where
         let mut read = 0;
         let mut write = 0;
         while read + 4 <= input_len {
-            let chunk = [
-                buffer[read],
-                buffer[read + 1],
-                buffer[read + 2],
-                buffer[read + 3],
-            ];
-            let written = decode_chunk::<A, PAD>(&chunk, &mut buffer[write..])
+            let chunk = read_quad(buffer, read)?;
+            let available = buffer.len();
+            let output_tail = buffer.get_mut(write..).ok_or(DecodeError::OutputTooSmall {
+                required: write,
+                available,
+            })?;
+            let written = decode_chunk::<A, PAD>(chunk, output_tail)
                 .map_err(|err| err.with_index_offset(read))?;
             read += 4;
             write += written;
@@ -3724,7 +3724,7 @@ fn validate_legacy_decode<A: Alphabet, const PAD: bool>(
 
         if chunk_len == 4 {
             let written =
-                validate_chunk::<A, PAD>(&chunk).map_err(|err| map_chunk_error(err, &indexes))?;
+                validate_chunk::<A, PAD>(chunk).map_err(|err| map_chunk_error(err, &indexes))?;
             required += written;
             terminal_seen = written < 3;
             chunk_len = 0;
@@ -3766,7 +3766,12 @@ fn decode_legacy_to_slice<A: Alphabet, const PAD: bool>(
         chunk_len += 1;
 
         if chunk_len == 4 {
-            let written = decode_chunk::<A, PAD>(&chunk, &mut output[write..])
+            let available = output.len();
+            let output_tail = output.get_mut(write..).ok_or(DecodeError::OutputTooSmall {
+                required: write,
+                available,
+            })?;
+            let written = decode_chunk::<A, PAD>(chunk, output_tail)
                 .map_err(|err| map_chunk_error(err, &indexes))?;
             write += written;
             terminal_seen = written < 3;
@@ -3880,7 +3885,7 @@ fn validate_wrapped_decode<A: Alphabet, const PAD: bool>(
 
         if chunk_len == 4 {
             let written =
-                validate_chunk::<A, PAD>(&chunk).map_err(|err| map_chunk_error(err, &indexes))?;
+                validate_chunk::<A, PAD>(chunk).map_err(|err| map_chunk_error(err, &indexes))?;
             required += written;
             terminal_seen = written < 3;
             chunk_len = 0;
@@ -3921,7 +3926,12 @@ fn decode_wrapped_to_slice<A: Alphabet, const PAD: bool>(
         chunk_len += 1;
 
         if chunk_len == 4 {
-            let written = decode_chunk::<A, PAD>(&chunk, &mut output[write..])
+            let available = output.len();
+            let output_tail = output.get_mut(write..).ok_or(DecodeError::OutputTooSmall {
+                required: write,
+                available,
+            })?;
+            let written = decode_chunk::<A, PAD>(chunk, output_tail)
                 .map_err(|err| map_chunk_error(err, &indexes))?;
             write += written;
             terminal_seen = written < 3;
@@ -3995,7 +4005,13 @@ fn decode_padded<A: Alphabet>(input: &[u8], output: &mut [u8]) -> Result<usize, 
     let mut read = 0;
     let mut write = 0;
     while read < input.len() {
-        let written = decode_chunk::<A, true>(&input[read..read + 4], &mut output[write..])
+        let chunk = read_quad(input, read)?;
+        let available = output.len();
+        let output_tail = output.get_mut(write..).ok_or(DecodeError::OutputTooSmall {
+            required: write,
+            available,
+        })?;
+        let written = decode_chunk::<A, true>(chunk, output_tail)
             .map_err(|err| err.with_index_offset(read))?;
         read += 4;
         write += written;
@@ -4026,8 +4042,9 @@ fn validate_padded<A: Alphabet>(input: &[u8]) -> Result<usize, DecodeError> {
 
     let mut read = 0;
     while read < input.len() {
-        let written = validate_chunk::<A, true>(&input[read..read + 4])
-            .map_err(|err| err.with_index_offset(read))?;
+        let chunk = read_quad(input, read)?;
+        let written =
+            validate_chunk::<A, true>(chunk).map_err(|err| err.with_index_offset(read))?;
         read += 4;
         if written < 3 && read != input.len() {
             return Err(DecodeError::InvalidPadding { index: read - 4 });
@@ -4042,8 +4059,8 @@ fn validate_unpadded<A: Alphabet>(input: &[u8]) -> Result<usize, DecodeError> {
 
     let mut read = 0;
     while read + 4 <= input.len() {
-        validate_chunk::<A, false>(&input[read..read + 4])
-            .map_err(|err| err.with_index_offset(read))?;
+        let chunk = read_quad(input, read)?;
+        validate_chunk::<A, false>(chunk).map_err(|err| err.with_index_offset(read))?;
         read += 4;
     }
     validate_tail_unpadded::<A>(&input[read..]).map_err(|err| err.with_index_offset(read))?;
@@ -4063,7 +4080,13 @@ fn decode_unpadded<A: Alphabet>(input: &[u8], output: &mut [u8]) -> Result<usize
     let mut read = 0;
     let mut write = 0;
     while read + 4 <= input.len() {
-        let written = decode_chunk::<A, false>(&input[read..read + 4], &mut output[write..])
+        let chunk = read_quad(input, read)?;
+        let available = output.len();
+        let output_tail = output.get_mut(write..).ok_or(DecodeError::OutputTooSmall {
+            required: write,
+            available,
+        })?;
+        let written = decode_chunk::<A, false>(chunk, output_tail)
             .map_err(|err| err.with_index_offset(read))?;
         read += 4;
         write += written;
@@ -4111,12 +4134,35 @@ fn decoded_len_unpadded(input: &[u8]) -> Result<usize, DecodeError> {
     Ok(decoded_capacity(input.len()))
 }
 
-fn validate_chunk<A: Alphabet, const PAD: bool>(input: &[u8]) -> Result<usize, DecodeError> {
-    debug_assert_eq!(input.len(), 4);
-    let _v0 = decode_byte::<A>(input[0], 0)?;
-    let v1 = decode_byte::<A>(input[1], 1)?;
+fn read_quad(input: &[u8], offset: usize) -> Result<[u8; 4], DecodeError> {
+    let end = offset.checked_add(4).ok_or(DecodeError::InvalidLength)?;
+    match input.get(offset..end) {
+        Some([b0, b1, b2, b3]) => Ok([*b0, *b1, *b2, *b3]),
+        _ => Err(DecodeError::InvalidLength),
+    }
+}
 
-    match (input[2], input[3]) {
+fn first_padding_index(input: [u8; 4]) -> usize {
+    let [b0, b1, b2, b3] = input;
+    if b0 == b'=' {
+        0
+    } else if b1 == b'=' {
+        1
+    } else if b2 == b'=' {
+        2
+    } else if b3 == b'=' {
+        3
+    } else {
+        0
+    }
+}
+
+fn validate_chunk<A: Alphabet, const PAD: bool>(input: [u8; 4]) -> Result<usize, DecodeError> {
+    let [b0, b1, b2, b3] = input;
+    let _v0 = decode_byte::<A>(b0, 0)?;
+    let v1 = decode_byte::<A>(b1, 1)?;
+
+    match (b2, b3) {
         (b'=', b'=') if PAD => {
             if v1 & 0b0000_1111 != 0 {
                 return Err(DecodeError::InvalidPadding { index: 1 });
@@ -4125,32 +4171,32 @@ fn validate_chunk<A: Alphabet, const PAD: bool>(input: &[u8]) -> Result<usize, D
         }
         (b'=', _) if PAD => Err(DecodeError::InvalidPadding { index: 2 }),
         (_, b'=') if PAD => {
-            let v2 = decode_byte::<A>(input[2], 2)?;
+            let v2 = decode_byte::<A>(b2, 2)?;
             if v2 & 0b0000_0011 != 0 {
                 return Err(DecodeError::InvalidPadding { index: 2 });
             }
             Ok(2)
         }
         (b'=', _) | (_, b'=') => Err(DecodeError::InvalidPadding {
-            index: input.iter().position(|byte| *byte == b'=').unwrap_or(0),
+            index: first_padding_index(input),
         }),
         _ => {
-            decode_byte::<A>(input[2], 2)?;
-            decode_byte::<A>(input[3], 3)?;
+            decode_byte::<A>(b2, 2)?;
+            decode_byte::<A>(b3, 3)?;
             Ok(3)
         }
     }
 }
 
 fn decode_chunk<A: Alphabet, const PAD: bool>(
-    input: &[u8],
+    input: [u8; 4],
     output: &mut [u8],
 ) -> Result<usize, DecodeError> {
-    debug_assert_eq!(input.len(), 4);
-    let v0 = decode_byte::<A>(input[0], 0)?;
-    let v1 = decode_byte::<A>(input[1], 1)?;
+    let [b0, b1, b2, b3] = input;
+    let v0 = decode_byte::<A>(b0, 0)?;
+    let v1 = decode_byte::<A>(b1, 1)?;
 
-    match (input[2], input[3]) {
+    match (b2, b3) {
         (b'=', b'=') if PAD => {
             if output.is_empty() {
                 return Err(DecodeError::OutputTooSmall {
@@ -4172,7 +4218,7 @@ fn decode_chunk<A: Alphabet, const PAD: bool>(
                     available: output.len(),
                 });
             }
-            let v2 = decode_byte::<A>(input[2], 2)?;
+            let v2 = decode_byte::<A>(b2, 2)?;
             if v2 & 0b0000_0011 != 0 {
                 return Err(DecodeError::InvalidPadding { index: 2 });
             }
@@ -4181,7 +4227,7 @@ fn decode_chunk<A: Alphabet, const PAD: bool>(
             Ok(2)
         }
         (b'=', _) | (_, b'=') => Err(DecodeError::InvalidPadding {
-            index: input.iter().position(|byte| *byte == b'=').unwrap_or(0),
+            index: first_padding_index(input),
         }),
         _ => {
             if output.len() < 3 {
@@ -4190,8 +4236,8 @@ fn decode_chunk<A: Alphabet, const PAD: bool>(
                     available: output.len(),
                 });
             }
-            let v2 = decode_byte::<A>(input[2], 2)?;
-            let v3 = decode_byte::<A>(input[3], 3)?;
+            let v2 = decode_byte::<A>(b2, 2)?;
+            let v3 = decode_byte::<A>(b3, 3)?;
             output[0] = (v0 << 2) | (v1 >> 4);
             output[1] = (v1 << 4) | (v2 >> 2);
             output[2] = (v2 << 6) | v3;
