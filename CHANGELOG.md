@@ -6,6 +6,9 @@
 - Added no-alloc validation-only APIs for strict and legacy profiles:
   `validate_result`, `validate`, `validate_legacy_result`, and
   `validate_legacy`.
+- Added dependency-free line-wrapped encoding with `LineWrap`, `LineEnding`,
+  checked wrapped-length calculation, caller-owned output APIs, clear-tail
+  wrapping, and `alloc` convenience helpers.
 
 ## 0.5.0 - 2026-05-14
 

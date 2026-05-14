@@ -24,6 +24,8 @@ Implemented now:
   keeping alphabet and padding validation strict.
 - Validation-only APIs for strict and legacy profiles when callers need to
   reject malformed input without materializing decoded bytes.
+- Line-wrapped encoding for MIME/PEM-style output and caller-selected wrapping
+  policies.
 - Separate `ct` scalar decode module for sensitive payloads that avoids
   secret-indexed lookup tables during Base64 symbol mapping.
 - `std::io` streaming encoders and decoders behind the `stream` feature.
@@ -156,6 +158,26 @@ use base64_ng::STANDARD;
 assert!(STANDARD.validate_legacy(b" aG\r\nVsbG8= "));
 assert!(!STANDARD.validate_legacy(b" aG-V "));
 ```
+
+## Line-Wrapped Encoding
+
+Use `LineWrap` when a protocol needs MIME/PEM-style line lengths:
+
+```rust
+use base64_ng::{LineEnding, LineWrap, STANDARD};
+
+let wrap = LineWrap::new(4, LineEnding::Lf);
+let mut output = [0u8; 9];
+let written = STANDARD
+    .encode_slice_wrapped(b"hello", &mut output, wrap)
+    .unwrap();
+
+assert_eq!(&output[..written], b"aGVs\nbG8=");
+```
+
+Built-in policies include `LineWrap::MIME`, `LineWrap::PEM`, and
+`LineWrap::PEM_CRLF`. Wrapping inserts line endings between encoded lines and
+does not append a trailing line ending after the final line.
 
 ## Legacy Whitespace Decoding
 

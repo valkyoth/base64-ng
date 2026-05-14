@@ -1,6 +1,7 @@
 use base64_ng::{
-    DecodeError, EncodeError, STANDARD, STANDARD_NO_PAD, URL_SAFE, URL_SAFE_NO_PAD,
-    checked_encoded_len, ct, decoded_capacity, decoded_len, encoded_len, runtime,
+    DecodeError, EncodeError, LineEnding, LineWrap, STANDARD, STANDARD_NO_PAD, URL_SAFE,
+    URL_SAFE_NO_PAD, checked_encoded_len, ct, decoded_capacity, decoded_len, encoded_len, runtime,
+    wrapped_encoded_len,
 };
 
 #[cfg(feature = "stream")]
@@ -571,6 +572,106 @@ fn checked_encoded_len_reports_overflow() {
     assert_eq!(checked_encoded_len(usize::MAX, false), None);
     assert_eq!(STANDARD.checked_encoded_len(usize::MAX), None);
     assert_eq!(STANDARD_NO_PAD.checked_encoded_len(usize::MAX), None);
+}
+
+#[test]
+fn wrapped_encoded_len_accounts_for_inserted_line_endings() {
+    let lf_4 = LineWrap::new(4, LineEnding::Lf);
+    let crlf_4 = LineWrap::new(4, LineEnding::CrLf);
+
+    assert_eq!(wrapped_encoded_len(0, true, lf_4), Ok(0));
+    assert_eq!(wrapped_encoded_len(5, true, lf_4), Ok(9));
+    assert_eq!(wrapped_encoded_len(5, true, crlf_4), Ok(10));
+    assert_eq!(STANDARD.wrapped_encoded_len(5, lf_4), Ok(9));
+    assert_eq!(STANDARD_NO_PAD.wrapped_encoded_len(5, lf_4), Ok(8));
+    assert_eq!(
+        wrapped_encoded_len(5, true, LineWrap::new(0, LineEnding::Lf)),
+        Err(EncodeError::InvalidLineWrap { line_len: 0 })
+    );
+    assert_eq!(LineEnding::Lf.as_bytes(), b"\n");
+    assert_eq!(LineEnding::CrLf.as_bytes(), b"\r\n");
+    assert_eq!(LineEnding::Lf.byte_len(), 1);
+    assert_eq!(LineEnding::CrLf.byte_len(), 2);
+    assert_eq!(LineWrap::MIME.line_len, 76);
+    assert_eq!(LineWrap::PEM.line_len, 64);
+    assert_eq!(LineWrap::PEM_CRLF.line_ending, LineEnding::CrLf);
+}
+
+#[test]
+fn encode_slice_wrapped_inserts_line_endings_without_trailing_newline() {
+    let lf_4 = LineWrap::new(4, LineEnding::Lf);
+    let crlf_4 = LineWrap::new(4, LineEnding::CrLf);
+
+    let mut output = [0u8; 16];
+    let written = STANDARD
+        .encode_slice_wrapped(b"hello", &mut output, lf_4)
+        .unwrap();
+    assert_eq!(&output[..written], b"aGVs\nbG8=");
+
+    let written = STANDARD
+        .encode_slice_wrapped(b"hello", &mut output, crlf_4)
+        .unwrap();
+    assert_eq!(&output[..written], b"aGVs\r\nbG8=");
+
+    let written = STANDARD_NO_PAD
+        .encode_slice_wrapped(b"hello", &mut output, lf_4)
+        .unwrap();
+    assert_eq!(&output[..written], b"aGVs\nbG8");
+
+    let written = STANDARD
+        .encode_slice_wrapped(b"foo", &mut output, lf_4)
+        .unwrap();
+    assert_eq!(&output[..written], b"Zm9v");
+}
+
+#[test]
+fn encode_slice_wrapped_reports_errors_and_clear_tail_scrubs() {
+    let wrap = LineWrap::new(4, LineEnding::Lf);
+    let mut too_small = [0xff; 8];
+    assert_eq!(
+        STANDARD.encode_slice_wrapped(b"hello", &mut too_small, wrap),
+        Err(EncodeError::OutputTooSmall {
+            required: 9,
+            available: 8,
+        })
+    );
+
+    assert_eq!(
+        STANDARD.encode_slice_wrapped(b"hello", &mut too_small, LineWrap::new(0, LineEnding::Lf)),
+        Err(EncodeError::InvalidLineWrap { line_len: 0 })
+    );
+
+    let mut output = [0xff; 12];
+    let written = STANDARD
+        .encode_slice_wrapped_clear_tail(b"hello", &mut output, wrap)
+        .unwrap();
+    assert_eq!(&output[..written], b"aGVs\nbG8=");
+    assert_eq!(&output[written..], &[0; 3]);
+
+    let mut output = [0xff; 8];
+    assert_eq!(
+        STANDARD.encode_slice_wrapped_clear_tail(b"hello", &mut output, wrap),
+        Err(EncodeError::OutputTooSmall {
+            required: 9,
+            available: 8,
+        })
+    );
+    assert!(output.iter().all(|byte| *byte == 0));
+}
+
+#[cfg(feature = "alloc")]
+#[test]
+fn encode_wrapped_alloc_helpers_match_slice_output() {
+    let wrap = LineWrap::new(4, LineEnding::Lf);
+
+    assert_eq!(
+        STANDARD.encode_wrapped_vec(b"hello", wrap).unwrap(),
+        b"aGVs\nbG8="
+    );
+    assert_eq!(
+        STANDARD.encode_wrapped_string(b"hello", wrap).unwrap(),
+        "aGVs\nbG8="
+    );
 }
 
 #[test]

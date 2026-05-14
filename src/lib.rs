@@ -1431,6 +1431,66 @@ pub const URL_SAFE: Engine<UrlSafe, true> = Engine::new();
 /// URL-safe Base64 engine without padding.
 pub const URL_SAFE_NO_PAD: Engine<UrlSafe, false> = Engine::new();
 
+/// Line ending used by wrapped Base64 output.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum LineEnding {
+    /// Line feed (`\n`).
+    Lf,
+    /// Carriage return followed by line feed (`\r\n`).
+    CrLf,
+}
+
+impl LineEnding {
+    /// Returns the byte representation of this line ending.
+    #[must_use]
+    pub const fn as_bytes(self) -> &'static [u8] {
+        match self {
+            Self::Lf => b"\n",
+            Self::CrLf => b"\r\n",
+        }
+    }
+
+    /// Returns the byte length of this line ending.
+    #[must_use]
+    pub const fn byte_len(self) -> usize {
+        match self {
+            Self::Lf => 1,
+            Self::CrLf => 2,
+        }
+    }
+}
+
+/// Base64 line wrapping policy.
+///
+/// `line_len` is measured in encoded Base64 bytes, not source input bytes.
+/// Encoders insert line endings between lines and do not append a trailing line
+/// ending after the final line.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct LineWrap {
+    /// Maximum encoded bytes per line.
+    pub line_len: usize,
+    /// Line ending inserted between wrapped lines.
+    pub line_ending: LineEnding,
+}
+
+impl LineWrap {
+    /// MIME-style wrapping: 76 columns with CRLF endings.
+    pub const MIME: Self = Self::new(76, LineEnding::CrLf);
+    /// PEM-style wrapping: 64 columns with LF endings.
+    pub const PEM: Self = Self::new(64, LineEnding::Lf);
+    /// PEM-style wrapping: 64 columns with CRLF endings.
+    pub const PEM_CRLF: Self = Self::new(64, LineEnding::CrLf);
+
+    /// Creates a wrapping policy.
+    #[must_use]
+    pub const fn new(line_len: usize, line_ending: LineEnding) -> Self {
+        Self {
+            line_len,
+            line_ending,
+        }
+    }
+}
+
 /// Returns the encoded length for an input length and padding policy.
 ///
 /// This function returns [`EncodeError::LengthOverflow`] instead of panicking.
@@ -1447,6 +1507,45 @@ pub const URL_SAFE_NO_PAD: Engine<UrlSafe, false> = Engine::new();
 /// ```
 pub const fn encoded_len(input_len: usize, padded: bool) -> Result<usize, EncodeError> {
     match checked_encoded_len(input_len, padded) {
+        Some(len) => Ok(len),
+        None => Err(EncodeError::LengthOverflow),
+    }
+}
+
+/// Returns the encoded length after applying a line wrapping policy.
+///
+/// The returned length includes inserted line endings but does not include a
+/// trailing line ending after the final encoded line.
+///
+/// # Examples
+///
+/// ```
+/// use base64_ng::{LineEnding, LineWrap, wrapped_encoded_len};
+///
+/// let wrap = LineWrap::new(4, LineEnding::Lf);
+/// assert_eq!(wrapped_encoded_len(5, true, wrap).unwrap(), 9);
+/// ```
+pub const fn wrapped_encoded_len(
+    input_len: usize,
+    padded: bool,
+    wrap: LineWrap,
+) -> Result<usize, EncodeError> {
+    if wrap.line_len == 0 {
+        return Err(EncodeError::InvalidLineWrap { line_len: 0 });
+    }
+
+    let Some(encoded) = checked_encoded_len(input_len, padded) else {
+        return Err(EncodeError::LengthOverflow);
+    };
+    if encoded == 0 {
+        return Ok(0);
+    }
+
+    let breaks = (encoded - 1) / wrap.line_len;
+    let Some(line_ending_bytes) = breaks.checked_mul(wrap.line_ending.byte_len()) else {
+        return Err(EncodeError::LengthOverflow);
+    };
+    match encoded.checked_add(line_ending_bytes) {
         Some(len) => Ok(len),
         None => Err(EncodeError::LengthOverflow),
     }
@@ -1788,6 +1887,18 @@ where
         checked_encoded_len(input_len, PAD)
     }
 
+    /// Returns the encoded length after applying a line wrapping policy.
+    ///
+    /// The returned length includes inserted line endings but does not include
+    /// a trailing line ending after the final encoded line.
+    pub const fn wrapped_encoded_len(
+        &self,
+        input_len: usize,
+        wrap: LineWrap,
+    ) -> Result<usize, EncodeError> {
+        wrapped_encoded_len(input_len, PAD, wrap)
+    }
+
     /// Returns the exact decoded length implied by input length and padding.
     ///
     /// This validates padding placement and impossible lengths, but it does not
@@ -1968,6 +2079,140 @@ where
     /// Encodes `input` into `output`, returning the number of bytes written.
     pub fn encode_slice(&self, input: &[u8], output: &mut [u8]) -> Result<usize, EncodeError> {
         backend::encode_slice::<A, PAD>(input, output)
+    }
+
+    /// Encodes `input` into `output` with line wrapping.
+    ///
+    /// The wrapping policy inserts line endings between encoded lines and does
+    /// not append a trailing line ending after the final line.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use base64_ng::{LineEnding, LineWrap, STANDARD};
+    ///
+    /// let wrap = LineWrap::new(4, LineEnding::Lf);
+    /// let mut output = [0u8; 9];
+    /// let written = STANDARD
+    ///     .encode_slice_wrapped(b"hello", &mut output, wrap)
+    ///     .unwrap();
+    ///
+    /// assert_eq!(&output[..written], b"aGVs\nbG8=");
+    /// ```
+    pub fn encode_slice_wrapped(
+        &self,
+        input: &[u8],
+        output: &mut [u8],
+        wrap: LineWrap,
+    ) -> Result<usize, EncodeError> {
+        let required = self.wrapped_encoded_len(input.len(), wrap)?;
+        if output.len() < required {
+            return Err(EncodeError::OutputTooSmall {
+                required,
+                available: output.len(),
+            });
+        }
+
+        let encoded_len =
+            checked_encoded_len(input.len(), PAD).ok_or(EncodeError::LengthOverflow)?;
+        if encoded_len == 0 {
+            return Ok(0);
+        }
+
+        if output.len() < required.saturating_add(encoded_len) {
+            let mut scratch = [0u8; 1024];
+            let mut input_offset = 0;
+            let mut output_offset = 0;
+            let mut column = 0;
+
+            while input_offset < input.len() {
+                let remaining = input.len() - input_offset;
+                let mut take = remaining.min(768);
+                if remaining > take {
+                    take -= take % 3;
+                }
+                if take == 0 {
+                    take = remaining;
+                }
+
+                let encoded =
+                    self.encode_slice(&input[input_offset..input_offset + take], &mut scratch)?;
+                write_wrapped_bytes(
+                    &scratch[..encoded],
+                    output,
+                    &mut output_offset,
+                    &mut column,
+                    wrap,
+                );
+                scratch[..encoded].fill(0);
+                input_offset += take;
+            }
+
+            Ok(output_offset)
+        } else {
+            let encoded =
+                self.encode_slice(input, &mut output[required..required + encoded_len])?;
+            let mut output_offset = 0;
+            let mut column = 0;
+            let mut read = required;
+            while read < required + encoded {
+                let byte = output[read];
+                write_wrapped_byte(byte, output, &mut output_offset, &mut column, wrap);
+                read += 1;
+            }
+            output[required..required + encoded].fill(0);
+            Ok(output_offset)
+        }
+    }
+
+    /// Encodes `input` with line wrapping and clears all bytes after the
+    /// encoded prefix.
+    ///
+    /// If encoding fails, the entire output buffer is cleared before the error
+    /// is returned.
+    pub fn encode_slice_wrapped_clear_tail(
+        &self,
+        input: &[u8],
+        output: &mut [u8],
+        wrap: LineWrap,
+    ) -> Result<usize, EncodeError> {
+        let written = match self.encode_slice_wrapped(input, output, wrap) {
+            Ok(written) => written,
+            Err(err) => {
+                output.fill(0);
+                return Err(err);
+            }
+        };
+        output[written..].fill(0);
+        Ok(written)
+    }
+
+    /// Encodes `input` with line wrapping into a newly allocated byte vector.
+    #[cfg(feature = "alloc")]
+    pub fn encode_wrapped_vec(
+        &self,
+        input: &[u8],
+        wrap: LineWrap,
+    ) -> Result<alloc::vec::Vec<u8>, EncodeError> {
+        let required = self.wrapped_encoded_len(input.len(), wrap)?;
+        let mut output = alloc::vec![0; required];
+        let written = self.encode_slice_wrapped(input, &mut output, wrap)?;
+        output.truncate(written);
+        Ok(output)
+    }
+
+    /// Encodes `input` with line wrapping into a newly allocated UTF-8 string.
+    #[cfg(feature = "alloc")]
+    pub fn encode_wrapped_string(
+        &self,
+        input: &[u8],
+        wrap: LineWrap,
+    ) -> Result<alloc::string::String, EncodeError> {
+        let output = self.encode_wrapped_vec(input, wrap)?;
+        match alloc::string::String::from_utf8(output) {
+            Ok(output) => Ok(output),
+            Err(_) => unreachable!("base64 encoder produced non-UTF-8 output"),
+        }
     }
 
     /// Encodes `input` into `output` and clears all bytes after the encoded
@@ -2443,11 +2688,51 @@ where
     }
 }
 
+fn write_wrapped_bytes(
+    input: &[u8],
+    output: &mut [u8],
+    output_offset: &mut usize,
+    column: &mut usize,
+    wrap: LineWrap,
+) {
+    for byte in input {
+        write_wrapped_byte(*byte, output, output_offset, column, wrap);
+    }
+}
+
+fn write_wrapped_byte(
+    byte: u8,
+    output: &mut [u8],
+    output_offset: &mut usize,
+    column: &mut usize,
+    wrap: LineWrap,
+) {
+    if *column == wrap.line_len {
+        let line_ending = wrap.line_ending.as_bytes();
+        let mut index = 0;
+        while index < line_ending.len() {
+            output[*output_offset] = line_ending[index];
+            *output_offset += 1;
+            index += 1;
+        }
+        *column = 0;
+    }
+
+    output[*output_offset] = byte;
+    *output_offset += 1;
+    *column += 1;
+}
+
 /// Encoding error.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum EncodeError {
     /// The encoded output length would overflow `usize`.
     LengthOverflow,
+    /// The requested line wrapping policy is invalid.
+    InvalidLineWrap {
+        /// Requested line length.
+        line_len: usize,
+    },
     /// The caller-provided input length exceeds the provided buffer.
     InputTooLarge {
         /// Requested input bytes.
@@ -2468,6 +2753,9 @@ impl core::fmt::Display for EncodeError {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Self::LengthOverflow => f.write_str("base64 output length overflows usize"),
+            Self::InvalidLineWrap { line_len } => {
+                write!(f, "base64 line wrap length {line_len} is invalid")
+            }
             Self::InputTooLarge {
                 input_len,
                 buffer_len,
