@@ -16,6 +16,8 @@
 - Added named dependency-free profiles for MIME, PEM, bcrypt-style, and
   `crypt(3)`-style Base64 through `Profile`, `MIME`, `PEM`, `PEM_CRLF`,
   `BCRYPT`, and `CRYPT`.
+- Added `EncodedBuffer` and `encode_buffer` helpers for stack-backed short
+  encoded output without requiring `alloc`.
 
 ## 0.5.0 - 2026-05-14
 

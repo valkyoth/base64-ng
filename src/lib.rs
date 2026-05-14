@@ -1503,6 +1503,126 @@ impl LineWrap {
     }
 }
 
+/// Stack-backed encoded Base64 output.
+///
+/// This type is intended for short values where heap allocation would be
+/// unnecessary but manually sizing and passing a separate output slice is
+/// noisy. Its visible bytes are produced by crate encoders, so [`Self::as_str`]
+/// can return `&str` without exposing a fallible UTF-8 conversion to callers.
+///
+/// The backing array is cleared when the value is dropped. This is best-effort
+/// data-retention reduction and is not a formal zeroization guarantee.
+pub struct EncodedBuffer<const CAP: usize> {
+    bytes: [u8; CAP],
+    len: usize,
+}
+
+impl<const CAP: usize> EncodedBuffer<CAP> {
+    /// Creates an empty encoded buffer.
+    #[must_use]
+    pub const fn new() -> Self {
+        Self {
+            bytes: [0u8; CAP],
+            len: 0,
+        }
+    }
+
+    /// Returns the number of visible encoded bytes.
+    #[must_use]
+    pub const fn len(&self) -> usize {
+        self.len
+    }
+
+    /// Returns whether the buffer has no visible encoded bytes.
+    #[must_use]
+    pub const fn is_empty(&self) -> bool {
+        self.len == 0
+    }
+
+    /// Returns the stack capacity in bytes.
+    #[must_use]
+    pub const fn capacity(&self) -> usize {
+        CAP
+    }
+
+    /// Returns the visible encoded bytes.
+    #[must_use]
+    pub fn as_bytes(&self) -> &[u8] {
+        &self.bytes[..self.len]
+    }
+
+    /// Returns the visible encoded bytes as UTF-8.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if the crate's internal invariant is broken and the buffer
+    /// contains non-UTF-8 bytes.
+    #[must_use]
+    pub fn as_str(&self) -> &str {
+        match core::str::from_utf8(self.as_bytes()) {
+            Ok(output) => output,
+            Err(_) => unreachable!("base64 encoder produced non-UTF-8 output"),
+        }
+    }
+
+    /// Clears the visible bytes and the full backing array.
+    pub fn clear(&mut self) {
+        self.bytes.fill(0);
+        self.len = 0;
+    }
+
+    /// Clears bytes after the visible prefix.
+    pub fn clear_tail(&mut self) {
+        self.bytes[self.len..].fill(0);
+    }
+}
+
+impl<const CAP: usize> AsRef<[u8]> for EncodedBuffer<CAP> {
+    fn as_ref(&self) -> &[u8] {
+        self.as_bytes()
+    }
+}
+
+impl<const CAP: usize> Clone for EncodedBuffer<CAP> {
+    fn clone(&self) -> Self {
+        let mut output = Self::new();
+        output.bytes[..self.len].copy_from_slice(self.as_bytes());
+        output.len = self.len;
+        output
+    }
+}
+
+impl<const CAP: usize> core::fmt::Debug for EncodedBuffer<CAP> {
+    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        formatter
+            .debug_struct("EncodedBuffer")
+            .field("bytes", &"<redacted>")
+            .field("len", &self.len)
+            .field("capacity", &CAP)
+            .finish()
+    }
+}
+
+impl<const CAP: usize> Default for EncodedBuffer<CAP> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<const CAP: usize> Drop for EncodedBuffer<CAP> {
+    fn drop(&mut self) {
+        self.clear();
+    }
+}
+
+impl<const CAP: usize> Eq for EncodedBuffer<CAP> {}
+
+impl<const CAP: usize> PartialEq for EncodedBuffer<CAP> {
+    fn eq(&self, other: &Self) -> bool {
+        self.as_bytes() == other.as_bytes()
+    }
+}
+
 /// A named Base64 profile with an engine and optional strict line wrapping.
 ///
 /// Profiles are convenience values for protocol-shaped Base64. They keep the
@@ -1587,6 +1707,27 @@ where
                 .encode_slice_wrapped_clear_tail(input, output, wrap),
             None => self.engine.encode_slice_clear_tail(input, output),
         }
+    }
+
+    /// Encodes `input` into a stack-backed buffer.
+    ///
+    /// This is useful for short values where heap allocation is unnecessary.
+    /// If encoding fails, the internal backing array is cleared before the
+    /// error is returned.
+    pub fn encode_buffer<const CAP: usize>(
+        &self,
+        input: &[u8],
+    ) -> Result<EncodedBuffer<CAP>, EncodeError> {
+        let mut output = EncodedBuffer::new();
+        let written = match self.encode_slice_clear_tail(input, &mut output.bytes) {
+            Ok(written) => written,
+            Err(err) => {
+                output.clear();
+                return Err(err);
+            }
+        };
+        output.len = written;
+        Ok(output)
     }
 
     /// Decodes `input` into `output` according to this profile.
@@ -2655,6 +2796,36 @@ where
         };
         output[written..].fill(0);
         Ok(written)
+    }
+
+    /// Encodes `input` into a stack-backed buffer.
+    ///
+    /// This helper is useful for short values where callers want the
+    /// convenience of an owned result without enabling `alloc`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use base64_ng::STANDARD;
+    ///
+    /// let encoded = STANDARD.encode_buffer::<8>(b"hello").unwrap();
+    ///
+    /// assert_eq!(encoded.as_str(), "aGVsbG8=");
+    /// ```
+    pub fn encode_buffer<const CAP: usize>(
+        &self,
+        input: &[u8],
+    ) -> Result<EncodedBuffer<CAP>, EncodeError> {
+        let mut output = EncodedBuffer::new();
+        let written = match self.encode_slice_clear_tail(input, &mut output.bytes) {
+            Ok(written) => written,
+            Err(err) => {
+                output.clear();
+                return Err(err);
+            }
+        };
+        output.len = written;
+        Ok(output)
     }
 
     /// Encodes `input` into a newly allocated byte vector.

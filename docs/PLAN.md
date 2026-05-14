@@ -174,12 +174,10 @@ the zero-runtime-dependency stance.
 - Named MIME, PEM, bcrypt-style, and `crypt(3)`-style profiles.
 - Custom alphabet validation helpers with duplicate-character, padding-byte,
   and visible-ASCII checks.
+- Stack-backed encoded output helpers for short values without `alloc`.
 
 ### Missing Secure Core Features
 
-- Add zero-dependency small-output helpers for common short values, such as a
-  stack-backed encoded buffer type that avoids heap allocation without forcing
-  callers to hand-roll arrays.
 - Add internal best-effort wipe primitives for crate-owned temporary buffers,
   using volatile writes and compiler fences where appropriate. This must be
   documented as retention reduction, not a hard zeroization guarantee.
@@ -325,7 +323,8 @@ the zero-runtime-dependency stance.
   policies, including CRLF and LF output.
 - Add validate-only APIs for strict, legacy, profile-aware, and
   constant-time-oriented validation use cases.
-- Add zero-dependency stack-backed output helpers for short encoded values.
+- Completed zero-dependency stack-backed output helpers for short encoded
+  values.
 - Add internal best-effort wiping helpers and secret wrapper types with redacted
   formatting for sensitive owned buffers.
 - Add the README trust dashboard and CWE/security-control mapping

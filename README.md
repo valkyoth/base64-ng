@@ -31,6 +31,7 @@ Implemented now:
 - Custom alphabet validation helpers for user-defined 64-byte alphabets.
 - Named dependency-free profiles for MIME, PEM, bcrypt-style, and
   `crypt(3)`-style Base64.
+- Stack-backed encoded output buffers for short values without `alloc`.
 - Separate `ct` scalar decode module for sensitive payloads that avoids
   secret-indexed lookup tables during Base64 symbol mapping.
 - `std::io` streaming encoders and decoders behind the `stream` feature.
@@ -308,6 +309,23 @@ returning the error. The legacy whitespace profile also provides
 `decode_slice_legacy_clear_tail` and `decode_in_place_legacy_clear_tail`.
 The `ct` module provides the same clear-tail decode variants for callers using
 the constant-time-oriented scalar decoder.
+
+For short values, `encode_buffer` returns a stack-backed `EncodedBuffer`
+without requiring the `alloc` feature:
+
+```rust
+use base64_ng::{BCRYPT, STANDARD};
+
+let encoded = STANDARD.encode_buffer::<8>(b"hello").unwrap();
+assert_eq!(encoded.as_str(), "aGVsbG8=");
+
+let bcrypt = BCRYPT.encode_buffer::<4>(&[0xff, 0xff, 0xff]).unwrap();
+assert_eq!(bcrypt.as_bytes(), b"9999");
+```
+
+`EncodedBuffer` exposes bytes only through `as_bytes` and `as_str`, redacts the
+payload from `Debug`, and clears its backing array when dropped as best-effort
+data-retention reduction.
 
 With the default `alloc` feature, vector and string helpers are available:
 

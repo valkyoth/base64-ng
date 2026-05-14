@@ -1,9 +1,9 @@
 use base64_ng::{
     Alphabet, AlphabetError, BCRYPT, BCRYPT_NO_PAD, Bcrypt, CRYPT, CRYPT_NO_PAD, Crypt,
-    DecodeError, EncodeError, Engine, LineEnding, LineWrap, MIME, PEM, PEM_CRLF, STANDARD,
-    STANDARD_NO_PAD, Standard, URL_SAFE, URL_SAFE_NO_PAD, UrlSafe, checked_encoded_len, ct,
-    decode_alphabet_byte, decoded_capacity, decoded_len, encoded_len, runtime, validate_alphabet,
-    wrapped_encoded_len,
+    DecodeError, EncodeError, EncodedBuffer, Engine, LineEnding, LineWrap, MIME, PEM, PEM_CRLF,
+    STANDARD, STANDARD_NO_PAD, Standard, URL_SAFE, URL_SAFE_NO_PAD, UrlSafe, checked_encoded_len,
+    ct, decode_alphabet_byte, decoded_capacity, decoded_len, encoded_len, runtime,
+    validate_alphabet, wrapped_encoded_len,
 };
 
 #[cfg(feature = "stream")]
@@ -1693,6 +1693,49 @@ fn rejects_non_canonical_trailing_bits() {
         STANDARD_NO_PAD.decode_in_place(&mut input),
         Err(DecodeError::InvalidPadding { index: 2 })
     );
+}
+
+#[test]
+fn stack_encoded_buffer_helpers_avoid_alloc_and_clear_tail() {
+    let encoded = STANDARD.encode_buffer::<8>(b"hello").unwrap();
+    assert_eq!(encoded.len(), 8);
+    assert_eq!(encoded.capacity(), 8);
+    assert!(!encoded.is_empty());
+    assert_eq!(encoded.as_bytes(), b"aGVsbG8=");
+    assert_eq!(encoded.as_str(), "aGVsbG8=");
+    assert_eq!(encoded.as_ref(), b"aGVsbG8=");
+    assert_eq!(
+        format!("{encoded:?}"),
+        "EncodedBuffer { bytes: \"<redacted>\", len: 8, capacity: 8 }"
+    );
+
+    let cloned = encoded.clone();
+    assert_eq!(encoded, cloned);
+
+    let too_small: Result<EncodedBuffer<7>, EncodeError> = STANDARD.encode_buffer(b"hello");
+    assert_eq!(
+        too_small,
+        Err(EncodeError::OutputTooSmall {
+            required: 8,
+            available: 7,
+        })
+    );
+
+    let mut empty = EncodedBuffer::<8>::new();
+    assert!(empty.is_empty());
+    empty.clear_tail();
+    empty.clear();
+    assert_eq!(empty.as_bytes(), b"");
+}
+
+#[test]
+fn profile_stack_encoded_buffer_respects_wrapping_policy() {
+    let encoded = MIME.encode_buffer::<82>(&[0x5a; 58]).unwrap();
+    assert_eq!(&encoded.as_bytes()[76..78], b"\r\n");
+    assert!(MIME.validate(encoded.as_bytes()));
+
+    let bcrypt = BCRYPT.encode_buffer::<4>(&[0xff, 0xff, 0xff]).unwrap();
+    assert_eq!(bcrypt.as_bytes(), b"9999");
 }
 
 #[cfg(feature = "alloc")]
