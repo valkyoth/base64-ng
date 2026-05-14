@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.0-alpha.0 - Unreleased
+
+- Started the next development cycle after the `0.4.1` release.
+
 ## 0.4.1 - 2026-05-14
 
 - Fixed published documentation examples and harness manifests to reference

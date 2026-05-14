@@ -6,7 +6,8 @@ The crate starts conservative: a small scalar implementation, strict RFC 4648 be
 
 ## Current Status
 
-The current public release is `0.4.1`.
+The current public release is `0.4.1`. The `main` branch now tracks the
+`0.5.0-alpha.0` development cycle.
 
 Implemented now:
 
