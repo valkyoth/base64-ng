@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.4.0-alpha.0 - Unreleased
+## 0.4.0 - 2026-05-14
 
 - Started the next development cycle after the `0.3.0` release.
 - Added cross-target CI checks for the reserved `simd` feature in `no_std`
