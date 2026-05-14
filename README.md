@@ -30,12 +30,13 @@ Implemented now:
   chunk-boundary behavior.
 - Local check scripts, release gate, dependency policy, audit config, CI, SBOM script, and reproducible build check.
 
-Planned:
+Planned behind admission evidence:
 
-- AVX2, AVX-512, and ARM NEON fast paths.
-- Async streaming wrappers.
-- Kani proof harnesses.
-- Criterion benchmarks against the established `base64` crate.
+- Admitted AVX2, AVX-512, and ARM NEON fast paths.
+- Async streaming wrappers only after the `tokio` feature passes the
+  dependency and cancellation-safety admission bar in [docs/ASYNC.md](docs/ASYNC.md).
+- Expanded Kani proof harnesses.
+- Broader benchmark evidence against the established `base64` crate.
 
 ## Install
 

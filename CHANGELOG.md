@@ -55,6 +55,8 @@
   instead of promising Tokio wrappers before dependency review.
 - Added `docs/ASYNC.md` to define the admission requirements for any future
   async/Tokio API while the `tokio` feature remains inert.
+- Clarified README planned-work wording so async wrappers are described as
+  admission-gated rather than already scheduled functionality.
 - Updated security documentation for streaming wrapper buffer cleanup behavior.
 - Updated release evidence documentation for stream fuzzing and reserved SIMD
   feature-bundle checks.
