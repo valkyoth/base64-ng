@@ -65,7 +65,7 @@ pub(crate) fn active_backend() -> ActiveBackend {
 pub(crate) fn detected_candidate() -> Candidate {
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     {
-        if avx512_vbmi_available() {
+        if avx512_vbmi_base64_available() {
             return Candidate::Avx512Vbmi;
         }
 
@@ -85,13 +85,19 @@ pub(crate) fn detected_candidate() -> Candidate {
 }
 
 #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
-fn avx512_vbmi_available() -> bool {
-    std::is_x86_feature_detected!("avx512vbmi")
+fn avx512_vbmi_base64_available() -> bool {
+    std::is_x86_feature_detected!("avx512f")
+        && std::is_x86_feature_detected!("avx512bw")
+        && std::is_x86_feature_detected!("avx512vl")
+        && std::is_x86_feature_detected!("avx512vbmi")
 }
 
 #[cfg(all(not(feature = "std"), any(target_arch = "x86", target_arch = "x86_64")))]
-fn avx512_vbmi_available() -> bool {
-    cfg!(target_feature = "avx512vbmi")
+fn avx512_vbmi_base64_available() -> bool {
+    cfg!(target_feature = "avx512f")
+        && cfg!(target_feature = "avx512bw")
+        && cfg!(target_feature = "avx512vl")
+        && cfg!(target_feature = "avx512vbmi")
 }
 
 #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]

@@ -83,6 +83,28 @@ pub mod runtime {
                 Self::Neon => "neon",
             }
         }
+
+        /// Returns the CPU features required before this backend may be used.
+        ///
+        /// The active backend is still scalar-only. This method exists so
+        /// security logs can record exactly which future backend feature bundle
+        /// was detected.
+        ///
+        /// ```
+        /// assert_eq!(
+        ///     base64_ng::runtime::Backend::Avx512Vbmi.required_cpu_features(),
+        ///     ["avx512f", "avx512bw", "avx512vl", "avx512vbmi"],
+        /// );
+        /// ```
+        #[must_use]
+        pub const fn required_cpu_features(self) -> &'static [&'static str] {
+            match self {
+                Self::Scalar => &[],
+                Self::Avx512Vbmi => &["avx512f", "avx512bw", "avx512vl", "avx512vbmi"],
+                Self::Avx2 => &["avx2"],
+                Self::Neon => &["neon"],
+            }
+        }
     }
 
     impl core::fmt::Display for Backend {

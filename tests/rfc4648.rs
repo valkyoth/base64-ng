@@ -61,7 +61,20 @@ fn runtime_backend_report_keeps_scalar_active() {
     assert_eq!(report.active, runtime::Backend::Scalar);
     assert_eq!(report.active.as_str(), "scalar");
     assert_eq!(report.active.to_string(), "scalar");
+    assert!(runtime::Backend::Scalar.required_cpu_features().is_empty());
     assert_eq!(runtime::Backend::Avx512Vbmi.as_str(), "avx512-vbmi");
+    assert_eq!(
+        runtime::Backend::Avx512Vbmi.required_cpu_features(),
+        ["avx512f", "avx512bw", "avx512vl", "avx512vbmi"]
+    );
+    assert_eq!(
+        runtime::Backend::Avx2.required_cpu_features(),
+        ["avx2"]
+    );
+    assert_eq!(
+        runtime::Backend::Neon.required_cpu_features(),
+        ["neon"]
+    );
     assert!(display.contains("active=scalar"));
     assert!(display.contains("accelerated_backend_active=false"));
     assert!(!report.accelerated_backend_active);
