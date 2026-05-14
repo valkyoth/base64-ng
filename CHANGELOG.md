@@ -49,6 +49,9 @@
   `ct::CtEngine::decode_in_place`, and
   `ct::CtEngine::decode_in_place_clear_tail` so constant-time-oriented decode
   callers can clear partially decoded output on rejected sensitive input.
+- Hardened streaming encoders to clear plaintext pending buffers on drop, and
+  after pending plaintext is consumed, while preserving `finish()` and
+  `into_inner()` behavior.
 
 ## 0.3.0 - 2026-05-13
 

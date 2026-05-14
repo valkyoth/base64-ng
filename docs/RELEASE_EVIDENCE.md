@@ -56,6 +56,8 @@ The release gate runs:
 - stable key/value runtime report and policy-failure formatting tests
 - constant-time-oriented clear-tail decode tests for success, malformed input,
   undersized output, and in-place cleanup
+- stream encoder tests proving `finish()` and `into_inner()` behavior remains
+  intact after drop-cleanup hardening
 - Kani proofs through `scripts/check_kani.sh` when Kani is installed and its
   bundled compiler supports this crate's pinned `rust-version`
 - SBOM generation

@@ -1315,6 +1315,15 @@ fn stream_encoder_exposes_inner_writer() {
 
 #[cfg(feature = "stream")]
 #[test]
+fn stream_encoder_into_inner_still_returns_writer() {
+    let mut encoder = Encoder::new(Vec::new(), STANDARD);
+    encoder.write_all(b"he").unwrap();
+    let inner = encoder.into_inner();
+    assert!(inner.is_empty());
+}
+
+#[cfg(feature = "stream")]
+#[test]
 fn stream_encoder_reader_handles_small_reads() {
     let mut reader = EncoderReader::new(&b"hello"[..], STANDARD);
     let mut output = [0u8; 8];
@@ -1346,6 +1355,14 @@ fn stream_encoder_reader_supports_url_safe() {
     assert_eq!(reader.get_ref().len(), 2);
     reader.read_to_end(&mut encoded).unwrap();
     assert_eq!(encoded, b"-_8");
+}
+
+#[cfg(feature = "stream")]
+#[test]
+fn stream_encoder_reader_into_inner_still_returns_reader() {
+    let reader = EncoderReader::new(&b"hello"[..], STANDARD);
+    let inner = reader.into_inner();
+    assert_eq!(inner, &b"hello"[..]);
 }
 
 #[cfg(feature = "stream")]

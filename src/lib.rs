@@ -366,7 +366,7 @@ pub mod stream {
     where
         A: Alphabet,
     {
-        inner: W,
+        inner: Option<W>,
         engine: Engine<A, PAD>,
         pending: [u8; 2],
         pending_len: usize,
@@ -380,7 +380,7 @@ pub mod stream {
         #[must_use]
         pub const fn new(inner: W, engine: Engine<A, PAD>) -> Self {
             Self {
-                inner,
+                inner: Some(inner),
                 engine,
                 pending: [0; 2],
                 pending_len: 0,
@@ -389,21 +389,56 @@ pub mod stream {
 
         /// Returns a shared reference to the wrapped writer.
         #[must_use]
-        pub const fn get_ref(&self) -> &W {
-            &self.inner
+        pub fn get_ref(&self) -> &W {
+            self.inner_ref()
         }
 
         /// Returns a mutable reference to the wrapped writer.
         pub fn get_mut(&mut self) -> &mut W {
-            &mut self.inner
+            self.inner_mut()
         }
 
         /// Consumes the encoder without flushing pending input.
         ///
         /// Prefer [`Self::finish`] when the encoded output must be complete.
         #[must_use]
-        pub fn into_inner(self) -> W {
-            self.inner
+        pub fn into_inner(mut self) -> W {
+            self.take_inner()
+        }
+
+        fn inner_ref(&self) -> &W {
+            match &self.inner {
+                Some(inner) => inner,
+                None => unreachable!("stream encoder inner writer was already taken"),
+            }
+        }
+
+        fn inner_mut(&mut self) -> &mut W {
+            match &mut self.inner {
+                Some(inner) => inner,
+                None => unreachable!("stream encoder inner writer was already taken"),
+            }
+        }
+
+        fn take_inner(&mut self) -> W {
+            match self.inner.take() {
+                Some(inner) => inner,
+                None => unreachable!("stream encoder inner writer was already taken"),
+            }
+        }
+
+        fn clear_pending(&mut self) {
+            self.pending.fill(0);
+            self.pending_len = 0;
+        }
+    }
+
+    impl<W, A, const PAD: bool> Drop for Encoder<W, A, PAD>
+    where
+        A: Alphabet,
+    {
+        fn drop(&mut self) {
+            self.clear_pending();
         }
     }
 
@@ -415,8 +450,8 @@ pub mod stream {
         /// Writes any pending input, flushes the wrapped writer, and returns it.
         pub fn finish(mut self) -> io::Result<W> {
             self.write_pending_final()?;
-            self.inner.flush()?;
-            Ok(self.inner)
+            self.inner_mut().flush()?;
+            Ok(self.take_inner())
         }
 
         fn write_pending_final(&mut self) -> io::Result<()> {
@@ -429,8 +464,8 @@ pub mod stream {
                 .engine
                 .encode_slice(&self.pending[..self.pending_len], &mut encoded)
                 .map_err(encode_error_to_io)?;
-            self.inner.write_all(&encoded[..written])?;
-            self.pending_len = 0;
+            self.inner_mut().write_all(&encoded[..written])?;
+            self.clear_pending();
             Ok(())
         }
     }
@@ -464,8 +499,8 @@ pub mod stream {
                     .engine
                     .encode_slice(&chunk, &mut encoded)
                     .map_err(encode_error_to_io)?;
-                self.inner.write_all(&encoded[..written])?;
-                self.pending_len = 0;
+                self.inner_mut().write_all(&encoded[..written])?;
+                self.clear_pending();
                 consumed += needed;
             }
 
@@ -482,7 +517,7 @@ pub mod stream {
                     .engine
                     .encode_slice(&remaining[offset..offset + take], &mut encoded)
                     .map_err(encode_error_to_io)?;
-                self.inner.write_all(&encoded[..written])?;
+                self.inner_mut().write_all(&encoded[..written])?;
                 offset += take;
             }
 
@@ -494,7 +529,7 @@ pub mod stream {
         }
 
         fn flush(&mut self) -> io::Result<()> {
-            self.inner.flush()
+            self.inner_mut().flush()
         }
     }
 
@@ -812,7 +847,7 @@ pub mod stream {
     where
         A: Alphabet,
     {
-        inner: R,
+        inner: Option<R>,
         engine: Engine<A, PAD>,
         pending: [u8; 2],
         pending_len: usize,
@@ -828,7 +863,7 @@ pub mod stream {
         #[must_use]
         pub fn new(inner: R, engine: Engine<A, PAD>) -> Self {
             Self {
-                inner,
+                inner: Some(inner),
                 engine,
                 pending: [0; 2],
                 pending_len: 0,
@@ -839,19 +874,57 @@ pub mod stream {
 
         /// Returns a shared reference to the wrapped reader.
         #[must_use]
-        pub const fn get_ref(&self) -> &R {
-            &self.inner
+        pub fn get_ref(&self) -> &R {
+            self.inner_ref()
         }
 
         /// Returns a mutable reference to the wrapped reader.
         pub fn get_mut(&mut self) -> &mut R {
-            &mut self.inner
+            self.inner_mut()
         }
 
         /// Consumes the encoder reader and returns the wrapped reader.
         #[must_use]
-        pub fn into_inner(self) -> R {
-            self.inner
+        pub fn into_inner(mut self) -> R {
+            self.take_inner()
+        }
+
+        fn inner_ref(&self) -> &R {
+            match &self.inner {
+                Some(inner) => inner,
+                None => unreachable!("stream encoder reader inner reader was already taken"),
+            }
+        }
+
+        fn inner_mut(&mut self) -> &mut R {
+            match &mut self.inner {
+                Some(inner) => inner,
+                None => unreachable!("stream encoder reader inner reader was already taken"),
+            }
+        }
+
+        fn take_inner(&mut self) -> R {
+            match self.inner.take() {
+                Some(inner) => inner,
+                None => unreachable!("stream encoder reader inner reader was already taken"),
+            }
+        }
+
+        fn clear_pending(&mut self) {
+            self.pending.fill(0);
+            self.pending_len = 0;
+        }
+    }
+
+    impl<R, A, const PAD: bool> Drop for EncoderReader<R, A, PAD>
+    where
+        A: Alphabet,
+    {
+        fn drop(&mut self) {
+            self.clear_pending();
+            for byte in &mut self.output {
+                *byte = 0;
+            }
         }
     }
 
@@ -889,7 +962,7 @@ pub mod stream {
     {
         fn fill_output(&mut self) -> io::Result<()> {
             let mut input = [0u8; 768];
-            let read = self.inner.read(&mut input)?;
+            let read = self.inner_mut().read(&mut input)?;
             if read == 0 {
                 self.finished = true;
                 self.push_final_pending()?;
@@ -910,7 +983,7 @@ pub mod stream {
                 chunk[..self.pending_len].copy_from_slice(&self.pending[..self.pending_len]);
                 chunk[self.pending_len..].copy_from_slice(&input[..needed]);
                 self.push_encoded(&chunk)?;
-                self.pending_len = 0;
+                self.clear_pending();
                 consumed += needed;
             }
 
@@ -934,7 +1007,7 @@ pub mod stream {
             let mut pending = [0u8; 2];
             pending[..self.pending_len].copy_from_slice(&self.pending[..self.pending_len]);
             let pending_len = self.pending_len;
-            self.pending_len = 0;
+            self.clear_pending();
             self.push_encoded(&pending[..pending_len])
         }
 

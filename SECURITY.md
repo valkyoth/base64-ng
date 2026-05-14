@@ -71,6 +71,11 @@ these APIs as buffer-retention reduction, not as a complete secret-erasure
 guarantee against compiler optimizations, core dumps, swap, hardware
 observation, or other process memory disclosure bugs.
 
+Streaming encoders clear their internal pending plaintext staging buffers when
+those pending bytes are consumed and again when the wrapper is dropped. This is
+best-effort retention reduction for small internal buffers, not a formal
+zeroization guarantee.
+
 Public encoded-length helpers report overflow with `Result` or `Option` rather
 than panicking. Code that handles untrusted length metadata should use these
 helpers before allocating or accepting framed payloads.

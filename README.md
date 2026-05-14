@@ -276,6 +276,7 @@ Security commitments:
 - Clear-tail encode/decode variants are available for callers that want
   best-effort cleanup of unused caller-owned buffers without adding a runtime
   dependency.
+- Streaming encoders clear internal pending plaintext staging buffers on drop.
 - Legacy compatibility must be opt-in.
 - Release gates include formatting, clippy, tests, Miri when installed, docs, dependency policy, audit, license review, isolated fuzz/perf dependency checks, SBOM, and reproducible build checks.
 - Future Kani proofs target in-place decoding bounds and scalar decoder invariants.

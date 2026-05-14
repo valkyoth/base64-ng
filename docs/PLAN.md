@@ -204,6 +204,7 @@ Phase 3:
 - Stable key/value runtime report and policy-failure display output.
 - Constant-time-oriented clear-tail decode APIs for sensitive caller-owned
   buffers.
+- Streaming encoder pending-buffer cleanup on consumption and drop.
 - Keep SIMD unsafe code isolated from the scalar core with documented invariants
   for every unsafe block.
 - Maintain `docs/UNSAFE.md` as a central unsafe inventory for every admitted or
