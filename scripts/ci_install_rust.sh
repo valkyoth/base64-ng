@@ -17,6 +17,23 @@ add_cargo_path() {
     export PATH="$HOME/.cargo/bin:$PATH"
 }
 
+add_ci_cargo_wrapper() {
+    if [ -z "${GITHUB_PATH:-}" ]; then
+        return
+    fi
+
+    wrapper_dir="${RUNNER_TEMP:-/tmp}/base64-ng-rust-bin"
+    mkdir -p "$wrapper_dir"
+    {
+        printf '%s\n' '#!/usr/bin/env sh'
+        printf 'exec rustup run %s cargo "$@"\n' "$toolchain"
+    } > "$wrapper_dir/cargo"
+    chmod +x "$wrapper_dir/cargo"
+
+    printf '%s\n' "$wrapper_dir" >> "$GITHUB_PATH"
+    export PATH="$wrapper_dir:$PATH"
+}
+
 install_rustup() {
     case "$(uname -s)" in
         MINGW* | MSYS* | CYGWIN*)
@@ -46,6 +63,7 @@ fi
 rustup set profile minimal
 rustup toolchain install "$toolchain" --component clippy --component rustfmt
 rustup default "$toolchain"
+add_ci_cargo_wrapper
 
 if ! cargo --version >/dev/null 2>&1; then
     echo "ci rust: cargo proxy is still not usable after toolchain setup" >&2
