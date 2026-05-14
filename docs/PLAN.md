@@ -194,6 +194,8 @@ Phase 3:
 - SIMD dispatch scaffold that detects AVX2/NEON candidates while keeping
   scalar as the only active backend.
 - Inactive AVX2 fixed-block encode prototype with scalar-equivalence tests.
+- Inactive NEON fixed-block encode prototype with scalar-equivalence tests for
+  NEON-capable ARM targets.
 - Public runtime backend report for audit logging and deployment assertions.
 - Public runtime backend policy assertions for scalar-only and no-SIMD
   deployment requirements.

@@ -27,6 +27,8 @@
   keeping scalar as the only active backend until accelerated code has evidence.
 - Added an inactive AVX2 fixed-block encode prototype with scalar-equivalence
   tests that run only when AVX2 is available.
+- Added an inactive NEON fixed-block encode prototype with scalar-equivalence
+  tests that compile only for NEON-capable ARM targets.
 - Added `runtime::backend_report()` so callers can audit the active backend,
   detected candidate, SIMD feature status, and scalar-only security posture.
 - Added `runtime::require_backend_policy()` for deployment assertions such as

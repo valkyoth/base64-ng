@@ -21,6 +21,8 @@ weakening the scalar trust base.
   and NEON candidates but still activates only the scalar backend.
 - An inactive AVX2 fixed-block encode prototype exists behind the SIMD boundary
   and is tested against scalar output only when AVX2 is available.
+- An inactive NEON fixed-block encode prototype exists behind the same boundary
+  and is tested against scalar output only on NEON-capable ARM targets.
 - `runtime::backend_report()` reports the active backend, detected candidate,
   SIMD feature status, and scalar-only security posture.
 - `runtime::require_backend_policy()` allows deployments to enforce scalar

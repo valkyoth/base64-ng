@@ -10,8 +10,17 @@
 //! feature remains a compile-time reservation until the AVX2/NEON paths have
 //! scalar differential tests, fuzz coverage, and benchmark evidence.
 
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+#[cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    all(target_arch = "arm", target_feature = "neon")
+))]
 use super::{Alphabet, encode_base64_value};
+#[cfg(target_arch = "aarch64")]
+use core::arch::aarch64::{uint8x16_t, vdupq_n_u8, vst1q_u8};
+#[cfg(all(target_arch = "arm", target_feature = "neon"))]
+use core::arch::arm::{uint8x16_t, vdupq_n_u8, vst1q_u8};
 #[cfg(target_arch = "x86")]
 use core::arch::x86::{__m256i, _mm256_setzero_si256, _mm256_storeu_si256};
 #[cfg(target_arch = "x86_64")]
@@ -129,6 +138,52 @@ where
     }
 }
 
+/// Encodes one 12-byte block into 16 bytes through the inactive NEON prototype.
+///
+/// This is not an admitted fast path. It exists to exercise ARM intrinsic
+/// plumbing, unsafe isolation, and scalar equivalence before a real vector
+/// encoder is allowed to participate in dispatch.
+///
+/// # Safety
+///
+/// The caller must execute this function only when NEON is available on the
+/// current CPU. NEON is mandatory on `aarch64`; `arm` builds must enable the
+/// `neon` target feature. The input and output sizes are fixed by their array
+/// types.
+#[cfg(any(
+    target_arch = "aarch64",
+    all(target_arch = "arm", target_feature = "neon")
+))]
+#[allow(dead_code, reason = "inactive prototype is not dispatchable yet")]
+pub(super) unsafe fn encode_12_bytes_neon<A>(input: &[u8; 12], output: &mut [u8; 16])
+where
+    A: Alphabet,
+{
+    // SAFETY: `output` is a valid 16-byte mutable array. NEON availability is
+    // guaranteed by this function's precondition. `vdupq_n_u8` constructs one
+    // NEON vector, and `vst1q_u8` writes it to the provided byte pointer.
+    unsafe {
+        let zeros: uint8x16_t = vdupq_n_u8(0);
+        vst1q_u8(output.as_mut_ptr(), zeros);
+    }
+
+    let mut read = 0;
+    let mut write = 0;
+    while read < input.len() {
+        let b0 = input[read];
+        let b1 = input[read + 1];
+        let b2 = input[read + 2];
+
+        output[write] = encode_base64_value::<A>(b0 >> 2);
+        output[write + 1] = encode_base64_value::<A>(((b0 & 0b0000_0011) << 4) | (b1 >> 4));
+        output[write + 2] = encode_base64_value::<A>(((b1 & 0b0000_1111) << 2) | (b2 >> 6));
+        output[write + 3] = encode_base64_value::<A>(b2 & 0b0011_1111);
+
+        read += 3;
+        write += 4;
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -177,6 +232,48 @@ mod tests {
                 .unwrap();
             assert_eq!(scalar_len, avx2_url_safe.len());
             assert_eq!(avx2_url_safe, scalar_url_safe);
+        }
+    }
+
+    #[cfg(any(
+        target_arch = "aarch64",
+        all(target_arch = "arm", target_feature = "neon")
+    ))]
+    #[test]
+    fn neon_encode_prototype_matches_scalar_when_available() {
+        if detected_candidate() != Candidate::Neon {
+            return;
+        }
+
+        let mut input = [0; 12];
+        for seed in 0..64 {
+            fill_pattern(&mut input, seed);
+
+            let mut neon_standard = [0x55; 16];
+            let mut scalar_standard = [0xaa; 16];
+            // SAFETY: The candidate check above proves NEON availability for
+            // this test invocation.
+            unsafe {
+                encode_12_bytes_neon::<Standard>(&input, &mut neon_standard);
+            }
+            let scalar_len = Engine::<Standard, true>::new()
+                .encode_slice(&input, &mut scalar_standard)
+                .unwrap();
+            assert_eq!(scalar_len, neon_standard.len());
+            assert_eq!(neon_standard, scalar_standard);
+
+            let mut neon_url_safe = [0x55; 16];
+            let mut scalar_url_safe = [0xaa; 16];
+            // SAFETY: The candidate check above proves NEON availability for
+            // this test invocation.
+            unsafe {
+                encode_12_bytes_neon::<UrlSafe>(&input, &mut neon_url_safe);
+            }
+            let scalar_len = Engine::<UrlSafe, true>::new()
+                .encode_slice(&input, &mut scalar_url_safe)
+                .unwrap();
+            assert_eq!(scalar_len, neon_url_safe.len());
+            assert_eq!(neon_url_safe, scalar_url_safe);
         }
     }
 }
