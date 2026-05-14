@@ -177,7 +177,11 @@ pub mod runtime {
 
     impl core::fmt::Display for BackendPolicyError {
         fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-            formatter.write_str("runtime backend policy was not satisfied")
+            write!(
+                formatter,
+                "runtime backend policy `{}` was not satisfied ({})",
+                self.policy, self.report,
+            )
         }
     }
 
@@ -199,6 +203,21 @@ pub mod runtime {
         pub unsafe_boundary_enforced: bool,
         /// Current security posture.
         pub security_posture: SecurityPosture,
+    }
+
+    impl core::fmt::Display for BackendReport {
+        fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+            write!(
+                formatter,
+                "active={} candidate={} simd_feature_enabled={} accelerated_backend_active={} unsafe_boundary_enforced={} security_posture={}",
+                self.active,
+                self.candidate,
+                self.simd_feature_enabled,
+                self.accelerated_backend_active,
+                self.unsafe_boundary_enforced,
+                self.security_posture,
+            )
+        }
     }
 
     impl BackendReport {

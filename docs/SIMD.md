@@ -29,6 +29,8 @@ weakening the scalar trust base.
   SIMD features, no detected SIMD candidate, and unsafe-boundary enforcement.
 - Runtime backend, posture, and policy enums provide stable string identifiers
   for logs and release evidence.
+- Runtime backend reports and policy failures format as stable key/value
+  strings suitable for CI and audit logs.
 - Unit tests compare dispatch behavior against the scalar reference for
   canonical inputs, malformed inputs, and undersized output buffers.
 - The `simd` feature does not enable accelerated code yet.

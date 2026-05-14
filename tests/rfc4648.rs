@@ -56,10 +56,13 @@ fn rfc4648_standard_round_trips() {
 #[test]
 fn runtime_backend_report_keeps_scalar_active() {
     let report = runtime::backend_report();
+    let display = report.to_string();
 
     assert_eq!(report.active, runtime::Backend::Scalar);
     assert_eq!(report.active.as_str(), "scalar");
     assert_eq!(report.active.to_string(), "scalar");
+    assert!(display.contains("active=scalar"));
+    assert!(display.contains("accelerated_backend_active=false"));
     assert!(!report.accelerated_backend_active);
     assert!(report.unsafe_boundary_enforced);
     assert_eq!(report.simd_feature_enabled, cfg!(feature = "simd"));
@@ -99,6 +102,22 @@ fn runtime_backend_policy_assertions_are_explicit() {
         runtime::BackendPolicy::HighAssuranceScalarOnly.to_string(),
         "high-assurance-scalar-only"
     );
+    let artificial_report = runtime::BackendReport {
+        active: runtime::Backend::Scalar,
+        candidate: runtime::Backend::Avx2,
+        simd_feature_enabled: true,
+        accelerated_backend_active: false,
+        unsafe_boundary_enforced: true,
+        security_posture: runtime::SecurityPosture::SimdCandidateScalarActive,
+    };
+    let artificial_error = runtime::BackendPolicyError {
+        policy: runtime::BackendPolicy::HighAssuranceScalarOnly,
+        report: artificial_report,
+    };
+    assert_eq!(
+        artificial_error.to_string(),
+        "runtime backend policy `high-assurance-scalar-only` was not satisfied (active=scalar candidate=avx2 simd_feature_enabled=true accelerated_backend_active=false unsafe_boundary_enforced=true security_posture=simd-candidate-scalar-active)"
+    );
 
     let simd_feature_policy =
         runtime::require_backend_policy(runtime::BackendPolicy::SimdFeatureDisabled);
@@ -131,10 +150,10 @@ fn runtime_backend_policy_assertions_are_explicit() {
     if report.satisfies(runtime::BackendPolicy::HighAssuranceScalarOnly) {
         assert_eq!(high_assurance_policy, Ok(()));
     } else {
-        assert_eq!(
-            high_assurance_policy.unwrap_err().policy,
-            runtime::BackendPolicy::HighAssuranceScalarOnly
-        );
+        let err = high_assurance_policy.unwrap_err();
+        assert_eq!(err.policy, runtime::BackendPolicy::HighAssuranceScalarOnly);
+        assert!(err.to_string().contains("high-assurance-scalar-only"));
+        assert!(err.to_string().contains("active=scalar"));
     }
 }
 

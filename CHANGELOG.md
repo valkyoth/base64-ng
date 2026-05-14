@@ -35,6 +35,8 @@
   `BackendReport::satisfies()` for captured-report policy checks.
 - Added stable string identifiers and `Display` implementations for runtime
   backend, posture, and policy enums for audit logs and CI artifacts.
+- Added stable key/value `Display` output for runtime backend reports and
+  policy failures.
 
 ## 0.3.0 - 2026-05-13
 
