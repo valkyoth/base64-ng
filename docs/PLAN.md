@@ -217,9 +217,12 @@ Phase 3:
 - AVX-512 implementation.
 - AVX-512 VBMI candidate detection for audit logs and future dispatch admission.
 - CPU dispatch hardening.
-- Tokio streaming wrappers.
-- Async cancellation and partial-read tests.
+- Keep the reserved `tokio`, `kani`, and `fuzzing` features inert and
+  dependency-free until each feature has an admission review.
+- Document the async-wrapper admission bar before adding a Tokio dependency.
 - Streaming fuzz and regression tests for adjacent framed payloads.
+- Release-gate hardening for packaged evidence, reserved feature placeholders,
+  unsafe/SIMD boundary validation, and cross-target SIMD feature bundles.
 
 ### v1.0
 
