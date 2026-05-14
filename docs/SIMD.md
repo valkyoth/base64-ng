@@ -18,8 +18,11 @@ weakening the scalar trust base.
 - The scalar implementation is the reference behavior.
 - Encode and decode entry points already pass through an internal backend
   boundary, currently backed only by the scalar implementation.
-- With the `simd` feature enabled, the private dispatch scaffold detects AVX2
-  and NEON candidates but still activates only the scalar backend.
+- With the `simd` feature enabled, the private dispatch scaffold detects
+  AVX-512 VBMI, AVX2, and NEON candidates but still activates only the scalar
+  backend.
+- AVX-512 VBMI detection is reporting-only until an implementation has scalar
+  differential tests, fuzz coverage, and benchmark evidence.
 - An inactive AVX2 fixed-block encode prototype exists behind the SIMD boundary
   and is tested against scalar output only when AVX2 is available.
 - An inactive NEON fixed-block encode prototype exists behind the same boundary

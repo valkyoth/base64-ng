@@ -60,6 +60,8 @@ pub mod runtime {
     pub enum Backend {
         /// The audited scalar backend.
         Scalar,
+        /// An AVX-512 VBMI candidate was detected.
+        Avx512Vbmi,
         /// An AVX2 candidate was detected.
         Avx2,
         /// An ARM NEON candidate was detected.
@@ -76,6 +78,7 @@ pub mod runtime {
         pub const fn as_str(self) -> &'static str {
             match self {
                 Self::Scalar => "scalar",
+                Self::Avx512Vbmi => "avx512-vbmi",
                 Self::Avx2 => "avx2",
                 Self::Neon => "neon",
             }
@@ -313,6 +316,8 @@ pub mod runtime {
     fn detected_candidate() -> Backend {
         match super::simd::detected_candidate() {
             super::simd::Candidate::Scalar => Backend::Scalar,
+            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+            super::simd::Candidate::Avx512Vbmi => Backend::Avx512Vbmi,
             #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
             super::simd::Candidate::Avx2 => Backend::Avx2,
             #[cfg(any(target_arch = "aarch64", target_arch = "arm"))]

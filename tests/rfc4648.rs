@@ -61,6 +61,7 @@ fn runtime_backend_report_keeps_scalar_active() {
     assert_eq!(report.active, runtime::Backend::Scalar);
     assert_eq!(report.active.as_str(), "scalar");
     assert_eq!(report.active.to_string(), "scalar");
+    assert_eq!(runtime::Backend::Avx512Vbmi.as_str(), "avx512-vbmi");
     assert!(display.contains("active=scalar"));
     assert!(display.contains("accelerated_backend_active=false"));
     assert!(!report.accelerated_backend_active);

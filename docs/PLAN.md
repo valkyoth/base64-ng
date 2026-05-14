@@ -213,6 +213,7 @@ Phase 3:
 ### v0.5
 
 - AVX-512 implementation.
+- AVX-512 VBMI candidate detection for audit logs and future dispatch admission.
 - CPU dispatch hardening.
 - Tokio streaming wrappers.
 - Async cancellation and partial-read tests.

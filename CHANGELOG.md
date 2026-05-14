@@ -3,6 +3,8 @@
 ## 0.5.0-alpha.0 - Unreleased
 
 - Started the next development cycle after the `0.4.1` release.
+- Added AVX-512 VBMI candidate detection to runtime backend reports while
+  keeping scalar as the only active backend.
 
 ## 0.4.1 - 2026-05-14
 
