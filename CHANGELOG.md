@@ -20,6 +20,8 @@
   encoded output without requiring `alloc`.
 - Added `SecretBuffer`, `encode_secret`, and `decode_secret` helpers for
   redacted owned sensitive output with dependency-free best-effort cleanup.
+- Added `docs/TRUST.md`, `docs/SECURITY_CONTROLS.md`, and a README trust
+  dashboard for adoption-focused security evidence and CWE mapping.
 
 ## 0.5.0 - 2026-05-14
 

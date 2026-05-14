@@ -50,6 +50,24 @@ Planned behind admission evidence:
 - Expanded Kani proof harnesses.
 - Broader benchmark evidence against the established `base64` crate.
 
+## Trust Dashboard
+
+| Area | Status |
+| --- | --- |
+| License | `MIT OR Apache-2.0` |
+| MSRV | Rust `1.95.0` |
+| Runtime dependencies | Zero external crates |
+| Unsafe policy | Scalar crate denies unsafe; unsafe confined to `src/simd.rs` |
+| Active backend | Scalar only |
+| Strict decoding | Default, canonical, no whitespace |
+| Legacy compatibility | Explicit opt-in APIs |
+| Constant-time posture | Constant-time-oriented scalar decode; no formal cryptographic guarantee |
+| Cleanup posture | Best-effort initialized-byte cleanup and redacted secret wrappers |
+| Release evidence | fmt, clippy, tests, docs, deny, audit, license, SBOM, reproducibility |
+
+Full adoption details live in [docs/TRUST.md](docs/TRUST.md). Security-control
+and CWE mapping lives in [docs/SECURITY_CONTROLS.md](docs/SECURITY_CONTROLS.md).
+
 ## Install
 
 ```toml
@@ -457,6 +475,9 @@ See [docs/PLAN.md](docs/PLAN.md), [SECURITY.md](SECURITY.md),
 [docs/RELEASE_EVIDENCE.md](docs/RELEASE_EVIDENCE.md), and
 [docs/CONSTANT_TIME.md](docs/CONSTANT_TIME.md). For the unsafe hardware
 acceleration gate, see [docs/SIMD.md](docs/SIMD.md).
+For the trust dashboard and CWE/security-control mapping, see
+[docs/TRUST.md](docs/TRUST.md) and
+[docs/SECURITY_CONTROLS.md](docs/SECURITY_CONTROLS.md).
 For dependency admission rules, see [docs/DEPENDENCIES.md](docs/DEPENDENCIES.md).
 For adoption guidance from the established `base64` crate, see
 [docs/MIGRATION.md](docs/MIGRATION.md).

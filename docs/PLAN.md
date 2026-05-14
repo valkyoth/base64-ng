@@ -177,17 +177,13 @@ the zero-runtime-dependency stance.
 - Stack-backed encoded output helpers for short values without `alloc`.
 - Internal safe-Rust best-effort wipe helpers for initialized bytes and
   redacted `SecretBuffer` owned outputs when `alloc` is enabled.
+- README trust dashboard and CWE/security-control mapping documentation.
 
 ### Missing Secure Core Features
 
 - Expand panic-free policy checks for non-test scalar code, replacing unchecked
   indexing and unwrap-like operations where practical or proving their bounds
   where replacement would harm clarity.
-- Add a CWE/security-control mapping document that explains which classes of
-  misuse the crate mitigates and which remain caller responsibilities.
-- Add a README trust dashboard covering dependencies, audit status, Miri,
-  fuzzing, Kani status, unsafe inventory, MSRV, SBOM, reproducibility, and
-  scalar-only policy.
 
 ### Missing Performance Features
 
@@ -323,7 +319,7 @@ the zero-runtime-dependency stance.
   values.
 - Completed internal best-effort wiping helpers and redacted `SecretBuffer`
   support for sensitive owned buffers.
-- Add the README trust dashboard and CWE/security-control mapping
+- Completed the README trust dashboard and CWE/security-control mapping
   documentation.
 - Expand Kani proof coverage for length helpers, in-place decode bounds, and
   selected scalar decoder invariants when Kani supports the pinned Rust

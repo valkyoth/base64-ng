@@ -68,10 +68,16 @@ The clear-tail encode and decode APIs provide best-effort cleanup for
 caller-owned buffers by writing zero bytes over unused tail bytes on success and
 over the whole buffer on encode/decode error. Because the scalar crate forbids
 unsafe code and has no runtime dependencies, this cleanup uses ordinary Rust
-writes, not volatile writes or a formally verified zeroization primitive. Treat
-these APIs as buffer-retention reduction, not as a complete secret-erasure
-guarantee against compiler optimizations, core dumps, swap, hardware
-observation, or other process memory disclosure bugs.
+writes plus a compiler fence, not volatile writes or a formally verified
+zeroization primitive. Treat these APIs as buffer-retention reduction, not as a
+complete secret-erasure guarantee against compiler optimizations, core dumps,
+swap, hardware observation, or other process memory disclosure bugs.
+
+The `SecretBuffer` owned wrapper is available with the `alloc` feature for
+sensitive encoded or decoded bytes that should not be accidentally logged. It
+redacts `Debug` and `Display`, requires explicit reveal methods, and clears
+initialized bytes on drop with the same best-effort cleanup helper. It cannot
+clean historical copies outside the wrapper or allocator spare capacity.
 
 Streaming wrappers apply best-effort cleanup to their small internal staging
 buffers. Encoders clear pending plaintext bytes when those bytes are consumed
@@ -107,3 +113,5 @@ Required before unsafe SIMD stabilizes:
 - Architecture-specific CI or documented local evidence.
 
 See `docs/SIMD.md` for the full SIMD admission policy.
+See `docs/TRUST.md` and `docs/SECURITY_CONTROLS.md` for adoption-focused
+trust and CWE/security-control mapping.
