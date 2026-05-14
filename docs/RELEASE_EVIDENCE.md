@@ -47,6 +47,8 @@ The release gate runs:
 - reserved x86 SIMD feature-bundle compile checks for AVX2 and AVX-512 VBMI
   under `no_std`
 - unsafe-boundary validation that confines `allow(unsafe_code)` to `src/simd.rs`
+- unsafe-boundary validation that confines architecture intrinsics, CPU feature
+  detection, and `target_feature` gates to `src/simd.rs`
 - unsafe-boundary validation that requires inventory documentation for every
   SIMD-boundary unsafe function and a nearby `SAFETY:` explanation for every
   unsafe block

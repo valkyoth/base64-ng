@@ -27,6 +27,8 @@
 - Hardened the unsafe-boundary validator so every SIMD-boundary unsafe function
   must be documented and every unsafe block must have a nearby `SAFETY:`
   explanation.
+- Added release-gate validation that architecture intrinsics, CPU feature
+  detection, and `target_feature` gates remain confined to `src/simd.rs`.
 - Updated security documentation for streaming wrapper buffer cleanup behavior.
 - Updated release evidence documentation for stream fuzzing and reserved SIMD
   feature-bundle checks.

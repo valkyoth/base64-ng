@@ -13,6 +13,8 @@ block must be added here before an accelerated backend can be admitted.
 - Optional SIMD prototypes live only in `src/simd.rs`.
 - `scripts/validate-unsafe-boundary.sh` fails if `allow(unsafe_code)` appears
   outside `src/simd.rs`.
+- `scripts/validate-unsafe-boundary.sh` fails if architecture intrinsics, CPU
+  feature detection, or `target_feature` gates appear outside `src/simd.rs`.
 - Every unsafe function and unsafe block must have a local safety explanation.
 - Prototype functions are not eligible for runtime dispatch.
 

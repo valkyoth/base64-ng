@@ -17,6 +17,16 @@ if [ "$matches" != "$allowed" ]; then
     exit 1
 fi
 
+arch_matches="$(grep -RIl -e 'core::arch' -e 'std::arch' -e 'is_x86_feature_detected!' -e 'target_feature' src || true)"
+
+if [ "$arch_matches" != "$allowed" ]; then
+    echo "unsafe boundary: architecture intrinsics and target-feature gates may appear only in $allowed"
+    if [ -n "$arch_matches" ]; then
+        echo "$arch_matches"
+    fi
+    exit 1
+fi
+
 if [ ! -s docs/UNSAFE.md ]; then
     echo "unsafe boundary: docs/UNSAFE.md must document unsafe sites"
     exit 1

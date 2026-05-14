@@ -250,7 +250,9 @@ Security commitments:
 - Future unsafe SIMD isolated under `src/simd.rs`.
 - Local checks verify that `allow(unsafe_code)` is confined to the SIMD
   boundary, every SIMD-boundary unsafe function is inventoried, and every
-  unsafe block has a nearby `SAFETY:` explanation.
+  unsafe block has a nearby `SAFETY:` explanation. Architecture intrinsics,
+  CPU feature detection, and target-feature gates are checked against the same
+  boundary.
 - [docs/UNSAFE.md](docs/UNSAFE.md) inventories every current unsafe site and
   its safety invariants.
 - `runtime::backend_report()` exposes the active backend, detected candidate,
