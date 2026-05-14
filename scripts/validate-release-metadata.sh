@@ -51,6 +51,8 @@ fi
 
 test -s LICENSE-MIT
 test -s LICENSE-APACHE
+test -s rust-toolchain.toml
+test -s deny.toml
 test -s README.md
 test -s CONTRIBUTING.md
 test -s SECURITY.md
@@ -85,9 +87,11 @@ package_list="$(
 for required_package_file in \
     "CHANGELOG.md" \
     "CONTRIBUTING.md" \
+    "deny.toml" \
     "LICENSE-APACHE" \
     "LICENSE-MIT" \
     "README.md" \
+    "rust-toolchain.toml" \
     "SECURITY.md" \
     "docs/BENCHMARKS.md" \
     "docs/CONSTANT_TIME.md" \

@@ -118,8 +118,9 @@ Expected artifacts:
 - `base64-ng.spdx.json`
 - `base64-ng.cyclonedx.json`
 
-The published crate package includes the core release/check scripts so the
-documented gate can be inspected with the packaged source.
+The published crate package includes the core release/check scripts, Rust
+toolchain pin, and cargo-deny policy so the documented gate can be inspected
+with the packaged source.
 
 Fuzz-only dependencies are checked separately with:
 

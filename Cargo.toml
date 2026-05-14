@@ -18,6 +18,8 @@ include = [
     "docs/**",
     "scripts/**",
     "Cargo.toml",
+    "rust-toolchain.toml",
+    "deny.toml",
     "README.md",
     "CONTRIBUTING.md",
     "CHANGELOG.md",
