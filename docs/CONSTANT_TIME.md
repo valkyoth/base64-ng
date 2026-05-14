@@ -70,6 +70,22 @@ pub mod ct {
             input: &[u8],
             output: &mut [u8],
         ) -> Result<usize, DecodeError>;
+
+        pub fn decode_slice_clear_tail(
+            &self,
+            input: &[u8],
+            output: &mut [u8],
+        ) -> Result<usize, DecodeError>;
+
+        pub fn decode_in_place<'a>(
+            &self,
+            buffer: &'a mut [u8],
+        ) -> Result<&'a mut [u8], DecodeError>;
+
+        pub fn decode_in_place_clear_tail<'a>(
+            &self,
+            buffer: &'a mut [u8],
+        ) -> Result<&'a mut [u8], DecodeError>;
     }
 }
 ```
@@ -111,7 +127,8 @@ cryptographic constant-time API.
 
 ## Memory Cleanup
 
-Clear-tail encode and decode APIs are intentionally separate from the future
-constant-time API. They reduce ordinary caller-buffer retention but do not
-provide a verified zeroization guarantee. Any future cryptographic profile must
-document memory cleanup separately from timing behavior.
+The `ct` module provides clear-tail decode variants for caller-owned buffers.
+They clear unused bytes after the decoded prefix on success and clear the whole
+caller-owned buffer on error. This reduces ordinary caller-buffer retention but
+does not provide a verified zeroization guarantee. Any future cryptographic
+profile must document memory cleanup separately from timing behavior.

@@ -957,7 +957,7 @@ pub mod stream {
 /// by secret input bytes while mapping Base64 symbols, but it is not documented
 /// as a formally verified cryptographic constant-time API.
 pub mod ct {
-    use super::{Alphabet, DecodeError, Standard, UrlSafe, ct_decode_slice};
+    use super::{Alphabet, DecodeError, Standard, UrlSafe, ct_decode_in_place, ct_decode_slice};
     use core::marker::PhantomData;
 
     /// Standard Base64 constant-time-oriented decoder with padding.
@@ -1013,6 +1013,98 @@ pub mod ct {
         /// ```
         pub fn decode_slice(&self, input: &[u8], output: &mut [u8]) -> Result<usize, DecodeError> {
             ct_decode_slice::<A, PAD>(input, output)
+        }
+
+        /// Decodes `input` into `output` and clears all bytes after the
+        /// decoded prefix.
+        ///
+        /// If decoding fails, the entire output buffer is cleared before the
+        /// error is returned. Use this variant for sensitive payloads where
+        /// partially decoded bytes from rejected input should not remain in the
+        /// caller-owned output buffer.
+        ///
+        /// # Examples
+        ///
+        /// ```
+        /// use base64_ng::ct;
+        ///
+        /// let mut output = [0xff; 8];
+        /// let written = ct::STANDARD
+        ///     .decode_slice_clear_tail(b"aGk=", &mut output)
+        ///     .unwrap();
+        ///
+        /// assert_eq!(&output[..written], b"hi");
+        /// assert!(output[written..].iter().all(|byte| *byte == 0));
+        /// ```
+        pub fn decode_slice_clear_tail(
+            &self,
+            input: &[u8],
+            output: &mut [u8],
+        ) -> Result<usize, DecodeError> {
+            let written = match self.decode_slice(input, output) {
+                Ok(written) => written,
+                Err(err) => {
+                    output.fill(0);
+                    return Err(err);
+                }
+            };
+            output[written..].fill(0);
+            Ok(written)
+        }
+
+        /// Decodes `buffer` in place and returns the decoded prefix.
+        ///
+        /// This uses the constant-time-oriented scalar decoder while reading
+        /// each Base64 quantum into local values before writing decoded bytes
+        /// back to the front of the same buffer.
+        ///
+        /// # Examples
+        ///
+        /// ```
+        /// use base64_ng::ct;
+        ///
+        /// let mut buffer = *b"aGk=";
+        /// let decoded = ct::STANDARD.decode_in_place(&mut buffer).unwrap();
+        ///
+        /// assert_eq!(decoded, b"hi");
+        /// ```
+        pub fn decode_in_place<'a>(
+            &self,
+            buffer: &'a mut [u8],
+        ) -> Result<&'a mut [u8], DecodeError> {
+            let len = ct_decode_in_place::<A, PAD>(buffer)?;
+            Ok(&mut buffer[..len])
+        }
+
+        /// Decodes `buffer` in place and clears all bytes after the decoded
+        /// prefix.
+        ///
+        /// If decoding fails, the entire buffer is cleared before the error is
+        /// returned.
+        ///
+        /// # Examples
+        ///
+        /// ```
+        /// use base64_ng::ct;
+        ///
+        /// let mut buffer = *b"aGk=";
+        /// let decoded = ct::STANDARD.decode_in_place_clear_tail(&mut buffer).unwrap();
+        ///
+        /// assert_eq!(decoded, b"hi");
+        /// ```
+        pub fn decode_in_place_clear_tail<'a>(
+            &self,
+            buffer: &'a mut [u8],
+        ) -> Result<&'a mut [u8], DecodeError> {
+            let len = match ct_decode_in_place::<A, PAD>(buffer) {
+                Ok(len) => len,
+                Err(err) => {
+                    buffer.fill(0);
+                    return Err(err);
+                }
+            };
+            buffer[len..].fill(0);
+            Ok(&mut buffer[..len])
         }
     }
 }
@@ -2487,6 +2579,20 @@ fn ct_decode_slice<A: Alphabet, const PAD: bool>(
     }
 }
 
+fn ct_decode_in_place<A: Alphabet, const PAD: bool>(
+    buffer: &mut [u8],
+) -> Result<usize, DecodeError> {
+    if buffer.is_empty() {
+        return Ok(0);
+    }
+
+    if PAD {
+        ct_decode_padded_in_place::<A>(buffer)
+    } else {
+        ct_decode_unpadded_in_place::<A>(buffer)
+    }
+}
+
 fn ct_decode_padded<A: Alphabet>(input: &[u8], output: &mut [u8]) -> Result<usize, DecodeError> {
     if !input.len().is_multiple_of(4) {
         return Err(DecodeError::InvalidLength);
@@ -2545,6 +2651,64 @@ fn ct_decode_padded<A: Alphabet>(input: &[u8], output: &mut [u8]) -> Result<usiz
         read += 4;
     }
 
+    report_ct_error(invalid_byte, invalid_padding)?;
+    Ok(write)
+}
+
+fn ct_decode_padded_in_place<A: Alphabet>(buffer: &mut [u8]) -> Result<usize, DecodeError> {
+    if !buffer.len().is_multiple_of(4) {
+        return Err(DecodeError::InvalidLength);
+    }
+
+    let padding = ct_padding_len(buffer);
+    let required = buffer.len() / 4 * 3 - padding;
+    debug_assert!(required <= buffer.len());
+
+    let mut invalid_byte = 0u8;
+    let mut invalid_padding = 0u8;
+    let mut write = 0;
+    let mut read = 0;
+
+    while read < buffer.len() {
+        let is_last = read + 4 == buffer.len();
+        let b0 = buffer[read];
+        let b1 = buffer[read + 1];
+        let b2 = buffer[read + 2];
+        let b3 = buffer[read + 3];
+        let (v0, valid0) = ct_decode_ascii_base64::<A>(b0);
+        let (v1, valid1) = ct_decode_ascii_base64::<A>(b1);
+        let (v2, valid2) = ct_decode_ascii_base64::<A>(b2);
+        let (v3, valid3) = ct_decode_ascii_base64::<A>(b3);
+
+        invalid_byte |= u8::from(!valid0);
+        invalid_byte |= u8::from(!valid1);
+
+        if is_last && padding == 2 {
+            invalid_padding |= u8::from((v1 & 0b0000_1111) != 0);
+            buffer[write] = (v0 << 2) | (v1 >> 4);
+            write += 1;
+        } else if is_last && padding == 1 {
+            invalid_byte |= u8::from(!valid2);
+            invalid_padding |= u8::from(b2 == b'=');
+            invalid_padding |= u8::from((v2 & 0b0000_0011) != 0);
+            buffer[write] = (v0 << 2) | (v1 >> 4);
+            buffer[write + 1] = (v1 << 4) | (v2 >> 2);
+            write += 2;
+        } else {
+            invalid_byte |= u8::from(!valid2);
+            invalid_byte |= u8::from(!valid3);
+            invalid_padding |= u8::from(b2 == b'=');
+            invalid_padding |= u8::from(b3 == b'=');
+            buffer[write] = (v0 << 2) | (v1 >> 4);
+            buffer[write + 1] = (v1 << 4) | (v2 >> 2);
+            buffer[write + 2] = (v2 << 6) | v3;
+            write += 3;
+        }
+
+        read += 4;
+    }
+
+    debug_assert_eq!(write, required);
     report_ct_error(invalid_byte, invalid_padding)?;
     Ok(write)
 }
@@ -2629,6 +2793,86 @@ fn ct_decode_unpadded<A: Alphabet>(input: &[u8], output: &mut [u8]) -> Result<us
         _ => return Err(DecodeError::InvalidLength),
     }
 
+    report_ct_error(invalid_byte, invalid_padding)?;
+    Ok(write)
+}
+
+fn ct_decode_unpadded_in_place<A: Alphabet>(buffer: &mut [u8]) -> Result<usize, DecodeError> {
+    if buffer.len() % 4 == 1 {
+        return Err(DecodeError::InvalidLength);
+    }
+
+    let required = decoded_capacity(buffer.len());
+    debug_assert!(required <= buffer.len());
+
+    let mut invalid_byte = 0u8;
+    let mut invalid_padding = 0u8;
+    let mut write = 0;
+    let mut read = 0;
+
+    while read + 4 <= buffer.len() {
+        let b0 = buffer[read];
+        let b1 = buffer[read + 1];
+        let b2 = buffer[read + 2];
+        let b3 = buffer[read + 3];
+        let (v0, valid0) = ct_decode_ascii_base64::<A>(b0);
+        let (v1, valid1) = ct_decode_ascii_base64::<A>(b1);
+        let (v2, valid2) = ct_decode_ascii_base64::<A>(b2);
+        let (v3, valid3) = ct_decode_ascii_base64::<A>(b3);
+
+        invalid_byte |= u8::from(!valid0);
+        invalid_byte |= u8::from(!valid1);
+        invalid_byte |= u8::from(!valid2);
+        invalid_byte |= u8::from(!valid3);
+        invalid_padding |= u8::from(b0 == b'=');
+        invalid_padding |= u8::from(b1 == b'=');
+        invalid_padding |= u8::from(b2 == b'=');
+        invalid_padding |= u8::from(b3 == b'=');
+
+        buffer[write] = (v0 << 2) | (v1 >> 4);
+        buffer[write + 1] = (v1 << 4) | (v2 >> 2);
+        buffer[write + 2] = (v2 << 6) | v3;
+        read += 4;
+        write += 3;
+    }
+
+    match buffer.len() - read {
+        0 => {}
+        2 => {
+            let b0 = buffer[read];
+            let b1 = buffer[read + 1];
+            let (v0, valid0) = ct_decode_ascii_base64::<A>(b0);
+            let (v1, valid1) = ct_decode_ascii_base64::<A>(b1);
+            invalid_byte |= u8::from(!valid0);
+            invalid_byte |= u8::from(!valid1);
+            invalid_padding |= u8::from(b0 == b'=');
+            invalid_padding |= u8::from(b1 == b'=');
+            invalid_padding |= u8::from((v1 & 0b0000_1111) != 0);
+            buffer[write] = (v0 << 2) | (v1 >> 4);
+            write += 1;
+        }
+        3 => {
+            let b0 = buffer[read];
+            let b1 = buffer[read + 1];
+            let b2 = buffer[read + 2];
+            let (v0, valid0) = ct_decode_ascii_base64::<A>(b0);
+            let (v1, valid1) = ct_decode_ascii_base64::<A>(b1);
+            let (v2, valid2) = ct_decode_ascii_base64::<A>(b2);
+            invalid_byte |= u8::from(!valid0);
+            invalid_byte |= u8::from(!valid1);
+            invalid_byte |= u8::from(!valid2);
+            invalid_padding |= u8::from(b0 == b'=');
+            invalid_padding |= u8::from(b1 == b'=');
+            invalid_padding |= u8::from(b2 == b'=');
+            invalid_padding |= u8::from((v2 & 0b0000_0011) != 0);
+            buffer[write] = (v0 << 2) | (v1 >> 4);
+            buffer[write + 1] = (v1 << 4) | (v2 >> 2);
+            write += 2;
+        }
+        _ => return Err(DecodeError::InvalidLength),
+    }
+
+    debug_assert_eq!(write, required);
     report_ct_error(invalid_byte, invalid_padding)?;
     Ok(write)
 }

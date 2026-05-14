@@ -45,6 +45,10 @@
   policy failures.
 - Updated the security policy with the current unsafe boundary and runtime
   backend policy controls.
+- Added `ct::CtEngine::decode_slice_clear_tail`,
+  `ct::CtEngine::decode_in_place`, and
+  `ct::CtEngine::decode_in_place_clear_tail` so constant-time-oriented decode
+  callers can clear partially decoded output on rejected sensitive input.
 
 ## 0.3.0 - 2026-05-13
 

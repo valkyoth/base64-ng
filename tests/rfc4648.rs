@@ -279,6 +279,122 @@ fn ct_decoder_rejects_malformed_inputs() {
 }
 
 #[test]
+fn ct_decode_slice_clear_tail_scrubs_unused_output() {
+    let mut standard = [0xff; 8];
+    let written = ct::STANDARD
+        .decode_slice_clear_tail(b"aGk=", &mut standard)
+        .unwrap();
+    assert_eq!(&standard[..written], b"hi");
+    assert_eq!(&standard[written..], &[0; 6]);
+
+    let mut standard_no_pad = [0xff; 8];
+    let written = ct::STANDARD_NO_PAD
+        .decode_slice_clear_tail(b"aGk", &mut standard_no_pad)
+        .unwrap();
+    assert_eq!(&standard_no_pad[..written], b"hi");
+    assert_eq!(&standard_no_pad[written..], &[0; 6]);
+}
+
+#[test]
+fn ct_decode_slice_clear_tail_scrubs_output_on_error() {
+    let mut invalid_byte = [0xff; 8];
+    assert_eq!(
+        ct::STANDARD.decode_slice_clear_tail(b"Zm9v$g==", &mut invalid_byte),
+        Err(DecodeError::InvalidByte { index: 0, byte: 0 })
+    );
+    assert!(invalid_byte.iter().all(|byte| *byte == 0));
+
+    let mut invalid_padding = [0xff; 8];
+    assert_eq!(
+        ct::STANDARD.decode_slice_clear_tail(b"Zh==", &mut invalid_padding),
+        Err(DecodeError::InvalidPadding { index: 0 })
+    );
+    assert!(invalid_padding.iter().all(|byte| *byte == 0));
+
+    let mut too_small = [0xff; 1];
+    assert_eq!(
+        ct::STANDARD.decode_slice_clear_tail(b"aGk=", &mut too_small),
+        Err(DecodeError::OutputTooSmall {
+            required: 2,
+            available: 1,
+        })
+    );
+    assert!(too_small.iter().all(|byte| *byte == 0));
+}
+
+#[test]
+fn ct_decode_in_place_matches_slice_for_canonical_inputs() {
+    for input_len in 0..64 {
+        let mut input = [0u8; 64];
+        for (index, byte) in input.iter_mut().enumerate() {
+            *byte = (index * 31 + input_len * 5) as u8;
+        }
+        let input = &input[..input_len];
+
+        let mut encoded = [0u8; 128];
+        let mut expected = [0u8; 64];
+
+        let encoded_len = STANDARD.encode_slice(input, &mut encoded).unwrap();
+        let expected_len = ct::STANDARD
+            .decode_slice(&encoded[..encoded_len], &mut expected)
+            .unwrap();
+        let mut in_place = [0u8; 128];
+        in_place[..encoded_len].copy_from_slice(&encoded[..encoded_len]);
+        let decoded = ct::STANDARD
+            .decode_in_place(&mut in_place[..encoded_len])
+            .unwrap();
+        assert_eq!(decoded, &expected[..expected_len]);
+
+        let encoded_len = STANDARD_NO_PAD.encode_slice(input, &mut encoded).unwrap();
+        let expected_len = ct::STANDARD_NO_PAD
+            .decode_slice(&encoded[..encoded_len], &mut expected)
+            .unwrap();
+        in_place[..encoded_len].copy_from_slice(&encoded[..encoded_len]);
+        let decoded = ct::STANDARD_NO_PAD
+            .decode_in_place(&mut in_place[..encoded_len])
+            .unwrap();
+        assert_eq!(decoded, &expected[..expected_len]);
+    }
+}
+
+#[test]
+fn ct_decode_in_place_clear_tail_scrubs_buffer() {
+    let mut standard = *b"aGk=";
+    let len = {
+        let decoded = ct::STANDARD
+            .decode_in_place_clear_tail(&mut standard)
+            .unwrap();
+        assert_eq!(decoded, b"hi");
+        decoded.len()
+    };
+    assert_eq!(&standard[len..], &[0, 0]);
+
+    let mut standard_no_pad = *b"aGk";
+    let len = {
+        let decoded = ct::STANDARD_NO_PAD
+            .decode_in_place_clear_tail(&mut standard_no_pad)
+            .unwrap();
+        assert_eq!(decoded, b"hi");
+        decoded.len()
+    };
+    assert_eq!(&standard_no_pad[len..], &[0]);
+
+    let mut invalid_byte = *b"Zm9v$g==";
+    assert_eq!(
+        ct::STANDARD.decode_in_place_clear_tail(&mut invalid_byte),
+        Err(DecodeError::InvalidByte { index: 0, byte: 0 })
+    );
+    assert!(invalid_byte.iter().all(|byte| *byte == 0));
+
+    let mut invalid_padding = *b"Zh==";
+    assert_eq!(
+        ct::STANDARD.decode_in_place_clear_tail(&mut invalid_padding),
+        Err(DecodeError::InvalidPadding { index: 0 })
+    );
+    assert!(invalid_padding.iter().all(|byte| *byte == 0));
+}
+
+#[test]
 fn ct_decoder_uses_non_localized_malformed_errors() {
     let mut output = [0u8; 8];
 

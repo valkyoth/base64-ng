@@ -181,6 +181,8 @@ For sensitive payloads, use `decode_slice_clear_tail` or
 decode error these variants clear the caller-owned output buffer before
 returning the error. The legacy whitespace profile also provides
 `decode_slice_legacy_clear_tail` and `decode_in_place_legacy_clear_tail`.
+The `ct` module provides the same clear-tail decode variants for callers using
+the constant-time-oriented scalar decoder.
 
 With the default `alloc` feature, vector and string helpers are available:
 
@@ -269,8 +271,8 @@ Security commitments:
   uses branch-minimized arithmetic. A separate `ct` module provides a
   constant-time-oriented scalar decode path for callers that need a narrower
   timing target. Its malformed-input errors are intentionally non-localized,
-  and it is not documented as a formally verified cryptographic constant-time
-  API.
+  clear-tail variants clear caller-owned buffers on error, and it is not
+  documented as a formally verified cryptographic constant-time API.
 - Clear-tail encode/decode variants are available for callers that want
   best-effort cleanup of unused caller-owned buffers without adding a runtime
   dependency.

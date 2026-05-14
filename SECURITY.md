@@ -56,7 +56,9 @@ arithmetic for ASCII classification. The `ct` module provides a separate
 constant-time-oriented scalar decode path that avoids secret-indexed lookup
 tables while mapping Base64 symbols. Its malformed-input errors are
 intentionally non-localized so error tracking does not reveal the first
-malformed byte position. This reduces easy timing pitfalls, but `base64-ng`
+malformed byte position. Its clear-tail variants clear caller-owned output on
+error so rejected sensitive payloads do not leave partially decoded bytes in
+that buffer. This reduces easy timing and retention pitfalls, but `base64-ng`
 does not currently claim a formally verified cryptographic constant-time encode
 or decode API.
 
