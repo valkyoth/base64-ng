@@ -6,7 +6,8 @@ The crate starts conservative: a small scalar implementation, strict RFC 4648 be
 
 ## Current Status
 
-The current public release is `0.5.0`.
+The current public release is `0.5.0`. The development branch is
+`0.6.0-alpha.0`.
 
 Implemented now:
 
@@ -21,6 +22,8 @@ Implemented now:
 - In-place decode API built on the same strict scalar decoder.
 - Explicit legacy decode APIs that ignore ASCII transport whitespace while
   keeping alphabet and padding validation strict.
+- Validation-only APIs for strict and legacy profiles when callers need to
+  reject malformed input without materializing decoded bytes.
 - Separate `ct` scalar decode module for sensitive payloads that avoids
   secret-indexed lookup tables during Base64 symbol mapping.
 - `std::io` streaming encoders and decoders behind the `stream` feature.
@@ -126,6 +129,32 @@ use base64_ng::{checked_encoded_len, decoded_len};
 
 assert_eq!(checked_encoded_len(5, true), Some(8));
 assert_eq!(decoded_len(b"aGVsbG8=", true).unwrap(), 5);
+```
+
+## Validation Without Decoding
+
+Use validation-only APIs when a protocol needs to sanitize input before storing,
+routing, or accounting for it:
+
+```rust
+use base64_ng::{STANDARD, URL_SAFE_NO_PAD};
+
+assert!(STANDARD.validate(b"aGVsbG8="));
+assert!(!STANDARD.validate(b"aGVsbG8"));
+
+STANDARD.validate_result(b"aGVsbG8=").unwrap();
+
+assert!(URL_SAFE_NO_PAD.validate(b"-_8"));
+assert!(!URL_SAFE_NO_PAD.validate(b"+/8"));
+```
+
+For line-wrapped or spaced legacy inputs, use the explicit legacy profile:
+
+```rust
+use base64_ng::STANDARD;
+
+assert!(STANDARD.validate_legacy(b" aG\r\nVsbG8= "));
+assert!(!STANDARD.validate_legacy(b" aG-V "));
 ```
 
 ## Legacy Whitespace Decoding

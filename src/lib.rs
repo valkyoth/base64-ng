@@ -1805,6 +1805,77 @@ where
         validate_legacy_decode::<A, PAD>(input)
     }
 
+    /// Validates strict Base64 input without writing decoded bytes.
+    ///
+    /// This applies the same alphabet, padding, and canonical-bit checks as
+    /// [`Self::decode_slice`]. Use this method when malformed-input
+    /// diagnostics matter; use [`Self::validate`] when a boolean is enough.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use base64_ng::STANDARD;
+    ///
+    /// STANDARD.validate_result(b"aGVsbG8=").unwrap();
+    /// assert!(STANDARD.validate_result(b"aGVsbG8").is_err());
+    /// ```
+    pub fn validate_result(&self, input: &[u8]) -> Result<(), DecodeError> {
+        validate_decode::<A, PAD>(input).map(|_| ())
+    }
+
+    /// Returns whether `input` is valid strict Base64 for this engine.
+    ///
+    /// This is a convenience wrapper around [`Self::validate_result`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use base64_ng::URL_SAFE_NO_PAD;
+    ///
+    /// assert!(URL_SAFE_NO_PAD.validate(b"-_8"));
+    /// assert!(!URL_SAFE_NO_PAD.validate(b"+/8"));
+    /// ```
+    #[must_use]
+    pub fn validate(&self, input: &[u8]) -> bool {
+        self.validate_result(input).is_ok()
+    }
+
+    /// Validates input using the explicit legacy whitespace profile.
+    ///
+    /// ASCII space, tab, carriage return, and line feed bytes are ignored
+    /// before applying the same alphabet, padding, and canonical-bit checks as
+    /// strict decoding.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use base64_ng::STANDARD;
+    ///
+    /// STANDARD.validate_legacy_result(b" aG\r\nVsbG8= ").unwrap();
+    /// assert!(STANDARD.validate_legacy_result(b" aG-=").is_err());
+    /// ```
+    pub fn validate_legacy_result(&self, input: &[u8]) -> Result<(), DecodeError> {
+        validate_legacy_decode::<A, PAD>(input).map(|_| ())
+    }
+
+    /// Returns whether `input` is valid for the explicit legacy whitespace
+    /// profile.
+    ///
+    /// This is a convenience wrapper around [`Self::validate_legacy_result`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use base64_ng::STANDARD;
+    ///
+    /// assert!(STANDARD.validate_legacy(b" aG\r\nVsbG8= "));
+    /// assert!(!STANDARD.validate_legacy(b"aG-V"));
+    /// ```
+    #[must_use]
+    pub fn validate_legacy(&self, input: &[u8]) -> bool {
+        self.validate_legacy_result(input).is_ok()
+    }
+
     /// Encodes a fixed-size input into a fixed-size output array in const contexts.
     ///
     /// Stable Rust does not yet allow this API to return an array whose length
@@ -2633,7 +2704,6 @@ fn decode_padded<A: Alphabet>(input: &[u8], output: &mut [u8]) -> Result<usize, 
     Ok(write)
 }
 
-#[cfg(feature = "alloc")]
 fn validate_decode<A: Alphabet, const PAD: bool>(input: &[u8]) -> Result<usize, DecodeError> {
     if input.is_empty() {
         return Ok(0);
@@ -2646,7 +2716,6 @@ fn validate_decode<A: Alphabet, const PAD: bool>(input: &[u8]) -> Result<usize, 
     }
 }
 
-#[cfg(feature = "alloc")]
 fn validate_padded<A: Alphabet>(input: &[u8]) -> Result<usize, DecodeError> {
     if !input.len().is_multiple_of(4) {
         return Err(DecodeError::InvalidLength);
@@ -2666,7 +2735,6 @@ fn validate_padded<A: Alphabet>(input: &[u8]) -> Result<usize, DecodeError> {
     Ok(required)
 }
 
-#[cfg(feature = "alloc")]
 fn validate_unpadded<A: Alphabet>(input: &[u8]) -> Result<usize, DecodeError> {
     let required = decoded_len_unpadded(input)?;
 

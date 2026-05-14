@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.0-alpha.0 - Unreleased
+
+- Started the next development cycle after the `0.5.0` release.
+- Added no-alloc validation-only APIs for strict and legacy profiles:
+  `validate_result`, `validate`, `validate_legacy_result`, and
+  `validate_legacy`.
+
 ## 0.5.0 - 2026-05-14
 
 - Started the next development cycle after the `0.4.1` release.

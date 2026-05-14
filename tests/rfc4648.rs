@@ -473,6 +473,73 @@ fn decoded_len_reports_exact_lengths() {
 }
 
 #[test]
+fn validate_strict_reports_canonical_inputs_without_decoding() {
+    assert!(STANDARD.validate(b""));
+    assert!(STANDARD.validate(b"Zg=="));
+    assert!(STANDARD.validate(b"Zm8="));
+    assert!(STANDARD.validate(b"Zm9v"));
+    assert!(STANDARD_NO_PAD.validate(b"Zg"));
+    assert!(STANDARD_NO_PAD.validate(b"Zm8"));
+    assert!(STANDARD_NO_PAD.validate(b"Zm9v"));
+    assert!(URL_SAFE.validate(b"-_8="));
+    assert!(URL_SAFE_NO_PAD.validate(b"-_8"));
+
+    assert_eq!(STANDARD.validate_result(b"Zg=="), Ok(()));
+    assert_eq!(STANDARD_NO_PAD.validate_result(b"Zg"), Ok(()));
+}
+
+#[test]
+fn validate_strict_rejects_malformed_inputs_without_decoding() {
+    assert!(!STANDARD.validate(b"Zg"));
+    assert!(!STANDARD.validate(b"Zg==="));
+    assert!(!STANDARD.validate(b"Z==="));
+    assert!(!STANDARD.validate(b"AA=A"));
+    assert!(!STANDARD.validate(b"Zh=="));
+    assert!(!STANDARD.validate(b"Zm9v\n"));
+    assert!(!STANDARD.validate(b"Zm-v"));
+    assert!(!URL_SAFE.validate(b"Zm+v"));
+    assert!(!STANDARD_NO_PAD.validate(b"Zg=="));
+
+    assert_eq!(
+        STANDARD.validate_result(b"Zg"),
+        Err(DecodeError::InvalidLength)
+    );
+    assert_eq!(
+        STANDARD.validate_result(b"Zm-v"),
+        Err(DecodeError::InvalidByte {
+            index: 2,
+            byte: b'-',
+        })
+    );
+    assert_eq!(
+        STANDARD.validate_result(b"Zh=="),
+        Err(DecodeError::InvalidPadding { index: 1 })
+    );
+}
+
+#[test]
+fn validate_legacy_ignores_transport_whitespace_without_decoding() {
+    assert!(STANDARD.validate_legacy(b" Z\r\ng\t== "));
+    assert!(STANDARD.validate_legacy(b" Zm\r\n9v "));
+    assert!(STANDARD_NO_PAD.validate_legacy(b" Z\r\ng "));
+    assert_eq!(STANDARD.validate_legacy_result(b" Z\r\ng== "), Ok(()));
+
+    assert!(!STANDARD.validate_legacy(b" Z-g== "));
+    assert!(!STANDARD.validate_legacy(b" Zg== A"));
+    assert_eq!(
+        STANDARD.validate_legacy_result(b" Z-g== "),
+        Err(DecodeError::InvalidByte {
+            index: 2,
+            byte: b'-',
+        })
+    );
+    assert_eq!(
+        STANDARD.validate_legacy_result(b" Zg== A"),
+        Err(DecodeError::InvalidPadding { index: 6 })
+    );
+}
+
+#[test]
 fn decoded_len_rejects_bad_lengths_and_padding() {
     assert_eq!(decoded_len(b"Z", true), Err(DecodeError::InvalidLength));
     assert_eq!(decoded_len(b"Z", false), Err(DecodeError::InvalidLength));
