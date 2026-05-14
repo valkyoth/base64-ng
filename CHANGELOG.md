@@ -16,6 +16,8 @@
   AVX-512 SIMD feature bundles under `no_std`.
 - Extended stream fuzz coverage to verify padded `DecoderReader` leaves
   adjacent framed payload bytes unread.
+- Extended stream fuzz coverage to compare fragmented `DecoderReader` sources
+  against slice decoding when payload-boundary semantics match.
 
 ## 0.4.1 - 2026-05-14
 

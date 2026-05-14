@@ -23,9 +23,32 @@ fuzz_target!(|data: &[u8]| {
     exercise_encoder_chunks(payload, split_seed, URL_SAFE);
     exercise_encoder_chunks(payload, split_seed, URL_SAFE_NO_PAD);
 
+    exercise_decoder_reader_chunks(payload, split_seed, STANDARD);
+    exercise_decoder_reader_chunks(payload, split_seed, STANDARD_NO_PAD);
+    exercise_decoder_reader_chunks(payload, split_seed, URL_SAFE);
+    exercise_decoder_reader_chunks(payload, split_seed, URL_SAFE_NO_PAD);
+
     exercise_decoder_reader_adjacent_payload(payload, split_seed, STANDARD);
     exercise_decoder_reader_adjacent_payload(payload, split_seed, URL_SAFE);
 });
+
+struct ChunkedReader<'a> {
+    input: &'a [u8],
+    max_chunk: usize,
+}
+
+impl Read for ChunkedReader<'_> {
+    fn read(&mut self, output: &mut [u8]) -> std::io::Result<usize> {
+        let len = self.input.len().min(self.max_chunk).min(output.len());
+        if len == 0 {
+            return Ok(0);
+        }
+
+        output[..len].copy_from_slice(&self.input[..len]);
+        self.input = &self.input[len..];
+        Ok(len)
+    }
+}
 
 fn exercise_decoder_chunks<A, const PAD: bool>(
     input: &[u8],
@@ -68,6 +91,35 @@ fn exercise_encoder_chunks<A, const PAD: bool>(
 
     let streamed = encoder.finish().unwrap();
     assert_eq!(streamed, expected);
+}
+
+fn exercise_decoder_reader_chunks<A, const PAD: bool>(
+    input: &[u8],
+    split_seed: u8,
+    engine: base64_ng::Engine<A, PAD>,
+) where
+    A: base64_ng::Alphabet,
+{
+    if PAD && input.contains(&b'=') {
+        return;
+    }
+
+    let expected = engine.decode_vec(input);
+    let source = ChunkedReader {
+        input,
+        max_chunk: chunk_size(split_seed),
+    };
+    let mut reader = DecoderReader::new(source, engine);
+    let mut decoded = Vec::new();
+    let streamed = reader.read_to_end(&mut decoded);
+
+    match (streamed, expected) {
+        (Ok(_), Ok(expected)) => assert_eq!(decoded, expected),
+        (Err(_), Err(_)) => {}
+        (streamed, expected) => {
+            panic!("decoder reader and slice decoder disagreed: {streamed:?} vs {expected:?}")
+        }
+    }
 }
 
 fn exercise_decoder_reader_adjacent_payload<A>(
