@@ -1122,10 +1122,12 @@ pub mod stream {
 
             let mut written = 0;
             while written < output.len() {
-                let Some(byte) = self.output.pop_front() else {
+                let Some(byte) = self.output.front_mut() else {
                     break;
                 };
-                output[written] = byte;
+                output[written] = *byte;
+                *byte = 0;
+                let _ = self.output.pop_front();
                 written += 1;
             }
 
