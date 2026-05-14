@@ -324,14 +324,14 @@ the zero-runtime-dependency stance.
   documentation.
 - Strengthened Miri coverage with a shared check script for no-default scalar
   APIs and all-features alloc/stream APIs when nightly Miri is installed.
+- Stabilized fuzz corpus handling with documented admission rules and a local
+  corpus policy check.
 - Expand Kani proof coverage for length helpers, in-place decode bounds, and
   selected scalar decoder invariants when Kani supports the pinned Rust
   toolchain.
 - Add a documented constant-time verification plan for the `ct` module,
   including generated-code review requirements before making cryptographic
   constant-time claims.
-- Stabilize fuzz corpus handling and document which corpus inputs are accepted
-  into the repository.
 
 ### v0.7
 

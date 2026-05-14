@@ -9,6 +9,9 @@ fi
 echo "fuzz checks: compile harnesses"
 cargo check --manifest-path fuzz/Cargo.toml --bins
 
+echo "fuzz checks: corpus policy"
+scripts/check_fuzz_corpus.sh
+
 echo "fuzz checks: RustSec advisories"
 cargo audit --file fuzz/Cargo.lock
 

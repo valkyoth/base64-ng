@@ -27,6 +27,8 @@
 - Added `scripts/check_miri.sh` and routed CI/release Miri checks through it so
   both no-default scalar and all-features alloc/stream surfaces run under Miri
   when nightly Miri is installed.
+- Added `docs/FUZZING.md` and `scripts/check_fuzz_corpus.sh` to document and
+  enforce reviewed fuzz corpus handling.
 
 ## 0.5.0 - 2026-05-14
 

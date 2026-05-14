@@ -484,6 +484,7 @@ For dependency admission rules, see [docs/DEPENDENCIES.md](docs/DEPENDENCIES.md)
 For adoption guidance from the established `base64` crate, see
 [docs/MIGRATION.md](docs/MIGRATION.md).
 For performance evidence guidance, see [docs/BENCHMARKS.md](docs/BENCHMARKS.md).
+For fuzz target and corpus policy, see [docs/FUZZING.md](docs/FUZZING.md).
 
 ## Local Checks
 
@@ -546,6 +547,12 @@ Compile fuzz targets without running a campaign:
 
 ```sh
 scripts/check_fuzz.sh
+```
+
+Validate the committed fuzz corpus policy directly:
+
+```sh
+scripts/check_fuzz_corpus.sh
 ```
 
 Compile and audit the isolated performance harness:

@@ -133,7 +133,9 @@ Fuzz-only dependencies are checked separately with:
 scripts/check_fuzz.sh
 ```
 
-The `fuzz/` package is not part of the published crate.
+The `fuzz/` package is not part of the published crate. Corpus admission rules
+are documented in `docs/FUZZING.md` and checked by
+`scripts/check_fuzz_corpus.sh`.
 
 Run the streaming fuzz smoke when changing stream state machines:
 
@@ -141,7 +143,9 @@ Run the streaming fuzz smoke when changing stream state machines:
 cargo +nightly fuzz run stream_chunks -- -runs=1000
 ```
 
-Review generated local corpus files before committing.
+Review generated local corpus files before committing. Commit only small,
+non-sensitive inputs that preserve a regression, protocol boundary, or edge
+case not already represented by deterministic tests.
 
 Reserved SIMD feature bundles are checked with:
 

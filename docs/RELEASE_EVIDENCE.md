@@ -53,6 +53,8 @@ The release gate runs:
 - Miri through `scripts/check_miri.sh` when nightly Miri is installed,
   covering no-default-features scalar APIs and all-features alloc/stream APIs
 - fuzz target compile check when `cargo-fuzz` is installed
+- fuzz corpus policy validation for target-specific reviewed corpus inputs and
+  release-blocking artifact cleanup
 - isolated fuzz and performance harness dependency checks
 - installed-target `no_std` checks for the reserved `simd` feature
 - reserved SIMD feature-bundle compile checks for AVX2, AVX-512 VBMI, and

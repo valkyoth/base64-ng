@@ -60,6 +60,7 @@ test -s docs/ASYNC.md
 test -s docs/BENCHMARKS.md
 test -s docs/CONSTANT_TIME.md
 test -s docs/DEPENDENCIES.md
+test -s docs/FUZZING.md
 test -s docs/MIGRATION.md
 test -s docs/PANIC_POLICY.md
 test -s docs/PLAN.md
@@ -73,6 +74,7 @@ test -s docs/UNSAFE.md
 for required_script in \
     "scripts/check_backend_evidence.sh" \
     "scripts/check_fuzz.sh" \
+    "scripts/check_fuzz_corpus.sh" \
     "scripts/check_kani.sh" \
     "scripts/check_miri.sh" \
     "scripts/check_perf.sh" \
@@ -132,6 +134,7 @@ for required_package_file in \
     "docs/BENCHMARKS.md" \
     "docs/CONSTANT_TIME.md" \
     "docs/DEPENDENCIES.md" \
+    "docs/FUZZING.md" \
     "docs/MIGRATION.md" \
     "docs/PANIC_POLICY.md" \
     "docs/PLAN.md" \
@@ -143,6 +146,7 @@ for required_package_file in \
     "docs/UNSAFE.md" \
     "scripts/check_backend_evidence.sh" \
     "scripts/check_fuzz.sh" \
+    "scripts/check_fuzz_corpus.sh" \
     "scripts/check_kani.sh" \
     "scripts/check_miri.sh" \
     "scripts/check_perf.sh" \
