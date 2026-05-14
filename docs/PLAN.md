@@ -205,6 +205,8 @@ Phase 3:
 - Constant-time-oriented clear-tail decode APIs for sensitive caller-owned
   buffers.
 - Streaming encoder pending-buffer cleanup on consumption and drop.
+- Streaming decoder pending-buffer and decoded-output queue cleanup on
+  consumption and drop.
 - Keep SIMD unsafe code isolated from the scalar core with documented invariants
   for every unsafe block.
 - Maintain `docs/UNSAFE.md` as a central unsafe inventory for every admitted or

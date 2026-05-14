@@ -71,10 +71,13 @@ these APIs as buffer-retention reduction, not as a complete secret-erasure
 guarantee against compiler optimizations, core dumps, swap, hardware
 observation, or other process memory disclosure bugs.
 
-Streaming encoders clear their internal pending plaintext staging buffers when
-those pending bytes are consumed and again when the wrapper is dropped. This is
-best-effort retention reduction for small internal buffers, not a formal
-zeroization guarantee.
+Streaming wrappers apply best-effort cleanup to their small internal staging
+buffers. Encoders clear pending plaintext bytes when those bytes are consumed
+and again when the wrapper is dropped. Decoders clear pending Base64 input when
+it is consumed or when the wrapper is dropped. `DecoderReader` also clears
+queued decoded output bytes before discarding them during reads and clears any
+remaining queued decoded bytes on drop. This is retention reduction for small
+internal buffers, not a formal zeroization guarantee.
 
 Public encoded-length helpers report overflow with `Result` or `Option` rather
 than panicking. Code that handles untrusted length metadata should use these
