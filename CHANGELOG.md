@@ -33,6 +33,8 @@
   under `no_std` when `aarch64-unknown-linux-gnu` is installed.
 - Updated CI to install `aarch64-unknown-linux-gnu` before the SIMD
   feature-bundle check so NEON reserved-build evidence runs in automation.
+- Hardened release metadata validation to require the published crate package
+  to include the SIMD admission policy and unsafe inventory documents.
 - Updated security documentation for streaming wrapper buffer cleanup behavior.
 - Updated release evidence documentation for stream fuzzing and reserved SIMD
   feature-bundle checks.

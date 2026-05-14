@@ -60,6 +60,8 @@ test -s docs/MIGRATION.md
 test -s docs/PLAN.md
 test -s docs/RELEASE.md
 test -s docs/RELEASE_EVIDENCE.md
+test -s docs/SIMD.md
+test -s docs/UNSAFE.md
 
 if ! grep -q '^The MIT License (MIT)$' LICENSE-MIT; then
     echo "release metadata: LICENSE-MIT does not look like the canonical MIT license" >&2
@@ -93,6 +95,8 @@ for required_package_file in \
     "docs/PLAN.md" \
     "docs/RELEASE.md" \
     "docs/RELEASE_EVIDENCE.md" \
+    "docs/SIMD.md" \
+    "docs/UNSAFE.md" \
     "src/lib.rs" \
     "tests/rfc4648.rs"
 do
