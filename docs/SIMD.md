@@ -27,6 +27,8 @@ weakening the scalar trust base.
   `avx512vbmi`.
 - Runtime backend identifiers expose their required CPU feature bundles through
   `runtime::Backend::required_cpu_features()`.
+- Runtime backend reports include `candidate_required_cpu_features=[...]` in
+  their stable key/value display output for audit logs.
 - An inactive AVX2 fixed-block encode prototype exists behind the SIMD boundary
   and is tested against scalar output only when AVX2 is available.
 - An inactive NEON fixed-block encode prototype exists behind the same boundary

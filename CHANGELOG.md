@@ -7,6 +7,8 @@
   keeping scalar as the only active backend.
 - Hardened AVX-512 candidate detection to require the full planned Base64
   feature bundle and exposed backend CPU feature requirements for audit logs.
+- Added detected-candidate CPU feature requirements to runtime backend report
+  formatting.
 
 ## 0.4.1 - 2026-05-14
 

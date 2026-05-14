@@ -62,6 +62,10 @@ fn runtime_backend_report_keeps_scalar_active() {
     assert_eq!(report.active.as_str(), "scalar");
     assert_eq!(report.active.to_string(), "scalar");
     assert!(runtime::Backend::Scalar.required_cpu_features().is_empty());
+    assert_eq!(
+        report.candidate_required_cpu_features(),
+        report.candidate.required_cpu_features()
+    );
     assert_eq!(runtime::Backend::Avx512Vbmi.as_str(), "avx512-vbmi");
     assert_eq!(
         runtime::Backend::Avx512Vbmi.required_cpu_features(),
@@ -76,6 +80,7 @@ fn runtime_backend_report_keeps_scalar_active() {
         ["neon"]
     );
     assert!(display.contains("active=scalar"));
+    assert!(display.contains("candidate_required_cpu_features="));
     assert!(display.contains("accelerated_backend_active=false"));
     assert!(!report.accelerated_backend_active);
     assert!(report.unsafe_boundary_enforced);
@@ -130,7 +135,7 @@ fn runtime_backend_policy_assertions_are_explicit() {
     };
     assert_eq!(
         artificial_error.to_string(),
-        "runtime backend policy `high-assurance-scalar-only` was not satisfied (active=scalar candidate=avx2 simd_feature_enabled=true accelerated_backend_active=false unsafe_boundary_enforced=true security_posture=simd-candidate-scalar-active)"
+        "runtime backend policy `high-assurance-scalar-only` was not satisfied (active=scalar candidate=avx2 candidate_required_cpu_features=[avx2] simd_feature_enabled=true accelerated_backend_active=false unsafe_boundary_enforced=true security_posture=simd-candidate-scalar-active)"
     );
 
     let simd_feature_policy =

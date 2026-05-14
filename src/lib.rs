@@ -234,9 +234,14 @@ pub mod runtime {
         fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
             write!(
                 formatter,
-                "active={} candidate={} simd_feature_enabled={} accelerated_backend_active={} unsafe_boundary_enforced={} security_posture={}",
+                "active={} candidate={} candidate_required_cpu_features=",
                 self.active,
                 self.candidate,
+            )?;
+            write_feature_list(formatter, self.candidate_required_cpu_features())?;
+            write!(
+                formatter,
+                " simd_feature_enabled={} accelerated_backend_active={} unsafe_boundary_enforced={} security_posture={}",
                 self.simd_feature_enabled,
                 self.accelerated_backend_active,
                 self.unsafe_boundary_enforced,
@@ -271,6 +276,21 @@ pub mod runtime {
                         && self.unsafe_boundary_enforced
                 }
             }
+        }
+
+        /// Returns the CPU features required by the detected candidate.
+        ///
+        /// ```
+        /// let report = base64_ng::runtime::backend_report();
+        ///
+        /// assert_eq!(
+        ///     report.candidate_required_cpu_features(),
+        ///     report.candidate.required_cpu_features(),
+        /// );
+        /// ```
+        #[must_use]
+        pub const fn candidate_required_cpu_features(self) -> &'static [&'static str] {
+            self.candidate.required_cpu_features()
         }
     }
 
@@ -320,6 +340,22 @@ pub mod runtime {
         } else {
             Err(BackendPolicyError { policy, report })
         }
+    }
+
+    fn write_feature_list(
+        formatter: &mut core::fmt::Formatter<'_>,
+        features: &[&str],
+    ) -> core::fmt::Result {
+        formatter.write_str("[")?;
+        let mut index = 0;
+        while index < features.len() {
+            if index != 0 {
+                formatter.write_str(",")?;
+            }
+            formatter.write_str(features[index])?;
+            index += 1;
+        }
+        formatter.write_str("]")
     }
 
     #[cfg(feature = "simd")]
