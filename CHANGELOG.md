@@ -49,6 +49,8 @@
   dependency graph validation.
 - Made the reserved `tokio` feature truly inert until async wrappers are
   admitted instead of enabling the existing `stream` feature.
+- Hardened reserved-feature checks to require `tokio`, `kani`, and `fuzzing`
+  to remain inert Cargo features.
 - Updated security documentation for streaming wrapper buffer cleanup behavior.
 - Updated release evidence documentation for stream fuzzing and reserved SIMD
   feature-bundle checks.

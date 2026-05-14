@@ -22,6 +22,13 @@ check_reserved_feature() {
     fi
 }
 
+for inert_feature in tokio kani fuzzing; do
+    if ! grep -q "^$inert_feature = \\[\\]$" Cargo.toml; then
+        echo "reserved features: $inert_feature must remain an inert Cargo feature" >&2
+        exit 1
+    fi
+done
+
 check_reserved_feature "tokio" "tokio"
 check_reserved_feature "kani" "kani"
 check_reserved_feature "fuzzing" "fuzzing"
