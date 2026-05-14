@@ -58,8 +58,8 @@ license = "MIT OR Apache-2.0"
 | `std` | yes | `std::error::Error` support and feature base for I/O. |
 | `simd` | no | Future hardware acceleration. |
 | `stream` | no | `std::io` streaming wrappers. |
-| `tokio` | no | Future async streaming wrappers. |
-| `kani` | no | Future verifier harnesses. |
+| `tokio` | no | Reserved for future async streaming wrappers; currently adds no dependencies or APIs. |
+| `kani` | no | Reserved for verifier harnesses; normal builds do not require Kani. |
 | `fuzzing` | no | Reserved for verifier and fuzz harness integration; published crate stays dependency-free. |
 
 Disable defaults for embedded or freestanding use:

@@ -35,6 +35,8 @@
   feature-bundle check so NEON reserved-build evidence runs in automation.
 - Hardened release metadata validation to require the published crate package
   to include the SIMD admission policy and unsafe inventory documents.
+- Clarified 0.5 development documentation around benchmark claims and reserved
+  `tokio` feature behavior.
 - Updated security documentation for streaming wrapper buffer cleanup behavior.
 - Updated release evidence documentation for stream fuzzing and reserved SIMD
   feature-bundle checks.

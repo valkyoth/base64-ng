@@ -166,7 +166,8 @@ let encoded = encoder.finish().unwrap();
 assert_eq!(encoded, b"aGVsbG8=");
 ```
 
-Tokio wrappers are planned but are not part of `0.4.1`.
+The `tokio` feature is reserved for future async wrappers. It currently adds
+no dependencies or APIs.
 
 ## Security Notes
 

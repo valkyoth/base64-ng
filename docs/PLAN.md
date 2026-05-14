@@ -81,8 +81,8 @@ Any dependency addition must answer:
    - Chunk-boundary state machines.
 
 5. `tokio`
-   - Future async wrappers.
-   - Explicit optional dependency.
+   - Reserved feature for future async wrappers.
+   - Explicit optional dependency only if the async API is admitted.
 
 ### API Policy
 
