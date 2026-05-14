@@ -66,6 +66,28 @@ pub mod runtime {
         Neon,
     }
 
+    impl Backend {
+        /// Returns the stable lowercase identifier for this backend.
+        ///
+        /// ```
+        /// assert_eq!(base64_ng::runtime::Backend::Scalar.as_str(), "scalar");
+        /// ```
+        #[must_use]
+        pub const fn as_str(self) -> &'static str {
+            match self {
+                Self::Scalar => "scalar",
+                Self::Avx2 => "avx2",
+                Self::Neon => "neon",
+            }
+        }
+    }
+
+    impl core::fmt::Display for Backend {
+        fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+            formatter.write_str(self.as_str())
+        }
+    }
+
     /// Security posture for the active runtime backend.
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     #[non_exhaustive]
@@ -76,6 +98,31 @@ pub mod runtime {
         SimdCandidateScalarActive,
         /// A SIMD backend is active.
         Accelerated,
+    }
+
+    impl SecurityPosture {
+        /// Returns the stable lowercase identifier for this security posture.
+        ///
+        /// ```
+        /// assert_eq!(
+        ///     base64_ng::runtime::SecurityPosture::ScalarOnly.as_str(),
+        ///     "scalar-only",
+        /// );
+        /// ```
+        #[must_use]
+        pub const fn as_str(self) -> &'static str {
+            match self {
+                Self::ScalarOnly => "scalar-only",
+                Self::SimdCandidateScalarActive => "simd-candidate-scalar-active",
+                Self::Accelerated => "accelerated",
+            }
+        }
+    }
+
+    impl core::fmt::Display for SecurityPosture {
+        fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+            formatter.write_str(self.as_str())
+        }
     }
 
     /// Deployment policy for runtime backend assertions.
@@ -91,6 +138,32 @@ pub mod runtime {
         /// Require scalar execution, the `simd` feature disabled, no detected
         /// SIMD candidate, and the unsafe boundary enforced.
         HighAssuranceScalarOnly,
+    }
+
+    impl BackendPolicy {
+        /// Returns the stable lowercase identifier for this policy.
+        ///
+        /// ```
+        /// assert_eq!(
+        ///     base64_ng::runtime::BackendPolicy::HighAssuranceScalarOnly.as_str(),
+        ///     "high-assurance-scalar-only",
+        /// );
+        /// ```
+        #[must_use]
+        pub const fn as_str(self) -> &'static str {
+            match self {
+                Self::ScalarExecutionOnly => "scalar-execution-only",
+                Self::SimdFeatureDisabled => "simd-feature-disabled",
+                Self::NoDetectedSimdCandidate => "no-detected-simd-candidate",
+                Self::HighAssuranceScalarOnly => "high-assurance-scalar-only",
+            }
+        }
+    }
+
+    impl core::fmt::Display for BackendPolicy {
+        fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+            formatter.write_str(self.as_str())
+        }
     }
 
     /// Runtime backend policy failure.

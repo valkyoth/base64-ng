@@ -198,6 +198,7 @@ Phase 3:
 - Public runtime backend policy assertions for scalar-only and no-SIMD
   deployment requirements.
 - High-assurance scalar-only backend policy for sensitive deployment profiles.
+- Stable runtime enum string identifiers for audit logs and CI artifacts.
 - Keep SIMD unsafe code isolated from the scalar core with documented invariants
   for every unsafe block.
 

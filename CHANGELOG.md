@@ -33,6 +33,8 @@
   scalar-only execution and no-SIMD build requirements.
 - Added `BackendPolicy::HighAssuranceScalarOnly` and
   `BackendReport::satisfies()` for captured-report policy checks.
+- Added stable string identifiers and `Display` implementations for runtime
+  backend, posture, and policy enums for audit logs and CI artifacts.
 
 ## 0.3.0 - 2026-05-13
 

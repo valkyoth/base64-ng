@@ -58,6 +58,8 @@ fn runtime_backend_report_keeps_scalar_active() {
     let report = runtime::backend_report();
 
     assert_eq!(report.active, runtime::Backend::Scalar);
+    assert_eq!(report.active.as_str(), "scalar");
+    assert_eq!(report.active.to_string(), "scalar");
     assert!(!report.accelerated_backend_active);
     assert!(report.unsafe_boundary_enforced);
     assert_eq!(report.simd_feature_enabled, cfg!(feature = "simd"));
@@ -67,10 +69,15 @@ fn runtime_backend_report_keeps_scalar_active() {
             report.security_posture,
             runtime::SecurityPosture::ScalarOnly
         );
+        assert_eq!(report.security_posture.as_str(), "scalar-only");
     } else {
         assert_eq!(
             report.security_posture,
             runtime::SecurityPosture::SimdCandidateScalarActive
+        );
+        assert_eq!(
+            report.security_posture.as_str(),
+            "simd-candidate-scalar-active"
         );
     }
 }
@@ -84,6 +91,14 @@ fn runtime_backend_policy_assertions_are_explicit() {
         Ok(())
     );
     assert!(report.satisfies(runtime::BackendPolicy::ScalarExecutionOnly));
+    assert_eq!(
+        runtime::BackendPolicy::ScalarExecutionOnly.as_str(),
+        "scalar-execution-only"
+    );
+    assert_eq!(
+        runtime::BackendPolicy::HighAssuranceScalarOnly.to_string(),
+        "high-assurance-scalar-only"
+    );
 
     let simd_feature_policy =
         runtime::require_backend_policy(runtime::BackendPolicy::SimdFeatureDisabled);

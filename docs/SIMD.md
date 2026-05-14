@@ -27,6 +27,8 @@ weakening the scalar trust base.
   execution, disabled SIMD features, or no detected SIMD candidate.
 - `BackendPolicy::HighAssuranceScalarOnly` combines scalar execution, disabled
   SIMD features, no detected SIMD candidate, and unsafe-boundary enforcement.
+- Runtime backend, posture, and policy enums provide stable string identifiers
+  for logs and release evidence.
 - Unit tests compare dispatch behavior against the scalar reference for
   canonical inputs, malformed inputs, and undersized output buffers.
 - The `simd` feature does not enable accelerated code yet.

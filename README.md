@@ -254,6 +254,8 @@ Security commitments:
   disabled SIMD features, or no detected SIMD candidate.
 - `BackendPolicy::HighAssuranceScalarOnly` combines the scalar/no-SIMD
   deployment checks into one assertion.
+- Runtime backend, posture, and policy enums expose stable string identifiers
+  for CI artifacts, audit logs, and deployment evidence.
 - Strict decoding rejects malformed padding and trailing data.
 - Runtime scalar APIs are expected to return `Result` or `Option` for malformed
   input and size errors instead of panicking.
