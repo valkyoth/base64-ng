@@ -25,6 +25,9 @@ weakening the scalar trust base.
   differential tests, fuzz coverage, and benchmark evidence. Detection requires
   the full planned feature bundle: `avx512f`, `avx512bw`, `avx512vl`, and
   `avx512vbmi`.
+- An inactive AVX-512 fixed-block encode prototype exists behind the SIMD
+  boundary and is tested against scalar output only when the full AVX-512
+  Base64 feature bundle is available.
 - Runtime backend identifiers expose their required CPU feature bundles through
   `runtime::Backend::required_cpu_features()`.
 - Runtime backend reports include `candidate_required_cpu_features=[...]` in

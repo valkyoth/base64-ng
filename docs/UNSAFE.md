@@ -18,6 +18,39 @@ block must be added here before an accelerated backend can be admitted.
 
 ## Current Unsafe Sites
 
+### `encode_48_bytes_avx512`
+
+Location: `src/simd.rs`
+
+Status: inactive prototype, not dispatchable.
+
+Purpose:
+
+- Exercise AVX-512 target-feature plumbing.
+- Validate the unsafe boundary before an admitted AVX-512 path exists.
+- Provide scalar-equivalence test coverage before any real vector path is
+  admitted.
+
+Preconditions:
+
+- Caller must prove the full AVX-512 Base64 candidate bundle is available on
+  the current CPU: `avx512f`, `avx512bw`, `avx512vl`, and `avx512vbmi`.
+- Input is exactly 48 bytes.
+- Output is exactly 64 bytes.
+
+Unsafe operation:
+
+- `_mm512_storeu_si512` stores one 512-bit zero vector into the output buffer.
+
+Safety argument:
+
+- The output type is `&mut [u8; 64]`, so the store has enough initialized,
+  writable memory.
+- The intrinsic is the unaligned store variant, so no stronger alignment is
+  required.
+- The function is guarded by the full AVX-512 Base64 target-feature contract.
+- The prototype then overwrites the block with scalar-equivalent Base64 output.
+
 ### `encode_24_bytes_avx2`
 
 Location: `src/simd.rs`

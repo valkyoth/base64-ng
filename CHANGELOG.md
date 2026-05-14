@@ -10,6 +10,8 @@
 - Added detected-candidate CPU feature requirements to runtime backend report
   formatting.
 - Added `BackendReport::snapshot()` for structured runtime backend audit logs.
+- Added an inactive AVX-512 fixed-block encode prototype with scalar-equivalence
+  tests gated by the detected AVX-512 Base64 feature bundle.
 
 ## 0.4.1 - 2026-05-14
 

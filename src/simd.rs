@@ -7,8 +7,8 @@
 //! this boundary, with a local safety explanation for every unsafe block.
 //!
 //! The module intentionally contains no accelerated backend yet. The `simd`
-//! feature remains a compile-time reservation until the AVX2/NEON paths have
-//! scalar differential tests, fuzz coverage, and benchmark evidence.
+//! feature remains a compile-time reservation until AVX-512, AVX2, and NEON
+//! paths have scalar differential tests, fuzz coverage, and benchmark evidence.
 
 #[cfg(any(
     target_arch = "x86",
@@ -22,9 +22,15 @@ use core::arch::aarch64::{uint8x16_t, vdupq_n_u8, vst1q_u8};
 #[cfg(all(target_arch = "arm", target_feature = "neon"))]
 use core::arch::arm::{uint8x16_t, vdupq_n_u8, vst1q_u8};
 #[cfg(target_arch = "x86")]
-use core::arch::x86::{__m256i, _mm256_setzero_si256, _mm256_storeu_si256};
+use core::arch::x86::{
+    __m256i, __m512i, _mm256_setzero_si256, _mm256_storeu_si256, _mm512_setzero_si512,
+    _mm512_storeu_si512,
+};
 #[cfg(target_arch = "x86_64")]
-use core::arch::x86_64::{__m256i, _mm256_setzero_si256, _mm256_storeu_si256};
+use core::arch::x86_64::{
+    __m256i, __m512i, _mm256_setzero_si256, _mm256_storeu_si256, _mm512_setzero_si512,
+    _mm512_storeu_si512,
+};
 
 /// Backend currently allowed to execute.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -113,6 +119,55 @@ fn avx2_available() -> bool {
 #[cfg(any(target_arch = "aarch64", target_arch = "arm"))]
 fn neon_available() -> bool {
     cfg!(target_arch = "aarch64") || cfg!(target_feature = "neon")
+}
+
+/// Encodes one 48-byte block into 64 bytes through the inactive AVX-512 prototype.
+///
+/// This is not an admitted fast path. It exists to exercise AVX-512 target
+/// feature plumbing, unsafe isolation, and scalar equivalence tests before a
+/// real vector encoder is allowed to participate in dispatch.
+///
+/// # Safety
+///
+/// The caller must execute this function only when the full AVX-512 Base64
+/// candidate bundle is available on the current CPU: `avx512f`, `avx512bw`,
+/// `avx512vl`, and `avx512vbmi`. The input and output sizes are fixed by their
+/// array types.
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+#[allow(dead_code, reason = "inactive prototype is not dispatchable yet")]
+#[expect(
+    clippy::cast_ptr_alignment,
+    reason = "_mm512_storeu_si512 accepts unaligned pointers"
+)]
+#[target_feature(enable = "avx512f,avx512bw,avx512vl,avx512vbmi")]
+pub(super) unsafe fn encode_48_bytes_avx512<A>(input: &[u8; 48], output: &mut [u8; 64])
+where
+    A: Alphabet,
+{
+    let zeros = _mm512_setzero_si512();
+    // SAFETY: `output` is a valid 64-byte mutable array. The full AVX-512
+    // candidate bundle is guaranteed by this function's target-feature
+    // precondition, and the unaligned store does not require stronger pointer
+    // alignment.
+    unsafe {
+        _mm512_storeu_si512(output.as_mut_ptr().cast::<__m512i>(), zeros);
+    }
+
+    let mut read = 0;
+    let mut write = 0;
+    while read < input.len() {
+        let b0 = input[read];
+        let b1 = input[read + 1];
+        let b2 = input[read + 2];
+
+        output[write] = encode_base64_value::<A>(b0 >> 2);
+        output[write + 1] = encode_base64_value::<A>(((b0 & 0b0000_0011) << 4) | (b1 >> 4));
+        output[write + 2] = encode_base64_value::<A>(((b1 & 0b0000_1111) << 2) | (b2 >> 6));
+        output[write + 3] = encode_base64_value::<A>(b2 & 0b0011_1111);
+
+        read += 3;
+        write += 4;
+    }
 }
 
 /// Encodes one 24-byte block into 32 bytes through the inactive AVX2 prototype.
@@ -216,6 +271,46 @@ mod tests {
         for (index, byte) in output.iter_mut().enumerate() {
             let value = (index * 73 + seed * 19) % 256;
             *byte = u8::try_from(value).unwrap();
+        }
+    }
+
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    #[test]
+    fn avx512_encode_prototype_matches_scalar_when_available() {
+        if detected_candidate() != Candidate::Avx512Vbmi {
+            return;
+        }
+
+        let mut input = [0; 48];
+        for seed in 0..64 {
+            fill_pattern(&mut input, seed);
+
+            let mut avx512_standard = [0x55; 64];
+            let mut scalar_standard = [0xaa; 64];
+            // SAFETY: The candidate check above uses runtime AVX-512 feature
+            // bundle detection on std builds and compile-time target-feature
+            // detection otherwise.
+            unsafe {
+                encode_48_bytes_avx512::<Standard>(&input, &mut avx512_standard);
+            }
+            let scalar_len = Engine::<Standard, true>::new()
+                .encode_slice(&input, &mut scalar_standard)
+                .unwrap();
+            assert_eq!(scalar_len, avx512_standard.len());
+            assert_eq!(avx512_standard, scalar_standard);
+
+            let mut avx512_url_safe = [0x55; 64];
+            let mut scalar_url_safe = [0xaa; 64];
+            // SAFETY: The candidate check above proves the AVX-512 feature
+            // bundle is available for this test invocation.
+            unsafe {
+                encode_48_bytes_avx512::<UrlSafe>(&input, &mut avx512_url_safe);
+            }
+            let scalar_len = Engine::<UrlSafe, true>::new()
+                .encode_slice(&input, &mut scalar_url_safe)
+                .unwrap();
+            assert_eq!(scalar_len, avx512_url_safe.len());
+            assert_eq!(avx512_url_safe, scalar_url_safe);
         }
     }
 
