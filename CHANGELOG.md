@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.5.0-alpha.0 - Unreleased
+## 0.5.0 - 2026-05-14
 
 - Started the next development cycle after the `0.4.1` release.
 - Added AVX-512 VBMI candidate detection to runtime backend reports while

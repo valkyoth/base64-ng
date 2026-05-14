@@ -228,6 +228,47 @@ Phase 3:
 - Release-gate hardening for packaged evidence, reserved feature placeholders,
   unsafe/SIMD boundary validation, and cross-target SIMD feature bundles.
 
+### v0.6
+
+- Expand Kani proof coverage for length helpers, in-place decode bounds, and
+  selected scalar decoder invariants when Kani supports the pinned Rust
+  toolchain.
+- Strengthen Miri coverage for scalar, in-place, clear-tail, and stream state
+  machine behavior that Miri can execute practically.
+- Add a documented constant-time verification plan for the `ct` module,
+  including generated-code review requirements before making cryptographic
+  constant-time claims.
+- Stabilize fuzz corpus handling and document which corpus inputs are accepted
+  into the repository.
+
+### v0.7
+
+- Replace inactive SIMD encode prototypes with real candidate implementations
+  only when scalar differential tests, fuzz evidence, target-feature checks,
+  unsafe inventory updates, and benchmark evidence are complete.
+- Keep scalar as the default fallback and require runtime backend policy tests
+  for every admitted accelerated backend.
+- Publish per-architecture benchmark evidence for any performance claim,
+  including CPU, OS, Rust version, command, and raw output.
+
+### v0.8
+
+- Consider admitting async streaming wrappers only after `docs/ASYNC.md`
+  requirements are met, including dependency review, cancellation behavior,
+  drop cleanup behavior, chunk-boundary tests, and release evidence with the
+  async feature enabled.
+- If async remains unjustified, keep `tokio` inert and spend this milestone on
+  stream ergonomics, documentation, and additional framed-protocol tests.
+
+### v0.9
+
+- Release-candidate hardening for `v1.0`: API audit, documentation audit,
+  migration guide refresh, fuzz corpus review, benchmark review, and release
+  evidence rehearsal.
+- Decide whether constant-time decode is formally guaranteed with supporting
+  evidence or explicitly documented as constant-time-oriented only.
+- Freeze dependency policy and feature admission rules for `v1.0`.
+
 ### v1.0
 
 - Kani proofs complete for scalar in-place decode.

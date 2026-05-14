@@ -6,8 +6,7 @@ The crate starts conservative: a small scalar implementation, strict RFC 4648 be
 
 ## Current Status
 
-The current public release is `0.4.1`. The `main` branch now tracks the
-`0.5.0-alpha.0` development cycle.
+The current public release is `0.5.0`.
 
 Implemented now:
 
@@ -42,7 +41,7 @@ Planned behind admission evidence:
 
 ```toml
 [dependencies]
-base64-ng = "0.4.1"
+base64-ng = "0.5.0"
 ```
 
 The crate is dual-licensed:
@@ -67,7 +66,7 @@ Disable defaults for embedded or freestanding use:
 
 ```toml
 [dependencies]
-base64-ng = { version = "0.4.1", default-features = false }
+base64-ng = { version = "0.5.0", default-features = false }
 ```
 
 ## Example
