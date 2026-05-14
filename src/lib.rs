@@ -1622,13 +1622,107 @@ pub fn decoded_len(input: &[u8], padded: bool) -> Result<usize, DecodeError> {
     }
 }
 
+/// Validates a 64-byte Base64 alphabet table.
+///
+/// A valid alphabet must contain exactly 64 unique visible ASCII bytes and must
+/// not contain the padding byte `=`.
+///
+/// # Examples
+///
+/// ```
+/// use base64_ng::{Alphabet, Standard, validate_alphabet};
+///
+/// validate_alphabet(&Standard::ENCODE).unwrap();
+/// ```
+pub const fn validate_alphabet(encode: &[u8; 64]) -> Result<(), AlphabetError> {
+    let mut index = 0;
+    while index < encode.len() {
+        let byte = encode[index];
+        if !is_visible_ascii(byte) {
+            return Err(AlphabetError::InvalidByte { index, byte });
+        }
+        if byte == b'=' {
+            return Err(AlphabetError::PaddingByte { index });
+        }
+
+        let mut duplicate = index + 1;
+        while duplicate < encode.len() {
+            if encode[duplicate] == byte {
+                return Err(AlphabetError::DuplicateByte {
+                    first: index,
+                    second: duplicate,
+                    byte,
+                });
+            }
+            duplicate += 1;
+        }
+
+        index += 1;
+    }
+
+    Ok(())
+}
+
+/// Decodes one byte by scanning a caller-provided alphabet table.
+///
+/// This helper is intended for custom [`Alphabet`] implementations. Validate
+/// the table with [`validate_alphabet`] before trusting the alphabet in a
+/// protocol or public API.
+///
+/// # Examples
+///
+/// ```
+/// use base64_ng::{Alphabet, decode_alphabet_byte};
+///
+/// struct DotSlash;
+///
+/// impl Alphabet for DotSlash {
+///     const ENCODE: [u8; 64] =
+///         *b"./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+///
+///     fn decode(byte: u8) -> Option<u8> {
+///         decode_alphabet_byte(byte, &Self::ENCODE)
+///     }
+/// }
+///
+/// assert_eq!(DotSlash::decode(b'.'), Some(0));
+/// assert_eq!(DotSlash::decode(b'9'), Some(63));
+/// ```
+#[must_use]
+pub const fn decode_alphabet_byte(byte: u8, encode: &[u8; 64]) -> Option<u8> {
+    let mut index = 0;
+    let mut value = 0;
+    while index < encode.len() {
+        if encode[index] == byte {
+            return Some(value);
+        }
+        index += 1;
+        value += 1;
+    }
+    None
+}
+
 /// A Base64 alphabet.
 pub trait Alphabet {
     /// Encoding table indexed by 6-bit values.
     const ENCODE: [u8; 64];
 
+    /// Encode one 6-bit value into an alphabet byte.
+    ///
+    /// The default implementation scans the alphabet table instead of using a
+    /// secret-indexed table lookup. Built-in alphabets override this with the
+    /// branch-minimized ASCII arithmetic mapper.
+    #[must_use]
+    fn encode(value: u8) -> u8 {
+        encode_alphabet_value(value, &Self::ENCODE)
+    }
+
     /// Decode one byte into a 6-bit value.
     fn decode(byte: u8) -> Option<u8>;
+}
+
+const fn is_visible_ascii(byte: u8) -> bool {
+    byte >= 0x21 && byte <= 0x7e
 }
 
 /// The RFC 4648 standard Base64 alphabet.
@@ -1637,6 +1731,11 @@ pub struct Standard;
 
 impl Alphabet for Standard {
     const ENCODE: [u8; 64] = *b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+    #[inline]
+    fn encode(value: u8) -> u8 {
+        encode_ascii_base64(value, Self::ENCODE[62], Self::ENCODE[63])
+    }
 
     #[inline]
     fn decode(byte: u8) -> Option<u8> {
@@ -1652,6 +1751,11 @@ impl Alphabet for UrlSafe {
     const ENCODE: [u8; 64] = *b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 
     #[inline]
+    fn encode(value: u8) -> u8 {
+        encode_ascii_base64(value, Self::ENCODE[62], Self::ENCODE[63])
+    }
+
+    #[inline]
     fn decode(byte: u8) -> Option<u8> {
         decode_ascii_base64(byte, Self::ENCODE[62], Self::ENCODE[63])
     }
@@ -1659,7 +1763,25 @@ impl Alphabet for UrlSafe {
 
 #[inline]
 const fn encode_base64_value<A: Alphabet>(value: u8) -> u8 {
-    encode_ascii_base64(value, A::ENCODE[62], A::ENCODE[63])
+    encode_alphabet_value(value, &A::ENCODE)
+}
+
+#[inline]
+fn encode_base64_value_runtime<A: Alphabet>(value: u8) -> u8 {
+    A::encode(value)
+}
+
+#[inline]
+const fn encode_alphabet_value(value: u8, encode: &[u8; 64]) -> u8 {
+    let mut output = 0;
+    let mut index = 0;
+    let mut candidate = 0;
+    while index < encode.len() {
+        output |= encode[index] & ct_mask_eq_u8(value, candidate);
+        index += 1;
+        candidate += 1;
+    }
+    output
 }
 
 #[inline]
@@ -1722,7 +1844,7 @@ const fn ct_mask_lt_u8(left: u8, right: u8) -> u8 {
 mod backend {
     use super::{
         Alphabet, DecodeError, EncodeError, checked_encoded_len, decode_padded, decode_unpadded,
-        encode_base64_value,
+        encode_base64_value_runtime,
     };
 
     pub(super) fn encode_slice<A, const PAD: bool>(
@@ -1799,10 +1921,12 @@ mod backend {
             let b1 = input[read + 1];
             let b2 = input[read + 2];
 
-            output[write] = encode_base64_value::<A>(b0 >> 2);
-            output[write + 1] = encode_base64_value::<A>(((b0 & 0b0000_0011) << 4) | (b1 >> 4));
-            output[write + 2] = encode_base64_value::<A>(((b1 & 0b0000_1111) << 2) | (b2 >> 6));
-            output[write + 3] = encode_base64_value::<A>(b2 & 0b0011_1111);
+            output[write] = encode_base64_value_runtime::<A>(b0 >> 2);
+            output[write + 1] =
+                encode_base64_value_runtime::<A>(((b0 & 0b0000_0011) << 4) | (b1 >> 4));
+            output[write + 2] =
+                encode_base64_value_runtime::<A>(((b1 & 0b0000_1111) << 2) | (b2 >> 6));
+            output[write + 3] = encode_base64_value_runtime::<A>(b2 & 0b0011_1111);
 
             read += 3;
             write += 4;
@@ -1812,8 +1936,8 @@ mod backend {
             0 => {}
             1 => {
                 let b0 = input[read];
-                output[write] = encode_base64_value::<A>(b0 >> 2);
-                output[write + 1] = encode_base64_value::<A>((b0 & 0b0000_0011) << 4);
+                output[write] = encode_base64_value_runtime::<A>(b0 >> 2);
+                output[write + 1] = encode_base64_value_runtime::<A>((b0 & 0b0000_0011) << 4);
                 write += 2;
                 if PAD {
                     output[write] = b'=';
@@ -1824,9 +1948,10 @@ mod backend {
             2 => {
                 let b0 = input[read];
                 let b1 = input[read + 1];
-                output[write] = encode_base64_value::<A>(b0 >> 2);
-                output[write + 1] = encode_base64_value::<A>(((b0 & 0b0000_0011) << 4) | (b1 >> 4));
-                output[write + 2] = encode_base64_value::<A>((b1 & 0b0000_1111) << 2);
+                output[write] = encode_base64_value_runtime::<A>(b0 >> 2);
+                output[write + 1] =
+                    encode_base64_value_runtime::<A>(((b0 & 0b0000_0011) << 4) | (b1 >> 4));
+                output[write + 2] = encode_base64_value_runtime::<A>((b1 & 0b0000_1111) << 2);
                 write += 3;
                 if PAD {
                     output[write] = b'=';
@@ -2376,14 +2501,14 @@ where
                 let b0 = buffer[read];
                 if PAD {
                     write -= 4;
-                    buffer[write] = encode_base64_value::<A>(b0 >> 2);
-                    buffer[write + 1] = encode_base64_value::<A>((b0 & 0b0000_0011) << 4);
+                    buffer[write] = encode_base64_value_runtime::<A>(b0 >> 2);
+                    buffer[write + 1] = encode_base64_value_runtime::<A>((b0 & 0b0000_0011) << 4);
                     buffer[write + 2] = b'=';
                     buffer[write + 3] = b'=';
                 } else {
                     write -= 2;
-                    buffer[write] = encode_base64_value::<A>(b0 >> 2);
-                    buffer[write + 1] = encode_base64_value::<A>((b0 & 0b0000_0011) << 4);
+                    buffer[write] = encode_base64_value_runtime::<A>(b0 >> 2);
+                    buffer[write + 1] = encode_base64_value_runtime::<A>((b0 & 0b0000_0011) << 4);
                 }
             }
             2 => {
@@ -2392,17 +2517,17 @@ where
                 let b1 = buffer[read + 1];
                 if PAD {
                     write -= 4;
-                    buffer[write] = encode_base64_value::<A>(b0 >> 2);
+                    buffer[write] = encode_base64_value_runtime::<A>(b0 >> 2);
                     buffer[write + 1] =
-                        encode_base64_value::<A>(((b0 & 0b0000_0011) << 4) | (b1 >> 4));
-                    buffer[write + 2] = encode_base64_value::<A>((b1 & 0b0000_1111) << 2);
+                        encode_base64_value_runtime::<A>(((b0 & 0b0000_0011) << 4) | (b1 >> 4));
+                    buffer[write + 2] = encode_base64_value_runtime::<A>((b1 & 0b0000_1111) << 2);
                     buffer[write + 3] = b'=';
                 } else {
                     write -= 3;
-                    buffer[write] = encode_base64_value::<A>(b0 >> 2);
+                    buffer[write] = encode_base64_value_runtime::<A>(b0 >> 2);
                     buffer[write + 1] =
-                        encode_base64_value::<A>(((b0 & 0b0000_0011) << 4) | (b1 >> 4));
-                    buffer[write + 2] = encode_base64_value::<A>((b1 & 0b0000_1111) << 2);
+                        encode_base64_value_runtime::<A>(((b0 & 0b0000_0011) << 4) | (b1 >> 4));
+                    buffer[write + 2] = encode_base64_value_runtime::<A>((b1 & 0b0000_1111) << 2);
                 }
             }
             _ => unreachable!(),
@@ -2415,10 +2540,12 @@ where
             let b1 = buffer[read + 1];
             let b2 = buffer[read + 2];
 
-            buffer[write] = encode_base64_value::<A>(b0 >> 2);
-            buffer[write + 1] = encode_base64_value::<A>(((b0 & 0b0000_0011) << 4) | (b1 >> 4));
-            buffer[write + 2] = encode_base64_value::<A>(((b1 & 0b0000_1111) << 2) | (b2 >> 6));
-            buffer[write + 3] = encode_base64_value::<A>(b2 & 0b0011_1111);
+            buffer[write] = encode_base64_value_runtime::<A>(b0 >> 2);
+            buffer[write + 1] =
+                encode_base64_value_runtime::<A>(((b0 & 0b0000_0011) << 4) | (b1 >> 4));
+            buffer[write + 2] =
+                encode_base64_value_runtime::<A>(((b1 & 0b0000_1111) << 2) | (b2 >> 6));
+            buffer[write + 3] = encode_base64_value_runtime::<A>(b2 & 0b0011_1111);
         }
 
         debug_assert_eq!(write, 0);
@@ -2887,6 +3014,59 @@ impl core::fmt::Display for EncodeError {
 
 #[cfg(feature = "std")]
 impl std::error::Error for EncodeError {}
+
+/// Alphabet validation error.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum AlphabetError {
+    /// The alphabet contains a non-visible-ASCII byte.
+    InvalidByte {
+        /// Byte index in the alphabet table.
+        index: usize,
+        /// Invalid byte value.
+        byte: u8,
+    },
+    /// The alphabet contains the padding byte `=`.
+    PaddingByte {
+        /// Byte index in the alphabet table.
+        index: usize,
+    },
+    /// The alphabet maps more than one value to the same byte.
+    DuplicateByte {
+        /// First byte index.
+        first: usize,
+        /// Second byte index.
+        second: usize,
+        /// Duplicated byte value.
+        byte: u8,
+    },
+}
+
+impl core::fmt::Display for AlphabetError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Self::InvalidByte { index, byte } => {
+                write!(
+                    f,
+                    "invalid base64 alphabet byte 0x{byte:02x} at index {index}"
+                )
+            }
+            Self::PaddingByte { index } => {
+                write!(f, "base64 alphabet contains padding byte at index {index}")
+            }
+            Self::DuplicateByte {
+                first,
+                second,
+                byte,
+            } => write!(
+                f,
+                "base64 alphabet byte 0x{byte:02x} is duplicated at indexes {first} and {second}"
+            ),
+        }
+    }
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for AlphabetError {}
 
 /// Decoding error.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

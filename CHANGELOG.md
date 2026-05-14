@@ -11,6 +11,8 @@
   wrapping, and `alloc` convenience helpers.
 - Added strict line-wrapped validation and decoding APIs that accept only the
   configured line ending and enforce configured-width non-final lines.
+- Added custom alphabet helpers: `validate_alphabet`,
+  `decode_alphabet_byte`, and `AlphabetError`.
 
 ## 0.5.0 - 2026-05-14
 

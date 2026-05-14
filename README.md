@@ -28,6 +28,7 @@ Implemented now:
   policies.
 - Strict line-wrapped validation and decoding profiles for MIME/PEM-style
   input.
+- Custom alphabet validation helpers for user-defined 64-byte alphabets.
 - Separate `ct` scalar decode module for sensitive payloads that avoids
   secret-indexed lookup tables during Base64 symbol mapping.
 - `std::io` streaming encoders and decoders behind the `stream` feature.
@@ -195,6 +196,28 @@ let written = STANDARD
     .unwrap();
 
 assert_eq!(&output[..written], b"hello");
+```
+
+## Custom Alphabets
+
+User-defined alphabets can be validated before use:
+
+```rust
+use base64_ng::{Alphabet, decode_alphabet_byte, validate_alphabet};
+
+struct DotSlash;
+
+impl Alphabet for DotSlash {
+    const ENCODE: [u8; 64] =
+        *b"./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+    fn decode(byte: u8) -> Option<u8> {
+        decode_alphabet_byte(byte, &Self::ENCODE)
+    }
+}
+
+validate_alphabet(&DotSlash::ENCODE).unwrap();
+assert_eq!(DotSlash::decode(b'.'), Some(0));
 ```
 
 ## Legacy Whitespace Decoding

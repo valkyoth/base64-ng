@@ -1,6 +1,7 @@
 use base64_ng::{
-    DecodeError, EncodeError, LineEnding, LineWrap, STANDARD, STANDARD_NO_PAD, URL_SAFE,
-    URL_SAFE_NO_PAD, checked_encoded_len, ct, decoded_capacity, decoded_len, encoded_len, runtime,
+    Alphabet, AlphabetError, DecodeError, EncodeError, Engine, LineEnding, LineWrap, STANDARD,
+    STANDARD_NO_PAD, Standard, URL_SAFE, URL_SAFE_NO_PAD, UrlSafe, checked_encoded_len, ct,
+    decode_alphabet_byte, decoded_capacity, decoded_len, encoded_len, runtime, validate_alphabet,
     wrapped_encoded_len,
 };
 
@@ -30,6 +31,18 @@ impl Read for ChunkedReader<'_> {
     }
 }
 
+struct ReverseAlphabet;
+
+impl Alphabet for ReverseAlphabet {
+    const ENCODE: [u8; 64] = *b"/+9876543210zyxwvutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA";
+
+    fn decode(byte: u8) -> Option<u8> {
+        decode_alphabet_byte(byte, &Self::ENCODE)
+    }
+}
+
+const REVERSE_PADDED: Engine<ReverseAlphabet, true> = Engine::new();
+
 #[test]
 fn rfc4648_standard_round_trips() {
     let cases: &[&[u8]] = &[
@@ -52,6 +65,68 @@ fn rfc4648_standard_round_trips() {
             .unwrap();
         assert_eq!(&decoded[..decoded_len], *case);
     }
+}
+
+#[test]
+fn validates_builtin_and_custom_alphabet_tables() {
+    assert_eq!(validate_alphabet(&Standard::ENCODE), Ok(()));
+    assert_eq!(validate_alphabet(&UrlSafe::ENCODE), Ok(()));
+    assert_eq!(validate_alphabet(&ReverseAlphabet::ENCODE), Ok(()));
+
+    let mut duplicate = Standard::ENCODE;
+    duplicate[63] = duplicate[0];
+    assert_eq!(
+        validate_alphabet(&duplicate),
+        Err(AlphabetError::DuplicateByte {
+            first: 0,
+            second: 63,
+            byte: b'A',
+        })
+    );
+
+    let mut padding = Standard::ENCODE;
+    padding[10] = b'=';
+    assert_eq!(
+        validate_alphabet(&padding),
+        Err(AlphabetError::PaddingByte { index: 10 })
+    );
+
+    let mut control = Standard::ENCODE;
+    control[3] = b'\n';
+    assert_eq!(
+        validate_alphabet(&control),
+        Err(AlphabetError::InvalidByte {
+            index: 3,
+            byte: b'\n',
+        })
+    );
+}
+
+#[test]
+fn custom_alphabet_helper_decodes_and_round_trips() {
+    assert_eq!(
+        decode_alphabet_byte(b'/', &ReverseAlphabet::ENCODE),
+        Some(0)
+    );
+    assert_eq!(
+        decode_alphabet_byte(b'A', &ReverseAlphabet::ENCODE),
+        Some(63)
+    );
+    assert_eq!(decode_alphabet_byte(b'=', &ReverseAlphabet::ENCODE), None);
+
+    let input = b"custom alphabet";
+    let mut encoded = [0u8; 64];
+    let encoded_len = REVERSE_PADDED.encode_slice(input, &mut encoded).unwrap();
+    let mut decoded = [0u8; 64];
+    let decoded_len = REVERSE_PADDED
+        .decode_slice(&encoded[..encoded_len], &mut decoded)
+        .unwrap();
+
+    assert_eq!(&decoded[..decoded_len], input);
+
+    let mut standard = [0u8; 64];
+    let standard_len = STANDARD.encode_slice(input, &mut standard).unwrap();
+    assert_ne!(&encoded[..encoded_len], &standard[..standard_len]);
 }
 
 #[test]
