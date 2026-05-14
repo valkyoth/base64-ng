@@ -57,7 +57,10 @@ jobs:
       - name: Reproducible package/build check
         run: scripts/reproducible_build_check.sh
 
-      - name: Check x86 SIMD feature bundles
+      - name: Install SIMD feature-bundle targets
+        run: rustup target add aarch64-unknown-linux-gnu
+
+      - name: Check SIMD feature bundles
         run: scripts/check_simd_feature_bundles.sh
 
   platform:

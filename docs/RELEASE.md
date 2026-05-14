@@ -30,7 +30,8 @@ The release gate covers:
 - Miri no-default-features tests when nightly Miri is installed
 - docs
 - installed cross-target `no_std` checks
-- reserved x86 SIMD feature-bundle compile checks
+- reserved SIMD feature-bundle compile checks for AVX2, AVX-512 VBMI, and NEON
+  when the corresponding Rust targets are installed
 - cargo-deny policy
 - RustSec audit
 - license inventory
@@ -132,7 +133,7 @@ cargo +nightly fuzz run stream_chunks -- -runs=1000
 
 Review generated local corpus files before committing.
 
-Reserved x86 SIMD feature bundles are checked with:
+Reserved SIMD feature bundles are checked with:
 
 ```sh
 scripts/check_simd_feature_bundles.sh

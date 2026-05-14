@@ -31,6 +31,8 @@
   detection, and `target_feature` gates remain confined to `src/simd.rs`.
 - Extended the SIMD feature-bundle check to compile the reserved NEON path
   under `no_std` when `aarch64-unknown-linux-gnu` is installed.
+- Updated CI to install `aarch64-unknown-linux-gnu` before the SIMD
+  feature-bundle check so NEON reserved-build evidence runs in automation.
 - Updated security documentation for streaming wrapper buffer cleanup behavior.
 - Updated release evidence documentation for stream fuzzing and reserved SIMD
   feature-bundle checks.
