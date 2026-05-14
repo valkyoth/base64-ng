@@ -675,6 +675,100 @@ fn encode_wrapped_alloc_helpers_match_slice_output() {
 }
 
 #[test]
+fn decode_slice_wrapped_enforces_line_profile() {
+    let wrap = LineWrap::new(4, LineEnding::Lf);
+    let mut output = [0u8; 8];
+
+    assert_eq!(STANDARD.decoded_len_wrapped(b"aGVs\nbG8=", wrap), Ok(5));
+    assert_eq!(
+        STANDARD.validate_wrapped_result(b"aGVs\nbG8=", wrap),
+        Ok(())
+    );
+    assert!(STANDARD.validate_wrapped(b"aGVs\nbG8=", wrap));
+
+    let written = STANDARD
+        .decode_slice_wrapped(b"aGVs\nbG8=", &mut output, wrap)
+        .unwrap();
+    assert_eq!(&output[..written], b"hello");
+
+    let written = STANDARD
+        .decode_slice_wrapped(b"aGVs\nbG8=\n", &mut output, wrap)
+        .unwrap();
+    assert_eq!(&output[..written], b"hello");
+
+    let written = STANDARD_NO_PAD
+        .decode_slice_wrapped(b"aGVs\nbG8", &mut output, wrap)
+        .unwrap();
+    assert_eq!(&output[..written], b"hello");
+
+    let crlf = LineWrap::new(4, LineEnding::CrLf);
+    let written = STANDARD
+        .decode_slice_wrapped(b"aGVs\r\nbG8=", &mut output, crlf)
+        .unwrap();
+    assert_eq!(&output[..written], b"hello");
+}
+
+#[test]
+fn decode_slice_wrapped_rejects_malformed_line_profiles() {
+    let wrap = LineWrap::new(4, LineEnding::Lf);
+    let mut output = [0u8; 8];
+
+    assert_eq!(
+        STANDARD.decode_slice_wrapped(b"aG\nVsbG8=", &mut output, wrap),
+        Err(DecodeError::InvalidLineWrap { index: 2 })
+    );
+    assert_eq!(
+        STANDARD.decode_slice_wrapped(b"aGVs\r\nbG8=", &mut output, wrap),
+        Err(DecodeError::InvalidLineWrap { index: 4 })
+    );
+    assert_eq!(
+        STANDARD.decode_slice_wrapped(b"aGVsbG8=", &mut output, wrap),
+        Err(DecodeError::InvalidLineWrap { index: 4 })
+    );
+    assert_eq!(
+        STANDARD.decode_slice_wrapped(b"\n", &mut output, wrap),
+        Err(DecodeError::InvalidLineWrap { index: 0 })
+    );
+    assert_eq!(
+        STANDARD.decode_slice_wrapped(b"aGVs\nbG8=", &mut output, LineWrap::new(0, LineEnding::Lf)),
+        Err(DecodeError::InvalidLineWrap { index: 0 })
+    );
+    assert!(!STANDARD.validate_wrapped(b"aG\nVsbG8=", wrap));
+}
+
+#[test]
+fn decode_slice_wrapped_clear_tail_scrubs_output() {
+    let wrap = LineWrap::new(4, LineEnding::Lf);
+    let mut output = [0xff; 8];
+    let written = STANDARD
+        .decode_slice_wrapped_clear_tail(b"aGVs\nbG8=", &mut output, wrap)
+        .unwrap();
+    assert_eq!(&output[..written], b"hello");
+    assert_eq!(&output[written..], &[0; 3]);
+
+    let mut output = [0xff; 4];
+    assert_eq!(
+        STANDARD.decode_slice_wrapped_clear_tail(b"aGVs\nbG8=", &mut output, wrap),
+        Err(DecodeError::OutputTooSmall {
+            required: 5,
+            available: 4,
+        })
+    );
+    assert!(output.iter().all(|byte| *byte == 0));
+}
+
+#[cfg(feature = "alloc")]
+#[test]
+fn decode_wrapped_alloc_helper_matches_slice_output() {
+    let wrap = LineWrap::new(4, LineEnding::Lf);
+
+    assert_eq!(
+        STANDARD.decode_wrapped_vec(b"aGVs\nbG8=", wrap).unwrap(),
+        b"hello"
+    );
+}
+
+#[test]
 fn encode_slice_reports_small_outputs() {
     let mut output = [0u8; 1];
     assert_eq!(

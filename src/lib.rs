@@ -1916,6 +1916,16 @@ where
         validate_legacy_decode::<A, PAD>(input)
     }
 
+    /// Returns the exact decoded length for a line-wrapped profile.
+    ///
+    /// The wrapped profile accepts only the configured line ending. Non-final
+    /// lines must contain exactly `wrap.line_len` encoded bytes; the final line
+    /// may be shorter. A single trailing line ending after the final line is
+    /// accepted.
+    pub fn decoded_len_wrapped(&self, input: &[u8], wrap: LineWrap) -> Result<usize, DecodeError> {
+        validate_wrapped_decode::<A, PAD>(input, wrap)
+    }
+
     /// Validates strict Base64 input without writing decoded bytes.
     ///
     /// This applies the same alphabet, padding, and canonical-bit checks as
@@ -1985,6 +1995,43 @@ where
     #[must_use]
     pub fn validate_legacy(&self, input: &[u8]) -> bool {
         self.validate_legacy_result(input).is_ok()
+    }
+
+    /// Validates input using a strict line-wrapped profile.
+    ///
+    /// This is stricter than [`Self::validate_legacy_result`]: it accepts only
+    /// the configured line ending and enforces the configured line length for
+    /// every non-final line.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use base64_ng::{LineEnding, LineWrap, STANDARD};
+    ///
+    /// let wrap = LineWrap::new(4, LineEnding::Lf);
+    /// STANDARD.validate_wrapped_result(b"aGVs\nbG8=", wrap).unwrap();
+    /// assert!(STANDARD.validate_wrapped_result(b"aG\nVsbG8=", wrap).is_err());
+    /// ```
+    pub fn validate_wrapped_result(&self, input: &[u8], wrap: LineWrap) -> Result<(), DecodeError> {
+        validate_wrapped_decode::<A, PAD>(input, wrap).map(|_| ())
+    }
+
+    /// Returns whether `input` is valid for a strict line-wrapped profile.
+    ///
+    /// This is a convenience wrapper around [`Self::validate_wrapped_result`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use base64_ng::{LineEnding, LineWrap, STANDARD};
+    ///
+    /// let wrap = LineWrap::new(4, LineEnding::Lf);
+    /// assert!(STANDARD.validate_wrapped(b"aGVs\nbG8=", wrap));
+    /// assert!(!STANDARD.validate_wrapped(b"aG\nVsbG8=", wrap));
+    /// ```
+    #[must_use]
+    pub fn validate_wrapped(&self, input: &[u8], wrap: LineWrap) -> bool {
+        self.validate_wrapped_result(input, wrap).is_ok()
     }
 
     /// Encodes a fixed-size input into a fixed-size output array in const contexts.
@@ -2509,6 +2556,50 @@ where
         Ok(written)
     }
 
+    /// Decodes `input` using a strict line-wrapped profile.
+    ///
+    /// The wrapped profile accepts only the configured line ending. Non-final
+    /// lines must contain exactly `wrap.line_len` encoded bytes; the final line
+    /// may be shorter. A single trailing line ending after the final line is
+    /// accepted.
+    pub fn decode_slice_wrapped(
+        &self,
+        input: &[u8],
+        output: &mut [u8],
+        wrap: LineWrap,
+    ) -> Result<usize, DecodeError> {
+        let required = validate_wrapped_decode::<A, PAD>(input, wrap)?;
+        if output.len() < required {
+            return Err(DecodeError::OutputTooSmall {
+                required,
+                available: output.len(),
+            });
+        }
+        decode_wrapped_to_slice::<A, PAD>(input, output, wrap)
+    }
+
+    /// Decodes `input` using a strict line-wrapped profile and clears all bytes
+    /// after the decoded prefix.
+    ///
+    /// If validation or decoding fails, the entire output buffer is cleared
+    /// before the error is returned.
+    pub fn decode_slice_wrapped_clear_tail(
+        &self,
+        input: &[u8],
+        output: &mut [u8],
+        wrap: LineWrap,
+    ) -> Result<usize, DecodeError> {
+        let written = match self.decode_slice_wrapped(input, output, wrap) {
+            Ok(written) => written,
+            Err(err) => {
+                output.fill(0);
+                return Err(err);
+            }
+        };
+        output[written..].fill(0);
+        Ok(written)
+    }
+
     /// Decodes `input` into a newly allocated byte vector.
     ///
     /// This is strict decoding with the same semantics as [`Self::decode_slice`].
@@ -2534,6 +2625,26 @@ where
         let required = validate_legacy_decode::<A, PAD>(input)?;
         let mut output = alloc::vec![0; required];
         let written = match self.decode_slice_legacy(input, &mut output) {
+            Ok(written) => written,
+            Err(err) => {
+                output.fill(0);
+                return Err(err);
+            }
+        };
+        output.truncate(written);
+        Ok(output)
+    }
+
+    /// Decodes line-wrapped input into a newly allocated byte vector.
+    #[cfg(feature = "alloc")]
+    pub fn decode_wrapped_vec(
+        &self,
+        input: &[u8],
+        wrap: LineWrap,
+    ) -> Result<alloc::vec::Vec<u8>, DecodeError> {
+        let required = validate_wrapped_decode::<A, PAD>(input, wrap)?;
+        let mut output = alloc::vec![0; required];
+        let written = match self.decode_slice_wrapped(input, &mut output, wrap) {
             Ok(written) => written,
             Err(err) => {
                 output.fill(0);
@@ -2797,6 +2908,11 @@ pub enum DecodeError {
         /// Byte index where padding became invalid.
         index: usize,
     },
+    /// Line wrapping is missing, misplaced, or uses the wrong line ending.
+    InvalidLineWrap {
+        /// Byte index where line wrapping became invalid.
+        index: usize,
+    },
     /// The output buffer is too small.
     OutputTooSmall {
         /// Required output bytes.
@@ -2815,6 +2931,9 @@ impl core::fmt::Display for DecodeError {
                 write!(f, "invalid base64 byte 0x{byte:02x} at index {index}")
             }
             Self::InvalidPadding { index } => write!(f, "invalid base64 padding at index {index}"),
+            Self::InvalidLineWrap { index } => {
+                write!(f, "invalid base64 line wrapping at index {index}")
+            }
             Self::OutputTooSmall {
                 required,
                 available,
@@ -2834,6 +2953,9 @@ impl DecodeError {
                 byte,
             },
             Self::InvalidPadding { index } => Self::InvalidPadding {
+                index: index + offset,
+            },
+            Self::InvalidLineWrap { index } => Self::InvalidLineWrap {
                 index: index + offset,
             },
             Self::InvalidInput | Self::InvalidLength | Self::OutputTooSmall { .. } => self,
@@ -2929,6 +3051,161 @@ fn decode_legacy_to_slice<A: Alphabet, const PAD: bool>(
         .map(|n| write + n)
 }
 
+struct WrappedBytes<'a> {
+    input: &'a [u8],
+    wrap: LineWrap,
+    index: usize,
+    line_len: usize,
+}
+
+impl<'a> WrappedBytes<'a> {
+    const fn new(input: &'a [u8], wrap: LineWrap) -> Result<Self, DecodeError> {
+        if wrap.line_len == 0 {
+            return Err(DecodeError::InvalidLineWrap { index: 0 });
+        }
+        Ok(Self {
+            input,
+            wrap,
+            index: 0,
+            line_len: 0,
+        })
+    }
+
+    fn next_byte(&mut self) -> Result<Option<(usize, u8)>, DecodeError> {
+        loop {
+            if self.index == self.input.len() {
+                return Ok(None);
+            }
+
+            if self.starts_with_line_ending() {
+                let line_end_index = self.index;
+                if self.line_len == 0 {
+                    return Err(DecodeError::InvalidLineWrap {
+                        index: line_end_index,
+                    });
+                }
+
+                self.index += self.wrap.line_ending.byte_len();
+                if self.index == self.input.len() {
+                    self.line_len = 0;
+                    return Ok(None);
+                }
+
+                if self.line_len != self.wrap.line_len {
+                    return Err(DecodeError::InvalidLineWrap {
+                        index: line_end_index,
+                    });
+                }
+                self.line_len = 0;
+                continue;
+            }
+
+            let byte = self.input[self.index];
+            if matches!(byte, b'\r' | b'\n') {
+                return Err(DecodeError::InvalidLineWrap { index: self.index });
+            }
+
+            self.line_len += 1;
+            if self.line_len > self.wrap.line_len {
+                return Err(DecodeError::InvalidLineWrap { index: self.index });
+            }
+
+            let index = self.index;
+            self.index += 1;
+            return Ok(Some((index, byte)));
+        }
+    }
+
+    fn starts_with_line_ending(&self) -> bool {
+        let line_ending = self.wrap.line_ending.as_bytes();
+        let end = self.index + line_ending.len();
+        end <= self.input.len() && &self.input[self.index..end] == line_ending
+    }
+}
+
+fn validate_wrapped_decode<A: Alphabet, const PAD: bool>(
+    input: &[u8],
+    wrap: LineWrap,
+) -> Result<usize, DecodeError> {
+    let mut bytes = WrappedBytes::new(input, wrap)?;
+    let mut chunk = [0u8; 4];
+    let mut indexes = [0usize; 4];
+    let mut chunk_len = 0;
+    let mut required = 0;
+    let mut terminal_seen = false;
+
+    while let Some((index, byte)) = bytes.next_byte()? {
+        if terminal_seen {
+            return Err(DecodeError::InvalidPadding { index });
+        }
+
+        chunk[chunk_len] = byte;
+        indexes[chunk_len] = index;
+        chunk_len += 1;
+
+        if chunk_len == 4 {
+            let written =
+                validate_chunk::<A, PAD>(&chunk).map_err(|err| map_chunk_error(err, &indexes))?;
+            required += written;
+            terminal_seen = written < 3;
+            chunk_len = 0;
+        }
+    }
+
+    if chunk_len == 0 {
+        return Ok(required);
+    }
+    if PAD {
+        return Err(DecodeError::InvalidLength);
+    }
+
+    validate_tail_unpadded::<A>(&chunk[..chunk_len])
+        .map_err(|err| map_partial_chunk_error(err, &indexes, chunk_len))?;
+    Ok(required + decoded_capacity(chunk_len))
+}
+
+fn decode_wrapped_to_slice<A: Alphabet, const PAD: bool>(
+    input: &[u8],
+    output: &mut [u8],
+    wrap: LineWrap,
+) -> Result<usize, DecodeError> {
+    let mut bytes = WrappedBytes::new(input, wrap)?;
+    let mut chunk = [0u8; 4];
+    let mut indexes = [0usize; 4];
+    let mut chunk_len = 0;
+    let mut write = 0;
+    let mut terminal_seen = false;
+
+    while let Some((index, byte)) = bytes.next_byte()? {
+        if terminal_seen {
+            return Err(DecodeError::InvalidPadding { index });
+        }
+
+        chunk[chunk_len] = byte;
+        indexes[chunk_len] = index;
+        chunk_len += 1;
+
+        if chunk_len == 4 {
+            let written = decode_chunk::<A, PAD>(&chunk, &mut output[write..])
+                .map_err(|err| map_chunk_error(err, &indexes))?;
+            write += written;
+            terminal_seen = written < 3;
+            chunk_len = 0;
+        }
+    }
+
+    if chunk_len == 0 {
+        return Ok(write);
+    }
+    if PAD {
+        return Err(DecodeError::InvalidLength);
+    }
+
+    decode_tail_unpadded::<A>(&chunk[..chunk_len], &mut output[write..])
+        .map_err(|err| map_partial_chunk_error(err, &indexes, chunk_len))
+        .map(|n| write + n)
+}
+
 #[inline]
 const fn is_legacy_whitespace(byte: u8) -> bool {
     matches!(byte, b' ' | b'\t' | b'\r' | b'\n')
@@ -2944,6 +3221,7 @@ fn map_chunk_error(err: DecodeError, indexes: &[usize; 4]) -> DecodeError {
             index: indexes[index],
         },
         DecodeError::InvalidInput
+        | DecodeError::InvalidLineWrap { .. }
         | DecodeError::InvalidLength
         | DecodeError::OutputTooSmall { .. } => err,
     }
@@ -2960,6 +3238,7 @@ fn map_partial_chunk_error(err: DecodeError, indexes: &[usize; 4], len: usize) -
         },
         DecodeError::InvalidByte { .. }
         | DecodeError::InvalidPadding { .. }
+        | DecodeError::InvalidLineWrap { .. }
         | DecodeError::InvalidInput
         | DecodeError::InvalidLength
         | DecodeError::OutputTooSmall { .. } => err,

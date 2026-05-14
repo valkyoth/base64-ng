@@ -26,6 +26,8 @@ Implemented now:
   reject malformed input without materializing decoded bytes.
 - Line-wrapped encoding for MIME/PEM-style output and caller-selected wrapping
   policies.
+- Strict line-wrapped validation and decoding profiles for MIME/PEM-style
+  input.
 - Separate `ct` scalar decode module for sensitive payloads that avoids
   secret-indexed lookup tables during Base64 symbol mapping.
 - `std::io` streaming encoders and decoders behind the `stream` feature.
@@ -178,6 +180,22 @@ assert_eq!(&output[..written], b"aGVs\nbG8=");
 Built-in policies include `LineWrap::MIME`, `LineWrap::PEM`, and
 `LineWrap::PEM_CRLF`. Wrapping inserts line endings between encoded lines and
 does not append a trailing line ending after the final line.
+
+The same policy can be used for strict wrapped decoding. Unlike legacy
+whitespace decoding, this accepts only the configured line ending and requires
+every non-final line to have the configured encoded length:
+
+```rust
+use base64_ng::{LineEnding, LineWrap, STANDARD};
+
+let wrap = LineWrap::new(4, LineEnding::Lf);
+let mut output = [0u8; 5];
+let written = STANDARD
+    .decode_slice_wrapped(b"aGVs\nbG8=", &mut output, wrap)
+    .unwrap();
+
+assert_eq!(&output[..written], b"hello");
+```
 
 ## Legacy Whitespace Decoding
 
