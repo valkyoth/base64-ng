@@ -18,6 +18,8 @@
   adjacent framed payload bytes unread.
 - Extended stream fuzz coverage to compare fragmented `DecoderReader` sources
   against slice decoding when payload-boundary semantics match.
+- Hardened streaming decoders to clear pending input on drop and clear decoded
+  output queue bytes before they are discarded.
 
 ## 0.4.1 - 2026-05-14
 

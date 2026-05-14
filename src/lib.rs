@@ -254,8 +254,7 @@ pub mod runtime {
             write!(
                 formatter,
                 "active={} candidate={} candidate_required_cpu_features=",
-                self.active,
-                self.candidate,
+                self.active, self.candidate,
             )?;
             write_feature_list(formatter, self.candidate_required_cpu_features())?;
             write!(
@@ -645,7 +644,7 @@ pub mod stream {
     where
         A: Alphabet,
     {
-        inner: W,
+        inner: Option<W>,
         engine: Engine<A, PAD>,
         pending: [u8; 4],
         pending_len: usize,
@@ -660,7 +659,7 @@ pub mod stream {
         #[must_use]
         pub const fn new(inner: W, engine: Engine<A, PAD>) -> Self {
             Self {
-                inner,
+                inner: Some(inner),
                 engine,
                 pending: [0; 4],
                 pending_len: 0,
@@ -670,21 +669,56 @@ pub mod stream {
 
         /// Returns a shared reference to the wrapped writer.
         #[must_use]
-        pub const fn get_ref(&self) -> &W {
-            &self.inner
+        pub fn get_ref(&self) -> &W {
+            self.inner_ref()
         }
 
         /// Returns a mutable reference to the wrapped writer.
         pub fn get_mut(&mut self) -> &mut W {
-            &mut self.inner
+            self.inner_mut()
         }
 
         /// Consumes the decoder without flushing pending input.
         ///
         /// Prefer [`Self::finish`] when the decoded output must be complete.
         #[must_use]
-        pub fn into_inner(self) -> W {
-            self.inner
+        pub fn into_inner(mut self) -> W {
+            self.take_inner()
+        }
+
+        fn inner_ref(&self) -> &W {
+            match &self.inner {
+                Some(inner) => inner,
+                None => unreachable!("stream decoder inner writer was already taken"),
+            }
+        }
+
+        fn inner_mut(&mut self) -> &mut W {
+            match &mut self.inner {
+                Some(inner) => inner,
+                None => unreachable!("stream decoder inner writer was already taken"),
+            }
+        }
+
+        fn take_inner(&mut self) -> W {
+            match self.inner.take() {
+                Some(inner) => inner,
+                None => unreachable!("stream decoder inner writer was already taken"),
+            }
+        }
+
+        fn clear_pending(&mut self) {
+            self.pending.fill(0);
+            self.pending_len = 0;
+        }
+    }
+
+    impl<W, A, const PAD: bool> Drop for Decoder<W, A, PAD>
+    where
+        A: Alphabet,
+    {
+        fn drop(&mut self) {
+            self.clear_pending();
         }
     }
 
@@ -696,8 +730,8 @@ pub mod stream {
         /// Validates final pending input, flushes the wrapped writer, and returns it.
         pub fn finish(mut self) -> io::Result<W> {
             self.write_pending_final()?;
-            self.inner.flush()?;
-            Ok(self.inner)
+            self.inner_mut().flush()?;
+            Ok(self.take_inner())
         }
 
         fn write_pending_final(&mut self) -> io::Result<()> {
@@ -710,8 +744,8 @@ pub mod stream {
                 .engine
                 .decode_slice(&self.pending[..self.pending_len], &mut decoded)
                 .map_err(decode_error_to_io)?;
-            self.inner.write_all(&decoded[..written])?;
-            self.pending_len = 0;
+            self.inner_mut().write_all(&decoded[..written])?;
+            self.clear_pending();
             Ok(())
         }
 
@@ -721,7 +755,7 @@ pub mod stream {
                 .engine
                 .decode_slice(&input, &mut decoded)
                 .map_err(decode_error_to_io)?;
-            self.inner.write_all(&decoded[..written])?;
+            self.inner_mut().write_all(&decoded[..written])?;
             if written < 3 {
                 self.finished = true;
             }
@@ -756,7 +790,7 @@ pub mod stream {
                 quad[..self.pending_len].copy_from_slice(&self.pending[..self.pending_len]);
                 quad[self.pending_len..].copy_from_slice(&input[..needed]);
                 self.write_full_quad(quad)?;
-                self.pending_len = 0;
+                self.clear_pending();
                 consumed += needed;
                 if self.finished && consumed < input.len() {
                     return Err(trailing_input_after_padding_error());
@@ -788,7 +822,7 @@ pub mod stream {
         }
 
         fn flush(&mut self) -> io::Result<()> {
-            self.inner.flush()
+            self.inner_mut().flush()
         }
     }
 
@@ -813,7 +847,7 @@ pub mod stream {
     where
         A: Alphabet,
     {
-        inner: R,
+        inner: Option<R>,
         engine: Engine<A, PAD>,
         pending: [u8; 4],
         pending_len: usize,
@@ -830,7 +864,7 @@ pub mod stream {
         #[must_use]
         pub fn new(inner: R, engine: Engine<A, PAD>) -> Self {
             Self {
-                inner,
+                inner: Some(inner),
                 engine,
                 pending: [0; 4],
                 pending_len: 0,
@@ -842,19 +876,57 @@ pub mod stream {
 
         /// Returns a shared reference to the wrapped reader.
         #[must_use]
-        pub const fn get_ref(&self) -> &R {
-            &self.inner
+        pub fn get_ref(&self) -> &R {
+            self.inner_ref()
         }
 
         /// Returns a mutable reference to the wrapped reader.
         pub fn get_mut(&mut self) -> &mut R {
-            &mut self.inner
+            self.inner_mut()
         }
 
         /// Consumes the decoder reader and returns the wrapped reader.
         #[must_use]
-        pub fn into_inner(self) -> R {
-            self.inner
+        pub fn into_inner(mut self) -> R {
+            self.take_inner()
+        }
+
+        fn inner_ref(&self) -> &R {
+            match &self.inner {
+                Some(inner) => inner,
+                None => unreachable!("stream decoder reader inner reader was already taken"),
+            }
+        }
+
+        fn inner_mut(&mut self) -> &mut R {
+            match &mut self.inner {
+                Some(inner) => inner,
+                None => unreachable!("stream decoder reader inner reader was already taken"),
+            }
+        }
+
+        fn take_inner(&mut self) -> R {
+            match self.inner.take() {
+                Some(inner) => inner,
+                None => unreachable!("stream decoder reader inner reader was already taken"),
+            }
+        }
+
+        fn clear_pending(&mut self) {
+            self.pending.fill(0);
+            self.pending_len = 0;
+        }
+    }
+
+    impl<R, A, const PAD: bool> Drop for DecoderReader<R, A, PAD>
+    where
+        A: Alphabet,
+    {
+        fn drop(&mut self) {
+            self.clear_pending();
+            for byte in &mut self.output {
+                *byte = 0;
+            }
         }
     }
 
@@ -874,10 +946,12 @@ pub mod stream {
 
             let mut written = 0;
             while written < output.len() {
-                let Some(byte) = self.output.pop_front() else {
+                let Some(byte) = self.output.front_mut() else {
                     break;
                 };
-                output[written] = byte;
+                output[written] = *byte;
+                *byte = 0;
+                let _ = self.output.pop_front();
                 written += 1;
             }
 
@@ -897,7 +971,8 @@ pub mod stream {
             }
 
             let mut input = [0u8; 4];
-            let read = self.inner.read(&mut input[..4 - self.pending_len])?;
+            let available = 4 - self.pending_len;
+            let read = self.inner_mut().read(&mut input[..available])?;
             if read == 0 {
                 self.finished = true;
                 self.push_final_pending()?;
@@ -911,7 +986,7 @@ pub mod stream {
             }
 
             let quad = self.pending;
-            self.pending_len = 0;
+            self.clear_pending();
             self.push_decoded(&quad)?;
             if self.terminal_seen {
                 self.finished = true;
@@ -927,7 +1002,7 @@ pub mod stream {
             let mut pending = [0u8; 4];
             pending[..self.pending_len].copy_from_slice(&self.pending[..self.pending_len]);
             let pending_len = self.pending_len;
-            self.pending_len = 0;
+            self.clear_pending();
             self.push_decoded(&pending[..pending_len])
         }
 
