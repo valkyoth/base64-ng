@@ -19,6 +19,9 @@ scripts/validate-unsafe-boundary.sh
 echo "checks: panic policy"
 scripts/validate-panic-policy.sh
 
+echo "checks: constant-time policy"
+scripts/validate-constant-time-policy.sh
+
 echo "checks: clippy default"
 cargo clippy --all-targets -- -D warnings
 

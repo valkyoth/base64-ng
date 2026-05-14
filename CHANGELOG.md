@@ -29,6 +29,9 @@
   when nightly Miri is installed.
 - Added `docs/FUZZING.md` and `scripts/check_fuzz_corpus.sh` to document and
   enforce reviewed fuzz corpus handling.
+- Expanded `docs/CONSTANT_TIME.md` with generated-code review requirements and
+  added `scripts/validate-constant-time-policy.sh` to release-gate the current
+  constant-time non-claim wording.
 
 ## 0.5.0 - 2026-05-14
 

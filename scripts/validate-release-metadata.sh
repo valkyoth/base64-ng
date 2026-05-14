@@ -86,6 +86,7 @@ for required_script in \
     "scripts/generate-sbom.sh" \
     "scripts/reproducible_build_check.sh" \
     "scripts/stable_release_gate.sh" \
+    "scripts/validate-constant-time-policy.sh" \
     "scripts/validate-dependencies.sh" \
     "scripts/validate-panic-policy.sh" \
     "scripts/validate-release-metadata.sh" \
@@ -158,6 +159,7 @@ for required_package_file in \
     "scripts/generate-sbom.sh" \
     "scripts/reproducible_build_check.sh" \
     "scripts/stable_release_gate.sh" \
+    "scripts/validate-constant-time-policy.sh" \
     "scripts/validate-dependencies.sh" \
     "scripts/validate-panic-policy.sh" \
     "scripts/validate-release-metadata.sh" \

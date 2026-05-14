@@ -129,6 +129,48 @@ Until this evidence exists, README and SECURITY must continue to say that the
 `ct` module is constant-time-oriented and does not claim a formally verified
 cryptographic constant-time API.
 
+## Generated-Code Review
+
+Before changing the documentation from "constant-time-oriented" to a formal
+cryptographic constant-time claim, maintainers must inspect generated code for
+every supported release target and feature mode covered by the claim.
+
+Minimum local commands:
+
+```sh
+cargo rustc --release --lib --no-default-features -- --emit=asm
+cargo rustc --release --lib --all-features -- --emit=asm
+```
+
+Target-specific reviews must also include the targets named in the release
+claim. For example:
+
+```sh
+cargo rustc --release --lib --no-default-features --target x86_64-unknown-linux-gnu -- --emit=asm
+cargo rustc --release --lib --no-default-features --target aarch64-unknown-linux-gnu -- --emit=asm
+```
+
+The review must check the scalar `ct` decode mapping and padding/error
+tracking code for:
+
+- no secret-indexed loads from alphabet or decode tables
+- no branches whose condition is derived from secret input byte classes
+- no early returns after malformed content is discovered inside fixed-length
+  decode loops
+- no optimizer-introduced control flow that invalidates the documented mask
+  arithmetic assumptions
+- no accidental dispatch into future SIMD code
+
+Generated assembly and reviewer notes should be archived with release evidence
+if a formal claim is made. Without that evidence, public documentation must keep
+the current non-claim wording.
+
+This policy is release-gated by:
+
+```sh
+scripts/validate-constant-time-policy.sh
+```
+
 ## Memory Cleanup
 
 The `ct` module provides clear-tail decode variants for caller-owned buffers.

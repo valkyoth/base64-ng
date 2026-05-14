@@ -67,6 +67,8 @@ The release gate runs:
   unsafe block
 - panic-policy validation that fails on unreviewed non-test `panic!`,
   `unreachable!`, `.unwrap()`, or `.expect()` sites
+- constant-time policy validation that keeps non-claim wording and
+  generated-code review requirements in the documented release bar
 - runtime backend report tests proving the public active backend remains scalar
   until an accelerated backend is explicitly admitted
 - runtime backend policy tests for scalar execution and no-SIMD deployment

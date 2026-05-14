@@ -326,12 +326,11 @@ the zero-runtime-dependency stance.
   APIs and all-features alloc/stream APIs when nightly Miri is installed.
 - Stabilized fuzz corpus handling with documented admission rules and a local
   corpus policy check.
+- Completed the constant-time verification plan with generated-code review
+  requirements and a release-gated non-claim wording check.
 - Expand Kani proof coverage for length helpers, in-place decode bounds, and
   selected scalar decoder invariants when Kani supports the pinned Rust
   toolchain.
-- Add a documented constant-time verification plan for the `ct` module,
-  including generated-code review requirements before making cryptographic
-  constant-time claims.
 
 ### v0.7
 
