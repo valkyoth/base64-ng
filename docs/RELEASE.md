@@ -40,7 +40,7 @@ The release gate covers:
 Install the cross targets used by `scripts/check_targets.sh` and CI:
 
 ```sh
-rustup target add aarch64-unknown-linux-gnu wasm32-unknown-unknown thumbv7em-none-eabihf
+rustup target add aarch64-unknown-linux-gnu x86_64-unknown-freebsd wasm32-unknown-unknown thumbv7em-none-eabihf
 ```
 
 Install release and deep-check tools:

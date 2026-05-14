@@ -4,7 +4,7 @@
 
 - Started the next development cycle after the `0.3.0` release.
 - Added cross-target CI checks for the reserved `simd` feature in `no_std`
-  mode across x86_64, aarch64, wasm32, and Cortex-M targets.
+  mode across x86_64, aarch64, FreeBSD, wasm32, and Cortex-M targets.
 - Added `scripts/check_targets.sh` so installed cross-target `no_std`
   `simd`-reserved builds can be checked locally and from CI.
 - Documented reinstall/setup commands for cross targets, nextest, cargo-fuzz,

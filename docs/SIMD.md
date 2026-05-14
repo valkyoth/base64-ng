@@ -38,7 +38,7 @@ weakening the scalar trust base.
   canonical inputs, malformed inputs, and undersized output buffers.
 - The `simd` feature does not enable accelerated code yet.
 - CI checks the reserved `simd` feature in `no_std` mode for x86_64, aarch64,
-  wasm32, and Cortex-M targets.
+  FreeBSD, wasm32, and Cortex-M targets.
 - Performance claims must be backed by local benchmark evidence, not roadmap
   language.
 

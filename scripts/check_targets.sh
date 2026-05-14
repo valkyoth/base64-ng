@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-targets="${*:-x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu wasm32-unknown-unknown thumbv7em-none-eabihf}"
+targets="${*:-x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu x86_64-unknown-freebsd wasm32-unknown-unknown thumbv7em-none-eabihf}"
 installed="$(rustup target list --installed)"
 
 for target in $targets; do

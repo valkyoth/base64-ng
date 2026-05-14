@@ -14,7 +14,7 @@ Install the optional targets and Cargo tools that make the release gate
 exercise the deepest local paths:
 
 ```sh
-rustup target add aarch64-unknown-linux-gnu wasm32-unknown-unknown thumbv7em-none-eabihf
+rustup target add aarch64-unknown-linux-gnu x86_64-unknown-freebsd wasm32-unknown-unknown thumbv7em-none-eabihf
 cargo install --locked cargo-nextest
 cargo install --locked cargo-fuzz
 cargo install --locked kani-verifier
