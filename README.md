@@ -6,8 +6,7 @@ The crate starts conservative: a small scalar implementation, strict RFC 4648 be
 
 ## Current Status
 
-The current public release is `0.5.0`. The development branch is
-`0.6.0-alpha.0`.
+The current public release is `0.6.0`.
 
 Implemented now:
 
@@ -72,7 +71,7 @@ and CWE mapping lives in [docs/SECURITY_CONTROLS.md](docs/SECURITY_CONTROLS.md).
 
 ```toml
 [dependencies]
-base64-ng = "0.5.0"
+base64-ng = "0.6.0"
 ```
 
 The crate is dual-licensed:
@@ -97,7 +96,7 @@ Disable defaults for embedded or freestanding use:
 
 ```toml
 [dependencies]
-base64-ng = { version = "0.5.0", default-features = false }
+base64-ng = { version = "0.6.0", default-features = false }
 ```
 
 ## Example

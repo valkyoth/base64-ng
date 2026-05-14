@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.6.0-alpha.0 - Unreleased
+## 0.6.0 - 2026-05-14
 
 - Started the next development cycle after the `0.5.0` release.
 - Added no-alloc validation-only APIs for strict and legacy profiles:
