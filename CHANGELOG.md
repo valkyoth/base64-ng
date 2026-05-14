@@ -57,6 +57,8 @@
   async/Tokio API while the `tokio` feature remains inert.
 - Clarified README planned-work wording so async wrappers are described as
   admission-gated rather than already scheduled functionality.
+- Added `docs/DEPENDENCIES.md` to make external crate admission requirements
+  explicit and packaged with release evidence.
 - Updated security documentation for streaming wrapper buffer cleanup behavior.
 - Updated release evidence documentation for stream fuzzing and reserved SIMD
   feature-bundle checks.

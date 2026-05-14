@@ -24,6 +24,9 @@ This policy is enforced by:
 scripts/validate-dependencies.sh
 ```
 
+The standalone dependency admission policy lives in
+[`docs/DEPENDENCIES.md`](DEPENDENCIES.md).
+
 Allowed without adding dependencies:
 
 - Base64 scalar logic.

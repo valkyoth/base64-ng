@@ -258,6 +258,8 @@ Security commitments:
   its safety invariants.
 - [docs/ASYNC.md](docs/ASYNC.md) defines the admission bar for any future
   async/Tokio API while the `tokio` feature remains inert.
+- [docs/DEPENDENCIES.md](docs/DEPENDENCIES.md) defines the dependency
+  admission bar for any future external crate.
 - `runtime::backend_report()` exposes the active backend, detected candidate,
   SIMD feature status, and scalar-only security posture for audit logging.
 - `runtime::require_backend_policy()` lets deployments assert scalar execution,
@@ -292,6 +294,7 @@ See [docs/PLAN.md](docs/PLAN.md), [SECURITY.md](SECURITY.md),
 [docs/RELEASE_EVIDENCE.md](docs/RELEASE_EVIDENCE.md), and
 [docs/CONSTANT_TIME.md](docs/CONSTANT_TIME.md). For the unsafe hardware
 acceleration gate, see [docs/SIMD.md](docs/SIMD.md).
+For dependency admission rules, see [docs/DEPENDENCIES.md](docs/DEPENDENCIES.md).
 For adoption guidance from the established `base64` crate, see
 [docs/MIGRATION.md](docs/MIGRATION.md).
 For performance evidence guidance, see [docs/BENCHMARKS.md](docs/BENCHMARKS.md).

@@ -39,6 +39,7 @@ The release gate runs:
 - release metadata validation
 - packaged release script presence, executable-bit, and shebang validation
 - zero-dependency policy check for the published crate
+- packaged dependency admission policy for future external-crate review
 - reserved feature placeholder checks for `tokio`, `kani`, and `fuzzing`,
   including inert-feature and per-feature dependency graph validation
 - clippy with warnings denied

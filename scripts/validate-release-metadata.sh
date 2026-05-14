@@ -59,6 +59,7 @@ test -s SECURITY.md
 test -s docs/ASYNC.md
 test -s docs/BENCHMARKS.md
 test -s docs/CONSTANT_TIME.md
+test -s docs/DEPENDENCIES.md
 test -s docs/MIGRATION.md
 test -s docs/PLAN.md
 test -s docs/RELEASE.md
@@ -125,6 +126,7 @@ for required_package_file in \
     "docs/ASYNC.md" \
     "docs/BENCHMARKS.md" \
     "docs/CONSTANT_TIME.md" \
+    "docs/DEPENDENCIES.md" \
     "docs/MIGRATION.md" \
     "docs/PLAN.md" \
     "docs/RELEASE.md" \
