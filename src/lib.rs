@@ -460,8 +460,71 @@ pub mod stream {
     //! ```
 
     use super::{Alphabet, DecodeError, EncodeError, Engine};
-    use std::collections::VecDeque;
     use std::io::{self, Read, Write};
+
+    struct OutputQueue<const CAP: usize> {
+        buffer: [u8; CAP],
+        start: usize,
+        len: usize,
+    }
+
+    impl<const CAP: usize> OutputQueue<CAP> {
+        const fn new() -> Self {
+            Self {
+                buffer: [0; CAP],
+                start: 0,
+                len: 0,
+            }
+        }
+
+        const fn is_empty(&self) -> bool {
+            self.len == 0
+        }
+
+        fn push_slice(&mut self, input: &[u8]) -> io::Result<()> {
+            if input.len() > self.available_capacity() {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidInput,
+                    "base64 stream output queue capacity exceeded",
+                ));
+            }
+
+            let mut read = 0;
+            while read < input.len() {
+                let write = (self.start + self.len) % CAP;
+                self.buffer[write] = input[read];
+                self.len += 1;
+                read += 1;
+            }
+
+            Ok(())
+        }
+
+        fn pop_front(&mut self) -> Option<u8> {
+            if self.len == 0 {
+                return None;
+            }
+
+            let byte = self.buffer[self.start];
+            self.buffer[self.start] = 0;
+            self.start = (self.start + 1) % CAP;
+            self.len -= 1;
+            if self.len == 0 {
+                self.start = 0;
+            }
+            Some(byte)
+        }
+
+        fn clear_all(&mut self) {
+            self.buffer.fill(0);
+            self.start = 0;
+            self.len = 0;
+        }
+
+        const fn available_capacity(&self) -> usize {
+            CAP - self.len
+        }
+    }
 
     /// A streaming Base64 encoder for `std::io::Write`.
     pub struct Encoder<W, A, const PAD: bool>
@@ -851,7 +914,7 @@ pub mod stream {
         engine: Engine<A, PAD>,
         pending: [u8; 4],
         pending_len: usize,
-        output: VecDeque<u8>,
+        output: OutputQueue<3>,
         finished: bool,
         terminal_seen: bool,
     }
@@ -868,7 +931,7 @@ pub mod stream {
                 engine,
                 pending: [0; 4],
                 pending_len: 0,
-                output: VecDeque::new(),
+                output: OutputQueue::new(),
                 finished: false,
                 terminal_seen: false,
             }
@@ -924,9 +987,7 @@ pub mod stream {
     {
         fn drop(&mut self) {
             self.clear_pending();
-            for byte in &mut self.output {
-                *byte = 0;
-            }
+            self.output.clear_all();
         }
     }
 
@@ -946,12 +1007,10 @@ pub mod stream {
 
             let mut written = 0;
             while written < output.len() {
-                let Some(byte) = self.output.front_mut() else {
+                let Some(byte) = self.output.pop_front() else {
                     break;
                 };
-                output[written] = *byte;
-                *byte = 0;
-                let _ = self.output.pop_front();
+                output[written] = byte;
                 written += 1;
             }
 
@@ -1012,7 +1071,7 @@ pub mod stream {
                 .engine
                 .decode_slice(input, &mut decoded)
                 .map_err(decode_error_to_io)?;
-            self.output.extend(&decoded[..written]);
+            self.output.push_slice(&decoded[..written])?;
             if input.len() == 4 && written < 3 {
                 self.terminal_seen = true;
             }
@@ -1029,7 +1088,7 @@ pub mod stream {
         engine: Engine<A, PAD>,
         pending: [u8; 2],
         pending_len: usize,
-        output: VecDeque<u8>,
+        output: OutputQueue<1024>,
         finished: bool,
     }
 
@@ -1045,7 +1104,7 @@ pub mod stream {
                 engine,
                 pending: [0; 2],
                 pending_len: 0,
-                output: VecDeque::new(),
+                output: OutputQueue::new(),
                 finished: false,
             }
         }
@@ -1100,9 +1159,7 @@ pub mod stream {
     {
         fn drop(&mut self) {
             self.clear_pending();
-            for byte in &mut self.output {
-                *byte = 0;
-            }
+            self.output.clear_all();
         }
     }
 
@@ -1122,12 +1179,10 @@ pub mod stream {
 
             let mut written = 0;
             while written < output.len() {
-                let Some(byte) = self.output.front_mut() else {
+                let Some(byte) = self.output.pop_front() else {
                     break;
                 };
-                output[written] = *byte;
-                *byte = 0;
-                let _ = self.output.pop_front();
+                output[written] = byte;
                 written += 1;
             }
 
@@ -1197,7 +1252,7 @@ pub mod stream {
                 .engine
                 .encode_slice(input, &mut encoded)
                 .map_err(encode_error_to_io)?;
-            self.output.extend(&encoded[..written]);
+            self.output.push_slice(&encoded[..written])?;
             Ok(())
         }
     }
@@ -1207,8 +1262,9 @@ pub mod stream {
 ///
 /// This module is separate from the default decoder so callers can opt into a
 /// slower path with a narrower timing target. It avoids lookup tables indexed
-/// by secret input bytes while mapping Base64 symbols, but it is not documented
-/// as a formally verified cryptographic constant-time API.
+/// by secret input bytes while mapping Base64 symbols and reports malformed
+/// content through one opaque error. It is not documented as a formally
+/// verified cryptographic constant-time API.
 pub mod ct {
     use super::{Alphabet, DecodeError, Standard, UrlSafe, ct_decode_in_place, ct_decode_slice};
     use core::marker::PhantomData;
@@ -1249,8 +1305,9 @@ pub mod ct {
         /// This path uses branch-minimized arithmetic for Base64 symbol
         /// mapping and avoids secret-indexed lookup tables. Input length,
         /// padding length, output length, and final success or failure remain
-        /// public. Malformed input errors are intentionally non-localized; use
-        /// the normal strict decoder when exact error indexes are required.
+        /// public. Malformed content errors are intentionally opaque and
+        /// non-localized; use the normal strict decoder when exact diagnostics
+        /// are required.
         ///
         /// # Examples
         ///
@@ -1508,11 +1565,11 @@ const fn encode_base64_value<A: Alphabet>(value: u8) -> u8 {
 
 #[inline]
 const fn encode_ascii_base64(value: u8, value_62_byte: u8, value_63_byte: u8) -> u8 {
-    let upper = mask_if(value < 26);
-    let lower = mask_if(value.wrapping_sub(26) < 26);
-    let digit = mask_if(value.wrapping_sub(52) < 10);
-    let value_62 = mask_if(value == 0x3e);
-    let value_63 = mask_if(value == 0x3f);
+    let upper = ct_mask_lt_u8(value, 26);
+    let lower = ct_mask_lt_u8(value.wrapping_sub(26), 26);
+    let digit = ct_mask_lt_u8(value.wrapping_sub(52), 10);
+    let value_62 = ct_mask_eq_u8(value, 0x3e);
+    let value_63 = ct_mask_eq_u8(value, 0x3f);
 
     (value.wrapping_add(b'A') & upper)
         | (value.wrapping_sub(26).wrapping_add(b'a') & lower)
@@ -1523,11 +1580,11 @@ const fn encode_ascii_base64(value: u8, value_62_byte: u8, value_63_byte: u8) ->
 
 #[inline]
 fn decode_ascii_base64(byte: u8, value_62_byte: u8, value_63_byte: u8) -> Option<u8> {
-    let upper = mask_if(byte.wrapping_sub(b'A') <= b'Z' - b'A');
-    let lower = mask_if(byte.wrapping_sub(b'a') <= b'z' - b'a');
-    let digit = mask_if(byte.wrapping_sub(b'0') <= b'9' - b'0');
-    let value_62 = mask_if(byte == value_62_byte);
-    let value_63 = mask_if(byte == value_63_byte);
+    let upper = ct_mask_lt_u8(byte.wrapping_sub(b'A'), 26);
+    let lower = ct_mask_lt_u8(byte.wrapping_sub(b'a'), 26);
+    let digit = ct_mask_lt_u8(byte.wrapping_sub(b'0'), 10);
+    let value_62 = ct_mask_eq_u8(byte, value_62_byte);
+    let value_63 = ct_mask_eq_u8(byte, value_63_byte);
     let valid = upper | lower | digit | value_62 | value_63;
 
     let decoded = (byte.wrapping_sub(b'A') & upper)
@@ -1540,8 +1597,27 @@ fn decode_ascii_base64(byte: u8, value_62_byte: u8, value_63_byte: u8) -> Option
 }
 
 #[inline]
-const fn mask_if(condition: bool) -> u8 {
-    0u8.wrapping_sub(condition as u8)
+const fn ct_mask_bit(bit: u8) -> u8 {
+    0u8.wrapping_sub(bit & 1)
+}
+
+#[inline]
+const fn ct_mask_nonzero_u8(value: u8) -> u8 {
+    let wide = value as u16;
+    let negative = 0u16.wrapping_sub(wide);
+    let nonzero = ((wide | negative) >> 8) as u8;
+    ct_mask_bit(nonzero)
+}
+
+#[inline]
+const fn ct_mask_eq_u8(left: u8, right: u8) -> u8 {
+    !ct_mask_nonzero_u8(left ^ right)
+}
+
+#[inline]
+const fn ct_mask_lt_u8(left: u8, right: u8) -> u8 {
+    let diff = (left as u16).wrapping_sub(right as u16);
+    ct_mask_bit((diff >> 8) as u8)
 }
 
 mod backend {
@@ -2345,6 +2421,9 @@ impl std::error::Error for EncodeError {}
 /// Decoding error.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum DecodeError {
+    /// The encoded input is malformed, but the decoder intentionally does not
+    /// disclose a more specific error class.
+    InvalidInput,
     /// The encoded input length is impossible for the selected padding policy.
     InvalidLength,
     /// A byte is not valid for the selected alphabet.
@@ -2371,6 +2450,7 @@ pub enum DecodeError {
 impl core::fmt::Display for DecodeError {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
+            Self::InvalidInput => f.write_str("malformed base64 input"),
             Self::InvalidLength => f.write_str("invalid base64 input length"),
             Self::InvalidByte { index, byte } => {
                 write!(f, "invalid base64 byte 0x{byte:02x} at index {index}")
@@ -2397,7 +2477,7 @@ impl DecodeError {
             Self::InvalidPadding { index } => Self::InvalidPadding {
                 index: index + offset,
             },
-            Self::InvalidLength | Self::OutputTooSmall { .. } => self,
+            Self::InvalidInput | Self::InvalidLength | Self::OutputTooSmall { .. } => self,
         }
     }
 }
@@ -2504,7 +2584,9 @@ fn map_chunk_error(err: DecodeError, indexes: &[usize; 4]) -> DecodeError {
         DecodeError::InvalidPadding { index } => DecodeError::InvalidPadding {
             index: indexes[index],
         },
-        DecodeError::InvalidLength | DecodeError::OutputTooSmall { .. } => err,
+        DecodeError::InvalidInput
+        | DecodeError::InvalidLength
+        | DecodeError::OutputTooSmall { .. } => err,
     }
 }
 
@@ -2519,6 +2601,7 @@ fn map_partial_chunk_error(err: DecodeError, indexes: &[usize; 4], len: usize) -
         },
         DecodeError::InvalidByte { .. }
         | DecodeError::InvalidPadding { .. }
+        | DecodeError::InvalidInput
         | DecodeError::InvalidLength
         | DecodeError::OutputTooSmall { .. } => err,
     }
@@ -2876,25 +2959,25 @@ fn ct_decode_padded<A: Alphabet>(input: &[u8], output: &mut [u8]) -> Result<usiz
         let (v2, valid2) = ct_decode_ascii_base64::<A>(b2);
         let (v3, valid3) = ct_decode_ascii_base64::<A>(b3);
 
-        invalid_byte |= u8::from(!valid0);
-        invalid_byte |= u8::from(!valid1);
+        invalid_byte |= !valid0;
+        invalid_byte |= !valid1;
 
         if is_last && padding == 2 {
-            invalid_padding |= u8::from((v1 & 0b0000_1111) != 0);
+            invalid_padding |= ct_mask_nonzero_u8(v1 & 0b0000_1111);
             output[write] = (v0 << 2) | (v1 >> 4);
             write += 1;
         } else if is_last && padding == 1 {
-            invalid_byte |= u8::from(!valid2);
-            invalid_padding |= u8::from(b2 == b'=');
-            invalid_padding |= u8::from((v2 & 0b0000_0011) != 0);
+            invalid_byte |= !valid2;
+            invalid_padding |= ct_mask_eq_u8(b2, b'=');
+            invalid_padding |= ct_mask_nonzero_u8(v2 & 0b0000_0011);
             output[write] = (v0 << 2) | (v1 >> 4);
             output[write + 1] = (v1 << 4) | (v2 >> 2);
             write += 2;
         } else {
-            invalid_byte |= u8::from(!valid2);
-            invalid_byte |= u8::from(!valid3);
-            invalid_padding |= u8::from(b2 == b'=');
-            invalid_padding |= u8::from(b3 == b'=');
+            invalid_byte |= !valid2;
+            invalid_byte |= !valid3;
+            invalid_padding |= ct_mask_eq_u8(b2, b'=');
+            invalid_padding |= ct_mask_eq_u8(b3, b'=');
             output[write] = (v0 << 2) | (v1 >> 4);
             output[write + 1] = (v1 << 4) | (v2 >> 2);
             output[write + 2] = (v2 << 6) | v3;
@@ -2933,25 +3016,25 @@ fn ct_decode_padded_in_place<A: Alphabet>(buffer: &mut [u8]) -> Result<usize, De
         let (v2, valid2) = ct_decode_ascii_base64::<A>(b2);
         let (v3, valid3) = ct_decode_ascii_base64::<A>(b3);
 
-        invalid_byte |= u8::from(!valid0);
-        invalid_byte |= u8::from(!valid1);
+        invalid_byte |= !valid0;
+        invalid_byte |= !valid1;
 
         if is_last && padding == 2 {
-            invalid_padding |= u8::from((v1 & 0b0000_1111) != 0);
+            invalid_padding |= ct_mask_nonzero_u8(v1 & 0b0000_1111);
             buffer[write] = (v0 << 2) | (v1 >> 4);
             write += 1;
         } else if is_last && padding == 1 {
-            invalid_byte |= u8::from(!valid2);
-            invalid_padding |= u8::from(b2 == b'=');
-            invalid_padding |= u8::from((v2 & 0b0000_0011) != 0);
+            invalid_byte |= !valid2;
+            invalid_padding |= ct_mask_eq_u8(b2, b'=');
+            invalid_padding |= ct_mask_nonzero_u8(v2 & 0b0000_0011);
             buffer[write] = (v0 << 2) | (v1 >> 4);
             buffer[write + 1] = (v1 << 4) | (v2 >> 2);
             write += 2;
         } else {
-            invalid_byte |= u8::from(!valid2);
-            invalid_byte |= u8::from(!valid3);
-            invalid_padding |= u8::from(b2 == b'=');
-            invalid_padding |= u8::from(b3 == b'=');
+            invalid_byte |= !valid2;
+            invalid_byte |= !valid3;
+            invalid_padding |= ct_mask_eq_u8(b2, b'=');
+            invalid_padding |= ct_mask_eq_u8(b3, b'=');
             buffer[write] = (v0 << 2) | (v1 >> 4);
             buffer[write + 1] = (v1 << 4) | (v2 >> 2);
             buffer[write + 2] = (v2 << 6) | v3;
@@ -2994,14 +3077,14 @@ fn ct_decode_unpadded<A: Alphabet>(input: &[u8], output: &mut [u8]) -> Result<us
         let (v2, valid2) = ct_decode_ascii_base64::<A>(b2);
         let (v3, valid3) = ct_decode_ascii_base64::<A>(b3);
 
-        invalid_byte |= u8::from(!valid0);
-        invalid_byte |= u8::from(!valid1);
-        invalid_byte |= u8::from(!valid2);
-        invalid_byte |= u8::from(!valid3);
-        invalid_padding |= u8::from(b0 == b'=');
-        invalid_padding |= u8::from(b1 == b'=');
-        invalid_padding |= u8::from(b2 == b'=');
-        invalid_padding |= u8::from(b3 == b'=');
+        invalid_byte |= !valid0;
+        invalid_byte |= !valid1;
+        invalid_byte |= !valid2;
+        invalid_byte |= !valid3;
+        invalid_padding |= ct_mask_eq_u8(b0, b'=');
+        invalid_padding |= ct_mask_eq_u8(b1, b'=');
+        invalid_padding |= ct_mask_eq_u8(b2, b'=');
+        invalid_padding |= ct_mask_eq_u8(b3, b'=');
 
         output[write] = (v0 << 2) | (v1 >> 4);
         output[write + 1] = (v1 << 4) | (v2 >> 2);
@@ -3017,11 +3100,11 @@ fn ct_decode_unpadded<A: Alphabet>(input: &[u8], output: &mut [u8]) -> Result<us
             let b1 = input[read + 1];
             let (v0, valid0) = ct_decode_ascii_base64::<A>(b0);
             let (v1, valid1) = ct_decode_ascii_base64::<A>(b1);
-            invalid_byte |= u8::from(!valid0);
-            invalid_byte |= u8::from(!valid1);
-            invalid_padding |= u8::from(b0 == b'=');
-            invalid_padding |= u8::from(b1 == b'=');
-            invalid_padding |= u8::from((v1 & 0b0000_1111) != 0);
+            invalid_byte |= !valid0;
+            invalid_byte |= !valid1;
+            invalid_padding |= ct_mask_eq_u8(b0, b'=');
+            invalid_padding |= ct_mask_eq_u8(b1, b'=');
+            invalid_padding |= ct_mask_nonzero_u8(v1 & 0b0000_1111);
             output[write] = (v0 << 2) | (v1 >> 4);
             write += 1;
         }
@@ -3032,13 +3115,13 @@ fn ct_decode_unpadded<A: Alphabet>(input: &[u8], output: &mut [u8]) -> Result<us
             let (v0, valid0) = ct_decode_ascii_base64::<A>(b0);
             let (v1, valid1) = ct_decode_ascii_base64::<A>(b1);
             let (v2, valid2) = ct_decode_ascii_base64::<A>(b2);
-            invalid_byte |= u8::from(!valid0);
-            invalid_byte |= u8::from(!valid1);
-            invalid_byte |= u8::from(!valid2);
-            invalid_padding |= u8::from(b0 == b'=');
-            invalid_padding |= u8::from(b1 == b'=');
-            invalid_padding |= u8::from(b2 == b'=');
-            invalid_padding |= u8::from((v2 & 0b0000_0011) != 0);
+            invalid_byte |= !valid0;
+            invalid_byte |= !valid1;
+            invalid_byte |= !valid2;
+            invalid_padding |= ct_mask_eq_u8(b0, b'=');
+            invalid_padding |= ct_mask_eq_u8(b1, b'=');
+            invalid_padding |= ct_mask_eq_u8(b2, b'=');
+            invalid_padding |= ct_mask_nonzero_u8(v2 & 0b0000_0011);
             output[write] = (v0 << 2) | (v1 >> 4);
             output[write + 1] = (v1 << 4) | (v2 >> 2);
             write += 2;
@@ -3073,14 +3156,14 @@ fn ct_decode_unpadded_in_place<A: Alphabet>(buffer: &mut [u8]) -> Result<usize, 
         let (v2, valid2) = ct_decode_ascii_base64::<A>(b2);
         let (v3, valid3) = ct_decode_ascii_base64::<A>(b3);
 
-        invalid_byte |= u8::from(!valid0);
-        invalid_byte |= u8::from(!valid1);
-        invalid_byte |= u8::from(!valid2);
-        invalid_byte |= u8::from(!valid3);
-        invalid_padding |= u8::from(b0 == b'=');
-        invalid_padding |= u8::from(b1 == b'=');
-        invalid_padding |= u8::from(b2 == b'=');
-        invalid_padding |= u8::from(b3 == b'=');
+        invalid_byte |= !valid0;
+        invalid_byte |= !valid1;
+        invalid_byte |= !valid2;
+        invalid_byte |= !valid3;
+        invalid_padding |= ct_mask_eq_u8(b0, b'=');
+        invalid_padding |= ct_mask_eq_u8(b1, b'=');
+        invalid_padding |= ct_mask_eq_u8(b2, b'=');
+        invalid_padding |= ct_mask_eq_u8(b3, b'=');
 
         buffer[write] = (v0 << 2) | (v1 >> 4);
         buffer[write + 1] = (v1 << 4) | (v2 >> 2);
@@ -3096,11 +3179,11 @@ fn ct_decode_unpadded_in_place<A: Alphabet>(buffer: &mut [u8]) -> Result<usize, 
             let b1 = buffer[read + 1];
             let (v0, valid0) = ct_decode_ascii_base64::<A>(b0);
             let (v1, valid1) = ct_decode_ascii_base64::<A>(b1);
-            invalid_byte |= u8::from(!valid0);
-            invalid_byte |= u8::from(!valid1);
-            invalid_padding |= u8::from(b0 == b'=');
-            invalid_padding |= u8::from(b1 == b'=');
-            invalid_padding |= u8::from((v1 & 0b0000_1111) != 0);
+            invalid_byte |= !valid0;
+            invalid_byte |= !valid1;
+            invalid_padding |= ct_mask_eq_u8(b0, b'=');
+            invalid_padding |= ct_mask_eq_u8(b1, b'=');
+            invalid_padding |= ct_mask_nonzero_u8(v1 & 0b0000_1111);
             buffer[write] = (v0 << 2) | (v1 >> 4);
             write += 1;
         }
@@ -3111,13 +3194,13 @@ fn ct_decode_unpadded_in_place<A: Alphabet>(buffer: &mut [u8]) -> Result<usize, 
             let (v0, valid0) = ct_decode_ascii_base64::<A>(b0);
             let (v1, valid1) = ct_decode_ascii_base64::<A>(b1);
             let (v2, valid2) = ct_decode_ascii_base64::<A>(b2);
-            invalid_byte |= u8::from(!valid0);
-            invalid_byte |= u8::from(!valid1);
-            invalid_byte |= u8::from(!valid2);
-            invalid_padding |= u8::from(b0 == b'=');
-            invalid_padding |= u8::from(b1 == b'=');
-            invalid_padding |= u8::from(b2 == b'=');
-            invalid_padding |= u8::from((v2 & 0b0000_0011) != 0);
+            invalid_byte |= !valid0;
+            invalid_byte |= !valid1;
+            invalid_byte |= !valid2;
+            invalid_padding |= ct_mask_eq_u8(b0, b'=');
+            invalid_padding |= ct_mask_eq_u8(b1, b'=');
+            invalid_padding |= ct_mask_eq_u8(b2, b'=');
+            invalid_padding |= ct_mask_nonzero_u8(v2 & 0b0000_0011);
             buffer[write] = (v0 << 2) | (v1 >> 4);
             buffer[write + 1] = (v1 << 4) | (v2 >> 2);
             write += 2;
@@ -3131,12 +3214,12 @@ fn ct_decode_unpadded_in_place<A: Alphabet>(buffer: &mut [u8]) -> Result<usize, 
 }
 
 #[inline]
-fn ct_decode_ascii_base64<A: Alphabet>(byte: u8) -> (u8, bool) {
-    let upper = mask_if(byte.wrapping_sub(b'A') <= b'Z' - b'A');
-    let lower = mask_if(byte.wrapping_sub(b'a') <= b'z' - b'a');
-    let digit = mask_if(byte.wrapping_sub(b'0') <= b'9' - b'0');
-    let value_62 = mask_if(byte == A::ENCODE[62]);
-    let value_63 = mask_if(byte == A::ENCODE[63]);
+fn ct_decode_ascii_base64<A: Alphabet>(byte: u8) -> (u8, u8) {
+    let upper = ct_mask_lt_u8(byte.wrapping_sub(b'A'), 26);
+    let lower = ct_mask_lt_u8(byte.wrapping_sub(b'a'), 26);
+    let digit = ct_mask_lt_u8(byte.wrapping_sub(b'0'), 10);
+    let value_62 = ct_mask_eq_u8(byte, A::ENCODE[62]);
+    let value_63 = ct_mask_eq_u8(byte, A::ENCODE[63]);
     let valid = upper | lower | digit | value_62 | value_63;
 
     let decoded = (byte.wrapping_sub(b'A') & upper)
@@ -3145,20 +3228,18 @@ fn ct_decode_ascii_base64<A: Alphabet>(byte: u8) -> (u8, bool) {
         | (0x3e & value_62)
         | (0x3f & value_63);
 
-    (decoded, valid != 0)
+    (decoded, valid)
 }
 
 fn ct_padding_len(input: &[u8]) -> usize {
     let last = input[input.len() - 1];
     let before_last = input[input.len() - 2];
-    usize::from(mask_if(last == b'=') & 1) + usize::from(mask_if(before_last == b'=') & 1)
+    usize::from(ct_mask_eq_u8(last, b'=') & 1) + usize::from(ct_mask_eq_u8(before_last, b'=') & 1)
 }
 
 fn report_ct_error(invalid_byte: u8, invalid_padding: u8) -> Result<(), DecodeError> {
-    if invalid_padding != 0 {
-        Err(DecodeError::InvalidPadding { index: 0 })
-    } else if invalid_byte != 0 {
-        Err(DecodeError::InvalidByte { index: 0, byte: 0 })
+    if (invalid_byte | invalid_padding) != 0 {
+        Err(DecodeError::InvalidInput)
     } else {
         Ok(())
     }

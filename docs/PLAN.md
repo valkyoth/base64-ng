@@ -357,6 +357,8 @@ the zero-runtime-dependency stance.
   SSSE3/SSE4.1, and wasm `simd128` candidate implementations only when scalar
   differential tests, fuzz evidence, target-feature checks, unsafe inventory
   updates, and benchmark evidence are complete.
+- Require every admitted SIMD implementation to document its vector-register
+  retention cleanup strategy before it can become an active backend.
 - Keep scalar as the default fallback and require runtime backend policy tests
   for every admitted accelerated backend.
 - Evaluate alignment and prefetch optimizations only as internal

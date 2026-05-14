@@ -63,6 +63,18 @@
   MIME/PEM/bcrypt profiles, custom alphabets, line wrapping, validation-only
   APIs, stack-backed short outputs, secret wrappers, CWE mapping, and
   admission-gated ecosystem integrations.
+- Replaced streaming reader `VecDeque` output queues with fixed-size internal
+  queues that clear consumed slots and wipe their full capacity on drop.
+- Hardened the constant-time-oriented decoder to report malformed content
+  through one opaque error instead of exposing invalid-byte versus
+  invalid-padding categories.
+- Replaced generic boolean mask generation in Base64 symbol mapping with
+  integer byte-mask helpers and documented the remaining generated-code review
+  requirement.
+- Clarified that clear-tail APIs reduce buffer retention but do not hide public
+  success, failure, or decoded-length results.
+- Added SIMD admission documentation requiring future real vector paths to
+  document their register-retention cleanup strategy.
 - Updated security documentation for streaming wrapper buffer cleanup behavior.
 - Updated release evidence documentation for stream fuzzing and reserved SIMD
   feature-bundle checks.

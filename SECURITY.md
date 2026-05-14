@@ -54,13 +54,15 @@ The scalar encoder avoids input-derived alphabet table indexes, and the scalar
 decoder avoids obvious alphabet `match` ladders by using branch-minimized
 arithmetic for ASCII classification. The `ct` module provides a separate
 constant-time-oriented scalar decode path that avoids secret-indexed lookup
-tables while mapping Base64 symbols. Its malformed-input errors are
-intentionally non-localized so error tracking does not reveal the first
-malformed byte position. Its clear-tail variants clear caller-owned output on
-error so rejected sensitive payloads do not leave partially decoded bytes in
-that buffer. This reduces easy timing and retention pitfalls, but `base64-ng`
-does not currently claim a formally verified cryptographic constant-time encode
-or decode API.
+tables while mapping Base64 symbols. Its malformed-content errors are
+intentionally opaque and non-localized so error tracking does not reveal the
+first malformed byte position or the malformed-content category. Invalid
+length, output-buffer capacity, final success/failure, and decoded length are
+public API results. Its clear-tail variants clear caller-owned output on error
+so rejected sensitive payloads do not leave partially decoded bytes in that
+buffer. This reduces easy timing and retention pitfalls, but `base64-ng` does
+not currently claim a formally verified cryptographic constant-time encode or
+decode API.
 
 The clear-tail encode and decode APIs provide best-effort cleanup for
 caller-owned buffers by writing zero bytes over unused tail bytes on success and
@@ -74,10 +76,11 @@ observation, or other process memory disclosure bugs.
 Streaming wrappers apply best-effort cleanup to their small internal staging
 buffers. Encoders clear pending plaintext bytes when those bytes are consumed
 and again when the wrapper is dropped. Decoders clear pending Base64 input when
-it is consumed or when the wrapper is dropped. `DecoderReader` also clears
-queued decoded output bytes before discarding them during reads and clears any
-remaining queued decoded bytes on drop. This is retention reduction for small
-internal buffers, not a formal zeroization guarantee.
+it is consumed or when the wrapper is dropped. `DecoderReader` and
+`EncoderReader` use fixed-size internal output queues instead of allocator
+backed queues, clear queue slots as bytes are consumed, and clear the full
+queue capacity on drop. This is retention reduction for small internal buffers,
+not a formal zeroization guarantee.
 
 Public encoded-length helpers report overflow with `Result` or `Option` rather
 than panicking. Code that handles untrusted length metadata should use these

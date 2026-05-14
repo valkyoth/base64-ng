@@ -47,7 +47,7 @@ The guarantee should explicitly exclude:
 - public input length
 - selected engine/alphabet
 - final success or failure result
-- malformed-input error kind
+- invalid length and output-buffer capacity errors
 - output length
 - allocator behavior
 - memory cleanup and zeroization behavior
@@ -102,8 +102,12 @@ behavior entirely.
   malformed input.
 - Keep padding validation explicit and documented; padding length and final
   output length are public.
-- Return non-localized malformed-input errors from the constant-time-oriented
-  path. Use the normal strict decoder when exact error indexes are required.
+- Return one opaque, non-localized malformed-content error from the
+  constant-time-oriented path. Use the normal strict decoder when exact error
+  indexes or malformed-input categories are required.
+- Generate byte masks with integer arithmetic helpers instead of a generic
+  `bool`-to-mask conversion. Generated-code review is still required before a
+  formal constant-time claim.
 - Keep the implementation scalar and `unsafe`-free.
 - Keep the module independent from future SIMD dispatch.
 
@@ -130,5 +134,9 @@ cryptographic constant-time API.
 The `ct` module provides clear-tail decode variants for caller-owned buffers.
 They clear unused bytes after the decoded prefix on success and clear the whole
 caller-owned buffer on error. This reduces ordinary caller-buffer retention but
-does not provide a verified zeroization guarantee. Any future cryptographic
-profile must document memory cleanup separately from timing behavior.
+does not provide a verified zeroization guarantee.
+
+The clear-tail APIs do not try to hide success, failure, or output length:
+those values are visible through the returned `Result` and decoded length. Any
+future cryptographic profile must document memory cleanup separately from timing
+behavior.

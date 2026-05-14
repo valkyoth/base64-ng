@@ -273,23 +273,23 @@ fn ct_decoder_rejects_malformed_inputs() {
 
     assert_eq!(
         ct::STANDARD.decode_slice(b"AA-A", &mut output),
-        Err(DecodeError::InvalidByte { index: 0, byte: 0 })
+        Err(DecodeError::InvalidInput)
     );
     assert_eq!(
         ct::URL_SAFE.decode_slice(b"AA+A", &mut output),
-        Err(DecodeError::InvalidByte { index: 0, byte: 0 })
+        Err(DecodeError::InvalidInput)
     );
     assert_eq!(
         ct::STANDARD.decode_slice(b"AA=A", &mut output),
-        Err(DecodeError::InvalidPadding { index: 0 })
+        Err(DecodeError::InvalidInput)
     );
     assert_eq!(
         ct::STANDARD.decode_slice(b"Zh==", &mut output),
-        Err(DecodeError::InvalidPadding { index: 0 })
+        Err(DecodeError::InvalidInput)
     );
     assert_eq!(
         ct::STANDARD_NO_PAD.decode_slice(b"Zg==", &mut output),
-        Err(DecodeError::InvalidPadding { index: 0 })
+        Err(DecodeError::InvalidInput)
     );
 
     let mut too_small = [0u8; 1];
@@ -324,14 +324,14 @@ fn ct_decode_slice_clear_tail_scrubs_output_on_error() {
     let mut invalid_byte = [0xff; 8];
     assert_eq!(
         ct::STANDARD.decode_slice_clear_tail(b"Zm9v$g==", &mut invalid_byte),
-        Err(DecodeError::InvalidByte { index: 0, byte: 0 })
+        Err(DecodeError::InvalidInput)
     );
     assert!(invalid_byte.iter().all(|byte| *byte == 0));
 
     let mut invalid_padding = [0xff; 8];
     assert_eq!(
         ct::STANDARD.decode_slice_clear_tail(b"Zh==", &mut invalid_padding),
-        Err(DecodeError::InvalidPadding { index: 0 })
+        Err(DecodeError::InvalidInput)
     );
     assert!(invalid_padding.iter().all(|byte| *byte == 0));
 
@@ -406,14 +406,14 @@ fn ct_decode_in_place_clear_tail_scrubs_buffer() {
     let mut invalid_byte = *b"Zm9v$g==";
     assert_eq!(
         ct::STANDARD.decode_in_place_clear_tail(&mut invalid_byte),
-        Err(DecodeError::InvalidByte { index: 0, byte: 0 })
+        Err(DecodeError::InvalidInput)
     );
     assert!(invalid_byte.iter().all(|byte| *byte == 0));
 
     let mut invalid_padding = *b"Zh==";
     assert_eq!(
         ct::STANDARD.decode_in_place_clear_tail(&mut invalid_padding),
-        Err(DecodeError::InvalidPadding { index: 0 })
+        Err(DecodeError::InvalidInput)
     );
     assert!(invalid_padding.iter().all(|byte| *byte == 0));
 }
@@ -425,14 +425,14 @@ fn ct_decoder_uses_non_localized_malformed_errors() {
     for input in [b"$AAA", b"A$AA", b"AA$A", b"AAA$"] {
         assert_eq!(
             ct::STANDARD.decode_slice(input, &mut output),
-            Err(DecodeError::InvalidByte { index: 0, byte: 0 })
+            Err(DecodeError::InvalidInput)
         );
     }
 
     for input in [b"AA=A", b"Zm9=", b"Zh=="] {
         assert_eq!(
             ct::STANDARD.decode_slice(input, &mut output),
-            Err(DecodeError::InvalidPadding { index: 0 })
+            Err(DecodeError::InvalidInput)
         );
     }
 }
