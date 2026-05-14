@@ -322,11 +322,11 @@ the zero-runtime-dependency stance.
   support for sensitive owned buffers.
 - Completed the README trust dashboard and CWE/security-control mapping
   documentation.
+- Strengthened Miri coverage with a shared check script for no-default scalar
+  APIs and all-features alloc/stream APIs when nightly Miri is installed.
 - Expand Kani proof coverage for length helpers, in-place decode bounds, and
   selected scalar decoder invariants when Kani supports the pinned Rust
   toolchain.
-- Strengthen Miri coverage for scalar, in-place, clear-tail, and stream state
-  machine behavior that Miri can execute practically.
 - Add a documented constant-time verification plan for the `ct` module,
   including generated-code review requirements before making cryptographic
   constant-time claims.

@@ -50,7 +50,8 @@ The release gate runs:
 - `cargo license --json`
 - async admission documentation packaged while the `tokio` feature remains
   inert and dependency-free
-- Miri when nightly Miri is installed
+- Miri through `scripts/check_miri.sh` when nightly Miri is installed,
+  covering no-default-features scalar APIs and all-features alloc/stream APIs
 - fuzz target compile check when `cargo-fuzz` is installed
 - isolated fuzz and performance harness dependency checks
 - installed-target `no_std` checks for the reserved `simd` feature

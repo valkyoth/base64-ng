@@ -574,7 +574,7 @@ Miri is installed as a nightly Rust component, not as a Cargo package:
 ```sh
 rustup toolchain install nightly --component miri
 cargo +nightly miri setup
-cargo +nightly miri test --no-default-features
+scripts/check_miri.sh
 ```
 
 Kani may need a one-time setup after installation:
@@ -589,10 +589,11 @@ On openSUSE Tumbleweed, install `rustup` first if it is not already present:
 sudo zypper install rustup
 ```
 
-The local release gate runs Miri automatically when `cargo +nightly miri` is
-available. The large deterministic sweep tests are ignored only under Miri
-because they are already covered by the normal release gate and are too slow for
-an interpreter.
+The local release gate runs Miri automatically when `rustup run nightly cargo
+miri` is available. `scripts/check_miri.sh` covers no-default-features scalar
+APIs and all-features alloc/stream APIs. The large deterministic sweep tests are
+ignored only under Miri because they are already covered by the normal release
+gate and are too slow for an interpreter.
 
 ## Project Principles
 

@@ -24,6 +24,9 @@
   dashboard for adoption-focused security evidence and CWE mapping.
 - Added `docs/PANIC_POLICY.md` and `scripts/validate-panic-policy.sh` to keep
   runtime panic-like sites reviewed and release-gated.
+- Added `scripts/check_miri.sh` and routed CI/release Miri checks through it so
+  both no-default scalar and all-features alloc/stream surfaces run under Miri
+  when nightly Miri is installed.
 
 ## 0.5.0 - 2026-05-14
 

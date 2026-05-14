@@ -101,13 +101,14 @@ Kani release supports the pinned toolchain.
 The local release gate runs:
 
 ```sh
-cargo +nightly miri test --no-default-features
+scripts/check_miri.sh
 ```
 
-If nightly Miri is not installed, the gate prints an explicit skip message. The
-large deterministic sweep tests remain part of the normal stable test suite, but
-are ignored under Miri because Miri interprets code and those sweeps are not
-practical there.
+If nightly Miri is not installed, the gate prints an explicit skip message.
+`scripts/check_miri.sh` covers the no-default-features scalar surface and the
+all-features alloc/stream surface. The large deterministic sweep tests remain
+part of the normal stable test suite, but are ignored under Miri because Miri
+interprets code and those sweeps are not practical there.
 
 ## Evidence
 

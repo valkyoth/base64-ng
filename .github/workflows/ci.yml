@@ -149,4 +149,4 @@ jobs:
           cargo +nightly miri setup
 
       - name: Run Miri tests
-        run: cargo +nightly miri test --no-default-features
+        run: scripts/check_miri.sh

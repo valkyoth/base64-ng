@@ -74,6 +74,7 @@ for required_script in \
     "scripts/check_backend_evidence.sh" \
     "scripts/check_fuzz.sh" \
     "scripts/check_kani.sh" \
+    "scripts/check_miri.sh" \
     "scripts/check_perf.sh" \
     "scripts/check_reserved_features.sh" \
     "scripts/check_simd_feature_bundles.sh" \
@@ -143,6 +144,7 @@ for required_package_file in \
     "scripts/check_backend_evidence.sh" \
     "scripts/check_fuzz.sh" \
     "scripts/check_kani.sh" \
+    "scripts/check_miri.sh" \
     "scripts/check_perf.sh" \
     "scripts/check_reserved_features.sh" \
     "scripts/check_simd_feature_bundles.sh" \
