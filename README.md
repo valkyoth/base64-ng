@@ -34,8 +34,8 @@ Implemented now:
 - Stack-backed encoded output buffers for short values without `alloc`.
 - Redacted secret owned buffers for sensitive encoded or decoded bytes when
   `alloc` is enabled.
-- Separate `ct` scalar decode module for sensitive payloads that avoids
-  secret-indexed lookup tables during Base64 symbol mapping.
+- Separate `ct` scalar validation and decode module for sensitive payloads
+  that avoids secret-indexed lookup tables during Base64 symbol mapping.
 - `std::io` streaming encoders and decoders behind the `stream` feature.
 - Focused unit and integration tests.
 - Isolated `cargo-fuzz` harnesses for decode, in-place decode, and stream
@@ -61,7 +61,7 @@ Planned behind admission evidence:
 | Active backend | Scalar only |
 | Strict decoding | Default, canonical, no whitespace |
 | Legacy compatibility | Explicit opt-in APIs |
-| Constant-time posture | Constant-time-oriented scalar decode; no formal cryptographic guarantee |
+| Constant-time posture | Constant-time-oriented scalar validation/decode; no formal cryptographic guarantee |
 | Cleanup posture | Best-effort initialized-byte cleanup and redacted secret wrappers |
 | Release evidence | fmt, clippy, tests, docs, deny, audit, license, SBOM, reproducibility |
 

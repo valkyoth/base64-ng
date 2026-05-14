@@ -163,7 +163,8 @@ the zero-runtime-dependency stance.
 - Allocation convenience APIs behind `alloc`.
 - In-place encode and decode APIs.
 - `std::io` streaming adapters.
-- Constant-time-oriented decode APIs for sensitive caller-owned buffers.
+- Constant-time-oriented validation and decode APIs for sensitive caller-owned
+  buffers.
 - Clear-tail APIs and streaming buffer cleanup for best-effort data retention
   reduction.
 - Detailed decode errors with offsets.
@@ -183,7 +184,7 @@ the zero-runtime-dependency stance.
 - Checked quad reads and typed `[u8; 4]` scalar chunk helpers for strict,
   legacy, wrapped, and in-place decode paths.
 
-### Missing Secure Core Features
+### Remaining Long-Term Secure Core Work
 
 - Continue replacing unchecked indexing where practical or documenting bounded
   internal indexing with proof, tests, or local invariants.
@@ -310,12 +311,13 @@ the zero-runtime-dependency stance.
 
 ### v0.6
 
-- Add profile-level support for MIME, PEM, and bcrypt-compatible alphabets
-  where those profiles can remain strict, explicit, and dependency-free.
-- Add custom alphabet/profile construction with validation for duplicate
+- Completed profile-level support for MIME, PEM, and bcrypt-compatible
+  alphabets where those profiles can remain strict, explicit, and
+  dependency-free.
+- Completed custom alphabet/profile construction with validation for duplicate
   symbols, padding conflicts, ASCII constraints, and deterministic errors.
-- Add line-wrapping encode support for PEM/MIME/common caller-selected wrapping
-  policies, including CRLF and LF output.
+- Completed line-wrapping encode support for PEM/MIME/common caller-selected
+  wrapping policies, including CRLF and LF output.
 - Completed validate-only APIs for strict, legacy, profile-aware, and
   constant-time-oriented validation use cases.
 - Completed zero-dependency stack-backed output helpers for short encoded
