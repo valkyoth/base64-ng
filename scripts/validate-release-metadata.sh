@@ -97,6 +97,14 @@ for required_package_file in \
     "docs/RELEASE_EVIDENCE.md" \
     "docs/SIMD.md" \
     "docs/UNSAFE.md" \
+    "scripts/check_reserved_features.sh" \
+    "scripts/check_simd_feature_bundles.sh" \
+    "scripts/check_targets.sh" \
+    "scripts/checks.sh" \
+    "scripts/stable_release_gate.sh" \
+    "scripts/validate-dependencies.sh" \
+    "scripts/validate-release-metadata.sh" \
+    "scripts/validate-unsafe-boundary.sh" \
     "src/lib.rs" \
     "tests/rfc4648.rs"
 do

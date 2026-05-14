@@ -39,6 +39,8 @@
   `tokio` feature behavior.
 - Added a reserved-feature placeholder check to prove `tokio`, `kani`, and
   `fuzzing` remain dependency-free compile-only features until admitted.
+- Included core release/check scripts in the published package and required
+  metadata validation to prove those gate assets are present.
 - Updated security documentation for streaming wrapper buffer cleanup behavior.
 - Updated release evidence documentation for stream fuzzing and reserved SIMD
   feature-bundle checks.

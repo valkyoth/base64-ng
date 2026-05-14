@@ -10,6 +10,10 @@ Run the gate with:
 scripts/stable_release_gate.sh release
 ```
 
+The published crate package includes the core local gate scripts referenced by
+this document, so downstream reviewers can inspect the release checks alongside
+the source and documentation.
+
 Install the optional targets and Cargo tools that make the release gate
 exercise the deepest local paths:
 
