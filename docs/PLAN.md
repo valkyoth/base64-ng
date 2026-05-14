@@ -178,12 +178,13 @@ the zero-runtime-dependency stance.
 - Internal safe-Rust best-effort wipe helpers for initialized bytes and
   redacted `SecretBuffer` owned outputs when `alloc` is enabled.
 - README trust dashboard and CWE/security-control mapping documentation.
+- Panic policy documentation and release-gated panic-like-site validation for
+  non-test source.
 
 ### Missing Secure Core Features
 
-- Expand panic-free policy checks for non-test scalar code, replacing unchecked
-  indexing and unwrap-like operations where practical or proving their bounds
-  where replacement would harm clarity.
+- Continue replacing unchecked indexing where practical or documenting bounded
+  internal indexing with proof, tests, or local invariants.
 
 ### Missing Performance Features
 

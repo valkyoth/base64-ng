@@ -62,6 +62,8 @@ The release gate runs:
 - unsafe-boundary validation that requires inventory documentation for every
   SIMD-boundary unsafe function and a nearby `SAFETY:` explanation for every
   unsafe block
+- panic-policy validation that fails on unreviewed non-test `panic!`,
+  `unreachable!`, `.unwrap()`, or `.expect()` sites
 - runtime backend report tests proving the public active backend remains scalar
   until an accelerated backend is explicitly admitted
 - runtime backend policy tests for scalar execution and no-SIMD deployment

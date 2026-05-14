@@ -61,10 +61,13 @@ test -s docs/BENCHMARKS.md
 test -s docs/CONSTANT_TIME.md
 test -s docs/DEPENDENCIES.md
 test -s docs/MIGRATION.md
+test -s docs/PANIC_POLICY.md
 test -s docs/PLAN.md
 test -s docs/RELEASE.md
 test -s docs/RELEASE_EVIDENCE.md
+test -s docs/SECURITY_CONTROLS.md
 test -s docs/SIMD.md
+test -s docs/TRUST.md
 test -s docs/UNSAFE.md
 
 for required_script in \
@@ -81,6 +84,7 @@ for required_script in \
     "scripts/reproducible_build_check.sh" \
     "scripts/stable_release_gate.sh" \
     "scripts/validate-dependencies.sh" \
+    "scripts/validate-panic-policy.sh" \
     "scripts/validate-release-metadata.sh" \
     "scripts/validate-unsafe-boundary.sh"
 do
@@ -128,10 +132,13 @@ for required_package_file in \
     "docs/CONSTANT_TIME.md" \
     "docs/DEPENDENCIES.md" \
     "docs/MIGRATION.md" \
+    "docs/PANIC_POLICY.md" \
     "docs/PLAN.md" \
     "docs/RELEASE.md" \
     "docs/RELEASE_EVIDENCE.md" \
+    "docs/SECURITY_CONTROLS.md" \
     "docs/SIMD.md" \
+    "docs/TRUST.md" \
     "docs/UNSAFE.md" \
     "scripts/check_backend_evidence.sh" \
     "scripts/check_fuzz.sh" \
@@ -146,6 +153,7 @@ for required_package_file in \
     "scripts/reproducible_build_check.sh" \
     "scripts/stable_release_gate.sh" \
     "scripts/validate-dependencies.sh" \
+    "scripts/validate-panic-policy.sh" \
     "scripts/validate-release-metadata.sh" \
     "scripts/validate-unsafe-boundary.sh" \
     "src/lib.rs" \

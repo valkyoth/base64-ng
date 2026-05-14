@@ -96,6 +96,8 @@ Runtime scalar APIs are expected to return `Result` or `Option` for malformed
 input and size errors instead of unwinding. Compile-time array encoding is the
 exception: it intentionally fails const evaluation when the caller supplies an
 incorrect output array length.
+`scripts/validate-panic-policy.sh` release-gates new non-test panic-like sites
+and requires reviewed exceptions to remain documented in `docs/PANIC_POLICY.md`.
 
 Bounded-memory users should prefer `checked_encoded_len`, `decoded_capacity`,
 `decode_slice`, and `decode_in_place` so allocation limits are chosen by the

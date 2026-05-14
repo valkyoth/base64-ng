@@ -478,6 +478,8 @@ acceleration gate, see [docs/SIMD.md](docs/SIMD.md).
 For the trust dashboard and CWE/security-control mapping, see
 [docs/TRUST.md](docs/TRUST.md) and
 [docs/SECURITY_CONTROLS.md](docs/SECURITY_CONTROLS.md).
+For panic-free public API policy, see
+[docs/PANIC_POLICY.md](docs/PANIC_POLICY.md).
 For dependency admission rules, see [docs/DEPENDENCIES.md](docs/DEPENDENCIES.md).
 For adoption guidance from the established `base64` crate, see
 [docs/MIGRATION.md](docs/MIGRATION.md).

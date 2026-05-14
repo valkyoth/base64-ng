@@ -22,6 +22,8 @@
   redacted owned sensitive output with dependency-free best-effort cleanup.
 - Added `docs/TRUST.md`, `docs/SECURITY_CONTROLS.md`, and a README trust
   dashboard for adoption-focused security evidence and CWE mapping.
+- Added `docs/PANIC_POLICY.md` and `scripts/validate-panic-policy.sh` to keep
+  runtime panic-like sites reviewed and release-gated.
 
 ## 0.5.0 - 2026-05-14
 

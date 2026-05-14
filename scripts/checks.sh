@@ -16,6 +16,9 @@ scripts/check_reserved_features.sh
 echo "checks: unsafe boundary"
 scripts/validate-unsafe-boundary.sh
 
+echo "checks: panic policy"
+scripts/validate-panic-policy.sh
+
 echo "checks: clippy default"
 cargo clippy --all-targets -- -D warnings
 
