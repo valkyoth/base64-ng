@@ -146,6 +146,14 @@ every supported release target and feature mode covered by the claim.
 Minimum local commands:
 
 ```sh
+scripts/generate_ct_asm_evidence.sh
+```
+
+The script writes release assembly artifacts under
+`target/release-evidence/asm/` for no-default-features and all-features builds.
+It wraps these raw compiler invocations:
+
+```sh
 cargo rustc --release --lib --no-default-features -- --emit=asm
 cargo rustc --release --lib --all-features -- --emit=asm
 ```

@@ -16,6 +16,8 @@
 - Added an isolated dependency-free dudect-style timing harness for the scalar
   constant-time-oriented decoder, with compile/dependency checks in CI and
   opt-in local timing runs.
+- Added release assembly evidence generation for no-default-features and
+  all-features constant-time generated-code review.
 
 ## 0.6.0 - 2026-05-14
 

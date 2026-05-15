@@ -42,6 +42,7 @@ The release gate covers:
 - RustSec audit
 - license inventory
 - dudect-style timing harness compile and dependency checks
+- constant-time assembly evidence generation
 - SBOM generation
 - reproducible package/build check
 

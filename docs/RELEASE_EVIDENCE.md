@@ -72,6 +72,8 @@ The release gate runs:
   generated-code review requirements in the documented release bar
 - dudect-style timing harness compile and dependency checks, with timing runs
   opt-in for local release evidence
+- constant-time assembly evidence generation for no-default-features and
+  all-features release builds
 - runtime backend report tests proving the public active backend remains scalar
   until an accelerated backend is explicitly admitted
 - runtime backend policy tests for scalar execution and no-SIMD deployment
@@ -190,6 +192,15 @@ BASE64_NG_RUN_DUDECT=1 scripts/check_dudect.sh
 Archive the raw output with CPU, OS, Rust version, sample count, and command
 line when using dudect-style evidence for a security review. This evidence is
 empirical and does not replace generated-code review or Kani proofs.
+
+Generate assembly artifacts for reviewer inspection with:
+
+```sh
+scripts/generate_ct_asm_evidence.sh
+```
+
+The script writes `target/release-evidence/asm/base64_ng-no-default-features.s`
+and `target/release-evidence/asm/base64_ng-all-features.s`.
 
 ## Performance Evidence
 

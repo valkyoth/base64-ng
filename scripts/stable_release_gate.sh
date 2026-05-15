@@ -50,6 +50,9 @@ scripts/check_simd_feature_bundles.sh
 echo "stable release gate: Kani proofs"
 scripts/check_kani.sh
 
+echo "stable release gate: constant-time assembly evidence"
+scripts/generate_ct_asm_evidence.sh
+
 echo "stable release gate: SBOM"
 scripts/generate-sbom.sh
 

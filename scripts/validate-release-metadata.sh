@@ -86,6 +86,7 @@ for required_script in \
     "scripts/checks.sh" \
     "scripts/ci_install_rust.sh" \
     "scripts/generate-sbom.sh" \
+    "scripts/generate_ct_asm_evidence.sh" \
     "scripts/reproducible_build_check.sh" \
     "scripts/stable_release_gate.sh" \
     "scripts/validate-constant-time-policy.sh" \
@@ -162,6 +163,7 @@ for required_package_file in \
     "scripts/checks.sh" \
     "scripts/ci_install_rust.sh" \
     "scripts/generate-sbom.sh" \
+    "scripts/generate_ct_asm_evidence.sh" \
     "scripts/reproducible_build_check.sh" \
     "scripts/stable_release_gate.sh" \
     "scripts/validate-constant-time-policy.sh" \
