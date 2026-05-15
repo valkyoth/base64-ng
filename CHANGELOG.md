@@ -72,6 +72,8 @@
   for strict line-wrapped no-alloc stack-backed output.
 - Added explicit `SecretBuffer` helpers for wrapped encode/decode and legacy
   whitespace decode.
+- Added strict line-wrapped in-place decode helpers, including clear-tail
+  variants and profile-level forwarding for wrapped MIME/PEM-style profiles.
 
 ## 0.7.0 - 2026-05-15
 

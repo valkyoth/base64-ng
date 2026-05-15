@@ -184,6 +184,8 @@ the zero-runtime-dependency stance.
 - Zero-dependency `TryFrom<&str>` and `TryFrom<&[u8]>` interop for strict
   standard padded `EncodedBuffer` encoding plus `DecodedBuffer` and
   `SecretBuffer` decoding.
+- Strict line-wrapped in-place decode helpers for MIME/PEM-style profiles,
+  including clear-tail variants and profile-level forwarding.
 - README trust dashboard and CWE/security-control mapping documentation.
 - Panic policy documentation and release-gated panic-like-site validation for
   non-test source.

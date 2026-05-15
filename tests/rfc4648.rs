@@ -212,6 +212,37 @@ fn mime_and_pem_profiles_round_trip_with_strict_wrapping() {
 }
 
 #[test]
+fn profile_decode_in_place_respects_wrapping_policy() {
+    let input = [0x5au8; 58];
+    let encoded = MIME.encode_buffer::<82>(&input).unwrap();
+    let mut buffer = [0xff; 96];
+    buffer[..encoded.len()].copy_from_slice(encoded.as_bytes());
+
+    let decoded = MIME.decode_in_place(&mut buffer[..encoded.len()]).unwrap();
+    assert_eq!(decoded, input);
+
+    let mut clear_tail = [0xff; 96];
+    clear_tail[..encoded.len()].copy_from_slice(encoded.as_bytes());
+    let decoded_len = MIME
+        .decode_in_place_clear_tail(&mut clear_tail[..encoded.len()])
+        .unwrap()
+        .len();
+    assert_eq!(&clear_tail[..decoded_len], input);
+    assert!(
+        clear_tail[decoded_len..encoded.len()]
+            .iter()
+            .all(|byte| *byte == 0)
+    );
+
+    let mut invalid = *b"Wlpa\nWg==";
+    assert_eq!(
+        MIME.decode_in_place_clear_tail(&mut invalid),
+        Err(DecodeError::InvalidLineWrap { index: 4 })
+    );
+    assert!(invalid.iter().all(|byte| *byte == 0));
+}
+
+#[test]
 fn bcrypt_and_crypt_profiles_use_explicit_no_padding_alphabets() {
     let input = [0xff, 0xff, 0xff];
     let mut bcrypt_encoded = [0u8; 8];
@@ -1219,6 +1250,29 @@ fn decode_wrapped_buffer_uses_stack_backed_output() {
             .unwrap_err(),
         DecodeError::InvalidLineWrap { index: 2 }
     );
+}
+
+#[test]
+fn decode_in_place_wrapped_compacts_line_endings() {
+    let wrap = LineWrap::new(4, LineEnding::Lf);
+    let mut buffer = *b"aGVs\nbG8=";
+    let decoded = STANDARD.decode_in_place_wrapped(&mut buffer, wrap).unwrap();
+    assert_eq!(decoded, b"hello");
+
+    let mut clear_tail = *b"aGVs\nbG8=";
+    let decoded_len = STANDARD
+        .decode_in_place_wrapped_clear_tail(&mut clear_tail, wrap)
+        .unwrap()
+        .len();
+    assert_eq!(&clear_tail[..decoded_len], b"hello");
+    assert_eq!(&clear_tail[decoded_len..], &[0; 4]);
+
+    let mut invalid = *b"aG\nVsbG8=";
+    assert_eq!(
+        STANDARD.decode_in_place_wrapped_clear_tail(&mut invalid, wrap),
+        Err(DecodeError::InvalidLineWrap { index: 2 })
+    );
+    assert!(invalid.iter().all(|byte| *byte == 0));
 }
 
 #[cfg(feature = "alloc")]

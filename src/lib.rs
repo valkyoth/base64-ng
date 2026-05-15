@@ -2409,6 +2409,32 @@ where
         Ok(output)
     }
 
+    /// Decodes `buffer` in place according to this profile.
+    ///
+    /// For wrapped profiles, configured line endings are compacted out before
+    /// decoding. If validation fails, the buffer contents are unspecified.
+    pub fn decode_in_place<'a>(&self, buffer: &'a mut [u8]) -> Result<&'a mut [u8], DecodeError> {
+        match self.wrap {
+            Some(wrap) => self.engine.decode_in_place_wrapped(buffer, wrap),
+            None => self.engine.decode_in_place(buffer),
+        }
+    }
+
+    /// Decodes `buffer` in place according to this profile and clears all
+    /// bytes after the decoded prefix.
+    ///
+    /// If validation or decoding fails, the entire buffer is cleared before the
+    /// error is returned.
+    pub fn decode_in_place_clear_tail<'a>(
+        &self,
+        buffer: &'a mut [u8],
+    ) -> Result<&'a mut [u8], DecodeError> {
+        match self.wrap {
+            Some(wrap) => self.engine.decode_in_place_wrapped_clear_tail(buffer, wrap),
+            None => self.engine.decode_in_place_clear_tail(buffer),
+        }
+    }
+
     /// Encodes `input` into a newly allocated byte vector.
     #[cfg(feature = "alloc")]
     pub fn encode_vec(&self, input: &[u8]) -> Result<alloc::vec::Vec<u8>, EncodeError> {
@@ -4162,6 +4188,57 @@ where
             .map(SecretBuffer::from_vec)
     }
 
+    /// Decodes `buffer` in place using a strict line-wrapped profile.
+    ///
+    /// The wrapped profile accepts only the configured line ending. Non-final
+    /// lines must contain exactly `wrap.line_len` encoded bytes; the final line
+    /// may be shorter. A single trailing line ending after the final line is
+    /// accepted. If validation fails, the buffer contents are unspecified.
+    pub fn decode_in_place_wrapped<'a>(
+        &self,
+        buffer: &'a mut [u8],
+        wrap: LineWrap,
+    ) -> Result<&'a mut [u8], DecodeError> {
+        let _required = validate_wrapped_decode::<A, PAD>(buffer, wrap)?;
+        let compacted = compact_wrapped_input(buffer, wrap)?;
+        let len = Self::decode_slice_to_start(&mut buffer[..compacted])?;
+        Ok(&mut buffer[..len])
+    }
+
+    /// Decodes `buffer` in place using a strict line-wrapped profile and clears
+    /// all bytes after the decoded prefix.
+    ///
+    /// If validation or decoding fails, the entire buffer is cleared before the
+    /// error is returned.
+    pub fn decode_in_place_wrapped_clear_tail<'a>(
+        &self,
+        buffer: &'a mut [u8],
+        wrap: LineWrap,
+    ) -> Result<&'a mut [u8], DecodeError> {
+        if let Err(err) = validate_wrapped_decode::<A, PAD>(buffer, wrap) {
+            wipe_bytes(buffer);
+            return Err(err);
+        }
+
+        let compacted = match compact_wrapped_input(buffer, wrap) {
+            Ok(compacted) => compacted,
+            Err(err) => {
+                wipe_bytes(buffer);
+                return Err(err);
+            }
+        };
+
+        let len = match Self::decode_slice_to_start(&mut buffer[..compacted]) {
+            Ok(len) => len,
+            Err(err) => {
+                wipe_bytes(buffer);
+                return Err(err);
+            }
+        };
+        wipe_tail(buffer, len);
+        Ok(&mut buffer[..len])
+    }
+
     /// Decodes the buffer in place and returns the decoded prefix.
     ///
     /// # Examples
@@ -4774,6 +4851,31 @@ fn decode_wrapped_to_slice<A: Alphabet, const PAD: bool>(
     decode_tail_unpadded::<A>(&chunk[..chunk_len], &mut output[write..])
         .map_err(|err| map_partial_chunk_error(err, &indexes, chunk_len))
         .map(|n| write + n)
+}
+
+fn compact_wrapped_input(buffer: &mut [u8], wrap: LineWrap) -> Result<usize, DecodeError> {
+    if !wrap.is_valid() {
+        return Err(DecodeError::InvalidLineWrap { index: 0 });
+    }
+
+    let line_ending = wrap.line_ending.as_bytes();
+    let line_ending_len = line_ending.len();
+    let mut read = 0;
+    let mut write = 0;
+
+    while read < buffer.len() {
+        let line_end = read + line_ending_len;
+        if buffer.get(read..line_end) == Some(line_ending) {
+            read = line_end;
+            continue;
+        }
+
+        buffer[write] = buffer[read];
+        write += 1;
+        read += 1;
+    }
+
+    Ok(write)
 }
 
 #[inline]

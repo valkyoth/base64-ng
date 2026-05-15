@@ -362,9 +362,12 @@ For sensitive payloads, use `decode_slice_clear_tail` or
 decode error these variants clear the caller-owned output buffer before
 returning the error. The legacy whitespace profile also provides
 `decode_slice_legacy_clear_tail`, `decode_in_place_legacy_clear_tail`, and
-`decode_buffer_legacy`. The `ct` module provides the same clear-tail decode
-variants for callers using the constant-time-oriented scalar decoder, plus
-`ct::CtEngine::decode_buffer` for stack-backed no-alloc decoded output.
+`decode_buffer_legacy`. Strict line-wrapped profiles provide
+`decode_in_place_wrapped`, `decode_in_place_wrapped_clear_tail`, and the same
+in-place behavior through `Profile::decode_in_place`. The `ct` module provides
+the same clear-tail decode variants for callers using the constant-time-oriented
+scalar decoder, plus `ct::CtEngine::decode_buffer` for stack-backed no-alloc
+decoded output.
 
 For short values, `encode_buffer` returns a stack-backed `EncodedBuffer`
 and `decode_buffer` returns a stack-backed `DecodedBuffer` without requiring
