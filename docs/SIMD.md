@@ -62,9 +62,10 @@ weakening the scalar trust base.
 - Unit tests compare dispatch behavior against the scalar reference for
   canonical inputs, malformed inputs, and undersized output buffers.
 - The `simd` feature does not enable accelerated code yet.
-- `v0.7` is scoped as a scalar-only evidence release. Candidate detection and
-  inactive prototypes may be reported, but active SIMD dispatch is out of scope
-  for that release.
+- Current `0.8` development remains scalar-only unless the SIMD admission
+  manifest, scalar differential tests, fuzz evidence, unsafe inventory,
+  architecture evidence, benchmark evidence, and release wording are updated
+  together.
 - CI checks the reserved `simd` feature in `no_std` mode for x86_64, aarch64,
   FreeBSD, wasm32, and Cortex-M targets.
 - Performance claims must be backed by local benchmark evidence, not roadmap

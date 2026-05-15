@@ -68,8 +68,9 @@ The release gate runs:
   Rust targets are installed
 - backend evidence capture for runtime backend reporting and inactive SIMD
   prototype scalar-equivalence output
-- scalar-only SIMD admission policy for `v0.7`, with no active accelerated
-  dispatch and no SIMD performance claims
+- scalar-only SIMD admission policy for the current release series, with no
+  active accelerated dispatch and no SIMD performance claims unless a complete
+  backend admission evidence package lands
 - unsafe-boundary validation that confines `allow(unsafe_code)` to `src/simd.rs`
 - unsafe-boundary validation that confines architecture intrinsics, CPU feature
   detection, and `target_feature` gates to `src/simd.rs`
