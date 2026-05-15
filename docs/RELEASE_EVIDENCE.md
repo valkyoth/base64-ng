@@ -54,6 +54,7 @@ The release gate runs:
   inert and dependency-free
 - Miri through `scripts/check_miri.sh` when nightly Miri is installed,
   covering no-default-features scalar APIs and all-features alloc/stream APIs
+  and writing a release evidence manifest
 - fuzz target compile check when `cargo-fuzz` is installed
 - fuzz corpus policy validation for target-specific reviewed corpus inputs and
   release-blocking artifact cleanup
@@ -191,6 +192,21 @@ That validator keeps active SIMD dispatch scalar-only until the release includes
 the required scalar differential tests, fuzz evidence, unsafe inventory updates,
 architecture evidence, benchmark evidence, release-note wording, and an updated
 `docs/SIMD_ADMISSION.md` manifest.
+
+## Miri Evidence
+
+Run Miri coverage with:
+
+```sh
+scripts/check_miri.sh
+```
+
+When nightly Miri is installed, the script runs no-default-features and
+all-features test surfaces and writes
+`target/release-evidence/miri/MANIFEST.txt`, `no-default-features.txt`, and
+`all-features.txt`. This evidence is useful for release review of the
+dependency-free scalar core, alloc helpers, stream wrappers, and cleanup
+helpers. It remains tool-backed undefined-behavior evidence, not a formal proof.
 
 ## Constant-Time Timing Evidence
 

@@ -33,6 +33,7 @@ The release gate covers:
 - clippy
 - feature-mode tests
 - Miri no-default-features tests when nightly Miri is installed
+- Miri evidence manifest generation when nightly Miri is installed
 - docs
 - packaged async admission policy while the `tokio` feature remains inert
 - installed cross-target `no_std` checks

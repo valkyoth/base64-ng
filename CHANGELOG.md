@@ -23,6 +23,8 @@
   and SIMD release-status docs cannot drift from `Cargo.toml`.
 - Tightened CI SIMD feature-bundle setup so the wasm `simd128` reserved build
   runs instead of being skipped in the main checks job.
+- Extended the Miri check to write release evidence artifacts and a manifest
+  when nightly Miri is installed.
 
 ## 0.7.0 - 2026-05-15
 
