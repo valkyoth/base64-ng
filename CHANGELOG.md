@@ -59,6 +59,8 @@
   `Profile::decode_buffer` for no-alloc stack-backed decoded output.
 - Added `ct::CtEngine::decode_buffer` for constant-time-oriented no-alloc
   stack-backed decoded output.
+- Added `TryFrom<&str>` and `TryFrom<&[u8]>` for `DecodedBuffer<CAP>` using
+  strict standard padded Base64.
 
 ## 0.7.0 - 2026-05-15
 

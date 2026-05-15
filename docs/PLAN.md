@@ -182,7 +182,7 @@ the zero-runtime-dependency stance.
 - Internal best-effort wipe helpers for initialized bytes, vector spare
   capacity, and redacted `SecretBuffer` owned outputs when `alloc` is enabled.
 - Zero-dependency `TryFrom<&str>` and `TryFrom<&[u8]>` interop for strict
-  standard padded `SecretBuffer` decoding.
+  standard padded `DecodedBuffer` and `SecretBuffer` decoding.
 - README trust dashboard and CWE/security-control mapping documentation.
 - Panic policy documentation and release-gated panic-like-site validation for
   non-test source.

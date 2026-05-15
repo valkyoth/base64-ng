@@ -2037,6 +2037,38 @@ fn profile_stack_decoded_buffer_respects_wrapping_policy() {
     assert_eq!(bcrypt.as_bytes(), &[0xff, 0xff, 0xff]);
 }
 
+#[test]
+fn decoded_buffer_try_from_uses_strict_standard_base64() {
+    let decoded = DecodedBuffer::<5>::try_from("aGVsbG8=").unwrap();
+    assert_eq!(decoded.as_bytes(), b"hello");
+    assert_eq!(
+        format!("{decoded:?}"),
+        r#"DecodedBuffer { bytes: "<redacted>", len: 5, capacity: 5 }"#
+    );
+
+    let decoded = DecodedBuffer::<5>::try_from(&b"aGVsbG8="[..]).unwrap();
+    assert_eq!(decoded.as_bytes(), b"hello");
+
+    assert_eq!(
+        DecodedBuffer::<5>::try_from("aGVsbG8").unwrap_err(),
+        DecodeError::InvalidLength
+    );
+    assert_eq!(
+        DecodedBuffer::<4>::try_from("aGVsbG8=").unwrap_err(),
+        DecodeError::OutputTooSmall {
+            required: 5,
+            available: 4,
+        }
+    );
+    assert_eq!(
+        DecodedBuffer::<6>::try_from("aGVsbG8$").unwrap_err(),
+        DecodeError::InvalidByte {
+            index: 7,
+            byte: b'$',
+        }
+    );
+}
+
 #[cfg(feature = "alloc")]
 #[test]
 fn alloc_helpers_round_trip() {

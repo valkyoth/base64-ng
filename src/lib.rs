@@ -1967,6 +1967,30 @@ impl<const CAP: usize> PartialEq for DecodedBuffer<CAP> {
     }
 }
 
+impl<const CAP: usize> TryFrom<&[u8]> for DecodedBuffer<CAP> {
+    type Error = DecodeError;
+
+    /// Decodes strict standard padded Base64 into a stack-backed buffer.
+    ///
+    /// Use [`Engine::decode_buffer`] or [`Profile::decode_buffer`] when a
+    /// different alphabet, padding mode, or line-wrapping profile is required.
+    fn try_from(input: &[u8]) -> Result<Self, Self::Error> {
+        STANDARD.decode_buffer(input)
+    }
+}
+
+impl<const CAP: usize> TryFrom<&str> for DecodedBuffer<CAP> {
+    type Error = DecodeError;
+
+    /// Decodes strict standard padded Base64 text into a stack-backed buffer.
+    ///
+    /// Use [`Engine::decode_buffer`] or [`Profile::decode_buffer`] when a
+    /// different alphabet, padding mode, or line-wrapping profile is required.
+    fn try_from(input: &str) -> Result<Self, Self::Error> {
+        Self::try_from(input.as_bytes())
+    }
+}
+
 /// Owned sensitive bytes with redacted formatting and drop-time cleanup.
 ///
 /// `SecretBuffer` is available with the `alloc` feature. It is intended for
