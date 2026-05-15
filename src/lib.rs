@@ -1623,6 +1623,27 @@ impl LineWrap {
             line_ending,
         }
     }
+
+    /// Creates a wrapping policy, returning `None` when the line length is
+    /// invalid.
+    ///
+    /// Base64 line-wrapping requires a non-zero encoded line length. This
+    /// helper is useful when accepting a wrapping policy from configuration or
+    /// another untrusted source.
+    #[must_use]
+    pub const fn checked_new(line_len: usize, line_ending: LineEnding) -> Option<Self> {
+        if line_len == 0 {
+            None
+        } else {
+            Some(Self::new(line_len, line_ending))
+        }
+    }
+
+    /// Returns whether this wrapping policy can be used by the encoder.
+    #[must_use]
+    pub const fn is_valid(self) -> bool {
+        self.line_len != 0
+    }
 }
 
 #[allow(unsafe_code)]

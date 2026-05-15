@@ -35,6 +35,8 @@
   for real verifier failures.
 - Added const policy introspection helpers for engines, named profiles, and
   constant-time-oriented decoders.
+- Added const `LineWrap::checked_new` and `LineWrap::is_valid` helpers for
+  defensive construction of line-wrapping policies.
 
 ## 0.7.0 - 2026-05-15
 

@@ -916,6 +916,11 @@ fn wrapped_encoded_len_accounts_for_inserted_line_endings() {
     let lf_4 = LineWrap::new(4, LineEnding::Lf);
     let crlf_4 = LineWrap::new(4, LineEnding::CrLf);
 
+    assert!(lf_4.is_valid());
+    assert_eq!(LineWrap::checked_new(4, LineEnding::Lf), Some(lf_4));
+    assert_eq!(LineWrap::checked_new(0, LineEnding::Lf), None);
+    assert!(!LineWrap::new(0, LineEnding::Lf).is_valid());
+
     assert_eq!(wrapped_encoded_len(0, true, lf_4), Ok(0));
     assert_eq!(wrapped_encoded_len(5, true, lf_4), Ok(9));
     assert_eq!(wrapped_encoded_len(5, true, crlf_4), Ok(10));
