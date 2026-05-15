@@ -1812,10 +1812,11 @@ impl<const CAP: usize> PartialEq for EncodedBuffer<CAP> {
 /// decoded keys, tokens, and other values that should not be accidentally
 /// logged. The buffer exposes contents only through explicit reveal methods.
 ///
-/// On drop, initialized bytes and vector spare capacity are cleared with the
-/// crate's internal best-effort wipe helpers. This is data-retention reduction,
-/// not a formal zeroization guarantee, and it cannot make claims about
-/// allocator behavior or historical copies outside the wrapper.
+/// Spare vector capacity is cleared when wrapping owned bytes. On drop,
+/// initialized bytes and vector spare capacity are cleared with the crate's
+/// internal best-effort wipe helpers. This is data-retention reduction, not a
+/// formal zeroization guarantee, and it cannot make claims about allocator
+/// behavior or historical copies outside the wrapper.
 #[cfg(feature = "alloc")]
 pub struct SecretBuffer {
     bytes: alloc::vec::Vec<u8>,
@@ -1833,9 +1834,7 @@ impl SecretBuffer {
     /// Copies a slice into an owned sensitive buffer.
     #[must_use]
     pub fn from_slice(bytes: &[u8]) -> Self {
-        Self {
-            bytes: bytes.to_vec(),
-        }
+        Self::from_vec(bytes.to_vec())
     }
 
     /// Returns the number of initialized secret bytes.

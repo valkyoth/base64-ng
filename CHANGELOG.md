@@ -45,6 +45,8 @@
   construction of wrapped profiles.
 - Tightened `SecretBuffer::from_vec` to wipe vector spare capacity immediately
   when wrapping caller-provided vectors.
+- Routed `SecretBuffer::from_slice` through the same spare-capacity cleanup
+  path as `SecretBuffer::from_vec`.
 
 ## 0.7.0 - 2026-05-15
 
