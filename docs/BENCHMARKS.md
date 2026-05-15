@@ -21,6 +21,16 @@ Run the benchmark locally:
 cargo run --release --manifest-path perf/Cargo.toml
 ```
 
+Capture benchmark output and a release-evidence manifest:
+
+```sh
+BASE64_NG_RUN_PERF=1 scripts/check_perf.sh
+```
+
+This writes `target/release-evidence/perf/perf-output.csv` and
+`target/release-evidence/perf/MANIFEST.txt` with toolchain metadata, command
+status, and artifact checksums.
+
 Output is CSV:
 
 ```text

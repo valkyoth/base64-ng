@@ -238,6 +238,15 @@ Run local scalar comparison measurements with:
 cargo run --release --manifest-path perf/Cargo.toml
 ```
 
+Capture benchmark output and a manifest with:
+
+```sh
+BASE64_NG_RUN_PERF=1 scripts/check_perf.sh
+```
+
+This writes `target/release-evidence/perf/perf-output.csv` and
+`target/release-evidence/perf/MANIFEST.txt`.
+
 Performance numbers are release notes evidence only when paired with hardware,
 OS, Rust version, CPU governor, and the exact command output.
 

@@ -11,6 +11,8 @@
   metadata, command status, and captured-output checksums.
 - Added backend evidence capture to the stable release gate and made packaged
   release metadata explicitly require the SIMD admission manifest.
+- Added opt-in performance evidence capture with benchmark output and manifest
+  generation under `target/release-evidence/perf/`.
 
 ## 0.7.0 - 2026-05-15
 
