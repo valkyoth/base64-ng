@@ -44,7 +44,7 @@ Implemented now:
 
 Planned behind admission evidence:
 
-- Admitted AVX2, AVX-512, and ARM NEON fast paths.
+- Admitted AVX2, AVX-512, ARM NEON, and wasm `simd128` fast paths.
 - Async streaming wrappers only after the `tokio` feature passes the
   dependency and cancellation-safety admission bar in [docs/ASYNC.md](docs/ASYNC.md).
 - Expanded Kani proof harnesses.

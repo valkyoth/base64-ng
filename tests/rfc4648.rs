@@ -255,6 +255,11 @@ fn runtime_backend_report_keeps_scalar_active() {
     );
     assert_eq!(runtime::Backend::Avx2.required_cpu_features(), ["avx2"]);
     assert_eq!(runtime::Backend::Neon.required_cpu_features(), ["neon"]);
+    assert_eq!(runtime::Backend::WasmSimd128.as_str(), "wasm-simd128");
+    assert_eq!(
+        runtime::Backend::WasmSimd128.required_cpu_features(),
+        ["simd128"]
+    );
     assert!(display.contains("active=scalar"));
     assert!(display.contains("candidate_required_cpu_features="));
     assert!(display.contains("accelerated_backend_active=false"));

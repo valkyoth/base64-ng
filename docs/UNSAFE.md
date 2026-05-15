@@ -163,6 +163,9 @@ Unsafe SIMD can become an active backend only after scalar differential tests,
 fuzz evidence, architecture-specific build evidence, benchmark evidence, and
 review of this inventory all pass for that release.
 
+The admission bar applies equally to AVX2, AVX-512, NEON, wasm `simd128`, and
+any other future vector backend.
+
 Any admitted SIMD path that processes caller data must also document its
 register-retention cleanup strategy. The current prototypes only construct and
 store zero vectors before scalar-equivalent writes; real vectorized

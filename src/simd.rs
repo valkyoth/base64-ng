@@ -7,8 +7,9 @@
 //! this boundary, with a local safety explanation for every unsafe block.
 //!
 //! The module intentionally contains no accelerated backend yet. The `simd`
-//! feature remains a compile-time reservation until AVX-512, AVX2, and NEON
-//! paths have scalar differential tests, fuzz coverage, and benchmark evidence.
+//! feature remains a compile-time reservation until AVX-512, AVX2, NEON, and
+//! wasm `simd128` paths have scalar differential tests, fuzz coverage, and
+//! benchmark evidence.
 
 #[cfg(any(
     target_arch = "x86",
@@ -53,6 +54,9 @@ pub(crate) enum Candidate {
     /// ARM NEON is available as a future candidate.
     #[cfg(any(target_arch = "aarch64", target_arch = "arm"))]
     Neon,
+    /// wasm32 `simd128` is available as a future candidate.
+    #[cfg(target_arch = "wasm32")]
+    WasmSimd128,
 }
 
 /// Returns the backend that is allowed to execute for this build.
@@ -84,6 +88,13 @@ pub(crate) fn detected_candidate() -> Candidate {
     {
         if neon_available() {
             return Candidate::Neon;
+        }
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    {
+        if wasm_simd128_available() {
+            return Candidate::WasmSimd128;
         }
     }
 
@@ -119,6 +130,11 @@ fn avx2_available() -> bool {
 #[cfg(any(target_arch = "aarch64", target_arch = "arm"))]
 fn neon_available() -> bool {
     cfg!(target_arch = "aarch64") || cfg!(target_feature = "neon")
+}
+
+#[cfg(target_arch = "wasm32")]
+fn wasm_simd128_available() -> bool {
+    cfg!(target_feature = "simd128")
 }
 
 /// Encodes one 48-byte block into 64 bytes through the inactive AVX-512 prototype.

@@ -8,8 +8,9 @@
 //! `base64-ng` is a `no_std`-first Base64 encoder and decoder.
 //!
 //! This initial release provides strict scalar RFC 4648-style behavior and
-//! caller-owned output buffers. Future SIMD fast paths will be required to
-//! match this scalar module byte-for-byte.
+//! caller-owned output buffers. Future SIMD fast paths, including AVX, NEON,
+//! and wasm `simd128` candidates, will be required to match this scalar module
+//! byte-for-byte.
 //!
 //! # Examples
 //!
@@ -66,6 +67,8 @@ pub mod runtime {
         Avx2,
         /// An ARM NEON candidate was detected.
         Neon,
+        /// A wasm `simd128` candidate was detected.
+        WasmSimd128,
     }
 
     impl Backend {
@@ -81,6 +84,7 @@ pub mod runtime {
                 Self::Avx512Vbmi => "avx512-vbmi",
                 Self::Avx2 => "avx2",
                 Self::Neon => "neon",
+                Self::WasmSimd128 => "wasm-simd128",
             }
         }
 
@@ -103,6 +107,7 @@ pub mod runtime {
                 Self::Avx512Vbmi => &["avx512f", "avx512bw", "avx512vl", "avx512vbmi"],
                 Self::Avx2 => &["avx2"],
                 Self::Neon => &["neon"],
+                Self::WasmSimd128 => &["simd128"],
             }
         }
     }
@@ -419,6 +424,8 @@ pub mod runtime {
             super::simd::Candidate::Avx2 => Backend::Avx2,
             #[cfg(any(target_arch = "aarch64", target_arch = "arm"))]
             super::simd::Candidate::Neon => Backend::Neon,
+            #[cfg(target_arch = "wasm32")]
+            super::simd::Candidate::WasmSimd128 => Backend::WasmSimd128,
         }
     }
 

@@ -350,6 +350,8 @@ the zero-runtime-dependency stance.
 - Add a release-gated SIMD admission validator that keeps active dispatch
   scalar-only until scalar differential tests, fuzz evidence, unsafe inventory
   updates, benchmark evidence, and release-note wording are updated together.
+- Add wasm `simd128` candidate reporting and reserved feature-bundle compile
+  checks while keeping scalar as the only active backend.
 - Replace inactive SIMD encode prototypes with real AVX2, AVX-512, NEON,
   SSSE3/SSE4.1, and wasm `simd128` candidate implementations only when scalar
   differential tests, fuzz evidence, target-feature checks, unsafe inventory

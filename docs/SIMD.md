@@ -22,8 +22,8 @@ weakening the scalar trust base.
 - Encode and decode entry points already pass through an internal backend
   boundary, currently backed only by the scalar implementation.
 - With the `simd` feature enabled, the private dispatch scaffold detects
-  AVX-512 VBMI, AVX2, and NEON candidates but still activates only the scalar
-  backend.
+  AVX-512 VBMI, AVX2, NEON, and wasm `simd128` candidates but still activates
+  only the scalar backend.
 - AVX-512 VBMI detection is reporting-only until an implementation has scalar
   differential tests, fuzz coverage, and benchmark evidence. Detection requires
   the full planned feature bundle: `avx512f`, `avx512bw`, `avx512vl`, and
@@ -41,6 +41,8 @@ weakening the scalar trust base.
   and is tested against scalar output only when AVX2 is available.
 - An inactive NEON fixed-block encode prototype exists behind the same boundary
   and is tested against scalar output only on NEON-capable ARM targets.
+- wasm `simd128` detection is reporting-only when `wasm32` is compiled with
+  `target-feature=+simd128`; no wasm accelerated backend is active.
 - `runtime::backend_report()` reports the active backend, detected candidate,
   SIMD feature status, and scalar-only security posture.
 - `runtime::require_backend_policy()` allows deployments to enforce scalar
@@ -78,8 +80,8 @@ scripts/check_simd_feature_bundles.sh
 ```
 
 This does not execute accelerated code. It proves the reserved AVX2,
-AVX-512, and NEON feature-gated code still compiles under `no_std` when the
-corresponding Rust targets are installed.
+AVX-512, NEON, and wasm `simd128` feature-gated code still compiles under
+`no_std` when the corresponding Rust targets are installed.
 
 Capture local backend and prototype evidence:
 
@@ -93,7 +95,8 @@ copy into release notes or issue discussion.
 
 ## Required Before SIMD Code Lands
 
-Any AVX2, NEON, AVX-512, or runtime-dispatch implementation must include:
+Any AVX2, NEON, AVX-512, wasm `simd128`, or runtime-dispatch implementation
+must include:
 
 - The dedicated `src/simd.rs` boundary for all architecture-specific code.
 - Crate-level `deny(unsafe_code)` must continue to reject unsafe outside the
