@@ -200,7 +200,9 @@ scripts/generate_ct_asm_evidence.sh
 ```
 
 The script writes `target/release-evidence/asm/base64_ng-no-default-features.s`
-and `target/release-evidence/asm/base64_ng-all-features.s`.
+and `target/release-evidence/asm/base64_ng-all-features.s`, plus
+`target/release-evidence/asm/MANIFEST.txt` with rustc metadata, commands,
+review focus, and artifact checksums.
 
 ## Performance Evidence
 

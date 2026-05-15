@@ -149,7 +149,7 @@ Minimum local commands:
 scripts/generate_ct_asm_evidence.sh
 ```
 
-The script writes release assembly artifacts under
+The script writes release assembly artifacts and a checksum manifest under
 `target/release-evidence/asm/` for no-default-features and all-features builds.
 It wraps these raw compiler invocations:
 
