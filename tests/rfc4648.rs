@@ -2354,6 +2354,13 @@ fn secret_buffer_from_vec_preserves_visible_bytes_with_spare_capacity() {
     text.push_str("token");
     let secret = SecretBuffer::from(text);
     assert_eq!(secret.expose_secret(), b"token");
+
+    let secret = SecretBuffer::from_slice(b"token");
+    assert_eq!(secret.try_into_exposed_string().unwrap(), "token");
+
+    let secret = SecretBuffer::from_slice(b"\xff");
+    let secret = secret.try_into_exposed_string().unwrap_err();
+    assert_eq!(secret.expose_secret(), b"\xff");
 }
 
 #[cfg(feature = "alloc")]

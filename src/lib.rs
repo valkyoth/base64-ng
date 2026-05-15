@@ -2151,6 +2151,26 @@ impl SecretBuffer {
         core::mem::take(&mut self.bytes)
     }
 
+    /// Consumes the wrapper and returns the owned secret bytes as UTF-8 text.
+    ///
+    /// This is an explicit escape hatch for interop with APIs that require an
+    /// owned string. The returned `String` is no longer redacted by formatting
+    /// and will not be cleared by `SecretBuffer` on drop; callers that keep
+    /// handling sensitive data should arrange their own cleanup.
+    ///
+    /// If the secret bytes are not valid UTF-8, the original redacted wrapper
+    /// is returned unchanged.
+    pub fn try_into_exposed_string(self) -> Result<alloc::string::String, Self> {
+        if core::str::from_utf8(self.expose_secret()).is_err() {
+            return Err(self);
+        }
+
+        match alloc::string::String::from_utf8(self.into_exposed_vec()) {
+            Ok(text) => Ok(text),
+            Err(error) => Err(Self::from_vec(error.into_bytes())),
+        }
+    }
+
     /// Compares this secret to `other` without short-circuiting on the first
     /// differing byte.
     ///
