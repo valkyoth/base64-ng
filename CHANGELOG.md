@@ -82,6 +82,7 @@
   and accepted trailing line endings.
 - Clarified that current `0.8` development remains scalar-only unless a full
   SIMD admission evidence package lands in the same release series.
+- Added doctested examples for wrapped and profile-level in-place decode APIs.
 
 ## 0.7.0 - 2026-05-15
 

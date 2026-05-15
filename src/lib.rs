@@ -2413,6 +2413,18 @@ where
     ///
     /// For wrapped profiles, configured line endings are compacted out before
     /// decoding. If validation fails, the buffer contents are unspecified.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use base64_ng::{LineEnding, LineWrap, Profile, STANDARD};
+    ///
+    /// let profile = Profile::new(STANDARD, Some(LineWrap::new(4, LineEnding::Lf)));
+    /// let mut buffer = *b"aGVs\nbG8=";
+    /// let decoded = profile.decode_in_place(&mut buffer).unwrap();
+    ///
+    /// assert_eq!(decoded, b"hello");
+    /// ```
     pub fn decode_in_place<'a>(&self, buffer: &'a mut [u8]) -> Result<&'a mut [u8], DecodeError> {
         match self.wrap {
             Some(wrap) => self.engine.decode_in_place_wrapped(buffer, wrap),
@@ -2425,6 +2437,19 @@ where
     ///
     /// If validation or decoding fails, the entire buffer is cleared before the
     /// error is returned.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use base64_ng::{LineEnding, LineWrap, Profile, STANDARD};
+    ///
+    /// let profile = Profile::new(STANDARD, Some(LineWrap::new(4, LineEnding::Lf)));
+    /// let mut buffer = *b"aGVs\nbG8=";
+    /// let len = profile.decode_in_place_clear_tail(&mut buffer).unwrap().len();
+    ///
+    /// assert_eq!(&buffer[..len], b"hello");
+    /// assert!(buffer[len..].iter().all(|byte| *byte == 0));
+    /// ```
     pub fn decode_in_place_clear_tail<'a>(
         &self,
         buffer: &'a mut [u8],
@@ -4194,6 +4219,19 @@ where
     /// lines must contain exactly `wrap.line_len` encoded bytes; the final line
     /// may be shorter. A single trailing line ending after the final line is
     /// accepted. If validation fails, the buffer contents are unspecified.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use base64_ng::{LineEnding, LineWrap, STANDARD};
+    ///
+    /// let mut buffer = *b"aGVs\nbG8=";
+    /// let decoded = STANDARD
+    ///     .decode_in_place_wrapped(&mut buffer, LineWrap::new(4, LineEnding::Lf))
+    ///     .unwrap();
+    ///
+    /// assert_eq!(decoded, b"hello");
+    /// ```
     pub fn decode_in_place_wrapped<'a>(
         &self,
         buffer: &'a mut [u8],
@@ -4210,6 +4248,21 @@ where
     ///
     /// If validation or decoding fails, the entire buffer is cleared before the
     /// error is returned.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use base64_ng::{LineEnding, LineWrap, STANDARD};
+    ///
+    /// let mut buffer = *b"aGVs\nbG8=";
+    /// let len = STANDARD
+    ///     .decode_in_place_wrapped_clear_tail(&mut buffer, LineWrap::new(4, LineEnding::Lf))
+    ///     .unwrap()
+    ///     .len();
+    ///
+    /// assert_eq!(&buffer[..len], b"hello");
+    /// assert!(buffer[len..].iter().all(|byte| *byte == 0));
+    /// ```
     pub fn decode_in_place_wrapped_clear_tail<'a>(
         &self,
         buffer: &'a mut [u8],
