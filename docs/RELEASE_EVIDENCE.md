@@ -157,6 +157,16 @@ scalar-equivalence tests with `--nocapture`. On CPUs with AVX2 or the AVX-512
 candidate bundle, those prototype tests execute the inactive prototype body and
 compare it against scalar output.
 
+The release gate also runs:
+
+```sh
+scripts/validate-simd-admission.sh
+```
+
+That validator keeps active SIMD dispatch scalar-only until the release includes
+the required scalar differential tests, fuzz evidence, unsafe inventory updates,
+architecture evidence, benchmark evidence, and release-note wording.
+
 ## Performance Evidence
 
 The performance harness is intentionally isolated from the published crate.

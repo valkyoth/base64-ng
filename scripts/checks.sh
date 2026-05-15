@@ -16,6 +16,9 @@ scripts/check_reserved_features.sh
 echo "checks: unsafe boundary"
 scripts/validate-unsafe-boundary.sh
 
+echo "checks: SIMD admission policy"
+scripts/validate-simd-admission.sh
+
 echo "checks: panic policy"
 scripts/validate-panic-policy.sh
 

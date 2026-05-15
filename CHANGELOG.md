@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.0-alpha.0 - Unreleased
+
+- Started the next development cycle after the `0.6.0` release.
+- Added a release-gated SIMD admission validator that keeps active dispatch
+  scalar-only until accelerated backend evidence is updated deliberately.
+
 ## 0.6.0 - 2026-05-14
 
 - Started the next development cycle after the `0.5.0` release.

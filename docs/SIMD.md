@@ -1,6 +1,7 @@
 # SIMD Admission Policy
 
-`base64-ng` is intentionally scalar-only in the `0.6.0` release. The crate uses
+`base64-ng` is intentionally scalar-only in the `0.6.0` release and at the
+start of the `0.7.0-alpha.0` development cycle. The crate uses
 `#![deny(unsafe_code)]` and permits reviewed `allow(unsafe_code)` exceptions
 only for the volatile wipe helper in `src/lib.rs` and the private `src/simd.rs`
 boundary. The `simd` feature remains reserved until architecture-specific code
@@ -107,6 +108,23 @@ Any AVX2, NEON, AVX-512, or runtime-dispatch implementation must include:
   enabled target.
 - Benchmark evidence that reports hardware, OS, Rust version, command, and raw
   output.
+
+## Admission Gate
+
+`scripts/validate-simd-admission.sh` keeps SIMD dispatch scalar-only until the
+admission evidence is deliberately updated. The gate currently requires:
+
+- `ActiveBackend` to expose only the `Scalar` variant.
+- `active_backend()` to return `ActiveBackend::Scalar`.
+- No accelerated `ActiveBackend::Avx*`, `ActiveBackend::Neon`,
+  `ActiveBackend::Sse*`, `ActiveBackend::Wasm*`, or generic SIMD dispatch
+  variants in source.
+- Documentation for benchmark evidence, release-note restrictions, and
+  vector-register retention cleanup strategy to remain packaged.
+
+When an accelerated backend is ready for admission, update this gate in the
+same commit as the scalar differential tests, fuzz evidence, unsafe inventory,
+benchmark evidence, and release notes.
 
 ## Dispatch Rules
 

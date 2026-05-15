@@ -90,6 +90,7 @@ for required_script in \
     "scripts/validate-dependencies.sh" \
     "scripts/validate-panic-policy.sh" \
     "scripts/validate-release-metadata.sh" \
+    "scripts/validate-simd-admission.sh" \
     "scripts/validate-unsafe-boundary.sh"
 do
     if [ ! -x "$required_script" ]; then
@@ -163,6 +164,7 @@ for required_package_file in \
     "scripts/validate-dependencies.sh" \
     "scripts/validate-panic-policy.sh" \
     "scripts/validate-release-metadata.sh" \
+    "scripts/validate-simd-admission.sh" \
     "scripts/validate-unsafe-boundary.sh" \
     "src/lib.rs" \
     "tests/rfc4648.rs"
