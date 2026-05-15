@@ -631,6 +631,34 @@ fn ct_validate_and_decode_agree_for_malformed_inputs() {
 }
 
 #[test]
+fn ct_decode_buffer_uses_stack_backed_output() {
+    let decoded = ct::STANDARD.decode_buffer::<5>(b"aGVsbG8=").unwrap();
+    assert_eq!(decoded.as_bytes(), b"hello");
+    assert!(decoded.constant_time_eq(b"hello"));
+    assert_eq!(
+        format!("{decoded:?}"),
+        "DecodedBuffer { bytes: \"<redacted>\", len: 5, capacity: 5 }"
+    );
+
+    let url_safe = ct::URL_SAFE_NO_PAD.decode_buffer::<2>(b"-_8").unwrap();
+    assert_eq!(url_safe.as_bytes(), b"\xfb\xff");
+
+    let too_small: Result<DecodedBuffer<4>, DecodeError> = ct::STANDARD.decode_buffer(b"aGVsbG8=");
+    assert_eq!(
+        too_small,
+        Err(DecodeError::OutputTooSmall {
+            required: 5,
+            available: 4,
+        })
+    );
+
+    assert_eq!(
+        ct::STANDARD.decode_buffer::<6>(b"aGVsbG8$").unwrap_err(),
+        DecodeError::InvalidInput,
+    );
+}
+
+#[test]
 fn ct_decoder_rejects_malformed_inputs() {
     let mut output = [0u8; 8];
 

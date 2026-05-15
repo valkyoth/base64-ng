@@ -57,6 +57,8 @@
   hatch where redaction and `SecretBuffer` drop-time cleanup intentionally end.
 - Added `DecodedBuffer` plus `Engine::decode_buffer` and
   `Profile::decode_buffer` for no-alloc stack-backed decoded output.
+- Added `ct::CtEngine::decode_buffer` for constant-time-oriented no-alloc
+  stack-backed decoded output.
 
 ## 0.7.0 - 2026-05-15
 

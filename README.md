@@ -350,7 +350,8 @@ decode error these variants clear the caller-owned output buffer before
 returning the error. The legacy whitespace profile also provides
 `decode_slice_legacy_clear_tail` and `decode_in_place_legacy_clear_tail`.
 The `ct` module provides the same clear-tail decode variants for callers using
-the constant-time-oriented scalar decoder.
+the constant-time-oriented scalar decoder, plus `ct::CtEngine::decode_buffer`
+for stack-backed no-alloc decoded output.
 
 For short values, `encode_buffer` returns a stack-backed `EncodedBuffer`
 and `decode_buffer` returns a stack-backed `DecodedBuffer` without requiring

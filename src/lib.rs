@@ -1343,8 +1343,8 @@ pub mod stream {
 /// verified cryptographic constant-time API.
 pub mod ct {
     use super::{
-        Alphabet, DecodeError, Standard, UrlSafe, ct_decode_in_place, ct_decode_slice,
-        ct_validate_decode,
+        Alphabet, DecodeError, DecodedBuffer, Standard, UrlSafe, ct_decode_in_place,
+        ct_decode_slice, ct_validate_decode,
     };
     use core::marker::PhantomData;
 
@@ -1482,6 +1482,37 @@ pub mod ct {
             };
             crate::wipe_tail(output, written);
             Ok(written)
+        }
+
+        /// Decodes `input` into a stack-backed buffer.
+        ///
+        /// This uses the same constant-time-oriented scalar decoder as
+        /// [`Self::decode_slice_clear_tail`] and clears the internal backing
+        /// array before returning an error.
+        ///
+        /// # Examples
+        ///
+        /// ```
+        /// use base64_ng::ct;
+        ///
+        /// let decoded = ct::STANDARD.decode_buffer::<5>(b"aGVsbG8=").unwrap();
+        ///
+        /// assert_eq!(decoded.as_bytes(), b"hello");
+        /// ```
+        pub fn decode_buffer<const CAP: usize>(
+            &self,
+            input: &[u8],
+        ) -> Result<DecodedBuffer<CAP>, DecodeError> {
+            let mut output = DecodedBuffer::new();
+            let written = match self.decode_slice_clear_tail(input, &mut output.bytes) {
+                Ok(written) => written,
+                Err(err) => {
+                    output.clear();
+                    return Err(err);
+                }
+            };
+            output.len = written;
+            Ok(output)
         }
 
         /// Decodes `buffer` in place and returns the decoded prefix.

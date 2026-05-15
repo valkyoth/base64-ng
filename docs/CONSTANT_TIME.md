@@ -81,6 +81,11 @@ pub mod ct {
             output: &mut [u8],
         ) -> Result<usize, DecodeError>;
 
+        pub fn decode_buffer<const CAP: usize>(
+            &self,
+            input: &[u8],
+        ) -> Result<DecodedBuffer<CAP>, DecodeError>;
+
         pub fn decode_in_place<'a>(
             &self,
             buffer: &'a mut [u8],
@@ -94,8 +99,8 @@ pub mod ct {
 }
 ```
 
-Allocation helpers may come later, but the current version avoids allocator
-behavior entirely.
+The stack-backed `decode_buffer` helper avoids allocator behavior while keeping
+the same cleanup and redacted formatting posture as `DecodedBuffer`.
 
 ## Implementation Rules
 
