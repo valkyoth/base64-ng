@@ -70,6 +70,8 @@
   decoded output.
 - Added `Engine::encode_wrapped_buffer` and `Engine::decode_wrapped_buffer`
   for strict line-wrapped no-alloc stack-backed output.
+- Added explicit `SecretBuffer` helpers for wrapped encode/decode and legacy
+  whitespace decode.
 
 ## 0.7.0 - 2026-05-15
 

@@ -413,6 +413,19 @@ assert_eq!(decoded.expose_secret(), b"hello");
 assert!(decoded.constant_time_eq(b"hello"));
 assert_eq!(format!("{decoded}"), "<redacted>");
 
+let wrapped = STANDARD
+    .encode_wrapped_secret(b"hello", base64_ng::LineWrap::PEM)
+    .unwrap();
+let unwrapped = STANDARD
+    .decode_wrapped_secret(wrapped.expose_secret(), base64_ng::LineWrap::PEM)
+    .unwrap();
+assert_eq!(unwrapped.expose_secret(), b"hello");
+
+let legacy = STANDARD
+    .decode_secret_legacy(b" aG\r\nVs\tbG8= ")
+    .unwrap();
+assert_eq!(legacy.expose_secret(), b"hello");
+
 let decoded = base64_ng::SecretBuffer::try_from("aGVsbG8=").unwrap();
 assert_eq!(decoded.expose_secret(), b"hello");
 ```

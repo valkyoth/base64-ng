@@ -3600,6 +3600,20 @@ where
         }
     }
 
+    /// Encodes `input` with line wrapping into a redacted owned secret buffer.
+    ///
+    /// This is useful when the wrapped encoded representation itself is
+    /// sensitive and should not be accidentally logged through formatting.
+    #[cfg(feature = "alloc")]
+    pub fn encode_wrapped_secret(
+        &self,
+        input: &[u8],
+        wrap: LineWrap,
+    ) -> Result<SecretBuffer, EncodeError> {
+        self.encode_wrapped_vec(input, wrap)
+            .map(SecretBuffer::from_vec)
+    }
+
     /// Encodes `input` into `output` and clears all bytes after the encoded
     /// prefix.
     ///
@@ -4101,6 +4115,17 @@ where
         Ok(output)
     }
 
+    /// Decodes `input` into a redacted owned secret buffer using the explicit
+    /// legacy whitespace profile.
+    ///
+    /// ASCII space, tab, carriage return, and line feed bytes are ignored.
+    /// Alphabet selection, padding placement, trailing data after padding, and
+    /// non-canonical trailing bits remain strict.
+    #[cfg(feature = "alloc")]
+    pub fn decode_secret_legacy(&self, input: &[u8]) -> Result<SecretBuffer, DecodeError> {
+        self.decode_vec_legacy(input).map(SecretBuffer::from_vec)
+    }
+
     /// Decodes line-wrapped input into a newly allocated byte vector.
     #[cfg(feature = "alloc")]
     pub fn decode_wrapped_vec(
@@ -4119,6 +4144,22 @@ where
         };
         output.truncate(written);
         Ok(output)
+    }
+
+    /// Decodes line-wrapped input into a redacted owned secret buffer.
+    ///
+    /// The wrapped profile accepts only the configured line ending. Non-final
+    /// lines must contain exactly `wrap.line_len` encoded bytes; the final line
+    /// may be shorter. A single trailing line ending after the final line is
+    /// accepted.
+    #[cfg(feature = "alloc")]
+    pub fn decode_wrapped_secret(
+        &self,
+        input: &[u8],
+        wrap: LineWrap,
+    ) -> Result<SecretBuffer, DecodeError> {
+        self.decode_wrapped_vec(input, wrap)
+            .map(SecretBuffer::from_vec)
     }
 
     /// Decodes the buffer in place and returns the decoded prefix.

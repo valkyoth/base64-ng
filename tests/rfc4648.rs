@@ -2290,6 +2290,47 @@ fn secret_encode_and_decode_helpers_round_trip() {
 
 #[cfg(feature = "alloc")]
 #[test]
+fn explicit_profile_secret_helpers_round_trip() {
+    let wrap = LineWrap::new(4, LineEnding::Lf);
+
+    let wrapped = STANDARD.encode_wrapped_secret(b"hello", wrap).unwrap();
+    assert_eq!(wrapped.expose_secret(), b"aGVs\nbG8=");
+    assert_eq!(
+        format!("{wrapped:?}"),
+        r#"SecretBuffer { bytes: "<redacted>", len: 9 }"#
+    );
+
+    let decoded = STANDARD
+        .decode_wrapped_secret(wrapped.expose_secret(), wrap)
+        .unwrap();
+    assert_eq!(decoded.expose_secret(), b"hello");
+
+    let legacy = STANDARD.decode_secret_legacy(b" aG\r\nVs\tbG8= ").unwrap();
+    assert_eq!(legacy.expose_secret(), b"hello");
+
+    assert_eq!(
+        STANDARD
+            .encode_wrapped_secret(b"hello", LineWrap::new(0, LineEnding::Lf))
+            .unwrap_err(),
+        EncodeError::InvalidLineWrap { line_len: 0 }
+    );
+    assert_eq!(
+        STANDARD
+            .decode_wrapped_secret(b"aG\nVsbG8=", wrap)
+            .unwrap_err(),
+        DecodeError::InvalidLineWrap { index: 2 }
+    );
+    assert_eq!(
+        STANDARD.decode_secret_legacy(b" aG-V ").unwrap_err(),
+        DecodeError::InvalidByte {
+            index: 3,
+            byte: b'-',
+        }
+    );
+}
+
+#[cfg(feature = "alloc")]
+#[test]
 fn secret_buffer_try_from_uses_strict_standard_base64() {
     let decoded = SecretBuffer::try_from("aGVsbG8=").unwrap();
     assert_eq!(decoded.expose_secret(), b"hello");
