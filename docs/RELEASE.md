@@ -169,6 +169,11 @@ Capture local backend evidence with:
 scripts/check_backend_evidence.sh
 ```
 
+The script writes a backend evidence manifest under
+`target/release-evidence/backend/` with toolchain metadata, command status, and
+checksums for the captured runtime backend report and inactive SIMD prototype
+equivalence output.
+
 ## Publish
 
 After the release gate passes:

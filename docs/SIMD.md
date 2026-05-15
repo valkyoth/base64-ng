@@ -99,7 +99,9 @@ scripts/check_backend_evidence.sh
 
 This prints the runtime backend-report test and runs the gated SIMD prototype
 scalar-equivalence tests with `--nocapture`, so local CPU evidence is easy to
-copy into release notes or issue discussion.
+copy into release notes or issue discussion. It also writes
+`target/release-evidence/backend/MANIFEST.txt` with toolchain metadata,
+commands, status values, and artifact checksums.
 
 ## Required Before SIMD Code Lands
 

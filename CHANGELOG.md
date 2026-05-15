@@ -7,6 +7,8 @@
   alphabet marker types and validates their 64-byte tables at compile time.
 - Added a SIMD admission manifest and release-gate validation that keeps active
   hardware acceleration blocked until backend-specific evidence is recorded.
+- Extended backend evidence capture to write a manifest with toolchain
+  metadata, command status, and captured-output checksums.
 
 ## 0.7.0 - 2026-05-15
 

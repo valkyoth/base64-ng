@@ -167,7 +167,9 @@ scripts/check_backend_evidence.sh
 The script runs the runtime backend-report test and the gated SIMD prototype
 scalar-equivalence tests with `--nocapture`. On CPUs with SSSE3/SSE4.1, AVX2,
 or the AVX-512 candidate bundle, those prototype tests execute the inactive
-prototype body and compare it against scalar output.
+prototype body and compare it against scalar output. The script writes
+`target/release-evidence/backend/MANIFEST.txt`, `runtime-backend-report.txt`,
+and `simd-prototype-equivalence.txt` so local CPU evidence can be archived.
 
 The release gate also runs:
 
