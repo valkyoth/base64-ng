@@ -20,8 +20,8 @@ if [ "$matches" != "$allowed" ]; then
 fi
 
 root_allow_count="$(grep -c '^#\[allow(unsafe_code)\]$' "$root_allowed" || true)"
-if [ "$root_allow_count" -ne 1 ]; then
-    echo "unsafe boundary: src/lib.rs must have exactly one reviewed allow(unsafe_code)"
+if [ "$root_allow_count" -ne 2 ]; then
+    echo "unsafe boundary: src/lib.rs must have exactly two reviewed allow(unsafe_code) cleanup helpers"
     exit 1
 fi
 
@@ -29,14 +29,15 @@ if ! awk '
     /^#\[allow\(unsafe_code\)\]$/ {
         allow_line = NR
     }
-    /^fn wipe_bytes\(/ {
+    /^fn wipe_bytes\(/ || /^fn wipe_vec_spare_capacity\(/ {
         if (allow_line != NR - 1) {
             failed = 1
         }
+        seen += 1
     }
-    END { exit failed }
+    END { exit failed || seen != 2 }
 ' "$root_allowed"; then
-    echo "unsafe boundary: src/lib.rs allow(unsafe_code) must apply only to wipe_bytes"
+    echo "unsafe boundary: src/lib.rs allow(unsafe_code) must apply only to reviewed cleanup helpers"
     exit 1
 fi
 

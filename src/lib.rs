@@ -1635,6 +1635,29 @@ fn wipe_tail(bytes: &mut [u8], start: usize) {
     wipe_bytes(&mut bytes[start..]);
 }
 
+#[cfg(feature = "alloc")]
+#[allow(unsafe_code)]
+fn wipe_vec_spare_capacity(bytes: &mut alloc::vec::Vec<u8>) {
+    let ptr = bytes.as_mut_ptr();
+    let mut offset = bytes.len();
+    while offset < bytes.capacity() {
+        // SAFETY: `offset` is within the vector allocation's spare capacity, so
+        // the pointer is valid, aligned, and writable for one `u8`. This writes
+        // a zero byte without reading the prior uninitialized value.
+        unsafe {
+            core::ptr::write_volatile(ptr.add(offset), 0);
+        }
+        offset += 1;
+    }
+    core::sync::atomic::compiler_fence(core::sync::atomic::Ordering::SeqCst);
+}
+
+#[cfg(feature = "alloc")]
+fn wipe_vec_all(bytes: &mut alloc::vec::Vec<u8>) {
+    wipe_bytes(bytes);
+    wipe_vec_spare_capacity(bytes);
+}
+
 /// Stack-backed encoded Base64 output.
 ///
 /// This type is intended for short values where heap allocation would be
@@ -1761,10 +1784,10 @@ impl<const CAP: usize> PartialEq for EncodedBuffer<CAP> {
 /// decoded keys, tokens, and other values that should not be accidentally
 /// logged. The buffer exposes contents only through explicit reveal methods.
 ///
-/// On drop, initialized bytes are cleared with the crate's internal best-effort
-/// wipe helper. This is data-retention reduction, not a formal zeroization
-/// guarantee, and it cannot make claims about allocator spare capacity or
-/// historical copies outside the wrapper.
+/// On drop, initialized bytes and vector spare capacity are cleared with the
+/// crate's internal best-effort wipe helpers. This is data-retention reduction,
+/// not a formal zeroization guarantee, and it cannot make claims about
+/// allocator behavior or historical copies outside the wrapper.
 #[cfg(feature = "alloc")]
 pub struct SecretBuffer {
     bytes: alloc::vec::Vec<u8>,
@@ -1818,7 +1841,7 @@ impl SecretBuffer {
 
     /// Clears the initialized bytes and makes the buffer empty.
     pub fn clear(&mut self) {
-        wipe_bytes(&mut self.bytes);
+        wipe_vec_all(&mut self.bytes);
         self.bytes.clear();
     }
 }
@@ -1851,7 +1874,7 @@ impl core::fmt::Display for SecretBuffer {
 #[cfg(feature = "alloc")]
 impl Drop for SecretBuffer {
     fn drop(&mut self) {
-        wipe_bytes(&mut self.bytes);
+        wipe_vec_all(&mut self.bytes);
     }
 }
 

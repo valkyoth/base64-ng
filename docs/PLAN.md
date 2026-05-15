@@ -115,9 +115,10 @@ Any dependency addition must answer:
 ### Hard Rules
 
 - Scalar encode/decode remains safe Rust.
-- The scalar-side volatile wipe helper is the only non-SIMD unsafe admission.
+- The scalar-side volatile wipe helpers are the only non-SIMD unsafe
+  admissions.
 - Unsafe SIMD must live under dedicated modules.
-- `allow(unsafe_code)` must remain confined to the volatile wipe helper and
+- `allow(unsafe_code)` must remain confined to the volatile wipe helpers and
   `src/simd.rs`.
 - Every unsafe block requires a local safety explanation.
 - Every SIMD path must have deterministic and fuzzed differential tests against scalar.
@@ -178,8 +179,8 @@ the zero-runtime-dependency stance.
 - Custom alphabet validation helpers with duplicate-character, padding-byte,
   and visible-ASCII checks.
 - Stack-backed encoded output helpers for short values without `alloc`.
-- Internal safe-Rust best-effort wipe helpers for initialized bytes and
-  redacted `SecretBuffer` owned outputs when `alloc` is enabled.
+- Internal best-effort wipe helpers for initialized bytes, vector spare
+  capacity, and redacted `SecretBuffer` owned outputs when `alloc` is enabled.
 - Zero-dependency `TryFrom<&str>` and `TryFrom<&[u8]>` interop for strict
   standard padded `SecretBuffer` decoding.
 - README trust dashboard and CWE/security-control mapping documentation.
@@ -279,7 +280,7 @@ the zero-runtime-dependency stance.
 - Backend differential tests that compare dispatch behavior against the scalar
   reference for canonical, malformed, and undersized-buffer cases.
 - Unsafe admission boundary in code and checks: crate-level `deny(unsafe_code)`
-  with `allow(unsafe_code)` confined to the volatile wipe helper and
+  with `allow(unsafe_code)` confined to the volatile wipe helpers and
   `src/simd.rs`.
 - SIMD dispatch scaffold that detects AVX2/NEON candidates while keeping
   scalar as the only active backend.

@@ -173,7 +173,7 @@ wrappers.
 ## Security Notes
 
 The scalar encode/decode core has no external crate dependencies and remains
-safe Rust. The only scalar-side unsafe code is the audited volatile wipe helper
+safe Rust. The only scalar-side unsafe code is the audited volatile wipe helpers
 used by clear-tail and secret-buffer cleanup APIs; architecture-specific unsafe
 code remains limited to the dedicated SIMD boundary.
 Release gates include tests, clippy, docs, dependency policy, RustSec audit,

@@ -2,7 +2,7 @@
 
 `base64-ng` keeps scalar encode/decode in safe Rust. The crate root uses
 `#![deny(unsafe_code)]`, and reviewed `allow(unsafe_code)` exceptions are
-limited to the volatile wipe helper in `src/lib.rs` and the SIMD boundary in
+limited to volatile wipe helpers in `src/lib.rs` and the SIMD boundary in
 `src/simd.rs`.
 
 This inventory is intentionally small and release-gate enforced. Any new unsafe
@@ -10,10 +10,10 @@ block must be added here before an accelerated backend can be admitted.
 
 ## Policy
 
-- Default builds compile one audited unsafe volatile wipe helper.
+- Default builds compile audited unsafe volatile wipe helpers.
 - Optional SIMD prototypes live only in `src/simd.rs`.
 - `scripts/validate-unsafe-boundary.sh` fails if `allow(unsafe_code)` appears
-  outside the volatile wipe helper or `src/simd.rs`.
+  outside the volatile wipe helpers or `src/simd.rs`.
 - `scripts/validate-unsafe-boundary.sh` fails if architecture intrinsics, CPU
   feature detection, or `target_feature` gates appear outside `src/simd.rs`.
 - Every unsafe function and unsafe block must have a local safety explanation.
@@ -56,6 +56,47 @@ Limitations:
 - This is best-effort data-retention reduction, not a formal zeroization
   guarantee. It cannot clear historical copies, allocator spare capacity, swap,
   core dumps, CPU registers, or buffers outside the slice provided to the API.
+
+### `wipe_vec_spare_capacity`
+
+Location: `src/lib.rs`
+
+Status: active cleanup primitive when `alloc` is enabled.
+
+Purpose:
+
+- Clear vector spare capacity for `SecretBuffer` so previously written bytes in
+  the same allocation are not left untouched when the wrapper is dropped or
+  explicitly cleared.
+- Keep spare-capacity cleanup dependency-free while still using volatile writes.
+
+Preconditions:
+
+- Caller must pass a valid mutable `Vec<u8>`.
+
+Unsafe operation:
+
+- `core::ptr::write_volatile` writes zero to each byte from `len` up to
+  `capacity`.
+- `ptr.add(offset)` computes a pointer inside the vector allocation's spare
+  capacity.
+
+Safety argument:
+
+- The loop writes only while `offset < capacity`, so each computed pointer is
+  inside the vector allocation.
+- A `Vec<u8>` allocation is valid and aligned for `u8` writes across its full
+  capacity.
+- The helper does not read uninitialized spare-capacity bytes; it only writes
+  zeros.
+- A `SeqCst` compiler fence follows the volatile write loop to prevent
+  reordering around the cleanup boundary.
+
+Limitations:
+
+- This is best-effort data-retention reduction, not a formal zeroization
+  guarantee. It cannot make claims about allocator internals, historical copies,
+  swap, core dumps, CPU registers, or buffers outside the vector allocation.
 
 ### `encode_48_bytes_avx512`
 

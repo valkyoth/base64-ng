@@ -3,7 +3,7 @@
 `base64-ng` is intentionally scalar-only in the `0.7.0` release and at the
 start of the `0.8.0-alpha.0` development cycle. The crate uses
 `#![deny(unsafe_code)]` and permits reviewed `allow(unsafe_code)` exceptions
-only for the volatile wipe helper in `src/lib.rs` and the private `src/simd.rs`
+only for volatile wipe helpers in `src/lib.rs` and the private `src/simd.rs`
 boundary. The `simd` feature remains reserved until architecture-specific code
 has enough evidence to justify enabling it.
 
@@ -13,10 +13,10 @@ weakening the scalar trust base.
 
 ## Current Status
 
-- Default builds compile one audited unsafe volatile wipe helper; scalar
+- Default builds compile audited unsafe volatile wipe helpers; scalar
   encode/decode remains safe Rust.
 - `scripts/validate-unsafe-boundary.sh` verifies that `allow(unsafe_code)` is
-  confined to the volatile wipe helper and `src/simd.rs`.
+  confined to the volatile wipe helpers and `src/simd.rs`.
 - `docs/UNSAFE.md` inventories every current unsafe site and its invariants.
 - The scalar implementation is the reference behavior.
 - Encode and decode entry points already pass through an internal backend
@@ -110,7 +110,7 @@ must include:
 
 - The dedicated `src/simd.rs` boundary for all architecture-specific code.
 - Crate-level `deny(unsafe_code)` must continue to reject unsafe outside the
-  volatile wipe helper and SIMD module.
+  volatile wipe helpers and SIMD module.
 - A local safety comment for every unsafe block.
 - Deterministic differential tests against scalar encode/decode behavior.
 - Fuzz differential coverage for strict and legacy-compatible inputs where

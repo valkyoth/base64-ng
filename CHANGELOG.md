@@ -17,6 +17,8 @@
   standard padded Base64.
 - Documented the existing `Clone`, `Copy`, `Debug`, `Eq`, and `PartialEq`
   behavior for named `Profile` values with regression coverage.
+- Extended `SecretBuffer` cleanup to best-effort wipe vector spare capacity
+  with an audited volatile helper when `alloc` is enabled.
 
 ## 0.7.0 - 2026-05-15
 

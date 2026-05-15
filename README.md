@@ -369,9 +369,9 @@ let decoded = base64_ng::SecretBuffer::try_from("aGVsbG8=").unwrap();
 assert_eq!(decoded.expose_secret(), b"hello");
 ```
 
-`SecretBuffer` clears initialized bytes when dropped, but it does not claim
-formal zeroization and cannot clean historical copies outside the wrapper or
-allocator spare capacity.
+`SecretBuffer` clears initialized bytes and vector spare capacity when dropped,
+but it does not claim formal zeroization and cannot clean historical copies
+outside the wrapper or make guarantees about allocator behavior.
 
 `TryFrom<&str>` and `TryFrom<&[u8]>` for `SecretBuffer` use strict standard
 padded Base64. Use explicit engine or profile methods for URL-safe, no-padding,
@@ -440,11 +440,11 @@ Security commitments:
 - Stable Rust first. Current toolchain pin: Rust `1.95.0`.
 - `no_std` core by default.
 - Scalar encode/decode remains safe Rust.
-- One audited unsafe helper in `src/lib.rs` performs volatile best-effort
-  wiping so cleanup writes are not optimized away.
+- Audited unsafe helpers in `src/lib.rs` perform volatile best-effort wiping so
+  cleanup writes are not optimized away.
 - Future unsafe SIMD remains isolated under `src/simd.rs`.
 - Local checks verify that `allow(unsafe_code)` is confined to the volatile
-  wipe helper and SIMD boundary, every unsafe function is inventoried, and
+  wipe helpers and SIMD boundary, every unsafe function is inventoried, and
   every unsafe block has a nearby `SAFETY:` explanation. Architecture intrinsics,
   CPU feature detection, and target-feature gates are checked against the same
   boundary.
