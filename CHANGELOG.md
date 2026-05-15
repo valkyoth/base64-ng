@@ -37,6 +37,8 @@
   constant-time-oriented decoders.
 - Added const `LineWrap::checked_new` and `LineWrap::is_valid` helpers for
   defensive construction of line-wrapping policies.
+- Added dependency-free `Default` and `From<Engine<_, _>>` interop for
+  unwrapped `Profile` values.
 
 ## 0.7.0 - 2026-05-15
 

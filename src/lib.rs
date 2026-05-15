@@ -2124,6 +2124,24 @@ where
     }
 }
 
+impl<A, const PAD: bool> Default for Profile<A, PAD>
+where
+    A: Alphabet,
+{
+    fn default() -> Self {
+        Self::new(Engine::new(), None)
+    }
+}
+
+impl<A, const PAD: bool> From<Engine<A, PAD>> for Profile<A, PAD>
+where
+    A: Alphabet,
+{
+    fn from(engine: Engine<A, PAD>) -> Self {
+        Self::new(engine, None)
+    }
+}
+
 /// MIME Base64 profile: standard alphabet, padding, 76-column CRLF wrapping.
 pub const MIME: Profile<Standard, true> = Profile::new(STANDARD, Some(LineWrap::MIME));
 

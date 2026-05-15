@@ -1,9 +1,9 @@
 use base64_ng::{
     Alphabet, AlphabetError, BCRYPT, BCRYPT_NO_PAD, Bcrypt, CRYPT, CRYPT_NO_PAD, Crypt,
     DecodeError, EncodeError, EncodedBuffer, Engine, LineEnding, LineWrap, MIME, PEM, PEM_CRLF,
-    STANDARD, STANDARD_NO_PAD, Standard, URL_SAFE, URL_SAFE_NO_PAD, UrlSafe, checked_encoded_len,
-    ct, decode_alphabet_byte, decoded_capacity, decoded_len, encoded_len, runtime,
-    validate_alphabet, wrapped_encoded_len,
+    Profile, STANDARD, STANDARD_NO_PAD, Standard, URL_SAFE, URL_SAFE_NO_PAD, UrlSafe,
+    checked_encoded_len, ct, decode_alphabet_byte, decoded_capacity, decoded_len, encoded_len,
+    runtime, validate_alphabet, wrapped_encoded_len,
 };
 
 #[cfg(feature = "stream")]
@@ -157,6 +157,11 @@ fn named_profiles_expose_expected_policies() {
         wrapped_encoded_len(58, true, LineWrap::MIME)
     );
     assert_eq!(BCRYPT.encoded_len(3), encoded_len(3, false));
+
+    let standard_profile: Profile<Standard, true> = STANDARD.into();
+    assert_eq!(standard_profile, Profile::<Standard, true>::default());
+    assert!(standard_profile.is_padded());
+    assert!(!standard_profile.is_wrapped());
 }
 
 #[test]
