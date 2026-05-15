@@ -20,7 +20,9 @@ scripts/check_fuzz_corpus.sh
 
 Current fuzz targets:
 
-- `decode`: arbitrary strict, legacy, and constant-time-oriented decode input
+- `decode`: arbitrary strict, strict line-wrapped, legacy, and
+  constant-time-oriented decode input plus wrapped encode slice/alloc
+  equivalence
 - `in_place`: in-place encode/decode, legacy compaction behavior, and strict
   line-wrapped in-place compaction behavior
 - `stream_chunks`: fragmented stream reader/writer state machines and adjacent

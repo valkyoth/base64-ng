@@ -76,6 +76,8 @@
   variants and profile-level forwarding for wrapped MIME/PEM-style profiles.
 - Extended in-place fuzz coverage to compare strict line-wrapped in-place
   decoding against allocated wrapped decoding.
+- Extended decode fuzz coverage to compare strict line-wrapped slice
+  encode/decode helpers against their allocated wrapped helpers.
 
 ## 0.7.0 - 2026-05-15
 
