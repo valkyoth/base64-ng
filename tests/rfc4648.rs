@@ -1684,6 +1684,37 @@ fn legacy_decode_slice_clear_tail_scrubs_output_on_error() {
 }
 
 #[test]
+fn legacy_decode_buffer_uses_stack_backed_output() {
+    let decoded = STANDARD
+        .decode_buffer_legacy::<5>(b" aG\r\nVs\tbG8= ")
+        .unwrap();
+    assert_eq!(decoded.as_bytes(), b"hello");
+    assert_eq!(decoded.as_utf8().unwrap(), "hello");
+
+    let decoded = STANDARD_NO_PAD
+        .decode_buffer_legacy::<5>(b" aG\r\nVs\tbG8 ")
+        .unwrap();
+    assert_eq!(decoded.as_bytes(), b"hello");
+
+    assert_eq!(
+        STANDARD.decode_buffer_legacy::<5>(b" aG-V ").unwrap_err(),
+        DecodeError::InvalidByte {
+            index: 3,
+            byte: b'-',
+        }
+    );
+    assert_eq!(
+        STANDARD
+            .decode_buffer_legacy::<4>(b" aG\r\nVs\tbG8= ")
+            .unwrap_err(),
+        DecodeError::OutputTooSmall {
+            required: 5,
+            available: 4,
+        }
+    );
+}
+
+#[test]
 fn legacy_decode_keeps_strict_alphabet_and_padding_rules() {
     let mut output = [0u8; 16];
     assert_eq!(

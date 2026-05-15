@@ -66,6 +66,8 @@
 - Added `DecodedBuffer::as_utf8` for fallible no-alloc decoded-text views.
 - Added `TryFrom<&str>` and `TryFrom<&[u8]>` for `EncodedBuffer<CAP>` using
   strict standard padded Base64 encoding.
+- Added `Engine::decode_buffer_legacy` for explicit legacy-whitespace no-alloc
+  decoded output.
 
 ## 0.7.0 - 2026-05-15
 

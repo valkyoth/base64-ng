@@ -3943,6 +3943,29 @@ where
         Ok(written)
     }
 
+    /// Decodes `input` into a stack-backed buffer using the explicit legacy
+    /// whitespace profile.
+    ///
+    /// ASCII space, tab, carriage return, and line feed bytes are ignored.
+    /// Alphabet selection, padding placement, trailing data after padding, and
+    /// non-canonical trailing bits remain strict. If decoding fails, the
+    /// internal backing array is cleared before the error is returned.
+    pub fn decode_buffer_legacy<const CAP: usize>(
+        &self,
+        input: &[u8],
+    ) -> Result<DecodedBuffer<CAP>, DecodeError> {
+        let mut output = DecodedBuffer::new();
+        let written = match self.decode_slice_legacy_clear_tail(input, &mut output.bytes) {
+            Ok(written) => written,
+            Err(err) => {
+                output.clear();
+                return Err(err);
+            }
+        };
+        output.len = written;
+        Ok(output)
+    }
+
     /// Decodes `input` using a strict line-wrapped profile.
     ///
     /// The wrapped profile accepts only the configured line ending. Non-final

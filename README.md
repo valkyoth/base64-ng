@@ -194,6 +194,11 @@ use base64_ng::STANDARD;
 
 assert!(STANDARD.validate_legacy(b" aG\r\nVsbG8= "));
 assert!(!STANDARD.validate_legacy(b" aG-V "));
+
+let decoded = STANDARD
+    .decode_buffer_legacy::<5>(b" aG\r\nVs\tbG8= ")
+    .unwrap();
+assert_eq!(decoded.as_bytes(), b"hello");
 ```
 
 ## Line-Wrapped Encoding
@@ -348,10 +353,10 @@ For sensitive payloads, use `decode_slice_clear_tail` or
 `decode_in_place_clear_tail` to clear unused bytes after the decoded prefix. On
 decode error these variants clear the caller-owned output buffer before
 returning the error. The legacy whitespace profile also provides
-`decode_slice_legacy_clear_tail` and `decode_in_place_legacy_clear_tail`.
-The `ct` module provides the same clear-tail decode variants for callers using
-the constant-time-oriented scalar decoder, plus `ct::CtEngine::decode_buffer`
-for stack-backed no-alloc decoded output.
+`decode_slice_legacy_clear_tail`, `decode_in_place_legacy_clear_tail`, and
+`decode_buffer_legacy`. The `ct` module provides the same clear-tail decode
+variants for callers using the constant-time-oriented scalar decoder, plus
+`ct::CtEngine::decode_buffer` for stack-backed no-alloc decoded output.
 
 For short values, `encode_buffer` returns a stack-backed `EncodedBuffer`
 and `decode_buffer` returns a stack-backed `DecodedBuffer` without requiring
