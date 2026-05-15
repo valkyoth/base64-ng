@@ -80,6 +80,8 @@
   encode/decode helpers against their allocated wrapped helpers.
 - Extended wrapped fuzz and regression coverage for unpadded wrapped profiles
   and accepted trailing line endings.
+- Clarified that current `0.8` development remains scalar-only unless a full
+  SIMD admission evidence package lands in the same release series.
 
 ## 0.7.0 - 2026-05-15
 

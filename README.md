@@ -48,8 +48,8 @@ Implemented now:
 Planned behind admission evidence:
 
 - Admitted AVX2, AVX-512, SSSE3/SSE4.1, ARM NEON, and wasm `simd128`
-  fast paths after the SIMD admission evidence is complete. `v0.7` remains
-  scalar-only.
+  fast paths after the SIMD admission evidence is complete. Current `0.8`
+  development remains scalar-only unless that full evidence package lands.
 - Async streaming wrappers only after the `tokio` feature passes the
   dependency and cancellation-safety admission bar in [docs/ASYNC.md](docs/ASYNC.md).
 - Expanded Kani proof harnesses.

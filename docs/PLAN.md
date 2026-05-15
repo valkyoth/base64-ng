@@ -379,13 +379,13 @@ the zero-runtime-dependency stance.
 
 ### v0.8
 
-- Begin active SIMD admission work only if the release can include complete
+- Keep `v0.8` scalar-only unless active SIMD admission can include complete
   scalar differential tests, fuzz evidence, target-feature checks, unsafe
   inventory updates, benchmark evidence, and release-note wording in the same
   commit series.
-- Replace inactive SIMD encode prototypes with real AVX2, AVX-512, NEON,
-  SSSE3/SSE4.1, and wasm `simd128` candidate implementations only when their
-  evidence is complete.
+- Keep inactive SIMD encode prototypes reserved. Replace them with real AVX2,
+  AVX-512, NEON, SSSE3/SSE4.1, and wasm `simd128` candidate implementations
+  only when their evidence is complete.
 - Require every admitted SIMD implementation to document its vector-register
   retention cleanup strategy before it can become an active backend.
 - Keep scalar as the default fallback and require runtime backend policy tests
