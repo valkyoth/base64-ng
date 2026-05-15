@@ -2001,6 +2001,7 @@ fn stack_decoded_buffer_helpers_avoid_alloc_and_clear_tail() {
     assert_eq!(decoded.capacity(), 5);
     assert!(!decoded.is_empty());
     assert_eq!(decoded.as_bytes(), b"hello");
+    assert_eq!(decoded.as_utf8().unwrap(), "hello");
     assert_eq!(decoded.as_ref(), b"hello");
     assert!(decoded.constant_time_eq(b"hello"));
     assert!(!decoded.constant_time_eq(b"Hello"));
@@ -2014,6 +2015,9 @@ fn stack_decoded_buffer_helpers_avoid_alloc_and_clear_tail() {
     assert_eq!(decoded, cloned);
     let different = STANDARD.decode_buffer::<5>(b"d29ybGQ=").unwrap();
     assert_ne!(decoded, different);
+
+    let binary = STANDARD.decode_buffer::<2>(b"//8=").unwrap();
+    assert!(binary.as_utf8().is_err());
 
     let (array, len) = cloned.into_exposed_array();
     assert_eq!(len, 5);

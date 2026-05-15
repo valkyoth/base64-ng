@@ -375,10 +375,10 @@ assert_eq!(decoded.as_bytes(), &[0x5a; 58]);
 ```
 
 `EncodedBuffer` exposes bytes only through `as_bytes` and `as_str`.
-`DecodedBuffer` exposes bytes through `as_bytes`. Both stack-backed buffers
-redact the payload from `Debug`, clear their backing arrays when dropped as
-best-effort data-retention reduction, and use constant-time-oriented
-equal-length equality.
+`DecodedBuffer` exposes bytes through `as_bytes` and provides a fallible
+`as_utf8` view for decoded text. Both stack-backed buffers redact the payload
+from `Debug`, clear their backing arrays when dropped as best-effort
+data-retention reduction, and use constant-time-oriented equal-length equality.
 
 `into_exposed_array` is the explicit no-alloc ownership escape hatch for both
 stack-backed buffers. It returns the backing array and visible length, so

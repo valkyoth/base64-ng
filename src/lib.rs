@@ -1911,6 +1911,15 @@ impl<const CAP: usize> DecodedBuffer<CAP> {
         &self.bytes[..self.len]
     }
 
+    /// Returns the visible decoded bytes as UTF-8 text.
+    ///
+    /// Decoded Base64 output is arbitrary bytes, so this method is fallible.
+    /// Use [`Self::as_bytes`] when the decoded payload is binary or when text
+    /// validation belongs to a higher protocol layer.
+    pub fn as_utf8(&self) -> Result<&str, core::str::Utf8Error> {
+        core::str::from_utf8(self.as_bytes())
+    }
+
     /// Compares this decoded output to `other` without short-circuiting on the
     /// first differing byte.
     ///

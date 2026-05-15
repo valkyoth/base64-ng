@@ -63,6 +63,7 @@
   strict standard padded Base64.
 - Added `into_exposed_array` escape hatches for `EncodedBuffer` and
   `DecodedBuffer`.
+- Added `DecodedBuffer::as_utf8` for fallible no-alloc decoded-text views.
 
 ## 0.7.0 - 2026-05-15
 
