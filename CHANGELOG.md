@@ -33,6 +33,8 @@
   refuses pre-release Cargo versions.
 - Made Kani's expected old-compiler skip path quiet while preserving full logs
   for real verifier failures.
+- Added const policy introspection helpers for engines, named profiles, and
+  constant-time-oriented decoders.
 
 ## 0.7.0 - 2026-05-15
 

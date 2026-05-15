@@ -124,10 +124,32 @@ fn named_profiles_expose_expected_policies() {
         "Profile { engine: Engine { padded: true }, wrap: Some(LineWrap { line_len: 76, line_ending: CrLf }) }"
     );
 
+    assert!(STANDARD.is_padded());
+    assert!(!STANDARD_NO_PAD.is_padded());
+    assert!(URL_SAFE.is_padded());
+    assert!(!URL_SAFE_NO_PAD.is_padded());
+    assert!(!BCRYPT_NO_PAD.is_padded());
+    assert!(!CRYPT_NO_PAD.is_padded());
+
+    assert!(ct::STANDARD.is_padded());
+    assert!(!ct::STANDARD_NO_PAD.is_padded());
+    assert!(ct::URL_SAFE.is_padded());
+    assert!(!ct::URL_SAFE_NO_PAD.is_padded());
+
+    assert!(MIME.is_padded());
+    assert!(MIME.is_wrapped());
     assert_eq!(MIME.line_wrap(), Some(LineWrap::MIME));
+    assert!(PEM.is_padded());
+    assert!(PEM.is_wrapped());
     assert_eq!(PEM.line_wrap(), Some(LineWrap::PEM));
+    assert!(PEM_CRLF.is_padded());
+    assert!(PEM_CRLF.is_wrapped());
     assert_eq!(PEM_CRLF.line_wrap(), Some(LineWrap::PEM_CRLF));
+    assert!(!BCRYPT.is_padded());
+    assert!(!BCRYPT.is_wrapped());
     assert_eq!(BCRYPT.line_wrap(), None);
+    assert!(!CRYPT.is_padded());
+    assert!(!CRYPT.is_wrapped());
     assert_eq!(CRYPT.line_wrap(), None);
 
     assert_eq!(

@@ -1378,6 +1378,13 @@ pub mod ct {
             }
         }
 
+        /// Returns whether this constant-time-oriented decoder expects padded
+        /// input.
+        #[must_use]
+        pub const fn is_padded(&self) -> bool {
+            PAD
+        }
+
         /// Validates `input` without writing decoded bytes.
         ///
         /// This uses the same constant-time-oriented symbol mapping and opaque
@@ -1939,6 +1946,18 @@ where
     #[must_use]
     pub const fn engine(&self) -> Engine<A, PAD> {
         self.engine
+    }
+
+    /// Returns whether this profile uses padded Base64.
+    #[must_use]
+    pub const fn is_padded(&self) -> bool {
+        PAD
+    }
+
+    /// Returns whether this profile carries a strict line-wrapping policy.
+    #[must_use]
+    pub const fn is_wrapped(&self) -> bool {
+        self.wrap.is_some()
     }
 
     /// Returns the strict wrapping policy carried by this profile, if any.
@@ -2739,6 +2758,12 @@ where
         Self {
             alphabet: core::marker::PhantomData,
         }
+    }
+
+    /// Returns whether this engine uses padded Base64.
+    #[must_use]
+    pub const fn is_padded(&self) -> bool {
+        PAD
     }
 
     /// Returns the encoded length for this engine's padding policy.
