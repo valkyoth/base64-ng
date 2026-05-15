@@ -4843,7 +4843,7 @@ fn report_ct_error(invalid_byte: u8, invalid_padding: u8) -> Result<(), DecodeEr
 
 #[cfg(kani)]
 mod kani_proofs {
-    use super::{STANDARD, checked_encoded_len, decoded_capacity};
+    use super::{STANDARD, checked_encoded_len, ct, decoded_capacity};
 
     #[kani::proof]
     fn checked_encoded_len_is_bounded_for_small_inputs() {
@@ -4931,6 +4931,53 @@ mod kani_proofs {
         if result.is_err() {
             assert!(buffer.iter().all(|byte| *byte == 0));
         }
+    }
+
+    #[kani::proof]
+    #[kani::unwind(3)]
+    fn ct_standard_decode_slice_returns_written_within_output() {
+        let input = kani::any::<[u8; 4]>();
+        let mut output = kani::any::<[u8; 3]>();
+        let result = ct::STANDARD.decode_slice(&input, &mut output);
+
+        if let Ok(written) = result {
+            assert!(written <= output.len());
+        }
+    }
+
+    #[kani::proof]
+    #[kani::unwind(3)]
+    fn ct_standard_decode_slice_clear_tail_clears_output_on_error() {
+        let input = kani::any::<[u8; 4]>();
+        let mut output = kani::any::<[u8; 3]>();
+        let result = ct::STANDARD.decode_slice_clear_tail(&input, &mut output);
+
+        if result.is_err() {
+            assert!(output.iter().all(|byte| *byte == 0));
+        }
+    }
+
+    #[kani::proof]
+    #[kani::unwind(3)]
+    fn ct_standard_decode_in_place_clear_tail_clears_buffer_on_error() {
+        let mut buffer = kani::any::<[u8; 4]>();
+        let result = ct::STANDARD.decode_in_place_clear_tail(&mut buffer);
+
+        if result.is_err() {
+            assert!(buffer.iter().all(|byte| *byte == 0));
+        }
+    }
+
+    #[kani::proof]
+    #[kani::unwind(3)]
+    fn ct_standard_validate_matches_decode_for_one_quantum() {
+        let input = kani::any::<[u8; 4]>();
+        let mut output = kani::any::<[u8; 3]>();
+
+        let validate_ok = ct::STANDARD.validate_result(&input).is_ok();
+        let decode_ok = ct::STANDARD.decode_slice(&input, &mut output).is_ok();
+
+        assert!(validate_ok == decode_ok);
     }
 }
 

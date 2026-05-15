@@ -89,6 +89,8 @@ The release gate runs:
   adjacent framed payload boundaries
 - Kani proofs through `scripts/check_kani.sh` when Kani is installed and its
   bundled compiler supports this crate's pinned `rust-version`
+- bounded Kani coverage for constant-time-oriented decode result bounds,
+  clear-tail cleanup on error, and validate/decode agreement
 - SBOM generation
 - reproducible package/build check
 

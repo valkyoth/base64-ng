@@ -20,6 +20,8 @@
   all-features constant-time generated-code review.
 - Added rustc metadata, review-focus notes, and artifact checksums to the
   generated constant-time assembly evidence.
+- Added bounded Kani proof harnesses for constant-time-oriented decode result
+  bounds, error cleanup, and validate/decode agreement.
 
 ## 0.6.0 - 2026-05-14
 

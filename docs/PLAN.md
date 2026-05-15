@@ -361,6 +361,8 @@ the zero-runtime-dependency stance.
   dependency-check the harness in CI and release gates.
 - Generate release assembly artifacts for the scalar constant-time-oriented
   decoder so generated-code review has repeatable inputs.
+- Add bounded Kani proof harnesses for constant-time-oriented decode result
+  bounds, error cleanup, and validate/decode agreement.
 - Replace inactive SIMD encode prototypes with real AVX2, AVX-512, NEON,
   SSSE3/SSE4.1, and wasm `simd128` candidate implementations only when scalar
   differential tests, fuzz evidence, target-feature checks, unsafe inventory

@@ -24,6 +24,11 @@ Current proof harnesses cover:
 - strict slice encode returning a written length inside the caller output
 - strict in-place encode returning only a prefix inside the caller buffer
 - strict clear-tail in-place decode clearing the caller buffer on error
+- constant-time-oriented slice decode returning a written length inside the
+  caller output
+- constant-time-oriented clear-tail slice and in-place decode clearing caller
+  buffers on error
+- constant-time-oriented validate/decode agreement for one padded quantum
 
 These are intentionally small bounded proofs. They complement Miri, fuzzing,
 and deterministic integration tests; they are not a substitute for the future
