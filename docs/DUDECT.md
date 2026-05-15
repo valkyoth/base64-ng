@@ -41,6 +41,18 @@ absolute t-statistics require investigation. A passing run means this specific
 binary, on this machine, did not show a strong fixed-vs-random timing signal
 for the measured path. It does not prove all targets or compiler modes.
 
+Opt-in timing runs write release evidence under:
+
+```text
+target/release-evidence/dudect/
+```
+
+Expected files:
+
+- `dudect-output.txt`: raw harness output.
+- `MANIFEST.txt`: rustc/cargo/system metadata, command line, parameters,
+  status, checksum, and interpretation notes.
+
 ## Review Rules
 
 - Keep the harness outside the published crate.
@@ -48,6 +60,5 @@ for the measured path. It does not prove all targets or compiler modes.
   dependency.
 - Do not use this as a replacement for Kani, Miri, generated-code review,
   fuzzing, or scalar differential tests.
-- Archive command, target, CPU, operating system, Rust version, sample count,
-  and raw output when using dudect evidence for a release note or security
-  review.
+- Archive `target/release-evidence/dudect/` when using dudect evidence for a
+  release note or security review.

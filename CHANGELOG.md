@@ -22,6 +22,8 @@
   generated constant-time assembly evidence.
 - Added bounded Kani proof harnesses for constant-time-oriented decode result
   bounds, error cleanup, and validate/decode agreement.
+- Added manifest generation for opt-in dudect-style timing evidence, including
+  toolchain metadata, command parameters, raw output checksum, and result status.
 
 ## 0.6.0 - 2026-05-14
 

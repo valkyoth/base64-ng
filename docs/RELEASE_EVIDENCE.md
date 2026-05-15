@@ -192,8 +192,10 @@ BASE64_NG_RUN_DUDECT=1 scripts/check_dudect.sh
 ```
 
 Archive the raw output with CPU, OS, Rust version, sample count, and command
-line when using dudect-style evidence for a security review. This evidence is
-empirical and does not replace generated-code review or Kani proofs.
+line when using dudect-style evidence for a security review. Opt-in timing runs
+write `target/release-evidence/dudect/dudect-output.txt` and
+`target/release-evidence/dudect/MANIFEST.txt` for this purpose. This evidence
+is empirical and does not replace generated-code review or Kani proofs.
 
 Generate assembly artifacts for reviewer inspection with:
 
