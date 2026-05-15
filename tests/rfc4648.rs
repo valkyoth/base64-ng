@@ -2309,6 +2309,7 @@ fn secret_buffer_redacts_and_reveals_explicitly() {
     assert_eq!(secret.len(), 5);
     assert!(!secret.is_empty());
     assert_eq!(secret.expose_secret(), b"token");
+    assert_eq!(secret.expose_secret_utf8().unwrap(), "token");
     assert_eq!(
         format!("{secret:?}"),
         "SecretBuffer { bytes: \"<redacted>\", len: 5 }"
@@ -2332,6 +2333,9 @@ fn secret_buffer_redacts_and_reveals_explicitly() {
     secret.clear();
     assert!(secret.is_empty());
     assert_eq!(secret.expose_secret(), b"");
+
+    let binary = SecretBuffer::from_slice(b"\xff");
+    assert!(binary.expose_secret_utf8().is_err());
 }
 
 #[cfg(feature = "alloc")]

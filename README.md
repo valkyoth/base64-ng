@@ -439,6 +439,8 @@ initialized bytes plus spare capacity when dropped. It does not claim formal
 zeroization and cannot clean historical copies outside the wrapper or make
 guarantees about allocator behavior. `SecretBuffer` equality uses the same
 constant-time-oriented equal-length comparison as `constant_time_eq`.
+`expose_secret_utf8` provides an explicit borrowed text view when the secret
+bytes are valid UTF-8.
 
 `into_exposed_vec` is the explicit owned interop escape hatch. It consumes the
 wrapper and returns a normal `Vec<u8>`, so redacted formatting and drop-time

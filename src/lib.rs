@@ -2131,6 +2131,15 @@ impl SecretBuffer {
         &self.bytes
     }
 
+    /// Reveals the secret bytes as UTF-8 text.
+    ///
+    /// This method is intentionally named to make secret access explicit at the
+    /// call site. Secret material may be arbitrary binary data, so this method
+    /// is fallible.
+    pub fn expose_secret_utf8(&self) -> Result<&str, core::str::Utf8Error> {
+        core::str::from_utf8(self.expose_secret())
+    }
+
     /// Reveals the secret bytes mutably.
     ///
     /// This method is intentionally named to make secret access explicit at the

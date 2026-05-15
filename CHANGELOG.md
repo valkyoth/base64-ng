@@ -93,6 +93,8 @@
   the redacted wrapper without copying initialized bytes.
 - Added `SecretBuffer::try_into_exposed_string` as an explicit owned UTF-8 text
   interop escape hatch that preserves redaction on invalid UTF-8.
+- Added `SecretBuffer::expose_secret_utf8` as an explicit fallible borrowed
+  UTF-8 view for secret text.
 - Added `remaining_capacity()` to `EncodedBuffer` and `DecodedBuffer` for
   no-alloc stack sizing checks.
 - Added `is_full()` to `EncodedBuffer` and `DecodedBuffer`.
