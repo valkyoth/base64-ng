@@ -21,6 +21,8 @@
   with an audited volatile helper when `alloc` is enabled.
 - Added a release-gated documentation version validator so README, changelog,
   and SIMD release-status docs cannot drift from `Cargo.toml`.
+- Tightened CI SIMD feature-bundle setup so the wasm `simd128` reserved build
+  runs instead of being skipped in the main checks job.
 
 ## 0.7.0 - 2026-05-15
 
