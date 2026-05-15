@@ -53,6 +53,8 @@
   equal-length comparison helper.
 - Added `EncodedBuffer::constant_time_eq` and routed `EncodedBuffer` equality
   through the same constant-time-oriented equal-length comparison helper.
+- Added `SecretBuffer::into_exposed_vec` as an explicit owned interop escape
+  hatch where redaction and `SecretBuffer` drop-time cleanup intentionally end.
 
 ## 0.7.0 - 2026-05-15
 

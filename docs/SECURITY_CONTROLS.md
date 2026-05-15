@@ -28,6 +28,8 @@ The caller still owns:
 - choosing strict, legacy, wrapped, MIME, PEM, bcrypt-style, or custom profiles
   intentionally
 - avoiding accidental copies of secrets before wrapping them in `SecretBuffer`
+- treating `SecretBuffer::into_exposed_vec` as a boundary where redacted
+  formatting and drop-time cleanup intentionally stop
 - process-wide memory hygiene such as core-dump policy, swap policy, crash
   handling, allocator behavior, and log retention
 - deciding whether the constant-time-oriented API is sufficient for the local

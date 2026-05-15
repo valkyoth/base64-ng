@@ -2025,6 +2025,9 @@ fn secret_buffer_redacts_and_reveals_explicitly() {
     assert_ne!(secret, SecretBuffer::from_slice(b"token"));
     assert_ne!(secret, SecretBuffer::from_slice(b"Token!"));
 
+    let exposed = cloned.into_exposed_vec();
+    assert_eq!(exposed, b"Token");
+
     secret.clear();
     assert!(secret.is_empty());
     assert_eq!(secret.expose_secret(), b"");

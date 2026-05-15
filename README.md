@@ -395,6 +395,10 @@ zeroization and cannot clean historical copies outside the wrapper or make
 guarantees about allocator behavior. `SecretBuffer` equality uses the same
 constant-time-oriented equal-length comparison as `constant_time_eq`.
 
+`into_exposed_vec` is the explicit owned interop escape hatch. It consumes the
+wrapper and returns a normal `Vec<u8>`, so redacted formatting and drop-time
+cleanup no longer apply after that point.
+
 `TryFrom<&str>` and `TryFrom<&[u8]>` for `SecretBuffer` use strict standard
 padded Base64. Use explicit engine or profile methods for URL-safe, no-padding,
 MIME/PEM, bcrypt-style, or custom alphabets.

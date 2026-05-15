@@ -1879,6 +1879,17 @@ impl SecretBuffer {
         &mut self.bytes
     }
 
+    /// Consumes the wrapper and returns the owned secret bytes.
+    ///
+    /// This is an explicit escape hatch for interop with APIs that require an
+    /// owned vector. The returned `Vec<u8>` is no longer redacted by
+    /// formatting and will not be cleared by `SecretBuffer` on drop; callers
+    /// that keep handling sensitive data should arrange their own cleanup.
+    #[must_use]
+    pub fn into_exposed_vec(mut self) -> alloc::vec::Vec<u8> {
+        core::mem::take(&mut self.bytes)
+    }
+
     /// Compares this secret to `other` without short-circuiting on the first
     /// differing byte.
     ///
