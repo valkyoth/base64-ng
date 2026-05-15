@@ -1923,6 +1923,9 @@ fn stack_encoded_buffer_helpers_avoid_alloc_and_clear_tail() {
     assert_eq!(encoded.as_bytes(), b"aGVsbG8=");
     assert_eq!(encoded.as_str(), "aGVsbG8=");
     assert_eq!(encoded.as_ref(), b"aGVsbG8=");
+    assert!(encoded.constant_time_eq(b"aGVsbG8="));
+    assert!(!encoded.constant_time_eq(b"aGVsbG9="));
+    assert!(!encoded.constant_time_eq(b"aGVsbG8"));
     assert_eq!(
         format!("{encoded:?}"),
         "EncodedBuffer { bytes: \"<redacted>\", len: 8, capacity: 8 }"
@@ -1930,6 +1933,8 @@ fn stack_encoded_buffer_helpers_avoid_alloc_and_clear_tail() {
 
     let cloned = encoded.clone();
     assert_eq!(encoded, cloned);
+    let different = STANDARD.encode_buffer::<8>(b"world").unwrap();
+    assert_ne!(encoded, different);
 
     let too_small: Result<EncodedBuffer<7>, EncodeError> = STANDARD.encode_buffer(b"hello");
     assert_eq!(

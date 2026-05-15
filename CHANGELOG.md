@@ -51,6 +51,8 @@
   constant-time-oriented comparison of equal-length secret buffers.
 - Changed `SecretBuffer` equality to use the same constant-time-oriented
   equal-length comparison helper.
+- Added `EncodedBuffer::constant_time_eq` and routed `EncodedBuffer` equality
+  through the same constant-time-oriented equal-length comparison helper.
 
 ## 0.7.0 - 2026-05-15
 

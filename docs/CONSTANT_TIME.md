@@ -211,3 +211,15 @@ The clear-tail APIs do not try to hide success, failure, or output length:
 those values are visible through the returned `Result` and decoded length. Any
 future cryptographic profile must document memory cleanup separately from timing
 behavior.
+
+## Buffer Comparisons
+
+`SecretBuffer::constant_time_eq` and `EncodedBuffer::constant_time_eq` provide
+dependency-free, constant-time-oriented comparison for equal-length buffers.
+Their `PartialEq` implementations use the same helper.
+
+Length mismatch returns immediately. Treat buffer length, the selected buffer
+type, and the final equality result as public. The helper scans every byte for
+equal-length inputs before returning, but this remains a best-effort API and
+does not upgrade `base64-ng` to a formally verified cryptographic
+constant-time comparison crate.

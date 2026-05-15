@@ -367,7 +367,8 @@ assert_eq!(bcrypt.as_bytes(), b"9999");
 
 `EncodedBuffer` exposes bytes only through `as_bytes` and `as_str`, redacts the
 payload from `Debug`, and clears its backing array when dropped as best-effort
-data-retention reduction.
+data-retention reduction. `EncodedBuffer` equality uses a
+constant-time-oriented equal-length comparison.
 
 When an owned heap buffer is acceptable but accidental logging is not, use
 `encode_secret` and `decode_secret`:

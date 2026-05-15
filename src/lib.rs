@@ -1748,6 +1748,18 @@ impl<const CAP: usize> EncodedBuffer<CAP> {
         }
     }
 
+    /// Compares this encoded output to `other` without short-circuiting on the
+    /// first differing byte.
+    ///
+    /// Length and the final equality result remain public. For equal-length
+    /// inputs, this helper scans every byte before returning. It is
+    /// constant-time-oriented best effort, not a formal cryptographic
+    /// constant-time guarantee.
+    #[must_use]
+    pub fn constant_time_eq(&self, other: &[u8]) -> bool {
+        constant_time_eq_public_len(self.as_bytes(), other)
+    }
+
     /// Clears the visible bytes and the full backing array.
     pub fn clear(&mut self) {
         wipe_bytes(&mut self.bytes);
@@ -1802,7 +1814,7 @@ impl<const CAP: usize> Eq for EncodedBuffer<CAP> {}
 
 impl<const CAP: usize> PartialEq for EncodedBuffer<CAP> {
     fn eq(&self, other: &Self) -> bool {
-        self.as_bytes() == other.as_bytes()
+        self.constant_time_eq(other.as_bytes())
     }
 }
 
@@ -2690,7 +2702,6 @@ const fn ct_mask_lt_u8(left: u8, right: u8) -> u8 {
     ct_mask_bit((diff >> 8) as u8)
 }
 
-#[cfg(feature = "alloc")]
 fn constant_time_eq_public_len(left: &[u8], right: &[u8]) -> bool {
     if left.len() != right.len() {
         return false;
