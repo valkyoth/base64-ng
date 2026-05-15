@@ -180,6 +180,8 @@ the zero-runtime-dependency stance.
 - Stack-backed encoded output helpers for short values without `alloc`.
 - Internal safe-Rust best-effort wipe helpers for initialized bytes and
   redacted `SecretBuffer` owned outputs when `alloc` is enabled.
+- Zero-dependency `TryFrom<&str>` and `TryFrom<&[u8]>` interop for strict
+  standard padded `SecretBuffer` decoding.
 - README trust dashboard and CWE/security-control mapping documentation.
 - Panic policy documentation and release-gated panic-like-site validation for
   non-test source.
@@ -389,6 +391,9 @@ the zero-runtime-dependency stance.
 - Consider a dependency-free helper macro or generator for audited custom
   alphabet encoders when an alphabet can be mapped without secret-indexed table
   access. Keep the fixed-scan fallback as the conservative default.
+- Add low-friction native Rust interop only where it preserves explicit
+  security semantics, starting with strict standard `SecretBuffer` `TryFrom`
+  decoders and leaving non-standard profiles on explicit engine/profile APIs.
 
 ### v0.9
 
@@ -398,9 +403,9 @@ the zero-runtime-dependency stance.
   async feature enabled.
 - Consider optional `serde` and `bytes` integration only if a concrete user
   need clears dependency admission; otherwise keep both out of the crate.
-- Add native Rust interoperability that needs no dependencies, such as
-  `TryFrom<&str>` for owned decoded buffer wrappers and redacted formatting for
-  secret wrapper types.
+- Continue native Rust interoperability that needs no dependencies, but avoid
+  broad conversion traits when they would hide alphabet, padding, profile, or
+  secret-handling choices.
 - If async remains unjustified, keep `tokio` inert and spend this milestone on
   stream ergonomics, documentation, framed-protocol tests, and wasm/no-allocator
   portability checks.

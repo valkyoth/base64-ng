@@ -1865,6 +1865,32 @@ impl PartialEq for SecretBuffer {
     }
 }
 
+#[cfg(feature = "alloc")]
+impl TryFrom<&[u8]> for SecretBuffer {
+    type Error = DecodeError;
+
+    /// Decodes strict standard padded Base64 into a redacted owned buffer.
+    ///
+    /// Use [`Engine::decode_secret`] or [`Profile::decode_secret`] when a
+    /// different alphabet, padding mode, or line-wrapping profile is required.
+    fn try_from(input: &[u8]) -> Result<Self, Self::Error> {
+        STANDARD.decode_secret(input)
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl TryFrom<&str> for SecretBuffer {
+    type Error = DecodeError;
+
+    /// Decodes strict standard padded Base64 text into a redacted owned buffer.
+    ///
+    /// Use [`Engine::decode_secret`] or [`Profile::decode_secret`] when a
+    /// different alphabet, padding mode, or line-wrapping profile is required.
+    fn try_from(input: &str) -> Result<Self, Self::Error> {
+        Self::try_from(input.as_bytes())
+    }
+}
+
 /// A named Base64 profile with an engine and optional strict line wrapping.
 ///
 /// Profiles are convenience values for protocol-shaped Base64. They keep the

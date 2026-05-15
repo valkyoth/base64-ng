@@ -13,6 +13,8 @@
   release metadata explicitly require the SIMD admission manifest.
 - Added opt-in performance evidence capture with benchmark output and manifest
   generation under `target/release-evidence/perf/`.
+- Added `TryFrom<&str>` and `TryFrom<&[u8]>` for `SecretBuffer` using strict
+  standard padded Base64.
 
 ## 0.7.0 - 2026-05-15
 

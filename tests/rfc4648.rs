@@ -1963,6 +1963,32 @@ fn secret_encode_and_decode_helpers_round_trip() {
     assert_eq!(unwrapped.expose_secret(), &[0x5a; 58]);
 }
 
+#[cfg(feature = "alloc")]
+#[test]
+fn secret_buffer_try_from_uses_strict_standard_base64() {
+    let decoded = SecretBuffer::try_from("aGVsbG8=").unwrap();
+    assert_eq!(decoded.expose_secret(), b"hello");
+    assert_eq!(
+        format!("{decoded:?}"),
+        r#"SecretBuffer { bytes: "<redacted>", len: 5 }"#
+    );
+
+    let decoded = SecretBuffer::try_from(&b"aGVsbG8="[..]).unwrap();
+    assert_eq!(decoded.expose_secret(), b"hello");
+
+    assert_eq!(
+        SecretBuffer::try_from("aGVsbG8").unwrap_err(),
+        DecodeError::InvalidLength
+    );
+    assert_eq!(
+        SecretBuffer::try_from("aGVsbG8$").unwrap_err(),
+        DecodeError::InvalidByte {
+            index: 7,
+            byte: b'$',
+        }
+    );
+}
+
 #[cfg(feature = "stream")]
 #[test]
 fn stream_encoder_handles_chunk_boundaries() {

@@ -364,11 +364,18 @@ assert_eq!(format!("{encoded:?}"), r#"SecretBuffer { bytes: "<redacted>", len: 8
 let decoded = STANDARD.decode_secret(encoded.expose_secret()).unwrap();
 assert_eq!(decoded.expose_secret(), b"hello");
 assert_eq!(format!("{decoded}"), "<redacted>");
+
+let decoded = base64_ng::SecretBuffer::try_from("aGVsbG8=").unwrap();
+assert_eq!(decoded.expose_secret(), b"hello");
 ```
 
 `SecretBuffer` clears initialized bytes when dropped, but it does not claim
 formal zeroization and cannot clean historical copies outside the wrapper or
 allocator spare capacity.
+
+`TryFrom<&str>` and `TryFrom<&[u8]>` for `SecretBuffer` use strict standard
+padded Base64. Use explicit engine or profile methods for URL-safe, no-padding,
+MIME/PEM, bcrypt-style, or custom alphabets.
 
 With the default `alloc` feature, vector and string helpers are available:
 
