@@ -12,6 +12,7 @@ fuzz_target!(|data: &[u8]| {
     exercise_wrapped_encode(data, STANDARD, LineWrap::new(4, LineEnding::Lf));
     exercise_wrapped_encode(data, STANDARD, LineWrap::new(8, LineEnding::CrLf));
     exercise_wrapped_encode(data, URL_SAFE, LineWrap::new(4, LineEnding::Lf));
+    exercise_wrapped_encode(data, URL_SAFE_NO_PAD, LineWrap::new(4, LineEnding::Lf));
 
     exercise_decode(data, STANDARD);
     exercise_decode(data, STANDARD_NO_PAD);
@@ -21,6 +22,7 @@ fuzz_target!(|data: &[u8]| {
     exercise_wrapped_decode(data, STANDARD, LineWrap::new(4, LineEnding::Lf));
     exercise_wrapped_decode(data, STANDARD, LineWrap::new(8, LineEnding::CrLf));
     exercise_wrapped_decode(data, URL_SAFE, LineWrap::new(4, LineEnding::Lf));
+    exercise_wrapped_decode(data, URL_SAFE_NO_PAD, LineWrap::new(4, LineEnding::Lf));
 
     exercise_ct_decode(data, STANDARD, base64_ng::ct::STANDARD);
     exercise_ct_decode(data, STANDARD_NO_PAD, base64_ng::ct::STANDARD_NO_PAD);

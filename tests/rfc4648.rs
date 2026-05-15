@@ -1275,6 +1275,24 @@ fn decode_in_place_wrapped_compacts_line_endings() {
     assert!(invalid.iter().all(|byte| *byte == 0));
 }
 
+#[test]
+fn decode_in_place_wrapped_accepts_trailing_line_endings_and_unpadded_tail() {
+    let wrap = LineWrap::new(4, LineEnding::CrLf);
+    let mut trailing = *b"aGVs\r\nbG8=\r\n";
+    let decoded = STANDARD
+        .decode_in_place_wrapped(&mut trailing, wrap)
+        .unwrap();
+    assert_eq!(decoded, b"hello");
+
+    let wrap = LineWrap::new(4, LineEnding::Lf);
+    let mut unpadded = *b"Zm9v\nYg";
+    let decoded = STANDARD_NO_PAD
+        .decode_in_place_wrapped_clear_tail(&mut unpadded, wrap)
+        .unwrap();
+    assert_eq!(decoded, b"foob");
+    assert_eq!(&unpadded[4..], &[0; 3]);
+}
+
 #[cfg(feature = "alloc")]
 #[test]
 fn decode_wrapped_alloc_helper_matches_slice_output() {

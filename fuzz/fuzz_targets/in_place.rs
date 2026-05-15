@@ -22,6 +22,7 @@ fuzz_target!(|data: &[u8]| {
     exercise_wrapped_in_place(data, STANDARD, LineWrap::new(4, LineEnding::Lf));
     exercise_wrapped_in_place(data, STANDARD, LineWrap::new(8, LineEnding::CrLf));
     exercise_wrapped_in_place(data, URL_SAFE, LineWrap::new(4, LineEnding::Lf));
+    exercise_wrapped_in_place(data, URL_SAFE_NO_PAD, LineWrap::new(4, LineEnding::Lf));
 });
 
 fn exercise_encode_in_place<A, const PAD: bool>(input: &[u8], engine: base64_ng::Engine<A, PAD>)

@@ -78,6 +78,8 @@
   decoding against allocated wrapped decoding.
 - Extended decode fuzz coverage to compare strict line-wrapped slice
   encode/decode helpers against their allocated wrapped helpers.
+- Extended wrapped fuzz and regression coverage for unpadded wrapped profiles
+  and accepted trailing line endings.
 
 ## 0.7.0 - 2026-05-15
 
