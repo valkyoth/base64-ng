@@ -20,11 +20,11 @@ if cargo kani --no-default-features >"$log" 2>&1; then
 fi
 
 status="$?"
-cat "$log"
 
 if grep -q "Kani Rust Verifier" "$log" && grep -q "requires rustc" "$log"; then
     echo "Kani checks: skipping; installed Kani compiler is older than this crate's rust-version"
     exit 0
 fi
 
+cat "$log"
 exit "$status"

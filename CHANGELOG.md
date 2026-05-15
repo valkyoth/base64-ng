@@ -31,6 +31,8 @@
   versions, commands, and artifact checksums.
 - Hardened `scripts/stable_release_gate.sh release` so stable release mode
   refuses pre-release Cargo versions.
+- Made Kani's expected old-compiler skip path quiet while preserving full logs
+  for real verifier failures.
 
 ## 0.7.0 - 2026-05-15
 
