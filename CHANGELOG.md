@@ -87,6 +87,8 @@
   the current scalar-only admission posture.
 - Corrected release-evidence unsafe-boundary wording to include the audited
   scalar-side volatile wipe helpers.
+- Added `From<Vec<u8>>` for `SecretBuffer` so owned sensitive bytes can move
+  into the redacted wrapper without copying.
 
 ## 0.7.0 - 2026-05-15
 

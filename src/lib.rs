@@ -2189,6 +2189,17 @@ impl PartialEq for SecretBuffer {
 }
 
 #[cfg(feature = "alloc")]
+impl From<alloc::vec::Vec<u8>> for SecretBuffer {
+    /// Wraps an owned vector as sensitive material.
+    ///
+    /// Spare capacity is cleared immediately before the vector is stored.
+    /// Use [`SecretBuffer::from_slice`] when the source data is borrowed.
+    fn from(bytes: alloc::vec::Vec<u8>) -> Self {
+        Self::from_vec(bytes)
+    }
+}
+
+#[cfg(feature = "alloc")]
 impl TryFrom<&[u8]> for SecretBuffer {
     type Error = DecodeError;
 

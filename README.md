@@ -443,6 +443,9 @@ constant-time-oriented equal-length comparison as `constant_time_eq`.
 wrapper and returns a normal `Vec<u8>`, so redacted formatting and drop-time
 cleanup no longer apply after that point.
 
+`SecretBuffer` also implements `From<Vec<u8>>` for callers that already own
+sensitive bytes and want to move them into the redacted wrapper without copying.
+
 `TryFrom<&str>` and `TryFrom<&[u8]>` for `EncodedBuffer<CAP>` encode raw input
 bytes with strict standard padded Base64. The same conversions for
 `DecodedBuffer<CAP>` and `SecretBuffer` decode strict standard padded Base64.

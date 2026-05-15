@@ -2336,6 +2336,11 @@ fn secret_buffer_from_vec_preserves_visible_bytes_with_spare_capacity() {
     let secret = SecretBuffer::from_vec(bytes);
     assert_eq!(secret.len(), 5);
     assert_eq!(secret.expose_secret(), b"token");
+
+    let mut bytes = Vec::with_capacity(16);
+    bytes.extend_from_slice(b"owned");
+    let secret = SecretBuffer::from(bytes);
+    assert_eq!(secret.expose_secret(), b"owned");
 }
 
 #[cfg(feature = "alloc")]
