@@ -1,6 +1,6 @@
 #![no_main]
 
-use base64_ng::{STANDARD, STANDARD_NO_PAD, URL_SAFE, URL_SAFE_NO_PAD};
+use base64_ng::{LineEnding, LineWrap, STANDARD, STANDARD_NO_PAD, URL_SAFE, URL_SAFE_NO_PAD};
 use libfuzzer_sys::fuzz_target;
 
 fuzz_target!(|data: &[u8]| {
@@ -18,6 +18,10 @@ fuzz_target!(|data: &[u8]| {
     exercise_legacy_in_place(data, STANDARD_NO_PAD);
     exercise_legacy_in_place(data, URL_SAFE);
     exercise_legacy_in_place(data, URL_SAFE_NO_PAD);
+
+    exercise_wrapped_in_place(data, STANDARD, LineWrap::new(4, LineEnding::Lf));
+    exercise_wrapped_in_place(data, STANDARD, LineWrap::new(8, LineEnding::CrLf));
+    exercise_wrapped_in_place(data, URL_SAFE, LineWrap::new(4, LineEnding::Lf));
 });
 
 fn exercise_encode_in_place<A, const PAD: bool>(input: &[u8], engine: base64_ng::Engine<A, PAD>)
@@ -157,6 +161,51 @@ where
         }
         (clear_tail_result, vec_result) => panic!(
             "decode_in_place_legacy_clear_tail and decode_vec_legacy disagreed: {clear_tail_result:?} vs {vec_result:?}"
+        ),
+    }
+}
+
+fn exercise_wrapped_in_place<A, const PAD: bool>(
+    input: &[u8],
+    engine: base64_ng::Engine<A, PAD>,
+    wrap: LineWrap,
+) where
+    A: base64_ng::Alphabet,
+{
+    let vec_result = engine.decode_wrapped_vec(input, wrap);
+    let mut buffer = input.to_vec();
+    let in_place_result = engine
+        .decode_in_place_wrapped(&mut buffer, wrap)
+        .map(|decoded| decoded.to_vec());
+
+    match (&in_place_result, &vec_result) {
+        (Ok(in_place), Ok(decoded)) => assert_eq!(in_place, decoded),
+        (Err(in_place_err), Err(vec_err)) => assert_eq!(in_place_err, vec_err),
+        (in_place_result, vec_result) => panic!(
+            "decode_in_place_wrapped and decode_wrapped_vec disagreed: {in_place_result:?} vs {vec_result:?}"
+        ),
+    }
+
+    let mut clear_tail_buffer = input.to_vec();
+    let clear_tail_result = engine
+        .decode_in_place_wrapped_clear_tail(&mut clear_tail_buffer, wrap)
+        .map(|decoded| decoded.to_vec());
+
+    match (clear_tail_result, vec_result) {
+        (Ok(clear_tail), Ok(decoded)) => {
+            assert_eq!(clear_tail, decoded);
+            assert!(
+                clear_tail_buffer[decoded.len()..]
+                    .iter()
+                    .all(|byte| *byte == 0)
+            );
+        }
+        (Err(clear_tail_err), Err(vec_err)) => {
+            assert_eq!(clear_tail_err, vec_err);
+            assert!(clear_tail_buffer.iter().all(|byte| *byte == 0));
+        }
+        (clear_tail_result, vec_result) => panic!(
+            "decode_in_place_wrapped_clear_tail and decode_wrapped_vec disagreed: {clear_tail_result:?} vs {vec_result:?}"
         ),
     }
 }

@@ -21,7 +21,8 @@ scripts/check_fuzz_corpus.sh
 Current fuzz targets:
 
 - `decode`: arbitrary strict, legacy, and constant-time-oriented decode input
-- `in_place`: in-place encode/decode and legacy compaction behavior
+- `in_place`: in-place encode/decode, legacy compaction behavior, and strict
+  line-wrapped in-place compaction behavior
 - `stream_chunks`: fragmented stream reader/writer state machines and adjacent
   framed payload boundaries
 - `differential`: canonical output comparison against the established Base64

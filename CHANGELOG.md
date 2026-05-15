@@ -74,6 +74,8 @@
   whitespace decode.
 - Added strict line-wrapped in-place decode helpers, including clear-tail
   variants and profile-level forwarding for wrapped MIME/PEM-style profiles.
+- Extended in-place fuzz coverage to compare strict line-wrapped in-place
+  decoding against allocated wrapped decoding.
 
 ## 0.7.0 - 2026-05-15
 
