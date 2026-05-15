@@ -19,6 +19,9 @@ scripts/validate-unsafe-boundary.sh
 echo "checks: SIMD admission policy"
 scripts/validate-simd-admission.sh
 
+echo "checks: SIMD feature bundles"
+scripts/check_simd_feature_bundles.sh
+
 echo "checks: panic policy"
 scripts/validate-panic-policy.sh
 
