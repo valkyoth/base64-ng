@@ -230,6 +230,18 @@ assert_eq!(&encoded[76..78], b"\r\n");
 assert!(MIME.validate(&encoded[..written]));
 ```
 
+When wrapping policy comes from configuration, prefer checked construction:
+
+```rust
+use base64_ng::{LineEnding, LineWrap, Profile, STANDARD};
+
+let wrap = LineWrap::checked_new(76, LineEnding::CrLf).unwrap();
+let profile = Profile::checked_new(STANDARD, Some(wrap)).unwrap();
+
+assert!(profile.is_valid());
+assert!(profile.is_wrapped());
+```
+
 The same policy can be used for strict wrapped decoding. Unlike legacy
 whitespace decoding, this accepts only the configured line ending and requires
 every non-final line to have the configured encoded length:

@@ -138,18 +138,23 @@ fn named_profiles_expose_expected_policies() {
 
     assert!(MIME.is_padded());
     assert!(MIME.is_wrapped());
+    assert!(MIME.is_valid());
     assert_eq!(MIME.line_wrap(), Some(LineWrap::MIME));
     assert!(PEM.is_padded());
     assert!(PEM.is_wrapped());
+    assert!(PEM.is_valid());
     assert_eq!(PEM.line_wrap(), Some(LineWrap::PEM));
     assert!(PEM_CRLF.is_padded());
     assert!(PEM_CRLF.is_wrapped());
+    assert!(PEM_CRLF.is_valid());
     assert_eq!(PEM_CRLF.line_wrap(), Some(LineWrap::PEM_CRLF));
     assert!(!BCRYPT.is_padded());
     assert!(!BCRYPT.is_wrapped());
+    assert!(BCRYPT.is_valid());
     assert_eq!(BCRYPT.line_wrap(), None);
     assert!(!CRYPT.is_padded());
     assert!(!CRYPT.is_wrapped());
+    assert!(CRYPT.is_valid());
     assert_eq!(CRYPT.line_wrap(), None);
 
     assert_eq!(
@@ -167,6 +172,16 @@ fn named_profiles_expose_expected_policies() {
     assert_eq!(standard_profile, Profile::<Standard, true>::default());
     assert!(standard_profile.is_padded());
     assert!(!standard_profile.is_wrapped());
+    assert!(standard_profile.is_valid());
+
+    assert_eq!(
+        Profile::checked_new(STANDARD, Some(LineWrap::MIME)),
+        Some(MIME)
+    );
+    assert_eq!(
+        Profile::checked_new(STANDARD, Some(LineWrap::new(0, LineEnding::Lf))),
+        None
+    );
 }
 
 #[test]

@@ -1963,6 +1963,28 @@ where
         Self { engine, wrap }
     }
 
+    /// Creates a profile, returning `None` when the wrapping policy is invalid.
+    ///
+    /// This is useful when a profile is assembled from configuration or other
+    /// untrusted metadata. Use [`Self::new`] for compile-time constants where
+    /// the wrapping policy is known to be valid.
+    #[must_use]
+    pub const fn checked_new(engine: Engine<A, PAD>, wrap: Option<LineWrap>) -> Option<Self> {
+        match wrap {
+            Some(wrap) if !wrap.is_valid() => None,
+            _ => Some(Self::new(engine, wrap)),
+        }
+    }
+
+    /// Returns whether this profile can be used by encoders and decoders.
+    #[must_use]
+    pub const fn is_valid(&self) -> bool {
+        match self.wrap {
+            Some(wrap) => wrap.is_valid(),
+            None => true,
+        }
+    }
+
     /// Returns the underlying engine.
     #[must_use]
     pub const fn engine(&self) -> Engine<A, PAD> {

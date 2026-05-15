@@ -41,6 +41,8 @@
   unwrapped `Profile` values.
 - Added checked wrapped-length helpers for MIME/PEM-style output length
   calculations.
+- Added `Profile::checked_new` and `Profile::is_valid` for defensive
+  construction of wrapped profiles.
 
 ## 0.7.0 - 2026-05-15
 
