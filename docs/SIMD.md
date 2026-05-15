@@ -22,8 +22,8 @@ weakening the scalar trust base.
 - Encode and decode entry points already pass through an internal backend
   boundary, currently backed only by the scalar implementation.
 - With the `simd` feature enabled, the private dispatch scaffold detects
-  AVX-512 VBMI, AVX2, NEON, and wasm `simd128` candidates but still activates
-  only the scalar backend.
+  AVX-512 VBMI, AVX2, SSSE3/SSE4.1, NEON, and wasm `simd128` candidates but
+  still activates only the scalar backend.
 - AVX-512 VBMI detection is reporting-only until an implementation has scalar
   differential tests, fuzz coverage, and benchmark evidence. Detection requires
   the full planned feature bundle: `avx512f`, `avx512bw`, `avx512vl`, and
@@ -37,6 +37,8 @@ weakening the scalar trust base.
   their stable key/value display output for audit logs.
 - Runtime backend reports expose `snapshot()` for structured audit logging
   without parsing formatted strings.
+- SSSE3/SSE4.1 detection is reporting-only until an implementation has scalar
+  differential tests, fuzz coverage, and benchmark evidence.
 - An inactive AVX2 fixed-block encode prototype exists behind the SIMD boundary
   and is tested against scalar output only when AVX2 is available.
 - An inactive NEON fixed-block encode prototype exists behind the same boundary
@@ -80,8 +82,8 @@ scripts/check_simd_feature_bundles.sh
 ```
 
 This does not execute accelerated code. It proves the reserved AVX2,
-AVX-512, NEON, and wasm `simd128` feature-gated code still compiles under
-`no_std` when the corresponding Rust targets are installed.
+AVX-512, SSSE3/SSE4.1, NEON, and wasm `simd128` feature-gated code still
+compiles under `no_std` when the corresponding Rust targets are installed.
 
 Capture local backend and prototype evidence:
 

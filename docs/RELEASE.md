@@ -35,8 +35,9 @@ The release gate covers:
 - docs
 - packaged async admission policy while the `tokio` feature remains inert
 - installed cross-target `no_std` checks
-- reserved SIMD feature-bundle compile checks for AVX2, AVX-512 VBMI, NEON,
-  and wasm `simd128` when the corresponding Rust targets are installed
+- reserved SIMD feature-bundle compile checks for AVX2, AVX-512 VBMI,
+  SSSE3/SSE4.1, NEON, and wasm `simd128` when the corresponding Rust targets
+  are installed
 - cargo-deny policy
 - RustSec audit
 - license inventory

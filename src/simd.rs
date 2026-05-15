@@ -7,9 +7,9 @@
 //! this boundary, with a local safety explanation for every unsafe block.
 //!
 //! The module intentionally contains no accelerated backend yet. The `simd`
-//! feature remains a compile-time reservation until AVX-512, AVX2, NEON, and
-//! wasm `simd128` paths have scalar differential tests, fuzz coverage, and
-//! benchmark evidence.
+//! feature remains a compile-time reservation until AVX-512, AVX2,
+//! SSSE3/SSE4.1, NEON, and wasm `simd128` paths have scalar differential
+//! tests, fuzz coverage, and benchmark evidence.
 
 #[cfg(any(
     target_arch = "x86",
@@ -51,6 +51,9 @@ pub(crate) enum Candidate {
     /// `x86`/`x86_64` AVX2 is available as a future candidate.
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     Avx2,
+    /// `x86`/`x86_64` SSSE3/SSE4.1 is available as a future candidate.
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    Ssse3Sse41,
     /// ARM NEON is available as a future candidate.
     #[cfg(any(target_arch = "aarch64", target_arch = "arm"))]
     Neon,
@@ -81,6 +84,10 @@ pub(crate) fn detected_candidate() -> Candidate {
 
         if avx2_available() {
             return Candidate::Avx2;
+        }
+
+        if ssse3_sse41_available() {
+            return Candidate::Ssse3Sse41;
         }
     }
 
@@ -125,6 +132,16 @@ fn avx2_available() -> bool {
 #[cfg(all(not(feature = "std"), any(target_arch = "x86", target_arch = "x86_64")))]
 fn avx2_available() -> bool {
     cfg!(target_feature = "avx2")
+}
+
+#[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
+fn ssse3_sse41_available() -> bool {
+    std::is_x86_feature_detected!("ssse3") && std::is_x86_feature_detected!("sse4.1")
+}
+
+#[cfg(all(not(feature = "std"), any(target_arch = "x86", target_arch = "x86_64")))]
+fn ssse3_sse41_available() -> bool {
+    cfg!(target_feature = "ssse3") && cfg!(target_feature = "sse4.1")
 }
 
 #[cfg(any(target_arch = "aarch64", target_arch = "arm"))]

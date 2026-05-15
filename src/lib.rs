@@ -65,6 +65,8 @@ pub mod runtime {
         Avx512Vbmi,
         /// An AVX2 candidate was detected.
         Avx2,
+        /// An SSSE3/SSE4.1 candidate was detected.
+        Ssse3Sse41,
         /// An ARM NEON candidate was detected.
         Neon,
         /// A wasm `simd128` candidate was detected.
@@ -83,6 +85,7 @@ pub mod runtime {
                 Self::Scalar => "scalar",
                 Self::Avx512Vbmi => "avx512-vbmi",
                 Self::Avx2 => "avx2",
+                Self::Ssse3Sse41 => "ssse3-sse4.1",
                 Self::Neon => "neon",
                 Self::WasmSimd128 => "wasm-simd128",
             }
@@ -106,6 +109,7 @@ pub mod runtime {
                 Self::Scalar => &[],
                 Self::Avx512Vbmi => &["avx512f", "avx512bw", "avx512vl", "avx512vbmi"],
                 Self::Avx2 => &["avx2"],
+                Self::Ssse3Sse41 => &["ssse3", "sse4.1"],
                 Self::Neon => &["neon"],
                 Self::WasmSimd128 => &["simd128"],
             }
@@ -422,6 +426,8 @@ pub mod runtime {
             super::simd::Candidate::Avx512Vbmi => Backend::Avx512Vbmi,
             #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
             super::simd::Candidate::Avx2 => Backend::Avx2,
+            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+            super::simd::Candidate::Ssse3Sse41 => Backend::Ssse3Sse41,
             #[cfg(any(target_arch = "aarch64", target_arch = "arm"))]
             super::simd::Candidate::Neon => Backend::Neon,
             #[cfg(target_arch = "wasm32")]

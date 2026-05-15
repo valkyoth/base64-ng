@@ -7,6 +7,8 @@
   scalar-only until accelerated backend evidence is updated deliberately.
 - Added wasm `simd128` candidate reporting and a reserved `no_std`
   feature-bundle compile check while keeping scalar as the only active backend.
+- Added SSSE3/SSE4.1 candidate reporting and reserved feature-bundle compile
+  evidence for older x86 CPUs before any active SIMD admission.
 
 ## 0.6.0 - 2026-05-14
 

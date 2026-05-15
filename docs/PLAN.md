@@ -352,6 +352,8 @@ the zero-runtime-dependency stance.
   updates, benchmark evidence, and release-note wording are updated together.
 - Add wasm `simd128` candidate reporting and reserved feature-bundle compile
   checks while keeping scalar as the only active backend.
+- Add SSSE3/SSE4.1 candidate reporting and reserved feature-bundle compile
+  checks for older x86 CPUs before active SIMD admission.
 - Replace inactive SIMD encode prototypes with real AVX2, AVX-512, NEON,
   SSSE3/SSE4.1, and wasm `simd128` candidate implementations only when scalar
   differential tests, fuzz evidence, target-feature checks, unsafe inventory

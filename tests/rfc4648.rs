@@ -254,6 +254,11 @@ fn runtime_backend_report_keeps_scalar_active() {
         ["avx512f", "avx512bw", "avx512vl", "avx512vbmi"]
     );
     assert_eq!(runtime::Backend::Avx2.required_cpu_features(), ["avx2"]);
+    assert_eq!(runtime::Backend::Ssse3Sse41.as_str(), "ssse3-sse4.1");
+    assert_eq!(
+        runtime::Backend::Ssse3Sse41.required_cpu_features(),
+        ["ssse3", "sse4.1"]
+    );
     assert_eq!(runtime::Backend::Neon.required_cpu_features(), ["neon"]);
     assert_eq!(runtime::Backend::WasmSimd128.as_str(), "wasm-simd128");
     assert_eq!(

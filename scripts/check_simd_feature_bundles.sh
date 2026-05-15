@@ -11,6 +11,10 @@ if printf '%s\n' "$installed" | grep -qx "$x86_target"; then
     RUSTFLAGS='-C target-feature=+avx2' \
         cargo check --target "$x86_target" --no-default-features --features simd --lib
 
+    echo "simd feature-bundle checks: SSSE3/SSE4.1 no_std reserved build for $x86_target"
+    RUSTFLAGS='-C target-feature=+ssse3,+sse4.1' \
+        cargo check --target "$x86_target" --no-default-features --features simd --lib
+
     echo "simd feature-bundle checks: AVX-512 VBMI no_std reserved build for $x86_target"
     RUSTFLAGS='-C target-feature=+avx512f,+avx512bw,+avx512vl,+avx512vbmi' \
         cargo check --target "$x86_target" --no-default-features --features simd --lib
