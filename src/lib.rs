@@ -1818,6 +1818,124 @@ impl<const CAP: usize> PartialEq for EncodedBuffer<CAP> {
     }
 }
 
+/// Stack-backed decoded Base64 output.
+///
+/// This type is intended for short decoded values where heap allocation would
+/// be unnecessary but manually sizing and passing a separate output slice is
+/// noisy. Decoded data may be binary or secret-bearing, so formatting is
+/// redacted and contents are exposed only through explicit byte accessors.
+///
+/// The backing array is cleared when the value is dropped. This is best-effort
+/// data-retention reduction and is not a formal zeroization guarantee.
+pub struct DecodedBuffer<const CAP: usize> {
+    bytes: [u8; CAP],
+    len: usize,
+}
+
+impl<const CAP: usize> DecodedBuffer<CAP> {
+    /// Creates an empty decoded buffer.
+    #[must_use]
+    pub const fn new() -> Self {
+        Self {
+            bytes: [0u8; CAP],
+            len: 0,
+        }
+    }
+
+    /// Returns the number of visible decoded bytes.
+    #[must_use]
+    pub const fn len(&self) -> usize {
+        self.len
+    }
+
+    /// Returns whether the buffer has no visible decoded bytes.
+    #[must_use]
+    pub const fn is_empty(&self) -> bool {
+        self.len == 0
+    }
+
+    /// Returns the stack capacity in bytes.
+    #[must_use]
+    pub const fn capacity(&self) -> usize {
+        CAP
+    }
+
+    /// Returns the visible decoded bytes.
+    #[must_use]
+    pub fn as_bytes(&self) -> &[u8] {
+        &self.bytes[..self.len]
+    }
+
+    /// Compares this decoded output to `other` without short-circuiting on the
+    /// first differing byte.
+    ///
+    /// Length and the final equality result remain public. For equal-length
+    /// inputs, this helper scans every byte before returning. It is
+    /// constant-time-oriented best effort, not a formal cryptographic
+    /// constant-time guarantee.
+    #[must_use]
+    pub fn constant_time_eq(&self, other: &[u8]) -> bool {
+        constant_time_eq_public_len(self.as_bytes(), other)
+    }
+
+    /// Clears the visible bytes and the full backing array.
+    pub fn clear(&mut self) {
+        wipe_bytes(&mut self.bytes);
+        self.len = 0;
+    }
+
+    /// Clears bytes after the visible prefix.
+    pub fn clear_tail(&mut self) {
+        wipe_tail(&mut self.bytes, self.len);
+    }
+}
+
+impl<const CAP: usize> AsRef<[u8]> for DecodedBuffer<CAP> {
+    fn as_ref(&self) -> &[u8] {
+        self.as_bytes()
+    }
+}
+
+impl<const CAP: usize> Clone for DecodedBuffer<CAP> {
+    fn clone(&self) -> Self {
+        let mut output = Self::new();
+        output.bytes[..self.len].copy_from_slice(self.as_bytes());
+        output.len = self.len;
+        output
+    }
+}
+
+impl<const CAP: usize> core::fmt::Debug for DecodedBuffer<CAP> {
+    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        formatter
+            .debug_struct("DecodedBuffer")
+            .field("bytes", &"<redacted>")
+            .field("len", &self.len)
+            .field("capacity", &CAP)
+            .finish()
+    }
+}
+
+impl<const CAP: usize> Default for DecodedBuffer<CAP> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<const CAP: usize> Drop for DecodedBuffer<CAP> {
+    fn drop(&mut self) {
+        self.clear();
+    }
+}
+
+impl<const CAP: usize> Eq for DecodedBuffer<CAP> {}
+
+impl<const CAP: usize> PartialEq for DecodedBuffer<CAP> {
+    fn eq(&self, other: &Self) -> bool {
+        self.constant_time_eq(other.as_bytes())
+    }
+}
+
 /// Owned sensitive bytes with redacted formatting and drop-time cleanup.
 ///
 /// `SecretBuffer` is available with the `alloc` feature. It is intended for
@@ -2149,6 +2267,27 @@ where
                 .decode_slice_wrapped_clear_tail(input, output, wrap),
             None => self.engine.decode_slice_clear_tail(input, output),
         }
+    }
+
+    /// Decodes `input` into a stack-backed buffer according to this profile.
+    ///
+    /// This is useful for short decoded values where heap allocation is
+    /// unnecessary. If decoding fails, the internal backing array is cleared
+    /// before the error is returned.
+    pub fn decode_buffer<const CAP: usize>(
+        &self,
+        input: &[u8],
+    ) -> Result<DecodedBuffer<CAP>, DecodeError> {
+        let mut output = DecodedBuffer::new();
+        let written = match self.decode_slice_clear_tail(input, &mut output.bytes) {
+            Ok(written) => written,
+            Err(err) => {
+                output.clear();
+                return Err(err);
+            }
+        };
+        output.len = written;
+        Ok(output)
     }
 
     /// Encodes `input` into a newly allocated byte vector.
@@ -3598,6 +3737,36 @@ where
         };
         wipe_tail(output, written);
         Ok(written)
+    }
+
+    /// Decodes `input` into a stack-backed buffer.
+    ///
+    /// This helper is useful for short decoded values where callers want the
+    /// convenience of an owned result without enabling `alloc`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use base64_ng::STANDARD;
+    ///
+    /// let decoded = STANDARD.decode_buffer::<5>(b"aGVsbG8=").unwrap();
+    ///
+    /// assert_eq!(decoded.as_bytes(), b"hello");
+    /// ```
+    pub fn decode_buffer<const CAP: usize>(
+        &self,
+        input: &[u8],
+    ) -> Result<DecodedBuffer<CAP>, DecodeError> {
+        let mut output = DecodedBuffer::new();
+        let written = match self.decode_slice_clear_tail(input, &mut output.bytes) {
+            Ok(written) => written,
+            Err(err) => {
+                output.clear();
+                return Err(err);
+            }
+        };
+        output.len = written;
+        Ok(output)
     }
 
     /// Decodes `input` using the explicit legacy whitespace profile.

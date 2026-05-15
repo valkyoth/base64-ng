@@ -353,22 +353,31 @@ The `ct` module provides the same clear-tail decode variants for callers using
 the constant-time-oriented scalar decoder.
 
 For short values, `encode_buffer` returns a stack-backed `EncodedBuffer`
-without requiring the `alloc` feature:
+and `decode_buffer` returns a stack-backed `DecodedBuffer` without requiring
+the `alloc` feature:
 
 ```rust
-use base64_ng::{BCRYPT, STANDARD};
+use base64_ng::{BCRYPT, MIME, STANDARD};
 
 let encoded = STANDARD.encode_buffer::<8>(b"hello").unwrap();
 assert_eq!(encoded.as_str(), "aGVsbG8=");
 
+let decoded = STANDARD.decode_buffer::<5>(encoded.as_bytes()).unwrap();
+assert_eq!(decoded.as_bytes(), b"hello");
+
 let bcrypt = BCRYPT.encode_buffer::<4>(&[0xff, 0xff, 0xff]).unwrap();
 assert_eq!(bcrypt.as_bytes(), b"9999");
+
+let wrapped = MIME.encode_buffer::<82>(&[0x5a; 58]).unwrap();
+let decoded = MIME.decode_buffer::<58>(wrapped.as_bytes()).unwrap();
+assert_eq!(decoded.as_bytes(), &[0x5a; 58]);
 ```
 
-`EncodedBuffer` exposes bytes only through `as_bytes` and `as_str`, redacts the
-payload from `Debug`, and clears its backing array when dropped as best-effort
-data-retention reduction. `EncodedBuffer` equality uses a
-constant-time-oriented equal-length comparison.
+`EncodedBuffer` exposes bytes only through `as_bytes` and `as_str`.
+`DecodedBuffer` exposes bytes through `as_bytes`. Both stack-backed buffers
+redact the payload from `Debug`, clear their backing arrays when dropped as
+best-effort data-retention reduction, and use constant-time-oriented
+equal-length equality.
 
 When an owned heap buffer is acceptable but accidental logging is not, use
 `encode_secret` and `decode_secret`:

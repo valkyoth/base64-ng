@@ -1,9 +1,9 @@
 use base64_ng::{
     Alphabet, AlphabetError, BCRYPT, BCRYPT_NO_PAD, Bcrypt, CRYPT, CRYPT_NO_PAD, Crypt,
-    DecodeError, EncodeError, EncodedBuffer, Engine, LineEnding, LineWrap, MIME, PEM, PEM_CRLF,
-    Profile, STANDARD, STANDARD_NO_PAD, Standard, URL_SAFE, URL_SAFE_NO_PAD, UrlSafe,
-    checked_encoded_len, checked_wrapped_encoded_len, ct, decode_alphabet_byte, decoded_capacity,
-    decoded_len, encoded_len, runtime, validate_alphabet, wrapped_encoded_len,
+    DecodeError, DecodedBuffer, EncodeError, EncodedBuffer, Engine, LineEnding, LineWrap, MIME,
+    PEM, PEM_CRLF, Profile, STANDARD, STANDARD_NO_PAD, Standard, URL_SAFE, URL_SAFE_NO_PAD,
+    UrlSafe, checked_encoded_len, checked_wrapped_encoded_len, ct, decode_alphabet_byte,
+    decoded_capacity, decoded_len, encoded_len, runtime, validate_alphabet, wrapped_encoded_len,
 };
 
 #[cfg(feature = "stream")]
@@ -1960,6 +1960,53 @@ fn profile_stack_encoded_buffer_respects_wrapping_policy() {
 
     let bcrypt = BCRYPT.encode_buffer::<4>(&[0xff, 0xff, 0xff]).unwrap();
     assert_eq!(bcrypt.as_bytes(), b"9999");
+}
+
+#[test]
+fn stack_decoded_buffer_helpers_avoid_alloc_and_clear_tail() {
+    let decoded = STANDARD.decode_buffer::<5>(b"aGVsbG8=").unwrap();
+    assert_eq!(decoded.len(), 5);
+    assert_eq!(decoded.capacity(), 5);
+    assert!(!decoded.is_empty());
+    assert_eq!(decoded.as_bytes(), b"hello");
+    assert_eq!(decoded.as_ref(), b"hello");
+    assert!(decoded.constant_time_eq(b"hello"));
+    assert!(!decoded.constant_time_eq(b"Hello"));
+    assert!(!decoded.constant_time_eq(b"hello!"));
+    assert_eq!(
+        format!("{decoded:?}"),
+        "DecodedBuffer { bytes: \"<redacted>\", len: 5, capacity: 5 }"
+    );
+
+    let cloned = decoded.clone();
+    assert_eq!(decoded, cloned);
+    let different = STANDARD.decode_buffer::<5>(b"d29ybGQ=").unwrap();
+    assert_ne!(decoded, different);
+
+    let too_small: Result<DecodedBuffer<4>, DecodeError> = STANDARD.decode_buffer(b"aGVsbG8=");
+    assert_eq!(
+        too_small,
+        Err(DecodeError::OutputTooSmall {
+            required: 5,
+            available: 4,
+        })
+    );
+
+    let mut empty = DecodedBuffer::<5>::new();
+    assert!(empty.is_empty());
+    empty.clear_tail();
+    empty.clear();
+    assert_eq!(empty.as_bytes(), b"");
+}
+
+#[test]
+fn profile_stack_decoded_buffer_respects_wrapping_policy() {
+    let encoded = MIME.encode_buffer::<82>(&[0x5a; 58]).unwrap();
+    let decoded = MIME.decode_buffer::<58>(encoded.as_bytes()).unwrap();
+    assert_eq!(decoded.as_bytes(), &[0x5a; 58]);
+
+    let bcrypt = BCRYPT.decode_buffer::<3>(b"9999").unwrap();
+    assert_eq!(bcrypt.as_bytes(), &[0xff, 0xff, 0xff]);
 }
 
 #[cfg(feature = "alloc")]
