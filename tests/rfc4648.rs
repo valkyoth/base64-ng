@@ -116,6 +116,14 @@ fn validates_builtin_and_custom_alphabet_tables() {
 
 #[test]
 fn named_profiles_expose_expected_policies() {
+    let copied = MIME;
+    assert_eq!(copied, MIME);
+    assert_ne!(MIME, PEM);
+    assert_eq!(
+        format!("{MIME:?}"),
+        "Profile { engine: Engine { padded: true }, wrap: Some(LineWrap { line_len: 76, line_ending: CrLf }) }"
+    );
+
     assert_eq!(MIME.line_wrap(), Some(LineWrap::MIME));
     assert_eq!(PEM.line_wrap(), Some(LineWrap::PEM));
     assert_eq!(PEM_CRLF.line_wrap(), Some(LineWrap::PEM_CRLF));

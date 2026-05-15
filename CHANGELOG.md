@@ -15,6 +15,8 @@
   generation under `target/release-evidence/perf/`.
 - Added `TryFrom<&str>` and `TryFrom<&[u8]>` for `SecretBuffer` using strict
   standard padded Base64.
+- Documented the existing `Clone`, `Copy`, `Debug`, `Eq`, and `PartialEq`
+  behavior for named `Profile` values with regression coverage.
 
 ## 0.7.0 - 2026-05-15
 
