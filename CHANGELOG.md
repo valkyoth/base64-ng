@@ -24,6 +24,9 @@
   bounds, error cleanup, and validate/decode agreement.
 - Added manifest generation for opt-in dudect-style timing evidence, including
   toolchain metadata, command parameters, raw output checksum, and result status.
+- Added deterministic regression coverage that constant-time-oriented
+  validation and decode agree on valid and malformed inputs across supported
+  alphabets and padding modes.
 
 ## 0.6.0 - 2026-05-14
 

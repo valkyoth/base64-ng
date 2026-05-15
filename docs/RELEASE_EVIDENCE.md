@@ -83,6 +83,8 @@ The release gate runs:
 - stable key/value runtime report and policy-failure formatting tests
 - constant-time-oriented clear-tail decode tests for success, malformed input,
   undersized output, and in-place cleanup
+- constant-time-oriented validate/decode agreement tests for valid and
+  malformed inputs across supported alphabets and padding modes
 - stream encoder and decoder tests proving `finish()`, `into_inner()`, and
   adjacent-payload behavior remain intact after cleanup hardening
 - stream fuzz coverage for chunked writers, fragmented reader sources, and

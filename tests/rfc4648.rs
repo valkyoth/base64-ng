@@ -502,6 +502,56 @@ fn ct_validate_matches_constant_time_decode_policy() {
     );
 }
 
+fn assert_ct_validate_decode_agree<A, const PAD: bool>(
+    engine: ct::CtEngine<A, PAD>,
+    cases: &[&[u8]],
+) where
+    A: Alphabet,
+{
+    let mut output = [0u8; 32];
+    for input in cases {
+        let validate_result = engine.validate_result(input);
+        let decode_result = engine.decode_slice(input, &mut output);
+
+        assert_eq!(
+            validate_result.is_ok(),
+            decode_result.is_ok(),
+            "ct validate/decode disagreement for {input:?}",
+        );
+        assert_eq!(engine.validate(input), decode_result.is_ok());
+    }
+}
+
+#[test]
+fn ct_validate_and_decode_agree_for_malformed_inputs() {
+    assert_ct_validate_decode_agree(
+        ct::STANDARD,
+        &[
+            b"",
+            b"AAAA",
+            b"aGk=",
+            b"AA-A",
+            b"AA=A",
+            b"Zh==",
+            b"Zg",
+            b"Zm9v$g==",
+            b"aGk=AAAA",
+        ],
+    );
+    assert_ct_validate_decode_agree(
+        ct::STANDARD_NO_PAD,
+        &[b"", b"AAAA", b"aGk", b"Zg==", b"Zh", b"Zm9v$g", b"AA_A"],
+    );
+    assert_ct_validate_decode_agree(
+        ct::URL_SAFE,
+        &[b"", b"AAAA", b"-_8=", b"AA+A", b"AA=A", b"-_9=", b"-_8"],
+    );
+    assert_ct_validate_decode_agree(
+        ct::URL_SAFE_NO_PAD,
+        &[b"", b"AAAA", b"-_8", b"AA/A", b"-_9", b"-_8=", b"AA=A"],
+    );
+}
+
 #[test]
 fn ct_decoder_rejects_malformed_inputs() {
     let mut output = [0u8; 8];
