@@ -386,6 +386,9 @@ the zero-runtime-dependency stance.
   for every admitted accelerated backend.
 - Publish per-architecture benchmark evidence for any performance claim,
   including CPU, OS, Rust version, command, and raw output.
+- Consider a dependency-free helper macro or generator for audited custom
+  alphabet encoders when an alphabet can be mapped without secret-indexed table
+  access. Keep the fixed-scan fallback as the conservative default.
 
 ### v0.9
 

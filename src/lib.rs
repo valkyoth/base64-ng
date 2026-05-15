@@ -637,14 +637,29 @@ pub mod stream {
                 return Ok(());
             }
 
+            let mut pending = [0u8; 2];
+            pending[..self.pending_len].copy_from_slice(&self.pending[..self.pending_len]);
+            let pending_len = self.pending_len;
             let mut encoded = [0u8; 4];
-            let written = self
-                .engine
-                .encode_slice(&self.pending[..self.pending_len], &mut encoded)
-                .map_err(encode_error_to_io)?;
-            self.inner_mut().write_all(&encoded[..written])?;
+            let result = self.write_encoded_temp(&pending[..pending_len], &mut encoded);
+            crate::wipe_bytes(&mut pending);
+            result?;
             self.clear_pending();
             Ok(())
+        }
+
+        fn write_encoded_temp(&mut self, input: &[u8], encoded: &mut [u8]) -> io::Result<()> {
+            let written = match self.engine.encode_slice(input, encoded) {
+                Ok(written) => written,
+                Err(err) => {
+                    crate::wipe_bytes(encoded);
+                    return Err(encode_error_to_io(err));
+                }
+            };
+
+            let result = self.inner_mut().write_all(&encoded[..written]);
+            crate::wipe_bytes(encoded);
+            result
         }
     }
 
@@ -673,11 +688,9 @@ pub mod stream {
                 chunk[self.pending_len..].copy_from_slice(&input[..needed]);
 
                 let mut encoded = [0u8; 4];
-                let written = self
-                    .engine
-                    .encode_slice(&chunk, &mut encoded)
-                    .map_err(encode_error_to_io)?;
-                self.inner_mut().write_all(&encoded[..written])?;
+                let result = self.write_encoded_temp(&chunk, &mut encoded);
+                crate::wipe_bytes(&mut chunk);
+                result?;
                 self.clear_pending();
                 consumed += needed;
             }
@@ -691,11 +704,7 @@ pub mod stream {
                 take -= take % 3;
                 debug_assert!(take > 0);
 
-                let written = self
-                    .engine
-                    .encode_slice(&remaining[offset..offset + take], &mut encoded)
-                    .map_err(encode_error_to_io)?;
-                self.inner_mut().write_all(&encoded[..written])?;
+                self.write_encoded_temp(&remaining[offset..offset + take], &mut encoded)?;
                 offset += take;
             }
 
@@ -815,27 +824,43 @@ pub mod stream {
                 return Ok(());
             }
 
+            let mut pending = [0u8; 4];
+            pending[..self.pending_len].copy_from_slice(&self.pending[..self.pending_len]);
+            let pending_len = self.pending_len;
             let mut decoded = [0u8; 3];
-            let written = self
-                .engine
-                .decode_slice(&self.pending[..self.pending_len], &mut decoded)
-                .map_err(decode_error_to_io)?;
-            self.inner_mut().write_all(&decoded[..written])?;
+            let result = self.write_decoded_temp(&pending[..pending_len], &mut decoded);
+            crate::wipe_bytes(&mut pending);
+            result?;
             self.clear_pending();
             Ok(())
         }
 
-        fn write_full_quad(&mut self, input: [u8; 4]) -> io::Result<()> {
+        fn write_full_quad(&mut self, mut input: [u8; 4]) -> io::Result<()> {
             let mut decoded = [0u8; 3];
-            let written = self
-                .engine
-                .decode_slice(&input, &mut decoded)
-                .map_err(decode_error_to_io)?;
-            self.inner_mut().write_all(&decoded[..written])?;
+            let result = self.write_decoded_temp(&input, &mut decoded);
+            crate::wipe_bytes(&mut input);
+            let written = result?;
             if written < 3 {
                 self.finished = true;
             }
             Ok(())
+        }
+
+        fn write_decoded_temp(&mut self, input: &[u8], decoded: &mut [u8]) -> io::Result<usize> {
+            let written = match self.engine.decode_slice(input, decoded) {
+                Ok(written) => written,
+                Err(err) => {
+                    crate::wipe_bytes(decoded);
+                    return Err(decode_error_to_io(err));
+                }
+            };
+
+            let result = self.inner_mut().write_all(&decoded[..written]);
+            crate::wipe_bytes(decoded);
+            match result {
+                Ok(()) => Ok(written),
+                Err(err) => Err(err),
+            }
         }
     }
 
@@ -865,7 +890,9 @@ pub mod stream {
                 let mut quad = [0u8; 4];
                 quad[..self.pending_len].copy_from_slice(&self.pending[..self.pending_len]);
                 quad[self.pending_len..].copy_from_slice(&input[..needed]);
-                self.write_full_quad(quad)?;
+                let result = self.write_full_quad(quad);
+                crate::wipe_bytes(&mut quad);
+                result?;
                 self.clear_pending();
                 consumed += needed;
                 if self.finished && consumed < input.len() {
@@ -883,7 +910,10 @@ pub mod stream {
                     remaining[offset + 2],
                     remaining[offset + 3],
                 ];
-                self.write_full_quad(quad)?;
+                let mut quad = quad;
+                let result = self.write_full_quad(quad);
+                crate::wipe_bytes(&mut quad);
+                result?;
                 offset += 4;
                 if self.finished && offset < remaining.len() {
                     return Err(trailing_input_after_padding_error());
@@ -1046,20 +1076,24 @@ pub mod stream {
             let available = 4 - self.pending_len;
             let read = self.inner_mut().read(&mut input[..available])?;
             if read == 0 {
+                crate::wipe_bytes(&mut input);
                 self.finished = true;
                 self.push_final_pending()?;
                 return Ok(());
             }
 
             self.pending[self.pending_len..self.pending_len + read].copy_from_slice(&input[..read]);
+            crate::wipe_bytes(&mut input);
             self.pending_len += read;
             if self.pending_len < 4 {
                 return Ok(());
             }
 
-            let quad = self.pending;
+            let mut quad = self.pending;
             self.clear_pending();
-            self.push_decoded(&quad)?;
+            let result = self.push_decoded(&quad);
+            crate::wipe_bytes(&mut quad);
+            result?;
             if self.terminal_seen {
                 self.finished = true;
             }
@@ -1075,16 +1109,23 @@ pub mod stream {
             pending[..self.pending_len].copy_from_slice(&self.pending[..self.pending_len]);
             let pending_len = self.pending_len;
             self.clear_pending();
-            self.push_decoded(&pending[..pending_len])
+            let result = self.push_decoded(&pending[..pending_len]);
+            crate::wipe_bytes(&mut pending);
+            result
         }
 
         fn push_decoded(&mut self, input: &[u8]) -> io::Result<()> {
             let mut decoded = [0u8; 3];
-            let written = self
-                .engine
-                .decode_slice(input, &mut decoded)
-                .map_err(decode_error_to_io)?;
-            self.output.push_slice(&decoded[..written])?;
+            let written = match self.engine.decode_slice(input, &mut decoded) {
+                Ok(written) => written,
+                Err(err) => {
+                    crate::wipe_bytes(&mut decoded);
+                    return Err(decode_error_to_io(err));
+                }
+            };
+            let result = self.output.push_slice(&decoded[..written]);
+            crate::wipe_bytes(&mut decoded);
+            result?;
             if input.len() == 4 && written < 3 {
                 self.terminal_seen = true;
             }
@@ -1212,6 +1253,7 @@ pub mod stream {
             let mut input = [0u8; 768];
             let read = self.inner_mut().read(&mut input)?;
             if read == 0 {
+                crate::wipe_bytes(&mut input);
                 self.finished = true;
                 self.push_final_pending()?;
                 return Ok(());
@@ -1224,26 +1266,41 @@ pub mod stream {
                     self.pending[self.pending_len..self.pending_len + read]
                         .copy_from_slice(&input[..read]);
                     self.pending_len += read;
+                    crate::wipe_bytes(&mut input);
                     return Ok(());
                 }
 
                 let mut chunk = [0u8; 3];
                 chunk[..self.pending_len].copy_from_slice(&self.pending[..self.pending_len]);
                 chunk[self.pending_len..].copy_from_slice(&input[..needed]);
-                self.push_encoded(&chunk)?;
+                let result = self.push_encoded(&chunk);
+                crate::wipe_bytes(&mut chunk);
+                if let Err(err) = result {
+                    crate::wipe_bytes(&mut input);
+                    return Err(err);
+                }
                 self.clear_pending();
                 consumed += needed;
             }
 
             let remaining = &input[consumed..read];
             let full_len = remaining.len() / 3 * 3;
-            if full_len > 0 {
-                self.push_encoded(&remaining[..full_len])?;
+            let tail_len = remaining.len() - full_len;
+            let mut tail = [0u8; 2];
+            tail[..tail_len].copy_from_slice(&remaining[full_len..]);
+            let result = if full_len > 0 {
+                self.push_encoded(&remaining[..full_len])
+            } else {
+                Ok(())
+            };
+            crate::wipe_bytes(&mut input);
+            if let Err(err) = result {
+                crate::wipe_bytes(&mut tail);
+                return Err(err);
             }
-
-            let tail = &remaining[full_len..];
-            self.pending[..tail.len()].copy_from_slice(tail);
-            self.pending_len = tail.len();
+            self.pending[..tail_len].copy_from_slice(&tail[..tail_len]);
+            crate::wipe_bytes(&mut tail);
+            self.pending_len = tail_len;
             Ok(())
         }
 
@@ -1256,17 +1313,23 @@ pub mod stream {
             pending[..self.pending_len].copy_from_slice(&self.pending[..self.pending_len]);
             let pending_len = self.pending_len;
             self.clear_pending();
-            self.push_encoded(&pending[..pending_len])
+            let result = self.push_encoded(&pending[..pending_len]);
+            crate::wipe_bytes(&mut pending);
+            result
         }
 
         fn push_encoded(&mut self, input: &[u8]) -> io::Result<()> {
             let mut encoded = [0u8; 1024];
-            let written = self
-                .engine
-                .encode_slice(input, &mut encoded)
-                .map_err(encode_error_to_io)?;
-            self.output.push_slice(&encoded[..written])?;
-            Ok(())
+            let written = match self.engine.encode_slice(input, &mut encoded) {
+                Ok(written) => written,
+                Err(err) => {
+                    crate::wipe_bytes(&mut encoded);
+                    return Err(encode_error_to_io(err));
+                }
+            };
+            let result = self.output.push_slice(&encoded[..written]);
+            crate::wipe_bytes(&mut encoded);
+            result
         }
     }
 }
@@ -2213,7 +2276,12 @@ pub trait Alphabet {
     ///
     /// The default implementation scans the alphabet table instead of using a
     /// secret-indexed table lookup. Built-in alphabets override this with the
-    /// branch-minimized ASCII arithmetic mapper.
+    /// branch-minimized ASCII arithmetic mapper. Custom alphabets that keep the
+    /// default method prioritize timing posture over throughput: every emitted
+    /// Base64 byte performs a fixed 64-entry scan. For massive payloads with
+    /// user-defined alphabets, profile this cost and consider an audited custom
+    /// override only if the alphabet has a structure that can be mapped without
+    /// secret-indexed table access.
     #[must_use]
     fn encode(value: u8) -> u8 {
         encode_alphabet_value(value, &Self::ENCODE)

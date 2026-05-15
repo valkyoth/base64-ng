@@ -29,6 +29,10 @@
 - Added deterministic regression coverage that constant-time-oriented
   validation and decode agree on valid and malformed inputs across supported
   alphabets and padding modes.
+- Hardened streaming adapters to wipe short-lived stack buffers used for
+  temporary encoded, decoded, and read staging data.
+- Documented the throughput tradeoff of the conservative custom alphabet
+  encoding fallback.
 
 ## 0.6.0 - 2026-05-14
 

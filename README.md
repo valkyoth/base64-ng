@@ -261,6 +261,13 @@ validate_alphabet(&DotSlash::ENCODE).unwrap();
 assert_eq!(DotSlash::decode(b'.'), Some(0));
 ```
 
+The default `Alphabet::encode` implementation is deliberately conservative for
+custom alphabets: it performs a fixed 64-entry scan for every emitted Base64
+byte to avoid secret-indexed table lookups. The built-in alphabets override this
+with optimized arithmetic mappers. For very large payloads and custom
+alphabets, benchmark this tradeoff before using them on untrusted high-volume
+traffic.
+
 Built-in non-RFC alphabets are available for explicit interoperability:
 
 ```rust
