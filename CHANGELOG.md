@@ -29,6 +29,8 @@
   evidence artifacts, and `SecretBuffer` spare-capacity cleanup posture.
 - Extended SBOM generation to write a release evidence manifest with tool
   versions, commands, and artifact checksums.
+- Hardened `scripts/stable_release_gate.sh release` so stable release mode
+  refuses pre-release Cargo versions.
 
 ## 0.7.0 - 2026-05-15
 

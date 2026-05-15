@@ -12,6 +12,19 @@ case "$mode" in
         ;;
 esac
 
+cargo_version="$(
+    sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | sed -n '1p'
+)"
+
+if [ "$mode" = "release" ]; then
+    case "$cargo_version" in
+        *-*)
+            echo "stable release gate: release mode requires a stable Cargo.toml version, got $cargo_version" >&2
+            exit 1
+            ;;
+    esac
+fi
+
 echo "stable release gate: standard checks"
 scripts/checks.sh
 
