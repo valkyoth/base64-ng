@@ -71,7 +71,8 @@ The release gate runs:
 - scalar-only SIMD admission policy for the current release series, with no
   active accelerated dispatch and no SIMD performance claims unless a complete
   backend admission evidence package lands
-- unsafe-boundary validation that confines `allow(unsafe_code)` to `src/simd.rs`
+- unsafe-boundary validation that confines `allow(unsafe_code)` to the audited
+  volatile wipe helpers in `src/lib.rs` and the SIMD boundary in `src/simd.rs`
 - unsafe-boundary validation that confines architecture intrinsics, CPU feature
   detection, and `target_feature` gates to `src/simd.rs`
 - unsafe-boundary validation that requires inventory documentation for every

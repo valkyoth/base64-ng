@@ -85,6 +85,8 @@
 - Added doctested examples for wrapped and profile-level in-place decode APIs.
 - Refreshed SIMD release-evidence wording so `0.8` docs consistently describe
   the current scalar-only admission posture.
+- Corrected release-evidence unsafe-boundary wording to include the audited
+  scalar-side volatile wipe helpers.
 
 ## 0.7.0 - 2026-05-15
 
