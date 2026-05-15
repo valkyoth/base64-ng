@@ -17,13 +17,13 @@ stable release.
 | Strict decoding | Default behavior rejects whitespace, mixed alphabets, malformed padding, and non-canonical trailing bits | integration tests |
 | Legacy compatibility | Explicit opt-in APIs only | `decode_slice_legacy`, `validate_legacy` |
 | Constant-time API | Constant-time-oriented scalar validation/decode exists with isolated dudect-style timing evidence; no formal cryptographic constant-time guarantee | `docs/CONSTANT_TIME.md`, `docs/DUDECT.md` |
-| Cleanup posture | Clear-tail APIs, stream cleanup, `EncodedBuffer`, and `SecretBuffer` provide best-effort initialized-byte cleanup | `SECURITY.md` |
+| Cleanup posture | Clear-tail APIs, stream cleanup, `EncodedBuffer`, and `SecretBuffer` provide best-effort cleanup; `SecretBuffer` also clears vector spare capacity | `SECURITY.md`, `docs/UNSAFE.md` |
 | Fuzzing | Isolated `cargo-fuzz` harnesses outside the published dependency graph | `fuzz/`, `docs/RELEASE_EVIDENCE.md` |
-| Miri | Release gate runs Miri when nightly Miri is installed | `scripts/stable_release_gate.sh` |
+| Miri | Release gate runs Miri when nightly Miri is installed and writes evidence artifacts | `scripts/check_miri.sh`, `target/release-evidence/miri/` |
 | Kani | Harnesses are gated and run when installed/toolchain-compatible | `scripts/check_kani.sh` |
 | Audit | RustSec check required | `cargo audit`, `scripts/checks.sh` |
 | License policy | `cargo deny` and `cargo license --json` required | `deny.toml`, `scripts/checks.sh` |
-| SBOM | SPDX and CycloneDX SBOM generation in release evidence | `scripts/generate_sbom.py` |
+| SBOM | SPDX and CycloneDX SBOM generation in release evidence | `scripts/generate-sbom.sh` |
 | Reproducibility | Package/build reproducibility check in release gate | `scripts/stable_release_gate.sh` |
 
 ## Deployment Checks

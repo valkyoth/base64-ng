@@ -25,6 +25,8 @@
   runs instead of being skipped in the main checks job.
 - Extended the Miri check to write release evidence artifacts and a manifest
   when nightly Miri is installed.
+- Refreshed the trust dashboard to reference the current SBOM script, Miri
+  evidence artifacts, and `SecretBuffer` spare-capacity cleanup posture.
 
 ## 0.7.0 - 2026-05-15
 
