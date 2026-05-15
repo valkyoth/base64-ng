@@ -515,6 +515,12 @@ Check the zero-external-crate policy directly:
 scripts/validate-dependencies.sh
 ```
 
+Check release-facing documentation versions directly:
+
+```sh
+scripts/validate-doc-versions.sh
+```
+
 Check reserved feature placeholders directly:
 
 ```sh

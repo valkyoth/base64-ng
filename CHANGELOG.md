@@ -19,6 +19,8 @@
   behavior for named `Profile` values with regression coverage.
 - Extended `SecretBuffer` cleanup to best-effort wipe vector spare capacity
   with an audited volatile helper when `alloc` is enabled.
+- Added a release-gated documentation version validator so README, changelog,
+  and SIMD release-status docs cannot drift from `Cargo.toml`.
 
 ## 0.7.0 - 2026-05-15
 

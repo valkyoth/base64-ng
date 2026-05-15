@@ -69,6 +69,7 @@ test -s docs/RELEASE.md
 test -s docs/RELEASE_EVIDENCE.md
 test -s docs/SECURITY_CONTROLS.md
 test -s docs/SIMD.md
+test -s docs/SIMD_ADMISSION.md
 test -s docs/TRUST.md
 test -s docs/UNSAFE.md
 
@@ -91,6 +92,7 @@ for required_script in \
     "scripts/stable_release_gate.sh" \
     "scripts/validate-constant-time-policy.sh" \
     "scripts/validate-dependencies.sh" \
+    "scripts/validate-doc-versions.sh" \
     "scripts/validate-panic-policy.sh" \
     "scripts/validate-release-metadata.sh" \
     "scripts/validate-simd-admission.sh" \
@@ -169,6 +171,7 @@ for required_package_file in \
     "scripts/stable_release_gate.sh" \
     "scripts/validate-constant-time-policy.sh" \
     "scripts/validate-dependencies.sh" \
+    "scripts/validate-doc-versions.sh" \
     "scripts/validate-panic-policy.sh" \
     "scripts/validate-release-metadata.sh" \
     "scripts/validate-simd-admission.sh" \
