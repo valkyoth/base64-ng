@@ -1863,6 +1863,33 @@ impl<const CAP: usize> PartialEq for EncodedBuffer<CAP> {
     }
 }
 
+impl<const CAP: usize> TryFrom<&[u8]> for EncodedBuffer<CAP> {
+    type Error = EncodeError;
+
+    /// Encodes bytes into strict standard padded Base64 in a stack-backed
+    /// buffer.
+    ///
+    /// Use [`Engine::encode_buffer`] or [`Profile::encode_buffer`] when a
+    /// different alphabet, padding mode, or line-wrapping profile is required.
+    fn try_from(input: &[u8]) -> Result<Self, Self::Error> {
+        STANDARD.encode_buffer(input)
+    }
+}
+
+impl<const CAP: usize> TryFrom<&str> for EncodedBuffer<CAP> {
+    type Error = EncodeError;
+
+    /// Encodes UTF-8 text bytes into strict standard padded Base64 in a
+    /// stack-backed buffer.
+    ///
+    /// This treats the string as raw input bytes. Use
+    /// [`Engine::encode_buffer`] or [`Profile::encode_buffer`] when a
+    /// different alphabet, padding mode, or line-wrapping profile is required.
+    fn try_from(input: &str) -> Result<Self, Self::Error> {
+        Self::try_from(input.as_bytes())
+    }
+}
+
 /// Stack-backed decoded Base64 output.
 ///
 /// This type is intended for short decoded values where heap allocation would

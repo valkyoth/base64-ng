@@ -1995,6 +1995,27 @@ fn profile_stack_encoded_buffer_respects_wrapping_policy() {
 }
 
 #[test]
+fn encoded_buffer_try_from_uses_strict_standard_base64() {
+    let encoded = EncodedBuffer::<8>::try_from("hello").unwrap();
+    assert_eq!(encoded.as_str(), "aGVsbG8=");
+    assert_eq!(
+        format!("{encoded:?}"),
+        r#"EncodedBuffer { bytes: "<redacted>", len: 8, capacity: 8 }"#
+    );
+
+    let encoded = EncodedBuffer::<4>::try_from(&b"\xfb\xff"[..]).unwrap();
+    assert_eq!(encoded.as_bytes(), b"+/8=");
+
+    assert_eq!(
+        EncodedBuffer::<7>::try_from("hello").unwrap_err(),
+        EncodeError::OutputTooSmall {
+            required: 8,
+            available: 7,
+        }
+    );
+}
+
+#[test]
 fn stack_decoded_buffer_helpers_avoid_alloc_and_clear_tail() {
     let decoded = STANDARD.decode_buffer::<5>(b"aGVsbG8=").unwrap();
     assert_eq!(decoded.len(), 5);
