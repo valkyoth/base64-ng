@@ -13,6 +13,9 @@
   scalar-equivalence tests while keeping runtime dispatch scalar-only.
 - Added reserved SIMD feature-bundle compile checks to the normal local
   `scripts/checks.sh` gate so day-to-day checks match release expectations.
+- Added an isolated dependency-free dudect-style timing harness for the scalar
+  constant-time-oriented decoder, with compile/dependency checks in CI and
+  opt-in local timing runs.
 
 ## 0.6.0 - 2026-05-14
 

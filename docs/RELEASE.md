@@ -41,6 +41,7 @@ The release gate covers:
 - cargo-deny policy
 - RustSec audit
 - license inventory
+- dudect-style timing harness compile and dependency checks
 - SBOM generation
 - reproducible package/build check
 
@@ -79,6 +80,13 @@ cargo kani --version
 The release gate detects these as Cargo subcommands, for example `cargo
 nextest --version`, not by looking for standalone binaries named
 `cargo-nextest`, `cargo-fuzz`, or `cargo-kani` on `PATH`.
+
+Optional local timing evidence for the constant-time-oriented decoder can be
+collected with:
+
+```sh
+BASE64_NG_RUN_DUDECT=1 scripts/check_dudect.sh
+```
 
 ## Miri Setup
 

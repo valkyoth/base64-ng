@@ -11,8 +11,9 @@ new dependency expands the audit, license, advisory, and supply-chain surface.
   contains anything beyond `base64-ng` itself.
 - `scripts/check_reserved_features.sh` verifies that `tokio`, `kani`, and
   `fuzzing` remain inert and dependency-free until admitted.
-- Fuzz and performance harness dependencies are isolated under `fuzz/` and
-  `perf/`; they are checked separately and are not part of the published crate.
+- Fuzz, performance, and dudect-style timing harness dependencies are isolated
+  under `fuzz/`, `perf/`, and `dudect/`; they are checked separately and are
+  not part of the published crate.
 
 ## Admission Requirements
 
@@ -58,11 +59,12 @@ The following are rejected unless a specific review proves they are necessary:
 
 ## Isolated Tooling
 
-Fuzzing and benchmark dependencies may live in isolated workspaces only when
-they are not packaged with the published crate:
+Fuzzing, benchmark, and timing-evidence dependencies may live in isolated
+workspaces only when they are not packaged with the published crate:
 
 - `fuzz/` dependencies are reviewed by `scripts/check_fuzz.sh`.
 - `perf/` dependencies are reviewed by `scripts/check_perf.sh`.
+- `dudect/` dependencies are reviewed by `scripts/check_dudect.sh`.
 
 Those isolated dependencies do not weaken the zero-dependency guarantee for the
 published crate.

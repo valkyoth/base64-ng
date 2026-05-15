@@ -356,6 +356,9 @@ the zero-runtime-dependency stance.
   checks for older x86 CPUs before active SIMD admission.
 - Add an inactive SSSE3/SSE4.1 fixed-block encode prototype with scalar
   equivalence tests before any runtime admission.
+- Add an isolated dudect-style timing harness for the scalar
+  constant-time-oriented decoder. Keep timing runs opt-in, but compile and
+  dependency-check the harness in CI and release gates.
 - Replace inactive SIMD encode prototypes with real AVX2, AVX-512, NEON,
   SSSE3/SSE4.1, and wasm `simd128` candidate implementations only when scalar
   differential tests, fuzz evidence, target-feature checks, unsafe inventory

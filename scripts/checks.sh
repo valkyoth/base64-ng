@@ -28,6 +28,9 @@ scripts/validate-panic-policy.sh
 echo "checks: constant-time policy"
 scripts/validate-constant-time-policy.sh
 
+echo "checks: dudect timing harness"
+scripts/check_dudect.sh
+
 echo "checks: clippy default"
 cargo clippy --all-targets -- -D warnings
 

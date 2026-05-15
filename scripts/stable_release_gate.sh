@@ -38,6 +38,9 @@ scripts/check_fuzz.sh
 echo "stable release gate: performance harness dependency checks"
 scripts/check_perf.sh
 
+echo "stable release gate: dudect timing harness dependency checks"
+scripts/check_dudect.sh
+
 echo "stable release gate: installed cross-target checks"
 scripts/check_targets.sh
 

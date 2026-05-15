@@ -51,6 +51,9 @@ jobs:
       - name: Check performance harness dependencies
         run: scripts/check_perf.sh
 
+      - name: Check dudect timing harness dependencies
+        run: scripts/check_dudect.sh
+
       - name: Generate SBOM
         run: scripts/generate-sbom.sh
 

@@ -60,6 +60,7 @@ test -s docs/ASYNC.md
 test -s docs/BENCHMARKS.md
 test -s docs/CONSTANT_TIME.md
 test -s docs/DEPENDENCIES.md
+test -s docs/DUDECT.md
 test -s docs/FUZZING.md
 test -s docs/MIGRATION.md
 test -s docs/PANIC_POLICY.md
@@ -73,6 +74,7 @@ test -s docs/UNSAFE.md
 
 for required_script in \
     "scripts/check_backend_evidence.sh" \
+    "scripts/check_dudect.sh" \
     "scripts/check_fuzz.sh" \
     "scripts/check_fuzz_corpus.sh" \
     "scripts/check_kani.sh" \
@@ -136,6 +138,7 @@ for required_package_file in \
     "docs/BENCHMARKS.md" \
     "docs/CONSTANT_TIME.md" \
     "docs/DEPENDENCIES.md" \
+    "docs/DUDECT.md" \
     "docs/FUZZING.md" \
     "docs/MIGRATION.md" \
     "docs/PANIC_POLICY.md" \
@@ -147,6 +150,7 @@ for required_package_file in \
     "docs/TRUST.md" \
     "docs/UNSAFE.md" \
     "scripts/check_backend_evidence.sh" \
+    "scripts/check_dudect.sh" \
     "scripts/check_fuzz.sh" \
     "scripts/check_fuzz_corpus.sh" \
     "scripts/check_kani.sh" \
@@ -182,6 +186,11 @@ fi
 
 if printf '%s\n' "$package_list" | grep -q '^perf/'; then
     echo "release metadata: performance harness files must not be included in the published crate" >&2
+    exit 1
+fi
+
+if printf '%s\n' "$package_list" | grep -q '^dudect/'; then
+    echo "release metadata: dudect harness files must not be included in the published crate" >&2
     exit 1
 fi
 

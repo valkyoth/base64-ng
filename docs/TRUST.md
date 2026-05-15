@@ -16,7 +16,7 @@ stable release.
 | SIMD status | Reserved prototypes only; no accelerated backend admitted | `docs/SIMD.md` |
 | Strict decoding | Default behavior rejects whitespace, mixed alphabets, malformed padding, and non-canonical trailing bits | integration tests |
 | Legacy compatibility | Explicit opt-in APIs only | `decode_slice_legacy`, `validate_legacy` |
-| Constant-time API | Constant-time-oriented scalar validation/decode exists; no formal cryptographic constant-time guarantee | `docs/CONSTANT_TIME.md` |
+| Constant-time API | Constant-time-oriented scalar validation/decode exists with isolated dudect-style timing evidence; no formal cryptographic constant-time guarantee | `docs/CONSTANT_TIME.md`, `docs/DUDECT.md` |
 | Cleanup posture | Clear-tail APIs, stream cleanup, `EncodedBuffer`, and `SecretBuffer` provide best-effort initialized-byte cleanup | `SECURITY.md` |
 | Fuzzing | Isolated `cargo-fuzz` harnesses outside the published dependency graph | `fuzz/`, `docs/RELEASE_EVIDENCE.md` |
 | Miri | Release gate runs Miri when nightly Miri is installed | `scripts/stable_release_gate.sh` |

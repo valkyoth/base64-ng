@@ -128,6 +128,8 @@ Before documenting the guarantee as formally supported:
 - Malformed-input tests covering invalid bytes, mixed alphabets, padding, and
   non-canonical trailing bits.
 - Miri coverage for the constant-time module.
+- dudect-style fixed-vs-random timing evidence for the supported release
+  binaries covered by the claim.
 - Generated-code review for supported release targets.
 - A release note that states the exact guarantee and exclusions.
 
@@ -176,6 +178,19 @@ This policy is release-gated by:
 ```sh
 scripts/validate-constant-time-policy.sh
 ```
+
+## dudect-Style Timing Evidence
+
+`dudect/` contains an isolated, dependency-free timing harness for the scalar
+constant-time-oriented decoder. The normal gate compiles the harness and checks
+its dependency policy. Local timing runs are opt-in because virtualized CI
+runners and busy developer machines can produce noisy measurements:
+
+```sh
+BASE64_NG_RUN_DUDECT=1 scripts/check_dudect.sh
+```
+
+See [DUDECT.md](DUDECT.md) for the exact command contract and evidence rules.
 
 ## Memory Cleanup
 

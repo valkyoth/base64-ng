@@ -62,7 +62,7 @@ Planned behind admission evidence:
 | Active backend | Scalar only |
 | Strict decoding | Default, canonical, no whitespace |
 | Legacy compatibility | Explicit opt-in APIs |
-| Constant-time posture | Constant-time-oriented scalar validation/decode; no formal cryptographic guarantee |
+| Constant-time posture | Constant-time-oriented scalar validation/decode with isolated dudect-style timing evidence; no formal cryptographic guarantee |
 | Cleanup posture | Best-effort initialized-byte cleanup and redacted secret wrappers |
 | Release evidence | fmt, clippy, tests, docs, deny, audit, license, SBOM, reproducibility |
 
@@ -613,6 +613,8 @@ gate and are too slow for an interpreter.
 - Correctness first, speed second, unsafe last.
 - The scalar implementation is the reference behavior.
 - SIMD must prove equivalence to scalar behavior across fuzzed and deterministic inputs.
+- Constant-time claims require empirical timing evidence, generated-code
+  review, and explicit documented exclusions.
 - Compatibility modes must be visible in the type/API surface.
 - Release evidence belongs in the repository and CI, not in memory.
 

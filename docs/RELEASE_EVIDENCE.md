@@ -70,6 +70,8 @@ The release gate runs:
   `unreachable!`, `.unwrap()`, or `.expect()` sites
 - constant-time policy validation that keeps non-claim wording and
   generated-code review requirements in the documented release bar
+- dudect-style timing harness compile and dependency checks, with timing runs
+  opt-in for local release evidence
 - runtime backend report tests proving the public active backend remains scalar
   until an accelerated backend is explicitly admitted
 - runtime backend policy tests for scalar execution and no-SIMD deployment
@@ -168,6 +170,26 @@ scripts/validate-simd-admission.sh
 That validator keeps active SIMD dispatch scalar-only until the release includes
 the required scalar differential tests, fuzz evidence, unsafe inventory updates,
 architecture evidence, benchmark evidence, and release-note wording.
+
+## Constant-Time Timing Evidence
+
+The release gate compiles the isolated dudect-style harness and checks its
+dependency policy:
+
+```sh
+scripts/check_dudect.sh
+```
+
+Timing measurements are opt-in because shared CI runners are not stable enough
+for reliable side-channel statistics:
+
+```sh
+BASE64_NG_RUN_DUDECT=1 scripts/check_dudect.sh
+```
+
+Archive the raw output with CPU, OS, Rust version, sample count, and command
+line when using dudect-style evidence for a security review. This evidence is
+empirical and does not replace generated-code review or Kani proofs.
 
 ## Performance Evidence
 
