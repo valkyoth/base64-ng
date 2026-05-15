@@ -1825,7 +1825,8 @@ pub struct SecretBuffer {
 impl SecretBuffer {
     /// Wraps an existing vector as sensitive material.
     #[must_use]
-    pub fn from_vec(bytes: alloc::vec::Vec<u8>) -> Self {
+    pub fn from_vec(mut bytes: alloc::vec::Vec<u8>) -> Self {
+        wipe_vec_spare_capacity(&mut bytes);
         Self { bytes }
     }
 

@@ -43,6 +43,8 @@
   calculations.
 - Added `Profile::checked_new` and `Profile::is_valid` for defensive
   construction of wrapped profiles.
+- Tightened `SecretBuffer::from_vec` to wipe vector spare capacity immediately
+  when wrapping caller-provided vectors.
 
 ## 0.7.0 - 2026-05-15
 

@@ -66,8 +66,8 @@ Status: active cleanup primitive when `alloc` is enabled.
 Purpose:
 
 - Clear vector spare capacity for `SecretBuffer` so previously written bytes in
-  the same allocation are not left untouched when the wrapper is dropped or
-  explicitly cleared.
+  the same allocation are not left untouched when the wrapper is created,
+  dropped, or explicitly cleared.
 - Keep spare-capacity cleanup dependency-free while still using volatile writes.
 
 Preconditions:

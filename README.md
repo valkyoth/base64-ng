@@ -387,9 +387,10 @@ let decoded = base64_ng::SecretBuffer::try_from("aGVsbG8=").unwrap();
 assert_eq!(decoded.expose_secret(), b"hello");
 ```
 
-`SecretBuffer` clears initialized bytes and vector spare capacity when dropped,
-but it does not claim formal zeroization and cannot clean historical copies
-outside the wrapper or make guarantees about allocator behavior.
+`SecretBuffer` clears vector spare capacity when a vector is wrapped, and clears
+initialized bytes plus spare capacity when dropped. It does not claim formal
+zeroization and cannot clean historical copies outside the wrapper or make
+guarantees about allocator behavior.
 
 `TryFrom<&str>` and `TryFrom<&[u8]>` for `SecretBuffer` use strict standard
 padded Base64. Use explicit engine or profile methods for URL-safe, no-padding,

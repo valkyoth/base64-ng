@@ -2022,6 +2022,18 @@ fn secret_buffer_redacts_and_reveals_explicitly() {
 
 #[cfg(feature = "alloc")]
 #[test]
+fn secret_buffer_from_vec_preserves_visible_bytes_with_spare_capacity() {
+    let mut bytes = Vec::with_capacity(32);
+    bytes.extend_from_slice(b"token");
+    assert!(bytes.capacity() > bytes.len());
+
+    let secret = SecretBuffer::from_vec(bytes);
+    assert_eq!(secret.len(), 5);
+    assert_eq!(secret.expose_secret(), b"token");
+}
+
+#[cfg(feature = "alloc")]
+#[test]
 fn secret_encode_and_decode_helpers_round_trip() {
     let encoded = STANDARD.encode_secret(b"hello").unwrap();
     assert_eq!(encoded.expose_secret(), b"aGVsbG8=");
