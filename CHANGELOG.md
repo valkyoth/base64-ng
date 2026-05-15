@@ -61,6 +61,8 @@
   stack-backed decoded output.
 - Added `TryFrom<&str>` and `TryFrom<&[u8]>` for `DecodedBuffer<CAP>` using
   strict standard padded Base64.
+- Added `into_exposed_array` escape hatches for `EncodedBuffer` and
+  `DecodedBuffer`.
 
 ## 0.7.0 - 2026-05-15
 

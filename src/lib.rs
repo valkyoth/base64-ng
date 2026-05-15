@@ -1791,6 +1791,20 @@ impl<const CAP: usize> EncodedBuffer<CAP> {
         constant_time_eq_public_len(self.as_bytes(), other)
     }
 
+    /// Consumes the wrapper and returns the backing array plus visible length.
+    ///
+    /// This is an explicit escape hatch for no-alloc interop with APIs that
+    /// require ownership of a fixed array. The returned array is no longer
+    /// redacted by formatting and will not be cleared by `EncodedBuffer` on
+    /// drop; callers that keep handling sensitive data should arrange their
+    /// own cleanup.
+    #[must_use]
+    pub fn into_exposed_array(mut self) -> ([u8; CAP], usize) {
+        let len = self.len;
+        self.len = 0;
+        (core::mem::replace(&mut self.bytes, [0u8; CAP]), len)
+    }
+
     /// Clears the visible bytes and the full backing array.
     pub fn clear(&mut self) {
         wipe_bytes(&mut self.bytes);
@@ -1907,6 +1921,20 @@ impl<const CAP: usize> DecodedBuffer<CAP> {
     #[must_use]
     pub fn constant_time_eq(&self, other: &[u8]) -> bool {
         constant_time_eq_public_len(self.as_bytes(), other)
+    }
+
+    /// Consumes the wrapper and returns the backing array plus visible length.
+    ///
+    /// This is an explicit escape hatch for no-alloc interop with APIs that
+    /// require ownership of a fixed array. The returned array is no longer
+    /// redacted by formatting and will not be cleared by `DecodedBuffer` on
+    /// drop; callers that keep handling sensitive data should arrange their
+    /// own cleanup.
+    #[must_use]
+    pub fn into_exposed_array(mut self) -> ([u8; CAP], usize) {
+        let len = self.len;
+        self.len = 0;
+        (core::mem::replace(&mut self.bytes, [0u8; CAP]), len)
     }
 
     /// Clears the visible bytes and the full backing array.

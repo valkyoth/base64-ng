@@ -1964,6 +1964,10 @@ fn stack_encoded_buffer_helpers_avoid_alloc_and_clear_tail() {
     let different = STANDARD.encode_buffer::<8>(b"world").unwrap();
     assert_ne!(encoded, different);
 
+    let (array, len) = cloned.into_exposed_array();
+    assert_eq!(len, 8);
+    assert_eq!(&array[..len], b"aGVsbG8=");
+
     let too_small: Result<EncodedBuffer<7>, EncodeError> = STANDARD.encode_buffer(b"hello");
     assert_eq!(
         too_small,
@@ -2010,6 +2014,10 @@ fn stack_decoded_buffer_helpers_avoid_alloc_and_clear_tail() {
     assert_eq!(decoded, cloned);
     let different = STANDARD.decode_buffer::<5>(b"d29ybGQ=").unwrap();
     assert_ne!(decoded, different);
+
+    let (array, len) = cloned.into_exposed_array();
+    assert_eq!(len, 5);
+    assert_eq!(&array[..len], b"hello");
 
     let too_small: Result<DecodedBuffer<4>, DecodeError> = STANDARD.decode_buffer(b"aGVsbG8=");
     assert_eq!(

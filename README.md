@@ -380,6 +380,11 @@ redact the payload from `Debug`, clear their backing arrays when dropped as
 best-effort data-retention reduction, and use constant-time-oriented
 equal-length equality.
 
+`into_exposed_array` is the explicit no-alloc ownership escape hatch for both
+stack-backed buffers. It returns the backing array and visible length, so
+redacted formatting and drop-time cleanup no longer apply to the returned
+array.
+
 When an owned heap buffer is acceptable but accidental logging is not, use
 `encode_secret` and `decode_secret`:
 

@@ -28,6 +28,8 @@ The caller still owns:
 - choosing strict, legacy, wrapped, MIME, PEM, bcrypt-style, or custom profiles
   intentionally
 - avoiding accidental copies of secrets before wrapping them in `SecretBuffer`
+- treating stack-buffer `into_exposed_array` calls as boundaries where redacted
+  formatting and drop-time cleanup intentionally stop for the returned arrays
 - treating `SecretBuffer::into_exposed_vec` as a boundary where redacted
   formatting and drop-time cleanup intentionally stop
 - process-wide memory hygiene such as core-dump policy, swap policy, crash
