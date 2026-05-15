@@ -24,13 +24,13 @@ use core::arch::aarch64::{uint8x16_t, vdupq_n_u8, vst1q_u8};
 use core::arch::arm::{uint8x16_t, vdupq_n_u8, vst1q_u8};
 #[cfg(target_arch = "x86")]
 use core::arch::x86::{
-    __m256i, __m512i, _mm256_setzero_si256, _mm256_storeu_si256, _mm512_setzero_si512,
-    _mm512_storeu_si512,
+    __m128i, __m256i, __m512i, _mm_setzero_si128, _mm_storeu_si128, _mm256_setzero_si256,
+    _mm256_storeu_si256, _mm512_setzero_si512, _mm512_storeu_si512,
 };
 #[cfg(target_arch = "x86_64")]
 use core::arch::x86_64::{
-    __m256i, __m512i, _mm256_setzero_si256, _mm256_storeu_si256, _mm512_setzero_si512,
-    _mm512_storeu_si512,
+    __m128i, __m256i, __m512i, _mm_setzero_si128, _mm_storeu_si128, _mm256_setzero_si256,
+    _mm256_storeu_si256, _mm512_setzero_si512, _mm512_storeu_si512,
 };
 
 /// Backend currently allowed to execute.
@@ -249,6 +249,54 @@ where
     }
 }
 
+/// Encodes one 12-byte block into 16 bytes through the inactive SSSE3/SSE4.1 prototype.
+///
+/// This is not an admitted fast path. It exists to exercise lower-tier x86
+/// target-feature plumbing, unsafe isolation, and scalar equivalence before a
+/// real vector encoder is allowed to participate in dispatch.
+///
+/// # Safety
+///
+/// The caller must execute this function only when SSSE3 and SSE4.1 are
+/// available on the current CPU. The input and output sizes are fixed by their
+/// array types.
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+#[allow(dead_code, reason = "inactive prototype is not dispatchable yet")]
+#[expect(
+    clippy::cast_ptr_alignment,
+    reason = "_mm_storeu_si128 accepts unaligned pointers"
+)]
+#[target_feature(enable = "ssse3,sse4.1")]
+pub(super) unsafe fn encode_12_bytes_ssse3_sse41<A>(input: &[u8; 12], output: &mut [u8; 16])
+where
+    A: Alphabet,
+{
+    let zeros = _mm_setzero_si128();
+    // SAFETY: `output` is a valid 16-byte mutable array. SSSE3/SSE4.1
+    // availability is guaranteed by this function's target-feature
+    // precondition, and the unaligned store does not require stronger pointer
+    // alignment.
+    unsafe {
+        _mm_storeu_si128(output.as_mut_ptr().cast::<__m128i>(), zeros);
+    }
+
+    let mut read = 0;
+    let mut write = 0;
+    while read < input.len() {
+        let b0 = input[read];
+        let b1 = input[read + 1];
+        let b2 = input[read + 2];
+
+        output[write] = encode_base64_value::<A>(b0 >> 2);
+        output[write + 1] = encode_base64_value::<A>(((b0 & 0b0000_0011) << 4) | (b1 >> 4));
+        output[write + 2] = encode_base64_value::<A>(((b1 & 0b0000_1111) << 2) | (b2 >> 6));
+        output[write + 3] = encode_base64_value::<A>(b2 & 0b0011_1111);
+
+        read += 3;
+        write += 4;
+    }
+}
+
 /// Encodes one 12-byte block into 16 bytes through the inactive NEON prototype.
 ///
 /// This is not an admitted fast path. It exists to exercise ARM intrinsic
@@ -383,6 +431,46 @@ mod tests {
                 .unwrap();
             assert_eq!(scalar_len, avx2_url_safe.len());
             assert_eq!(avx2_url_safe, scalar_url_safe);
+        }
+    }
+
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    #[test]
+    fn ssse3_sse41_encode_prototype_matches_scalar_when_available() {
+        if !ssse3_sse41_available() {
+            return;
+        }
+
+        let mut input = [0; 12];
+        for seed in 0..64 {
+            fill_pattern(&mut input, seed);
+
+            let mut ssse3_standard = [0x55; 16];
+            let mut scalar_standard = [0xaa; 16];
+            // SAFETY: The feature check above uses runtime SSSE3/SSE4.1
+            // detection on std builds and compile-time target-feature
+            // detection otherwise.
+            unsafe {
+                encode_12_bytes_ssse3_sse41::<Standard>(&input, &mut ssse3_standard);
+            }
+            let scalar_len = Engine::<Standard, true>::new()
+                .encode_slice(&input, &mut scalar_standard)
+                .unwrap();
+            assert_eq!(scalar_len, ssse3_standard.len());
+            assert_eq!(ssse3_standard, scalar_standard);
+
+            let mut ssse3_url_safe = [0x55; 16];
+            let mut scalar_url_safe = [0xaa; 16];
+            // SAFETY: The feature check above proves SSSE3/SSE4.1
+            // availability for this test invocation.
+            unsafe {
+                encode_12_bytes_ssse3_sse41::<UrlSafe>(&input, &mut ssse3_url_safe);
+            }
+            let scalar_len = Engine::<UrlSafe, true>::new()
+                .encode_slice(&input, &mut scalar_url_safe)
+                .unwrap();
+            assert_eq!(scalar_len, ssse3_url_safe.len());
+            assert_eq!(ssse3_url_safe, scalar_url_safe);
         }
     }
 

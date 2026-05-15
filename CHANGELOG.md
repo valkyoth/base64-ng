@@ -9,6 +9,8 @@
   feature-bundle compile check while keeping scalar as the only active backend.
 - Added SSSE3/SSE4.1 candidate reporting and reserved feature-bundle compile
   evidence for older x86 CPUs before any active SIMD admission.
+- Added an inactive SSSE3/SSE4.1 fixed-block encode prototype with
+  scalar-equivalence tests while keeping runtime dispatch scalar-only.
 - Added reserved SIMD feature-bundle compile checks to the normal local
   `scripts/checks.sh` gate so day-to-day checks match release expectations.
 

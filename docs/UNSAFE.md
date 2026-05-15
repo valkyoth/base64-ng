@@ -122,6 +122,38 @@ Safety argument:
 - The function is guarded by an AVX2 target-feature contract.
 - The prototype then overwrites the block with scalar-equivalent Base64 output.
 
+### `encode_12_bytes_ssse3_sse41`
+
+Location: `src/simd.rs`
+
+Status: inactive prototype, not dispatchable.
+
+Purpose:
+
+- Exercise lower-tier x86 target-feature plumbing.
+- Validate the unsafe boundary.
+- Provide scalar-equivalence test coverage before any real vector path is
+  admitted.
+
+Preconditions:
+
+- Caller must prove SSSE3 and SSE4.1 are available on the current CPU.
+- Input is exactly 12 bytes.
+- Output is exactly 16 bytes.
+
+Unsafe operation:
+
+- `_mm_storeu_si128` stores one 128-bit zero vector into the output buffer.
+
+Safety argument:
+
+- The output type is `&mut [u8; 16]`, so the store has enough initialized,
+  writable memory.
+- The intrinsic is the unaligned store variant, so no stronger alignment is
+  required.
+- The function is guarded by an SSSE3/SSE4.1 target-feature contract.
+- The prototype then overwrites the block with scalar-equivalent Base64 output.
+
 ### `encode_12_bytes_neon`
 
 Location: `src/simd.rs`

@@ -39,6 +39,9 @@ weakening the scalar trust base.
   without parsing formatted strings.
 - SSSE3/SSE4.1 detection is reporting-only until an implementation has scalar
   differential tests, fuzz coverage, and benchmark evidence.
+- An inactive SSSE3/SSE4.1 fixed-block encode prototype exists behind the SIMD
+  boundary and is tested against scalar output only when SSSE3/SSE4.1 is
+  available.
 - An inactive AVX2 fixed-block encode prototype exists behind the SIMD boundary
   and is tested against scalar output only when AVX2 is available.
 - An inactive NEON fixed-block encode prototype exists behind the same boundary
