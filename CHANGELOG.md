@@ -47,6 +47,8 @@
   when wrapping caller-provided vectors.
 - Routed `SecretBuffer::from_slice` through the same spare-capacity cleanup
   path as `SecretBuffer::from_vec`.
+- Added `SecretBuffer::constant_time_eq` for dependency-free,
+  constant-time-oriented comparison of equal-length secret buffers.
 
 ## 0.7.0 - 2026-05-15
 

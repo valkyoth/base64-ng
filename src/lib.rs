@@ -1867,6 +1867,18 @@ impl SecretBuffer {
         &mut self.bytes
     }
 
+    /// Compares this secret to `other` without short-circuiting on the first
+    /// differing byte.
+    ///
+    /// Length and the final equality result remain public. For equal-length
+    /// inputs, this helper scans every byte before returning. It is
+    /// constant-time-oriented best effort, not a formal cryptographic
+    /// constant-time guarantee.
+    #[must_use]
+    pub fn constant_time_eq(&self, other: &[u8]) -> bool {
+        constant_time_eq_public_len(self.expose_secret(), other)
+    }
+
     /// Clears the initialized bytes and makes the buffer empty.
     pub fn clear(&mut self) {
         wipe_vec_all(&mut self.bytes);
@@ -2676,6 +2688,19 @@ const fn ct_mask_eq_u8(left: u8, right: u8) -> u8 {
 const fn ct_mask_lt_u8(left: u8, right: u8) -> u8 {
     let diff = (left as u16).wrapping_sub(right as u16);
     ct_mask_bit((diff >> 8) as u8)
+}
+
+#[cfg(feature = "alloc")]
+fn constant_time_eq_public_len(left: &[u8], right: &[u8]) -> bool {
+    if left.len() != right.len() {
+        return false;
+    }
+
+    let diff = left
+        .iter()
+        .zip(right)
+        .fold(0u8, |diff, (left, right)| diff | (*left ^ *right));
+    diff == 0
 }
 
 mod backend {

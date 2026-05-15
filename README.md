@@ -381,6 +381,7 @@ assert_eq!(format!("{encoded:?}"), r#"SecretBuffer { bytes: "<redacted>", len: 8
 
 let decoded = STANDARD.decode_secret(encoded.expose_secret()).unwrap();
 assert_eq!(decoded.expose_secret(), b"hello");
+assert!(decoded.constant_time_eq(b"hello"));
 assert_eq!(format!("{decoded}"), "<redacted>");
 
 let decoded = base64_ng::SecretBuffer::try_from("aGVsbG8=").unwrap();

@@ -2011,6 +2011,9 @@ fn secret_buffer_redacts_and_reveals_explicitly() {
 
     secret.expose_secret_mut()[0] = b'T';
     assert_eq!(secret.expose_secret(), b"Token");
+    assert!(secret.constant_time_eq(b"Token"));
+    assert!(!secret.constant_time_eq(b"token"));
+    assert!(!secret.constant_time_eq(b"Token!"));
 
     let cloned = secret.clone();
     assert_eq!(secret, cloned);
