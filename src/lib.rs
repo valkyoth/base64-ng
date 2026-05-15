@@ -1924,7 +1924,7 @@ impl Eq for SecretBuffer {}
 #[cfg(feature = "alloc")]
 impl PartialEq for SecretBuffer {
     fn eq(&self, other: &Self) -> bool {
-        self.expose_secret() == other.expose_secret()
+        self.constant_time_eq(other.expose_secret())
     }
 }
 

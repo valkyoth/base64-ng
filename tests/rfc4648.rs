@@ -2017,6 +2017,8 @@ fn secret_buffer_redacts_and_reveals_explicitly() {
 
     let cloned = secret.clone();
     assert_eq!(secret, cloned);
+    assert_ne!(secret, SecretBuffer::from_slice(b"token"));
+    assert_ne!(secret, SecretBuffer::from_slice(b"Token!"));
 
     secret.clear();
     assert!(secret.is_empty());
