@@ -2187,6 +2187,62 @@ pub fn decoded_len(input: &[u8], padded: bool) -> Result<usize, DecodeError> {
     }
 }
 
+/// Defines a custom [`Alphabet`] from a 64-byte string literal.
+///
+/// The generated alphabet is validated at compile time with
+/// [`validate_alphabet`]. Invalid, duplicate, or padding bytes fail the build
+/// instead of creating a malformed runtime profile.
+///
+/// The generated implementation uses the conservative default
+/// [`Alphabet::encode`] behavior: every emitted Base64 byte performs a fixed
+/// 64-entry scan to avoid secret-indexed table lookups. Built-in alphabets use
+/// optimized arithmetic mappers.
+///
+/// # Examples
+///
+/// ```
+/// base64_ng::define_alphabet! {
+///     struct DotSlash = b"./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+/// }
+///
+/// let engine = base64_ng::Engine::<DotSlash, false>::new();
+/// let mut encoded = [0u8; 4];
+/// let written = engine.encode_slice(&[0xff, 0xff, 0xff], &mut encoded).unwrap();
+/// assert_eq!(&encoded[..written], b"9999");
+/// ```
+///
+/// Invalid alphabets fail during compilation:
+///
+/// ```compile_fail
+/// base64_ng::define_alphabet! {
+///     struct Bad = b"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+/// }
+/// ```
+#[macro_export]
+macro_rules! define_alphabet {
+    ($(#[$meta:meta])* $vis:vis struct $name:ident = $encode:expr;) => {
+        $(#[$meta])*
+        #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+        $vis struct $name;
+
+        impl $crate::Alphabet for $name {
+            const ENCODE: [u8; 64] = *$encode;
+
+            #[inline]
+            fn decode(byte: u8) -> Option<u8> {
+                $crate::decode_alphabet_byte(byte, &Self::ENCODE)
+            }
+        }
+
+        const _: [(); 1] = [(); match $crate::validate_alphabet(
+            &<$name as $crate::Alphabet>::ENCODE,
+        ) {
+            Ok(()) => 1,
+            Err(_) => 0,
+        }];
+    };
+}
+
 /// Validates a 64-byte Base64 alphabet table.
 ///
 /// A valid alphabet must contain exactly 64 unique visible ASCII bytes and must

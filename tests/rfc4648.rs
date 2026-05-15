@@ -47,6 +47,12 @@ impl Alphabet for ReverseAlphabet {
 
 const REVERSE_PADDED: Engine<ReverseAlphabet, true> = Engine::new();
 
+base64_ng::define_alphabet! {
+    struct MacroAlphabet = b"./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+}
+
+const MACRO_NO_PAD: Engine<MacroAlphabet, false> = Engine::new();
+
 #[test]
 fn rfc4648_standard_round_trips() {
     let cases: &[&[u8]] = &[
@@ -222,6 +228,23 @@ fn custom_alphabet_helper_decodes_and_round_trips() {
     let mut standard = [0u8; 64];
     let standard_len = STANDARD.encode_slice(input, &mut standard).unwrap();
     assert_ne!(&encoded[..encoded_len], &standard[..standard_len]);
+}
+
+#[test]
+fn custom_alphabet_macro_validates_and_round_trips() {
+    assert_eq!(validate_alphabet(&MacroAlphabet::ENCODE), Ok(()));
+    assert_eq!(MacroAlphabet::decode(b'.'), Some(0));
+    assert_eq!(MacroAlphabet::decode(b'9'), Some(63));
+
+    let input = b"macro alphabet";
+    let mut encoded = [0u8; 64];
+    let encoded_len = MACRO_NO_PAD.encode_slice(input, &mut encoded).unwrap();
+    let mut decoded = [0u8; 64];
+    let decoded_len = MACRO_NO_PAD
+        .decode_slice(&encoded[..encoded_len], &mut decoded)
+        .unwrap();
+
+    assert_eq!(&decoded[..decoded_len], input);
 }
 
 #[test]

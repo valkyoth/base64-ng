@@ -242,32 +242,24 @@ assert_eq!(&output[..written], b"hello");
 
 ## Custom Alphabets
 
-User-defined alphabets can be validated before use:
+User-defined alphabets can be generated and validated at compile time:
 
 ```rust
-use base64_ng::{Alphabet, decode_alphabet_byte, validate_alphabet};
-
-struct DotSlash;
-
-impl Alphabet for DotSlash {
-    const ENCODE: [u8; 64] =
-        *b"./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-
-    fn decode(byte: u8) -> Option<u8> {
-        decode_alphabet_byte(byte, &Self::ENCODE)
-    }
+base64_ng::define_alphabet! {
+    struct DotSlash = b"./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 }
 
-validate_alphabet(&DotSlash::ENCODE).unwrap();
+use base64_ng::Alphabet;
+
 assert_eq!(DotSlash::decode(b'.'), Some(0));
 ```
 
-The default `Alphabet::encode` implementation is deliberately conservative for
-custom alphabets: it performs a fixed 64-entry scan for every emitted Base64
-byte to avoid secret-indexed table lookups. The built-in alphabets override this
-with optimized arithmetic mappers. For very large payloads and custom
-alphabets, benchmark this tradeoff before using them on untrusted high-volume
-traffic.
+The generated alphabet uses the deliberately conservative default
+`Alphabet::encode` implementation: it performs a fixed 64-entry scan for every
+emitted Base64 byte to avoid secret-indexed table lookups. The built-in
+alphabets override this with optimized arithmetic mappers. For very large
+payloads and custom alphabets, benchmark this tradeoff before using them on
+untrusted high-volume traffic.
 
 Built-in non-RFC alphabets are available for explicit interoperability:
 
