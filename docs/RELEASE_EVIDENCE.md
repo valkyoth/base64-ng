@@ -177,7 +177,8 @@ scripts/validate-simd-admission.sh
 
 That validator keeps active SIMD dispatch scalar-only until the release includes
 the required scalar differential tests, fuzz evidence, unsafe inventory updates,
-architecture evidence, benchmark evidence, and release-note wording.
+architecture evidence, benchmark evidence, release-note wording, and an updated
+`docs/SIMD_ADMISSION.md` manifest.
 
 ## Constant-Time Timing Evidence
 

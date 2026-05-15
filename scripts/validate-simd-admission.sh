@@ -2,6 +2,7 @@
 set -eu
 
 test -s docs/SIMD.md
+test -s docs/SIMD_ADMISSION.md
 test -s docs/UNSAFE.md
 test -s docs/BENCHMARKS.md
 test -s docs/RELEASE_EVIDENCE.md
@@ -68,9 +69,12 @@ for required_text in \
     "Do not advertise SIMD acceleration" \
     "Benchmark evidence that reports hardware" \
     "register-retention cleanup strategy" \
-    "Performance numbers are release notes evidence only"
+    "Performance numbers are release notes evidence only" \
+    "Admitted backends: none" \
+    "Active backend: scalar only" \
+    "Do not advertise SIMD acceleration until this manifest names an admitted"
 do
-    if ! grep -R -q "$required_text" docs/SIMD.md docs/UNSAFE.md docs/RELEASE_EVIDENCE.md; then
+    if ! grep -R -q "$required_text" docs/SIMD.md docs/SIMD_ADMISSION.md docs/UNSAFE.md docs/RELEASE_EVIDENCE.md; then
         echo "simd admission: missing required SIMD admission text: $required_text" >&2
         exit 1
     fi

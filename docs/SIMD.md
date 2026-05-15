@@ -130,6 +130,7 @@ admission evidence is deliberately updated. The gate currently requires:
 - No accelerated `ActiveBackend::Avx*`, `ActiveBackend::Neon`,
   `ActiveBackend::Sse*`, `ActiveBackend::Wasm*`, or generic SIMD dispatch
   variants in source.
+- `docs/SIMD_ADMISSION.md` to record that no accelerated backend is admitted.
 - Documentation for benchmark evidence, release-note restrictions, and
   vector-register retention cleanup strategy to remain packaged.
 
