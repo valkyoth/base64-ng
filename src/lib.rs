@@ -1759,6 +1759,12 @@ impl<const CAP: usize> EncodedBuffer<CAP> {
         CAP
     }
 
+    /// Returns the number of unused bytes in the stack backing array.
+    #[must_use]
+    pub const fn remaining_capacity(&self) -> usize {
+        CAP - self.len
+    }
+
     /// Returns the visible encoded bytes.
     #[must_use]
     pub fn as_bytes(&self) -> &[u8] {
@@ -1930,6 +1936,12 @@ impl<const CAP: usize> DecodedBuffer<CAP> {
     #[must_use]
     pub const fn capacity(&self) -> usize {
         CAP
+    }
+
+    /// Returns the number of unused bytes in the stack backing array.
+    #[must_use]
+    pub const fn remaining_capacity(&self) -> usize {
+        CAP - self.len
     }
 
     /// Returns the visible decoded bytes.
