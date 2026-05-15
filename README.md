@@ -40,12 +40,16 @@ Implemented now:
 - Focused unit and integration tests.
 - Isolated `cargo-fuzz` harnesses for decode, in-place decode, and stream
   chunk-boundary behavior.
+- Isolated dudect-style timing harness for the constant-time-oriented scalar
+  decoder.
+- Constant-time assembly evidence generation for reviewer inspection.
 - Local check scripts, release gate, dependency policy, audit config, CI, SBOM script, and reproducible build check.
 
 Planned behind admission evidence:
 
 - Admitted AVX2, AVX-512, SSSE3/SSE4.1, ARM NEON, and wasm `simd128`
-  fast paths.
+  fast paths after the SIMD admission evidence is complete. `v0.7` remains
+  scalar-only.
 - Async streaming wrappers only after the `tokio` feature passes the
   dependency and cancellation-safety admission bar in [docs/ASYNC.md](docs/ASYNC.md).
 - Expanded Kani proof harnesses.

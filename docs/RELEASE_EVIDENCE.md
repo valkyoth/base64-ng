@@ -60,6 +60,8 @@ The release gate runs:
 - reserved SIMD feature-bundle compile checks for AVX2, AVX-512 VBMI,
   SSSE3/SSE4.1, NEON, and wasm `simd128` under `no_std` when the corresponding
   Rust targets are installed
+- scalar-only SIMD admission policy for `v0.7`, with no active accelerated
+  dispatch and no SIMD performance claims
 - unsafe-boundary validation that confines `allow(unsafe_code)` to `src/simd.rs`
 - unsafe-boundary validation that confines architecture intrinsics, CPU feature
   detection, and `target_feature` gates to `src/simd.rs`

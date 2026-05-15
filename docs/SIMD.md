@@ -1,7 +1,7 @@
 # SIMD Admission Policy
 
-`base64-ng` is intentionally scalar-only in the `0.6.0` release and at the
-start of the `0.7.0-alpha.0` development cycle. The crate uses
+`base64-ng` is intentionally scalar-only in the `0.6.0` release and the
+`0.7.0-alpha.0` development cycle. The crate uses
 `#![deny(unsafe_code)]` and permits reviewed `allow(unsafe_code)` exceptions
 only for the volatile wipe helper in `src/lib.rs` and the private `src/simd.rs`
 boundary. The `simd` feature remains reserved until architecture-specific code
@@ -61,6 +61,9 @@ weakening the scalar trust base.
 - Unit tests compare dispatch behavior against the scalar reference for
   canonical inputs, malformed inputs, and undersized output buffers.
 - The `simd` feature does not enable accelerated code yet.
+- `v0.7` is scoped as a scalar-only evidence release. Candidate detection and
+  inactive prototypes may be reported, but active SIMD dispatch is out of scope
+  for that release.
 - CI checks the reserved `simd` feature in `no_std` mode for x86_64, aarch64,
   FreeBSD, wasm32, and Cortex-M targets.
 - Performance claims must be backed by local benchmark evidence, not roadmap

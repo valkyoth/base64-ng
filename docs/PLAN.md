@@ -347,6 +347,9 @@ the zero-runtime-dependency stance.
 
 ### v0.7
 
+- Scope this milestone as a scalar-only security-evidence release. Do not admit
+  active SIMD dispatch in `v0.7`; keep hardware acceleration behind reporting,
+  prototype, and evidence gates.
 - Add a release-gated SIMD admission validator that keeps active dispatch
   scalar-only until scalar differential tests, fuzz evidence, unsafe inventory
   updates, benchmark evidence, and release-note wording are updated together.
@@ -363,20 +366,28 @@ the zero-runtime-dependency stance.
   decoder so generated-code review has repeatable inputs.
 - Add bounded Kani proof harnesses for constant-time-oriented decode result
   bounds, error cleanup, and validate/decode agreement.
+- Evaluate alignment and prefetch optimizations only as internal
+  benchmark-backed experiments, not as public contracts.
+- Publish no SIMD acceleration claims for `v0.7`; release notes must describe
+  candidate detection, inactive prototypes, and evidence gates only.
+
+### v0.8
+
+- Begin active SIMD admission work only if the release can include complete
+  scalar differential tests, fuzz evidence, target-feature checks, unsafe
+  inventory updates, benchmark evidence, and release-note wording in the same
+  commit series.
 - Replace inactive SIMD encode prototypes with real AVX2, AVX-512, NEON,
-  SSSE3/SSE4.1, and wasm `simd128` candidate implementations only when scalar
-  differential tests, fuzz evidence, target-feature checks, unsafe inventory
-  updates, and benchmark evidence are complete.
+  SSSE3/SSE4.1, and wasm `simd128` candidate implementations only when their
+  evidence is complete.
 - Require every admitted SIMD implementation to document its vector-register
   retention cleanup strategy before it can become an active backend.
 - Keep scalar as the default fallback and require runtime backend policy tests
   for every admitted accelerated backend.
-- Evaluate alignment and prefetch optimizations only as internal
-  benchmark-backed experiments, not as public contracts.
 - Publish per-architecture benchmark evidence for any performance claim,
   including CPU, OS, Rust version, command, and raw output.
 
-### v0.8
+### v0.9
 
 - Consider admitting async streaming wrappers only after `docs/ASYNC.md`
   requirements are met, including dependency review, cancellation behavior,
@@ -391,7 +402,7 @@ the zero-runtime-dependency stance.
   stream ergonomics, documentation, framed-protocol tests, and wasm/no-allocator
   portability checks.
 
-### v0.9
+### v0.10
 
 - Release-candidate hardening for `v1.0`: API audit, documentation audit,
   migration guide refresh, fuzz corpus review, benchmark review, and release

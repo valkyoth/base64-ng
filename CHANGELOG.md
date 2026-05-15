@@ -3,6 +3,8 @@
 ## 0.7.0-alpha.0 - Unreleased
 
 - Started the next development cycle after the `0.6.0` release.
+- Scoped `0.7.0` as a scalar-only security-evidence release; active SIMD
+  dispatch remains intentionally out of scope until a later admission milestone.
 - Added a release-gated SIMD admission validator that keeps active dispatch
   scalar-only until accelerated backend evidence is updated deliberately.
 - Added wasm `simd128` candidate reporting and a reserved `no_std`
