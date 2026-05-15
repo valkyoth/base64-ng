@@ -68,6 +68,8 @@
   strict standard padded Base64 encoding.
 - Added `Engine::decode_buffer_legacy` for explicit legacy-whitespace no-alloc
   decoded output.
+- Added `Engine::encode_wrapped_buffer` and `Engine::decode_wrapped_buffer`
+  for strict line-wrapped no-alloc stack-backed output.
 
 ## 0.7.0 - 2026-05-15
 

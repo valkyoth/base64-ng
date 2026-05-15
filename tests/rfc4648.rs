@@ -1073,6 +1073,30 @@ fn encode_slice_wrapped_reports_errors_and_clear_tail_scrubs() {
     assert!(output.iter().all(|byte| *byte == 0));
 }
 
+#[test]
+fn encode_wrapped_buffer_uses_stack_backed_output() {
+    let wrap = LineWrap::new(4, LineEnding::Lf);
+    let encoded = STANDARD.encode_wrapped_buffer::<9>(b"hello", wrap).unwrap();
+    assert_eq!(encoded.as_bytes(), b"aGVs\nbG8=");
+    assert!(encoded.constant_time_eq(b"aGVs\nbG8="));
+
+    assert_eq!(
+        STANDARD
+            .encode_wrapped_buffer::<8>(b"hello", wrap)
+            .unwrap_err(),
+        EncodeError::OutputTooSmall {
+            required: 9,
+            available: 8,
+        }
+    );
+    assert_eq!(
+        STANDARD
+            .encode_wrapped_buffer::<9>(b"hello", LineWrap::new(0, LineEnding::Lf))
+            .unwrap_err(),
+        EncodeError::InvalidLineWrap { line_len: 0 }
+    );
+}
+
 #[cfg(feature = "alloc")]
 #[test]
 fn encode_wrapped_alloc_helpers_match_slice_output() {
@@ -1169,6 +1193,32 @@ fn decode_slice_wrapped_clear_tail_scrubs_output() {
         })
     );
     assert!(output.iter().all(|byte| *byte == 0));
+}
+
+#[test]
+fn decode_wrapped_buffer_uses_stack_backed_output() {
+    let wrap = LineWrap::new(4, LineEnding::Lf);
+    let decoded = STANDARD
+        .decode_wrapped_buffer::<5>(b"aGVs\nbG8=", wrap)
+        .unwrap();
+    assert_eq!(decoded.as_bytes(), b"hello");
+    assert_eq!(decoded.as_utf8().unwrap(), "hello");
+
+    assert_eq!(
+        STANDARD
+            .decode_wrapped_buffer::<4>(b"aGVs\nbG8=", wrap)
+            .unwrap_err(),
+        DecodeError::OutputTooSmall {
+            required: 5,
+            available: 4,
+        }
+    );
+    assert_eq!(
+        STANDARD
+            .decode_wrapped_buffer::<5>(b"aG\nVsbG8=", wrap)
+            .unwrap_err(),
+        DecodeError::InvalidLineWrap { index: 2 }
+    );
 }
 
 #[cfg(feature = "alloc")]

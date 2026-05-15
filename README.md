@@ -261,6 +261,14 @@ let written = STANDARD
     .unwrap();
 
 assert_eq!(&output[..written], b"hello");
+
+let encoded = STANDARD.encode_wrapped_buffer::<9>(b"hello", wrap).unwrap();
+assert_eq!(encoded.as_bytes(), b"aGVs\nbG8=");
+
+let decoded = STANDARD
+    .decode_wrapped_buffer::<5>(encoded.as_bytes(), wrap)
+    .unwrap();
+assert_eq!(decoded.as_bytes(), b"hello");
 ```
 
 ## Custom Alphabets

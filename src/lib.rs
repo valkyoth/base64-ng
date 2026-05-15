@@ -3550,6 +3550,28 @@ where
         Ok(written)
     }
 
+    /// Encodes `input` with line wrapping into a stack-backed buffer.
+    ///
+    /// This is useful for MIME/PEM-style protocols where heap allocation is
+    /// unnecessary. If encoding fails, the internal backing array is cleared
+    /// before the error is returned.
+    pub fn encode_wrapped_buffer<const CAP: usize>(
+        &self,
+        input: &[u8],
+        wrap: LineWrap,
+    ) -> Result<EncodedBuffer<CAP>, EncodeError> {
+        let mut output = EncodedBuffer::new();
+        let written = match self.encode_slice_wrapped_clear_tail(input, &mut output.bytes, wrap) {
+            Ok(written) => written,
+            Err(err) => {
+                output.clear();
+                return Err(err);
+            }
+        };
+        output.len = written;
+        Ok(output)
+    }
+
     /// Encodes `input` with line wrapping into a newly allocated byte vector.
     #[cfg(feature = "alloc")]
     pub fn encode_wrapped_vec(
@@ -4008,6 +4030,31 @@ where
         };
         wipe_tail(output, written);
         Ok(written)
+    }
+
+    /// Decodes `input` using a strict line-wrapped profile into a stack-backed
+    /// buffer.
+    ///
+    /// The wrapped profile accepts only the configured line ending. Non-final
+    /// lines must contain exactly `wrap.line_len` encoded bytes; the final line
+    /// may be shorter. A single trailing line ending after the final line is
+    /// accepted. If decoding fails, the internal backing array is cleared
+    /// before the error is returned.
+    pub fn decode_wrapped_buffer<const CAP: usize>(
+        &self,
+        input: &[u8],
+        wrap: LineWrap,
+    ) -> Result<DecodedBuffer<CAP>, DecodeError> {
+        let mut output = DecodedBuffer::new();
+        let written = match self.decode_slice_wrapped_clear_tail(input, &mut output.bytes, wrap) {
+            Ok(written) => written,
+            Err(err) => {
+                output.clear();
+                return Err(err);
+            }
+        };
+        output.len = written;
+        Ok(output)
     }
 
     /// Decodes `input` into a newly allocated byte vector.
