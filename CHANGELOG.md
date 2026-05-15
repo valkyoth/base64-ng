@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.7.0-alpha.0 - Unreleased
+## 0.7.0 - 2026-05-15
 
 - Started the next development cycle after the `0.6.0` release.
 - Scoped `0.7.0` as a scalar-only security-evidence release; active SIMD
