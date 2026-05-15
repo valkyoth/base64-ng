@@ -60,6 +60,8 @@ The release gate runs:
 - reserved SIMD feature-bundle compile checks for AVX2, AVX-512 VBMI,
   SSSE3/SSE4.1, NEON, and wasm `simd128` under `no_std` when the corresponding
   Rust targets are installed
+- backend evidence capture for runtime backend reporting and inactive SIMD
+  prototype scalar-equivalence output
 - scalar-only SIMD admission policy for `v0.7`, with no active accelerated
   dispatch and no SIMD performance claims
 - unsafe-boundary validation that confines `allow(unsafe_code)` to `src/simd.rs`
@@ -110,6 +112,12 @@ Expected files:
 
 - `base64-ng.spdx.json`
 - `base64-ng.cyclonedx.json`
+- `backend/MANIFEST.txt`
+- `backend/runtime-backend-report.txt`
+- `backend/simd-prototype-equivalence.txt`
+- `asm/MANIFEST.txt`
+- `asm/base64_ng-no-default-features.s`
+- `asm/base64_ng-all-features.s`
 
 The SBOMs describe the published crate dependency graph. The normal published
 crate is zero-dependency; fuzz-only dependencies live under `fuzz/` and are

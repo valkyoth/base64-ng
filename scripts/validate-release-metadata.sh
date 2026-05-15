@@ -147,6 +147,7 @@ for required_package_file in \
     "docs/RELEASE.md" \
     "docs/RELEASE_EVIDENCE.md" \
     "docs/SECURITY_CONTROLS.md" \
+    "docs/SIMD_ADMISSION.md" \
     "docs/SIMD.md" \
     "docs/TRUST.md" \
     "docs/UNSAFE.md" \

@@ -9,6 +9,8 @@
   hardware acceleration blocked until backend-specific evidence is recorded.
 - Extended backend evidence capture to write a manifest with toolchain
   metadata, command status, and captured-output checksums.
+- Added backend evidence capture to the stable release gate and made packaged
+  release metadata explicitly require the SIMD admission manifest.
 
 ## 0.7.0 - 2026-05-15
 
