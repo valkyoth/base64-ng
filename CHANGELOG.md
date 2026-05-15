@@ -93,6 +93,7 @@
   the redacted wrapper without copying initialized bytes.
 - Added `remaining_capacity()` to `EncodedBuffer` and `DecodedBuffer` for
   no-alloc stack sizing checks.
+- Added `is_full()` to `EncodedBuffer` and `DecodedBuffer`.
 
 ## 0.7.0 - 2026-05-15
 

@@ -2102,6 +2102,7 @@ fn stack_encoded_buffer_helpers_avoid_alloc_and_clear_tail() {
     assert_eq!(encoded.capacity(), 8);
     assert_eq!(encoded.remaining_capacity(), 0);
     assert!(!encoded.is_empty());
+    assert!(encoded.is_full());
     assert_eq!(encoded.as_bytes(), b"aGVsbG8=");
     assert_eq!(encoded.as_str(), "aGVsbG8=");
     assert_eq!(encoded.as_ref(), b"aGVsbG8=");
@@ -2133,6 +2134,7 @@ fn stack_encoded_buffer_helpers_avoid_alloc_and_clear_tail() {
 
     let mut empty = EncodedBuffer::<8>::new();
     assert!(empty.is_empty());
+    assert!(!empty.is_full());
     assert_eq!(empty.remaining_capacity(), 8);
     empty.clear_tail();
     empty.clear();
@@ -2177,6 +2179,7 @@ fn stack_decoded_buffer_helpers_avoid_alloc_and_clear_tail() {
     assert_eq!(decoded.capacity(), 5);
     assert_eq!(decoded.remaining_capacity(), 0);
     assert!(!decoded.is_empty());
+    assert!(decoded.is_full());
     assert_eq!(decoded.as_bytes(), b"hello");
     assert_eq!(decoded.as_utf8().unwrap(), "hello");
     assert_eq!(decoded.as_ref(), b"hello");
@@ -2211,6 +2214,7 @@ fn stack_decoded_buffer_helpers_avoid_alloc_and_clear_tail() {
 
     let mut empty = DecodedBuffer::<5>::new();
     assert!(empty.is_empty());
+    assert!(!empty.is_full());
     assert_eq!(empty.remaining_capacity(), 5);
     empty.clear_tail();
     empty.clear();

@@ -1753,6 +1753,12 @@ impl<const CAP: usize> EncodedBuffer<CAP> {
         self.len == 0
     }
 
+    /// Returns whether the visible encoded bytes fill the stack backing array.
+    #[must_use]
+    pub const fn is_full(&self) -> bool {
+        self.len == CAP
+    }
+
     /// Returns the stack capacity in bytes.
     #[must_use]
     pub const fn capacity(&self) -> usize {
@@ -1930,6 +1936,12 @@ impl<const CAP: usize> DecodedBuffer<CAP> {
     #[must_use]
     pub const fn is_empty(&self) -> bool {
         self.len == 0
+    }
+
+    /// Returns whether the visible decoded bytes fill the stack backing array.
+    #[must_use]
+    pub const fn is_full(&self) -> bool {
+        self.len == CAP
     }
 
     /// Returns the stack capacity in bytes.
