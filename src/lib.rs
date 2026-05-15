@@ -2200,6 +2200,17 @@ impl From<alloc::vec::Vec<u8>> for SecretBuffer {
 }
 
 #[cfg(feature = "alloc")]
+impl From<alloc::string::String> for SecretBuffer {
+    /// Wraps an owned UTF-8 string as sensitive material.
+    ///
+    /// The string is consumed without copying its initialized bytes. Spare
+    /// vector capacity is cleared immediately before the bytes are stored.
+    fn from(text: alloc::string::String) -> Self {
+        Self::from_vec(text.into_bytes())
+    }
+}
+
+#[cfg(feature = "alloc")]
 impl TryFrom<&[u8]> for SecretBuffer {
     type Error = DecodeError;
 

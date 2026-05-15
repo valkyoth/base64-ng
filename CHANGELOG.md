@@ -89,6 +89,8 @@
   scalar-side volatile wipe helpers.
 - Added `From<Vec<u8>>` for `SecretBuffer` so owned sensitive bytes can move
   into the redacted wrapper without copying.
+- Added `From<String>` for `SecretBuffer` so owned sensitive text can move into
+  the redacted wrapper without copying initialized bytes.
 
 ## 0.7.0 - 2026-05-15
 
