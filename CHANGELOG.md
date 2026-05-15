@@ -27,6 +27,8 @@
   when nightly Miri is installed.
 - Refreshed the trust dashboard to reference the current SBOM script, Miri
   evidence artifacts, and `SecretBuffer` spare-capacity cleanup posture.
+- Extended SBOM generation to write a release evidence manifest with tool
+  versions, commands, and artifact checksums.
 
 ## 0.7.0 - 2026-05-15
 

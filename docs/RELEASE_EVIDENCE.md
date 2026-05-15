@@ -115,6 +115,7 @@ Expected files:
 
 - `base64-ng.spdx.json`
 - `base64-ng.cyclonedx.json`
+- `sbom-MANIFEST.txt`
 - `backend/MANIFEST.txt`
 - `backend/runtime-backend-report.txt`
 - `backend/simd-prototype-equivalence.txt`
@@ -122,7 +123,8 @@ Expected files:
 - `asm/base64_ng-no-default-features.s`
 - `asm/base64_ng-all-features.s`
 
-The SBOMs describe the published crate dependency graph. The normal published
+The SBOMs and `sbom-MANIFEST.txt` describe the published crate dependency
+graph and record tool versions, commands, and checksums. The normal published
 crate is zero-dependency; fuzz-only dependencies live under `fuzz/` and are
 reviewed separately.
 
