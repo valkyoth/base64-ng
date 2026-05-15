@@ -43,6 +43,7 @@ For untrusted input and untrusted length metadata, prefer:
 
 - `checked_encoded_len`
 - `encoded_len`
+- `checked_wrapped_encoded_len`
 - `wrapped_encoded_len`
 - `decoded_capacity`
 - `decoded_len`

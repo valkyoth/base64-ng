@@ -2,8 +2,8 @@ use base64_ng::{
     Alphabet, AlphabetError, BCRYPT, BCRYPT_NO_PAD, Bcrypt, CRYPT, CRYPT_NO_PAD, Crypt,
     DecodeError, EncodeError, EncodedBuffer, Engine, LineEnding, LineWrap, MIME, PEM, PEM_CRLF,
     Profile, STANDARD, STANDARD_NO_PAD, Standard, URL_SAFE, URL_SAFE_NO_PAD, UrlSafe,
-    checked_encoded_len, ct, decode_alphabet_byte, decoded_capacity, decoded_len, encoded_len,
-    runtime, validate_alphabet, wrapped_encoded_len,
+    checked_encoded_len, checked_wrapped_encoded_len, ct, decode_alphabet_byte, decoded_capacity,
+    decoded_len, encoded_len, runtime, validate_alphabet, wrapped_encoded_len,
 };
 
 #[cfg(feature = "stream")]
@@ -156,7 +156,12 @@ fn named_profiles_expose_expected_policies() {
         MIME.encoded_len(58),
         wrapped_encoded_len(58, true, LineWrap::MIME)
     );
+    assert_eq!(
+        MIME.checked_encoded_len(58),
+        checked_wrapped_encoded_len(58, true, LineWrap::MIME)
+    );
     assert_eq!(BCRYPT.encoded_len(3), encoded_len(3, false));
+    assert_eq!(BCRYPT.checked_encoded_len(3), checked_encoded_len(3, false));
 
     let standard_profile: Profile<Standard, true> = STANDARD.into();
     assert_eq!(standard_profile, Profile::<Standard, true>::default());
@@ -914,6 +919,15 @@ fn checked_encoded_len_reports_overflow() {
     assert_eq!(checked_encoded_len(usize::MAX, false), None);
     assert_eq!(STANDARD.checked_encoded_len(usize::MAX), None);
     assert_eq!(STANDARD_NO_PAD.checked_encoded_len(usize::MAX), None);
+    assert_eq!(
+        checked_wrapped_encoded_len(usize::MAX, true, LineWrap::MIME),
+        None
+    );
+    assert_eq!(
+        STANDARD.checked_wrapped_encoded_len(usize::MAX, LineWrap::MIME),
+        None
+    );
+    assert_eq!(MIME.checked_encoded_len(usize::MAX), None);
 }
 
 #[test]
@@ -930,10 +944,20 @@ fn wrapped_encoded_len_accounts_for_inserted_line_endings() {
     assert_eq!(wrapped_encoded_len(5, true, lf_4), Ok(9));
     assert_eq!(wrapped_encoded_len(5, true, crlf_4), Ok(10));
     assert_eq!(STANDARD.wrapped_encoded_len(5, lf_4), Ok(9));
+    assert_eq!(checked_wrapped_encoded_len(5, true, lf_4), Some(9));
+    assert_eq!(STANDARD.checked_wrapped_encoded_len(5, lf_4), Some(9));
     assert_eq!(STANDARD_NO_PAD.wrapped_encoded_len(5, lf_4), Ok(8));
+    assert_eq!(
+        STANDARD_NO_PAD.checked_wrapped_encoded_len(5, lf_4),
+        Some(8)
+    );
     assert_eq!(
         wrapped_encoded_len(5, true, LineWrap::new(0, LineEnding::Lf)),
         Err(EncodeError::InvalidLineWrap { line_len: 0 })
+    );
+    assert_eq!(
+        checked_wrapped_encoded_len(5, true, LineWrap::new(0, LineEnding::Lf)),
+        None
     );
     assert_eq!(LineEnding::Lf.as_bytes(), b"\n");
     assert_eq!(LineEnding::CrLf.as_bytes(), b"\r\n");

@@ -39,6 +39,8 @@
   defensive construction of line-wrapping policies.
 - Added dependency-free `Default` and `From<Engine<_, _>>` interop for
   unwrapped `Profile` values.
+- Added checked wrapped-length helpers for MIME/PEM-style output length
+  calculations.
 
 ## 0.7.0 - 2026-05-15
 

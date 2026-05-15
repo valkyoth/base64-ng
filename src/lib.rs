@@ -1995,6 +1995,16 @@ where
         }
     }
 
+    /// Returns the encoded length for this profile, or `None` on overflow or
+    /// invalid line wrapping.
+    #[must_use]
+    pub const fn checked_encoded_len(&self, input_len: usize) -> Option<usize> {
+        match self.wrap {
+            Some(wrap) => checked_wrapped_encoded_len(input_len, PAD, wrap),
+            None => checked_encoded_len(input_len, PAD),
+        }
+    }
+
     /// Returns the exact decoded length for this profile.
     pub fn decoded_len(&self, input: &[u8]) -> Result<usize, DecodeError> {
         match self.wrap {
@@ -2221,6 +2231,45 @@ pub const fn wrapped_encoded_len(
         Some(len) => Ok(len),
         None => Err(EncodeError::LengthOverflow),
     }
+}
+
+/// Returns the encoded length after line wrapping, or `None` on overflow or
+/// invalid line wrapping.
+///
+/// The returned length includes inserted line endings but does not include a
+/// trailing line ending after the final encoded line.
+///
+/// # Examples
+///
+/// ```
+/// use base64_ng::{LineEnding, LineWrap, checked_wrapped_encoded_len};
+///
+/// let wrap = LineWrap::new(4, LineEnding::Lf);
+/// assert_eq!(checked_wrapped_encoded_len(5, true, wrap), Some(9));
+/// assert_eq!(checked_wrapped_encoded_len(5, true, LineWrap::new(0, LineEnding::Lf)), None);
+/// ```
+#[must_use]
+pub const fn checked_wrapped_encoded_len(
+    input_len: usize,
+    padded: bool,
+    wrap: LineWrap,
+) -> Option<usize> {
+    if wrap.line_len == 0 {
+        return None;
+    }
+
+    let Some(encoded) = checked_encoded_len(input_len, padded) else {
+        return None;
+    };
+    if encoded == 0 {
+        return Some(0);
+    }
+
+    let breaks = (encoded - 1) / wrap.line_len;
+    let Some(line_ending_bytes) = breaks.checked_mul(wrap.line_ending.byte_len()) else {
+        return None;
+    };
+    encoded.checked_add(line_ending_bytes)
 }
 
 /// Returns the encoded length, or `None` if it would overflow `usize`.
@@ -2826,6 +2875,17 @@ where
         wrap: LineWrap,
     ) -> Result<usize, EncodeError> {
         wrapped_encoded_len(input_len, PAD, wrap)
+    }
+
+    /// Returns the encoded length after line wrapping, or `None` on overflow or
+    /// invalid line wrapping.
+    #[must_use]
+    pub const fn checked_wrapped_encoded_len(
+        &self,
+        input_len: usize,
+        wrap: LineWrap,
+    ) -> Option<usize> {
+        checked_wrapped_encoded_len(input_len, PAD, wrap)
     }
 
     /// Returns the exact decoded length implied by input length and padding.

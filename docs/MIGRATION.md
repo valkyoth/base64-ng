@@ -136,9 +136,15 @@ broader non-canonical input, normalize or reject that input before calling
 `base64-ng` exposes recoverable length helpers:
 
 ```rust
-use base64_ng::{checked_encoded_len, decoded_capacity};
+use base64_ng::{
+    LineEnding, LineWrap, checked_encoded_len, checked_wrapped_encoded_len, decoded_capacity,
+};
 
 assert_eq!(checked_encoded_len(5, true), Some(8));
+assert_eq!(
+    checked_wrapped_encoded_len(5, true, LineWrap::new(4, LineEnding::Lf)),
+    Some(9)
+);
 assert_eq!(decoded_capacity(8), 6);
 ```
 

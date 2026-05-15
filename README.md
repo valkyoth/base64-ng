@@ -158,9 +158,15 @@ caller. A wrong output length fails during const evaluation.
 For untrusted length metadata, use checked length calculation:
 
 ```rust
-use base64_ng::{checked_encoded_len, decoded_len};
+use base64_ng::{
+    LineEnding, LineWrap, checked_encoded_len, checked_wrapped_encoded_len, decoded_len,
+};
 
 assert_eq!(checked_encoded_len(5, true), Some(8));
+assert_eq!(
+    checked_wrapped_encoded_len(5, true, LineWrap::new(4, LineEnding::Lf)),
+    Some(9)
+);
 assert_eq!(decoded_len(b"aGVsbG8=", true).unwrap(), 5);
 ```
 
