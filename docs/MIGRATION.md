@@ -166,11 +166,30 @@ use std::io::Write;
 use base64_ng::{STANDARD, stream::Encoder};
 
 let mut encoder = Encoder::new(Vec::new(), STANDARD);
-encoder.write_all(b"hello").unwrap();
+assert_eq!(encoder.engine(), STANDARD);
+assert!(encoder.is_padded());
+
+encoder.write_all(b"he").unwrap();
+assert!(encoder.has_pending_input());
+
+encoder.write_all(b"llo").unwrap();
+assert!(encoder.has_pending_input());
+
+encoder.try_finish().unwrap();
+assert!(encoder.is_finalized());
+
 let encoded = encoder.finish().unwrap();
 
 assert_eq!(encoded, b"aGVsbG8=");
 ```
+
+Writer adapters expose `try_finish()` when a caller wants to finalize pending
+Base64 input and flush the wrapped writer without immediately consuming the
+adapter. After successful finalization, later non-empty writes return
+`InvalidInput`. Stream adapters also expose non-sensitive state helpers such as
+`engine()`, `is_padded()`, `pending_len()`, `has_pending_input()`, reader-side
+`buffered_output_len()`, and decoder-side `has_terminal_padding()` for framed
+protocols and audit logging.
 
 The `tokio` feature is reserved for future async wrappers. It is currently
 inert and dependency-free; use the explicit `stream` feature for `std::io`

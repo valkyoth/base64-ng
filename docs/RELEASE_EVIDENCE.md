@@ -105,9 +105,9 @@ The release gate runs:
   undersized output, and in-place cleanup
 - constant-time-oriented validate/decode agreement tests for valid and
   malformed inputs across supported alphabets and padding modes
-- stream encoder and decoder tests proving `finish()`, `try_finish()`,
-  `into_inner()`, and adjacent-payload behavior remain intact after cleanup
-  hardening
+- stream encoder and decoder tests proving policy accessors, state accessors,
+  `finish()`, `try_finish()`, `into_inner()`, and adjacent-payload behavior
+  remain intact after cleanup hardening
 - stream fuzz coverage for chunked writers, fragmented reader sources, and
   adjacent framed payload boundaries
 - Kani proofs through `scripts/check_kani.sh` when Kani is installed and its
