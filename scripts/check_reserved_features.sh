@@ -29,6 +29,13 @@ for inert_feature in tokio kani fuzzing; do
     fi
 done
 
+for deferred_feature in serde bytes zeroize subtle criterion; do
+    if grep -q "^$deferred_feature =" Cargo.toml; then
+        echo "reserved features: $deferred_feature must not be exposed before dependency admission" >&2
+        exit 1
+    fi
+done
+
 check_reserved_feature "tokio" "tokio"
 check_reserved_feature "kani" "kani"
 check_reserved_feature "fuzzing" "fuzzing"

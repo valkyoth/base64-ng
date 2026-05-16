@@ -10,7 +10,9 @@ new dependency expands the audit, license, advisory, and supply-chain surface.
 - `scripts/validate-dependencies.sh` fails if the root crate dependency graph
   contains anything beyond `base64-ng` itself.
 - `scripts/check_reserved_features.sh` verifies that `tokio`, `kani`, and
-  `fuzzing` remain inert and dependency-free until admitted.
+  `fuzzing` remain inert and dependency-free until admitted, and that deferred
+  integration features such as `serde`, `bytes`, `zeroize`, `subtle`, and
+  `criterion` are not exposed before dependency admission.
 - Fuzz, performance, and dudect-style timing harness dependencies are isolated
   under `fuzz/`, `perf/`, and `dudect/`; they are checked separately and are
   not part of the published crate.

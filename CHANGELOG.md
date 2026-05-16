@@ -17,6 +17,9 @@
   bytes are drained and adjacent payload bytes remain unread.
 - Documented the v0.9 dependency-admission stance for deferred `tokio`,
   `serde`, `bytes`, cleanup, timing, and benchmark integrations.
+- Hardened reserved-feature checks so deferred `serde`, `bytes`, cleanup,
+  timing, and benchmark integration features cannot appear before dependency
+  admission.
 
 ## 0.8.0 - 2026-05-16
 
