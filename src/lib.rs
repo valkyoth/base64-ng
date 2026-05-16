@@ -1887,6 +1887,18 @@ impl<const CAP: usize, const N: usize> PartialEq<&[u8; N]> for EncodedBuffer<CAP
     }
 }
 
+impl<const CAP: usize> PartialEq<EncodedBuffer<CAP>> for &[u8] {
+    fn eq(&self, other: &EncodedBuffer<CAP>) -> bool {
+        other.constant_time_eq(self)
+    }
+}
+
+impl<const CAP: usize, const N: usize> PartialEq<EncodedBuffer<CAP>> for &[u8; N] {
+    fn eq(&self, other: &EncodedBuffer<CAP>) -> bool {
+        other.constant_time_eq(&self[..])
+    }
+}
+
 impl<const CAP: usize> TryFrom<&[u8]> for EncodedBuffer<CAP> {
     type Error = EncodeError;
 
@@ -2076,6 +2088,18 @@ impl<const CAP: usize> PartialEq<&[u8]> for DecodedBuffer<CAP> {
 impl<const CAP: usize, const N: usize> PartialEq<&[u8; N]> for DecodedBuffer<CAP> {
     fn eq(&self, other: &&[u8; N]) -> bool {
         self.constant_time_eq(&other[..])
+    }
+}
+
+impl<const CAP: usize> PartialEq<DecodedBuffer<CAP>> for &[u8] {
+    fn eq(&self, other: &DecodedBuffer<CAP>) -> bool {
+        other.constant_time_eq(self)
+    }
+}
+
+impl<const CAP: usize, const N: usize> PartialEq<DecodedBuffer<CAP>> for &[u8; N] {
+    fn eq(&self, other: &DecodedBuffer<CAP>) -> bool {
+        other.constant_time_eq(&self[..])
     }
 }
 
@@ -2276,6 +2300,20 @@ impl PartialEq<&[u8]> for SecretBuffer {
 impl<const N: usize> PartialEq<&[u8; N]> for SecretBuffer {
     fn eq(&self, other: &&[u8; N]) -> bool {
         self.constant_time_eq(&other[..])
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl PartialEq<SecretBuffer> for &[u8] {
+    fn eq(&self, other: &SecretBuffer) -> bool {
+        other.constant_time_eq(self)
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl<const N: usize> PartialEq<SecretBuffer> for &[u8; N] {
+    fn eq(&self, other: &SecretBuffer) -> bool {
+        other.constant_time_eq(&self[..])
     }
 }
 

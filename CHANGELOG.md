@@ -98,6 +98,8 @@
 - Added direct byte-slice and byte-string literal equality for `EncodedBuffer`,
   `DecodedBuffer`, and `SecretBuffer` using their constant-time-oriented
   comparison helpers.
+- Added reverse operand-order byte-slice and byte-string literal equality for
+  `EncodedBuffer`, `DecodedBuffer`, and `SecretBuffer`.
 - Added `remaining_capacity()` to `EncodedBuffer` and `DecodedBuffer` for
   no-alloc stack sizing checks.
 - Added `is_full()` to `EncodedBuffer` and `DecodedBuffer`.

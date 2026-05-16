@@ -2112,6 +2112,9 @@ fn stack_encoded_buffer_helpers_avoid_alloc_and_clear_tail() {
     assert_eq!(encoded, b"aGVsbG8=");
     assert_eq!(encoded, &b"aGVsbG8="[..]);
     assert_ne!(encoded, b"aGVsbG9=");
+    assert_eq!(b"aGVsbG8=", encoded);
+    assert_eq!(&b"aGVsbG8="[..], encoded);
+    assert_ne!(b"aGVsbG9=", encoded);
     assert_eq!(
         format!("{encoded:?}"),
         "EncodedBuffer { bytes: \"<redacted>\", len: 8, capacity: 8 }"
@@ -2192,6 +2195,9 @@ fn stack_decoded_buffer_helpers_avoid_alloc_and_clear_tail() {
     assert_eq!(decoded, b"hello");
     assert_eq!(decoded, &b"hello"[..]);
     assert_ne!(decoded, b"Hello");
+    assert_eq!(b"hello", decoded);
+    assert_eq!(&b"hello"[..], decoded);
+    assert_ne!(b"Hello", decoded);
     assert_eq!(
         format!("{decoded:?}"),
         "DecodedBuffer { bytes: \"<redacted>\", len: 5, capacity: 5 }"
@@ -2330,6 +2336,9 @@ fn secret_buffer_redacts_and_reveals_explicitly() {
     assert_eq!(secret, b"Token");
     assert_eq!(secret, &b"Token"[..]);
     assert_ne!(secret, b"token");
+    assert_eq!(b"Token", secret);
+    assert_eq!(&b"Token"[..], secret);
+    assert_ne!(b"token", secret);
 
     let cloned = secret.clone();
     assert_eq!(secret, cloned);
