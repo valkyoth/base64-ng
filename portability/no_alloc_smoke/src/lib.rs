@@ -159,6 +159,9 @@ pub fn custom_profile_surfaces() -> bool {
     {
         return false;
     }
+    if STANDARD.ct_decoder().decoded_len(b"aGVsbG8=") != Ok(5) {
+        return false;
+    }
 
     let encoded = match SMOKE_NO_PAD.encode_buffer::<4>(&[0xff, 0xff, 0xff]) {
         Ok(encoded) => encoded,

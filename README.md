@@ -248,15 +248,18 @@ assert!(MIME.validate(&encoded[..written]));
 ```
 
 An engine can also be promoted explicitly to an unwrapped profile when a common
-configuration path expects profile values:
+configuration path expects profile values, or to the matching
+constant-time-oriented decoder when sensitive decode policy is required:
 
 ```rust
 use base64_ng::STANDARD;
 
 let profile = STANDARD.profile();
+let ct_decoder = STANDARD.ct_decoder();
 
 assert!(profile.is_padded());
 assert!(!profile.is_wrapped());
+assert_eq!(ct_decoder.decoded_len(b"aGVsbG8=").unwrap(), 5);
 ```
 
 When wrapping policy comes from configuration, prefer checked construction:

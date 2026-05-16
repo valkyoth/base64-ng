@@ -254,6 +254,10 @@ fn named_profiles_expose_expected_policies() {
     assert_eq!(URL_SAFE_NO_PAD.profile().engine(), URL_SAFE_NO_PAD);
     assert!(!URL_SAFE_NO_PAD.profile().is_padded());
     assert!(!URL_SAFE_NO_PAD.profile().is_wrapped());
+    assert_eq!(STANDARD.ct_decoder(), ct::STANDARD);
+    assert_eq!(STANDARD_NO_PAD.ct_decoder(), ct::STANDARD_NO_PAD);
+    assert_eq!(URL_SAFE.ct_decoder(), ct::URL_SAFE);
+    assert_eq!(URL_SAFE_NO_PAD.ct_decoder(), ct::URL_SAFE_NO_PAD);
     assert!(standard_profile.is_padded());
     assert!(!standard_profile.is_wrapped());
     assert!(standard_profile.is_valid());

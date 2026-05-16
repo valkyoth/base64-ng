@@ -3928,6 +3928,16 @@ where
         Profile::new(*self, None)
     }
 
+    /// Returns the matching constant-time-oriented decoder for this engine's
+    /// alphabet and padding policy.
+    ///
+    /// The returned decoder is still an explicit opt-in to the [`ct`] module's
+    /// slower, opaque-error, constant-time-oriented scalar path.
+    #[must_use]
+    pub const fn ct_decoder(&self) -> ct::CtEngine<A, PAD> {
+        ct::CtEngine::new()
+    }
+
     /// Returns the encoded length for this engine's padding policy.
     pub const fn encoded_len(&self, input_len: usize) -> Result<usize, EncodeError> {
         encoded_len(input_len, PAD)

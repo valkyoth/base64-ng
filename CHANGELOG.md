@@ -76,6 +76,8 @@
   unwrapped `Profile`.
 - Added `ct::CtEngine::decoded_len()` so sensitive decode paths can size
   caller-owned buffers without switching to the diagnostic decoder.
+- Added `Engine::ct_decoder()` for explicit promotion to the matching
+  constant-time-oriented decoder without type annotations.
 
 ## 0.8.0 - 2026-05-16
 
