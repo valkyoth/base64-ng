@@ -86,6 +86,14 @@ pub fn wrapped_round_trip() -> bool {
 }
 
 pub fn ct_stack_decode() -> bool {
+    let mut ct_policy = FixedText::<18>::new();
+    if write!(&mut ct_policy, "{}", ct::STANDARD).is_err() {
+        return false;
+    }
+    if ct_policy.as_bytes() != b"ct padded=true" {
+        return false;
+    }
+
     let decoded = match ct::STANDARD.decode_buffer::<5>(b"aGVsbG8=") {
         Ok(decoded) => decoded,
         Err(_) => return false,

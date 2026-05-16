@@ -1896,6 +1896,12 @@ pub mod ct {
             Ok(&mut buffer[..len])
         }
     }
+
+    impl<A, const PAD: bool> core::fmt::Display for CtEngine<A, PAD> {
+        fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+            write!(formatter, "ct padded={PAD}")
+        }
+    }
 }
 
 /// Standard Base64 engine with padding.

@@ -200,6 +200,8 @@ fn named_profiles_expose_expected_policies() {
     assert!(!ct::STANDARD_NO_PAD.is_padded());
     assert!(ct::URL_SAFE.is_padded());
     assert!(!ct::URL_SAFE_NO_PAD.is_padded());
+    assert_eq!(ct::STANDARD.to_string(), "ct padded=true");
+    assert_eq!(ct::STANDARD_NO_PAD.to_string(), "ct padded=false");
 
     assert!(MIME.is_padded());
     assert!(MIME.is_wrapped());

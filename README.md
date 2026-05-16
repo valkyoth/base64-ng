@@ -593,8 +593,9 @@ Security commitments:
   for CI artifacts, audit logs, and deployment evidence.
 - Runtime backend reports and policy failures use stable key/value display
   output for log ingestion.
-- `Engine`, `LineEnding`, `LineWrap`, and `Profile` implement printable
-  `Display` output for policy logging without payload materialization.
+- `Engine`, `ct::CtEngine`, `LineEnding`, `LineWrap`, and `Profile` implement
+  printable `Display` output for policy logging without payload
+  materialization.
 - Strict decoding rejects malformed padding and trailing data.
 - Runtime scalar APIs are expected to return `Result` or `Option` for malformed
   input and size errors instead of panicking.

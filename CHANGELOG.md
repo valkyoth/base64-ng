@@ -70,6 +70,8 @@
   direct wrapped-profile policy inspection.
 - Added `Display` for `Engine` and `Profile` so padding and wrapping policy can
   be logged without relying on verbose debug output.
+- Added matching `Display` output for `ct::CtEngine` so sensitive-path decoder
+  policy logging uses the same dependency-free formatting surface.
 
 ## 0.8.0 - 2026-05-16
 
