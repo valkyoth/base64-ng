@@ -52,6 +52,8 @@
   flush errors do not re-emit the terminal Base64 quantum.
 - Added the matching decoder-side flush retry regression so final decoded bytes
   are not emitted twice after a failed `try_finish()` flush.
+- Added a decoder-side final pending write-failure regression proving failed
+  `try_finish()` calls preserve pending input and can be retried.
 
 ## 0.8.0 - 2026-05-16
 
