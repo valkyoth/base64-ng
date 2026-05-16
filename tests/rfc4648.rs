@@ -67,6 +67,7 @@ impl Read for FramedChunkedReader<'_> {
 struct FailOnceWriter {
     output: Vec<u8>,
     fail_next: bool,
+    fail_flush_next: bool,
 }
 
 #[cfg(feature = "stream")]
@@ -85,6 +86,14 @@ impl Write for FailOnceWriter {
     }
 
     fn flush(&mut self) -> std::io::Result<()> {
+        if self.fail_flush_next {
+            self.fail_flush_next = false;
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::BrokenPipe,
+                "injected flush failure",
+            ));
+        }
+
         Ok(())
     }
 }
@@ -2678,6 +2687,7 @@ fn stream_encoder_try_finish_failure_does_not_finalize() {
     let writer = FailOnceWriter {
         output: Vec::new(),
         fail_next: true,
+        fail_flush_next: false,
     };
     let mut encoder = Encoder::new(writer, STANDARD);
     encoder.write_all(b"he").unwrap();
@@ -2691,6 +2701,29 @@ fn stream_encoder_try_finish_failure_does_not_finalize() {
     encoder.try_finish().unwrap();
     assert!(encoder.is_finalized());
     assert_eq!(encoder.pending_len(), 0);
+    assert_eq!(encoder.get_ref().output, b"aGU=");
+}
+
+#[cfg(feature = "stream")]
+#[test]
+fn stream_encoder_try_finish_flush_failure_does_not_reemit_final_quantum() {
+    let writer = FailOnceWriter {
+        output: Vec::new(),
+        fail_next: false,
+        fail_flush_next: true,
+    };
+    let mut encoder = Encoder::new(writer, STANDARD);
+    encoder.write_all(b"he").unwrap();
+
+    let err = encoder.try_finish().unwrap_err();
+    assert_eq!(err.kind(), std::io::ErrorKind::BrokenPipe);
+    assert!(encoder.is_finalized());
+    assert_eq!(encoder.pending_len(), 0);
+    assert!(!encoder.has_pending_input());
+    assert_eq!(encoder.get_ref().output, b"aGU=");
+
+    encoder.try_finish().unwrap();
+    assert!(encoder.is_finalized());
     assert_eq!(encoder.get_ref().output, b"aGU=");
 }
 

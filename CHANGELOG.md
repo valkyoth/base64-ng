@@ -48,6 +48,8 @@
 - Added fallible `EncodedBuffer::as_utf8()` for callers that prefer
   recoverable text access even though crate-produced Base64 is ASCII by
   invariant.
+- Added a stream finalization regression proving `try_finish()` retries after
+  flush errors do not re-emit the terminal Base64 quantum.
 
 ## 0.8.0 - 2026-05-16
 
