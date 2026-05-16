@@ -20,6 +20,7 @@ publish = false
 base64-ng = { path = "../..", default-features = false }
 MANIFEST
 
+cargo test --manifest-path "$manifest" --offline
 cargo check --manifest-path "$manifest" --offline
 
 for target in $targets; do

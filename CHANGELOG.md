@@ -27,6 +27,8 @@
   decode surfaces with default features disabled.
 - Aligned the default no-alloc portability smoke target list with the main
   installed cross-target check list.
+- Added host-side unit tests to the no-alloc portability smoke harness before
+  cross-target compile checks.
 
 ## 0.8.0 - 2026-05-16
 

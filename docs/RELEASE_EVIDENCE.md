@@ -66,7 +66,8 @@ The release gate runs:
 - no-alloc portability smoke crate checks for stack-backed encode/decode,
   wrapped output, URL-safe no-padding, and constant-time-oriented decode with
   default features disabled, plus validate-only, legacy decode, in-place
-  encode/decode, and constant-time-oriented in-place decode surfaces
+  encode/decode, and constant-time-oriented in-place decode surfaces; the
+  harness also runs host-side unit tests before cross-target compile checks
 - Local and CI target-matrix no-alloc portability smoke checks so installed
   Linux, FreeBSD, wasm32, ARM, and Cortex-M targets compile the same
   stack-backed dependency-free harness

@@ -98,3 +98,31 @@ pub fn legacy_stack_decode() -> bool {
 
     decoded.as_bytes() == b"hello"
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        CONST_HELLO, ct_stack_decode, in_place_surfaces, legacy_stack_decode, stack_round_trip,
+        url_safe_round_trip, validate_only_surfaces, wrapped_round_trip,
+    };
+
+    #[test]
+    fn const_encoding_matches_expected_output() {
+        assert_eq!(CONST_HELLO, *b"aGVsbG8=");
+    }
+
+    #[test]
+    fn stack_backed_surfaces_round_trip() {
+        assert!(stack_round_trip(b"hello"));
+        assert!(url_safe_round_trip(b"\xfb\xff"));
+        assert!(wrapped_round_trip());
+        assert!(legacy_stack_decode());
+    }
+
+    #[test]
+    fn validation_and_in_place_surfaces_work() {
+        assert!(validate_only_surfaces());
+        assert!(in_place_surfaces());
+        assert!(ct_stack_decode());
+    }
+}
