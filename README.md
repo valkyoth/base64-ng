@@ -247,6 +247,18 @@ assert_eq!(&encoded[76..78], b"\r\n");
 assert!(MIME.validate(&encoded[..written]));
 ```
 
+An engine can also be promoted explicitly to an unwrapped profile when a common
+configuration path expects profile values:
+
+```rust
+use base64_ng::STANDARD;
+
+let profile = STANDARD.profile();
+
+assert!(profile.is_padded());
+assert!(!profile.is_wrapped());
+```
+
 When wrapping policy comes from configuration, prefer checked construction:
 
 ```rust

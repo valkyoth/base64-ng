@@ -3910,6 +3910,15 @@ where
         PAD
     }
 
+    /// Returns this engine as an unwrapped profile.
+    ///
+    /// Use [`Profile::new`] or [`Profile::checked_new`] when a strict
+    /// line-wrapping policy should travel with the profile.
+    #[must_use]
+    pub const fn profile(&self) -> Profile<A, PAD> {
+        Profile::new(*self, None)
+    }
+
     /// Returns the encoded length for this engine's padding policy.
     pub const fn encoded_len(&self, input_len: usize) -> Result<usize, EncodeError> {
         encoded_len(input_len, PAD)

@@ -149,6 +149,14 @@ pub fn legacy_stack_decode() -> bool {
 }
 
 pub fn custom_profile_surfaces() -> bool {
+    let standard_profile = STANDARD.profile();
+    if standard_profile.engine() != STANDARD
+        || !standard_profile.is_padded()
+        || standard_profile.is_wrapped()
+    {
+        return false;
+    }
+
     let encoded = match SMOKE_NO_PAD.encode_buffer::<4>(&[0xff, 0xff, 0xff]) {
         Ok(encoded) => encoded,
         Err(_) => return false,

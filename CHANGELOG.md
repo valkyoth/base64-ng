@@ -72,6 +72,8 @@
   be logged without relying on verbose debug output.
 - Added matching `Display` output for `ct::CtEngine` so sensitive-path decoder
   policy logging uses the same dependency-free formatting surface.
+- Added `Engine::profile()` for explicit dependency-free promotion to an
+  unwrapped `Profile`.
 
 ## 0.8.0 - 2026-05-16
 
