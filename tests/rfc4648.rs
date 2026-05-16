@@ -2119,6 +2119,13 @@ fn stack_encoded_buffer_helpers_avoid_alloc_and_clear_tail() {
     assert_ne!(encoded, "aGVsbG9=");
     assert_eq!("aGVsbG8=", encoded);
     assert_ne!("aGVsbG9=", encoded);
+    #[cfg(feature = "alloc")]
+    {
+        assert_eq!(encoded, String::from("aGVsbG8="));
+        assert_ne!(encoded, String::from("aGVsbG9="));
+        assert_eq!(String::from("aGVsbG8="), encoded);
+        assert_ne!(String::from("aGVsbG9="), encoded);
+    }
     assert_eq!(
         format!("{encoded:?}"),
         "EncodedBuffer { bytes: \"<redacted>\", len: 8, capacity: 8 }"
@@ -2206,6 +2213,13 @@ fn stack_decoded_buffer_helpers_avoid_alloc_and_clear_tail() {
     assert_ne!(decoded, "Hello");
     assert_eq!("hello", decoded);
     assert_ne!("Hello", decoded);
+    #[cfg(feature = "alloc")]
+    {
+        assert_eq!(decoded, String::from("hello"));
+        assert_ne!(decoded, String::from("Hello"));
+        assert_eq!(String::from("hello"), decoded);
+        assert_ne!(String::from("Hello"), decoded);
+    }
     assert_eq!(
         format!("{decoded:?}"),
         "DecodedBuffer { bytes: \"<redacted>\", len: 5, capacity: 5 }"
@@ -2351,6 +2365,10 @@ fn secret_buffer_redacts_and_reveals_explicitly() {
     assert_ne!(secret, "token");
     assert_eq!("Token", secret);
     assert_ne!("token", secret);
+    assert_eq!(secret, String::from("Token"));
+    assert_ne!(secret, String::from("token"));
+    assert_eq!(String::from("Token"), secret);
+    assert_ne!(String::from("token"), secret);
 
     let cloned = secret.clone();
     assert_eq!(secret, cloned);

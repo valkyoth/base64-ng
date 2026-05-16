@@ -103,6 +103,8 @@
 - Added string equality for `EncodedBuffer`, `DecodedBuffer`, and
   `SecretBuffer` in either operand order using the same
   constant-time-oriented comparison helpers.
+- Added owned `String` equality for `EncodedBuffer`, `DecodedBuffer`, and
+  `SecretBuffer` in either operand order under the `alloc` feature.
 - Added `remaining_capacity()` to `EncodedBuffer` and `DecodedBuffer` for
   no-alloc stack sizing checks.
 - Added `is_full()` to `EncodedBuffer` and `DecodedBuffer`.
