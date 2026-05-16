@@ -67,7 +67,7 @@ Install the cross targets used by `scripts/check_targets.sh` and CI:
 rustup target add aarch64-unknown-linux-gnu x86_64-unknown-freebsd wasm32-unknown-unknown thumbv7em-none-eabihf
 ```
 
-The no-alloc portability smoke crate is checked with:
+The no-alloc portability smoke crate checks the same installed target list with:
 
 ```sh
 scripts/check_no_alloc_smoke.sh

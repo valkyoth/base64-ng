@@ -25,6 +25,8 @@
 - Expanded the no-alloc portability smoke harness to compile validate-only,
   legacy decode, in-place encode/decode, and constant-time-oriented in-place
   decode surfaces with default features disabled.
+- Aligned the default no-alloc portability smoke target list with the main
+  installed cross-target check list.
 
 ## 0.8.0 - 2026-05-16
 
