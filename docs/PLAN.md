@@ -178,12 +178,19 @@ the zero-runtime-dependency stance.
 - Named MIME, PEM, bcrypt-style, and `crypt(3)`-style profiles.
 - Custom alphabet validation helpers with duplicate-character, padding-byte,
   and visible-ASCII checks.
-- Stack-backed encoded output helpers for short values without `alloc`.
+- Stack-backed encoded and decoded output helpers for short values without
+  `alloc`, including explicit visible-length, capacity, tail-clearing, and
+  no-alloc ownership escape hatches.
 - Internal best-effort wipe helpers for initialized bytes, vector spare
   capacity, and redacted `SecretBuffer` owned outputs when `alloc` is enabled.
 - Zero-dependency `TryFrom<&str>` and `TryFrom<&[u8]>` interop for strict
   standard padded `EncodedBuffer` encoding plus `DecodedBuffer` and
   `SecretBuffer` decoding.
+- Redacted-buffer comparison interop for bytes, byte-string literals, borrowed
+  strings, and owned strings, routed through the same
+  constant-time-oriented equal-length comparison helpers.
+- Explicit `SecretBuffer` ownership escape hatches and `alloc`-gated
+  conversions from stack-backed buffers into redacted owned storage.
 - Strict line-wrapped in-place decode helpers for MIME/PEM-style profiles,
   including clear-tail variants and profile-level forwarding.
 - README trust dashboard and CWE/security-control mapping documentation.

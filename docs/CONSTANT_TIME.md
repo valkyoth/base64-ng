@@ -222,7 +222,9 @@ behavior.
 `SecretBuffer::constant_time_eq`, `EncodedBuffer::constant_time_eq`, and
 `DecodedBuffer::constant_time_eq` provide dependency-free,
 constant-time-oriented comparison for equal-length buffers. Their `PartialEq`
-implementations use the same helper.
+implementations use the same helper, including direct comparisons with byte
+slices, byte-string literals, borrowed strings, and owned strings where the
+relevant feature is enabled.
 
 Length mismatch returns immediately. Treat buffer length, the selected buffer
 type, and the final equality result as public. The helper scans every byte for
