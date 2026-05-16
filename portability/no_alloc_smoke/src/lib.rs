@@ -197,6 +197,13 @@ pub fn custom_profile_surfaces() -> bool {
     {
         return false;
     }
+    let mut profile_policy = FixedText::<32>::new();
+    if write!(&mut profile_policy, "{}", profile).is_err() {
+        return false;
+    }
+    if profile_policy.as_bytes() != b"padded=true wrap=4:LF" {
+        return false;
+    }
 
     let wrapped = match profile.encode_buffer::<9>(b"hello") {
         Ok(encoded) => encoded,
@@ -207,6 +214,13 @@ pub fn custom_profile_surfaces() -> bool {
 
 pub fn length_and_stack_state_surfaces() -> bool {
     if checked_encoded_len(5, true) != Some(8) {
+        return false;
+    }
+    let mut engine_policy = FixedText::<16>::new();
+    if write!(&mut engine_policy, "{}", STANDARD).is_err() {
+        return false;
+    }
+    if engine_policy.as_bytes() != b"padded=true" {
         return false;
     }
     if encoded_len(5, true) != Ok(8) {

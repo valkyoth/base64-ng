@@ -68,6 +68,8 @@
   stable values such as `76:CRLF`.
 - Added const `Profile::line_len()` and `Profile::line_ending()` accessors for
   direct wrapped-profile policy inspection.
+- Added `Display` for `Engine` and `Profile` so padding and wrapping policy can
+  be logged without relying on verbose debug output.
 
 ## 0.8.0 - 2026-05-16
 

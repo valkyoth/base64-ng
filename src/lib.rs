@@ -3163,6 +3163,18 @@ where
     }
 }
 
+impl<A, const PAD: bool> core::fmt::Display for Profile<A, PAD>
+where
+    A: Alphabet,
+{
+    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self.wrap {
+            Some(wrap) => write!(formatter, "padded={PAD} wrap={wrap}"),
+            None => write!(formatter, "padded={PAD} wrap=none"),
+        }
+    }
+}
+
 impl<A, const PAD: bool> From<Engine<A, PAD>> for Profile<A, PAD>
 where
     A: Alphabet,
@@ -3849,6 +3861,12 @@ impl<A, const PAD: bool> core::fmt::Debug for Engine<A, PAD> {
             .debug_struct("Engine")
             .field("padded", &PAD)
             .finish()
+    }
+}
+
+impl<A, const PAD: bool> core::fmt::Display for Engine<A, PAD> {
+    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(formatter, "padded={PAD}")
     }
 }
 

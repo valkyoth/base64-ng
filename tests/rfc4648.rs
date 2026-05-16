@@ -193,6 +193,8 @@ fn named_profiles_expose_expected_policies() {
     assert!(!URL_SAFE_NO_PAD.is_padded());
     assert!(!BCRYPT_NO_PAD.is_padded());
     assert!(!CRYPT_NO_PAD.is_padded());
+    assert_eq!(STANDARD.to_string(), "padded=true");
+    assert_eq!(STANDARD_NO_PAD.to_string(), "padded=false");
 
     assert!(ct::STANDARD.is_padded());
     assert!(!ct::STANDARD_NO_PAD.is_padded());
@@ -205,12 +207,14 @@ fn named_profiles_expose_expected_policies() {
     assert_eq!(MIME.line_wrap(), Some(LineWrap::MIME));
     assert_eq!(MIME.line_len(), Some(76));
     assert_eq!(MIME.line_ending(), Some(LineEnding::CrLf));
+    assert_eq!(MIME.to_string(), "padded=true wrap=76:CRLF");
     assert!(PEM.is_padded());
     assert!(PEM.is_wrapped());
     assert!(PEM.is_valid());
     assert_eq!(PEM.line_wrap(), Some(LineWrap::PEM));
     assert_eq!(PEM.line_len(), Some(64));
     assert_eq!(PEM.line_ending(), Some(LineEnding::Lf));
+    assert_eq!(PEM.to_string(), "padded=true wrap=64:LF");
     assert!(PEM_CRLF.is_padded());
     assert!(PEM_CRLF.is_wrapped());
     assert!(PEM_CRLF.is_valid());
@@ -223,6 +227,7 @@ fn named_profiles_expose_expected_policies() {
     assert_eq!(BCRYPT.line_wrap(), None);
     assert_eq!(BCRYPT.line_len(), None);
     assert_eq!(BCRYPT.line_ending(), None);
+    assert_eq!(BCRYPT.to_string(), "padded=false wrap=none");
     assert!(!CRYPT.is_padded());
     assert!(!CRYPT.is_wrapped());
     assert!(CRYPT.is_valid());

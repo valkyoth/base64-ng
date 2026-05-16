@@ -237,6 +237,7 @@ use base64_ng::{LineEnding, MIME, PEM};
 assert_eq!(MIME.line_wrap().unwrap().line_len, 76);
 assert_eq!(MIME.line_len(), Some(76));
 assert_eq!(MIME.line_ending(), Some(LineEnding::CrLf));
+assert_eq!(MIME.to_string(), "padded=true wrap=76:CRLF");
 assert_eq!(PEM.line_wrap().unwrap().line_len, 64);
 assert_eq!(PEM.line_len(), Some(64));
 
@@ -592,6 +593,8 @@ Security commitments:
   for CI artifacts, audit logs, and deployment evidence.
 - Runtime backend reports and policy failures use stable key/value display
   output for log ingestion.
+- `Engine`, `LineEnding`, `LineWrap`, and `Profile` implement printable
+  `Display` output for policy logging without payload materialization.
 - Strict decoding rejects malformed padding and trailing data.
 - Runtime scalar APIs are expected to return `Result` or `Option` for malformed
   input and size errors instead of panicking.
