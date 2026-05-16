@@ -95,6 +95,9 @@
   interop escape hatch that preserves redaction on invalid UTF-8.
 - Added `SecretBuffer::expose_secret_utf8` as an explicit fallible borrowed
   UTF-8 view for secret text.
+- Added direct byte-slice and byte-string literal equality for `EncodedBuffer`,
+  `DecodedBuffer`, and `SecretBuffer` using their constant-time-oriented
+  comparison helpers.
 - Added `remaining_capacity()` to `EncodedBuffer` and `DecodedBuffer` for
   no-alloc stack sizing checks.
 - Added `is_full()` to `EncodedBuffer` and `DecodedBuffer`.
