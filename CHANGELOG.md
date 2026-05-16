@@ -35,6 +35,8 @@
   `try_finish()` succeeds.
 - Added writer-side stream `is_finalized()` helpers for explicit finalized
   state inspection.
+- Added stream adapter `engine()` and `is_padded()` helpers for dependency-free
+  policy inspection in diagnostics and audit logs.
 
 ## 0.8.0 - 2026-05-16
 

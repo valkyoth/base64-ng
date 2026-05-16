@@ -2583,6 +2583,8 @@ fn secret_buffer_try_from_uses_strict_standard_base64() {
 #[test]
 fn stream_encoder_handles_chunk_boundaries() {
     let mut encoder = Encoder::new(Vec::new(), STANDARD);
+    assert_eq!(encoder.engine(), STANDARD);
+    assert!(encoder.is_padded());
     assert_eq!(encoder.pending_len(), 0);
     assert!(!encoder.has_pending_input());
     encoder.write_all(b"h").unwrap();
@@ -2601,6 +2603,8 @@ fn stream_encoder_handles_chunk_boundaries() {
 #[test]
 fn stream_encoder_supports_no_padding() {
     let mut encoder = Encoder::new(Vec::new(), STANDARD_NO_PAD);
+    assert_eq!(encoder.engine(), STANDARD_NO_PAD);
+    assert!(!encoder.is_padded());
     encoder.write_all(b"he").unwrap();
     encoder.write_all(b"llo").unwrap();
     let encoded = encoder.finish().unwrap();
@@ -2651,6 +2655,8 @@ fn stream_encoder_into_inner_still_returns_writer() {
 #[test]
 fn stream_encoder_reader_handles_small_reads() {
     let mut reader = EncoderReader::new(&b"hello"[..], STANDARD);
+    assert_eq!(reader.engine(), STANDARD);
+    assert!(reader.is_padded());
     assert!(!reader.is_finished());
     assert_eq!(reader.pending_len(), 0);
     assert!(!reader.has_pending_input());
@@ -2699,6 +2705,8 @@ fn stream_encoder_reader_reports_buffered_output() {
 #[test]
 fn stream_encoder_reader_supports_no_padding() {
     let mut reader = EncoderReader::new(&b"hello"[..], STANDARD_NO_PAD);
+    assert_eq!(reader.engine(), STANDARD_NO_PAD);
+    assert!(!reader.is_padded());
     let mut encoded = Vec::new();
     reader.read_to_end(&mut encoded).unwrap();
     assert_eq!(encoded, b"aGVsbG8");
@@ -2749,6 +2757,8 @@ fn stream_encoder_reader_handles_fragmented_sources() {
 #[test]
 fn stream_decoder_handles_chunk_boundaries() {
     let mut decoder = Decoder::new(Vec::new(), STANDARD);
+    assert_eq!(decoder.engine(), STANDARD);
+    assert!(decoder.is_padded());
     assert_eq!(decoder.pending_len(), 0);
     assert!(!decoder.has_pending_input());
     assert!(!decoder.has_terminal_padding());
@@ -2768,6 +2778,8 @@ fn stream_decoder_handles_chunk_boundaries() {
 #[test]
 fn stream_decoder_supports_no_padding() {
     let mut decoder = Decoder::new(Vec::new(), STANDARD_NO_PAD);
+    assert_eq!(decoder.engine(), STANDARD_NO_PAD);
+    assert!(!decoder.is_padded());
     decoder.write_all(b"aGV").unwrap();
     decoder.write_all(b"sbG8").unwrap();
     let decoded = decoder.finish().unwrap();
@@ -2871,6 +2883,8 @@ fn stream_decoder_into_inner_still_returns_writer() {
 #[test]
 fn stream_decoder_reader_handles_small_reads() {
     let mut reader = DecoderReader::new(&b"aGVsbG8="[..], STANDARD);
+    assert_eq!(reader.engine(), STANDARD);
+    assert!(reader.is_padded());
     assert!(!reader.is_finished());
     assert_eq!(reader.pending_len(), 0);
     assert!(!reader.has_pending_input());
@@ -2941,6 +2955,8 @@ fn stream_decoder_reader_terminal_padding_finishes_after_buffer_drain() {
 #[test]
 fn stream_decoder_reader_supports_no_padding() {
     let mut reader = DecoderReader::new(&b"aGVsbG8"[..], STANDARD_NO_PAD);
+    assert_eq!(reader.engine(), STANDARD_NO_PAD);
+    assert!(!reader.is_padded());
     let mut decoded = Vec::new();
     reader.read_to_end(&mut decoded).unwrap();
     assert_eq!(decoded, b"hello");

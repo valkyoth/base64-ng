@@ -582,6 +582,18 @@ pub mod stream {
             self.inner_mut()
         }
 
+        /// Returns the Base64 engine used by this adapter.
+        #[must_use]
+        pub const fn engine(&self) -> Engine<A, PAD> {
+            self.engine
+        }
+
+        /// Returns whether this adapter uses padded Base64.
+        #[must_use]
+        pub const fn is_padded(&self) -> bool {
+            PAD
+        }
+
         /// Returns the number of raw input bytes currently buffered until a
         /// complete 3-byte Base64 encode quantum is available.
         #[must_use]
@@ -829,6 +841,18 @@ pub mod stream {
         /// Returns a mutable reference to the wrapped writer.
         pub fn get_mut(&mut self) -> &mut W {
             self.inner_mut()
+        }
+
+        /// Returns the Base64 engine used by this adapter.
+        #[must_use]
+        pub const fn engine(&self) -> Engine<A, PAD> {
+            self.engine
+        }
+
+        /// Returns whether this adapter uses padded Base64.
+        #[must_use]
+        pub const fn is_padded(&self) -> bool {
+            PAD
         }
 
         /// Returns the number of encoded input bytes currently buffered until
@@ -1130,6 +1154,18 @@ pub mod stream {
             self.inner_mut()
         }
 
+        /// Returns the Base64 engine used by this adapter.
+        #[must_use]
+        pub const fn engine(&self) -> Engine<A, PAD> {
+            self.engine
+        }
+
+        /// Returns whether this adapter uses padded Base64.
+        #[must_use]
+        pub const fn is_padded(&self) -> bool {
+            PAD
+        }
+
         /// Returns the number of encoded input bytes currently buffered until
         /// a complete 4-byte Base64 decode quantum is available.
         #[must_use]
@@ -1375,6 +1411,18 @@ pub mod stream {
         /// Returns a mutable reference to the wrapped reader.
         pub fn get_mut(&mut self) -> &mut R {
             self.inner_mut()
+        }
+
+        /// Returns the Base64 engine used by this adapter.
+        #[must_use]
+        pub const fn engine(&self) -> Engine<A, PAD> {
+            self.engine
+        }
+
+        /// Returns whether this adapter uses padded Base64.
+        #[must_use]
+        pub const fn is_padded(&self) -> bool {
+            PAD
         }
 
         /// Returns the number of raw input bytes currently buffered until a
