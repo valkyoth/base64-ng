@@ -1,6 +1,15 @@
 #![no_std]
 
-use base64_ng::{LineEnding, LineWrap, STANDARD, URL_SAFE_NO_PAD, ct};
+use base64_ng::{
+    DecodedBuffer, EncodedBuffer, Engine, LineEnding, LineWrap, Profile, STANDARD,
+    URL_SAFE_NO_PAD, checked_encoded_len, decoded_capacity, decoded_len, encoded_len, ct,
+};
+
+base64_ng::define_alphabet! {
+    struct SmokeAlphabet = b"./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+}
+
+const SMOKE_NO_PAD: Engine<SmokeAlphabet, false> = Engine::new();
 
 pub const CONST_HELLO: [u8; 8] = STANDARD.encode_array(b"hello");
 
@@ -99,11 +108,104 @@ pub fn legacy_stack_decode() -> bool {
     decoded.as_bytes() == b"hello"
 }
 
+pub fn custom_profile_surfaces() -> bool {
+    let encoded = match SMOKE_NO_PAD.encode_buffer::<4>(&[0xff, 0xff, 0xff]) {
+        Ok(encoded) => encoded,
+        Err(_) => return false,
+    };
+    if encoded.as_bytes() != b"9999" {
+        return false;
+    }
+
+    let decoded = match SMOKE_NO_PAD.decode_buffer::<3>(encoded.as_bytes()) {
+        Ok(decoded) => decoded,
+        Err(_) => return false,
+    };
+    if decoded.as_bytes() != [0xff, 0xff, 0xff] {
+        return false;
+    }
+
+    let wrap = match LineWrap::checked_new(4, LineEnding::Lf) {
+        Some(wrap) => wrap,
+        None => return false,
+    };
+    let profile = match Profile::checked_new(STANDARD, Some(wrap)) {
+        Some(profile) => profile,
+        None => return false,
+    };
+
+    if !profile.is_valid() || !profile.is_padded() || profile.engine() != STANDARD {
+        return false;
+    }
+
+    let wrapped = match profile.encode_buffer::<9>(b"hello") {
+        Ok(encoded) => encoded,
+        Err(_) => return false,
+    };
+    wrapped.as_bytes() == b"aGVs\nbG8="
+}
+
+pub fn length_and_stack_state_surfaces() -> bool {
+    if checked_encoded_len(5, true) != Some(8) {
+        return false;
+    }
+    if encoded_len(5, true) != Ok(8) {
+        return false;
+    }
+    if decoded_capacity(8) != 6 {
+        return false;
+    }
+    if decoded_len(b"aGVsbG8=", true) != Ok(5) {
+        return false;
+    }
+
+    let empty_encoded = EncodedBuffer::<8>::new();
+    if !empty_encoded.is_empty()
+        || empty_encoded.is_full()
+        || empty_encoded.capacity() != 8
+        || empty_encoded.remaining_capacity() != 8
+    {
+        return false;
+    }
+
+    let encoded = match STANDARD.encode_buffer::<8>(b"hello") {
+        Ok(encoded) => encoded,
+        Err(_) => return false,
+    };
+    if encoded.is_empty()
+        || !encoded.is_full()
+        || encoded.remaining_capacity() != 0
+        || encoded.as_str() != "aGVsbG8="
+    {
+        return false;
+    }
+
+    let empty_decoded = DecodedBuffer::<5>::new();
+    if !empty_decoded.is_empty()
+        || empty_decoded.is_full()
+        || empty_decoded.capacity() != 5
+        || empty_decoded.remaining_capacity() != 5
+    {
+        return false;
+    }
+
+    let decoded = match STANDARD.decode_buffer::<5>(encoded.as_bytes()) {
+        Ok(decoded) => decoded,
+        Err(_) => return false,
+    };
+
+    !decoded.is_empty()
+        && decoded.is_full()
+        && decoded.remaining_capacity() == 0
+        && decoded.as_bytes() == b"hello"
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        CONST_HELLO, ct_stack_decode, in_place_surfaces, legacy_stack_decode, stack_round_trip,
-        url_safe_round_trip, validate_only_surfaces, wrapped_round_trip,
+        CONST_HELLO, ct_stack_decode, custom_profile_surfaces, in_place_surfaces,
+        legacy_stack_decode, length_and_stack_state_surfaces, stack_round_trip, url_safe_round_trip,
+        validate_only_surfaces, wrapped_round_trip,
     };
 
     #[test]
@@ -117,6 +219,7 @@ mod tests {
         assert!(url_safe_round_trip(b"\xfb\xff"));
         assert!(wrapped_round_trip());
         assert!(legacy_stack_decode());
+        assert!(custom_profile_surfaces());
     }
 
     #[test]
@@ -124,5 +227,6 @@ mod tests {
         assert!(validate_only_surfaces());
         assert!(in_place_surfaces());
         assert!(ct_stack_decode());
+        assert!(length_and_stack_state_surfaces());
     }
 }

@@ -39,6 +39,8 @@
   policy inspection in diagnostics and audit logs.
 - Added reader-side stream `has_finished_input()` helpers so callers can
   distinguish EOF or terminal padding from fully drained buffered output.
+- Expanded the no-alloc portability smoke harness to cover custom alphabets,
+  checked profiles, recoverable length helpers, and stack-buffer state helpers.
 
 ## 0.8.0 - 2026-05-16
 
