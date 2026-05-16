@@ -2266,6 +2266,7 @@ fn profile_stack_encoded_buffer_respects_wrapping_policy() {
 fn encoded_buffer_try_from_uses_strict_standard_base64() {
     let encoded = EncodedBuffer::<8>::try_from("hello").unwrap();
     assert_eq!(encoded.as_str(), "aGVsbG8=");
+    assert_eq!(encoded.to_string(), "aGVsbG8=");
     assert_eq!(
         format!("{encoded:?}"),
         r#"EncodedBuffer { bytes: "<redacted>", len: 8, capacity: 8 }"#

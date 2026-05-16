@@ -4,6 +4,7 @@ use base64_ng::{
     DecodedBuffer, EncodedBuffer, Engine, LineEnding, LineWrap, Profile, STANDARD,
     URL_SAFE_NO_PAD, checked_encoded_len, decoded_capacity, decoded_len, encoded_len, ct,
 };
+use core::fmt::Write as _;
 
 base64_ng::define_alphabet! {
     struct SmokeAlphabet = b"./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -12,6 +13,37 @@ base64_ng::define_alphabet! {
 const SMOKE_NO_PAD: Engine<SmokeAlphabet, false> = Engine::new();
 
 pub const CONST_HELLO: [u8; 8] = STANDARD.encode_array(b"hello");
+
+struct FixedText<const CAP: usize> {
+    bytes: [u8; CAP],
+    len: usize,
+}
+
+impl<const CAP: usize> FixedText<CAP> {
+    const fn new() -> Self {
+        Self {
+            bytes: [0u8; CAP],
+            len: 0,
+        }
+    }
+
+    fn as_bytes(&self) -> &[u8] {
+        &self.bytes[..self.len]
+    }
+}
+
+impl<const CAP: usize> core::fmt::Write for FixedText<CAP> {
+    fn write_str(&mut self, input: &str) -> core::fmt::Result {
+        let available = CAP - self.len;
+        if input.len() > available {
+            return Err(core::fmt::Error);
+        }
+
+        self.bytes[self.len..self.len + input.len()].copy_from_slice(input.as_bytes());
+        self.len += input.len();
+        Ok(())
+    }
+}
 
 pub fn stack_round_trip(input: &[u8]) -> bool {
     let encoded = match STANDARD.encode_buffer::<88>(input) {
@@ -200,12 +232,26 @@ pub fn length_and_stack_state_surfaces() -> bool {
         && decoded.as_bytes() == b"hello"
 }
 
+pub fn fmt_surfaces() -> bool {
+    let encoded = match STANDARD.encode_buffer::<8>(b"hello") {
+        Ok(encoded) => encoded,
+        Err(_) => return false,
+    };
+
+    let mut output = FixedText::<8>::new();
+    if write!(&mut output, "{encoded}").is_err() {
+        return false;
+    }
+
+    output.as_bytes() == b"aGVsbG8="
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         CONST_HELLO, ct_stack_decode, custom_profile_surfaces, in_place_surfaces,
-        legacy_stack_decode, length_and_stack_state_surfaces, stack_round_trip, url_safe_round_trip,
-        validate_only_surfaces, wrapped_round_trip,
+        fmt_surfaces, legacy_stack_decode, length_and_stack_state_surfaces, stack_round_trip,
+        url_safe_round_trip, validate_only_surfaces, wrapped_round_trip,
     };
 
     #[test]
@@ -228,5 +274,6 @@ mod tests {
         assert!(in_place_surfaces());
         assert!(ct_stack_decode());
         assert!(length_and_stack_state_surfaces());
+        assert!(fmt_surfaces());
     }
 }

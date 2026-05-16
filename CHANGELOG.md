@@ -43,6 +43,8 @@
   checked profiles, recoverable length helpers, and stack-buffer state helpers.
 - Added stream finalization failure regressions proving failed `try_finish()`
   calls do not mark adapters finalized and can be retried.
+- Added `Display` for `EncodedBuffer` so stack-backed encoded output can be
+  formatted without allocating, while `Debug` remains redacted.
 
 ## 0.8.0 - 2026-05-16
 

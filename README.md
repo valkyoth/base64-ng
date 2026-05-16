@@ -380,6 +380,7 @@ use base64_ng::{BCRYPT, MIME, STANDARD};
 
 let encoded = STANDARD.encode_buffer::<8>(b"hello").unwrap();
 assert_eq!(encoded.as_str(), "aGVsbG8=");
+assert_eq!(encoded.to_string(), "aGVsbG8=");
 
 let decoded = STANDARD.decode_buffer::<5>(encoded.as_bytes()).unwrap();
 assert_eq!(decoded.as_bytes(), b"hello");
@@ -392,7 +393,8 @@ let decoded = MIME.decode_buffer::<58>(wrapped.as_bytes()).unwrap();
 assert_eq!(decoded.as_bytes(), &[0x5a; 58]);
 ```
 
-`EncodedBuffer` exposes bytes only through `as_bytes` and `as_str`.
+`EncodedBuffer` exposes bytes only through `as_bytes` and `as_str`, and
+implements `Display` for allocation-free formatting of encoded Base64 text.
 `DecodedBuffer` exposes bytes through `as_bytes` and provides a fallible
 `as_utf8` view for decoded text. Both expose `is_full()` and
 `remaining_capacity()` for no-alloc sizing checks, redact the payload from

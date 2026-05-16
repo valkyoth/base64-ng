@@ -2181,6 +2181,12 @@ impl<const CAP: usize> core::fmt::Debug for EncodedBuffer<CAP> {
     }
 }
 
+impl<const CAP: usize> core::fmt::Display for EncodedBuffer<CAP> {
+    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        formatter.write_str(self.as_str())
+    }
+}
+
 impl<const CAP: usize> Default for EncodedBuffer<CAP> {
     fn default() -> Self {
         Self::new()
