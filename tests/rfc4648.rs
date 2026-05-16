@@ -2729,6 +2729,31 @@ fn stream_encoder_try_finish_flush_failure_does_not_reemit_final_quantum() {
 
 #[cfg(feature = "stream")]
 #[test]
+fn stream_encoder_write_failure_preserves_pending_input() {
+    let writer = FailOnceWriter {
+        output: Vec::new(),
+        fail_next: true,
+        fail_flush_next: false,
+    };
+    let mut encoder = Encoder::new(writer, STANDARD);
+    encoder.write_all(b"h").unwrap();
+    assert_eq!(encoder.pending_len(), 1);
+    assert!(encoder.has_pending_input());
+
+    let err = encoder.write_all(b"el").unwrap_err();
+    assert_eq!(err.kind(), std::io::ErrorKind::BrokenPipe);
+    assert_eq!(encoder.pending_len(), 1);
+    assert!(encoder.has_pending_input());
+    assert_eq!(encoder.get_ref().output, b"");
+
+    encoder.write_all(b"el").unwrap();
+    assert_eq!(encoder.pending_len(), 0);
+    assert!(!encoder.has_pending_input());
+    assert_eq!(encoder.get_ref().output, b"aGVs");
+}
+
+#[cfg(feature = "stream")]
+#[test]
 fn stream_encoder_into_inner_still_returns_writer() {
     let mut encoder = Encoder::new(Vec::new(), STANDARD);
     encoder.write_all(b"he").unwrap();
@@ -2982,6 +3007,33 @@ fn stream_decoder_try_finish_write_failure_does_not_finalize() {
     assert!(decoder.is_finalized());
     assert_eq!(decoder.pending_len(), 0);
     assert!(!decoder.has_pending_input());
+    assert_eq!(decoder.get_ref().output, b"hi");
+}
+
+#[cfg(feature = "stream")]
+#[test]
+fn stream_decoder_write_failure_preserves_pending_input() {
+    let writer = FailOnceWriter {
+        output: Vec::new(),
+        fail_next: true,
+        fail_flush_next: false,
+    };
+    let mut decoder = Decoder::new(writer, STANDARD);
+    decoder.write_all(b"a").unwrap();
+    assert_eq!(decoder.pending_len(), 1);
+    assert!(decoder.has_pending_input());
+
+    let err = decoder.write_all(b"Gk=").unwrap_err();
+    assert_eq!(err.kind(), std::io::ErrorKind::BrokenPipe);
+    assert_eq!(decoder.pending_len(), 1);
+    assert!(decoder.has_pending_input());
+    assert!(!decoder.has_terminal_padding());
+    assert_eq!(decoder.get_ref().output, b"");
+
+    decoder.write_all(b"Gk=").unwrap();
+    assert_eq!(decoder.pending_len(), 0);
+    assert!(!decoder.has_pending_input());
+    assert!(decoder.has_terminal_padding());
     assert_eq!(decoder.get_ref().output, b"hi");
 }
 
