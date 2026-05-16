@@ -2917,6 +2917,24 @@ where
         self.wrap
     }
 
+    /// Returns the encoded line length for wrapped profiles.
+    #[must_use]
+    pub const fn line_len(&self) -> Option<usize> {
+        match self.wrap {
+            Some(wrap) => Some(wrap.line_len()),
+            None => None,
+        }
+    }
+
+    /// Returns the line ending for wrapped profiles.
+    #[must_use]
+    pub const fn line_ending(&self) -> Option<LineEnding> {
+        match self.wrap {
+            Some(wrap) => Some(wrap.line_ending()),
+            None => None,
+        }
+    }
+
     /// Returns the encoded length for this profile.
     pub const fn encoded_len(&self, input_len: usize) -> Result<usize, EncodeError> {
         match self.wrap {

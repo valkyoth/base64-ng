@@ -232,10 +232,13 @@ example `76:CRLF`.
 Named profiles carry the wrapping policy for common protocols:
 
 ```rust
-use base64_ng::{MIME, PEM};
+use base64_ng::{LineEnding, MIME, PEM};
 
 assert_eq!(MIME.line_wrap().unwrap().line_len, 76);
+assert_eq!(MIME.line_len(), Some(76));
+assert_eq!(MIME.line_ending(), Some(LineEnding::CrLf));
 assert_eq!(PEM.line_wrap().unwrap().line_len, 64);
+assert_eq!(PEM.line_len(), Some(64));
 
 let mut encoded = [0u8; 82];
 let written = MIME.encode_slice(&[0x5a; 58], &mut encoded).unwrap();

@@ -66,6 +66,8 @@
   identifiers without confusing them with literal line-ending bytes.
 - Added `Display` for `LineWrap` so audit logs can print wrapping policies as
   stable values such as `76:CRLF`.
+- Added const `Profile::line_len()` and `Profile::line_ending()` accessors for
+  direct wrapped-profile policy inspection.
 
 ## 0.8.0 - 2026-05-16
 

@@ -203,22 +203,32 @@ fn named_profiles_expose_expected_policies() {
     assert!(MIME.is_wrapped());
     assert!(MIME.is_valid());
     assert_eq!(MIME.line_wrap(), Some(LineWrap::MIME));
+    assert_eq!(MIME.line_len(), Some(76));
+    assert_eq!(MIME.line_ending(), Some(LineEnding::CrLf));
     assert!(PEM.is_padded());
     assert!(PEM.is_wrapped());
     assert!(PEM.is_valid());
     assert_eq!(PEM.line_wrap(), Some(LineWrap::PEM));
+    assert_eq!(PEM.line_len(), Some(64));
+    assert_eq!(PEM.line_ending(), Some(LineEnding::Lf));
     assert!(PEM_CRLF.is_padded());
     assert!(PEM_CRLF.is_wrapped());
     assert!(PEM_CRLF.is_valid());
     assert_eq!(PEM_CRLF.line_wrap(), Some(LineWrap::PEM_CRLF));
+    assert_eq!(PEM_CRLF.line_len(), Some(64));
+    assert_eq!(PEM_CRLF.line_ending(), Some(LineEnding::CrLf));
     assert!(!BCRYPT.is_padded());
     assert!(!BCRYPT.is_wrapped());
     assert!(BCRYPT.is_valid());
     assert_eq!(BCRYPT.line_wrap(), None);
+    assert_eq!(BCRYPT.line_len(), None);
+    assert_eq!(BCRYPT.line_ending(), None);
     assert!(!CRYPT.is_padded());
     assert!(!CRYPT.is_wrapped());
     assert!(CRYPT.is_valid());
     assert_eq!(CRYPT.line_wrap(), None);
+    assert_eq!(CRYPT.line_len(), None);
+    assert_eq!(CRYPT.line_ending(), None);
 
     assert_eq!(
         MIME.encoded_len(58),

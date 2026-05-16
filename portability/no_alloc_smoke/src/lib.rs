@@ -191,6 +191,12 @@ pub fn custom_profile_surfaces() -> bool {
     if !profile.is_valid() || !profile.is_padded() || profile.engine() != STANDARD {
         return false;
     }
+    if !profile.is_wrapped()
+        || profile.line_len() != Some(4)
+        || profile.line_ending() != Some(LineEnding::Lf)
+    {
+        return false;
+    }
 
     let wrapped = match profile.encode_buffer::<9>(b"hello") {
         Ok(encoded) => encoded,
