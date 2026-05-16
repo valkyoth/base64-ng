@@ -69,6 +69,7 @@ for required_text in \
     "Do not advertise SIMD acceleration" \
     "Benchmark evidence that reports hardware" \
     "register-retention cleanup strategy" \
+    "explicit register cleanup implementation and tests" \
     "Performance numbers are release notes evidence only" \
     "Admitted backends: none" \
     "Active backend: scalar only" \

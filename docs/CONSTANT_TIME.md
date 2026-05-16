@@ -157,9 +157,10 @@ Minimum local commands:
 scripts/generate_ct_asm_evidence.sh
 ```
 
-The script writes release assembly artifacts and a checksum manifest under
-`target/release-evidence/asm/` for no-default-features and all-features builds.
-It wraps these raw compiler invocations:
+Normal CI and the release gate run this script. It writes release assembly
+artifacts and a checksum manifest under `target/release-evidence/asm/` for
+no-default-features and all-features builds. It wraps these raw compiler
+invocations:
 
 ```sh
 cargo rustc --release --lib --no-default-features -- --emit=asm
@@ -198,9 +199,10 @@ scripts/validate-constant-time-policy.sh
 ## dudect-Style Timing Evidence
 
 `dudect/` contains an isolated, dependency-free timing harness for the scalar
-constant-time-oriented decoder. The normal gate compiles the harness and checks
-its dependency policy. Local timing runs are opt-in because virtualized CI
-runners and busy developer machines can produce noisy measurements:
+constant-time-oriented decoder. Normal CI and the release gate compile the
+harness and check its dependency policy. Local timing runs are opt-in because
+virtualized CI runners and busy developer machines can produce noisy
+measurements:
 
 ```sh
 BASE64_NG_RUN_DUDECT=1 scripts/check_dudect.sh

@@ -240,8 +240,9 @@ The admission bar applies equally to AVX2, AVX-512, SSSE3/SSE4.1, NEON, wasm
 `simd128`, and any other future vector backend.
 
 Any admitted SIMD path that processes caller data must also document its
-register-retention cleanup strategy. The current prototypes only construct and
-store zero vectors before scalar-equivalent writes; real vectorized
-implementations must explain whether target-specific cleanup such as
-`vzeroupper`, explicit zero registers, or another architecture-appropriate
-sequence is required before returning.
+register-retention cleanup strategy and include the matching explicit register
+cleanup implementation and tests in the admission evidence. The current
+prototypes only construct and store zero vectors before scalar-equivalent
+writes; real vectorized implementations must explain whether target-specific
+cleanup such as `vzeroupper`, explicit zero registers, or another
+architecture-appropriate sequence is required before returning.

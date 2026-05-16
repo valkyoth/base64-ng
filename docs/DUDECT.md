@@ -16,8 +16,9 @@ scripts/check_dudect.sh
 ```
 
 By default this compiles the harness and checks its isolated dependency policy.
-It deliberately does not run the timing test in normal CI because timing
-measurements are noisy on shared runners.
+Normal CI runs this compile/dependency check. It deliberately does not run the
+timing test in normal CI because timing measurements are noisy on shared
+runners.
 
 ## Run Local Timing Evidence
 

@@ -28,6 +28,8 @@ added to `ActiveBackend` or used by runtime dispatch:
 - unsafe inventory updates for every unsafe function and unsafe block
 - register-retention cleanup strategy for any vector registers that process
   caller data
+- explicit register cleanup implementation and tests for every vector path
+  that processes caller data
 - Miri coverage for all scalar and dispatch-level code Miri can execute
 - benchmark evidence that reports hardware, OS, Rust version, command, raw
   output, and comparison baseline

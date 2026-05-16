@@ -54,6 +54,9 @@ jobs:
       - name: Check dudect timing harness dependencies
         run: scripts/check_dudect.sh
 
+      - name: Generate constant-time assembly evidence
+        run: scripts/generate_ct_asm_evidence.sh
+
       - name: Generate SBOM
         run: scripts/generate-sbom.sh
 

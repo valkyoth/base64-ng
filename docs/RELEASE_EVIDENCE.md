@@ -225,8 +225,8 @@ helpers. It remains tool-backed undefined-behavior evidence, not a formal proof.
 
 ## Constant-Time Timing Evidence
 
-The release gate compiles the isolated dudect-style harness and checks its
-dependency policy:
+The normal CI gate and release gate compile the isolated dudect-style harness
+and check its dependency policy:
 
 ```sh
 scripts/check_dudect.sh
@@ -245,7 +245,8 @@ write `target/release-evidence/dudect/dudect-output.txt` and
 `target/release-evidence/dudect/MANIFEST.txt` for this purpose. This evidence
 is empirical and does not replace generated-code review or Kani proofs.
 
-Generate assembly artifacts for reviewer inspection with:
+The normal CI gate and release gate also generate assembly artifacts for
+reviewer inspection with:
 
 ```sh
 scripts/generate_ct_asm_evidence.sh

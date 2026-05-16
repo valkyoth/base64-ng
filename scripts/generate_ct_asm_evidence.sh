@@ -62,7 +62,7 @@ copy_single_asm "target/ct-asm-all-features" "$output_dir/base64_ng-all-features
     echo "review focus:"
     echo "- ct::CtEngine decode entry points"
     echo "- ct_decode_* scalar helper code"
-    echo "- ct_decode_ascii_base64 symbol mapping"
+    echo "- ct_decode_alphabet_byte generic alphabet scanner"
     echo "- ct_mask_* arithmetic helpers"
     echo "- absence of secret-indexed lookup tables in ct symbol mapping"
     echo "- absence of secret-byte-class branches in fixed-length ct decode loops"
