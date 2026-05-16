@@ -93,6 +93,9 @@ pub fn ct_stack_decode() -> bool {
     if ct_policy.as_bytes() != b"ct padded=true" {
         return false;
     }
+    if ct::STANDARD.decoded_len(b"aGVsbG8=") != Ok(5) {
+        return false;
+    }
 
     let decoded = match ct::STANDARD.decode_buffer::<5>(b"aGVsbG8=") {
         Ok(decoded) => decoded,

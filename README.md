@@ -390,8 +390,9 @@ returning the error. The legacy whitespace profile also provides
 `decode_in_place_wrapped`, `decode_in_place_wrapped_clear_tail`, and the same
 in-place behavior through `Profile::decode_in_place`. The `ct` module provides
 the same clear-tail decode variants for callers using the constant-time-oriented
-scalar decoder, plus `ct::CtEngine::decode_buffer` for stack-backed no-alloc
-decoded output.
+scalar decoder, `ct::CtEngine::decoded_len` for sizing caller-owned buffers
+under the same opaque malformed-input policy, plus
+`ct::CtEngine::decode_buffer` for stack-backed no-alloc decoded output.
 
 For short values, `encode_buffer` returns a stack-backed `EncodedBuffer`
 and `decode_buffer` returns a stack-backed `DecodedBuffer` without requiring

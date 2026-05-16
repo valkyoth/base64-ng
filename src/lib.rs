@@ -1671,7 +1671,7 @@ pub mod stream {
 pub mod ct {
     use super::{
         Alphabet, DecodeError, DecodedBuffer, Standard, UrlSafe, ct_decode_in_place,
-        ct_decode_slice, ct_validate_decode,
+        ct_decode_slice, ct_decoded_len, ct_validate_decode,
     };
     use core::marker::PhantomData;
 
@@ -1746,6 +1746,15 @@ pub mod ct {
         #[must_use]
         pub fn validate(&self, input: &[u8]) -> bool {
             self.validate_result(input).is_ok()
+        }
+
+        /// Returns the exact decoded length for valid input.
+        ///
+        /// This uses the same constant-time-oriented validation policy as
+        /// [`Self::decode_slice`] before returning a length. Input length,
+        /// padding length, and final success or failure remain public.
+        pub fn decoded_len(&self, input: &[u8]) -> Result<usize, DecodeError> {
+            ct_decoded_len::<A, PAD>(input)
         }
 
         /// Decodes `input` into `output`, returning the number of bytes
@@ -6021,6 +6030,25 @@ fn ct_validate_decode<A: Alphabet, const PAD: bool>(input: &[u8]) -> Result<(), 
         ct_validate_padded::<A>(input)
     } else {
         ct_validate_unpadded::<A>(input)
+    }
+}
+
+fn ct_decoded_len<A: Alphabet, const PAD: bool>(input: &[u8]) -> Result<usize, DecodeError> {
+    ct_validate_decode::<A, PAD>(input)?;
+    if input.is_empty() {
+        return Ok(0);
+    }
+
+    if PAD {
+        Ok(input.len() / 4 * 3 - ct_padding_len(input))
+    } else {
+        let full_quads = input.len() / 4 * 3;
+        match input.len() % 4 {
+            0 => Ok(full_quads),
+            2 => Ok(full_quads + 1),
+            3 => Ok(full_quads + 2),
+            _ => Err(DecodeError::InvalidLength),
+        }
     }
 }
 

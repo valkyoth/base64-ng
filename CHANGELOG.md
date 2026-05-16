@@ -74,6 +74,8 @@
   policy logging uses the same dependency-free formatting surface.
 - Added `Engine::profile()` for explicit dependency-free promotion to an
   unwrapped `Profile`.
+- Added `ct::CtEngine::decoded_len()` so sensitive decode paths can size
+  caller-owned buffers without switching to the diagnostic decoder.
 
 ## 0.8.0 - 2026-05-16
 

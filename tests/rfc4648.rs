@@ -735,6 +735,35 @@ fn ct_validate_matches_constant_time_decode_policy() {
     );
 }
 
+#[test]
+fn ct_decoded_len_matches_constant_time_decode_policy() {
+    assert_eq!(ct::STANDARD.decoded_len(b""), Ok(0));
+    assert_eq!(ct::STANDARD.decoded_len(b"Zg=="), Ok(1));
+    assert_eq!(ct::STANDARD.decoded_len(b"Zm8="), Ok(2));
+    assert_eq!(ct::STANDARD.decoded_len(b"Zm9v"), Ok(3));
+    assert_eq!(ct::STANDARD_NO_PAD.decoded_len(b""), Ok(0));
+    assert_eq!(ct::STANDARD_NO_PAD.decoded_len(b"Zg"), Ok(1));
+    assert_eq!(ct::STANDARD_NO_PAD.decoded_len(b"Zm8"), Ok(2));
+    assert_eq!(ct::STANDARD_NO_PAD.decoded_len(b"Zm9v"), Ok(3));
+
+    assert_eq!(
+        ct::STANDARD.decoded_len(b"AA-A"),
+        Err(DecodeError::InvalidInput)
+    );
+    assert_eq!(
+        ct::STANDARD.decoded_len(b"Zh=="),
+        Err(DecodeError::InvalidInput)
+    );
+    assert_eq!(
+        ct::STANDARD_NO_PAD.decoded_len(b"Zg=="),
+        Err(DecodeError::InvalidInput)
+    );
+    assert_eq!(
+        ct::STANDARD.decoded_len(b"Zg"),
+        Err(DecodeError::InvalidLength)
+    );
+}
+
 fn assert_ct_validate_decode_agree<A, const PAD: bool>(
     engine: ct::CtEngine<A, PAD>,
     cases: &[&[u8]],
