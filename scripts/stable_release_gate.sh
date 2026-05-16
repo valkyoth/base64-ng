@@ -57,6 +57,9 @@ scripts/check_dudect.sh
 echo "stable release gate: installed cross-target checks"
 scripts/check_targets.sh
 
+echo "stable release gate: no-alloc portability smoke"
+scripts/check_no_alloc_smoke.sh
+
 echo "stable release gate: SIMD feature-bundle checks"
 scripts/check_simd_feature_bundles.sh
 

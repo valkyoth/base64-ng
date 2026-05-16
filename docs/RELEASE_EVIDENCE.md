@@ -63,6 +63,9 @@ The release gate runs:
   release-blocking artifact cleanup
 - isolated fuzz and performance harness dependency checks
 - installed-target `no_std` checks for the reserved `simd` feature
+- no-alloc portability smoke crate checks for stack-backed encode/decode,
+  wrapped output, URL-safe no-padding, and constant-time-oriented decode with
+  default features disabled
 - reserved SIMD feature-bundle compile checks for AVX2, AVX-512 VBMI,
   SSSE3/SSE4.1, NEON, and wasm `simd128` under `no_std` when the corresponding
   Rust targets are installed

@@ -80,6 +80,7 @@ for required_script in \
     "scripts/check_fuzz_corpus.sh" \
     "scripts/check_kani.sh" \
     "scripts/check_miri.sh" \
+    "scripts/check_no_alloc_smoke.sh" \
     "scripts/check_perf.sh" \
     "scripts/check_reserved_features.sh" \
     "scripts/check_simd_feature_bundles.sh" \
@@ -153,12 +154,14 @@ for required_package_file in \
     "docs/SIMD.md" \
     "docs/TRUST.md" \
     "docs/UNSAFE.md" \
+    "portability/no_alloc_smoke/src/lib.rs" \
     "scripts/check_backend_evidence.sh" \
     "scripts/check_dudect.sh" \
     "scripts/check_fuzz.sh" \
     "scripts/check_fuzz_corpus.sh" \
     "scripts/check_kani.sh" \
     "scripts/check_miri.sh" \
+    "scripts/check_no_alloc_smoke.sh" \
     "scripts/check_perf.sh" \
     "scripts/check_reserved_features.sh" \
     "scripts/check_simd_feature_bundles.sh" \

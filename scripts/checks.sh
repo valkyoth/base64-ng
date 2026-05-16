@@ -43,6 +43,9 @@ cargo clippy --all-targets --all-features -- -D warnings
 echo "checks: no_std library build"
 cargo check --no-default-features --lib
 
+echo "checks: no-alloc portability smoke"
+scripts/check_no_alloc_smoke.sh
+
 echo "checks: tests default"
 cargo test --all-targets
 

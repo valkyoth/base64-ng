@@ -6,6 +6,9 @@
 - Added stream adapter state-inspection helpers for pending input quanta and
   buffered reader output plus terminal padded decode blocks, improving
   framed-protocol ergonomics without adding dependencies.
+- Added a dependency-free no-alloc portability smoke crate and local gate that
+  builds stack-backed APIs with default features disabled across installed
+  Linux, wasm32, and Cortex-M targets.
 
 ## 0.8.0 - 2026-05-16
 

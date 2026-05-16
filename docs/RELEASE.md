@@ -45,6 +45,8 @@ The release gate covers:
 - docs
 - packaged async admission policy while the `tokio` feature remains inert
 - installed cross-target `no_std` checks
+- no-alloc portability smoke crate checks for installed Linux, wasm32, and
+  Cortex-M targets
 - reserved SIMD feature-bundle compile checks for AVX2, AVX-512 VBMI,
   SSSE3/SSE4.1, NEON, and wasm `simd128` when the corresponding Rust targets
   are installed
@@ -62,6 +64,12 @@ Install the cross targets used by `scripts/check_targets.sh` and CI:
 
 ```sh
 rustup target add aarch64-unknown-linux-gnu x86_64-unknown-freebsd wasm32-unknown-unknown thumbv7em-none-eabihf
+```
+
+The no-alloc portability smoke crate is checked with:
+
+```sh
+scripts/check_no_alloc_smoke.sh
 ```
 
 Install release and deep-check tools:
