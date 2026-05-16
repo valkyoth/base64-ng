@@ -105,6 +105,8 @@
   constant-time-oriented comparison helpers.
 - Added owned `String` equality for `EncodedBuffer`, `DecodedBuffer`, and
   `SecretBuffer` in either operand order under the `alloc` feature.
+- Added `From<EncodedBuffer<CAP>>` and `From<DecodedBuffer<CAP>>` for
+  `SecretBuffer` under the `alloc` feature.
 - Added `remaining_capacity()` to `EncodedBuffer` and `DecodedBuffer` for
   no-alloc stack sizing checks.
 - Added `is_full()` to `EncodedBuffer` and `DecodedBuffer`.

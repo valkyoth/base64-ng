@@ -454,7 +454,10 @@ unchanged when the bytes are not valid UTF-8.
 
 `SecretBuffer` also implements `From<Vec<u8>>` and `From<String>` for callers
 that already own sensitive bytes or text and want to move them into the
-redacted wrapper without copying initialized bytes.
+redacted wrapper without copying initialized bytes. With `alloc` enabled,
+stack-backed `EncodedBuffer` and `DecodedBuffer` values can also be consumed
+into `SecretBuffer`; the stack backing array is cleared when the consumed
+buffer drops at the end of the conversion.
 
 `TryFrom<&str>` and `TryFrom<&[u8]>` for `EncodedBuffer<CAP>` encode raw input
 bytes with strict standard padded Base64. The same conversions for

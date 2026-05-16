@@ -2407,6 +2407,14 @@ fn secret_buffer_from_vec_preserves_visible_bytes_with_spare_capacity() {
     let secret = SecretBuffer::from(text);
     assert_eq!(secret.expose_secret(), b"token");
 
+    let encoded = STANDARD.encode_buffer::<8>(b"hello").unwrap();
+    let secret = SecretBuffer::from(encoded);
+    assert_eq!(secret.expose_secret(), b"aGVsbG8=");
+
+    let decoded = STANDARD.decode_buffer::<5>(b"aGVsbG8=").unwrap();
+    let secret = SecretBuffer::from(decoded);
+    assert_eq!(secret.expose_secret(), b"hello");
+
     let secret = SecretBuffer::from_slice(b"token");
     assert_eq!(secret.try_into_exposed_string().unwrap(), "token");
 

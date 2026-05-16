@@ -2420,6 +2420,30 @@ impl From<alloc::string::String> for SecretBuffer {
 }
 
 #[cfg(feature = "alloc")]
+impl<const CAP: usize> From<EncodedBuffer<CAP>> for SecretBuffer {
+    /// Copies visible encoded bytes from a stack-backed buffer into an owned
+    /// redacted buffer.
+    ///
+    /// The consumed stack-backed buffer clears its backing array when it is
+    /// dropped at the end of the conversion.
+    fn from(buffer: EncodedBuffer<CAP>) -> Self {
+        Self::from_slice(buffer.as_bytes())
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl<const CAP: usize> From<DecodedBuffer<CAP>> for SecretBuffer {
+    /// Copies visible decoded bytes from a stack-backed buffer into an owned
+    /// redacted buffer.
+    ///
+    /// The consumed stack-backed buffer clears its backing array when it is
+    /// dropped at the end of the conversion.
+    fn from(buffer: DecodedBuffer<CAP>) -> Self {
+        Self::from_slice(buffer.as_bytes())
+    }
+}
+
+#[cfg(feature = "alloc")]
 impl TryFrom<&[u8]> for SecretBuffer {
     type Error = DecodeError;
 
