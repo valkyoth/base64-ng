@@ -491,6 +491,9 @@ use base64_ng::{STANDARD, stream::{Decoder, DecoderReader, Encoder, EncoderReade
 let mut encoder = Encoder::new(Vec::new(), STANDARD);
 encoder.write_all(b"he").unwrap();
 encoder.write_all(b"llo").unwrap();
+assert!(encoder.has_pending_input());
+encoder.try_finish().unwrap();
+assert_eq!(encoder.get_ref(), b"aGVsbG8=");
 let encoded = encoder.finish().unwrap();
 assert_eq!(encoded, b"aGVsbG8=");
 
@@ -521,8 +524,11 @@ or encoded but not yet returned to the caller. Decoders additionally expose
 `has_terminal_padding()` so framed protocols can tell when a padded payload has
 ended and leave adjacent bytes for the next protocol layer. Reader adapters
 also expose `is_finished()` once EOF or terminal padding has been reached and
-all buffered output has been drained. Their `Debug` output reports adapter
-state without formatting the wrapped reader or writer.
+all buffered output has been drained. Writer adapters expose `try_finish()` to
+finalize pending input and flush the wrapped writer without consuming the
+adapter, which keeps diagnostics and explicit inner-writer recovery available.
+Their `Debug` output reports adapter state without formatting the wrapped
+reader or writer.
 
 URL-safe, no-padding encoding:
 

@@ -658,10 +658,22 @@ pub mod stream {
         W: Write,
         A: Alphabet,
     {
+        /// Writes any pending input and flushes the wrapped writer without
+        /// consuming this encoder.
+        ///
+        /// After this succeeds, [`Self::pending_len`] returns `0` and
+        /// [`Self::finish`] can still be used to recover the wrapped writer.
+        /// This is useful when a caller needs to finalize a framed payload
+        /// while keeping the stream adapter available for diagnostics or
+        /// explicit recovery.
+        pub fn try_finish(&mut self) -> io::Result<()> {
+            self.write_pending_final()?;
+            self.inner_mut().flush()
+        }
+
         /// Writes any pending input, flushes the wrapped writer, and returns it.
         pub fn finish(mut self) -> io::Result<W> {
-            self.write_pending_final()?;
-            self.inner_mut().flush()?;
+            self.try_finish()?;
             Ok(self.take_inner())
         }
 
@@ -885,10 +897,22 @@ pub mod stream {
         W: Write,
         A: Alphabet,
     {
+        /// Validates any final pending input and flushes the wrapped writer
+        /// without consuming this decoder.
+        ///
+        /// After this succeeds, [`Self::pending_len`] returns `0` and
+        /// [`Self::finish`] can still be used to recover the wrapped writer.
+        /// If the final buffered input is malformed, an error is returned and
+        /// the caller still owns the decoder for diagnostics or explicit
+        /// recovery.
+        pub fn try_finish(&mut self) -> io::Result<()> {
+            self.write_pending_final()?;
+            self.inner_mut().flush()
+        }
+
         /// Validates final pending input, flushes the wrapped writer, and returns it.
         pub fn finish(mut self) -> io::Result<W> {
-            self.write_pending_final()?;
-            self.inner_mut().flush()?;
+            self.try_finish()?;
             Ok(self.take_inner())
         }
 

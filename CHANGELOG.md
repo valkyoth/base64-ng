@@ -29,6 +29,8 @@
   installed cross-target check list.
 - Added host-side unit tests to the no-alloc portability smoke harness before
   cross-target compile checks.
+- Added writer-side stream `try_finish()` helpers so callers can finalize and
+  flush pending Base64 quanta without consuming the adapter.
 
 ## 0.8.0 - 2026-05-16
 
