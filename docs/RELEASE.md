@@ -47,6 +47,7 @@ The release gate covers:
 - installed cross-target `no_std` checks
 - no-alloc portability smoke crate checks for installed Linux, wasm32, and
   Cortex-M targets
+- CI target-matrix no-alloc smoke checks for each installed `no_std` target
 - reserved SIMD feature-bundle compile checks for AVX2, AVX-512 VBMI,
   SSSE3/SSE4.1, NEON, and wasm `simd128` when the corresponding Rust targets
   are installed

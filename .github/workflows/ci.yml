@@ -133,6 +133,9 @@ jobs:
       - name: Check no_std simd-reserved build
         run: scripts/check_targets.sh ${{ matrix.target }}
 
+      - name: Check no-alloc portability smoke
+        run: scripts/check_no_alloc_smoke.sh ${{ matrix.target }}
+
   miri:
     name: Miri
     runs-on: ubuntu-latest

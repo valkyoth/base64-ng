@@ -66,6 +66,9 @@ The release gate runs:
 - no-alloc portability smoke crate checks for stack-backed encode/decode,
   wrapped output, URL-safe no-padding, and constant-time-oriented decode with
   default features disabled
+- CI target-matrix no-alloc portability smoke checks so installed Linux,
+  FreeBSD, wasm32, ARM, and Cortex-M targets compile the same stack-backed
+  dependency-free harness
 - reserved SIMD feature-bundle compile checks for AVX2, AVX-512 VBMI,
   SSSE3/SSE4.1, NEON, and wasm `simd128` under `no_std` when the corresponding
   Rust targets are installed
