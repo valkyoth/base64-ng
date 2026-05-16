@@ -60,6 +60,8 @@
   finalization flush retries.
 - Added `LineEnding::as_str()` for allocation-free text inspection of wrapping
   policies.
+- Added const `LineWrap::line_len()` and `LineWrap::line_ending()` accessors
+  for audit-friendly wrapping policy inspection.
 
 ## 0.8.0 - 2026-05-16
 

@@ -161,7 +161,11 @@ pub fn custom_profile_surfaces() -> bool {
         Some(wrap) => wrap,
         None => return false,
     };
-    if wrap.line_ending.as_str() != "\n" || wrap.line_ending.as_bytes() != b"\n" {
+    if wrap.line_len() != 4
+        || wrap.line_ending() != LineEnding::Lf
+        || wrap.line_ending().as_str() != "\n"
+        || wrap.line_ending().as_bytes() != b"\n"
+    {
         return false;
     }
     let profile = match Profile::checked_new(STANDARD, Some(wrap)) {

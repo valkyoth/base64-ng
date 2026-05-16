@@ -2002,6 +2002,18 @@ impl LineWrap {
         }
     }
 
+    /// Returns the maximum encoded bytes per line.
+    #[must_use]
+    pub const fn line_len(self) -> usize {
+        self.line_len
+    }
+
+    /// Returns the line ending inserted between wrapped lines.
+    #[must_use]
+    pub const fn line_ending(self) -> LineEnding {
+        self.line_ending
+    }
+
     /// Returns whether this wrapping policy can be used by the encoder.
     #[must_use]
     pub const fn is_valid(self) -> bool {
