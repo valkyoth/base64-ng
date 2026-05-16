@@ -1152,6 +1152,8 @@ fn wrapped_encoded_len_accounts_for_inserted_line_endings() {
     assert_eq!(LineWrap::PEM.line_ending(), LineEnding::Lf);
     assert_eq!(LineWrap::PEM_CRLF.line_ending, LineEnding::CrLf);
     assert_eq!(LineWrap::PEM_CRLF.line_ending(), LineEnding::CrLf);
+    assert_eq!(LineWrap::MIME.to_string(), "76:CRLF");
+    assert_eq!(LineWrap::PEM.to_string(), "64:LF");
 }
 
 #[test]

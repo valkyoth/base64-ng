@@ -226,7 +226,8 @@ exposes `name()`, `Display`, `as_str()`, `as_bytes()`, and `byte_len()` for
 allocation-free policy inspection. `name()` and `Display` return printable
 identifiers such as `LF` and `CRLF`; `as_str()` returns the literal line-ending
 bytes. `LineWrap` exposes `line_len()`, `line_ending()`, and `is_valid()` for
-const-friendly policy checks.
+const-friendly policy checks and implements `Display` as `line_len:name`, for
+example `76:CRLF`.
 
 Named profiles carry the wrapping policy for common protocols:
 

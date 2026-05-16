@@ -176,6 +176,13 @@ pub fn custom_profile_surfaces() -> bool {
     if line_ending_name.as_bytes() != b"LF" {
         return false;
     }
+    let mut wrap_name = FixedText::<8>::new();
+    if write!(&mut wrap_name, "{}", wrap).is_err() {
+        return false;
+    }
+    if wrap_name.as_bytes() != b"4:LF" {
+        return false;
+    }
     let profile = match Profile::checked_new(STANDARD, Some(wrap)) {
         Some(profile) => profile,
         None => return false,

@@ -64,6 +64,8 @@
   for audit-friendly wrapping policy inspection.
 - Added `LineEnding::name()` and `Display` for printable wrapping-policy
   identifiers without confusing them with literal line-ending bytes.
+- Added `Display` for `LineWrap` so audit logs can print wrapping policies as
+  stable values such as `76:CRLF`.
 
 ## 0.8.0 - 2026-05-16
 

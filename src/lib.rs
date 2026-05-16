@@ -2036,6 +2036,12 @@ impl LineWrap {
     }
 }
 
+impl core::fmt::Display for LineWrap {
+    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(formatter, "{}:{}", self.line_len, self.line_ending.name())
+    }
+}
+
 #[allow(unsafe_code)]
 fn wipe_bytes(bytes: &mut [u8]) {
     for byte in bytes {
