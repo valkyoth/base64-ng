@@ -52,6 +52,8 @@ Planned behind admission evidence:
   development remains scalar-only unless that full evidence package lands.
 - Async streaming wrappers only after the `tokio` feature passes the
   dependency and cancellation-safety admission bar in [docs/ASYNC.md](docs/ASYNC.md).
+- Optional `serde` or `bytes` integration only if a concrete use case clears
+  the dependency admission policy in [docs/DEPENDENCIES.md](docs/DEPENDENCIES.md).
 - Expanded Kani proof harnesses.
 - Broader benchmark evidence against the established `base64` crate.
 

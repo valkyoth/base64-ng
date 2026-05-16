@@ -15,6 +15,8 @@
 - Added framed-protocol stream regressions for fragmented padded decoder
   sources, proving terminal-padding state is reported before buffered decoded
   bytes are drained and adjacent payload bytes remain unread.
+- Documented the v0.9 dependency-admission stance for deferred `tokio`,
+  `serde`, `bytes`, cleanup, timing, and benchmark integrations.
 
 ## 0.8.0 - 2026-05-16
 

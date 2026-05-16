@@ -57,6 +57,28 @@ The following are rejected unless a specific review proves they are necessary:
 - Dependencies with unclear licensing, unmaintained status, active security
   advisories, yanked releases, or unnecessary transitive graphs.
 
+## Deferred Integrations
+
+The following integrations are intentionally not admitted in the published
+crate today:
+
+- `tokio`: reserved for async streaming only after the policy in
+  [`ASYNC.md`](ASYNC.md) is satisfied.
+- `serde`: deferred until a concrete serialization use case proves that native
+  `AsRef`, `TryFrom`, engine/profile APIs, and caller-owned buffers are
+  insufficient.
+- `bytes`: deferred until a concrete networking use case proves that slice and
+  `std::io` APIs are insufficient.
+- `zeroize` or `subtle`: deferred unless a review proves that the dependency
+  materially improves the documented best-effort cleanup or
+  constant-time-oriented posture beyond the current audited local helpers.
+- Criterion or other benchmark frameworks: keep benchmark evidence isolated
+  unless the added dependency graph clearly improves release evidence quality.
+
+These are product decisions as much as technical ones. The crate is allowed to
+remain smaller than the broader ecosystem when dependency-free APIs preserve
+explicit security semantics.
+
 ## Isolated Tooling
 
 Fuzzing, benchmark, and timing-evidence dependencies may live in isolated
