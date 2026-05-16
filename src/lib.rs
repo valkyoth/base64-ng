@@ -638,6 +638,21 @@ pub mod stream {
         }
     }
 
+    impl<W, A, const PAD: bool> core::fmt::Debug for Encoder<W, A, PAD>
+    where
+        A: Alphabet,
+    {
+        fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+            formatter
+                .debug_struct("Encoder")
+                .field("inner", &redacted_inner_state(self.inner.is_some()))
+                .field("engine", &self.engine)
+                .field("pending", &"<redacted>")
+                .field("pending_len", &self.pending_len)
+                .finish()
+        }
+    }
+
     impl<W, A, const PAD: bool> Encoder<W, A, PAD>
     where
         W: Write,
@@ -846,6 +861,22 @@ pub mod stream {
     {
         fn drop(&mut self) {
             self.clear_pending();
+        }
+    }
+
+    impl<W, A, const PAD: bool> core::fmt::Debug for Decoder<W, A, PAD>
+    where
+        A: Alphabet,
+    {
+        fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+            formatter
+                .debug_struct("Decoder")
+                .field("inner", &redacted_inner_state(self.inner.is_some()))
+                .field("engine", &self.engine)
+                .field("pending", &"<redacted>")
+                .field("pending_len", &self.pending_len)
+                .field("terminal_padding", &self.finished)
+                .finish()
         }
     }
 
@@ -1072,6 +1103,13 @@ pub mod stream {
             self.terminal_seen
         }
 
+        /// Returns whether this reader has reached EOF or terminal padding
+        /// and has no decoded output buffered for the caller.
+        #[must_use]
+        pub const fn is_finished(&self) -> bool {
+            self.finished && self.output.is_empty()
+        }
+
         /// Consumes the decoder reader and returns the wrapped reader.
         #[must_use]
         pub fn into_inner(mut self) -> R {
@@ -1112,6 +1150,24 @@ pub mod stream {
         fn drop(&mut self) {
             self.clear_pending();
             self.output.clear_all();
+        }
+    }
+
+    impl<R, A, const PAD: bool> core::fmt::Debug for DecoderReader<R, A, PAD>
+    where
+        A: Alphabet,
+    {
+        fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+            formatter
+                .debug_struct("DecoderReader")
+                .field("inner", &redacted_inner_state(self.inner.is_some()))
+                .field("engine", &self.engine)
+                .field("pending", &"<redacted>")
+                .field("pending_len", &self.pending_len)
+                .field("buffered_output_len", &self.output.len())
+                .field("finished", &self.finished)
+                .field("terminal_padding", &self.terminal_seen)
+                .finish()
         }
     }
 
@@ -1283,6 +1339,13 @@ pub mod stream {
             !self.output.is_empty()
         }
 
+        /// Returns whether this reader has reached EOF and has no encoded
+        /// output buffered for the caller.
+        #[must_use]
+        pub const fn is_finished(&self) -> bool {
+            self.finished && self.output.is_empty()
+        }
+
         /// Consumes the encoder reader and returns the wrapped reader.
         #[must_use]
         pub fn into_inner(mut self) -> R {
@@ -1323,6 +1386,23 @@ pub mod stream {
         fn drop(&mut self) {
             self.clear_pending();
             self.output.clear_all();
+        }
+    }
+
+    impl<R, A, const PAD: bool> core::fmt::Debug for EncoderReader<R, A, PAD>
+    where
+        A: Alphabet,
+    {
+        fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+            formatter
+                .debug_struct("EncoderReader")
+                .field("inner", &redacted_inner_state(self.inner.is_some()))
+                .field("engine", &self.engine)
+                .field("pending", &"<redacted>")
+                .field("pending_len", &self.pending_len)
+                .field("buffered_output_len", &self.output.len())
+                .field("finished", &self.finished)
+                .finish()
         }
     }
 
@@ -1440,6 +1520,10 @@ pub mod stream {
             crate::wipe_bytes(&mut encoded);
             result
         }
+    }
+
+    const fn redacted_inner_state(present: bool) -> &'static str {
+        if present { "<present>" } else { "<taken>" }
     }
 }
 

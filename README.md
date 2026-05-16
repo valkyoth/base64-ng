@@ -509,6 +509,7 @@ let mut decoded = Vec::new();
 reader.read_to_end(&mut decoded).unwrap();
 assert_eq!(decoded, b"hello");
 assert!(reader.has_terminal_padding());
+assert!(reader.is_finished());
 ```
 
 The stream adapters expose `pending_len()` and `has_pending_input()` for
@@ -516,7 +517,10 @@ partial Base64 quantum visibility. Reader adapters also expose
 `buffered_output_len()` and `has_buffered_output()` for bytes already decoded
 or encoded but not yet returned to the caller. Decoders additionally expose
 `has_terminal_padding()` so framed protocols can tell when a padded payload has
-ended and leave adjacent bytes for the next protocol layer.
+ended and leave adjacent bytes for the next protocol layer. Reader adapters
+also expose `is_finished()` once EOF or terminal padding has been reached and
+all buffered output has been drained. Their `Debug` output reports adapter
+state without formatting the wrapped reader or writer.
 
 URL-safe, no-padding encoding:
 

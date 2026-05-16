@@ -9,6 +9,9 @@
 - Added a dependency-free no-alloc portability smoke crate and local gate that
   builds stack-backed APIs with default features disabled across installed
   Linux, wasm32, and Cortex-M targets.
+- Added stream reader `is_finished()` state helpers plus redacted `Debug`
+  output for stream adapters so diagnostics can inspect buffering state without
+  formatting wrapped readers or writers.
 
 ## 0.8.0 - 2026-05-16
 

@@ -2604,6 +2604,7 @@ fn stream_encoder_into_inner_still_returns_writer() {
 #[test]
 fn stream_encoder_reader_handles_small_reads() {
     let mut reader = EncoderReader::new(&b"hello"[..], STANDARD);
+    assert!(!reader.is_finished());
     assert_eq!(reader.pending_len(), 0);
     assert!(!reader.has_pending_input());
     assert_eq!(reader.buffered_output_len(), 0);
@@ -2622,12 +2623,14 @@ fn stream_encoder_reader_handles_small_reads() {
     assert!(!reader.has_pending_input());
     assert_eq!(reader.buffered_output_len(), 0);
     assert!(!reader.has_buffered_output());
+    assert!(reader.is_finished());
 }
 
 #[cfg(feature = "stream")]
 #[test]
 fn stream_encoder_reader_reports_buffered_output() {
     let mut reader = EncoderReader::new(&b"hello"[..], STANDARD);
+    assert!(!reader.is_finished());
     let mut first = [0u8; 1];
     assert_eq!(reader.read(&mut first).unwrap(), 1);
     assert_eq!(first, [b'a']);
@@ -2635,12 +2638,14 @@ fn stream_encoder_reader_reports_buffered_output() {
     assert!(reader.has_pending_input());
     assert_eq!(reader.buffered_output_len(), 3);
     assert!(reader.has_buffered_output());
+    assert!(!reader.is_finished());
 
     let mut rest = Vec::new();
     reader.read_to_end(&mut rest).unwrap();
     assert_eq!(rest, b"GVsbG8=");
     assert_eq!(reader.buffered_output_len(), 0);
     assert!(!reader.has_buffered_output());
+    assert!(reader.is_finished());
 }
 
 #[cfg(feature = "stream")]
@@ -2771,6 +2776,7 @@ fn stream_decoder_into_inner_still_returns_writer() {
 #[test]
 fn stream_decoder_reader_handles_small_reads() {
     let mut reader = DecoderReader::new(&b"aGVsbG8="[..], STANDARD);
+    assert!(!reader.is_finished());
     assert_eq!(reader.pending_len(), 0);
     assert!(!reader.has_pending_input());
     assert_eq!(reader.buffered_output_len(), 0);
@@ -2790,18 +2796,21 @@ fn stream_decoder_reader_handles_small_reads() {
     assert_eq!(reader.buffered_output_len(), 0);
     assert!(!reader.has_buffered_output());
     assert!(reader.has_terminal_padding());
+    assert!(reader.is_finished());
 }
 
 #[cfg(feature = "stream")]
 #[test]
 fn stream_decoder_reader_reports_buffered_output() {
     let mut reader = DecoderReader::new(&b"aGVsbG8="[..], STANDARD);
+    assert!(!reader.is_finished());
     let mut first = [0u8; 1];
     assert_eq!(reader.read(&mut first).unwrap(), 1);
     assert_eq!(first, [b'h']);
     assert_eq!(reader.buffered_output_len(), 2);
     assert!(reader.has_buffered_output());
     assert!(!reader.has_terminal_padding());
+    assert!(!reader.is_finished());
 
     let mut rest = Vec::new();
     reader.read_to_end(&mut rest).unwrap();
@@ -2809,6 +2818,7 @@ fn stream_decoder_reader_reports_buffered_output() {
     assert_eq!(reader.buffered_output_len(), 0);
     assert!(!reader.has_buffered_output());
     assert!(reader.has_terminal_padding());
+    assert!(reader.is_finished());
 }
 
 #[cfg(feature = "stream")]
@@ -2873,6 +2883,7 @@ fn stream_decoder_reader_leaves_adjacent_payload_unread_after_padding() {
     assert!(!reader.has_buffered_output());
     assert!(!reader.has_pending_input());
     assert!(reader.has_terminal_padding());
+    assert!(reader.is_finished());
     assert_eq!(reader.get_ref().position(), 4);
 }
 
@@ -2897,6 +2908,40 @@ fn stream_decoder_reader_handles_fragmented_sources() {
     }
 
     assert_eq!(decoded, b"any carnal pleasure.");
+}
+
+#[cfg(feature = "stream")]
+#[test]
+fn stream_debug_output_redacts_wrapped_io() {
+    let mut encoder = Encoder::new(b"raw-secret".to_vec(), STANDARD);
+    encoder.write_all(b"h").unwrap();
+    let debug = format!("{encoder:?}");
+    assert!(debug.contains("Encoder"));
+    assert!(debug.contains("pending_len"));
+    assert!(debug.contains("<present>"));
+    assert!(!debug.contains("raw-secret"));
+
+    let mut decoder = Decoder::new(b"decoded-secret".to_vec(), STANDARD);
+    decoder.write_all(b"aGk=").unwrap();
+    let debug = format!("{decoder:?}");
+    assert!(debug.contains("Decoder"));
+    assert!(debug.contains("terminal_padding"));
+    assert!(!debug.contains("decoded-secret"));
+
+    let mut decoder_reader = DecoderReader::new(Cursor::new(&b"aGVsbG8="[..]), STANDARD);
+    let mut one = [0u8; 1];
+    decoder_reader.read_exact(&mut one).unwrap();
+    let debug = format!("{decoder_reader:?}");
+    assert!(debug.contains("DecoderReader"));
+    assert!(debug.contains("buffered_output_len"));
+    assert!(!debug.contains("aGVsbG8"));
+
+    let mut encoder_reader = EncoderReader::new(Cursor::new(&b"raw-secret"[..]), STANDARD);
+    encoder_reader.read_exact(&mut one).unwrap();
+    let debug = format!("{encoder_reader:?}");
+    assert!(debug.contains("EncoderReader"));
+    assert!(debug.contains("buffered_output_len"));
+    assert!(!debug.contains("raw-secret"));
 }
 
 fn assert_round_trip<A, const PAD: bool>(engine: &base64_ng::Engine<A, PAD>, input: &[u8])
