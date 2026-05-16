@@ -100,6 +100,9 @@
   comparison helpers.
 - Added reverse operand-order byte-slice and byte-string literal equality for
   `EncodedBuffer`, `DecodedBuffer`, and `SecretBuffer`.
+- Added string equality for `EncodedBuffer`, `DecodedBuffer`, and
+  `SecretBuffer` in either operand order using the same
+  constant-time-oriented comparison helpers.
 - Added `remaining_capacity()` to `EncodedBuffer` and `DecodedBuffer` for
   no-alloc stack sizing checks.
 - Added `is_full()` to `EncodedBuffer` and `DecodedBuffer`.

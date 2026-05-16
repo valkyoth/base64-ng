@@ -396,8 +396,8 @@ assert_eq!(decoded.as_bytes(), &[0x5a; 58]);
 `remaining_capacity()` for no-alloc sizing checks, redact the payload from
 `Debug`, clear their backing arrays when dropped as best-effort data-retention
 reduction, and use constant-time-oriented equal-length equality, including
-direct comparisons with byte slices and byte-string literals in either operand
-order.
+direct comparisons with byte slices, byte-string literals, and strings in
+either operand order.
 
 `into_exposed_array` is the explicit no-alloc ownership escape hatch for both
 stack-backed buffers. It returns the backing array and visible length, so
@@ -441,8 +441,8 @@ initialized bytes plus spare capacity when dropped. It does not claim formal
 zeroization and cannot clean historical copies outside the wrapper or make
 guarantees about allocator behavior. `SecretBuffer` equality uses the same
 constant-time-oriented equal-length comparison as `constant_time_eq`, including
-direct comparisons with byte slices and byte-string literals in either operand
-order.
+direct comparisons with byte slices, byte-string literals, and strings in
+either operand order.
 `expose_secret_utf8` provides an explicit borrowed text view when the secret
 bytes are valid UTF-8.
 
