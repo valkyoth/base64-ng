@@ -37,6 +37,8 @@
   state inspection.
 - Added stream adapter `engine()` and `is_padded()` helpers for dependency-free
   policy inspection in diagnostics and audit logs.
+- Added reader-side stream `has_finished_input()` helpers so callers can
+  distinguish EOF or terminal padding from fully drained buffered output.
 
 ## 0.8.0 - 2026-05-16
 

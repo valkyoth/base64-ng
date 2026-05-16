@@ -2657,6 +2657,7 @@ fn stream_encoder_reader_handles_small_reads() {
     let mut reader = EncoderReader::new(&b"hello"[..], STANDARD);
     assert_eq!(reader.engine(), STANDARD);
     assert!(reader.is_padded());
+    assert!(!reader.has_finished_input());
     assert!(!reader.is_finished());
     assert_eq!(reader.pending_len(), 0);
     assert!(!reader.has_pending_input());
@@ -2676,6 +2677,7 @@ fn stream_encoder_reader_handles_small_reads() {
     assert!(!reader.has_pending_input());
     assert_eq!(reader.buffered_output_len(), 0);
     assert!(!reader.has_buffered_output());
+    assert!(reader.has_finished_input());
     assert!(reader.is_finished());
 }
 
@@ -2691,6 +2693,7 @@ fn stream_encoder_reader_reports_buffered_output() {
     assert!(reader.has_pending_input());
     assert_eq!(reader.buffered_output_len(), 3);
     assert!(reader.has_buffered_output());
+    assert!(!reader.has_finished_input());
     assert!(!reader.is_finished());
 
     let mut rest = Vec::new();
@@ -2698,6 +2701,32 @@ fn stream_encoder_reader_reports_buffered_output() {
     assert_eq!(rest, b"GVsbG8=");
     assert_eq!(reader.buffered_output_len(), 0);
     assert!(!reader.has_buffered_output());
+    assert!(reader.has_finished_input());
+    assert!(reader.is_finished());
+}
+
+#[cfg(feature = "stream")]
+#[test]
+fn stream_encoder_reader_finished_input_before_buffer_drain() {
+    let mut reader = EncoderReader::new(&b"h"[..], STANDARD);
+    assert!(!reader.has_finished_input());
+    assert!(!reader.is_finished());
+
+    let mut first = [0u8; 1];
+    assert_eq!(reader.read(&mut first).unwrap(), 1);
+    assert_eq!(first, [b'a']);
+    assert_eq!(reader.pending_len(), 0);
+    assert_eq!(reader.buffered_output_len(), 3);
+    assert!(reader.has_buffered_output());
+    assert!(reader.has_finished_input());
+    assert!(!reader.is_finished());
+
+    let mut rest = Vec::new();
+    reader.read_to_end(&mut rest).unwrap();
+    assert_eq!(rest, b"A==");
+    assert_eq!(reader.buffered_output_len(), 0);
+    assert!(!reader.has_buffered_output());
+    assert!(reader.has_finished_input());
     assert!(reader.is_finished());
 }
 
@@ -2885,6 +2914,7 @@ fn stream_decoder_reader_handles_small_reads() {
     let mut reader = DecoderReader::new(&b"aGVsbG8="[..], STANDARD);
     assert_eq!(reader.engine(), STANDARD);
     assert!(reader.is_padded());
+    assert!(!reader.has_finished_input());
     assert!(!reader.is_finished());
     assert_eq!(reader.pending_len(), 0);
     assert!(!reader.has_pending_input());
@@ -2905,6 +2935,7 @@ fn stream_decoder_reader_handles_small_reads() {
     assert_eq!(reader.buffered_output_len(), 0);
     assert!(!reader.has_buffered_output());
     assert!(reader.has_terminal_padding());
+    assert!(reader.has_finished_input());
     assert!(reader.is_finished());
 }
 
@@ -2919,6 +2950,7 @@ fn stream_decoder_reader_reports_buffered_output() {
     assert_eq!(reader.buffered_output_len(), 2);
     assert!(reader.has_buffered_output());
     assert!(!reader.has_terminal_padding());
+    assert!(!reader.has_finished_input());
     assert!(!reader.is_finished());
 
     let mut rest = Vec::new();
@@ -2927,6 +2959,7 @@ fn stream_decoder_reader_reports_buffered_output() {
     assert_eq!(reader.buffered_output_len(), 0);
     assert!(!reader.has_buffered_output());
     assert!(reader.has_terminal_padding());
+    assert!(reader.has_finished_input());
     assert!(reader.is_finished());
 }
 
@@ -2940,6 +2973,7 @@ fn stream_decoder_reader_terminal_padding_finishes_after_buffer_drain() {
     assert_eq!(reader.buffered_output_len(), 1);
     assert!(reader.has_buffered_output());
     assert!(reader.has_terminal_padding());
+    assert!(reader.has_finished_input());
     assert!(!reader.is_finished());
 
     let mut rest = Vec::new();
@@ -2948,6 +2982,7 @@ fn stream_decoder_reader_terminal_padding_finishes_after_buffer_drain() {
     assert_eq!(reader.buffered_output_len(), 0);
     assert!(!reader.has_buffered_output());
     assert!(reader.has_terminal_padding());
+    assert!(reader.has_finished_input());
     assert!(reader.is_finished());
 }
 

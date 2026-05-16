@@ -188,8 +188,8 @@ Base64 input and flush the wrapped writer without immediately consuming the
 adapter. After successful finalization, later non-empty writes return
 `InvalidInput`. Stream adapters also expose non-sensitive state helpers such as
 `engine()`, `is_padded()`, `pending_len()`, `has_pending_input()`, reader-side
-`buffered_output_len()`, and decoder-side `has_terminal_padding()` for framed
-protocols and audit logging.
+`buffered_output_len()` and `has_finished_input()`, and decoder-side
+`has_terminal_padding()` for framed protocols and audit logging.
 
 The `tokio` feature is reserved for future async wrappers. It is currently
 inert and dependency-free; use the explicit `stream` feature for `std::io`

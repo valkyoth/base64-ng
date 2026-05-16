@@ -1205,6 +1205,16 @@ pub mod stream {
             self.terminal_seen
         }
 
+        /// Returns whether this decoder reader has reached EOF or terminal
+        /// padding in the wrapped reader.
+        ///
+        /// This may become `true` before [`Self::is_finished`] when decoded
+        /// output is still buffered for the caller.
+        #[must_use]
+        pub const fn has_finished_input(&self) -> bool {
+            self.finished
+        }
+
         /// Returns whether this reader has reached EOF or terminal padding
         /// and has no decoded output buffered for the caller.
         #[must_use]
@@ -1451,6 +1461,16 @@ pub mod stream {
         #[must_use]
         pub const fn has_buffered_output(&self) -> bool {
             !self.output.is_empty()
+        }
+
+        /// Returns whether this encoder reader has reached EOF in the wrapped
+        /// reader.
+        ///
+        /// This may become `true` before [`Self::is_finished`] when encoded
+        /// output is still buffered for the caller.
+        #[must_use]
+        pub const fn has_finished_input(&self) -> bool {
+            self.finished
         }
 
         /// Returns whether this reader has reached EOF and has no encoded
