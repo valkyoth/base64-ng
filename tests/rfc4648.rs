@@ -35,6 +35,33 @@ impl Read for ChunkedReader<'_> {
     }
 }
 
+#[cfg(feature = "stream")]
+struct FramedChunkedReader<'a> {
+    input: &'a [u8],
+    max_chunk: usize,
+}
+
+#[cfg(feature = "stream")]
+impl<'a> FramedChunkedReader<'a> {
+    fn remaining(&self) -> &'a [u8] {
+        self.input
+    }
+}
+
+#[cfg(feature = "stream")]
+impl Read for FramedChunkedReader<'_> {
+    fn read(&mut self, output: &mut [u8]) -> std::io::Result<usize> {
+        let len = self.input.len().min(self.max_chunk).min(output.len());
+        if len == 0 {
+            return Ok(0);
+        }
+
+        output[..len].copy_from_slice(&self.input[..len]);
+        self.input = &self.input[len..];
+        Ok(len)
+    }
+}
+
 struct ReverseAlphabet;
 
 impl Alphabet for ReverseAlphabet {
@@ -2823,6 +2850,27 @@ fn stream_decoder_reader_reports_buffered_output() {
 
 #[cfg(feature = "stream")]
 #[test]
+fn stream_decoder_reader_terminal_padding_finishes_after_buffer_drain() {
+    let mut reader = DecoderReader::new(&b"aGk="[..], STANDARD);
+    let mut first = [0u8; 1];
+    assert_eq!(reader.read(&mut first).unwrap(), 1);
+    assert_eq!(first, [b'h']);
+    assert_eq!(reader.buffered_output_len(), 1);
+    assert!(reader.has_buffered_output());
+    assert!(reader.has_terminal_padding());
+    assert!(!reader.is_finished());
+
+    let mut rest = Vec::new();
+    reader.read_to_end(&mut rest).unwrap();
+    assert_eq!(rest, b"i");
+    assert_eq!(reader.buffered_output_len(), 0);
+    assert!(!reader.has_buffered_output());
+    assert!(reader.has_terminal_padding());
+    assert!(reader.is_finished());
+}
+
+#[cfg(feature = "stream")]
+#[test]
 fn stream_decoder_reader_supports_no_padding() {
     let mut reader = DecoderReader::new(&b"aGVsbG8"[..], STANDARD_NO_PAD);
     let mut decoded = Vec::new();
@@ -2885,6 +2933,33 @@ fn stream_decoder_reader_leaves_adjacent_payload_unread_after_padding() {
     assert!(reader.has_terminal_padding());
     assert!(reader.is_finished());
     assert_eq!(reader.get_ref().position(), 4);
+}
+
+#[cfg(feature = "stream")]
+#[test]
+fn stream_decoder_reader_leaves_fragmented_adjacent_payload_unread() {
+    let source = FramedChunkedReader {
+        input: b"aGk=NEXT",
+        max_chunk: 2,
+    };
+    let mut reader = DecoderReader::new(source, STANDARD);
+    let mut decoded = Vec::new();
+    let mut scratch = [0u8; 1];
+
+    loop {
+        let read = reader.read(&mut scratch).unwrap();
+        if read == 0 {
+            break;
+        }
+        decoded.extend_from_slice(&scratch[..read]);
+    }
+
+    assert_eq!(decoded, b"hi");
+    assert_eq!(reader.pending_len(), 0);
+    assert_eq!(reader.buffered_output_len(), 0);
+    assert!(reader.has_terminal_padding());
+    assert!(reader.is_finished());
+    assert_eq!(reader.get_ref().remaining(), b"NEXT");
 }
 
 #[cfg(feature = "stream")]

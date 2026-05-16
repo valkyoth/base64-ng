@@ -12,6 +12,9 @@
 - Added stream reader `is_finished()` state helpers plus redacted `Debug`
   output for stream adapters so diagnostics can inspect buffering state without
   formatting wrapped readers or writers.
+- Added framed-protocol stream regressions for fragmented padded decoder
+  sources, proving terminal-padding state is reported before buffered decoded
+  bytes are drained and adjacent payload bytes remain unread.
 
 ## 0.8.0 - 2026-05-16
 
