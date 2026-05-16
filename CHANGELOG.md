@@ -41,6 +41,8 @@
   distinguish EOF or terminal padding from fully drained buffered output.
 - Expanded the no-alloc portability smoke harness to cover custom alphabets,
   checked profiles, recoverable length helpers, and stack-buffer state helpers.
+- Added stream finalization failure regressions proving failed `try_finish()`
+  calls do not mark adapters finalized and can be retried.
 
 ## 0.8.0 - 2026-05-16
 

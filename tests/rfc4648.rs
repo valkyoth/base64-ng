@@ -62,6 +62,33 @@ impl Read for FramedChunkedReader<'_> {
     }
 }
 
+#[cfg(feature = "stream")]
+#[derive(Default)]
+struct FailOnceWriter {
+    output: Vec<u8>,
+    fail_next: bool,
+}
+
+#[cfg(feature = "stream")]
+impl Write for FailOnceWriter {
+    fn write(&mut self, input: &[u8]) -> std::io::Result<usize> {
+        if self.fail_next {
+            self.fail_next = false;
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::BrokenPipe,
+                "injected writer failure",
+            ));
+        }
+
+        self.output.extend_from_slice(input);
+        Ok(input.len())
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        Ok(())
+    }
+}
+
 struct ReverseAlphabet;
 
 impl Alphabet for ReverseAlphabet {
@@ -2644,6 +2671,28 @@ fn stream_encoder_try_finish_keeps_adapter_available() {
 
 #[cfg(feature = "stream")]
 #[test]
+fn stream_encoder_try_finish_failure_does_not_finalize() {
+    let writer = FailOnceWriter {
+        output: Vec::new(),
+        fail_next: true,
+    };
+    let mut encoder = Encoder::new(writer, STANDARD);
+    encoder.write_all(b"he").unwrap();
+
+    let err = encoder.try_finish().unwrap_err();
+    assert_eq!(err.kind(), std::io::ErrorKind::BrokenPipe);
+    assert!(!encoder.is_finalized());
+    assert_eq!(encoder.pending_len(), 2);
+    assert!(encoder.has_pending_input());
+
+    encoder.try_finish().unwrap();
+    assert!(encoder.is_finalized());
+    assert_eq!(encoder.pending_len(), 0);
+    assert_eq!(encoder.get_ref().output, b"aGU=");
+}
+
+#[cfg(feature = "stream")]
+#[test]
 fn stream_encoder_into_inner_still_returns_writer() {
     let mut encoder = Encoder::new(Vec::new(), STANDARD);
     encoder.write_all(b"he").unwrap();
@@ -2868,7 +2917,15 @@ fn stream_decoder_try_finish_reports_bad_final_pending_input() {
 
     let err = decoder.try_finish().unwrap_err();
     assert_eq!(err.kind(), std::io::ErrorKind::InvalidInput);
+    assert!(!decoder.is_finalized());
+    assert_eq!(decoder.pending_len(), 1);
+    assert!(decoder.has_pending_input());
     assert!(decoder.get_ref().is_empty());
+
+    decoder.write_all(b"Gk=").unwrap();
+    decoder.try_finish().unwrap();
+    assert!(decoder.is_finalized());
+    assert_eq!(decoder.get_ref(), b"hi");
 }
 
 #[cfg(feature = "stream")]
