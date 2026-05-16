@@ -1932,6 +1932,15 @@ pub enum LineEnding {
 }
 
 impl LineEnding {
+    /// Returns a stable printable identifier for this line ending.
+    #[must_use]
+    pub const fn name(self) -> &'static str {
+        match self {
+            Self::Lf => "LF",
+            Self::CrLf => "CRLF",
+        }
+    }
+
     /// Returns the text representation of this line ending.
     #[must_use]
     pub const fn as_str(self) -> &'static str {
@@ -1954,6 +1963,12 @@ impl LineEnding {
             Self::Lf => 1,
             Self::CrLf => 2,
         }
+    }
+}
+
+impl core::fmt::Display for LineEnding {
+    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        formatter.write_str(self.name())
     }
 }
 

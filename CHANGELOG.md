@@ -62,6 +62,8 @@
   policies.
 - Added const `LineWrap::line_len()` and `LineWrap::line_ending()` accessors
   for audit-friendly wrapping policy inspection.
+- Added `LineEnding::name()` and `Display` for printable wrapping-policy
+  identifiers without confusing them with literal line-ending bytes.
 
 ## 0.8.0 - 2026-05-16
 

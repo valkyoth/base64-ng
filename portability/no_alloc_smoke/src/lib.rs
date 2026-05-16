@@ -163,9 +163,17 @@ pub fn custom_profile_surfaces() -> bool {
     };
     if wrap.line_len() != 4
         || wrap.line_ending() != LineEnding::Lf
+        || wrap.line_ending().name() != "LF"
         || wrap.line_ending().as_str() != "\n"
         || wrap.line_ending().as_bytes() != b"\n"
     {
+        return false;
+    }
+    let mut line_ending_name = FixedText::<4>::new();
+    if write!(&mut line_ending_name, "{}", wrap.line_ending()).is_err() {
+        return false;
+    }
+    if line_ending_name.as_bytes() != b"LF" {
         return false;
     }
     let profile = match Profile::checked_new(STANDARD, Some(wrap)) {

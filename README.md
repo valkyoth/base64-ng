@@ -222,9 +222,11 @@ assert_eq!(&output[..written], b"aGVs\nbG8=");
 Built-in policies include `LineWrap::MIME`, `LineWrap::PEM`, and
 `LineWrap::PEM_CRLF`. Wrapping inserts line endings between encoded lines and
 does not append a trailing line ending after the final line. `LineEnding`
-exposes `as_str()`, `as_bytes()`, and `byte_len()` for allocation-free policy
-inspection. `LineWrap` exposes `line_len()`, `line_ending()`, and
-`is_valid()` for const-friendly policy checks.
+exposes `name()`, `Display`, `as_str()`, `as_bytes()`, and `byte_len()` for
+allocation-free policy inspection. `name()` and `Display` return printable
+identifiers such as `LF` and `CRLF`; `as_str()` returns the literal line-ending
+bytes. `LineWrap` exposes `line_len()`, `line_ending()`, and `is_valid()` for
+const-friendly policy checks.
 
 Named profiles carry the wrapping policy for common protocols:
 
