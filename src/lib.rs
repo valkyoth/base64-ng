@@ -494,6 +494,10 @@ pub mod stream {
             self.len == 0
         }
 
+        const fn len(&self) -> usize {
+            self.len
+        }
+
         fn push_slice(&mut self, input: &[u8]) -> io::Result<()> {
             if input.len() > self.available_capacity() {
                 return Err(io::Error::new(
@@ -1043,6 +1047,20 @@ pub mod stream {
             self.pending_len != 0
         }
 
+        /// Returns the number of decoded bytes currently buffered and ready to
+        /// be read before this adapter polls the wrapped reader again.
+        #[must_use]
+        pub const fn buffered_output_len(&self) -> usize {
+            self.output.len()
+        }
+
+        /// Returns whether this decoder reader currently has decoded output
+        /// waiting in its internal queue.
+        #[must_use]
+        pub const fn has_buffered_output(&self) -> bool {
+            !self.output.is_empty()
+        }
+
         /// Returns whether this decoder reader has seen terminal padding.
         ///
         /// For padded engines, this becomes `true` after the terminal padded
@@ -1249,6 +1267,20 @@ pub mod stream {
         #[must_use]
         pub const fn has_pending_input(&self) -> bool {
             self.pending_len != 0
+        }
+
+        /// Returns the number of encoded bytes currently buffered and ready to
+        /// be read before this adapter polls the wrapped reader again.
+        #[must_use]
+        pub const fn buffered_output_len(&self) -> usize {
+            self.output.len()
+        }
+
+        /// Returns whether this encoder reader currently has encoded output
+        /// waiting in its internal queue.
+        #[must_use]
+        pub const fn has_buffered_output(&self) -> bool {
+            !self.output.is_empty()
         }
 
         /// Consumes the encoder reader and returns the wrapped reader.

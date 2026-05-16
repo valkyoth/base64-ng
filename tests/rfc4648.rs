@@ -2606,6 +2606,8 @@ fn stream_encoder_reader_handles_small_reads() {
     let mut reader = EncoderReader::new(&b"hello"[..], STANDARD);
     assert_eq!(reader.pending_len(), 0);
     assert!(!reader.has_pending_input());
+    assert_eq!(reader.buffered_output_len(), 0);
+    assert!(!reader.has_buffered_output());
     let mut output = [0u8; 8];
     let mut written = 0;
     while written < output.len() {
@@ -2618,6 +2620,27 @@ fn stream_encoder_reader_handles_small_reads() {
     assert_eq!(&output[..written], b"aGVsbG8=");
     assert_eq!(reader.pending_len(), 0);
     assert!(!reader.has_pending_input());
+    assert_eq!(reader.buffered_output_len(), 0);
+    assert!(!reader.has_buffered_output());
+}
+
+#[cfg(feature = "stream")]
+#[test]
+fn stream_encoder_reader_reports_buffered_output() {
+    let mut reader = EncoderReader::new(&b"hello"[..], STANDARD);
+    let mut first = [0u8; 1];
+    assert_eq!(reader.read(&mut first).unwrap(), 1);
+    assert_eq!(first, [b'a']);
+    assert_eq!(reader.pending_len(), 2);
+    assert!(reader.has_pending_input());
+    assert_eq!(reader.buffered_output_len(), 3);
+    assert!(reader.has_buffered_output());
+
+    let mut rest = Vec::new();
+    reader.read_to_end(&mut rest).unwrap();
+    assert_eq!(rest, b"GVsbG8=");
+    assert_eq!(reader.buffered_output_len(), 0);
+    assert!(!reader.has_buffered_output());
 }
 
 #[cfg(feature = "stream")]
@@ -2750,6 +2773,8 @@ fn stream_decoder_reader_handles_small_reads() {
     let mut reader = DecoderReader::new(&b"aGVsbG8="[..], STANDARD);
     assert_eq!(reader.pending_len(), 0);
     assert!(!reader.has_pending_input());
+    assert_eq!(reader.buffered_output_len(), 0);
+    assert!(!reader.has_buffered_output());
     assert!(!reader.has_terminal_padding());
     let mut output = [0u8; 5];
     let mut written = 0;
@@ -2762,6 +2787,27 @@ fn stream_decoder_reader_handles_small_reads() {
     }
     assert_eq!(&output[..written], b"hello");
     assert_eq!(reader.pending_len(), 0);
+    assert_eq!(reader.buffered_output_len(), 0);
+    assert!(!reader.has_buffered_output());
+    assert!(reader.has_terminal_padding());
+}
+
+#[cfg(feature = "stream")]
+#[test]
+fn stream_decoder_reader_reports_buffered_output() {
+    let mut reader = DecoderReader::new(&b"aGVsbG8="[..], STANDARD);
+    let mut first = [0u8; 1];
+    assert_eq!(reader.read(&mut first).unwrap(), 1);
+    assert_eq!(first, [b'h']);
+    assert_eq!(reader.buffered_output_len(), 2);
+    assert!(reader.has_buffered_output());
+    assert!(!reader.has_terminal_padding());
+
+    let mut rest = Vec::new();
+    reader.read_to_end(&mut rest).unwrap();
+    assert_eq!(rest, b"ello");
+    assert_eq!(reader.buffered_output_len(), 0);
+    assert!(!reader.has_buffered_output());
     assert!(reader.has_terminal_padding());
 }
 
@@ -2823,6 +2869,8 @@ fn stream_decoder_reader_leaves_adjacent_payload_unread_after_padding() {
     reader.read_to_end(&mut decoded).unwrap();
     assert_eq!(decoded, b"hi");
     assert_eq!(reader.pending_len(), 0);
+    assert_eq!(reader.buffered_output_len(), 0);
+    assert!(!reader.has_buffered_output());
     assert!(!reader.has_pending_input());
     assert!(reader.has_terminal_padding());
     assert_eq!(reader.get_ref().position(), 4);

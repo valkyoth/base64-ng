@@ -512,7 +512,9 @@ assert!(reader.has_terminal_padding());
 ```
 
 The stream adapters expose `pending_len()` and `has_pending_input()` for
-partial Base64 quantum visibility. Decoders also expose
+partial Base64 quantum visibility. Reader adapters also expose
+`buffered_output_len()` and `has_buffered_output()` for bytes already decoded
+or encoded but not yet returned to the caller. Decoders additionally expose
 `has_terminal_padding()` so framed protocols can tell when a padded payload has
 ended and leave adjacent bytes for the next protocol layer.
 
