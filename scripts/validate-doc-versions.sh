@@ -13,7 +13,7 @@ fi
 require_text() {
     file="$1"
     text="$2"
-    if ! grep -F -q "$text" "$file"; then
+    if ! grep -F -q -- "$text" "$file"; then
         echo "doc versions: $file is missing required text: $text" >&2
         exit 1
     fi
@@ -22,7 +22,7 @@ require_text() {
 reject_text() {
     file="$1"
     text="$2"
-    if grep -F -q "$text" "$file"; then
+    if grep -F -q -- "$text" "$file"; then
         echo "doc versions: $file contains rejected text: $text" >&2
         exit 1
     fi
