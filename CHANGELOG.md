@@ -31,6 +31,8 @@
   cross-target compile checks.
 - Added writer-side stream `try_finish()` helpers so callers can finalize and
   flush pending Base64 quanta without consuming the adapter.
+- Hardened writer-side stream finalization so adapters reject later input after
+  `try_finish()` succeeds.
 
 ## 0.8.0 - 2026-05-16
 

@@ -552,6 +552,7 @@ pub mod stream {
         engine: Engine<A, PAD>,
         pending: [u8; 2],
         pending_len: usize,
+        finalized: bool,
     }
 
     impl<W, A, const PAD: bool> Encoder<W, A, PAD>
@@ -566,6 +567,7 @@ pub mod stream {
                 engine,
                 pending: [0; 2],
                 pending_len: 0,
+                finalized: false,
             }
         }
 
@@ -649,6 +651,7 @@ pub mod stream {
                 .field("engine", &self.engine)
                 .field("pending", &"<redacted>")
                 .field("pending_len", &self.pending_len)
+                .field("finalized", &self.finalized)
                 .finish()
         }
     }
@@ -661,13 +664,17 @@ pub mod stream {
         /// Writes any pending input and flushes the wrapped writer without
         /// consuming this encoder.
         ///
-        /// After this succeeds, [`Self::pending_len`] returns `0` and
-        /// [`Self::finish`] can still be used to recover the wrapped writer.
+        /// After this succeeds, [`Self::pending_len`] returns `0`, later
+        /// writes are rejected, and [`Self::finish`] can still be used to
+        /// recover the wrapped writer.
         /// This is useful when a caller needs to finalize a framed payload
         /// while keeping the stream adapter available for diagnostics or
         /// explicit recovery.
         pub fn try_finish(&mut self) -> io::Result<()> {
-            self.write_pending_final()?;
+            if !self.finalized {
+                self.write_pending_final()?;
+                self.finalized = true;
+            }
             self.inner_mut().flush()
         }
 
@@ -716,6 +723,12 @@ pub mod stream {
         fn write(&mut self, input: &[u8]) -> io::Result<usize> {
             if input.is_empty() {
                 return Ok(0);
+            }
+            if self.finalized {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidInput,
+                    "base64 stream encoder received input after finalization",
+                ));
             }
 
             let mut consumed = 0;
@@ -779,6 +792,7 @@ pub mod stream {
         pending: [u8; 4],
         pending_len: usize,
         finished: bool,
+        finalized: bool,
     }
 
     impl<W, A, const PAD: bool> Decoder<W, A, PAD>
@@ -794,6 +808,7 @@ pub mod stream {
                 pending: [0; 4],
                 pending_len: 0,
                 finished: false,
+                finalized: false,
             }
         }
 
@@ -888,6 +903,7 @@ pub mod stream {
                 .field("pending", &"<redacted>")
                 .field("pending_len", &self.pending_len)
                 .field("terminal_padding", &self.finished)
+                .field("finalized", &self.finalized)
                 .finish()
         }
     }
@@ -900,13 +916,17 @@ pub mod stream {
         /// Validates any final pending input and flushes the wrapped writer
         /// without consuming this decoder.
         ///
-        /// After this succeeds, [`Self::pending_len`] returns `0` and
-        /// [`Self::finish`] can still be used to recover the wrapped writer.
+        /// After this succeeds, [`Self::pending_len`] returns `0`, later
+        /// writes are rejected, and [`Self::finish`] can still be used to
+        /// recover the wrapped writer.
         /// If the final buffered input is malformed, an error is returned and
         /// the caller still owns the decoder for diagnostics or explicit
         /// recovery.
         pub fn try_finish(&mut self) -> io::Result<()> {
-            self.write_pending_final()?;
+            if !self.finalized {
+                self.write_pending_final()?;
+                self.finalized = true;
+            }
             self.inner_mut().flush()
         }
 
@@ -969,6 +989,12 @@ pub mod stream {
         fn write(&mut self, input: &[u8]) -> io::Result<usize> {
             if input.is_empty() {
                 return Ok(0);
+            }
+            if self.finalized {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidInput,
+                    "base64 stream decoder received input after finalization",
+                ));
             }
             if self.finished {
                 return Err(trailing_input_after_padding_error());

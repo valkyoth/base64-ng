@@ -2629,6 +2629,8 @@ fn stream_encoder_try_finish_keeps_adapter_available() {
     assert_eq!(encoder.get_ref(), b"aGU=");
     assert_eq!(encoder.pending_len(), 0);
     assert!(!encoder.has_pending_input());
+    let err = encoder.write_all(b"llo").unwrap_err();
+    assert_eq!(err.kind(), std::io::ErrorKind::InvalidInput);
 
     let inner = encoder.finish().unwrap();
     assert_eq!(inner, b"aGU=");
@@ -2781,9 +2783,26 @@ fn stream_decoder_try_finish_keeps_adapter_available() {
     assert_eq!(decoder.get_ref(), b"hi");
     assert_eq!(decoder.pending_len(), 0);
     assert!(!decoder.has_pending_input());
+    let err = decoder.write_all(b"AA").unwrap_err();
+    assert_eq!(err.kind(), std::io::ErrorKind::InvalidInput);
 
     let inner = decoder.finish().unwrap();
     assert_eq!(inner, b"hi");
+}
+
+#[cfg(feature = "stream")]
+#[test]
+fn stream_decoder_try_finish_terminal_for_unpadded_payloads() {
+    let mut decoder = Decoder::new(Vec::new(), STANDARD_NO_PAD);
+    decoder.write_all(b"aGk").unwrap();
+
+    decoder.try_finish().unwrap();
+    assert_eq!(decoder.get_ref(), b"hi");
+    assert_eq!(decoder.pending_len(), 0);
+    assert!(!decoder.has_terminal_padding());
+
+    let err = decoder.write_all(b"AA").unwrap_err();
+    assert_eq!(err.kind(), std::io::ErrorKind::InvalidInput);
 }
 
 #[cfg(feature = "stream")]
