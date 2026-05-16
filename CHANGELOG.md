@@ -3,6 +3,9 @@
 ## 0.9.0-alpha.0 - Unreleased
 
 - Started the next development cycle after the `0.8.0` release.
+- Added stream adapter state-inspection helpers for pending input quanta and
+  terminal padded decode blocks, improving framed-protocol ergonomics without
+  adding dependencies.
 
 ## 0.8.0 - 2026-05-16
 

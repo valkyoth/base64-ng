@@ -500,6 +500,7 @@ assert_eq!(encoded, "aGVsbG8=");
 let mut decoder = Decoder::new(Vec::new(), STANDARD);
 decoder.write_all(b"aGVs").unwrap();
 decoder.write_all(b"bG8=").unwrap();
+assert!(decoder.has_terminal_padding());
 let decoded = decoder.finish().unwrap();
 assert_eq!(decoded, b"hello");
 
@@ -507,7 +508,13 @@ let mut reader = DecoderReader::new(&b"aGVsbG8="[..], STANDARD);
 let mut decoded = Vec::new();
 reader.read_to_end(&mut decoded).unwrap();
 assert_eq!(decoded, b"hello");
+assert!(reader.has_terminal_padding());
 ```
+
+The stream adapters expose `pending_len()` and `has_pending_input()` for
+partial Base64 quantum visibility. Decoders also expose
+`has_terminal_padding()` so framed protocols can tell when a padded payload has
+ended and leave adjacent bytes for the next protocol layer.
 
 URL-safe, no-padding encoding:
 

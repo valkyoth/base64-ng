@@ -2556,9 +2556,16 @@ fn secret_buffer_try_from_uses_strict_standard_base64() {
 #[test]
 fn stream_encoder_handles_chunk_boundaries() {
     let mut encoder = Encoder::new(Vec::new(), STANDARD);
+    assert_eq!(encoder.pending_len(), 0);
+    assert!(!encoder.has_pending_input());
     encoder.write_all(b"h").unwrap();
+    assert_eq!(encoder.pending_len(), 1);
+    assert!(encoder.has_pending_input());
     encoder.write_all(b"el").unwrap();
+    assert_eq!(encoder.pending_len(), 0);
+    assert!(!encoder.has_pending_input());
     encoder.write_all(b"lo").unwrap();
+    assert_eq!(encoder.pending_len(), 2);
     let encoded = encoder.finish().unwrap();
     assert_eq!(encoded, b"aGVsbG8=");
 }
@@ -2597,6 +2604,8 @@ fn stream_encoder_into_inner_still_returns_writer() {
 #[test]
 fn stream_encoder_reader_handles_small_reads() {
     let mut reader = EncoderReader::new(&b"hello"[..], STANDARD);
+    assert_eq!(reader.pending_len(), 0);
+    assert!(!reader.has_pending_input());
     let mut output = [0u8; 8];
     let mut written = 0;
     while written < output.len() {
@@ -2607,6 +2616,8 @@ fn stream_encoder_reader_handles_small_reads() {
         written += read;
     }
     assert_eq!(&output[..written], b"aGVsbG8=");
+    assert_eq!(reader.pending_len(), 0);
+    assert!(!reader.has_pending_input());
 }
 
 #[cfg(feature = "stream")]
@@ -2663,9 +2674,17 @@ fn stream_encoder_reader_handles_fragmented_sources() {
 #[test]
 fn stream_decoder_handles_chunk_boundaries() {
     let mut decoder = Decoder::new(Vec::new(), STANDARD);
+    assert_eq!(decoder.pending_len(), 0);
+    assert!(!decoder.has_pending_input());
+    assert!(!decoder.has_terminal_padding());
     decoder.write_all(b"a").unwrap();
+    assert_eq!(decoder.pending_len(), 1);
+    assert!(decoder.has_pending_input());
     decoder.write_all(b"GVs").unwrap();
+    assert_eq!(decoder.pending_len(), 0);
+    assert!(!decoder.has_pending_input());
     decoder.write_all(b"bG8=").unwrap();
+    assert!(decoder.has_terminal_padding());
     let decoded = decoder.finish().unwrap();
     assert_eq!(decoded, b"hello");
 }
@@ -2729,6 +2748,9 @@ fn stream_decoder_into_inner_still_returns_writer() {
 #[test]
 fn stream_decoder_reader_handles_small_reads() {
     let mut reader = DecoderReader::new(&b"aGVsbG8="[..], STANDARD);
+    assert_eq!(reader.pending_len(), 0);
+    assert!(!reader.has_pending_input());
+    assert!(!reader.has_terminal_padding());
     let mut output = [0u8; 5];
     let mut written = 0;
     while written < output.len() {
@@ -2739,6 +2761,8 @@ fn stream_decoder_reader_handles_small_reads() {
         written += read;
     }
     assert_eq!(&output[..written], b"hello");
+    assert_eq!(reader.pending_len(), 0);
+    assert!(reader.has_terminal_padding());
 }
 
 #[cfg(feature = "stream")]
@@ -2798,6 +2822,9 @@ fn stream_decoder_reader_leaves_adjacent_payload_unread_after_padding() {
     let mut decoded = Vec::new();
     reader.read_to_end(&mut decoded).unwrap();
     assert_eq!(decoded, b"hi");
+    assert_eq!(reader.pending_len(), 0);
+    assert!(!reader.has_pending_input());
+    assert!(reader.has_terminal_padding());
     assert_eq!(reader.get_ref().position(), 4);
 }
 

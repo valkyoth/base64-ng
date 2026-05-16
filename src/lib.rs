@@ -576,6 +576,20 @@ pub mod stream {
             self.inner_mut()
         }
 
+        /// Returns the number of raw input bytes currently buffered until a
+        /// complete 3-byte Base64 encode quantum is available.
+        #[must_use]
+        pub const fn pending_len(&self) -> usize {
+            self.pending_len
+        }
+
+        /// Returns whether this encoder currently holds a partial input
+        /// quantum.
+        #[must_use]
+        pub const fn has_pending_input(&self) -> bool {
+            self.pending_len != 0
+        }
+
         /// Consumes the encoder without flushing pending input.
         ///
         /// Prefer [`Self::finish`] when the encoded output must be complete.
@@ -761,6 +775,30 @@ pub mod stream {
         /// Returns a mutable reference to the wrapped writer.
         pub fn get_mut(&mut self) -> &mut W {
             self.inner_mut()
+        }
+
+        /// Returns the number of encoded input bytes currently buffered until
+        /// a complete 4-byte Base64 decode quantum is available.
+        #[must_use]
+        pub const fn pending_len(&self) -> usize {
+            self.pending_len
+        }
+
+        /// Returns whether this decoder currently holds a partial input
+        /// quantum.
+        #[must_use]
+        pub const fn has_pending_input(&self) -> bool {
+            self.pending_len != 0
+        }
+
+        /// Returns whether this decoder has processed a terminal padded block.
+        ///
+        /// Once this returns `true`, later calls to [`Write::write`] with
+        /// additional input return an error because strict Base64 does not
+        /// permit trailing payload bytes after padding.
+        #[must_use]
+        pub const fn has_terminal_padding(&self) -> bool {
+            self.finished
         }
 
         /// Consumes the decoder without flushing pending input.
@@ -991,6 +1029,31 @@ pub mod stream {
             self.inner_mut()
         }
 
+        /// Returns the number of encoded input bytes currently buffered until
+        /// a complete 4-byte Base64 decode quantum is available.
+        #[must_use]
+        pub const fn pending_len(&self) -> usize {
+            self.pending_len
+        }
+
+        /// Returns whether this decoder reader currently holds a partial input
+        /// quantum.
+        #[must_use]
+        pub const fn has_pending_input(&self) -> bool {
+            self.pending_len != 0
+        }
+
+        /// Returns whether this decoder reader has seen terminal padding.
+        ///
+        /// For padded engines, this becomes `true` after the terminal padded
+        /// block is decoded. The wrapped reader is then left positioned after
+        /// that Base64 block so adjacent framed bytes can be read by the
+        /// caller.
+        #[must_use]
+        pub const fn has_terminal_padding(&self) -> bool {
+            self.terminal_seen
+        }
+
         /// Consumes the decoder reader and returns the wrapped reader.
         #[must_use]
         pub fn into_inner(mut self) -> R {
@@ -1172,6 +1235,20 @@ pub mod stream {
         /// Returns a mutable reference to the wrapped reader.
         pub fn get_mut(&mut self) -> &mut R {
             self.inner_mut()
+        }
+
+        /// Returns the number of raw input bytes currently buffered until a
+        /// complete 3-byte Base64 encode quantum is available.
+        #[must_use]
+        pub const fn pending_len(&self) -> usize {
+            self.pending_len
+        }
+
+        /// Returns whether this encoder reader currently holds a partial input
+        /// quantum.
+        #[must_use]
+        pub const fn has_pending_input(&self) -> bool {
+            self.pending_len != 0
         }
 
         /// Consumes the encoder reader and returns the wrapped reader.
