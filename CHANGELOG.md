@@ -56,6 +56,8 @@
   `try_finish()` calls preserve pending input and can be retried.
 - Added stream writer regressions proving failed `write_all()` calls preserve
   pending encoder and decoder input until the wrapped writer succeeds.
+- Documented stream retry semantics for wrapped writer failures and
+  finalization flush retries.
 
 ## 0.8.0 - 2026-05-16
 

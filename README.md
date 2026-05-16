@@ -533,8 +533,12 @@ drained, and `has_finished_input()` when the wrapped reader has reached EOF or
 terminal padding but buffered output may still remain. Writer adapters expose
 `try_finish()` to finalize pending input and flush the wrapped writer without
 consuming the adapter, plus `is_finalized()` for explicit state inspection;
-after successful finalization, later writes are rejected. Their `Debug` output
-reports adapter state without formatting the wrapped reader or writer.
+after successful finalization, later writes are rejected. If a wrapped writer
+fails before pending input is emitted, the adapter remains unfinalized and the
+pending input can be retried. If final bytes were emitted but only `flush()`
+failed, retrying `try_finish()` flushes again without re-emitting the terminal
+Base64 quantum or decoded tail. Their `Debug` output reports adapter state
+without formatting the wrapped reader or writer.
 
 URL-safe, no-padding encoding:
 

@@ -109,6 +109,9 @@ The release gate runs:
 - stream encoder and decoder tests proving policy accessors, state accessors,
   `finish()`, `try_finish()`, `into_inner()`, and adjacent-payload behavior
   remain intact after cleanup hardening
+- stream encoder and decoder retry tests proving pending input survives wrapped
+  writer failures, and finalization flush retries do not re-emit terminal
+  encoded or decoded bytes
 - stream fuzz coverage for chunked writers, fragmented reader sources, and
   adjacent framed payload boundaries
 - Kani proofs through `scripts/check_kani.sh` when Kani is installed and its

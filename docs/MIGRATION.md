@@ -186,7 +186,11 @@ assert_eq!(encoded, b"aGVsbG8=");
 Writer adapters expose `try_finish()` when a caller wants to finalize pending
 Base64 input and flush the wrapped writer without immediately consuming the
 adapter. After successful finalization, later non-empty writes return
-`InvalidInput`. Stream adapters also expose non-sensitive state helpers such as
+`InvalidInput`. Failed writes before pending input is emitted leave the adapter
+unfinalized with pending input intact for retry. Failed flushes after final
+bytes are emitted leave the adapter finalized, and retrying `try_finish()` only
+flushes the wrapped writer again. Stream adapters also expose non-sensitive
+state helpers such as
 `engine()`, `is_padded()`, `pending_len()`, `has_pending_input()`, reader-side
 `buffered_output_len()` and `has_finished_input()`, and decoder-side
 `has_terminal_padding()` for framed protocols and audit logging.
