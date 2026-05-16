@@ -45,6 +45,9 @@
   calls do not mark adapters finalized and can be retried.
 - Added `Display` for `EncodedBuffer` so stack-backed encoded output can be
   formatted without allocating, while `Debug` remains redacted.
+- Added fallible `EncodedBuffer::as_utf8()` for callers that prefer
+  recoverable text access even though crate-produced Base64 is ASCII by
+  invariant.
 
 ## 0.8.0 - 2026-05-16
 

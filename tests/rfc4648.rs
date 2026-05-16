@@ -2199,6 +2199,7 @@ fn stack_encoded_buffer_helpers_avoid_alloc_and_clear_tail() {
     assert!(encoded.is_full());
     assert_eq!(encoded.as_bytes(), b"aGVsbG8=");
     assert_eq!(encoded.as_str(), "aGVsbG8=");
+    assert_eq!(encoded.as_utf8().unwrap(), "aGVsbG8=");
     assert_eq!(encoded.as_ref(), b"aGVsbG8=");
     assert!(encoded.constant_time_eq(b"aGVsbG8="));
     assert!(!encoded.constant_time_eq(b"aGVsbG9="));
@@ -2266,6 +2267,7 @@ fn profile_stack_encoded_buffer_respects_wrapping_policy() {
 fn encoded_buffer_try_from_uses_strict_standard_base64() {
     let encoded = EncodedBuffer::<8>::try_from("hello").unwrap();
     assert_eq!(encoded.as_str(), "aGVsbG8=");
+    assert_eq!(encoded.as_utf8().unwrap(), "aGVsbG8=");
     assert_eq!(encoded.to_string(), "aGVsbG8=");
     assert_eq!(
         format!("{encoded:?}"),

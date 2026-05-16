@@ -2103,6 +2103,16 @@ impl<const CAP: usize> EncodedBuffer<CAP> {
         &self.bytes[..self.len]
     }
 
+    /// Returns the visible encoded bytes as UTF-8 text.
+    ///
+    /// Encoded Base64 output is produced as ASCII by this crate, so this
+    /// method should not fail unless an internal invariant has been broken.
+    /// It is provided for callers that prefer a fallible accessor over
+    /// [`Self::as_str`].
+    pub fn as_utf8(&self) -> Result<&str, core::str::Utf8Error> {
+        core::str::from_utf8(self.as_bytes())
+    }
+
     /// Returns the visible encoded bytes as UTF-8.
     ///
     /// # Panics
@@ -2111,7 +2121,7 @@ impl<const CAP: usize> EncodedBuffer<CAP> {
     /// contains non-UTF-8 bytes.
     #[must_use]
     pub fn as_str(&self) -> &str {
-        match core::str::from_utf8(self.as_bytes()) {
+        match self.as_utf8() {
             Ok(output) => output,
             Err(_) => unreachable!("base64 encoder produced non-UTF-8 output"),
         }

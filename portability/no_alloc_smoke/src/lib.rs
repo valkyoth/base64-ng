@@ -208,6 +208,7 @@ pub fn length_and_stack_state_surfaces() -> bool {
         || !encoded.is_full()
         || encoded.remaining_capacity() != 0
         || encoded.as_str() != "aGVsbG8="
+        || encoded.as_utf8() != Ok("aGVsbG8=")
     {
         return false;
     }
