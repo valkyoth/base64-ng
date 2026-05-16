@@ -596,6 +596,14 @@ pub mod stream {
             self.pending_len != 0
         }
 
+        /// Returns whether this encoder has been finalized.
+        ///
+        /// Once this returns `true`, later non-empty writes return an error.
+        #[must_use]
+        pub const fn is_finalized(&self) -> bool {
+            self.finalized
+        }
+
         /// Consumes the encoder without flushing pending input.
         ///
         /// Prefer [`Self::finish`] when the encoded output must be complete.
@@ -845,6 +853,14 @@ pub mod stream {
         #[must_use]
         pub const fn has_terminal_padding(&self) -> bool {
             self.finished
+        }
+
+        /// Returns whether this decoder has been finalized.
+        ///
+        /// Once this returns `true`, later non-empty writes return an error.
+        #[must_use]
+        pub const fn is_finalized(&self) -> bool {
+            self.finalized
         }
 
         /// Consumes the decoder without flushing pending input.

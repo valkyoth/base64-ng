@@ -33,6 +33,8 @@
   flush pending Base64 quanta without consuming the adapter.
 - Hardened writer-side stream finalization so adapters reject later input after
   `try_finish()` succeeds.
+- Added writer-side stream `is_finalized()` helpers for explicit finalized
+  state inspection.
 
 ## 0.8.0 - 2026-05-16
 

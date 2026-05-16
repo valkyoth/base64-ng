@@ -526,9 +526,9 @@ ended and leave adjacent bytes for the next protocol layer. Reader adapters
 also expose `is_finished()` once EOF or terminal padding has been reached and
 all buffered output has been drained. Writer adapters expose `try_finish()` to
 finalize pending input and flush the wrapped writer without consuming the
-adapter, which keeps diagnostics and explicit inner-writer recovery available;
-after successful finalization, later writes are rejected. Their `Debug` output
-reports adapter state without formatting the wrapped reader or writer.
+adapter, plus `is_finalized()` for explicit state inspection; after successful
+finalization, later writes are rejected. Their `Debug` output reports adapter
+state without formatting the wrapped reader or writer.
 
 URL-safe, no-padding encoding:
 

@@ -2622,10 +2622,12 @@ fn stream_encoder_exposes_inner_writer() {
 #[test]
 fn stream_encoder_try_finish_keeps_adapter_available() {
     let mut encoder = Encoder::new(Vec::new(), STANDARD);
+    assert!(!encoder.is_finalized());
     encoder.write_all(b"he").unwrap();
     assert!(encoder.has_pending_input());
 
     encoder.try_finish().unwrap();
+    assert!(encoder.is_finalized());
     assert_eq!(encoder.get_ref(), b"aGU=");
     assert_eq!(encoder.pending_len(), 0);
     assert!(!encoder.has_pending_input());
@@ -2776,10 +2778,12 @@ fn stream_decoder_supports_no_padding() {
 #[test]
 fn stream_decoder_try_finish_keeps_adapter_available() {
     let mut decoder = Decoder::new(Vec::new(), STANDARD);
+    assert!(!decoder.is_finalized());
     decoder.write_all(b"aGk=").unwrap();
     assert!(decoder.has_terminal_padding());
 
     decoder.try_finish().unwrap();
+    assert!(decoder.is_finalized());
     assert_eq!(decoder.get_ref(), b"hi");
     assert_eq!(decoder.pending_len(), 0);
     assert!(!decoder.has_pending_input());
@@ -2794,9 +2798,11 @@ fn stream_decoder_try_finish_keeps_adapter_available() {
 #[test]
 fn stream_decoder_try_finish_terminal_for_unpadded_payloads() {
     let mut decoder = Decoder::new(Vec::new(), STANDARD_NO_PAD);
+    assert!(!decoder.is_finalized());
     decoder.write_all(b"aGk").unwrap();
 
     decoder.try_finish().unwrap();
+    assert!(decoder.is_finalized());
     assert_eq!(decoder.get_ref(), b"hi");
     assert_eq!(decoder.pending_len(), 0);
     assert!(!decoder.has_terminal_padding());
