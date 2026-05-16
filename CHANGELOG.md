@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.0-alpha.0 - Unreleased
+
+- Started the next development cycle after the `0.8.0` release.
+
 ## 0.8.0 - 2026-05-16
 
 - Started the next development cycle after the `0.7.0` release.
