@@ -1138,6 +1138,8 @@ fn wrapped_encoded_len_accounts_for_inserted_line_endings() {
     );
     assert_eq!(LineEnding::Lf.as_bytes(), b"\n");
     assert_eq!(LineEnding::CrLf.as_bytes(), b"\r\n");
+    assert_eq!(LineEnding::Lf.as_str(), "\n");
+    assert_eq!(LineEnding::CrLf.as_str(), "\r\n");
     assert_eq!(LineEnding::Lf.byte_len(), 1);
     assert_eq!(LineEnding::CrLf.byte_len(), 2);
     assert_eq!(LineWrap::MIME.line_len, 76);

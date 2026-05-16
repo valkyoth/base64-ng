@@ -1932,13 +1932,19 @@ pub enum LineEnding {
 }
 
 impl LineEnding {
+    /// Returns the text representation of this line ending.
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Lf => "\n",
+            Self::CrLf => "\r\n",
+        }
+    }
+
     /// Returns the byte representation of this line ending.
     #[must_use]
     pub const fn as_bytes(self) -> &'static [u8] {
-        match self {
-            Self::Lf => b"\n",
-            Self::CrLf => b"\r\n",
-        }
+        self.as_str().as_bytes()
     }
 
     /// Returns the byte length of this line ending.

@@ -58,6 +58,8 @@
   pending encoder and decoder input until the wrapped writer succeeds.
 - Documented stream retry semantics for wrapped writer failures and
   finalization flush retries.
+- Added `LineEnding::as_str()` for allocation-free text inspection of wrapping
+  policies.
 
 ## 0.8.0 - 2026-05-16
 
