@@ -558,6 +558,46 @@ fn ct_decoder_matches_strict_for_canonical_inputs() {
 }
 
 #[test]
+fn ct_decoder_respects_generic_alphabets() {
+    let inputs: &[&[u8]] = &[
+        b"",
+        b"hello",
+        &[0xff, 0xff, 0xff],
+        &[0x00, 0x10, 0x83, 0xff],
+    ];
+    let ct_bcrypt = ct::CtEngine::<Bcrypt, false>::new();
+    let ct_crypt = ct::CtEngine::<Crypt, false>::new();
+
+    for input in inputs {
+        let mut encoded = [0u8; 32];
+        let mut strict = [0u8; 16];
+        let mut ct_output = [0u8; 16];
+
+        let encoded_len = BCRYPT_NO_PAD.encode_slice(input, &mut encoded).unwrap();
+        let bcrypt_encoded = &encoded[..encoded_len];
+        let strict_len = BCRYPT_NO_PAD
+            .decode_slice(bcrypt_encoded, &mut strict)
+            .unwrap();
+        let ct_len = ct_bcrypt
+            .decode_slice(bcrypt_encoded, &mut ct_output)
+            .unwrap();
+        assert_eq!(&ct_output[..ct_len], &strict[..strict_len]);
+        assert!(ct_bcrypt.validate(bcrypt_encoded));
+
+        let encoded_len = CRYPT_NO_PAD.encode_slice(input, &mut encoded).unwrap();
+        let crypt_encoded = &encoded[..encoded_len];
+        let strict_len = CRYPT_NO_PAD
+            .decode_slice(crypt_encoded, &mut strict)
+            .unwrap();
+        let ct_len = ct_crypt
+            .decode_slice(crypt_encoded, &mut ct_output)
+            .unwrap();
+        assert_eq!(&ct_output[..ct_len], &strict[..strict_len]);
+        assert!(ct_crypt.validate(crypt_encoded));
+    }
+}
+
+#[test]
 fn ct_validate_matches_constant_time_decode_policy() {
     for input_len in 0..64 {
         let mut input = [0u8; 64];

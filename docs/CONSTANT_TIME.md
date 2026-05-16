@@ -107,6 +107,9 @@ the same cleanup and redacted formatting posture as `DecodedBuffer`.
 - Accumulate validity into masks instead of returning early on input-dependent
   byte classes.
 - Avoid lookup tables indexed by input bytes or decoded 6-bit values.
+- Decode symbols with a fixed scan over the selected alphabet so standard,
+  URL-safe, bcrypt-style, crypt-style, and custom alphabets share the same
+  generic mapping rule.
 - Decode all complete quanta for the public input length before reporting
   malformed input.
 - Keep padding validation explicit and documented; padding length and final

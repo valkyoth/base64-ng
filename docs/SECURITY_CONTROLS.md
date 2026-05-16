@@ -67,8 +67,9 @@ process memory disclosure vulnerabilities.
 
 The default scalar encoder avoids input-derived alphabet table indexes for
 built-in alphabets, and the decoder uses branch-minimized ASCII arithmetic.
-The `ct` module narrows the timing target further for scalar decode. It still
-does not carry a formal cryptographic constant-time guarantee.
+The `ct` module narrows the timing target further for scalar decode and uses a
+fixed scan over the selected alphabet for generic symbol mapping. It still does
+not carry a formal cryptographic constant-time guarantee.
 
 ### Supply Chain
 

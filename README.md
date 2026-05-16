@@ -558,8 +558,9 @@ Security commitments:
   untrusted length metadata should never require a panic.
 - Scalar encode avoids input-derived alphabet table indexes, and scalar decode
   uses branch-minimized arithmetic. A separate `ct` module provides a
-  constant-time-oriented scalar validation and decode path for callers that
-  need a narrower timing target. Its malformed-input errors are intentionally
+  constant-time-oriented scalar validation and decode path that scans the
+  selected alphabet for every symbol so custom alphabets do not fall back to
+  standard ASCII assumptions. Its malformed-input errors are intentionally
   non-localized, clear-tail variants clear caller-owned buffers on error, and
   it is not documented as a formally verified cryptographic constant-time API.
 - Clear-tail encode/decode variants are available for callers that want

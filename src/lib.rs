@@ -1424,12 +1424,11 @@ pub mod ct {
         /// Decodes `input` into `output`, returning the number of bytes
         /// written.
         ///
-        /// This path uses branch-minimized arithmetic for Base64 symbol
-        /// mapping and avoids secret-indexed lookup tables. Input length,
-        /// padding length, output length, and final success or failure remain
-        /// public. Malformed content errors are intentionally opaque and
-        /// non-localized; use the normal strict decoder when exact diagnostics
-        /// are required.
+        /// This path uses a fixed alphabet scan for Base64 symbol mapping and
+        /// avoids secret-indexed lookup tables. Input length, padding length,
+        /// output length, and final success or failure remain public.
+        /// Malformed content errors are intentionally opaque and non-localized;
+        /// use the normal strict decoder when exact diagnostics are required.
         ///
         /// # Examples
         ///
@@ -5604,10 +5603,10 @@ fn ct_validate_padded<A: Alphabet>(input: &[u8]) -> Result<(), DecodeError> {
 
     while read + 4 < input.len() {
         let [b0, b1, b2, b3] = read_quad(input, read)?;
-        let (_, valid0) = ct_decode_ascii_base64::<A>(b0);
-        let (_, valid1) = ct_decode_ascii_base64::<A>(b1);
-        let (_, valid2) = ct_decode_ascii_base64::<A>(b2);
-        let (_, valid3) = ct_decode_ascii_base64::<A>(b3);
+        let (_, valid0) = ct_decode_alphabet_byte::<A>(b0);
+        let (_, valid1) = ct_decode_alphabet_byte::<A>(b1);
+        let (_, valid2) = ct_decode_alphabet_byte::<A>(b2);
+        let (_, valid3) = ct_decode_alphabet_byte::<A>(b3);
 
         invalid_byte |= !valid0;
         invalid_byte |= !valid1;
@@ -5641,10 +5640,10 @@ fn ct_validate_unpadded<A: Alphabet>(input: &[u8]) -> Result<(), DecodeError> {
         let b1 = input[read + 1];
         let b2 = input[read + 2];
         let b3 = input[read + 3];
-        let (_, valid0) = ct_decode_ascii_base64::<A>(b0);
-        let (_, valid1) = ct_decode_ascii_base64::<A>(b1);
-        let (_, valid2) = ct_decode_ascii_base64::<A>(b2);
-        let (_, valid3) = ct_decode_ascii_base64::<A>(b3);
+        let (_, valid0) = ct_decode_alphabet_byte::<A>(b0);
+        let (_, valid1) = ct_decode_alphabet_byte::<A>(b1);
+        let (_, valid2) = ct_decode_alphabet_byte::<A>(b2);
+        let (_, valid3) = ct_decode_alphabet_byte::<A>(b3);
 
         invalid_byte |= !valid0;
         invalid_byte |= !valid1;
@@ -5663,8 +5662,8 @@ fn ct_validate_unpadded<A: Alphabet>(input: &[u8]) -> Result<(), DecodeError> {
         2 => {
             let b0 = input[read];
             let b1 = input[read + 1];
-            let (_, valid0) = ct_decode_ascii_base64::<A>(b0);
-            let (v1, valid1) = ct_decode_ascii_base64::<A>(b1);
+            let (_, valid0) = ct_decode_alphabet_byte::<A>(b0);
+            let (v1, valid1) = ct_decode_alphabet_byte::<A>(b1);
             invalid_byte |= !valid0;
             invalid_byte |= !valid1;
             invalid_padding |= ct_mask_eq_u8(b0, b'=');
@@ -5675,9 +5674,9 @@ fn ct_validate_unpadded<A: Alphabet>(input: &[u8]) -> Result<(), DecodeError> {
             let b0 = input[read];
             let b1 = input[read + 1];
             let b2 = input[read + 2];
-            let (_, valid0) = ct_decode_ascii_base64::<A>(b0);
-            let (_, valid1) = ct_decode_ascii_base64::<A>(b1);
-            let (v2, valid2) = ct_decode_ascii_base64::<A>(b2);
+            let (_, valid0) = ct_decode_alphabet_byte::<A>(b0);
+            let (_, valid1) = ct_decode_alphabet_byte::<A>(b1);
+            let (v2, valid2) = ct_decode_alphabet_byte::<A>(b2);
             invalid_byte |= !valid0;
             invalid_byte |= !valid1;
             invalid_byte |= !valid2;
@@ -5697,10 +5696,10 @@ fn ct_padded_final_quantum<A: Alphabet>(
     padding: usize,
 ) -> ([u8; 3], u8, u8, usize) {
     let [b0, b1, b2, b3] = input;
-    let (v0, valid0) = ct_decode_ascii_base64::<A>(b0);
-    let (v1, valid1) = ct_decode_ascii_base64::<A>(b1);
-    let (v2, valid2) = ct_decode_ascii_base64::<A>(b2);
-    let (v3, valid3) = ct_decode_ascii_base64::<A>(b3);
+    let (v0, valid0) = ct_decode_alphabet_byte::<A>(b0);
+    let (v1, valid1) = ct_decode_alphabet_byte::<A>(b1);
+    let (v2, valid2) = ct_decode_alphabet_byte::<A>(b2);
+    let (v3, valid3) = ct_decode_alphabet_byte::<A>(b3);
 
     let padding_byte = padding.to_le_bytes()[0];
     let no_padding = ct_mask_eq_u8(padding_byte, 0);
@@ -5743,10 +5742,10 @@ fn ct_decode_padded<A: Alphabet>(input: &[u8], output: &mut [u8]) -> Result<usiz
 
     while read + 4 < input.len() {
         let [b0, b1, b2, b3] = read_quad(input, read)?;
-        let (v0, valid0) = ct_decode_ascii_base64::<A>(b0);
-        let (v1, valid1) = ct_decode_ascii_base64::<A>(b1);
-        let (v2, valid2) = ct_decode_ascii_base64::<A>(b2);
-        let (v3, valid3) = ct_decode_ascii_base64::<A>(b3);
+        let (v0, valid0) = ct_decode_alphabet_byte::<A>(b0);
+        let (v1, valid1) = ct_decode_alphabet_byte::<A>(b1);
+        let (v2, valid2) = ct_decode_alphabet_byte::<A>(b2);
+        let (v3, valid3) = ct_decode_alphabet_byte::<A>(b3);
 
         invalid_byte |= !valid0;
         invalid_byte |= !valid1;
@@ -5789,10 +5788,10 @@ fn ct_decode_padded_in_place<A: Alphabet>(buffer: &mut [u8]) -> Result<usize, De
 
     while read + 4 < buffer.len() {
         let [b0, b1, b2, b3] = read_quad(buffer, read)?;
-        let (v0, valid0) = ct_decode_ascii_base64::<A>(b0);
-        let (v1, valid1) = ct_decode_ascii_base64::<A>(b1);
-        let (v2, valid2) = ct_decode_ascii_base64::<A>(b2);
-        let (v3, valid3) = ct_decode_ascii_base64::<A>(b3);
+        let (v0, valid0) = ct_decode_alphabet_byte::<A>(b0);
+        let (v1, valid1) = ct_decode_alphabet_byte::<A>(b1);
+        let (v2, valid2) = ct_decode_alphabet_byte::<A>(b2);
+        let (v3, valid3) = ct_decode_alphabet_byte::<A>(b3);
 
         invalid_byte |= !valid0;
         invalid_byte |= !valid1;
@@ -5843,10 +5842,10 @@ fn ct_decode_unpadded<A: Alphabet>(input: &[u8], output: &mut [u8]) -> Result<us
         let b1 = input[read + 1];
         let b2 = input[read + 2];
         let b3 = input[read + 3];
-        let (v0, valid0) = ct_decode_ascii_base64::<A>(b0);
-        let (v1, valid1) = ct_decode_ascii_base64::<A>(b1);
-        let (v2, valid2) = ct_decode_ascii_base64::<A>(b2);
-        let (v3, valid3) = ct_decode_ascii_base64::<A>(b3);
+        let (v0, valid0) = ct_decode_alphabet_byte::<A>(b0);
+        let (v1, valid1) = ct_decode_alphabet_byte::<A>(b1);
+        let (v2, valid2) = ct_decode_alphabet_byte::<A>(b2);
+        let (v3, valid3) = ct_decode_alphabet_byte::<A>(b3);
 
         invalid_byte |= !valid0;
         invalid_byte |= !valid1;
@@ -5869,8 +5868,8 @@ fn ct_decode_unpadded<A: Alphabet>(input: &[u8], output: &mut [u8]) -> Result<us
         2 => {
             let b0 = input[read];
             let b1 = input[read + 1];
-            let (v0, valid0) = ct_decode_ascii_base64::<A>(b0);
-            let (v1, valid1) = ct_decode_ascii_base64::<A>(b1);
+            let (v0, valid0) = ct_decode_alphabet_byte::<A>(b0);
+            let (v1, valid1) = ct_decode_alphabet_byte::<A>(b1);
             invalid_byte |= !valid0;
             invalid_byte |= !valid1;
             invalid_padding |= ct_mask_eq_u8(b0, b'=');
@@ -5883,9 +5882,9 @@ fn ct_decode_unpadded<A: Alphabet>(input: &[u8], output: &mut [u8]) -> Result<us
             let b0 = input[read];
             let b1 = input[read + 1];
             let b2 = input[read + 2];
-            let (v0, valid0) = ct_decode_ascii_base64::<A>(b0);
-            let (v1, valid1) = ct_decode_ascii_base64::<A>(b1);
-            let (v2, valid2) = ct_decode_ascii_base64::<A>(b2);
+            let (v0, valid0) = ct_decode_alphabet_byte::<A>(b0);
+            let (v1, valid1) = ct_decode_alphabet_byte::<A>(b1);
+            let (v2, valid2) = ct_decode_alphabet_byte::<A>(b2);
             invalid_byte |= !valid0;
             invalid_byte |= !valid1;
             invalid_byte |= !valid2;
@@ -5922,10 +5921,10 @@ fn ct_decode_unpadded_in_place<A: Alphabet>(buffer: &mut [u8]) -> Result<usize, 
         let b1 = buffer[read + 1];
         let b2 = buffer[read + 2];
         let b3 = buffer[read + 3];
-        let (v0, valid0) = ct_decode_ascii_base64::<A>(b0);
-        let (v1, valid1) = ct_decode_ascii_base64::<A>(b1);
-        let (v2, valid2) = ct_decode_ascii_base64::<A>(b2);
-        let (v3, valid3) = ct_decode_ascii_base64::<A>(b3);
+        let (v0, valid0) = ct_decode_alphabet_byte::<A>(b0);
+        let (v1, valid1) = ct_decode_alphabet_byte::<A>(b1);
+        let (v2, valid2) = ct_decode_alphabet_byte::<A>(b2);
+        let (v3, valid3) = ct_decode_alphabet_byte::<A>(b3);
 
         invalid_byte |= !valid0;
         invalid_byte |= !valid1;
@@ -5948,8 +5947,8 @@ fn ct_decode_unpadded_in_place<A: Alphabet>(buffer: &mut [u8]) -> Result<usize, 
         2 => {
             let b0 = buffer[read];
             let b1 = buffer[read + 1];
-            let (v0, valid0) = ct_decode_ascii_base64::<A>(b0);
-            let (v1, valid1) = ct_decode_ascii_base64::<A>(b1);
+            let (v0, valid0) = ct_decode_alphabet_byte::<A>(b0);
+            let (v1, valid1) = ct_decode_alphabet_byte::<A>(b1);
             invalid_byte |= !valid0;
             invalid_byte |= !valid1;
             invalid_padding |= ct_mask_eq_u8(b0, b'=');
@@ -5962,9 +5961,9 @@ fn ct_decode_unpadded_in_place<A: Alphabet>(buffer: &mut [u8]) -> Result<usize, 
             let b0 = buffer[read];
             let b1 = buffer[read + 1];
             let b2 = buffer[read + 2];
-            let (v0, valid0) = ct_decode_ascii_base64::<A>(b0);
-            let (v1, valid1) = ct_decode_ascii_base64::<A>(b1);
-            let (v2, valid2) = ct_decode_ascii_base64::<A>(b2);
+            let (v0, valid0) = ct_decode_alphabet_byte::<A>(b0);
+            let (v1, valid1) = ct_decode_alphabet_byte::<A>(b1);
+            let (v2, valid2) = ct_decode_alphabet_byte::<A>(b2);
             invalid_byte |= !valid0;
             invalid_byte |= !valid1;
             invalid_byte |= !valid2;
@@ -5985,19 +5984,17 @@ fn ct_decode_unpadded_in_place<A: Alphabet>(buffer: &mut [u8]) -> Result<usize, 
 }
 
 #[inline]
-fn ct_decode_ascii_base64<A: Alphabet>(byte: u8) -> (u8, u8) {
-    let upper = ct_mask_lt_u8(byte.wrapping_sub(b'A'), 26);
-    let lower = ct_mask_lt_u8(byte.wrapping_sub(b'a'), 26);
-    let digit = ct_mask_lt_u8(byte.wrapping_sub(b'0'), 10);
-    let value_62 = ct_mask_eq_u8(byte, A::ENCODE[62]);
-    let value_63 = ct_mask_eq_u8(byte, A::ENCODE[63]);
-    let valid = upper | lower | digit | value_62 | value_63;
+fn ct_decode_alphabet_byte<A: Alphabet>(byte: u8) -> (u8, u8) {
+    let mut decoded = 0u8;
+    let mut valid = 0u8;
+    let mut candidate = 0u8;
 
-    let decoded = (byte.wrapping_sub(b'A') & upper)
-        | (byte.wrapping_sub(b'a').wrapping_add(26) & lower)
-        | (byte.wrapping_sub(b'0').wrapping_add(52) & digit)
-        | (0x3e & value_62)
-        | (0x3f & value_63);
+    while candidate < 64 {
+        let matches = ct_mask_eq_u8(byte, A::ENCODE[candidate as usize]);
+        decoded |= candidate & matches;
+        valid |= matches;
+        candidate += 1;
+    }
 
     (decoded, valid)
 }

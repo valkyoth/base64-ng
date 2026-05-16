@@ -110,6 +110,9 @@
 - Added `remaining_capacity()` to `EncodedBuffer` and `DecodedBuffer` for
   no-alloc stack sizing checks.
 - Added `is_full()` to `EncodedBuffer` and `DecodedBuffer`.
+- Fixed the constant-time-oriented generic decoder to scan the selected
+  alphabet for every symbol instead of assuming standard ASCII ranges for
+  custom alphabets.
 
 ## 0.7.0 - 2026-05-15
 
