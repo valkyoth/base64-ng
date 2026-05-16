@@ -402,9 +402,11 @@ the zero-runtime-dependency stance.
 - Consider a dependency-free helper macro or generator for audited custom
   alphabet encoders when an alphabet can be mapped without secret-indexed table
   access. Keep the fixed-scan fallback as the conservative default.
-- Add low-friction native Rust interop only where it preserves explicit
-  security semantics, starting with strict standard `SecretBuffer` `TryFrom`
-  decoders and leaving non-standard profiles on explicit engine/profile APIs.
+- Continue small native Rust interop only where it preserves explicit security
+  semantics. Strict standard `SecretBuffer` `TryFrom`, stack-backed buffer
+  conversions, explicit ownership escape hatches, and direct redacted-buffer
+  comparisons are established; leave non-standard profiles on explicit
+  engine/profile APIs.
 
 ### v0.9
 
