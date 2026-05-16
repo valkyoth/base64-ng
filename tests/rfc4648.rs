@@ -2939,6 +2939,29 @@ fn stream_decoder_try_finish_terminal_for_unpadded_payloads() {
 
 #[cfg(feature = "stream")]
 #[test]
+fn stream_decoder_try_finish_flush_failure_does_not_reemit_final_bytes() {
+    let writer = FailOnceWriter {
+        output: Vec::new(),
+        fail_next: false,
+        fail_flush_next: true,
+    };
+    let mut decoder = Decoder::new(writer, STANDARD_NO_PAD);
+    decoder.write_all(b"aGk").unwrap();
+
+    let err = decoder.try_finish().unwrap_err();
+    assert_eq!(err.kind(), std::io::ErrorKind::BrokenPipe);
+    assert!(decoder.is_finalized());
+    assert_eq!(decoder.pending_len(), 0);
+    assert!(!decoder.has_pending_input());
+    assert_eq!(decoder.get_ref().output, b"hi");
+
+    decoder.try_finish().unwrap();
+    assert!(decoder.is_finalized());
+    assert_eq!(decoder.get_ref().output, b"hi");
+}
+
+#[cfg(feature = "stream")]
+#[test]
 fn stream_decoder_rejects_bad_final_pending_input() {
     let mut decoder = Decoder::new(Vec::new(), STANDARD);
     decoder.write_all(b"a").unwrap();

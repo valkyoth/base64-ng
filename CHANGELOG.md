@@ -50,6 +50,8 @@
   invariant.
 - Added a stream finalization regression proving `try_finish()` retries after
   flush errors do not re-emit the terminal Base64 quantum.
+- Added the matching decoder-side flush retry regression so final decoded bytes
+  are not emitted twice after a failed `try_finish()` flush.
 
 ## 0.8.0 - 2026-05-16
 
