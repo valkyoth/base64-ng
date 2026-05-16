@@ -65,7 +65,8 @@ The release gate runs:
 - installed-target `no_std` checks for the reserved `simd` feature
 - no-alloc portability smoke crate checks for stack-backed encode/decode,
   wrapped output, URL-safe no-padding, and constant-time-oriented decode with
-  default features disabled
+  default features disabled, plus validate-only, legacy decode, in-place
+  encode/decode, and constant-time-oriented in-place decode surfaces
 - CI target-matrix no-alloc portability smoke checks so installed Linux,
   FreeBSD, wasm32, ARM, and Cortex-M targets compile the same stack-backed
   dependency-free harness

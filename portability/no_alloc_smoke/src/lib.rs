@@ -52,3 +52,49 @@ pub fn ct_stack_decode() -> bool {
 
     decoded.as_bytes() == b"hello"
 }
+
+pub fn validate_only_surfaces() -> bool {
+    STANDARD.validate(b"aGVsbG8=")
+        && STANDARD.validate_legacy(b"aGVs\r\nbG8=")
+        && !STANDARD.validate(b"aGVs\r\nbG8=")
+        && URL_SAFE_NO_PAD.validate(b"-_8")
+        && ct::STANDARD.validate(b"aGVsbG8=")
+}
+
+pub fn in_place_surfaces() -> bool {
+    let mut encoded = [0u8; 8];
+    encoded[..5].copy_from_slice(b"hello");
+    let encoded = match STANDARD.encode_in_place(&mut encoded, 5) {
+        Ok(encoded) => encoded,
+        Err(_) => return false,
+    };
+    if encoded != b"aGVsbG8=" {
+        return false;
+    }
+
+    let mut decoded = *b"aGVsbG8=";
+    let decoded = match STANDARD.decode_in_place(&mut decoded) {
+        Ok(decoded) => decoded,
+        Err(_) => return false,
+    };
+    if decoded != b"hello" {
+        return false;
+    }
+
+    let mut ct_decoded = *b"aGk=";
+    let ct_decoded = match ct::STANDARD.decode_in_place(&mut ct_decoded) {
+        Ok(decoded) => decoded,
+        Err(_) => return false,
+    };
+
+    ct_decoded == b"hi"
+}
+
+pub fn legacy_stack_decode() -> bool {
+    let decoded = match STANDARD.decode_buffer_legacy::<5>(b"aGVs\r\nbG8=") {
+        Ok(decoded) => decoded,
+        Err(_) => return false,
+    };
+
+    decoded.as_bytes() == b"hello"
+}

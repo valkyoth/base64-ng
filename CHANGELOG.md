@@ -22,6 +22,9 @@
   admission.
 - Extended CI target-matrix coverage to run the no-alloc portability smoke
   harness for each installed `no_std` target.
+- Expanded the no-alloc portability smoke harness to compile validate-only,
+  legacy decode, in-place encode/decode, and constant-time-oriented in-place
+  decode surfaces with default features disabled.
 
 ## 0.8.0 - 2026-05-16
 
