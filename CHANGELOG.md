@@ -141,6 +141,9 @@
 - Added no-default-features doctests to the standard local gate and release
   evidence docs so no-alloc examples are checked alongside all-features
   doctests.
+- Added no-default-features documentation builds to the standard local gate and
+  release evidence docs so the `no_std` API reference is built alongside the
+  all-features docs.
 
 ## 0.8.0 - 2026-05-16
 

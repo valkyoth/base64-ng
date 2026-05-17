@@ -185,7 +185,9 @@ done
 
 for required_checks_command in \
     "cargo test --doc --all-features" \
-    "cargo test --doc --no-default-features"
+    "cargo test --doc --no-default-features" \
+    "cargo doc --no-deps --all-features" \
+    "cargo doc --no-deps --no-default-features"
 do
     if ! grep -F -q "$required_checks_command" scripts/checks.sh; then
         echo "release metadata: standard checks are missing $required_checks_command" >&2

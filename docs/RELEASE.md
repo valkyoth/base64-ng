@@ -43,7 +43,7 @@ The release gate covers:
 - Miri no-default-features tests when nightly Miri is installed
 - Miri evidence manifest generation when nightly Miri is installed
 - all-features and no-default-features doctests
-- docs
+- all-features and no-default-features docs
 - packaged async admission policy while the `tokio` feature remains inert
 - installed cross-target `no_std` checks
 - no-alloc portability smoke crate checks for installed Linux, FreeBSD, wasm32,

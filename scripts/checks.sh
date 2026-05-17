@@ -70,6 +70,9 @@ cargo test --doc --no-default-features
 echo "checks: docs"
 cargo doc --no-deps --all-features
 
+echo "checks: docs no default features"
+cargo doc --no-deps --no-default-features
+
 echo "checks: dependency policy"
 cargo deny check
 
