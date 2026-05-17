@@ -183,6 +183,16 @@ do
     fi
 done
 
+for required_checks_command in \
+    "cargo test --doc --all-features" \
+    "cargo test --doc --no-default-features"
+do
+    if ! grep -F -q "$required_checks_command" scripts/checks.sh; then
+        echo "release metadata: standard checks are missing $required_checks_command" >&2
+        exit 1
+    fi
+done
+
 package_list="$(
     cargo package --locked --allow-dirty --list
 )"

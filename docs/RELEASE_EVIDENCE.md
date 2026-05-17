@@ -49,7 +49,7 @@ The release gate runs:
   including inert-feature and per-feature dependency graph validation
 - clippy with warnings denied
 - default, all-features, and no-default-features tests
-- doctests and documentation build
+- all-features and no-default-features doctests plus documentation build
 - `cargo deny check`
 - `cargo audit`
 - `cargo license --json`

@@ -138,6 +138,9 @@
 - Hardened release metadata validation for the README's zero-dependency,
   scalar-only development, inert future-feature, constant-time non-claim, and
   release-evidence wording.
+- Added no-default-features doctests to the standard local gate and release
+  evidence docs so no-alloc examples are checked alongside all-features
+  doctests.
 
 ## 0.8.0 - 2026-05-16
 
