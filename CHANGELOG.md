@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.12.0-alpha.0 - Unreleased
+## 0.12.0 - 2026-05-17
 
 - Started the stabilization rehearsal cycle after the `0.11.0` release.
 - Added a migration-guide smoke crate and release-gate check covering strict

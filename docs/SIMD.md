@@ -1,6 +1,6 @@
 # SIMD Admission Policy
 
-`base64-ng` is intentionally scalar-only in the `0.12.0-alpha.0` development
+`base64-ng` is intentionally scalar-only in the `0.12.0` release
 branch unless a complete SIMD admission evidence package lands in the same
 release series. The crate uses `#![deny(unsafe_code)]` and permits reviewed
 `allow(unsafe_code)` exceptions only for volatile wipe helpers in `src/lib.rs`
@@ -61,7 +61,7 @@ weakening the scalar trust base.
 - Unit tests compare dispatch behavior against the scalar reference for
   canonical inputs, malformed inputs, and undersized output buffers.
 - The `simd` feature does not enable accelerated code yet.
-- Current `0.12` development remains scalar-only unless the SIMD admission
+- Current `0.12` release remains scalar-only unless the SIMD admission
   manifest, scalar differential tests, fuzz evidence, unsafe inventory,
   architecture evidence, benchmark evidence, and release wording are updated
   together.
