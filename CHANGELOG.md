@@ -30,6 +30,8 @@
   reports the same recoverable errors as slice and vector decode.
 - Added a dedicated profile/custom-alphabet fuzz target for MIME, PEM,
   bcrypt-style, `crypt(3)`-style, and caller-defined alphabets.
+- Documented the accepted `v0.11` Kani verifier exception and the replacement
+  release evidence required while local Kani remains behind Rust `1.95`.
 
 ## 0.10.0 - 2026-05-17
 

@@ -47,14 +47,54 @@ Current harnesses cover:
 - clear-tail cleanup behavior on decode failures
 - constant-time-oriented validate/decode agreement for one quantum
 
+## v0.11 Verifier Exception
+
+The accepted `v0.11` outcome is a documented verifier exception:
+
+- keep all Kani harnesses in-tree and checked by `scripts/check_kani.sh`
+- treat an incompatible Kani compiler as an explicit skip, not a proof
+- require replacement evidence before release-sensitive changes are accepted
+
+Replacement evidence for `v0.11` consists of:
+
+- the full `scripts/checks.sh` gate
+- Miri evidence from `scripts/check_miri.sh`
+- bounded fuzz smoke evidence from
+  `BASE64_NG_RUN_FUZZ_SMOKE=1 scripts/check_fuzz.sh`
+- deterministic tests for scalar chunk packing, in-place decode, clear-tail
+  cleanup, stream fail-closed behavior, profile behavior, and constant-time
+  validate/decode agreement
+- generated assembly evidence from `scripts/generate_ct_asm_evidence.sh`
+- invariant documentation in [INVARIANTS.md](INVARIANTS.md)
+- panic-policy enforcement through `scripts/validate-panic-policy.sh`
+
+This exception is intentionally narrower than a formal proof. It does not
+upgrade Kani status to "complete", and it does not satisfy the `v1.0` formal
+verification gate by itself.
+
+## Future Verifier Admission
+
+Other verifier or model-checking tools may be evaluated, but they are not
+release-gate evidence until they have:
+
+- a documented local install and CI path
+- reproducible commands that work with the pinned Rust toolchain
+- a scoped harness plan for scalar Base64 bit-packing and buffer bounds
+- no runtime dependency impact on the published crate
+- clear failure behavior in release scripts
+
+Do not lower `rust-version` only to make Kani run unless the whole crate still
+passes the release gate and the MSRV change is intentional. The verifier should
+follow the crate's supported Rust version, not the other way around.
+
 ## Release Policy
 
-For `v0.11`, the project must choose one of these outcomes:
+For each future release, the project must choose one of these outcomes:
 
 - run Kani proofs with a compatible Kani release
 - pin a documented compatible Kani workflow
 - document a verifier exception and the replacement evidence required before
-  `v1.0`
+  release
 
 Replacement evidence may include Miri, deterministic exhaustive tests,
 fuzz-corpus evidence, generated-code review, panic-policy validation, and local
@@ -72,6 +112,4 @@ cargo kani --version
 scripts/check_kani.sh
 ```
 
-Do not lower `rust-version` only to make Kani run unless the whole crate still
-passes the release gate and the MSRV change is intentional. The verifier should
-follow the crate's supported Rust version, not the other way around.
+The `v0.11` exception above must be revisited before `v1.0`.

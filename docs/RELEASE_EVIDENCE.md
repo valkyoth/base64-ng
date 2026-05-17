@@ -140,6 +140,9 @@ The release gate runs:
 - bounded-index invariant documentation in [INVARIANTS.md](INVARIANTS.md)
 - explicit Kani compatibility or verifier-exception documentation in
   [KANI.md](KANI.md) when the installed Kani compiler cannot run the proofs
+- the `v0.11` Kani verifier exception requires replacement evidence from Miri,
+  bounded fuzz smoke, generated assembly evidence, panic-policy checks,
+  deterministic tests, and [INVARIANTS.md](INVARIANTS.md)
 - SBOM generation
 - reproducible package/build check
 

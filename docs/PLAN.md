@@ -484,6 +484,11 @@ weakened or broken.
 - Resolve Kani execution for the pinned Rust toolchain, pin a compatible Kani
   workflow, or document through [KANI.md](KANI.md) why Kani remains unavailable
   and what evidence replaces it for `v1.0`.
+  Current `v0.11` direction: keep the Kani harnesses in-tree, document an
+  explicit verifier exception while local Kani is behind Rust `1.95`, and
+  require Miri, bounded fuzz smoke, generated-code evidence, panic-policy
+  checks, deterministic tests, and invariant documentation as replacement
+  release evidence. Revisit this exception before `v1.0`.
 - Expand or finalize proof harnesses for length helpers, slice encode/decode
   bounds, in-place decode bounds, clear-tail cleanup behavior, and
   constant-time-oriented validate/decode agreement.
