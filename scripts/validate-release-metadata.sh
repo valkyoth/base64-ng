@@ -177,7 +177,7 @@ case "$cargo_version" in
         required_readme_simd_status="development remains scalar-only unless that full evidence package lands"
         ;;
     *)
-        required_readme_simd_status="release remains scalar-only because that full evidence package has not"
+        required_readme_simd_status="release remains scalar-only"
         ;;
 esac
 

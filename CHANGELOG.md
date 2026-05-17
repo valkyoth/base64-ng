@@ -1,8 +1,7 @@
 # Changelog
 
-## 0.10.0-alpha.0 - Unreleased
+## 0.10.0 - 2026-05-17
 
-- Started the next development cycle after the `0.9.0` release.
 - Added a dedicated public API audit checklist for the `v0.10`
   release-candidate audit-preparation milestone.
 - Added release-gated public API audit validation so stable releases cannot
