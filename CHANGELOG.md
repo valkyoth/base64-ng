@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.12.0-alpha.0 - Unreleased
+
+- Started the stabilization rehearsal cycle after the `0.11.0` release.
+
 ## 0.11.0 - 2026-05-17
 
 - Started the next development cycle after the `0.10.0` release.
