@@ -113,6 +113,8 @@
   invariants after malformed input.
 - Documented stream decoder failed-state behavior in crate rustdoc and the
   migration guide.
+- Expanded the no-alloc portability smoke crate to cover scalar and
+  constant-time clear-tail cleanup APIs on success and error paths.
 
 ## 0.8.0 - 2026-05-16
 

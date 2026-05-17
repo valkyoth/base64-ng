@@ -2,7 +2,7 @@
 
 use base64_ng::{
     DecodedBuffer, EncodedBuffer, Engine, LineEnding, LineWrap, Profile, STANDARD,
-    URL_SAFE_NO_PAD, checked_encoded_len, decoded_capacity, decoded_len, encoded_len, ct,
+    URL_SAFE_NO_PAD, checked_encoded_len, ct, decoded_capacity, decoded_len, encoded_len,
 };
 use core::fmt::Write as _;
 
@@ -140,6 +140,64 @@ pub fn in_place_surfaces() -> bool {
     };
 
     ct_decoded == b"hi"
+}
+
+pub fn clear_tail_surfaces() -> bool {
+    let mut encoded = [0xAA; 8];
+    let encoded_len = match STANDARD.encode_slice_clear_tail(b"hi", &mut encoded) {
+        Ok(written) => written,
+        Err(_) => return false,
+    };
+    if encoded_len != 4 || &encoded[..encoded_len] != b"aGk=" || encoded[encoded_len..] != [0; 4]
+    {
+        return false;
+    }
+
+    let mut small_encode_output = [0xAA; 3];
+    if STANDARD
+        .encode_slice_clear_tail(b"hi", &mut small_encode_output)
+        .is_ok()
+        || small_encode_output != [0; 3]
+    {
+        return false;
+    }
+
+    let mut decoded = [0xAA; 5];
+    let decoded_len = match STANDARD.decode_slice_clear_tail(b"aGk=", &mut decoded) {
+        Ok(written) => written,
+        Err(_) => return false,
+    };
+    if decoded_len != 2 || &decoded[..decoded_len] != b"hi" || decoded[decoded_len..] != [0; 3] {
+        return false;
+    }
+
+    let mut invalid_decode_output = [0xAA; 5];
+    if STANDARD
+        .decode_slice_clear_tail(b"!!!!", &mut invalid_decode_output)
+        .is_ok()
+        || invalid_decode_output != [0; 5]
+    {
+        return false;
+    }
+
+    let mut ct_decoded = [0xAA; 5];
+    let ct_decoded_len = match ct::STANDARD.decode_slice_clear_tail(b"aGk=", &mut ct_decoded) {
+        Ok(written) => written,
+        Err(_) => return false,
+    };
+    if ct_decoded_len != 2
+        || &ct_decoded[..ct_decoded_len] != b"hi"
+        || ct_decoded[ct_decoded_len..] != [0; 3]
+    {
+        return false;
+    }
+
+    let mut in_place = *b"aGk=";
+    let in_place_len = match STANDARD.decode_in_place_clear_tail(&mut in_place) {
+        Ok(decoded) => decoded.len(),
+        Err(_) => return false,
+    };
+    in_place_len == 2 && &in_place[..in_place_len] == b"hi" && in_place[in_place_len..] == [0; 2]
 }
 
 pub fn legacy_stack_decode() -> bool {
@@ -314,8 +372,8 @@ pub fn fmt_surfaces() -> bool {
 #[cfg(test)]
 mod tests {
     use super::{
-        CONST_HELLO, ct_stack_decode, custom_profile_surfaces, in_place_surfaces,
-        fmt_surfaces, legacy_stack_decode, length_and_stack_state_surfaces, stack_round_trip,
+        CONST_HELLO, clear_tail_surfaces, ct_stack_decode, custom_profile_surfaces, fmt_surfaces,
+        in_place_surfaces, legacy_stack_decode, length_and_stack_state_surfaces, stack_round_trip,
         url_safe_round_trip, validate_only_surfaces, wrapped_round_trip,
     };
 
@@ -337,6 +395,7 @@ mod tests {
     fn validation_and_in_place_surfaces_work() {
         assert!(validate_only_surfaces());
         assert!(in_place_surfaces());
+        assert!(clear_tail_surfaces());
         assert!(ct_stack_decode());
         assert!(length_and_stack_state_surfaces());
         assert!(fmt_surfaces());
