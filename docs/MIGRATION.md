@@ -6,6 +6,16 @@ This guide targets projects using `base64` `0.22.x`.
 every compatibility setting from `base64`; it provides a strict RFC 4648 scalar
 core, caller-owned buffers, optional allocation helpers, and release evidence.
 
+The migration examples are covered by a local smoke crate:
+
+```sh
+scripts/check_migration_smoke.sh
+```
+
+The standard release gate runs this script so strict standard, URL-safe no-pad,
+MIME/PEM wrapping, legacy whitespace, custom alphabets, stack buffers, secret
+buffers, and stream wrapper migration examples stay in sync with the crate.
+
 ## Dependency
 
 Before:

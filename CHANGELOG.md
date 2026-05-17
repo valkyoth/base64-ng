@@ -3,6 +3,9 @@
 ## 0.12.0-alpha.0 - Unreleased
 
 - Started the stabilization rehearsal cycle after the `0.11.0` release.
+- Added a migration-guide smoke crate and release-gate check covering strict
+  standard, URL-safe no-pad, MIME/PEM, legacy whitespace, custom alphabet,
+  stack-buffer, secret-buffer, and stream migration examples.
 
 ## 0.11.0 - 2026-05-17
 
