@@ -100,6 +100,7 @@ for required_script in \
     "scripts/validate-constant-time-policy.sh" \
     "scripts/validate-dependencies.sh" \
     "scripts/validate-doc-versions.sh" \
+    "scripts/validate-msrv-policy.sh" \
     "scripts/validate-panic-policy.sh" \
     "scripts/validate-release-metadata.sh" \
     "scripts/validate-simd-admission.sh" \
@@ -237,6 +238,7 @@ done
 
 for required_checks_command in \
     "scripts/validate-api-audit.sh" \
+    "scripts/validate-msrv-policy.sh" \
     "scripts/check_migration_smoke.sh" \
     "cargo test --doc --all-features" \
     "cargo test --doc --no-default-features" \
@@ -306,6 +308,7 @@ for required_package_file in \
     "scripts/validate-constant-time-policy.sh" \
     "scripts/validate-dependencies.sh" \
     "scripts/validate-doc-versions.sh" \
+    "scripts/validate-msrv-policy.sh" \
     "scripts/validate-panic-policy.sh" \
     "scripts/validate-release-metadata.sh" \
     "scripts/validate-simd-admission.sh" \

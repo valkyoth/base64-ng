@@ -21,7 +21,7 @@ Install the optional targets and Cargo tools that make the release gate
 exercise the deepest local paths:
 
 ```sh
-rustup target add aarch64-unknown-linux-gnu x86_64-unknown-freebsd wasm32-unknown-unknown thumbv7em-none-eabihf
+rustup target add x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu x86_64-unknown-freebsd wasm32-unknown-unknown thumbv7em-none-eabihf
 cargo install --locked cargo-nextest
 cargo install --locked cargo-fuzz
 cargo install --locked kani-verifier
@@ -42,6 +42,9 @@ The release gate runs:
 - release metadata validation
 - documentation version consistency checks for README, changelog, and SIMD
   release-status docs
+- MSRV/toolchain policy validation for `Cargo.toml`, `rust-toolchain.toml`,
+  docs.rs metadata, CI install paths, target matrices, and release-evidence
+  tooling
 - public API audit validation; stable releases fail if public API rows remain
   marked as `review pending`
 - packaged release script presence, executable-bit, and shebang validation

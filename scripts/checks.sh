@@ -7,6 +7,9 @@ cargo fmt --all --check
 echo "checks: release metadata"
 scripts/validate-release-metadata.sh
 
+echo "checks: MSRV policy"
+scripts/validate-msrv-policy.sh
+
 echo "checks: documentation versions"
 scripts/validate-doc-versions.sh
 

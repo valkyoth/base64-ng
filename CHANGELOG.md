@@ -8,6 +8,9 @@
   stack-buffer, secret-buffer, and stream migration examples.
 - Hardened release metadata validation and the stable release gate so the
   migration smoke source and check script stay packaged and release-gated.
+- Added an MSRV/toolchain policy validator covering Cargo metadata,
+  `rust-toolchain.toml`, docs.rs metadata, CI install paths, target matrices,
+  Kani policy, and release evidence tooling.
 
 ## 0.11.0 - 2026-05-17
 

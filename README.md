@@ -738,6 +738,8 @@ scripts/check_no_alloc_smoke.sh
 
 Required security tools:
 
+CI and local release scripts use `scripts/ci_install_rust.sh`; that script uses rust-toolchain.toml as the single source of truth for the pinned stable Rust toolchain.
+
 ```sh
 cargo install --locked cargo-audit
 cargo install --locked cargo-license
