@@ -60,6 +60,7 @@ test -s docs/API_AUDIT.md
 test -s docs/ASYNC.md
 test -s docs/BENCHMARKS.md
 test -s docs/CONSTANT_TIME.md
+test -s docs/CT_ASM_REVIEW.md
 test -s docs/DEPENDENCIES.md
 test -s docs/DUDECT.md
 test -s docs/FUZZING.md
@@ -186,6 +187,18 @@ do
     fi
 done
 
+for required_ct_review_text in \
+    "No formally verified cryptographic constant-time guarantee is claimed" \
+    "Review Questions" \
+    "ct_decode_alphabet_byte" \
+    "Reviewer Notes"
+do
+    if ! grep -F -q "$required_ct_review_text" docs/CT_ASM_REVIEW.md; then
+        echo "release metadata: ct asm review doc is missing required text: $required_ct_review_text" >&2
+        exit 1
+    fi
+done
+
 for required_kani_text in \
     "Kani runs are compiler-integration-sensitive" \
     "A Kani skip is not the same as a proof" \
@@ -249,6 +262,7 @@ for required_package_file in \
     "docs/ASYNC.md" \
     "docs/BENCHMARKS.md" \
     "docs/CONSTANT_TIME.md" \
+    "docs/CT_ASM_REVIEW.md" \
     "docs/DEPENDENCIES.md" \
     "docs/DUDECT.md" \
     "docs/FUZZING.md" \

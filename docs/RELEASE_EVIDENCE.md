@@ -126,6 +126,9 @@ The release gate runs:
 - stream fuzz coverage for chunked writers, fragmented reader sources, and
   adjacent framed payload boundaries, including fail-closed decoder state
   invariants after malformed input
+- generated constant-time assembly artifacts through
+  `scripts/generate_ct_asm_evidence.sh`
+- manual generated-code review checklist in [CT_ASM_REVIEW.md](CT_ASM_REVIEW.md)
 - Kani proofs through `scripts/check_kani.sh` when Kani is installed and its
   bundled compiler supports this crate's pinned `rust-version`
 - bounded Kani coverage for constant-time-oriented decode result bounds,

@@ -22,6 +22,8 @@
   length-derived indexing.
 - Added an internal bounds invariant document and release metadata checks so
   remaining safe indexing is tied to explicit evidence before `v1.0`.
+- Added a constant-time assembly review checklist and release metadata checks
+  for generated-code evidence.
 
 ## 0.10.0 - 2026-05-17
 

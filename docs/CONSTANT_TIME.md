@@ -190,6 +190,8 @@ tracking code for:
 Generated assembly and reviewer notes should be archived with release evidence
 if a formal claim is made. Without that evidence, public documentation must keep
 the current non-claim wording.
+The reviewer checklist and current release position live in
+[CT_ASM_REVIEW.md](CT_ASM_REVIEW.md).
 
 This policy is release-gated by:
 
