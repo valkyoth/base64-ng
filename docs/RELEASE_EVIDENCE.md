@@ -50,6 +50,9 @@ The release gate runs:
 - packaged release script presence, executable-bit, and shebang validation
 - zero-dependency policy check for the published crate
 - packaged dependency admission policy for future external-crate review
+- final `v0.12` dependency admission review keeping `tokio`, `serde`, `bytes`,
+  `zeroize`, `subtle`, property-testing, and benchmark frameworks out of the
+  published crate contract unless separately admitted
 - reserved feature placeholder checks for `tokio`, `kani`, and `fuzzing`,
   including inert-feature and per-feature dependency graph validation
 - clippy with warnings denied

@@ -214,6 +214,17 @@ do
     fi
 done
 
+for required_dependency_review_text in \
+    "v0.12 Final Admission Review" \
+    "No optional ecosystem integration has a strong enough security and maintenance case" \
+    "zeroize\` and \`subtle\` remain deferred"
+do
+    if ! grep -F -q "$required_dependency_review_text" docs/DEPENDENCIES.md; then
+        echo "release metadata: dependency policy is missing required review text: $required_dependency_review_text" >&2
+        exit 1
+    fi
+done
+
 case "$cargo_version" in
     *-*)
         required_readme_simd_status="development remains scalar-only unless that full evidence package lands"

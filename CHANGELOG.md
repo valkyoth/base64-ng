@@ -11,6 +11,8 @@
 - Added an MSRV/toolchain policy validator covering Cargo metadata,
   `rust-toolchain.toml`, docs.rs metadata, CI install paths, target matrices,
   Kani policy, and release evidence tooling.
+- Added the `v0.12` final dependency admission review, keeping optional
+  ecosystem integrations deferred unless they earn separate admission evidence.
 
 ## 0.11.0 - 2026-05-17
 
