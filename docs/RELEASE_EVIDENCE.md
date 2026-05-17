@@ -42,6 +42,8 @@ The release gate runs:
 - release metadata validation
 - documentation version consistency checks for README, changelog, and SIMD
   release-status docs
+- public API audit validation; stable releases fail if public API rows remain
+  marked as `review pending`
 - packaged release script presence, executable-bit, and shebang validation
 - zero-dependency policy check for the published crate
 - packaged dependency admission policy for future external-crate review

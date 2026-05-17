@@ -32,6 +32,7 @@ The release gate covers:
 - formatting
 - metadata
 - documentation version consistency checks
+- public API audit status checks
 - packaged release script presence, executable-bit, and shebang validation
 - dependency graph
 - packaged dependency admission policy

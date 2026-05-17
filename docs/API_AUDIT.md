@@ -20,22 +20,33 @@ adding convenience.
   boundary that must be documented.
 - Prefer caller-owned output APIs and recoverable errors for untrusted input.
 
+## Status Legend
+
+- `candidate stable`: the current API shape looks suitable for `v1.0`, pending
+  final release-candidate evidence.
+- `documented boundary`: the API is acceptable only because its security or
+  ownership boundary is explicit in docs and examples.
+- `review pending`: the API still needs audit before a stable `v0.10` release;
+  stable releases fail the local gate if any row remains in this state.
+- `deferred`: the API area is intentionally not admitted in this release
+  series.
+
 ## Public Surface Under Review
 
 | Area | Status | Notes |
 | --- | --- | --- |
-| Engine constants and `Engine<A, PAD>` | review pending | Confirm strict/default semantics and constructor naming before `v1.0`. |
+| Engine constants and `Engine<A, PAD>` | candidate stable | Strict/default semantics are explicit; audit constructor naming and stream convenience methods before `v1.0`. |
 | `Profile<A, PAD>` and named profiles | review pending | Freeze MIME, PEM, bcrypt-style, `crypt(3)`-style, wrapping, and padding behavior. |
-| Length helpers | review pending | Confirm all public helpers stay recoverable and panic-free for untrusted sizes. |
-| Slice encode/decode APIs | review pending | Confirm buffer sizing, clear-tail variants, and error semantics. |
+| Length helpers | candidate stable | Public helpers are recoverable and checked; keep examples focused on untrusted-size handling. |
+| Slice encode/decode APIs | candidate stable | Caller-owned output, checked lengths, and clear-tail variants are the preferred stable surface. |
 | In-place APIs | review pending | Confirm decode-to-front and encode-to-back contracts are clear. |
 | Validation-only APIs | review pending | Confirm validate/decode agreement across strict, legacy, wrapped, and ct paths. |
 | Stack-backed buffers | review pending | Confirm exposed-array escape hatches and cleanup boundaries are documented. |
 | `SecretBuffer` | review pending | Confirm redaction, cleanup limits, comparison semantics, and ownership escape hatches. |
-| `ct` module | review pending | Confirm non-claim wording and opaque error behavior remain explicit. |
+| `ct` module | documented boundary | Keep non-claim wording and opaque error behavior explicit unless verification evidence changes. |
 | `stream` module | review pending | Confirm fail-closed behavior, retry semantics, state helpers, and recovery helpers. |
-| Runtime backend reporting | review pending | Confirm scalar-only posture and stable log identifiers. |
-| Feature flags | review pending | Confirm `tokio`, `kani`, `fuzzing`, and `simd` remain inert or reserved as documented. |
+| Runtime backend reporting | candidate stable | Scalar-only posture and stable log identifiers are documented and release-gated. |
+| Feature flags | deferred | `tokio`, `kani`, `fuzzing`, and `simd` remain inert or reserved unless admitted by their policy docs. |
 | Error types | review pending | Confirm variants and indexes are stable enough for downstream diagnostics. |
 | Macros and custom alphabets | review pending | Confirm compile-time validation and custom-alphabet performance/security tradeoffs. |
 

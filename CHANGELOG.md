@@ -5,6 +5,8 @@
 - Started the next development cycle after the `0.9.0` release.
 - Added a dedicated public API audit checklist for the `v0.10`
   release-candidate audit-preparation milestone.
+- Added release-gated public API audit validation so stable releases cannot
+  leave audit rows marked as `review pending`.
 
 ## 0.9.0 - 2026-05-17
 

@@ -76,6 +76,7 @@ test -s docs/UNSAFE.md
 
 for required_script in \
     "scripts/check_backend_evidence.sh" \
+    "scripts/validate-api-audit.sh" \
     "scripts/check_dudect.sh" \
     "scripts/check_fuzz.sh" \
     "scripts/check_fuzz_corpus.sh" \
@@ -194,6 +195,7 @@ do
 done
 
 for required_checks_command in \
+    "scripts/validate-api-audit.sh" \
     "cargo test --doc --all-features" \
     "cargo test --doc --no-default-features" \
     "cargo doc --no-deps --all-features" \
@@ -237,6 +239,7 @@ for required_package_file in \
     "docs/UNSAFE.md" \
     "portability/no_alloc_smoke/src/lib.rs" \
     "scripts/check_backend_evidence.sh" \
+    "scripts/validate-api-audit.sh" \
     "scripts/check_dudect.sh" \
     "scripts/check_fuzz.sh" \
     "scripts/check_fuzz_corpus.sh" \
