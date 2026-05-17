@@ -521,36 +521,40 @@ pub mod stream {
             Ok(())
         }
 
-        fn pop_front(&mut self) -> Option<u8> {
-            if self.len == 0 {
-                return None;
-            }
-
-            let byte = self.buffer[self.start];
-            self.buffer[self.start] = 0;
-            self.start = (self.start + 1) % CAP;
-            self.len -= 1;
-            if self.len == 0 {
-                self.start = 0;
-            }
-            Some(byte)
-        }
-
         fn copy_front(&self, output: &mut [u8]) -> usize {
-            let mut copied = 0;
-            while copied < self.len && copied < output.len() {
-                output[copied] = self.buffer[(self.start + copied) % CAP];
-                copied += 1;
+            let count = core::cmp::min(self.len, output.len());
+            let first = core::cmp::min(count, CAP - self.start);
+            output[..first].copy_from_slice(&self.buffer[self.start..self.start + first]);
+
+            let second = count - first;
+            if second > 0 {
+                output[first..first + second].copy_from_slice(&self.buffer[..second]);
             }
-            copied
+
+            count
         }
 
         fn discard_front(&mut self, count: usize) {
-            let mut discarded = 0;
-            while discarded < count {
-                let _ = self.pop_front();
-                discarded += 1;
+            let count = core::cmp::min(count, self.len);
+            let first = core::cmp::min(count, CAP - self.start);
+            crate::wipe_bytes(&mut self.buffer[self.start..self.start + first]);
+
+            let second = count - first;
+            if second > 0 {
+                crate::wipe_bytes(&mut self.buffer[..second]);
             }
+
+            self.start = (self.start + count) % CAP;
+            self.len -= count;
+            if self.len == 0 {
+                self.start = 0;
+            }
+        }
+
+        fn pop_slice(&mut self, output: &mut [u8]) -> usize {
+            let count = self.copy_front(output);
+            self.discard_front(count);
+            count
         }
 
         fn clear_all(&mut self) {
@@ -1589,16 +1593,7 @@ pub mod stream {
                 self.fill_output()?;
             }
 
-            let mut written = 0;
-            while written < output.len() {
-                let Some(byte) = self.output.pop_front() else {
-                    break;
-                };
-                output[written] = byte;
-                written += 1;
-            }
-
-            Ok(written)
+            Ok(self.output.pop_slice(output))
         }
     }
 
@@ -1901,16 +1896,7 @@ pub mod stream {
                 self.fill_output()?;
             }
 
-            let mut written = 0;
-            while written < output.len() {
-                let Some(byte) = self.output.pop_front() else {
-                    break;
-                };
-                output[written] = byte;
-                written += 1;
-            }
-
-            Ok(written)
+            Ok(self.output.pop_slice(output))
         }
     }
 

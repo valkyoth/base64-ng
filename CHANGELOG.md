@@ -105,6 +105,8 @@
 - Changed writer-side stream output draining to write queued data in bounded
   chunks while discarding only bytes accepted by the wrapped writer, with
   short-write regressions for encoder and decoder adapters.
+- Changed reader-side stream output draining to copy queued data into caller
+  buffers in bounded slices while clearing queue slots as bytes are consumed.
 
 ## 0.8.0 - 2026-05-16
 

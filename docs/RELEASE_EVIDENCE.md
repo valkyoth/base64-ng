@@ -115,6 +115,8 @@ The release gate runs:
   encoded or decoded bytes
 - stream encoder and decoder short-write tests proving buffered writer output
   is retained until the wrapped writer reports bytes accepted
+- stream reader output queues drain into caller buffers in bounded slices while
+  consumed queue slots are cleared
 - stream fuzz coverage for chunked writers, fragmented reader sources, and
   adjacent framed payload boundaries
 - Kani proofs through `scripts/check_kani.sh` when Kani is installed and its
