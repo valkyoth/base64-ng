@@ -62,12 +62,30 @@ cargo install --locked cargo-fuzz
 Run bounded smoke campaigns before release-sensitive stream or decode changes:
 
 ```sh
-cargo +nightly fuzz run decode -- -runs=1000
-cargo +nightly fuzz run in_place -- -runs=1000
-cargo +nightly fuzz run stream_chunks -- -runs=1000
-cargo +nightly fuzz run differential -- -runs=1000
+BASE64_NG_RUN_FUZZ_SMOKE=1 scripts/check_fuzz.sh
 ```
+
+Use `BASE64_NG_FUZZ_RUNS=<n>` to change the per-target run count. The default
+is `1000` runs for each target.
 
 Longer campaigns are useful before release candidates, but generated corpus
 changes should be reviewed deliberately. Keep only the inputs that improve
 coverage or preserve a regression.
+
+Opt-in smoke campaigns write release evidence under:
+
+```text
+target/release-evidence/fuzz/
+```
+
+Expected files:
+
+- `decode.txt`
+- `in_place.txt`
+- `stream_chunks.txt`
+- `differential.txt`
+- `MANIFEST.txt`
+
+Smoke campaigns use temporary corpus and artifact directories under
+`target/release-evidence/fuzz/` so ordinary release smoke runs do not leave
+generated files under committed `fuzz/corpus/` or `fuzz/artifacts/`.

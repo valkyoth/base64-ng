@@ -1753,6 +1753,26 @@ fn decode_in_place_clear_tail_scrubs_buffer_on_error() {
 }
 
 #[test]
+fn decode_in_place_reports_same_padding_errors_as_slice_decode() {
+    let inputs: &[&[u8]] = &[b"=AAA", b"A=AA", b"AA=A", b"=AA?"];
+
+    for input in inputs {
+        let mut slice_output = [0u8; 8];
+        let slice_result = STANDARD.decode_slice(input, &mut slice_output);
+        let mut in_place = input.to_vec();
+        let in_place_result = STANDARD
+            .decode_in_place(&mut in_place)
+            .map(|bytes| bytes.len());
+
+        assert_eq!(
+            in_place_result.map(|_| ()),
+            slice_result.map(|_| ()),
+            "input {input:?}"
+        );
+    }
+}
+
+#[test]
 fn runtime_encode_errors_do_not_panic() {
     let checks = [
         std::panic::catch_unwind(|| encoded_len(usize::MAX, true).unwrap_err()).is_ok(),

@@ -5644,6 +5644,7 @@ where
     }
 
     fn decode_slice_to_start(buffer: &mut [u8]) -> Result<usize, DecodeError> {
+        let _required = validate_decode::<A, PAD>(buffer)?;
         let input_len = buffer.len();
         let mut read = 0;
         let mut write = 0;

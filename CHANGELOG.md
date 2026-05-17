@@ -24,6 +24,10 @@
   remaining safe indexing is tied to explicit evidence before `v1.0`.
 - Added a constant-time assembly review checklist and release metadata checks
   for generated-code evidence.
+- Added an opt-in bounded fuzz smoke mode that records per-target release
+  evidence without making normal CI runs expensive.
+- Fixed strict in-place decode prevalidation so malformed padding placement
+  reports the same recoverable errors as slice and vector decode.
 
 ## 0.10.0 - 2026-05-17
 
