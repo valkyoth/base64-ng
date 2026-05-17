@@ -17,6 +17,7 @@ include = [
     "benches/**",
     "docs/**",
     "portability/no_alloc_smoke/src/**",
+    "portability/migration_smoke/src/**",
     "scripts/**",
     "Cargo.toml",
     "rust-toolchain.toml",

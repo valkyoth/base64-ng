@@ -85,6 +85,7 @@ for required_script in \
     "scripts/check_fuzz_corpus.sh" \
     "scripts/check_kani.sh" \
     "scripts/check_miri.sh" \
+    "scripts/check_migration_smoke.sh" \
     "scripts/check_no_alloc_smoke.sh" \
     "scripts/check_perf.sh" \
     "scripts/check_reserved_features.sh" \
@@ -148,6 +149,7 @@ for required_release_gate_command in \
     "cargo +nightly fuzz build" \
     "scripts/check_targets.sh" \
     "scripts/check_no_alloc_smoke.sh" \
+    "scripts/check_migration_smoke.sh" \
     "scripts/check_simd_feature_bundles.sh" \
     "scripts/check_backend_evidence.sh" \
     "scripts/check_kani.sh" \
@@ -235,6 +237,7 @@ done
 
 for required_checks_command in \
     "scripts/validate-api-audit.sh" \
+    "scripts/check_migration_smoke.sh" \
     "cargo test --doc --all-features" \
     "cargo test --doc --no-default-features" \
     "cargo doc --no-deps --all-features" \
@@ -280,6 +283,7 @@ for required_package_file in \
     "docs/TRUST.md" \
     "docs/UNSAFE.md" \
     "portability/no_alloc_smoke/src/lib.rs" \
+    "portability/migration_smoke/src/lib.rs" \
     "scripts/check_backend_evidence.sh" \
     "scripts/validate-api-audit.sh" \
     "scripts/check_dudect.sh" \
@@ -287,6 +291,7 @@ for required_package_file in \
     "scripts/check_fuzz_corpus.sh" \
     "scripts/check_kani.sh" \
     "scripts/check_miri.sh" \
+    "scripts/check_migration_smoke.sh" \
     "scripts/check_no_alloc_smoke.sh" \
     "scripts/check_perf.sh" \
     "scripts/check_reserved_features.sh" \

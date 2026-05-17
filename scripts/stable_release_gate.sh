@@ -53,6 +53,9 @@ scripts/check_targets.sh
 echo "stable release gate: no-alloc portability smoke"
 scripts/check_no_alloc_smoke.sh
 
+echo "stable release gate: migration guide smoke"
+scripts/check_migration_smoke.sh
+
 echo "stable release gate: SIMD feature-bundle checks"
 scripts/check_simd_feature_bundles.sh
 

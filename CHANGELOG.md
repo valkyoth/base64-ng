@@ -6,6 +6,8 @@
 - Added a migration-guide smoke crate and release-gate check covering strict
   standard, URL-safe no-pad, MIME/PEM, legacy whitespace, custom alphabet,
   stack-buffer, secret-buffer, and stream migration examples.
+- Hardened release metadata validation and the stable release gate so the
+  migration smoke source and check script stay packaged and release-gated.
 
 ## 0.11.0 - 2026-05-17
 
