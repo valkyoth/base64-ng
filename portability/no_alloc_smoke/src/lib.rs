@@ -430,12 +430,42 @@ pub fn fmt_surfaces() -> bool {
     output.as_bytes() == b"aGVsbG8="
 }
 
+pub fn native_interop_surfaces() -> bool {
+    let encoded = match EncodedBuffer::<8>::try_from(b"hello") {
+        Ok(encoded) => encoded,
+        Err(_) => return false,
+    };
+    if encoded.as_bytes() != b"aGVsbG8=" {
+        return false;
+    }
+
+    let decoded = match DecodedBuffer::<5>::try_from(b"aGVsbG8=") {
+        Ok(decoded) => decoded,
+        Err(_) => return false,
+    };
+    if decoded.as_bytes() != b"hello" {
+        return false;
+    }
+
+    let parsed = match "aGVsbG8=".parse::<DecodedBuffer<5>>() {
+        Ok(decoded) => decoded,
+        Err(_) => return false,
+    };
+    if parsed.as_bytes() != b"hello" {
+        return false;
+    }
+
+    DecodedBuffer::<5>::try_from(b"aGVsbG8").is_err()
+        && "aGVsbG8".parse::<DecodedBuffer<5>>().is_err()
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         CONST_HELLO, clear_tail_surfaces, ct_stack_decode, custom_profile_surfaces, fmt_surfaces,
-        in_place_surfaces, legacy_stack_decode, length_and_stack_state_surfaces, stack_round_trip,
-        named_profile_surfaces, url_safe_round_trip, validate_only_surfaces, wrapped_round_trip,
+        in_place_surfaces, legacy_stack_decode, length_and_stack_state_surfaces,
+        named_profile_surfaces, native_interop_surfaces, stack_round_trip, url_safe_round_trip,
+        validate_only_surfaces, wrapped_round_trip,
     };
 
     #[test]
@@ -461,5 +491,6 @@ mod tests {
         assert!(ct_stack_decode());
         assert!(length_and_stack_state_surfaces());
         assert!(fmt_surfaces());
+        assert!(native_interop_surfaces());
     }
 }

@@ -210,6 +210,7 @@ for required_no_alloc_symbol in \
     "custom_profile_surfaces" \
     "validate_only_surfaces" \
     "in_place_surfaces" \
+    "native_interop_surfaces" \
     "BCRYPT" \
     "CRYPT" \
     "MIME" \

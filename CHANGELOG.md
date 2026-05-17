@@ -124,6 +124,8 @@
 - Added zero-dependency `TryFrom<&[u8; N]>` interop for `EncodedBuffer`,
   `DecodedBuffer`, and `SecretBuffer` so byte-string literals use the same
   explicit strict standard policy as byte slices.
+- Expanded no-alloc smoke coverage and release metadata validation for the
+  native byte-array and `FromStr` buffer interop surfaces.
 
 ## 0.8.0 - 2026-05-16
 
