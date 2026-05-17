@@ -56,6 +56,7 @@ test -s deny.toml
 test -s README.md
 test -s CONTRIBUTING.md
 test -s SECURITY.md
+test -s docs/API_AUDIT.md
 test -s docs/ASYNC.md
 test -s docs/BENCHMARKS.md
 test -s docs/CONSTANT_TIME.md
@@ -170,9 +171,18 @@ do
     fi
 done
 
+case "$cargo_version" in
+    *-*)
+        required_readme_simd_status="development remains scalar-only unless that full evidence package lands"
+        ;;
+    *)
+        required_readme_simd_status="release remains scalar-only because that full evidence package has not"
+        ;;
+esac
+
 for required_readme_text in \
     "Zero external runtime or development dependencies in \`Cargo.toml\`." \
-    "release remains scalar-only because that full evidence package has not" \
+    "$required_readme_simd_status" \
     "currently inert and dependency-free" \
     "no formal cryptographic guarantee" \
     "SBOM, and reproducible build check"
@@ -208,6 +218,7 @@ for required_package_file in \
     "README.md" \
     "rust-toolchain.toml" \
     "SECURITY.md" \
+    "docs/API_AUDIT.md" \
     "docs/ASYNC.md" \
     "docs/BENCHMARKS.md" \
     "docs/CONSTANT_TIME.md" \

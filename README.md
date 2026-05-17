@@ -6,7 +6,8 @@ The crate starts conservative: a small scalar implementation, strict RFC 4648 be
 
 ## Current Status
 
-The current public release is `0.9.0`.
+The current public release is `0.9.0`. The development branch is
+`0.10.0-alpha.0`.
 
 Implemented now:
 
@@ -47,9 +48,8 @@ Implemented now:
 Planned behind admission evidence:
 
 - Admitted AVX2, AVX-512, SSSE3/SSE4.1, ARM NEON, and wasm `simd128`
-  fast paths after the SIMD admission evidence is complete. The `0.9.0`
-  release remains scalar-only because that full evidence package has not
-  landed.
+  fast paths after the SIMD admission evidence is complete. Current `0.10`
+  development remains scalar-only unless that full evidence package lands.
 - Async streaming wrappers only after the `tokio` feature passes the
   dependency and cancellation-safety admission bar in [docs/ASYNC.md](docs/ASYNC.md).
 - Optional `serde` or `bytes` integration only if a concrete use case clears
