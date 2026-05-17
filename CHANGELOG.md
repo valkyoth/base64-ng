@@ -126,6 +126,9 @@
   explicit strict standard policy as byte slices.
 - Expanded no-alloc smoke coverage and release metadata validation for the
   native byte-array and `FromStr` buffer interop surfaces.
+- Refreshed release evidence and checklist wording for native interop smoke
+  coverage and the installed Linux, FreeBSD, wasm32, ARM, and Cortex-M target
+  set.
 
 ## 0.8.0 - 2026-05-16
 

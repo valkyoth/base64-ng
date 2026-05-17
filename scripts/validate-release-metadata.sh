@@ -125,6 +125,16 @@ if ! grep -q "^## $cargo_version " CHANGELOG.md; then
     exit 1
 fi
 
+for required_release_doc_text in \
+    "native byte-array and \`FromStr\` interop surfaces" \
+    "Linux, FreeBSD, wasm32, ARM, and Cortex-M targets"
+do
+    if ! grep -q "$required_release_doc_text" docs/RELEASE_EVIDENCE.md docs/RELEASE.md; then
+        echo "release metadata: release docs are missing required text: $required_release_doc_text" >&2
+        exit 1
+    fi
+done
+
 package_list="$(
     cargo package --locked --allow-dirty --list
 )"

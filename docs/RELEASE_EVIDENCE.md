@@ -69,8 +69,9 @@ The release gate runs:
   default features disabled, plus validate-only, legacy decode, in-place
   encode/decode, scalar and constant-time clear-tail cleanup,
   constant-time-oriented in-place decode, named MIME/PEM/bcrypt/crypt profiles,
-  custom alphabet/profile, recoverable length, and stack-buffer state surfaces;
-  the harness also runs host-side unit tests before cross-target compile checks
+  custom alphabet/profile, recoverable length, stack-buffer state surfaces,
+  and native byte-array and `FromStr` interop surfaces; the harness also runs
+  host-side unit tests before cross-target compile checks
 - Local and CI target-matrix no-alloc portability smoke checks so installed
   Linux, FreeBSD, wasm32, ARM, and Cortex-M targets compile the same
   stack-backed dependency-free harness
