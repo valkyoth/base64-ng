@@ -9,6 +9,8 @@
   leave audit rows marked as `review pending`.
 - Classified profile and validation-only APIs as `v1.0` stable candidates
   with explicit audit rationale and stability boundaries.
+- Classified stack-backed buffers and `SecretBuffer` as documented `v1.0`
+  security boundaries with explicit ownership and cleanup limits.
 
 ## 0.9.0 - 2026-05-17
 

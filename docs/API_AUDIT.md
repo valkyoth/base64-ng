@@ -41,8 +41,8 @@ adding convenience.
 | Slice encode/decode APIs | candidate stable | Caller-owned output, checked lengths, and clear-tail variants are the preferred stable surface. |
 | In-place APIs | review pending | Confirm decode-to-front and encode-to-back contracts are clear. |
 | Validation-only APIs | candidate stable | Strict, legacy, wrapped, and ct validation APIs are documented as decode-equivalent policy checks. |
-| Stack-backed buffers | review pending | Confirm exposed-array escape hatches and cleanup boundaries are documented. |
-| `SecretBuffer` | review pending | Confirm redaction, cleanup limits, comparison semantics, and ownership escape hatches. |
+| Stack-backed buffers | documented boundary | `EncodedBuffer` and `DecodedBuffer` are retained with explicit visible-length, cleanup, comparison, and exposed-array boundaries. |
+| `SecretBuffer` | documented boundary | Redaction, cleanup limits, comparison semantics, and owned escape hatches are explicit adoption boundaries. |
 | `ct` module | documented boundary | Keep non-claim wording and opaque error behavior explicit unless verification evidence changes. |
 | `stream` module | review pending | Confirm fail-closed behavior, retry semantics, state helpers, and recovery helpers. |
 | Runtime backend reporting | candidate stable | Scalar-only posture and stable log identifiers are documented and release-gated. |
@@ -118,6 +118,58 @@ Stable boundary:
 - Keep legacy and wrapped validation explicit in method names.
 - Keep ct validation errors opaque unless formal side-channel evidence changes
   the documented contract.
+
+### Stack-Backed Buffers
+
+`EncodedBuffer<CAP>` and `DecodedBuffer<CAP>` are retained as documented
+boundaries for `v1.0`.
+
+Decision rationale:
+
+- Stack-backed buffers give no-alloc callers an owned output shape without
+  hiding capacity or visible length.
+- Accessors expose borrowed bytes or fallible UTF-8 views rather than
+  implicitly allocating or assuming decoded text.
+- `Debug` is redacted for decoded buffers; encoded buffers remain printable as
+  Base64 text through explicit display/text APIs.
+- Drop-time cleanup is best-effort and scoped to the buffer's current backing
+  array, not historical stack-frame copies.
+- `into_exposed_array` is intentionally named as an ownership escape hatch
+  where redaction and drop-time cleanup stop applying to the returned array.
+- Equality uses the same constant-time-oriented equal-length comparison helper
+  used by the redacted owned wrapper.
+
+Stable boundary:
+
+- Keep capacity and visible length explicit.
+- Keep ownership escape hatches explicit in names.
+- Do not add implicit text conversions for decoded bytes.
+- Do not describe drop-time cleanup as formal zeroization.
+
+### Secret Buffer
+
+`SecretBuffer` is retained as a documented security boundary for `v1.0`.
+
+Decision rationale:
+
+- Formatting is redacted by default through `Debug` and `Display`.
+- Secret exposure requires explicitly named borrowed or owned escape hatches.
+- Drop-time cleanup uses the crate's volatile best-effort wipe helper for
+  initialized bytes and vector spare capacity.
+- Equality and direct byte/text comparisons use constant-time-oriented
+  equal-length comparison semantics.
+- Strict standard padded `TryFrom` and `FromStr` implementations are kept only
+  for native Rust ergonomics; non-standard profiles remain on explicit
+  engine/profile methods.
+
+Stable boundary:
+
+- Keep redaction as the default formatting behavior.
+- Keep `expose_secret`, `into_exposed_vec`, and `try_into_exposed_string`
+  explicit.
+- Do not claim formal zeroization or allocator-wide cleanup.
+- Do not add broad conversions that hide profile, alphabet, padding, or
+  wrapping policy.
 
 ## Initial `v0.10` Direction
 
