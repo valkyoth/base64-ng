@@ -2971,6 +2971,18 @@ impl<const CAP: usize> TryFrom<&str> for DecodedBuffer<CAP> {
     }
 }
 
+impl<const CAP: usize> core::str::FromStr for DecodedBuffer<CAP> {
+    type Err = DecodeError;
+
+    /// Decodes strict standard padded Base64 text into a stack-backed buffer.
+    ///
+    /// Use [`Engine::decode_buffer`] or [`Profile::decode_buffer`] when a
+    /// different alphabet, padding mode, or line-wrapping profile is required.
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
+        Self::try_from(input)
+    }
+}
+
 /// Owned sensitive bytes with redacted formatting and drop-time cleanup.
 ///
 /// `SecretBuffer` is available with the `alloc` feature. It is intended for
@@ -3258,6 +3270,19 @@ impl TryFrom<&str> for SecretBuffer {
     /// different alphabet, padding mode, or line-wrapping profile is required.
     fn try_from(input: &str) -> Result<Self, Self::Error> {
         Self::try_from(input.as_bytes())
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl core::str::FromStr for SecretBuffer {
+    type Err = DecodeError;
+
+    /// Decodes strict standard padded Base64 text into a redacted owned buffer.
+    ///
+    /// Use [`Engine::decode_secret`] or [`Profile::decode_secret`] when a
+    /// different alphabet, padding mode, or line-wrapping profile is required.
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
+        Self::try_from(input)
     }
 }
 

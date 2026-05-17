@@ -119,6 +119,8 @@
   bcrypt, and crypt profiles without enabling alloc or std.
 - Hardened release metadata validation so required no-alloc smoke coverage
   symbols are checked before packaging.
+- Added zero-dependency `FromStr` interop for `DecodedBuffer` and
+  `SecretBuffer`, using the existing strict standard padded decode policy.
 
 ## 0.8.0 - 2026-05-16
 

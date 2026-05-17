@@ -2489,6 +2489,24 @@ fn decoded_buffer_try_from_uses_strict_standard_base64() {
     );
 }
 
+#[test]
+fn decoded_buffer_from_str_uses_strict_standard_base64() {
+    let decoded = "aGVsbG8=".parse::<DecodedBuffer<5>>().unwrap();
+    assert_eq!(decoded.as_bytes(), b"hello");
+
+    assert_eq!(
+        "aGVsbG8".parse::<DecodedBuffer<5>>().unwrap_err(),
+        DecodeError::InvalidLength
+    );
+    assert_eq!(
+        "-_8=".parse::<DecodedBuffer<2>>().unwrap_err(),
+        DecodeError::InvalidByte {
+            index: 0,
+            byte: b'-',
+        }
+    );
+}
+
 #[cfg(feature = "alloc")]
 #[test]
 fn alloc_helpers_round_trip() {
@@ -2613,6 +2631,22 @@ fn secret_buffer_from_vec_preserves_visible_bytes_with_spare_capacity() {
     let secret = SecretBuffer::from_slice(b"\xff");
     let secret = secret.try_into_exposed_string().unwrap_err();
     assert_eq!(secret.expose_secret(), b"\xff");
+}
+
+#[cfg(feature = "alloc")]
+#[test]
+fn secret_buffer_from_str_uses_strict_standard_base64() {
+    let secret = "aGVsbG8=".parse::<SecretBuffer>().unwrap();
+    assert_eq!(secret.expose_secret(), b"hello");
+    assert_eq!(
+        format!("{secret:?}"),
+        r#"SecretBuffer { bytes: "<redacted>", len: 5 }"#
+    );
+
+    assert_eq!(
+        "aGVsbG8".parse::<SecretBuffer>().unwrap_err(),
+        DecodeError::InvalidLength
+    );
 }
 
 #[cfg(feature = "alloc")]

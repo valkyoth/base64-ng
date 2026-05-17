@@ -494,8 +494,9 @@ buffer drops at the end of the conversion.
 `TryFrom<&str>` and `TryFrom<&[u8]>` for `EncodedBuffer<CAP>` encode raw input
 bytes with strict standard padded Base64. The same conversions for
 `DecodedBuffer<CAP>` and `SecretBuffer` decode strict standard padded Base64.
-Use explicit engine or profile methods for URL-safe, no-padding, MIME/PEM,
-bcrypt-style, or custom alphabets.
+`DecodedBuffer<CAP>` and `SecretBuffer` also implement `FromStr` with the same
+strict standard padded decode policy. Use explicit engine or profile methods
+for URL-safe, no-padding, MIME/PEM, bcrypt-style, or custom alphabets.
 
 With the default `alloc` feature, vector and string helpers are available:
 
