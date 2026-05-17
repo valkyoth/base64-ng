@@ -2837,6 +2837,28 @@ fn stream_encoder_write_failure_preserves_pending_input() {
 
 #[cfg(feature = "stream")]
 #[test]
+fn stream_encoder_direct_write_reports_partial_progress() {
+    let mut encoder = Encoder::new(Vec::new(), STANDARD);
+
+    let written = encoder.write(b"hello").unwrap();
+    assert_eq!(written, 3);
+    assert_eq!(encoder.get_ref(), b"");
+    assert_eq!(encoder.buffered_output_len(), 4);
+    assert!(encoder.has_buffered_output());
+    assert!(!encoder.can_into_inner());
+
+    let written = encoder.write(b"lo").unwrap();
+    assert_eq!(written, 2);
+    assert_eq!(encoder.get_ref(), b"aGVs");
+    assert_eq!(encoder.pending_len(), 2);
+    assert!(!encoder.has_buffered_output());
+
+    let encoded = encoder.finish().unwrap();
+    assert_eq!(encoded, b"aGVsbG8=");
+}
+
+#[cfg(feature = "stream")]
+#[test]
 fn stream_encoder_into_inner_still_returns_writer() {
     let mut encoder = Encoder::new(Vec::new(), STANDARD);
     encoder.write_all(b"he").unwrap();
@@ -3214,6 +3236,27 @@ fn stream_decoder_write_failure_preserves_pending_input() {
     assert!(decoder.has_terminal_padding());
     assert!(!decoder.has_buffered_output());
     assert_eq!(decoder.get_ref().output, b"hi");
+}
+
+#[cfg(feature = "stream")]
+#[test]
+fn stream_decoder_direct_write_reports_partial_progress() {
+    let mut decoder = Decoder::new(Vec::new(), STANDARD);
+
+    let written = decoder.write(b"aGk=AA").unwrap();
+    assert_eq!(written, 4);
+    assert_eq!(decoder.get_ref(), b"");
+    assert_eq!(decoder.buffered_output_len(), 2);
+    assert!(decoder.has_buffered_output());
+    assert!(decoder.has_terminal_padding());
+    assert!(!decoder.can_into_inner());
+
+    decoder.flush().unwrap();
+    assert_eq!(decoder.get_ref(), b"hi");
+    assert!(!decoder.has_buffered_output());
+
+    let err = decoder.write(b"AA").unwrap_err();
+    assert_eq!(err.kind(), std::io::ErrorKind::InvalidInput);
 }
 
 #[cfg(feature = "stream")]

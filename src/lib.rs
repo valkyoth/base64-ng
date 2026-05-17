@@ -556,6 +556,12 @@ pub mod stream {
     }
 
     /// A streaming Base64 encoder for `std::io::Write`.
+    ///
+    /// Like any [`Write`] implementation, [`Write::write`] may accept only
+    /// part of the provided input. Accepted input may be held as encoded
+    /// output until [`Write::flush`], [`Self::try_finish`], [`Self::finish`],
+    /// or a later write drains the wrapped writer. Use [`Write::write_all`]
+    /// when the whole input slice must be consumed.
     pub struct Encoder<W, A, const PAD: bool>
     where
         A: Alphabet,
@@ -916,6 +922,12 @@ pub mod stream {
     }
 
     /// A streaming Base64 decoder for `std::io::Write`.
+    ///
+    /// Like any [`Write`] implementation, [`Write::write`] may accept only
+    /// part of the provided input. Accepted input may be held as decoded
+    /// output until [`Write::flush`], [`Self::try_finish`], [`Self::finish`],
+    /// or a later write drains the wrapped writer. Use [`Write::write_all`]
+    /// when the whole input slice must be consumed.
     pub struct Decoder<W, A, const PAD: bool>
     where
         A: Alphabet,

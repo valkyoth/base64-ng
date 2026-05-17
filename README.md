@@ -573,7 +573,9 @@ checked recovery paths that refuse to return the wrapped reader or writer while
 doing so would discard pending input or buffered output. Their `Debug` output
 reports adapter state without formatting the wrapped reader or writer,
 including recovery readiness, pending quantum state, and fixed output queue
-capacity.
+capacity. As with other `std::io::Write` implementations, direct `write()`
+calls may accept only part of the provided input while buffering encoded or
+decoded output; use `write_all()` when the whole input slice must be consumed.
 
 URL-safe, no-padding encoding:
 

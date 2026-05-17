@@ -189,8 +189,9 @@ adapter. After successful finalization, later non-empty writes return
 `InvalidInput`. Writer adapters buffer encoded or decoded output internally
 before draining it into the wrapped writer, so failed wrapped writes can be
 retried by calling `flush()` or `try_finish()` again without re-encoding or
-re-decoding accepted input. Stream adapters also expose non-sensitive state
-helpers such as
+re-decoding accepted input. Direct `write()` calls may report partial progress;
+use `write_all()` when the whole input slice must be consumed. Stream adapters
+also expose non-sensitive state helpers such as
 `engine()`, `is_padded()`, `pending_len()`, `has_pending_input()`,
 `pending_input_needed_len()`, `buffered_output_len()`,
 `buffered_output_capacity()`, `buffered_output_remaining_capacity()`, and

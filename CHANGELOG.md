@@ -100,6 +100,8 @@
 - Added writer-side stream output queues with buffered-output diagnostics so
   wrapped writer failures can be retried without re-encoding or re-decoding
   accepted input.
+- Documented and tested direct writer-adapter `write()` partial-progress
+  behavior; `write_all()` remains the recommended whole-slice path.
 
 ## 0.8.0 - 2026-05-16
 
