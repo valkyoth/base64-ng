@@ -17,6 +17,9 @@
   indexing.
 - Added Kani proof harnesses for unpadded tail validation and decode output
   bounds.
+- Reworked constant-time-oriented unpadded validation/decode reads and padding
+  length inspection to use checked quad/tail helpers instead of direct
+  length-derived indexing.
 
 ## 0.10.0 - 2026-05-17
 
