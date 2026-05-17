@@ -90,6 +90,8 @@
   `buffered_output_remaining_capacity()` helpers for fixed-queue diagnostics.
 - Expanded redacted stream `Debug` output with recovery readiness, pending
   quantum state, and reader-side fixed output queue capacity.
+- Expanded the isolated `stream_chunks` fuzz target to cover encoder-reader
+  streaming and stream state-helper invariants.
 
 ## 0.8.0 - 2026-05-16
 

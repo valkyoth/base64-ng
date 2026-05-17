@@ -161,10 +161,13 @@ scripts/check_fuzz.sh
 The `stream_chunks` fuzz target covers:
 
 - chunked streaming encoders and decoders
+- fragmented `EncoderReader` sources compared with slice encoding
 - fragmented `DecoderReader` sources compared with slice decoding when payload
   boundary semantics match
 - padded `DecoderReader` payloads followed by adjacent framed bytes, proving
   the reader leaves those bytes unread
+- stream state-helper invariants for pending quanta, buffered output capacity,
+  recovery readiness, and terminal input state
 
 Run a bounded local smoke test with:
 

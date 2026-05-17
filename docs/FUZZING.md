@@ -25,8 +25,8 @@ Current fuzz targets:
   equivalence
 - `in_place`: in-place encode/decode, legacy compaction behavior, and strict
   line-wrapped in-place compaction behavior
-- `stream_chunks`: fragmented stream reader/writer state machines and adjacent
-  framed payload boundaries
+- `stream_chunks`: fragmented stream reader/writer state machines, adjacent
+  framed payload boundaries, and stream state-helper invariants
 - `differential`: canonical output comparison against the established Base64
   behavior used by the harness
 
