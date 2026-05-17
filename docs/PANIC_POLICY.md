@@ -23,7 +23,9 @@ The current reviewed exceptions are:
   supplies an output array length that does not match the compile-time encoded
   length, or when that const length calculation overflows. This is documented
   as a const-array API contract and is not used for runtime untrusted length
-  metadata.
+  metadata. Calling it at runtime with a mismatched const output length can
+  also unwind; do not route attacker-controlled sizing decisions through this
+  API.
 - Internal remainder matches use `_ => unreachable!()` after matching
   `len % 3` or equivalent remainder values. The preceding arithmetic bounds
   make those arms unreachable.
@@ -53,3 +55,8 @@ For untrusted input and untrusted length metadata, prefer:
 Compile-time array encoding is intentionally stricter: an incorrect destination
 array length fails const evaluation so the mistake cannot silently produce a
 truncated or oversized static value.
+
+Use `Engine::encode_array` for fixed-size static data and compile-time checked
+arrays. For runtime data, especially data sized from packet headers, file
+metadata, network frames, or other untrusted sources, use checked length helpers
+and caller-owned slice APIs instead.

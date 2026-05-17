@@ -155,6 +155,8 @@ assert_eq!(&URL_BYTES, b"-_8");
 Stable Rust cannot yet express the encoded length as the return array length
 directly, so `encode_array` uses the destination array type supplied by the
 caller. A wrong output length fails during const evaluation.
+Use `encode_array` for fixed-size static values, not for runtime data whose
+size is controlled by an attacker.
 
 For untrusted length metadata, use checked length calculation:
 
@@ -656,6 +658,9 @@ Security commitments:
   standard ASCII assumptions. Its malformed-input errors are intentionally
   non-localized, clear-tail variants clear caller-owned buffers on error, and
   it is not documented as a formally verified cryptographic constant-time API.
+  Input length, padding length, decoded length, and final success/failure are
+  public; callers that need protocol-level success/failure timing resistance
+  should continue with fixed-shape dummy downstream work after decode failure.
 - Clear-tail encode/decode variants are available for callers that want
   best-effort cleanup of unused caller-owned buffers without adding a runtime
   dependency.

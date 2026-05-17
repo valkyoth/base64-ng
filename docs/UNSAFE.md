@@ -54,8 +54,12 @@ Safety argument:
 Limitations:
 
 - This is best-effort data-retention reduction, not a formal zeroization
-  guarantee. It cannot clear historical copies, allocator spare capacity, swap,
-  core dumps, CPU registers, or buffers outside the slice provided to the API.
+  guarantee. It cannot clear historical copies, compiler spill slots,
+  allocator spare capacity, swap, core dumps, CPU registers, or buffers outside
+  the slice provided to the API.
+- Callers with platform-specific formal zeroization requirements should apply
+  their own zeroization policy to caller-owned buffers in addition to using the
+  crate cleanup APIs.
 
 ### `wipe_vec_spare_capacity`
 
@@ -95,8 +99,9 @@ Safety argument:
 Limitations:
 
 - This is best-effort data-retention reduction, not a formal zeroization
-  guarantee. It cannot make claims about allocator internals, historical copies,
-  swap, core dumps, CPU registers, or buffers outside the vector allocation.
+  guarantee. It cannot make claims about allocator internals, historical
+  copies, compiler spill slots, swap, core dumps, CPU registers, or buffers
+  outside the vector allocation.
 
 ### `encode_48_bytes_avx512`
 

@@ -47,6 +47,7 @@ The guarantee should explicitly exclude:
 - public input length
 - selected engine/alphabet
 - final success or failure result
+- total protocol work performed after the public `Result` is returned
 - invalid length and output-buffer capacity errors
 - output length
 - allocator behavior
@@ -221,6 +222,12 @@ The clear-tail APIs do not try to hide success, failure, or output length:
 those values are visible through the returned `Result` and decoded length. Any
 future cryptographic profile must document memory cleanup separately from timing
 behavior.
+
+Applications that must hide success/failure timing at the protocol level should
+continue with fixed-shape downstream work after decode failure. A common pattern
+is to decode into caller-owned storage, substitute a same-length dummy buffer on
+failure, and perform the same comparison, authentication, accounting, and
+cleanup steps before returning a protocol decision.
 
 ## Buffer Comparisons
 

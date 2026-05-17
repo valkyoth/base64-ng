@@ -16,6 +16,9 @@
 - Classified stream adapters and error types for the `v1.0` audit, preserving
   fail-closed decode, checked recovery, framed-reader, localized diagnostic,
   and opaque constant-time-oriented error boundaries.
+- Tightened security documentation for public ct success/failure and length
+  boundaries, volatile best-effort cleanup limits, and const-array panic
+  policy.
 
 ## 0.9.0 - 2026-05-17
 

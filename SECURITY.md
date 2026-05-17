@@ -64,20 +64,30 @@ buffer. This reduces easy timing and retention pitfalls, but `base64-ng` does
 not currently claim a formally verified cryptographic constant-time encode or
 decode API.
 
+If a deployment treats final success/failure timing or exact ciphertext length
+as sensitive, the caller must continue protocol processing in a fixed-shape
+way after decode failure, for example by substituting dummy output and running
+the same downstream validation or comparison steps. The `ct` module narrows
+the Base64 symbol-mapping timing target; it does not hide the public `Result`,
+input length, padding length, or decoded length from the surrounding protocol.
+
 The clear-tail encode and decode APIs provide best-effort cleanup for
 caller-owned buffers by writing zero bytes over unused tail bytes on success and
-over the whole buffer on encode/decode error. Because the scalar crate forbids
-unsafe code and has no runtime dependencies, this cleanup uses ordinary Rust
-writes plus a compiler fence, not volatile writes or a formally verified
-zeroization primitive. Treat these APIs as buffer-retention reduction, not as a
-complete secret-erasure guarantee against compiler optimizations, core dumps,
-swap, hardware observation, or other process memory disclosure bugs.
+over the whole buffer on encode/decode error. The cleanup primitive uses
+volatile byte writes plus a `SeqCst` compiler fence so cleanup writes are not
+optimized away. Treat these APIs as buffer-retention reduction, not as a
+complete secret-erasure guarantee against historical stack-frame copies,
+compiler spills, CPU registers, allocator behavior, core dumps, swap, hardware
+observation, or other process memory disclosure bugs. Callers that require a
+platform-specific formal zeroization policy should apply that policy to their
+own buffers in addition to using crate cleanup APIs.
 
 The `SecretBuffer` owned wrapper is available with the `alloc` feature for
 sensitive encoded or decoded bytes that should not be accidentally logged. It
 redacts `Debug` and `Display`, requires explicit reveal methods, and clears
-initialized bytes on drop with the same best-effort cleanup helper. It cannot
-clean historical copies outside the wrapper or allocator spare capacity.
+initialized bytes and vector spare capacity on drop with the same best-effort
+cleanup helper. It cannot clean historical copies outside the wrapper or make
+guarantees about allocator internals after ownership is exposed.
 
 Streaming wrappers apply best-effort cleanup to their small internal staging
 buffers. Encoders clear pending plaintext bytes when those bytes are consumed
@@ -95,7 +105,9 @@ helpers before allocating or accepting framed payloads.
 Runtime scalar APIs are expected to return `Result` or `Option` for malformed
 input and size errors instead of unwinding. Compile-time array encoding is the
 exception: it intentionally fails const evaluation when the caller supplies an
-incorrect output array length.
+incorrect output array length. Do not use `Engine::encode_array` as a runtime
+API for untrusted size decisions; use `checked_encoded_len`, `encoded_len`, or
+caller-owned slice APIs instead.
 `scripts/validate-panic-policy.sh` release-gates new non-test panic-like sites
 and requires reviewed exceptions to remain documented in `docs/PANIC_POLICY.md`.
 
