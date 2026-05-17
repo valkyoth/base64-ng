@@ -234,8 +234,8 @@ helpers. It remains tool-backed undefined-behavior evidence, not a formal proof.
 
 ## Constant-Time Timing Evidence
 
-The normal CI gate and release gate compile the isolated dudect-style harness
-and check its dependency policy:
+The standard local gate, normal CI gate, and release gate compile the isolated
+dudect-style harness and check its dependency policy:
 
 ```sh
 scripts/check_dudect.sh
@@ -254,8 +254,8 @@ write `target/release-evidence/dudect/dudect-output.txt` and
 `target/release-evidence/dudect/MANIFEST.txt` for this purpose. This evidence
 is empirical and does not replace generated-code review or Kani proofs.
 
-The normal CI gate and release gate also generate assembly artifacts for
-reviewer inspection with:
+The release gate also generates assembly artifacts for reviewer inspection
+with:
 
 ```sh
 scripts/generate_ct_asm_evidence.sh
@@ -269,7 +269,8 @@ review focus, and artifact checksums.
 ## Performance Evidence
 
 The performance harness is intentionally isolated from the published crate.
-Compile and review its dependencies with:
+The standard local gate compiles and reviews its dependencies. Run the same
+check directly while iterating on benchmark code with:
 
 ```sh
 scripts/check_perf.sh

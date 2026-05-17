@@ -55,7 +55,7 @@ grep -q '"bomFormat"[[:space:]]*:[[:space:]]*"CycloneDX"' "$cyclonedx_output"
     echo
     echo "interpretation:"
     echo "This evidence records SPDX and CycloneDX SBOM generation for the published crate graph."
-    echo "Fuzz, performance, and timing harness dependencies are intentionally checked separately."
+    echo "Isolated dudect, fuzz, and performance harness dependencies are checked by the standard gate but remain outside this published-crate SBOM."
 } >"$manifest"
 
 cat "$manifest"

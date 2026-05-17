@@ -81,6 +81,8 @@
 - Added isolated dudect, fuzz, and performance harness compile/dependency
   checks to the standard local gate so harness policy is verified before
   release-only evidence steps.
+- Aligned SBOM, fuzzing, dependency, and release-evidence wording with the
+  standard local gate now checking isolated harness dependencies.
 - Added checked stream adapter `try_into_inner()` helpers that recover the
   wrapped reader or writer only when doing so will not discard pending input or
   buffered output.

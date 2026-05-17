@@ -14,8 +14,8 @@ new dependency expands the audit, license, advisory, and supply-chain surface.
   integration features such as `serde`, `bytes`, `zeroize`, `subtle`, and
   `criterion` are not exposed before dependency admission.
 - Fuzz, performance, and dudect-style timing harness dependencies are isolated
-  under `fuzz/`, `perf/`, and `dudect/`; they are checked separately and are
-  not part of the published crate.
+  under `fuzz/`, `perf/`, and `dudect/`; the standard local gate checks them
+  separately from the published crate dependency graph.
 
 ## Admission Requirements
 
@@ -89,6 +89,10 @@ workspaces only when they are not packaged with the published crate:
 - `fuzz/` dependencies are reviewed by `scripts/check_fuzz.sh`.
 - `perf/` dependencies are reviewed by `scripts/check_perf.sh`.
 - `dudect/` dependencies are reviewed by `scripts/check_dudect.sh`.
+
+`scripts/checks.sh` runs those isolated harness checks so ordinary local
+verification catches harness dependency drift before release-only evidence
+steps.
 
 Those isolated dependencies do not weaken the zero-dependency guarantee for the
 published crate.

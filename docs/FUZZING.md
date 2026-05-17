@@ -2,7 +2,7 @@
 
 `base64-ng` keeps fuzzing isolated from the published crate. The root crate
 remains dependency-free; fuzz-only dependencies live under `fuzz/` and are
-checked separately.
+checked by the standard local gate while remaining outside the published crate.
 
 Run fuzz harness checks with:
 
