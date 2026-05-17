@@ -83,6 +83,9 @@
   buffered output.
 - Added matching stream adapter `can_into_inner()` readiness helpers for
   non-consuming recovery checks in framed protocols and diagnostics.
+- Added stream adapter `pending_input_needed_len()` helpers so callers can see
+  how many more bytes are needed to complete a buffered encode or decode
+  quantum.
 
 ## 0.8.0 - 2026-05-16
 

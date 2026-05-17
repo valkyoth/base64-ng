@@ -608,6 +608,19 @@ pub mod stream {
             self.pending_len != 0
         }
 
+        /// Returns how many additional input bytes are needed to complete the
+        /// currently buffered encode quantum.
+        ///
+        /// Returns `0` when no partial input quantum is buffered.
+        #[must_use]
+        pub const fn pending_input_needed_len(&self) -> usize {
+            if self.has_pending_input() {
+                3 - self.pending_len
+            } else {
+                0
+            }
+        }
+
         /// Returns whether this encoder has been finalized.
         ///
         /// Once this returns `true`, later non-empty writes return an error.
@@ -887,6 +900,19 @@ pub mod stream {
         #[must_use]
         pub const fn has_pending_input(&self) -> bool {
             self.pending_len != 0
+        }
+
+        /// Returns how many additional input bytes are needed to complete the
+        /// currently buffered decode quantum.
+        ///
+        /// Returns `0` when no partial input quantum is buffered.
+        #[must_use]
+        pub const fn pending_input_needed_len(&self) -> usize {
+            if self.has_pending_input() {
+                4 - self.pending_len
+            } else {
+                0
+            }
         }
 
         /// Returns whether this decoder has processed a terminal padded block.
@@ -1220,6 +1246,19 @@ pub mod stream {
             self.pending_len != 0
         }
 
+        /// Returns how many additional encoded input bytes are needed to
+        /// complete the currently buffered decode quantum.
+        ///
+        /// Returns `0` when no partial input quantum is buffered.
+        #[must_use]
+        pub const fn pending_input_needed_len(&self) -> usize {
+            if self.has_pending_input() {
+                4 - self.pending_len
+            } else {
+                0
+            }
+        }
+
         /// Returns the number of decoded bytes currently buffered and ready to
         /// be read before this adapter polls the wrapped reader again.
         #[must_use]
@@ -1509,6 +1548,19 @@ pub mod stream {
         #[must_use]
         pub const fn has_pending_input(&self) -> bool {
             self.pending_len != 0
+        }
+
+        /// Returns how many additional raw input bytes are needed to complete
+        /// the currently buffered encode quantum.
+        ///
+        /// Returns `0` when no partial input quantum is buffered.
+        #[must_use]
+        pub const fn pending_input_needed_len(&self) -> usize {
+            if self.has_pending_input() {
+                3 - self.pending_len
+            } else {
+                0
+            }
         }
 
         /// Returns the number of encoded bytes currently buffered and ready to

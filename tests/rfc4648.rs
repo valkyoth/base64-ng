@@ -2690,15 +2690,19 @@ fn stream_encoder_handles_chunk_boundaries() {
     assert_eq!(encoder.engine(), STANDARD);
     assert!(encoder.is_padded());
     assert_eq!(encoder.pending_len(), 0);
+    assert_eq!(encoder.pending_input_needed_len(), 0);
     assert!(!encoder.has_pending_input());
     encoder.write_all(b"h").unwrap();
     assert_eq!(encoder.pending_len(), 1);
+    assert_eq!(encoder.pending_input_needed_len(), 2);
     assert!(encoder.has_pending_input());
     encoder.write_all(b"el").unwrap();
     assert_eq!(encoder.pending_len(), 0);
+    assert_eq!(encoder.pending_input_needed_len(), 0);
     assert!(!encoder.has_pending_input());
     encoder.write_all(b"lo").unwrap();
     assert_eq!(encoder.pending_len(), 2);
+    assert_eq!(encoder.pending_input_needed_len(), 1);
     let encoded = encoder.finish().unwrap();
     assert_eq!(encoded, b"aGVsbG8=");
 }
@@ -2866,6 +2870,7 @@ fn stream_encoder_reader_handles_small_reads() {
     assert!(!reader.has_finished_input());
     assert!(!reader.is_finished());
     assert_eq!(reader.pending_len(), 0);
+    assert_eq!(reader.pending_input_needed_len(), 0);
     assert!(!reader.has_pending_input());
     assert_eq!(reader.buffered_output_len(), 0);
     assert!(!reader.has_buffered_output());
@@ -2880,6 +2885,7 @@ fn stream_encoder_reader_handles_small_reads() {
     }
     assert_eq!(&output[..written], b"aGVsbG8=");
     assert_eq!(reader.pending_len(), 0);
+    assert_eq!(reader.pending_input_needed_len(), 0);
     assert!(!reader.has_pending_input());
     assert_eq!(reader.buffered_output_len(), 0);
     assert!(!reader.has_buffered_output());
@@ -2896,6 +2902,7 @@ fn stream_encoder_reader_reports_buffered_output() {
     assert_eq!(reader.read(&mut first).unwrap(), 1);
     assert_eq!(first, [b'a']);
     assert_eq!(reader.pending_len(), 2);
+    assert_eq!(reader.pending_input_needed_len(), 1);
     assert!(reader.has_pending_input());
     assert_eq!(reader.buffered_output_len(), 3);
     assert!(reader.has_buffered_output());
@@ -2906,6 +2913,7 @@ fn stream_encoder_reader_reports_buffered_output() {
     reader.read_to_end(&mut rest).unwrap();
     assert_eq!(rest, b"GVsbG8=");
     assert_eq!(reader.buffered_output_len(), 0);
+    assert_eq!(reader.pending_input_needed_len(), 0);
     assert!(!reader.has_buffered_output());
     assert!(reader.has_finished_input());
     assert!(reader.is_finished());
@@ -3030,13 +3038,16 @@ fn stream_decoder_handles_chunk_boundaries() {
     assert_eq!(decoder.engine(), STANDARD);
     assert!(decoder.is_padded());
     assert_eq!(decoder.pending_len(), 0);
+    assert_eq!(decoder.pending_input_needed_len(), 0);
     assert!(!decoder.has_pending_input());
     assert!(!decoder.has_terminal_padding());
     decoder.write_all(b"a").unwrap();
     assert_eq!(decoder.pending_len(), 1);
+    assert_eq!(decoder.pending_input_needed_len(), 3);
     assert!(decoder.has_pending_input());
     decoder.write_all(b"GVs").unwrap();
     assert_eq!(decoder.pending_len(), 0);
+    assert_eq!(decoder.pending_input_needed_len(), 0);
     assert!(!decoder.has_pending_input());
     decoder.write_all(b"bG8=").unwrap();
     assert!(decoder.has_terminal_padding());
@@ -3272,6 +3283,7 @@ fn stream_decoder_reader_handles_small_reads() {
     assert!(!reader.has_finished_input());
     assert!(!reader.is_finished());
     assert_eq!(reader.pending_len(), 0);
+    assert_eq!(reader.pending_input_needed_len(), 0);
     assert!(!reader.has_pending_input());
     assert_eq!(reader.buffered_output_len(), 0);
     assert!(!reader.has_buffered_output());
@@ -3287,6 +3299,7 @@ fn stream_decoder_reader_handles_small_reads() {
     }
     assert_eq!(&output[..written], b"hello");
     assert_eq!(reader.pending_len(), 0);
+    assert_eq!(reader.pending_input_needed_len(), 0);
     assert_eq!(reader.buffered_output_len(), 0);
     assert!(!reader.has_buffered_output());
     assert!(reader.has_terminal_padding());
