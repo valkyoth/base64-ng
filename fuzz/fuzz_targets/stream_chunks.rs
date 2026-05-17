@@ -64,6 +64,7 @@ fn exercise_decoder_chunks<A, const PAD: bool>(
 {
     let expected = engine.decode_vec(input);
     let mut decoder = Decoder::new(Vec::new(), engine);
+    assert!(!decoder.is_failed());
     assert_decode_pending_state(decoder.pending_len(), decoder.pending_input_needed_len());
     assert_eq!(decoder.has_pending_input(), decoder.pending_len() != 0);
     assert_reader_output_state(
@@ -79,8 +80,11 @@ fn exercise_decoder_chunks<A, const PAD: bool>(
 
     for chunk in input.chunks(chunk_size(split_seed)) {
         if decoder.write_all(chunk).is_err() {
+            assert!(decoder.is_failed());
+            assert!(!decoder.can_into_inner());
             return;
         }
+        assert!(!decoder.is_failed());
         assert_decode_pending_state(decoder.pending_len(), decoder.pending_input_needed_len());
         assert_eq!(decoder.has_pending_input(), decoder.pending_len() != 0);
         assert_reader_output_state(
@@ -95,9 +99,16 @@ fn exercise_decoder_chunks<A, const PAD: bool>(
         );
     }
 
-    match (decoder.finish(), expected) {
-        (Ok(streamed), Ok(decoded)) => assert_eq!(streamed, decoded),
-        (Err(_), Err(_)) => {}
+    let stream_result = decoder.try_finish().map(|()| decoder.get_ref().clone());
+    match (stream_result, expected) {
+        (Ok(streamed), Ok(decoded)) => {
+            assert!(!decoder.is_failed());
+            assert_eq!(streamed, decoded);
+        }
+        (Err(_), Err(_)) => {
+            assert!(decoder.is_failed());
+            assert!(!decoder.can_into_inner());
+        }
         (stream_result, expected) => {
             panic!("stream decoder and slice decoder disagreed: {stream_result:?} vs {expected:?}")
         }
@@ -217,6 +228,7 @@ fn exercise_decoder_reader_chunks<A, const PAD: bool>(
         max_chunk: chunk_size(split_seed),
     };
     let mut reader = DecoderReader::new(source, engine);
+    assert!(!reader.is_failed());
     let mut decoded = Vec::new();
     let streamed = reader.read_to_end(&mut decoded);
     assert_decode_pending_state(reader.pending_len(), reader.pending_input_needed_len());
@@ -230,12 +242,16 @@ fn exercise_decoder_reader_chunks<A, const PAD: bool>(
 
     match (streamed, expected) {
         (Ok(_), Ok(expected)) => {
+            assert!(!reader.is_failed());
             assert_eq!(decoded, expected);
             assert!(reader.has_finished_input());
             assert!(reader.is_finished());
             assert!(reader.can_into_inner());
         }
-        (Err(_), Err(_)) => {}
+        (Err(_), Err(_)) => {
+            assert!(reader.is_failed());
+            assert!(!reader.can_into_inner());
+        }
         (streamed, expected) => {
             panic!("decoder reader and slice decoder disagreed: {streamed:?} vs {expected:?}")
         }
@@ -282,6 +298,7 @@ fn exercise_decoder_reader_adjacent_payload<A>(
     reader.read_to_end(&mut decoded).unwrap();
 
     assert_eq!(decoded, payload);
+    assert!(!reader.is_failed());
     assert!(reader.has_terminal_padding());
     assert!(reader.has_finished_input());
     assert!(reader.is_finished());

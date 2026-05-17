@@ -109,6 +109,8 @@
   buffers in bounded slices while clearing queue slots as bytes are consumed.
 - Hardened stream decoders to fail closed after malformed Base64 input, with
   `is_failed()` state inspection and regressions for writer and reader adapters.
+- Extended the stream fuzz harness to assert fail-closed decoder state
+  invariants after malformed input.
 
 ## 0.8.0 - 2026-05-16
 

@@ -120,7 +120,8 @@ The release gate runs:
 - stream decoder fail-closed tests proving malformed Base64 input poisons the
   adapter while preserving explicit unchecked inner recovery
 - stream fuzz coverage for chunked writers, fragmented reader sources, and
-  adjacent framed payload boundaries
+  adjacent framed payload boundaries, including fail-closed decoder state
+  invariants after malformed input
 - Kani proofs through `scripts/check_kani.sh` when Kani is installed and its
   bundled compiler supports this crate's pinned `rust-version`
 - bounded Kani coverage for constant-time-oriented decode result bounds,
