@@ -63,6 +63,7 @@ test -s docs/CONSTANT_TIME.md
 test -s docs/DEPENDENCIES.md
 test -s docs/DUDECT.md
 test -s docs/FUZZING.md
+test -s docs/INVARIANTS.md
 test -s docs/KANI.md
 test -s docs/MIGRATION.md
 test -s docs/PANIC_POLICY.md
@@ -173,6 +174,18 @@ do
     fi
 done
 
+for required_invariant_text in \
+    "Chunk Reads" \
+    "Output Writes" \
+    "In-Place Decode" \
+    "Constant-Time-Oriented Decode"
+do
+    if ! grep -F -q "$required_invariant_text" docs/INVARIANTS.md; then
+        echo "release metadata: invariants doc is missing required text: $required_invariant_text" >&2
+        exit 1
+    fi
+done
+
 for required_kani_text in \
     "Kani runs are compiler-integration-sensitive" \
     "A Kani skip is not the same as a proof" \
@@ -239,6 +252,7 @@ for required_package_file in \
     "docs/DEPENDENCIES.md" \
     "docs/DUDECT.md" \
     "docs/FUZZING.md" \
+    "docs/INVARIANTS.md" \
     "docs/KANI.md" \
     "docs/MIGRATION.md" \
     "docs/PANIC_POLICY.md" \

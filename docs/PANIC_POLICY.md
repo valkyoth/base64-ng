@@ -14,6 +14,8 @@ scripts/validate-panic-policy.sh
 The validator scans non-test source before Kani/test-only modules and fails on
 new `panic!`, `unreachable!`, `.unwrap()`, or `.expect()` sites unless they
 match an allowlisted pattern documented here.
+Remaining bounded indexing invariants are documented in
+[INVARIANTS.md](INVARIANTS.md).
 
 ## Allowed Non-Test Sites
 
