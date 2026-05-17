@@ -36,11 +36,11 @@ adding convenience.
 | Area | Status | Notes |
 | --- | --- | --- |
 | Engine constants and `Engine<A, PAD>` | candidate stable | Strict/default semantics are explicit; audit constructor naming and stream convenience methods before `v1.0`. |
-| `Profile<A, PAD>` and named profiles | review pending | Freeze MIME, PEM, bcrypt-style, `crypt(3)`-style, wrapping, and padding behavior. |
+| `Profile<A, PAD>` and named profiles | candidate stable | MIME, PEM, bcrypt-style, `crypt(3)`-style, wrapping, and padding behavior are explicit and covered by policy tests. |
 | Length helpers | candidate stable | Public helpers are recoverable and checked; keep examples focused on untrusted-size handling. |
 | Slice encode/decode APIs | candidate stable | Caller-owned output, checked lengths, and clear-tail variants are the preferred stable surface. |
 | In-place APIs | review pending | Confirm decode-to-front and encode-to-back contracts are clear. |
-| Validation-only APIs | review pending | Confirm validate/decode agreement across strict, legacy, wrapped, and ct paths. |
+| Validation-only APIs | candidate stable | Strict, legacy, wrapped, and ct validation APIs are documented as decode-equivalent policy checks. |
 | Stack-backed buffers | review pending | Confirm exposed-array escape hatches and cleanup boundaries are documented. |
 | `SecretBuffer` | review pending | Confirm redaction, cleanup limits, comparison semantics, and ownership escape hatches. |
 | `ct` module | documented boundary | Keep non-claim wording and opaque error behavior explicit unless verification evidence changes. |
@@ -61,6 +61,63 @@ adding convenience.
 - Does the API commit to behavior that future SIMD backends can reproduce
   exactly?
 - Does the API require dependency admission or feature-policy documentation?
+
+## Audit Decisions
+
+### Profiles
+
+`Profile<A, PAD>` and the named `MIME`, `PEM`, `PEM_CRLF`, `BCRYPT`, and
+`CRYPT` profiles are candidates for the `v1.0` stable surface.
+
+Decision rationale:
+
+- A profile is an explicit policy bundle: alphabet, padding mode, and optional
+  line wrapping remain visible through type parameters, constructor arguments,
+  and policy accessors.
+- `Profile::checked_new` rejects invalid wrapping policy instead of silently
+  accepting an unusable profile.
+- MIME and PEM wrapping policy is strict: non-final encoded lines must match
+  the configured width and line ending.
+- Bcrypt-style and `crypt(3)`-style profiles expose alphabet and no-padding
+  interoperability only; they do not claim password-hash parsing or
+  verification.
+- Profiles forward to the same scalar engine, validation, in-place, clear-tail,
+  stack-buffer, and secret-buffer APIs rather than introducing a separate
+  decoding contract.
+
+Stable boundary:
+
+- Keep profile behavior strict and deterministic.
+- Do not add permissive profile constructors without a new audit entry.
+- Do not broaden bcrypt-style or `crypt(3)`-style profiles into full password
+  hash parsers.
+- Do not hide profile policy behind broad conversion traits.
+
+### Validation-Only APIs
+
+Strict, legacy, wrapped, and constant-time-oriented validation APIs are
+candidates for the `v1.0` stable surface.
+
+Decision rationale:
+
+- Validation-only APIs use the same alphabet, padding, canonical-bit, and line
+  wrapping checks as the corresponding decode APIs.
+- Boolean helpers are convenience wrappers over `Result`-returning helpers,
+  preserving recoverable diagnostics for callers that need them.
+- Legacy validation is opt-in and only skips ASCII transport whitespace; it
+  keeps alphabet, padding, terminal-data, and canonical-bit checks strict.
+- Wrapped validation is stricter than legacy whitespace handling and accepts
+  only the configured wrapping policy.
+- Constant-time-oriented validation follows the `ct` module's documented
+  opaque malformed-input policy.
+
+Stable boundary:
+
+- Keep validation/decode agreement release-tested.
+- Keep strict validation canonical by default.
+- Keep legacy and wrapped validation explicit in method names.
+- Keep ct validation errors opaque unless formal side-channel evidence changes
+  the documented contract.
 
 ## Initial `v0.10` Direction
 

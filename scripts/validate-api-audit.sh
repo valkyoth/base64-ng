@@ -12,12 +12,17 @@ for required_text in \
     "## Audit Rules" \
     "## Status Legend" \
     "## Public Surface Under Review" \
+    "## Audit Decisions" \
+    "### Profiles" \
+    "### Validation-Only APIs" \
     "## \`v1.0\` Admission Questions" \
     "## Initial \`v0.10\` Direction" \
     "Do not add broad conversion traits" \
     "Do not admit optional ecosystem dependencies" \
     "Do not admit active SIMD dispatch" \
-    "review pending"
+    "review pending" \
+    "Profile::checked_new" \
+    "Keep validation/decode agreement release-tested"
 do
     if ! grep -F -q "$required_text" docs/API_AUDIT.md; then
         echo "api audit: docs/API_AUDIT.md is missing required text: $required_text" >&2

@@ -7,6 +7,8 @@
   release-candidate audit-preparation milestone.
 - Added release-gated public API audit validation so stable releases cannot
   leave audit rows marked as `review pending`.
+- Classified profile and validation-only APIs as `v1.0` stable candidates
+  with explicit audit rationale and stability boundaries.
 
 ## 0.9.0 - 2026-05-17
 
