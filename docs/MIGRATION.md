@@ -198,7 +198,10 @@ also expose non-sensitive state helpers such as
 `has_finished_input()`, and decoder-side `has_terminal_padding()` for framed
 protocols and audit logging. Use `can_into_inner()` and `try_into_inner()` when
 recovering the wrapped reader or writer should be refused if it would discard
-pending input or buffered output.
+pending input or buffered output. Decoder writer and reader adapters also
+expose `is_failed()` and fail closed after malformed Base64 input; unchecked
+`into_inner()` remains available for explicit recovery of the wrapped object
+after a decode error.
 
 The `tokio` feature is reserved for future async wrappers. It is currently
 inert and dependency-free; use the explicit `stream` feature for `std::io`

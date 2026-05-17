@@ -445,6 +445,11 @@ pub mod runtime {
 pub mod stream {
     //! Streaming Base64 wrappers for `std::io`.
     //!
+    //! Decoder adapters fail closed after malformed Base64 input. Use
+    //! `is_failed()` for diagnostics; unchecked `into_inner()` remains
+    //! available when the wrapped reader or writer must be explicitly
+    //! recovered after a decode error.
+    //!
     //! ```
     //! use std::io::{Read, Write};
     //! use base64_ng::{STANDARD, stream::{Decoder, DecoderReader, Encoder, EncoderReader}};

@@ -111,6 +111,8 @@
   `is_failed()` state inspection and regressions for writer and reader adapters.
 - Extended the stream fuzz harness to assert fail-closed decoder state
   invariants after malformed input.
+- Documented stream decoder failed-state behavior in crate rustdoc and the
+  migration guide.
 
 ## 0.8.0 - 2026-05-16
 
