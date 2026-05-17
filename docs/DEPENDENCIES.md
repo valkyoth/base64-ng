@@ -109,6 +109,9 @@ decode into a caller-owned buffer with `decode_slice_clear_tail` and then call
 `Zeroize::zeroize()` on that buffer after the protocol step is complete. That
 keeps the published `base64-ng` crate dependency-free while allowing the
 application to apply its local memory-cleanup policy at the ownership boundary.
+This is the recommended pattern for deployments that require a dependency-backed
+zeroization policy while still wanting `base64-ng` itself to remain a small,
+auditable zero-runtime-dependency crate.
 
 ## Isolated Tooling
 

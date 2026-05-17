@@ -509,8 +509,7 @@ pub mod stream {
 
         fn push_slice(&mut self, input: &[u8]) -> io::Result<()> {
             if input.len() > self.available_capacity() {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidInput,
+                return Err(io::Error::other(
                     "base64 stream output queue capacity exceeded",
                 ));
             }
@@ -3952,7 +3951,9 @@ pub const fn validate_alphabet(encode: &[u8; 64]) -> Result<(), AlphabetError> {
 ///
 /// This helper is intended for custom [`Alphabet`] implementations. Validate
 /// the table with [`validate_alphabet`] before trusting the alphabet in a
-/// protocol or public API.
+/// protocol or public API. The scan always visits all 64 entries before
+/// returning so the match position does not create an early-return timing
+/// signal in custom alphabet decoders.
 ///
 /// # Examples
 ///
@@ -3976,15 +3977,18 @@ pub const fn validate_alphabet(encode: &[u8; 64]) -> Result<(), AlphabetError> {
 #[must_use]
 pub const fn decode_alphabet_byte(byte: u8, encode: &[u8; 64]) -> Option<u8> {
     let mut index = 0;
-    let mut value = 0;
+    let mut candidate = 0;
+    let mut decoded = 0;
+    let mut valid = 0;
     while index < encode.len() {
-        if encode[index] == byte {
-            return Some(value);
-        }
+        let matches = ct_mask_eq_u8(byte, encode[index]);
+        decoded |= candidate & matches;
+        valid |= matches;
         index += 1;
-        value += 1;
+        candidate += 1;
     }
-    None
+
+    if valid == 0 { None } else { Some(decoded) }
 }
 
 /// A Base64 alphabet.
@@ -5150,6 +5154,12 @@ where
     ///
     /// This is strict decoding. Whitespace, mixed alphabets, malformed padding,
     /// and trailing non-padding data are rejected.
+    ///
+    /// This default scalar decoder prioritizes strict validation, exact error
+    /// reporting, and ordinary throughput. It may branch or return early based
+    /// on malformed input and padding position. Use [`crate::ct`] for
+    /// secret-bearing payloads where timing behavior matters more than exact
+    /// malformed-input diagnostics.
     pub fn decode_slice(&self, input: &[u8], output: &mut [u8]) -> Result<usize, DecodeError> {
         backend::decode_slice::<A, PAD>(input, output)
     }

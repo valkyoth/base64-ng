@@ -56,10 +56,14 @@ Limitations:
 - This is best-effort data-retention reduction, not a formal zeroization
   guarantee. It cannot clear historical copies, compiler spill slots,
   allocator spare capacity, swap, core dumps, CPU registers, or buffers outside
-  the slice provided to the API.
+  the slice provided to the API. Software-only wiping also cannot make claims
+  about cache residency, registers, or temporary stack copies created before the
+  wipe boundary.
 - Callers with platform-specific formal zeroization requirements should apply
   their own zeroization policy to caller-owned buffers in addition to using the
-  crate cleanup APIs.
+  crate cleanup APIs. Applications that already admit dependencies such as
+  `zeroize` may combine them with `base64-ng` caller-owned buffers after the
+  Base64 operation.
 
 ### `wipe_vec_spare_capacity`
 
@@ -101,7 +105,8 @@ Limitations:
 - This is best-effort data-retention reduction, not a formal zeroization
   guarantee. It cannot make claims about allocator internals, historical
   copies, compiler spill slots, swap, core dumps, CPU registers, or buffers
-  outside the vector allocation.
+  outside the vector allocation. Applications with a platform-specific
+  zeroization policy should still apply that policy at the ownership boundary.
 
 ### `encode_48_bytes_avx512`
 

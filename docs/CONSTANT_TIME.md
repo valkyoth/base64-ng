@@ -24,6 +24,21 @@ let written = ct::STANDARD.decode_slice(b"...", &mut output)?;
 The API should be separate from the default strict decoder so users can choose
 the tradeoff explicitly.
 
+## Default Decoder Timing
+
+The default `Engine` decode APIs are strict scalar decoders, not constant-time
+decoders. They intentionally preserve exact error indexes and fast rejection for
+malformed padding, invalid bytes, undersized outputs, and invalid lengths. That
+means default methods such as `decode_slice`, `decode_in_place`,
+`validate_result`, profile decoders, and stream adapters may branch or return
+early based on malformed input content.
+
+Use the `base64_ng::ct` module for secret-bearing payloads where timing posture
+matters more than localized malformed-input diagnostics. The `ct` module still
+documents public length, output length, and final success/failure as public
+values; callers with stricter protocol requirements must continue processing
+with dummy data at the application layer.
+
 ## Non-Goals
 
 - Do not describe Base64 itself as cryptography.

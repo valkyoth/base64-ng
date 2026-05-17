@@ -399,6 +399,11 @@ scalar decoder, `ct::CtEngine::decoded_len` for sizing caller-owned buffers
 under the same opaque malformed-input policy, plus
 `ct::CtEngine::decode_buffer` for stack-backed no-alloc decoded output.
 
+The default strict decoders are not constant-time decoders: they preserve exact
+error indexes and may return early for malformed input, padding, length, or
+output-size errors. Use `base64_ng::ct` for secret-bearing payloads where decode
+timing posture matters more than localized error diagnostics.
+
 For short values, `encode_buffer` returns a stack-backed `EncodedBuffer`
 and `decode_buffer` returns a stack-backed `DecodedBuffer` without requiring
 the `alloc` feature:

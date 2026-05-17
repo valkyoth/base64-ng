@@ -410,6 +410,13 @@ fn custom_alphabet_helper_decodes_and_round_trips() {
     );
     assert_eq!(decode_alphabet_byte(b'=', &ReverseAlphabet::ENCODE), None);
 
+    for (index, byte) in ReverseAlphabet::ENCODE.iter().enumerate() {
+        assert_eq!(
+            decode_alphabet_byte(*byte, &ReverseAlphabet::ENCODE),
+            Some(index as u8)
+        );
+    }
+
     let input = b"custom alphabet";
     let mut encoded = [0u8; 64];
     let encoded_len = REVERSE_PADDED.encode_slice(input, &mut encoded).unwrap();

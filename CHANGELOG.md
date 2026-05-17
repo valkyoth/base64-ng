@@ -13,6 +13,18 @@
   Kani policy, and release evidence tooling.
 - Added the `v0.12` final dependency admission review, keeping optional
   ecosystem integrations deferred unless they earn separate admission evidence.
+- Changed custom alphabet byte decoding to scan all 64 alphabet entries before
+  returning, avoiding match-position early returns for bcrypt-style,
+  `crypt(3)`-style, and caller-defined alphabets.
+- Clarified that default strict decoders are not constant-time decoders and
+  that secret-bearing payloads should use the `ct` module when timing posture
+  matters more than localized error diagnostics.
+- Changed internal stream output-queue saturation errors away from
+  `InvalidInput` so bounded queue exhaustion is not reported as malformed
+  caller input.
+- Expanded software-only wipe documentation with the known limits of volatile
+  best-effort cleanup and the recommended application-owned `zeroize` pattern
+  for deployments that already admit that dependency.
 
 ## 0.11.0 - 2026-05-17
 
