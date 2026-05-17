@@ -42,7 +42,7 @@ Review focus:
 
 ## Current Release Position
 
-For the current `0.11.0-alpha.0` development branch:
+For the current `0.11.0` release:
 
 - Assembly evidence generation is release-gated.
 - Manual review is required before a stable release that strengthens ct

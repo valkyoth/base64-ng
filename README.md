@@ -6,8 +6,7 @@ The crate starts conservative: a small scalar implementation, strict RFC 4648 be
 
 ## Current Status
 
-The current public release is `0.10.0`. The development branch is
-`0.11.0-alpha.0`.
+The current public release is `0.11.0`.
 
 Implemented now:
 
@@ -49,7 +48,7 @@ Planned behind admission evidence:
 
 - Admitted AVX2, AVX-512, SSSE3/SSE4.1, ARM NEON, and wasm `simd128`
   fast paths after the SIMD admission evidence is complete. Current `0.11`
-  development remains scalar-only unless that full evidence package lands.
+  release remains scalar-only unless that full evidence package lands.
 - Async streaming wrappers only after the `tokio` feature passes the
   dependency and cancellation-safety admission bar in [docs/ASYNC.md](docs/ASYNC.md).
 - Optional `serde` or `bytes` integration only if a concrete use case clears
@@ -79,7 +78,7 @@ and CWE mapping lives in [docs/SECURITY_CONTROLS.md](docs/SECURITY_CONTROLS.md).
 
 ```toml
 [dependencies]
-base64-ng = "0.10.0"
+base64-ng = "0.11.0"
 ```
 
 The crate is dual-licensed:
@@ -104,7 +103,7 @@ Disable defaults for embedded or freestanding use:
 
 ```toml
 [dependencies]
-base64-ng = { version = "0.10.0", default-features = false }
+base64-ng = { version = "0.11.0", default-features = false }
 ```
 
 ## Example

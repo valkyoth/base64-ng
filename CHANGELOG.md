@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.11.0-alpha.0 - Unreleased
+## 0.11.0 - 2026-05-17
 
 - Started the next development cycle after the `0.10.0` release.
 - Began the verification and panic-policy hardening milestone, with Kani
