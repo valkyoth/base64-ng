@@ -117,6 +117,8 @@
   constant-time clear-tail cleanup APIs on success and error paths.
 - Expanded the no-alloc portability smoke crate to cover named MIME, PEM,
   bcrypt, and crypt profiles without enabling alloc or std.
+- Hardened release metadata validation so required no-alloc smoke coverage
+  symbols are checked before packaging.
 
 ## 0.8.0 - 2026-05-16
 

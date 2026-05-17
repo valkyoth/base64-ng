@@ -203,4 +203,22 @@ if printf '%s\n' "$package_list" | grep -q '^dudect/'; then
     exit 1
 fi
 
+for required_no_alloc_symbol in \
+    "clear_tail_surfaces" \
+    "named_profile_surfaces" \
+    "ct_stack_decode" \
+    "custom_profile_surfaces" \
+    "validate_only_surfaces" \
+    "in_place_surfaces" \
+    "BCRYPT" \
+    "CRYPT" \
+    "MIME" \
+    "PEM"
+do
+    if ! grep -q "$required_no_alloc_symbol" portability/no_alloc_smoke/src/lib.rs; then
+        echo "release metadata: no-alloc smoke is missing $required_no_alloc_symbol coverage" >&2
+        exit 1
+    fi
+done
+
 echo "release metadata: ok"
