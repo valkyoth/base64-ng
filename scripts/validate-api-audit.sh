@@ -17,6 +17,8 @@ for required_text in \
     "### Validation-Only APIs" \
     "### Stack-Backed Buffers" \
     "### Secret Buffer" \
+    "### In-Place APIs" \
+    "### Custom Alphabets" \
     "## \`v1.0\` Admission Questions" \
     "## Initial \`v0.10\` Direction" \
     "Do not add broad conversion traits" \
@@ -26,7 +28,9 @@ for required_text in \
     "Profile::checked_new" \
     "Keep validation/decode agreement release-tested" \
     "into_exposed_array" \
-    "try_into_exposed_string"
+    "try_into_exposed_string" \
+    "Encode-to-back and decode-to-front contracts" \
+    "define_alphabet!"
 do
     if ! grep -F -q "$required_text" docs/API_AUDIT.md; then
         echo "api audit: docs/API_AUDIT.md is missing required text: $required_text" >&2

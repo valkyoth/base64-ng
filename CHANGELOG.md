@@ -11,6 +11,9 @@
   with explicit audit rationale and stability boundaries.
 - Classified stack-backed buffers and `SecretBuffer` as documented `v1.0`
   security boundaries with explicit ownership and cleanup limits.
+- Classified in-place APIs and custom alphabet helpers for the `v1.0` audit,
+  including explicit encode-to-back/decode-to-front and fixed-scan custom
+  alphabet boundaries.
 
 ## 0.9.0 - 2026-05-17
 

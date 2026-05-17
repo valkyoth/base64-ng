@@ -39,7 +39,7 @@ adding convenience.
 | `Profile<A, PAD>` and named profiles | candidate stable | MIME, PEM, bcrypt-style, `crypt(3)`-style, wrapping, and padding behavior are explicit and covered by policy tests. |
 | Length helpers | candidate stable | Public helpers are recoverable and checked; keep examples focused on untrusted-size handling. |
 | Slice encode/decode APIs | candidate stable | Caller-owned output, checked lengths, and clear-tail variants are the preferred stable surface. |
-| In-place APIs | review pending | Confirm decode-to-front and encode-to-back contracts are clear. |
+| In-place APIs | candidate stable | Encode-to-back and decode-to-front contracts are explicit, checked, and paired with clear-tail variants. |
 | Validation-only APIs | candidate stable | Strict, legacy, wrapped, and ct validation APIs are documented as decode-equivalent policy checks. |
 | Stack-backed buffers | documented boundary | `EncodedBuffer` and `DecodedBuffer` are retained with explicit visible-length, cleanup, comparison, and exposed-array boundaries. |
 | `SecretBuffer` | documented boundary | Redaction, cleanup limits, comparison semantics, and owned escape hatches are explicit adoption boundaries. |
@@ -48,7 +48,7 @@ adding convenience.
 | Runtime backend reporting | candidate stable | Scalar-only posture and stable log identifiers are documented and release-gated. |
 | Feature flags | deferred | `tokio`, `kani`, `fuzzing`, and `simd` remain inert or reserved unless admitted by their policy docs. |
 | Error types | review pending | Confirm variants and indexes are stable enough for downstream diagnostics. |
-| Macros and custom alphabets | review pending | Confirm compile-time validation and custom-alphabet performance/security tradeoffs. |
+| Macros and custom alphabets | documented boundary | Compile-time validation and conservative fixed-scan performance/security tradeoffs are explicit. |
 
 ## `v1.0` Admission Questions
 
@@ -170,6 +170,59 @@ Stable boundary:
 - Do not claim formal zeroization or allocator-wide cleanup.
 - Do not add broad conversions that hide profile, alphabet, padding, or
   wrapping policy.
+
+### In-Place APIs
+
+In-place encode and decode APIs are candidates for the `v1.0` stable surface.
+
+Decision rationale:
+
+- In-place encode validates the caller-provided input length and required
+  encoded length before writing.
+- In-place encode writes from the back of the output region toward the front,
+  so unread input bytes are not overwritten.
+- In-place decode writes decoded output to the front of the same buffer, which
+  is valid because Base64 decoded output is never larger than accepted encoded
+  input.
+- Legacy and wrapped in-place decode validate and compact input according to
+  their explicit policies before decoding.
+- Clear-tail variants exist for strict, legacy, wrapped, and
+  constant-time-oriented in-place decode when the caller wants best-effort
+  cleanup on success and failure.
+
+Stable boundary:
+
+- Keep all in-place APIs recoverable through `Result`.
+- Keep strict, legacy, wrapped, and ct in-place behavior separated by method or
+  module name.
+- Keep clear-tail variants explicit rather than making cleanup an implicit
+  default for all in-place APIs.
+- Do not add unchecked in-place APIs to the public surface.
+
+### Custom Alphabets
+
+`validate_alphabet`, `decode_alphabet_byte`, and `define_alphabet!` are retained
+as documented boundaries for `v1.0`.
+
+Decision rationale:
+
+- Custom alphabets must contain exactly 64 unique visible ASCII bytes and must
+  not contain the padding byte.
+- `define_alphabet!` validates the alphabet at compile time, so invalid
+  literals fail the build.
+- The generated `decode` method delegates to the same validated table
+  semantics as runtime custom alphabet helpers.
+- The default `Alphabet::encode` implementation performs a fixed 64-entry scan
+  for every emitted byte. This preserves the conservative no secret-indexed
+  lookup posture, but it is slower than the arithmetic mappers used by built-in
+  alphabets.
+
+Stable boundary:
+
+- Keep compile-time validation in the macro.
+- Keep custom-alphabet performance tradeoffs documented.
+- Do not add a faster custom-alphabet path unless it has its own audit record.
+- Do not accept non-visible ASCII or padding bytes in Base64 alphabets.
 
 ## Initial `v0.10` Direction
 
