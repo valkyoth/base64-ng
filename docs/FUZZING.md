@@ -84,6 +84,7 @@ Expected files:
 - `in_place.txt`
 - `stream_chunks.txt`
 - `differential.txt`
+- `profiles.txt`
 - `MANIFEST.txt`
 
 Smoke campaigns use temporary corpus and artifact directories under

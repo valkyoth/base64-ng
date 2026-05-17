@@ -28,6 +28,8 @@
   evidence without making normal CI runs expensive.
 - Fixed strict in-place decode prevalidation so malformed padding placement
   reports the same recoverable errors as slice and vector decode.
+- Added a dedicated profile/custom-alphabet fuzz target for MIME, PEM,
+  bcrypt-style, `crypt(3)`-style, and caller-defined alphabets.
 
 ## 0.10.0 - 2026-05-17
 

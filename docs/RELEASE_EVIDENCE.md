@@ -126,6 +126,8 @@ The release gate runs:
 - stream fuzz coverage for chunked writers, fragmented reader sources, and
   adjacent framed payload boundaries, including fail-closed decoder state
   invariants after malformed input
+- profile and custom-alphabet fuzz coverage for MIME, PEM, bcrypt-style,
+  `crypt(3)`-style, and caller-defined alphabets
 - opt-in bounded fuzz smoke evidence through
   `BASE64_NG_RUN_FUZZ_SMOKE=1 scripts/check_fuzz.sh`
 - generated constant-time assembly artifacts through

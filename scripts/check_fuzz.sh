@@ -51,7 +51,7 @@ mkdir -p "$evidence_dir"
     echo "targets:"
 } >"$manifest"
 
-for target in decode in_place stream_chunks differential; do
+for target in decode in_place stream_chunks differential profiles; do
     output="$evidence_dir/$target.txt"
     corpus_dir="$evidence_dir/corpus/$target"
     artifact_dir="$evidence_dir/artifacts/$target"
