@@ -135,6 +135,26 @@ do
     fi
 done
 
+for required_release_gate_command in \
+    "scripts/checks.sh" \
+    "cargo nextest run --all-features" \
+    "scripts/check_miri.sh" \
+    "cargo +nightly fuzz build" \
+    "scripts/check_targets.sh" \
+    "scripts/check_no_alloc_smoke.sh" \
+    "scripts/check_simd_feature_bundles.sh" \
+    "scripts/check_backend_evidence.sh" \
+    "scripts/check_kani.sh" \
+    "scripts/generate_ct_asm_evidence.sh" \
+    "scripts/generate-sbom.sh" \
+    "scripts/reproducible_build_check.sh"
+do
+    if ! grep -F -q "$required_release_gate_command" scripts/stable_release_gate.sh; then
+        echo "release metadata: stable release gate is missing $required_release_gate_command" >&2
+        exit 1
+    fi
+done
+
 package_list="$(
     cargo package --locked --allow-dirty --list
 )"

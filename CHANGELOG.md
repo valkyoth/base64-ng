@@ -129,6 +129,9 @@
 - Refreshed release evidence and checklist wording for native interop smoke
   coverage and the installed Linux, FreeBSD, wasm32, ARM, and Cortex-M target
   set.
+- Hardened release metadata validation so the stable release gate must keep
+  invoking the release-only evidence scripts for Miri, fuzz, cross-targets,
+  backend evidence, Kani, assembly evidence, SBOMs, and reproducibility.
 
 ## 0.8.0 - 2026-05-16
 
