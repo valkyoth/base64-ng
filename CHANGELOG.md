@@ -146,6 +146,9 @@
   all-features docs.
 - Added dependency-free `Engine` convenience constructors for `std::io` stream
   encoder/decoder writer and reader adapters.
+- Updated the roadmap to make `v0.10` an audit-preparation milestone, add
+  `v0.11` verification hardening, add `v0.12` stabilization rehearsal, and keep
+  `v1.0` gated on evidence instead of schedule.
 
 ## 0.8.0 - 2026-05-16
 

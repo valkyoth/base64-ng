@@ -231,6 +231,32 @@ the zero-runtime-dependency stance.
 
 ## Roadmap
 
+### Release Sequencing Assessment
+
+Do not treat `v0.10` as the automatic final stop before `v1.0`. The crate is
+feature-rich enough for normal Base64 use, but `v1.0` should mean the security
+contract is frozen and the evidence story is mature enough for conservative
+users. As of the `v0.9` release line, the remaining work is mostly assurance,
+not feature volume.
+
+The current honest path is:
+
+- `v0.10`: release-candidate audit preparation. Freeze or reject feature ideas,
+  audit the public API, refresh docs, and make gaps explicit.
+- `v0.11`: verification and panic-policy hardening. Resolve the Kani/toolchain
+  gap or document an accepted substitute, deepen panic-free evidence, and turn
+  any remaining bounded indexing into audited invariants.
+- `v0.12`: stabilization rehearsal. Run the crate as a practical `v1.0`
+  candidate for one more release, with no broad new APIs unless an audit finds
+  a necessary correction.
+- `v1.0`: final API and security-contract freeze only after the previous
+  release has clean CI, clean pentest results, clean release evidence, and no
+  unresolved policy exceptions.
+
+Additional `0.x` releases are acceptable if evidence is not ready. Calendar
+speed is less important than avoiding a stable contract that later needs to be
+weakened or broken.
+
 ### v0.1
 
 - Scalar strict encoding and decoding.
@@ -425,23 +451,80 @@ the zero-runtime-dependency stance.
 
 ### v0.10
 
-- Release-candidate hardening for `v1.0`: API audit, documentation audit,
-  migration guide refresh, fuzz corpus review, benchmark review, and release
-  evidence rehearsal.
-- Decide whether constant-time decode is formally guaranteed with supporting
-  evidence or explicitly documented as constant-time-oriented only.
-- Complete the panic-free public API audit for non-test scalar code and document
-  any remaining bounded internal indexing with proof or test evidence.
-- Freeze profile behavior for strict, legacy, MIME, PEM, bcrypt, custom
-  alphabets, and validation-only APIs.
-- Finalize the trust dashboard, CWE mapping, dependency admission outcomes, and
-  security policy language for enterprise review.
-- Freeze dependency policy and feature admission rules for `v1.0`.
+- Treat this as a release-candidate audit preparation milestone, not the final
+  pre-`v1.0` release by default.
+- Perform a full public API audit: engines, profiles, stack buffers,
+  `SecretBuffer`, stream adapters, runtime backend reporting, constant-time
+  module, feature flags, and error variants.
+- Classify every public API as stable-for-`v1.0`, experimental-but-retained,
+  or removed/deferred before `v1.0`. Avoid new broad conversion traits or
+  convenience APIs that hide alphabet, padding, profile, allocation, or secret
+  handling choices.
+- Refresh the documentation set as if a conservative security team will review
+  it: README, migration guide, trust dashboard, CWE/security-control mapping,
+  dependency policy, async policy, constant-time policy, SIMD admission policy,
+  panic policy, unsafe inventory, release evidence, and benchmarks.
+- Decide the `v1.0` constant-time wording. The default expectation is to keep
+  the API explicitly "constant-time-oriented" unless the release has tool-backed
+  generated-code and timing evidence strong enough for a formal guarantee.
+- Freeze profile behavior for strict, legacy, MIME, PEM, bcrypt-style,
+  `crypt(3)`-style, custom alphabets, wrapped profiles, and validation-only
+  APIs.
+- Freeze dependency policy and feature admission rules for the `v1.0` candidate
+  series. `tokio`, `serde`, `bytes`, `zeroize`, `subtle`, property-test, and
+  Criterion-style integrations remain deferred unless a written admission
+  record justifies them.
+- Rehearse release evidence with the stable release gate and record any skips
+  or policy exceptions that would block `v1.0`.
+
+### v0.11
+
+- Verification and panic-policy hardening.
+- Resolve Kani execution for the pinned Rust toolchain, pin a compatible Kani
+  workflow, or document why Kani remains unavailable and what evidence replaces
+  it for `v1.0`.
+- Expand or finalize proof harnesses for length helpers, slice encode/decode
+  bounds, in-place decode bounds, clear-tail cleanup behavior, and
+  constant-time-oriented validate/decode agreement.
+- Complete the panic-free public API audit for non-test scalar code. Document
+  every remaining bounded internal index with proof, tests, or a local
+  invariant in code or policy docs.
+- Run focused fuzz campaigns for strict decode, legacy decode, in-place decode,
+  wrapped profiles, custom alphabets, and stream chunk boundaries; keep corpus
+  policy stable and dependency-isolated.
+- Re-run generated-code review for constant-time-oriented paths and refresh
+  assembly evidence. Keep dudect timing runs opt-in but make the evidence
+  expectations explicit for release reviewers.
+- Reassess best-effort cleanup claims against the volatile wipe implementation,
+  stream queues, stack buffers, `EncodedBuffer`, `DecodedBuffer`, and
+  `SecretBuffer`.
+
+### v0.12
+
+- Stabilization rehearsal for `v1.0`.
+- Ship no broad new APIs unless the `v0.10` or `v0.11` audits found a
+  correctness or security reason. Prefer removals, renames, documentation
+  tightening, and test/evidence improvements over feature expansion.
+- Run the migration guide against realistic examples from strict standard,
+  URL-safe no-pad, MIME/PEM, legacy whitespace, custom alphabet, stack-buffer,
+  secret-buffer, and stream use cases.
+- Freeze MSRV policy and confirm `rust-toolchain.toml`, CI, docs.rs metadata,
+  cross-target checks, Miri, Kani policy, fuzz harnesses, SBOM generation, and
+  reproducibility checks agree.
+- Do a final dependency admission review. Any optional ecosystem integration
+  still without a concrete security and maintenance case remains out of
+  `v1.0`.
+- Publish release notes that explicitly describe the crate as a `v1.0`
+  candidate and invite downstream API/security feedback before the final
+  stable release.
 
 ### v1.0
 
-- Kani proofs complete for scalar in-place decode.
-- Formal or tool-backed evidence for panic-free scalar public APIs.
+- No unresolved `v0.10`, `v0.11`, or `v0.12` release-candidate blockers.
+- Kani proofs complete for scalar in-place decode, or an explicit documented
+  verifier exception with replacement evidence accepted before the release.
+- Formal or tool-backed evidence for panic-free scalar public APIs, including
+  documented bounded-index invariants where indexing remains.
 - Stable profile API for RFC 4648 standard and URL-safe, MIME, PEM, bcrypt, and
   custom alphabets.
 - Stable validate-only APIs.
@@ -450,7 +533,7 @@ the zero-runtime-dependency stance.
 - Constant-time decode guarantee either formally documented with supporting
   verification evidence or explicitly excluded from the stable API contract.
 - Fuzz corpus stabilized.
-- API freeze.
+- API freeze and feature-admission freeze.
 - Release gate mandatory.
 
 ## Release Gate
