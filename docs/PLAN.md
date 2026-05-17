@@ -244,8 +244,9 @@ The current honest path is:
 - `v0.10`: release-candidate audit preparation. Freeze or reject feature ideas,
   audit the public API, refresh docs, and make gaps explicit.
 - `v0.11`: verification and panic-policy hardening. Resolve the Kani/toolchain
-  gap or document an accepted substitute, deepen panic-free evidence, and turn
-  any remaining bounded indexing into audited invariants.
+  gap through the policy in [KANI.md](KANI.md), document any accepted
+  substitute, deepen panic-free evidence, and turn any remaining bounded
+  indexing into audited invariants.
 - `v0.12`: stabilization rehearsal. Run the crate as a practical `v1.0`
   candidate for one more release, with no broad new APIs unless an audit finds
   a necessary correction.
@@ -481,8 +482,8 @@ weakened or broken.
 
 - Verification and panic-policy hardening.
 - Resolve Kani execution for the pinned Rust toolchain, pin a compatible Kani
-  workflow, or document why Kani remains unavailable and what evidence replaces
-  it for `v1.0`.
+  workflow, or document through [KANI.md](KANI.md) why Kani remains unavailable
+  and what evidence replaces it for `v1.0`.
 - Expand or finalize proof harnesses for length helpers, slice encode/decode
   bounds, in-place decode bounds, clear-tail cleanup behavior, and
   constant-time-oriented validate/decode agreement.

@@ -63,6 +63,7 @@ test -s docs/CONSTANT_TIME.md
 test -s docs/DEPENDENCIES.md
 test -s docs/DUDECT.md
 test -s docs/FUZZING.md
+test -s docs/KANI.md
 test -s docs/MIGRATION.md
 test -s docs/PANIC_POLICY.md
 test -s docs/PLAN.md
@@ -172,6 +173,17 @@ do
     fi
 done
 
+for required_kani_text in \
+    "Kani runs are compiler-integration-sensitive" \
+    "A Kani skip is not the same as a proof" \
+    "Do not lower \`rust-version\` only to make Kani run"
+do
+    if ! grep -F -q "$required_kani_text" docs/KANI.md; then
+        echo "release metadata: Kani policy is missing required text: $required_kani_text" >&2
+        exit 1
+    fi
+done
+
 case "$cargo_version" in
     *-*)
         required_readme_simd_status="development remains scalar-only unless that full evidence package lands"
@@ -227,6 +239,7 @@ for required_package_file in \
     "docs/DEPENDENCIES.md" \
     "docs/DUDECT.md" \
     "docs/FUZZING.md" \
+    "docs/KANI.md" \
     "docs/MIGRATION.md" \
     "docs/PANIC_POLICY.md" \
     "docs/PLAN.md" \

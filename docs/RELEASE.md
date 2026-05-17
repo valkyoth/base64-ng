@@ -128,6 +128,8 @@ cargo kani setup
 Kani bundles its own Rust compiler. If that compiler is older than this crate's
 `rust-version`, `scripts/check_kani.sh` records an explicit skip until a newer
 Kani release supports the pinned toolchain.
+The Kani compatibility and verifier-exception policy is documented in
+[`KANI.md`](KANI.md).
 
 The standard local gate runs isolated dudect, fuzz, and performance harness
 compile/dependency checks without running timing campaigns, fuzz campaigns, or

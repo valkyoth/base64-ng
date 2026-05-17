@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.11.0-alpha.0 - Unreleased
+
+- Started the next development cycle after the `0.10.0` release.
+- Began the verification and panic-policy hardening milestone, with Kani
+  compatibility and replacement-evidence policy as the first focus.
+- Added a dedicated Kani verification policy document explaining the current
+  Rust `1.95` compatibility skip and the accepted `v0.11` outcomes.
+
 ## 0.10.0 - 2026-05-17
 
 - Added a dedicated public API audit checklist for the `v0.10`

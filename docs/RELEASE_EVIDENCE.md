@@ -130,6 +130,8 @@ The release gate runs:
   bundled compiler supports this crate's pinned `rust-version`
 - bounded Kani coverage for constant-time-oriented decode result bounds,
   clear-tail cleanup on error, and validate/decode agreement
+- explicit Kani compatibility or verifier-exception documentation in
+  [KANI.md](KANI.md) when the installed Kani compiler cannot run the proofs
 - SBOM generation
 - reproducible package/build check
 
