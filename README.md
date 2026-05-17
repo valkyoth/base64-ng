@@ -665,6 +665,9 @@ Run the standard gate:
 scripts/checks.sh
 ```
 
+The standard gate includes isolated dudect, fuzz, and performance harness
+compile/dependency checks. It does not run fuzz campaigns or benchmarks.
+
 Check the zero-external-crate policy directly:
 
 ```sh
@@ -727,7 +730,7 @@ cargo fuzz --version
 cargo kani --version
 ```
 
-Compile fuzz targets without running a campaign:
+Compile and audit fuzz targets directly while iterating on fuzz harnesses:
 
 ```sh
 scripts/check_fuzz.sh
@@ -739,7 +742,7 @@ Validate the committed fuzz corpus policy directly:
 scripts/check_fuzz_corpus.sh
 ```
 
-Compile and audit the isolated performance harness:
+Compile and audit the isolated performance harness directly:
 
 ```sh
 scripts/check_perf.sh

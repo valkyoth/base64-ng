@@ -127,7 +127,9 @@ Kani bundles its own Rust compiler. If that compiler is older than this crate's
 `rust-version`, `scripts/check_kani.sh` records an explicit skip until a newer
 Kani release supports the pinned toolchain.
 
-The local release gate runs:
+The standard local gate runs isolated dudect, fuzz, and performance harness
+compile/dependency checks without running timing campaigns, fuzz campaigns, or
+benchmarks. The local release gate also runs:
 
 ```sh
 scripts/check_miri.sh
@@ -156,7 +158,8 @@ The published crate package includes the core release/check scripts, Rust
 toolchain pin, and cargo-deny policy so the documented gate can be inspected
 with the packaged source.
 
-Fuzz-only dependencies are checked separately with:
+Fuzz-only dependencies are included in the standard local gate and can also be
+checked directly with:
 
 ```sh
 scripts/check_fuzz.sh

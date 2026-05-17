@@ -45,14 +45,7 @@ else
     echo "stable release gate: skipping fuzz compile check; cargo fuzz or fuzz/ is not available"
 fi
 
-echo "stable release gate: fuzz dependency checks"
-scripts/check_fuzz.sh
-
-echo "stable release gate: performance harness dependency checks"
-scripts/check_perf.sh
-
-echo "stable release gate: dudect timing harness dependency checks"
-scripts/check_dudect.sh
+echo "stable release gate: isolated dudect/fuzz/performance harness checks covered by standard checks"
 
 echo "stable release gate: installed cross-target checks"
 scripts/check_targets.sh

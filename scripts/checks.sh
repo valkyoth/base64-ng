@@ -34,6 +34,12 @@ scripts/validate-constant-time-policy.sh
 echo "checks: dudect timing harness"
 scripts/check_dudect.sh
 
+echo "checks: fuzz harness"
+scripts/check_fuzz.sh
+
+echo "checks: performance harness"
+scripts/check_perf.sh
+
 echo "checks: clippy default"
 cargo clippy --all-targets -- -D warnings
 

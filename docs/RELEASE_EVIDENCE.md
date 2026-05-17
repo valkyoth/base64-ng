@@ -61,7 +61,8 @@ The release gate runs:
 - fuzz target compile check when `cargo-fuzz` is installed
 - fuzz corpus policy validation for target-specific reviewed corpus inputs and
   release-blocking artifact cleanup
-- isolated fuzz and performance harness dependency checks
+- isolated dudect, fuzz, and performance harness dependency checks as part of
+  the standard gate
 - installed-target `no_std` checks for the reserved `simd` feature
 - no-alloc portability smoke crate checks for stack-backed encode/decode,
   wrapped output, URL-safe no-padding, and constant-time-oriented decode with
