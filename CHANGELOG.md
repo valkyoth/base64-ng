@@ -135,6 +135,9 @@
 - Hardened release metadata validation for the trust dashboard's
   zero-dependency, scalar-only, constant-time non-claim, hardware-acceleration
   non-claim, and deferred ecosystem-integration wording.
+- Hardened release metadata validation for the README's zero-dependency,
+  scalar-only development, inert future-feature, constant-time non-claim, and
+  release-evidence wording.
 
 ## 0.8.0 - 2026-05-16
 

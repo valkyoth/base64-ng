@@ -170,6 +170,19 @@ do
     fi
 done
 
+for required_readme_text in \
+    "Zero external runtime or development dependencies in \`Cargo.toml\`." \
+    "development remains scalar-only unless that full evidence package lands" \
+    "currently inert and dependency-free" \
+    "no formal cryptographic guarantee" \
+    "SBOM, and reproducible build check"
+do
+    if ! grep -q "$required_readme_text" README.md; then
+        echo "release metadata: README.md is missing required text: $required_readme_text" >&2
+        exit 1
+    fi
+done
+
 package_list="$(
     cargo package --locked --allow-dirty --list
 )"
