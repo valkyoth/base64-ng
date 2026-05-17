@@ -19,6 +19,8 @@ for required_text in \
     "### Secret Buffer" \
     "### In-Place APIs" \
     "### Custom Alphabets" \
+    "### Stream Module" \
+    "### Error Types" \
     "## \`v1.0\` Admission Questions" \
     "## Initial \`v0.10\` Direction" \
     "Do not add broad conversion traits" \
@@ -30,7 +32,9 @@ for required_text in \
     "into_exposed_array" \
     "try_into_exposed_string" \
     "Encode-to-back and decode-to-front contracts" \
-    "define_alphabet!"
+    "define_alphabet!" \
+    "Padded \`DecoderReader\` stops after terminal padding" \
+    "Keep ct malformed-content errors opaque"
 do
     if ! grep -F -q "$required_text" docs/API_AUDIT.md; then
         echo "api audit: docs/API_AUDIT.md is missing required text: $required_text" >&2

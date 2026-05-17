@@ -14,6 +14,9 @@
 - Classified in-place APIs and custom alphabet helpers for the `v1.0` audit,
   including explicit encode-to-back/decode-to-front and fixed-scan custom
   alphabet boundaries.
+- Classified stream adapters and error types for the `v1.0` audit, preserving
+  fail-closed decode, checked recovery, framed-reader, localized diagnostic,
+  and opaque constant-time-oriented error boundaries.
 
 ## 0.9.0 - 2026-05-17
 

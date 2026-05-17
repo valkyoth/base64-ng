@@ -44,10 +44,10 @@ adding convenience.
 | Stack-backed buffers | documented boundary | `EncodedBuffer` and `DecodedBuffer` are retained with explicit visible-length, cleanup, comparison, and exposed-array boundaries. |
 | `SecretBuffer` | documented boundary | Redaction, cleanup limits, comparison semantics, and owned escape hatches are explicit adoption boundaries. |
 | `ct` module | documented boundary | Keep non-claim wording and opaque error behavior explicit unless verification evidence changes. |
-| `stream` module | review pending | Confirm fail-closed behavior, retry semantics, state helpers, and recovery helpers. |
+| `stream` module | documented boundary | Fail-closed decode, retry semantics, state helpers, recovery helpers, and framed-reader behavior are explicit. |
 | Runtime backend reporting | candidate stable | Scalar-only posture and stable log identifiers are documented and release-gated. |
 | Feature flags | deferred | `tokio`, `kani`, `fuzzing`, and `simd` remain inert or reserved unless admitted by their policy docs. |
-| Error types | review pending | Confirm variants and indexes are stable enough for downstream diagnostics. |
+| Error types | candidate stable | Encode, decode, and alphabet errors are recoverable and diagnostic without committing ct errors to localized detail. |
 | Macros and custom alphabets | documented boundary | Compile-time validation and conservative fixed-scan performance/security tradeoffs are explicit. |
 
 ## `v1.0` Admission Questions
@@ -223,6 +223,71 @@ Stable boundary:
 - Keep custom-alphabet performance tradeoffs documented.
 - Do not add a faster custom-alphabet path unless it has its own audit record.
 - Do not accept non-visible ASCII or padding bytes in Base64 alphabets.
+
+### Stream Module
+
+The `stream` module is retained as a documented boundary for `v1.0`.
+
+Decision rationale:
+
+- Streaming remains behind the explicit `stream` feature and depends only on
+  `std::io`.
+- Writer adapters expose `try_finish` for finalization without consuming the
+  adapter, and `finish` for finalization plus wrapped object recovery.
+- Writer adapters buffer accepted output and allow failed wrapped writes to be
+  retried without re-encoding or re-decoding already accepted input.
+- Direct `Write::write` calls follow normal `std::io::Write` partial-progress
+  semantics; examples and migration docs recommend `write_all` when the whole
+  slice must be consumed.
+- Decoder adapters fail closed after malformed Base64 input and expose
+  `is_failed` for diagnostics.
+- `can_into_inner` and `try_into_inner` provide checked recovery paths that
+  refuse to silently discard pending input or buffered output.
+- Padded `DecoderReader` stops after terminal padding and leaves adjacent
+  framed payload bytes unread in the wrapped reader.
+- Debug output redacts wrapped I/O values and pending payload bytes while still
+  exposing non-sensitive state useful for diagnostics.
+- Internal pending and output queues are wiped on consumption and drop as
+  best-effort retention reduction.
+
+Stable boundary:
+
+- Keep `std::io` streaming under the explicit `stream` feature.
+- Keep async/Tokio out unless the async admission policy is satisfied.
+- Keep decoder failure fail-closed.
+- Keep recovery helpers explicit; do not make unchecked `into_inner` the
+  recommended safe recovery path.
+- Keep reader terminal-padding behavior documented for framed protocols.
+
+### Error Types
+
+`EncodeError`, `DecodeError`, and `AlphabetError` are candidates for the
+`v1.0` stable surface.
+
+Decision rationale:
+
+- Public runtime errors are recoverable through `Result` and avoid panic-based
+  failure for malformed input, size errors, and invalid policies.
+- `EncodeError` separates length overflow, invalid line wrapping, input length,
+  and output capacity failures.
+- `DecodeError` separates invalid length, invalid bytes, invalid padding,
+  invalid line wrapping, output capacity, and deliberately opaque malformed
+  input.
+- Strict, legacy, wrapped, and in-place decode paths preserve absolute input
+  indexes where localized diagnostics are part of the public contract.
+- `ct` APIs intentionally report malformed content as `InvalidInput` so the
+  constant-time-oriented path does not promise localized error detail.
+- `AlphabetError` identifies invalid, padding, and duplicate alphabet bytes
+  during custom alphabet validation.
+
+Stable boundary:
+
+- Keep existing variants unless a later release-candidate audit finds a
+  correctness reason to change them before `v1.0`.
+- Keep localized indexes for non-ct scalar diagnostics.
+- Keep ct malformed-content errors opaque.
+- Do not add panicking convenience APIs for error cases already represented by
+  public error variants.
 
 ## Initial `v0.10` Direction
 
