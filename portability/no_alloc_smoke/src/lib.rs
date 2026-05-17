@@ -1,8 +1,9 @@
 #![no_std]
 
 use base64_ng::{
-    DecodedBuffer, EncodedBuffer, Engine, LineEnding, LineWrap, Profile, STANDARD,
-    URL_SAFE_NO_PAD, checked_encoded_len, ct, decoded_capacity, decoded_len, encoded_len,
+    BCRYPT, CRYPT, DecodedBuffer, EncodedBuffer, Engine, LineEnding, LineWrap, MIME, PEM,
+    Profile, STANDARD, URL_SAFE_NO_PAD, checked_encoded_len, ct, decoded_capacity, decoded_len,
+    encoded_len,
 };
 use core::fmt::Write as _;
 
@@ -292,6 +293,66 @@ pub fn custom_profile_surfaces() -> bool {
     wrapped.as_bytes() == b"aGVs\nbG8="
 }
 
+pub fn named_profile_surfaces() -> bool {
+    if !MIME.is_wrapped()
+        || MIME.line_wrap() != Some(LineWrap::MIME)
+        || MIME.line_len() != Some(76)
+        || MIME.line_ending() != Some(LineEnding::CrLf)
+    {
+        return false;
+    }
+    if !PEM.is_wrapped()
+        || PEM.line_wrap() != Some(LineWrap::PEM)
+        || PEM.line_len() != Some(64)
+        || PEM.line_ending() != Some(LineEnding::Lf)
+    {
+        return false;
+    }
+    if BCRYPT.is_padded() || BCRYPT.is_wrapped() || CRYPT.is_padded() || CRYPT.is_wrapped() {
+        return false;
+    }
+
+    let mime_encoded = match MIME.encode_buffer::<82>(&[0x5a; 58]) {
+        Ok(encoded) => encoded,
+        Err(_) => return false,
+    };
+    if !MIME.validate(mime_encoded.as_bytes()) || !mime_encoded.as_bytes().contains(&b'\r') {
+        return false;
+    }
+    let mime_decoded = match MIME.decode_buffer::<58>(mime_encoded.as_bytes()) {
+        Ok(decoded) => decoded,
+        Err(_) => return false,
+    };
+    if mime_decoded.as_bytes() != [0x5a; 58] {
+        return false;
+    }
+
+    let bcrypt = match BCRYPT.encode_buffer::<4>(&[0xff, 0xff, 0xff]) {
+        Ok(encoded) => encoded,
+        Err(_) => return false,
+    };
+    if bcrypt.as_bytes() != b"9999" {
+        return false;
+    }
+    let bcrypt_decoded = match BCRYPT.decode_buffer::<3>(bcrypt.as_bytes()) {
+        Ok(decoded) => decoded,
+        Err(_) => return false,
+    };
+    if bcrypt_decoded.as_bytes() != [0xff, 0xff, 0xff] {
+        return false;
+    }
+
+    let crypt = match CRYPT.encode_buffer::<4>(&[0xff, 0xff, 0xff]) {
+        Ok(encoded) => encoded,
+        Err(_) => return false,
+    };
+    let crypt_decoded = match CRYPT.decode_buffer::<3>(crypt.as_bytes()) {
+        Ok(decoded) => decoded,
+        Err(_) => return false,
+    };
+    crypt_decoded.as_bytes() == [0xff, 0xff, 0xff]
+}
+
 pub fn length_and_stack_state_surfaces() -> bool {
     if checked_encoded_len(5, true) != Some(8) {
         return false;
@@ -374,7 +435,7 @@ mod tests {
     use super::{
         CONST_HELLO, clear_tail_surfaces, ct_stack_decode, custom_profile_surfaces, fmt_surfaces,
         in_place_surfaces, legacy_stack_decode, length_and_stack_state_surfaces, stack_round_trip,
-        url_safe_round_trip, validate_only_surfaces, wrapped_round_trip,
+        named_profile_surfaces, url_safe_round_trip, validate_only_surfaces, wrapped_round_trip,
     };
 
     #[test]
@@ -389,6 +450,7 @@ mod tests {
         assert!(wrapped_round_trip());
         assert!(legacy_stack_decode());
         assert!(custom_profile_surfaces());
+        assert!(named_profile_surfaces());
     }
 
     #[test]

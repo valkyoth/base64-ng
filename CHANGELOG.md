@@ -115,6 +115,8 @@
   migration guide.
 - Expanded the no-alloc portability smoke crate to cover scalar and
   constant-time clear-tail cleanup APIs on success and error paths.
+- Expanded the no-alloc portability smoke crate to cover named MIME, PEM,
+  bcrypt, and crypt profiles without enabling alloc or std.
 
 ## 0.8.0 - 2026-05-16
 
