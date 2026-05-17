@@ -98,6 +98,27 @@ impl Write for FailOnceWriter {
     }
 }
 
+#[cfg(feature = "stream")]
+struct ShortWriter {
+    output: Vec<u8>,
+    max_write: usize,
+    write_calls: usize,
+}
+
+#[cfg(feature = "stream")]
+impl Write for ShortWriter {
+    fn write(&mut self, input: &[u8]) -> std::io::Result<usize> {
+        self.write_calls += 1;
+        let written = input.len().min(self.max_write);
+        self.output.extend_from_slice(&input[..written]);
+        Ok(written)
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        Ok(())
+    }
+}
+
 struct ReverseAlphabet;
 
 impl Alphabet for ReverseAlphabet {
@@ -2859,6 +2880,29 @@ fn stream_encoder_direct_write_reports_partial_progress() {
 
 #[cfg(feature = "stream")]
 #[test]
+fn stream_encoder_drains_buffered_output_with_short_writes() {
+    let writer = ShortWriter {
+        output: Vec::new(),
+        max_write: 2,
+        write_calls: 0,
+    };
+    let mut encoder = Encoder::new(writer, STANDARD);
+
+    assert_eq!(encoder.write(b"hello").unwrap(), 3);
+    assert_eq!(encoder.buffered_output_len(), 4);
+    encoder.flush().unwrap();
+    assert_eq!(encoder.buffered_output_len(), 0);
+    assert_eq!(encoder.get_ref().output, b"aGVs");
+    assert_eq!(encoder.get_ref().write_calls, 2);
+
+    assert_eq!(encoder.write(b"lo").unwrap(), 2);
+    let writer = encoder.finish().unwrap();
+    assert_eq!(writer.output, b"aGVsbG8=");
+    assert_eq!(writer.write_calls, 4);
+}
+
+#[cfg(feature = "stream")]
+#[test]
 fn stream_encoder_into_inner_still_returns_writer() {
     let mut encoder = Encoder::new(Vec::new(), STANDARD);
     encoder.write_all(b"he").unwrap();
@@ -3254,6 +3298,27 @@ fn stream_decoder_direct_write_reports_partial_progress() {
     decoder.flush().unwrap();
     assert_eq!(decoder.get_ref(), b"hi");
     assert!(!decoder.has_buffered_output());
+
+    let err = decoder.write(b"AA").unwrap_err();
+    assert_eq!(err.kind(), std::io::ErrorKind::InvalidInput);
+}
+
+#[cfg(feature = "stream")]
+#[test]
+fn stream_decoder_drains_buffered_output_with_short_writes() {
+    let writer = ShortWriter {
+        output: Vec::new(),
+        max_write: 1,
+        write_calls: 0,
+    };
+    let mut decoder = Decoder::new(writer, STANDARD);
+
+    assert_eq!(decoder.write(b"aGk=AA").unwrap(), 4);
+    assert_eq!(decoder.buffered_output_len(), 2);
+    decoder.flush().unwrap();
+    assert_eq!(decoder.buffered_output_len(), 0);
+    assert_eq!(decoder.get_ref().output, b"hi");
+    assert_eq!(decoder.get_ref().write_calls, 2);
 
     let err = decoder.write(b"AA").unwrap_err();
     assert_eq!(err.kind(), std::io::ErrorKind::InvalidInput);

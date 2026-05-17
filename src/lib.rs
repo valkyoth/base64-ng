@@ -536,11 +536,20 @@ pub mod stream {
             Some(byte)
         }
 
-        const fn front(&self) -> Option<u8> {
-            if self.len == 0 {
-                None
-            } else {
-                Some(self.buffer[self.start])
+        fn copy_front(&self, output: &mut [u8]) -> usize {
+            let mut copied = 0;
+            while copied < self.len && copied < output.len() {
+                output[copied] = self.buffer[(self.start + copied) % CAP];
+                copied += 1;
+            }
+            copied
+        }
+
+        fn discard_front(&mut self, count: usize) {
+            let mut discarded = 0;
+            while discarded < count {
+                let _ = self.pop_front();
+                discarded += 1;
             }
         }
 
@@ -829,10 +838,11 @@ pub mod stream {
         }
 
         fn drain_output(&mut self) -> io::Result<()> {
-            while let Some(byte) = self.output.front() {
-                let mut byte_buffer = [byte];
-                let result = self.inner_mut().write(&byte_buffer);
-                crate::wipe_bytes(&mut byte_buffer);
+            let mut chunk = [0u8; 1024];
+            while !self.output.is_empty() {
+                let pending = self.output.copy_front(&mut chunk);
+                let result = self.inner_mut().write(&chunk[..pending]);
+                crate::wipe_bytes(&mut chunk[..pending]);
                 match result {
                     Ok(0) => {
                         return Err(io::Error::new(
@@ -840,8 +850,14 @@ pub mod stream {
                             "base64 stream encoder could not drain buffered output",
                         ));
                     }
-                    Ok(_) => {
-                        let _ = self.output.pop_front();
+                    Ok(written) => {
+                        if written > pending {
+                            return Err(io::Error::new(
+                                io::ErrorKind::InvalidData,
+                                "wrapped writer reported more bytes than provided",
+                            ));
+                        }
+                        self.output.discard_front(written);
                     }
                     Err(err) => return Err(err),
                 }
@@ -1220,10 +1236,11 @@ pub mod stream {
         }
 
         fn drain_output(&mut self) -> io::Result<()> {
-            while let Some(byte) = self.output.front() {
-                let mut byte_buffer = [byte];
-                let result = self.inner_mut().write(&byte_buffer);
-                crate::wipe_bytes(&mut byte_buffer);
+            let mut chunk = [0u8; 1024];
+            while !self.output.is_empty() {
+                let pending = self.output.copy_front(&mut chunk);
+                let result = self.inner_mut().write(&chunk[..pending]);
+                crate::wipe_bytes(&mut chunk[..pending]);
                 match result {
                     Ok(0) => {
                         return Err(io::Error::new(
@@ -1231,8 +1248,14 @@ pub mod stream {
                             "base64 stream decoder could not drain buffered output",
                         ));
                     }
-                    Ok(_) => {
-                        let _ = self.output.pop_front();
+                    Ok(written) => {
+                        if written > pending {
+                            return Err(io::Error::new(
+                                io::ErrorKind::InvalidData,
+                                "wrapped writer reported more bytes than provided",
+                            ));
+                        }
+                        self.output.discard_front(written);
                     }
                     Err(err) => return Err(err),
                 }

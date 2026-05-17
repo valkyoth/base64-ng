@@ -102,6 +102,9 @@
   accepted input.
 - Documented and tested direct writer-adapter `write()` partial-progress
   behavior; `write_all()` remains the recommended whole-slice path.
+- Changed writer-side stream output draining to write queued data in bounded
+  chunks while discarding only bytes accepted by the wrapped writer, with
+  short-write regressions for encoder and decoder adapters.
 
 ## 0.8.0 - 2026-05-16
 
