@@ -2758,6 +2758,32 @@ fn secret_buffer_try_from_uses_strict_standard_base64() {
 
 #[cfg(feature = "stream")]
 #[test]
+fn stream_engine_convenience_constructors_attach_policy() {
+    let mut encoder = STANDARD.encoder_writer(Vec::new());
+    assert_eq!(encoder.engine(), STANDARD);
+    encoder.write_all(b"hello").unwrap();
+    assert_eq!(encoder.finish().unwrap(), b"aGVsbG8=");
+
+    let mut decoder = STANDARD.decoder_writer(Vec::new());
+    assert_eq!(decoder.engine(), STANDARD);
+    decoder.write_all(b"aGVsbG8=").unwrap();
+    assert_eq!(decoder.finish().unwrap(), b"hello");
+
+    let mut reader = URL_SAFE_NO_PAD.encoder_reader(&b"\xfb\xff"[..]);
+    assert_eq!(reader.engine(), URL_SAFE_NO_PAD);
+    let mut encoded = String::new();
+    reader.read_to_string(&mut encoded).unwrap();
+    assert_eq!(encoded, "-_8");
+
+    let mut reader = URL_SAFE_NO_PAD.decoder_reader(&b"-_8"[..]);
+    assert_eq!(reader.engine(), URL_SAFE_NO_PAD);
+    let mut decoded = Vec::new();
+    reader.read_to_end(&mut decoded).unwrap();
+    assert_eq!(decoded, b"\xfb\xff");
+}
+
+#[cfg(feature = "stream")]
+#[test]
 fn stream_encoder_handles_chunk_boundaries() {
     let mut encoder = Encoder::new(Vec::new(), STANDARD);
     assert_eq!(encoder.engine(), STANDARD);

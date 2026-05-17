@@ -144,6 +144,8 @@
 - Added no-default-features documentation builds to the standard local gate and
   release evidence docs so the `no_std` API reference is built alongside the
   all-features docs.
+- Added dependency-free `Engine` convenience constructors for `std::io` stream
+  encoder/decoder writer and reader adapters.
 
 ## 0.8.0 - 2026-05-16
 

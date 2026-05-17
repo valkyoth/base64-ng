@@ -518,9 +518,9 @@ With the `stream` feature, `std::io` encoders are available:
 
 ```rust
 use std::io::{Read, Write};
-use base64_ng::{STANDARD, stream::{Decoder, DecoderReader, Encoder, EncoderReader}};
+use base64_ng::STANDARD;
 
-let mut encoder = Encoder::new(Vec::new(), STANDARD);
+let mut encoder = STANDARD.encoder_writer(Vec::new());
 encoder.write_all(b"he").unwrap();
 encoder.write_all(b"llo").unwrap();
 assert!(encoder.has_pending_input());
@@ -529,24 +529,34 @@ assert_eq!(encoder.get_ref(), b"aGVsbG8=");
 let encoded = encoder.finish().unwrap();
 assert_eq!(encoded, b"aGVsbG8=");
 
-let mut reader = EncoderReader::new(&b"hello"[..], STANDARD);
+let mut reader = STANDARD.encoder_reader(&b"hello"[..]);
 let mut encoded = String::new();
 reader.read_to_string(&mut encoded).unwrap();
 assert_eq!(encoded, "aGVsbG8=");
 
-let mut decoder = Decoder::new(Vec::new(), STANDARD);
+let mut decoder = STANDARD.decoder_writer(Vec::new());
 decoder.write_all(b"aGVs").unwrap();
 decoder.write_all(b"bG8=").unwrap();
 assert!(decoder.has_terminal_padding());
 let decoded = decoder.finish().unwrap();
 assert_eq!(decoded, b"hello");
 
-let mut reader = DecoderReader::new(&b"aGVsbG8="[..], STANDARD);
+let mut reader = STANDARD.decoder_reader(&b"aGVsbG8="[..]);
 let mut decoded = Vec::new();
 reader.read_to_end(&mut decoded).unwrap();
 assert_eq!(decoded, b"hello");
 assert!(reader.has_terminal_padding());
 assert!(reader.is_finished());
+```
+
+The explicit adapter constructors remain available when the engine should be
+passed separately:
+
+```rust
+use base64_ng::{STANDARD, stream::Encoder};
+
+let encoder = Encoder::new(Vec::new(), STANDARD);
+assert_eq!(encoder.engine(), STANDARD);
 ```
 
 The stream adapters expose `engine()` and `is_padded()` for policy inspection,
