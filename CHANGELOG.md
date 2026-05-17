@@ -81,6 +81,8 @@
 - Added checked stream adapter `try_into_inner()` helpers that recover the
   wrapped reader or writer only when doing so will not discard pending input or
   buffered output.
+- Added matching stream adapter `can_into_inner()` readiness helpers for
+  non-consuming recovery checks in framed protocols and diagnostics.
 
 ## 0.8.0 - 2026-05-16
 

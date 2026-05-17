@@ -2830,7 +2830,9 @@ fn stream_encoder_into_inner_still_returns_writer() {
 #[test]
 fn stream_encoder_try_into_inner_rejects_pending_input() {
     let mut encoder = Encoder::new(Vec::new(), STANDARD);
+    assert!(encoder.can_into_inner());
     encoder.write_all(b"he").unwrap();
+    assert!(!encoder.can_into_inner());
 
     let mut encoder = match encoder.try_into_inner() {
         Ok(_) => panic!("pending stream encoder was recovered"),
@@ -2839,6 +2841,7 @@ fn stream_encoder_try_into_inner_rejects_pending_input() {
 
     assert_eq!(encoder.pending_len(), 2);
     encoder.try_finish().unwrap();
+    assert!(encoder.can_into_inner());
     assert_eq!(encoder.try_into_inner().unwrap(), b"aGU=");
 }
 
@@ -2847,6 +2850,7 @@ fn stream_encoder_try_into_inner_rejects_pending_input() {
 fn stream_encoder_try_into_inner_returns_writer_without_pending_input() {
     let mut encoder = Encoder::new(Vec::new(), STANDARD);
     encoder.write_all(b"hel").unwrap();
+    assert!(encoder.can_into_inner());
 
     let inner = encoder.try_into_inner().unwrap();
 
@@ -2965,8 +2969,10 @@ fn stream_encoder_reader_into_inner_still_returns_reader() {
 #[test]
 fn stream_encoder_reader_try_into_inner_rejects_buffered_output() {
     let mut reader = EncoderReader::new(Cursor::new(&b"hello"[..]), STANDARD);
+    assert!(!reader.can_into_inner());
     let mut first = [0u8; 1];
     assert_eq!(reader.read(&mut first).unwrap(), 1);
+    assert!(!reader.can_into_inner());
 
     let mut reader = match reader.try_into_inner() {
         Ok(_) => panic!("buffered encoder reader was recovered"),
@@ -2976,6 +2982,7 @@ fn stream_encoder_reader_try_into_inner_rejects_buffered_output() {
     assert!(reader.has_buffered_output());
     let mut rest = Vec::new();
     reader.read_to_end(&mut rest).unwrap();
+    assert!(reader.can_into_inner());
     assert_eq!(reader.try_into_inner().unwrap().position(), 5);
 }
 
@@ -2985,6 +2992,7 @@ fn stream_encoder_reader_try_into_inner_returns_finished_reader() {
     let mut reader = EncoderReader::new(Cursor::new(&b"hello"[..]), STANDARD);
     let mut encoded = Vec::new();
     reader.read_to_end(&mut encoded).unwrap();
+    assert!(reader.can_into_inner());
 
     let inner = reader.try_into_inner().unwrap();
 
@@ -3228,7 +3236,9 @@ fn stream_decoder_into_inner_still_returns_writer() {
 #[test]
 fn stream_decoder_try_into_inner_rejects_pending_input() {
     let mut decoder = Decoder::new(Vec::new(), STANDARD);
+    assert!(decoder.can_into_inner());
     decoder.write_all(b"aG").unwrap();
+    assert!(!decoder.can_into_inner());
 
     let mut decoder = match decoder.try_into_inner() {
         Ok(_) => panic!("pending stream decoder was recovered"),
@@ -3237,6 +3247,7 @@ fn stream_decoder_try_into_inner_rejects_pending_input() {
 
     assert_eq!(decoder.pending_len(), 2);
     decoder.write_all(b"k=").unwrap();
+    assert!(decoder.can_into_inner());
     assert_eq!(decoder.try_into_inner().unwrap(), b"hi");
 }
 
@@ -3245,6 +3256,7 @@ fn stream_decoder_try_into_inner_rejects_pending_input() {
 fn stream_decoder_try_into_inner_returns_writer_without_pending_input() {
     let mut decoder = Decoder::new(Vec::new(), STANDARD);
     decoder.write_all(b"aGk=").unwrap();
+    assert!(decoder.can_into_inner());
 
     let inner = decoder.try_into_inner().unwrap();
 
@@ -3375,8 +3387,10 @@ fn stream_decoder_reader_into_inner_still_returns_reader() {
 #[test]
 fn stream_decoder_reader_try_into_inner_rejects_buffered_output() {
     let mut reader = DecoderReader::new(Cursor::new(&b"aGk=NEXT"[..]), STANDARD);
+    assert!(!reader.can_into_inner());
     let mut first = [0u8; 1];
     assert_eq!(reader.read(&mut first).unwrap(), 1);
+    assert!(!reader.can_into_inner());
 
     let mut reader = match reader.try_into_inner() {
         Ok(_) => panic!("buffered decoder reader was recovered"),
@@ -3386,6 +3400,7 @@ fn stream_decoder_reader_try_into_inner_rejects_buffered_output() {
     assert!(reader.has_buffered_output());
     let mut rest = Vec::new();
     reader.read_to_end(&mut rest).unwrap();
+    assert!(reader.can_into_inner());
     assert_eq!(reader.try_into_inner().unwrap().position(), 4);
 }
 
@@ -3395,6 +3410,7 @@ fn stream_decoder_reader_try_into_inner_returns_finished_reader() {
     let mut reader = DecoderReader::new(Cursor::new(&b"aGk=NEXT"[..]), STANDARD);
     let mut decoded = Vec::new();
     reader.read_to_end(&mut decoded).unwrap();
+    assert!(reader.can_into_inner());
 
     let inner = reader.try_into_inner().unwrap();
 

@@ -564,10 +564,10 @@ fails before pending input is emitted, the adapter remains unfinalized and the
 pending input can be retried. If final bytes were emitted but only `flush()`
 failed, retrying `try_finish()` flushes again without re-emitting the terminal
 Base64 quantum or decoded tail. All stream adapters also expose
-`try_into_inner()` as a checked recovery path that refuses to return the
-wrapped reader or writer while doing so would discard pending input or buffered
-output. Their `Debug` output reports adapter state without formatting the
-wrapped reader or writer.
+`can_into_inner()` and `try_into_inner()` as checked recovery paths that refuse
+to return the wrapped reader or writer while doing so would discard pending
+input or buffered output. Their `Debug` output reports adapter state without
+formatting the wrapped reader or writer.
 
 URL-safe, no-padding encoding:
 

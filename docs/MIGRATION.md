@@ -193,7 +193,10 @@ flushes the wrapped writer again. Stream adapters also expose non-sensitive
 state helpers such as
 `engine()`, `is_padded()`, `pending_len()`, `has_pending_input()`, reader-side
 `buffered_output_len()` and `has_finished_input()`, and decoder-side
-`has_terminal_padding()` for framed protocols and audit logging.
+`has_terminal_padding()` for framed protocols and audit logging. Use
+`can_into_inner()` and `try_into_inner()` when recovering the wrapped
+reader or writer should be refused if it would discard pending input or
+buffered output.
 
 The `tokio` feature is reserved for future async wrappers. It is currently
 inert and dependency-free; use the explicit `stream` feature for `std::io`

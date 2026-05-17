@@ -616,6 +616,13 @@ pub mod stream {
             self.finalized
         }
 
+        /// Returns whether [`Self::try_into_inner`] can recover the wrapped
+        /// writer without discarding pending input.
+        #[must_use]
+        pub const fn can_into_inner(&self) -> bool {
+            !self.has_pending_input()
+        }
+
         /// Consumes the encoder without flushing pending input.
         ///
         /// Prefer [`Self::finish`] when the encoded output must be complete.
@@ -631,7 +638,7 @@ pub mod stream {
         /// accidentally discarding pending input bytes.
         #[allow(clippy::result_large_err)]
         pub fn try_into_inner(mut self) -> Result<W, Self> {
-            if self.has_pending_input() {
+            if !self.can_into_inner() {
                 return Err(self);
             }
             Ok(self.take_inner())
@@ -900,6 +907,13 @@ pub mod stream {
             self.finalized
         }
 
+        /// Returns whether [`Self::try_into_inner`] can recover the wrapped
+        /// writer without discarding pending encoded input.
+        #[must_use]
+        pub const fn can_into_inner(&self) -> bool {
+            !self.has_pending_input()
+        }
+
         /// Consumes the decoder without flushing pending input.
         ///
         /// Prefer [`Self::finish`] when the decoded output must be complete.
@@ -915,7 +929,7 @@ pub mod stream {
         /// accidentally discarding pending encoded input bytes.
         #[allow(clippy::result_large_err)]
         pub fn try_into_inner(mut self) -> Result<W, Self> {
-            if self.has_pending_input() {
+            if !self.can_into_inner() {
                 return Err(self);
             }
             Ok(self.take_inner())
@@ -1248,6 +1262,13 @@ pub mod stream {
             self.finished && self.output.is_empty()
         }
 
+        /// Returns whether [`Self::try_into_inner`] can recover the wrapped
+        /// reader without discarding buffered decoded output.
+        #[must_use]
+        pub const fn can_into_inner(&self) -> bool {
+            self.is_finished()
+        }
+
         /// Consumes the decoder reader and returns the wrapped reader.
         #[must_use]
         pub fn into_inner(mut self) -> R {
@@ -1263,7 +1284,7 @@ pub mod stream {
         /// the wrapped reader does not silently discard decoded bytes.
         #[allow(clippy::result_large_err)]
         pub fn try_into_inner(mut self) -> Result<R, Self> {
-            if !self.is_finished() {
+            if !self.can_into_inner() {
                 return Err(self);
             }
             Ok(self.take_inner())
@@ -1521,6 +1542,13 @@ pub mod stream {
             self.finished && self.output.is_empty()
         }
 
+        /// Returns whether [`Self::try_into_inner`] can recover the wrapped
+        /// reader without discarding pending input or buffered encoded output.
+        #[must_use]
+        pub const fn can_into_inner(&self) -> bool {
+            self.is_finished()
+        }
+
         /// Consumes the encoder reader and returns the wrapped reader.
         #[must_use]
         pub fn into_inner(mut self) -> R {
@@ -1535,7 +1563,7 @@ pub mod stream {
         /// output buffered inside the adapter.
         #[allow(clippy::result_large_err)]
         pub fn try_into_inner(mut self) -> Result<R, Self> {
-            if !self.is_finished() {
+            if !self.can_into_inner() {
                 return Err(self);
             }
             Ok(self.take_inner())
