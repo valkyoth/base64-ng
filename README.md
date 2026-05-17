@@ -570,7 +570,8 @@ Base64 quantum or decoded tail. All stream adapters also expose
 `can_into_inner()` and `try_into_inner()` as checked recovery paths that refuse
 to return the wrapped reader or writer while doing so would discard pending
 input or buffered output. Their `Debug` output reports adapter state without
-formatting the wrapped reader or writer.
+formatting the wrapped reader or writer, including recovery readiness, pending
+quantum state, and reader-side fixed output queue capacity.
 
 URL-safe, no-padding encoding:
 

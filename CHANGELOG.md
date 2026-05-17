@@ -88,6 +88,8 @@
   quantum.
 - Added reader-side stream `buffered_output_capacity()` and
   `buffered_output_remaining_capacity()` helpers for fixed-queue diagnostics.
+- Expanded redacted stream `Debug` output with recovery readiness, pending
+  quantum state, and reader-side fixed output queue capacity.
 
 ## 0.8.0 - 2026-05-16
 

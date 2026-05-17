@@ -708,6 +708,8 @@ pub mod stream {
                 .field("engine", &self.engine)
                 .field("pending", &"<redacted>")
                 .field("pending_len", &self.pending_len)
+                .field("pending_input_needed_len", &self.pending_input_needed_len())
+                .field("can_into_inner", &self.can_into_inner())
                 .field("finalized", &self.finalized)
                 .finish()
         }
@@ -1012,6 +1014,8 @@ pub mod stream {
                 .field("engine", &self.engine)
                 .field("pending", &"<redacted>")
                 .field("pending_len", &self.pending_len)
+                .field("pending_input_needed_len", &self.pending_input_needed_len())
+                .field("can_into_inner", &self.can_into_inner())
                 .field("terminal_padding", &self.finished)
                 .field("finalized", &self.finalized)
                 .finish()
@@ -1395,7 +1399,14 @@ pub mod stream {
                 .field("engine", &self.engine)
                 .field("pending", &"<redacted>")
                 .field("pending_len", &self.pending_len)
+                .field("pending_input_needed_len", &self.pending_input_needed_len())
                 .field("buffered_output_len", &self.output.len())
+                .field("buffered_output_capacity", &self.output.capacity())
+                .field(
+                    "buffered_output_remaining_capacity",
+                    &self.output.available_capacity(),
+                )
+                .field("can_into_inner", &self.can_into_inner())
                 .field("finished", &self.finished)
                 .field("terminal_padding", &self.terminal_seen)
                 .finish()
@@ -1701,7 +1712,14 @@ pub mod stream {
                 .field("engine", &self.engine)
                 .field("pending", &"<redacted>")
                 .field("pending_len", &self.pending_len)
+                .field("pending_input_needed_len", &self.pending_input_needed_len())
                 .field("buffered_output_len", &self.output.len())
+                .field("buffered_output_capacity", &self.output.capacity())
+                .field(
+                    "buffered_output_remaining_capacity",
+                    &self.output.available_capacity(),
+                )
+                .field("can_into_inner", &self.can_into_inner())
                 .field("finished", &self.finished)
                 .finish()
         }

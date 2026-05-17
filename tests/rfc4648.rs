@@ -3527,6 +3527,8 @@ fn stream_debug_output_redacts_wrapped_io() {
     let debug = format!("{encoder:?}");
     assert!(debug.contains("Encoder"));
     assert!(debug.contains("pending_len"));
+    assert!(debug.contains("pending_input_needed_len"));
+    assert!(debug.contains("can_into_inner"));
     assert!(debug.contains("<present>"));
     assert!(!debug.contains("raw-secret"));
 
@@ -3534,6 +3536,8 @@ fn stream_debug_output_redacts_wrapped_io() {
     decoder.write_all(b"aGk=").unwrap();
     let debug = format!("{decoder:?}");
     assert!(debug.contains("Decoder"));
+    assert!(debug.contains("pending_input_needed_len"));
+    assert!(debug.contains("can_into_inner"));
     assert!(debug.contains("terminal_padding"));
     assert!(!debug.contains("decoded-secret"));
 
@@ -3542,14 +3546,22 @@ fn stream_debug_output_redacts_wrapped_io() {
     decoder_reader.read_exact(&mut one).unwrap();
     let debug = format!("{decoder_reader:?}");
     assert!(debug.contains("DecoderReader"));
+    assert!(debug.contains("pending_input_needed_len"));
     assert!(debug.contains("buffered_output_len"));
+    assert!(debug.contains("buffered_output_capacity"));
+    assert!(debug.contains("buffered_output_remaining_capacity"));
+    assert!(debug.contains("can_into_inner"));
     assert!(!debug.contains("aGVsbG8"));
 
     let mut encoder_reader = EncoderReader::new(Cursor::new(&b"raw-secret"[..]), STANDARD);
     encoder_reader.read_exact(&mut one).unwrap();
     let debug = format!("{encoder_reader:?}");
     assert!(debug.contains("EncoderReader"));
+    assert!(debug.contains("pending_input_needed_len"));
     assert!(debug.contains("buffered_output_len"));
+    assert!(debug.contains("buffered_output_capacity"));
+    assert!(debug.contains("buffered_output_remaining_capacity"));
+    assert!(debug.contains("can_into_inner"));
     assert!(!debug.contains("raw-secret"));
 }
 
