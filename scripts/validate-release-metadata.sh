@@ -172,7 +172,7 @@ done
 
 for required_readme_text in \
     "Zero external runtime or development dependencies in \`Cargo.toml\`." \
-    "development remains scalar-only unless that full evidence package lands" \
+    "release remains scalar-only because that full evidence package has not" \
     "currently inert and dependency-free" \
     "no formal cryptographic guarantee" \
     "SBOM, and reproducible build check"

@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.9.0-alpha.0 - Unreleased
+## 0.9.0 - 2026-05-17
 
 - Started the next development cycle after the `0.8.0` release.
 - Added stream adapter state-inspection helpers for pending input quanta and

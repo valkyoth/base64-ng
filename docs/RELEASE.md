@@ -19,8 +19,8 @@ Run:
 scripts/stable_release_gate.sh release
 ```
 
-`release` mode refuses pre-release Cargo versions such as
-`0.9.0-alpha.0`. Use `check` mode during development:
+`release` mode refuses pre-release Cargo versions such as `-alpha` builds.
+Use `check` mode during pre-release development:
 
 ```sh
 scripts/stable_release_gate.sh check
