@@ -34,6 +34,18 @@ crate declares, the script prints a skip and exits successfully. The stable
 release gate treats that as an explicit policy skip, not as completed formal
 verification.
 
+## Harness Scope
+
+Current harnesses cover:
+
+- scalar `decode_chunk` output bounds and bit-packing agreement with decoded
+  6-bit values
+- scalar length-helper bounds
+- bounded scalar encode/decode output-prefix bounds
+- in-place decode prefix bounds
+- clear-tail cleanup behavior on decode failures
+- constant-time-oriented validate/decode agreement for one quantum
+
 ## Release Policy
 
 For `v0.11`, the project must choose one of these outcomes:

@@ -7025,7 +7025,9 @@ fn report_ct_error(invalid_byte: u8, invalid_padding: u8) -> Result<(), DecodeEr
 
 #[cfg(kani)]
 mod kani_proofs {
-    use super::{STANDARD, checked_encoded_len, ct, decoded_capacity};
+    use super::{
+        STANDARD, Standard, checked_encoded_len, ct, decode_byte, decode_chunk, decoded_capacity,
+    };
 
     #[kani::proof]
     fn checked_encoded_len_is_bounded_for_small_inputs() {
@@ -7065,6 +7067,45 @@ mod kani_proofs {
 
         if let Ok(written) = result {
             assert!(written <= output.len());
+        }
+    }
+
+    #[kani::proof]
+    #[kani::unwind(3)]
+    fn standard_decode_chunk_returns_written_within_output() {
+        let input = kani::any::<[u8; 4]>();
+        let mut output = kani::any::<[u8; 3]>();
+        let result = decode_chunk::<Standard, true>(input, &mut output);
+
+        if let Ok(written) = result {
+            assert!(written <= output.len());
+            assert!(written <= 3);
+        }
+    }
+
+    #[kani::proof]
+    #[kani::unwind(3)]
+    fn standard_decode_chunk_bit_packing_matches_decoded_values() {
+        let input = kani::any::<[u8; 4]>();
+        let mut output = kani::any::<[u8; 3]>();
+        let result = decode_chunk::<Standard, true>(input, &mut output);
+
+        if let Ok(written) = result {
+            let v0 = decode_byte::<Standard>(input[0], 0).expect("successful chunk has v0");
+            let v1 = decode_byte::<Standard>(input[1], 1).expect("successful chunk has v1");
+
+            assert!(output[0] == ((v0 << 2) | (v1 >> 4)));
+
+            if written >= 2 {
+                let v2 = decode_byte::<Standard>(input[2], 2).expect("successful chunk has v2");
+                assert!(output[1] == ((v1 << 4) | (v2 >> 2)));
+            }
+
+            if written == 3 {
+                let v2 = decode_byte::<Standard>(input[2], 2).expect("successful chunk has v2");
+                let v3 = decode_byte::<Standard>(input[3], 3).expect("successful chunk has v3");
+                assert!(output[2] == ((v2 << 6) | v3));
+            }
         }
     }
 
@@ -7249,6 +7290,19 @@ mod tests {
         assert_decode_backend_matches_scalar::<A, PAD>(&encoded[..encoded_len]);
     }
 
+    fn assert_standard_decode_chunk_matches_input(input: &[u8]) {
+        let mut encoded = [0u8; 4];
+        let encoded_len = STANDARD.encode_slice(input, &mut encoded).unwrap();
+        assert_eq!(encoded_len, 4);
+
+        let chunk = [encoded[0], encoded[1], encoded[2], encoded[3]];
+        let mut decoded = [0u8; 3];
+        let decoded_len = decode_chunk::<Standard, true>(chunk, &mut decoded).unwrap();
+
+        assert_eq!(decoded_len, input.len());
+        assert_eq!(&decoded[..decoded_len], input);
+    }
+
     #[test]
     fn backend_dispatch_matches_scalar_reference_for_canonical_inputs() {
         let mut input = [0; 128];
@@ -7286,6 +7340,34 @@ mod tests {
         assert_decode_backend_matches_scalar::<UrlSafe, false>(b"AA/A");
         assert_decode_backend_matches_scalar::<Standard, true>(b"AA-A");
         assert_decode_backend_matches_scalar::<Standard, false>(b"AA_A");
+    }
+
+    #[test]
+    fn decode_chunk_bit_packing_matches_exhaustive_small_inputs() {
+        for byte in u8::MIN..=u8::MAX {
+            assert_standard_decode_chunk_matches_input(&[byte]);
+        }
+
+        for first in u8::MIN..=u8::MAX {
+            for second in u8::MIN..=u8::MAX {
+                assert_standard_decode_chunk_matches_input(&[first, second]);
+            }
+        }
+    }
+
+    #[test]
+    fn decode_chunk_bit_packing_matches_representative_full_quanta() {
+        const SAMPLES: [u8; 16] = [
+            0, 1, 2, 15, 16, 31, 32, 63, 64, 95, 127, 128, 191, 192, 254, 255,
+        ];
+
+        for first in SAMPLES {
+            for second in SAMPLES {
+                for third in SAMPLES {
+                    assert_standard_decode_chunk_matches_input(&[first, second, third]);
+                }
+            }
+        }
     }
 
     #[cfg(feature = "simd")]

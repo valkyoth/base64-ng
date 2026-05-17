@@ -7,6 +7,11 @@
   compatibility and replacement-evidence policy as the first focus.
 - Added a dedicated Kani verification policy document explaining the current
   Rust `1.95` compatibility skip and the accepted `v0.11` outcomes.
+- Added focused Kani proof harnesses for scalar `decode_chunk` output bounds
+  and bit-packing agreement with decoded 6-bit values.
+- Added deterministic scalar `decode_chunk` bit-packing tests that exhaustively
+  cover all one-byte and two-byte padded inputs plus a representative
+  full-quantum grid.
 
 ## 0.10.0 - 2026-05-17
 
