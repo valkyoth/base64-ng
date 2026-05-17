@@ -12,6 +12,11 @@
 - Added deterministic scalar `decode_chunk` bit-packing tests that exhaustively
   cover all one-byte and two-byte padded inputs plus a representative
   full-quantum grid.
+- Reworked unpadded scalar tail decode and padded-length inspection to use
+  slice-pattern and checked slice APIs instead of direct length-derived
+  indexing.
+- Added Kani proof harnesses for unpadded tail validation and decode output
+  bounds.
 
 ## 0.10.0 - 2026-05-17
 

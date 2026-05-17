@@ -6328,11 +6328,19 @@ fn decoded_len_padded(input: &[u8]) -> Result<usize, DecodeError> {
     if !input.len().is_multiple_of(4) {
         return Err(DecodeError::InvalidLength);
     }
+
+    let Some((&last, before_last_prefix)) = input.split_last() else {
+        return Ok(0);
+    };
+    let Some(&before_last) = before_last_prefix.last() else {
+        return Err(DecodeError::InvalidLength);
+    };
+
     let mut padding = 0;
-    if input[input.len() - 1] == b'=' {
+    if last == b'=' {
         padding += 1;
     }
-    if input[input.len() - 2] == b'=' {
+    if before_last == b'=' {
         padding += 1;
     }
     if padding == 0
@@ -6472,20 +6480,20 @@ fn decode_chunk<A: Alphabet, const PAD: bool>(
 }
 
 fn validate_tail_unpadded<A: Alphabet>(input: &[u8]) -> Result<(), DecodeError> {
-    match input.len() {
-        0 => Ok(()),
-        2 => {
-            decode_byte::<A>(input[0], 0)?;
-            let v1 = decode_byte::<A>(input[1], 1)?;
+    match input {
+        [] => Ok(()),
+        [b0, b1] => {
+            decode_byte::<A>(*b0, 0)?;
+            let v1 = decode_byte::<A>(*b1, 1)?;
             if v1 & 0b0000_1111 != 0 {
                 return Err(DecodeError::InvalidPadding { index: 1 });
             }
             Ok(())
         }
-        3 => {
-            decode_byte::<A>(input[0], 0)?;
-            decode_byte::<A>(input[1], 1)?;
-            let v2 = decode_byte::<A>(input[2], 2)?;
+        [b0, b1, b2] => {
+            decode_byte::<A>(*b0, 0)?;
+            decode_byte::<A>(*b1, 1)?;
+            let v2 = decode_byte::<A>(*b2, 2)?;
             if v2 & 0b0000_0011 != 0 {
                 return Err(DecodeError::InvalidPadding { index: 2 });
             }
@@ -6499,38 +6507,39 @@ fn decode_tail_unpadded<A: Alphabet>(
     input: &[u8],
     output: &mut [u8],
 ) -> Result<usize, DecodeError> {
-    match input.len() {
-        0 => Ok(0),
-        2 => {
-            if output.is_empty() {
+    match input {
+        [] => Ok(0),
+        [b0, b1] => {
+            let Some(out0) = output.first_mut() else {
                 return Err(DecodeError::OutputTooSmall {
                     required: 1,
                     available: output.len(),
                 });
-            }
-            let v0 = decode_byte::<A>(input[0], 0)?;
-            let v1 = decode_byte::<A>(input[1], 1)?;
+            };
+            let v0 = decode_byte::<A>(*b0, 0)?;
+            let v1 = decode_byte::<A>(*b1, 1)?;
             if v1 & 0b0000_1111 != 0 {
                 return Err(DecodeError::InvalidPadding { index: 1 });
             }
-            output[0] = (v0 << 2) | (v1 >> 4);
+            *out0 = (v0 << 2) | (v1 >> 4);
             Ok(1)
         }
-        3 => {
-            if output.len() < 2 {
+        [b0, b1, b2] => {
+            let available = output.len();
+            let Some([out0, out1]) = output.get_mut(..2) else {
                 return Err(DecodeError::OutputTooSmall {
                     required: 2,
-                    available: output.len(),
+                    available,
                 });
-            }
-            let v0 = decode_byte::<A>(input[0], 0)?;
-            let v1 = decode_byte::<A>(input[1], 1)?;
-            let v2 = decode_byte::<A>(input[2], 2)?;
+            };
+            let v0 = decode_byte::<A>(*b0, 0)?;
+            let v1 = decode_byte::<A>(*b1, 1)?;
+            let v2 = decode_byte::<A>(*b2, 2)?;
             if v2 & 0b0000_0011 != 0 {
                 return Err(DecodeError::InvalidPadding { index: 2 });
             }
-            output[0] = (v0 << 2) | (v1 >> 4);
-            output[1] = (v1 << 4) | (v2 >> 2);
+            *out0 = (v0 << 2) | (v1 >> 4);
+            *out1 = (v1 << 4) | (v2 >> 2);
             Ok(2)
         }
         _ => Err(DecodeError::InvalidLength),
@@ -7026,7 +7035,8 @@ fn report_ct_error(invalid_byte: u8, invalid_padding: u8) -> Result<(), DecodeEr
 #[cfg(kani)]
 mod kani_proofs {
     use super::{
-        STANDARD, Standard, checked_encoded_len, ct, decode_byte, decode_chunk, decoded_capacity,
+        STANDARD, Standard, checked_encoded_len, ct, decode_byte, decode_chunk,
+        decode_tail_unpadded, decoded_capacity, validate_tail_unpadded,
     };
 
     #[kani::proof]
@@ -7106,6 +7116,44 @@ mod kani_proofs {
                 let v3 = decode_byte::<Standard>(input[3], 3).expect("successful chunk has v3");
                 assert!(output[2] == ((v2 << 6) | v3));
             }
+        }
+    }
+
+    #[kani::proof]
+    #[kani::unwind(3)]
+    fn standard_validate_tail_unpadded_accepts_or_rejects_without_panic() {
+        let input = kani::any::<[u8; 3]>();
+        let len = usize::from(kani::any::<u8>() % 4);
+        let result = validate_tail_unpadded::<Standard>(&input[..len]);
+
+        if result.is_ok() {
+            assert!(len == 0 || len == 2 || len == 3);
+        }
+    }
+
+    #[kani::proof]
+    #[kani::unwind(3)]
+    fn standard_decode_two_byte_tail_returns_written_within_output() {
+        let input = kani::any::<[u8; 2]>();
+        let mut output = kani::any::<[u8; 1]>();
+        let result = decode_tail_unpadded::<Standard>(&input, &mut output);
+
+        if let Ok(written) = result {
+            assert!(written <= output.len());
+            assert!(written == 1);
+        }
+    }
+
+    #[kani::proof]
+    #[kani::unwind(3)]
+    fn standard_decode_three_byte_tail_returns_written_within_output() {
+        let input = kani::any::<[u8; 3]>();
+        let mut output = kani::any::<[u8; 2]>();
+        let result = decode_tail_unpadded::<Standard>(&input, &mut output);
+
+        if let Ok(written) = result {
+            assert!(written <= output.len());
+            assert!(written == 2);
         }
     }
 

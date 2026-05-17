@@ -40,6 +40,7 @@ Current harnesses cover:
 
 - scalar `decode_chunk` output bounds and bit-packing agreement with decoded
   6-bit values
+- unpadded scalar tail validation and decode output bounds
 - scalar length-helper bounds
 - bounded scalar encode/decode output-prefix bounds
 - in-place decode prefix bounds
