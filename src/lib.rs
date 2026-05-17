@@ -624,6 +624,19 @@ pub mod stream {
             self.take_inner()
         }
 
+        /// Consumes the encoder only when no partial input quantum is buffered.
+        ///
+        /// This does not flush or finalize the wrapped writer. It is a checked
+        /// alternative to [`Self::into_inner`] for callers that want to avoid
+        /// accidentally discarding pending input bytes.
+        #[allow(clippy::result_large_err)]
+        pub fn try_into_inner(mut self) -> Result<W, Self> {
+            if self.has_pending_input() {
+                return Err(self);
+            }
+            Ok(self.take_inner())
+        }
+
         fn inner_ref(&self) -> &W {
             match &self.inner {
                 Some(inner) => inner,
@@ -893,6 +906,19 @@ pub mod stream {
         #[must_use]
         pub fn into_inner(mut self) -> W {
             self.take_inner()
+        }
+
+        /// Consumes the decoder only when no partial input quantum is buffered.
+        ///
+        /// This does not flush or finalize the wrapped writer. It is a checked
+        /// alternative to [`Self::into_inner`] for callers that want to avoid
+        /// accidentally discarding pending encoded input bytes.
+        #[allow(clippy::result_large_err)]
+        pub fn try_into_inner(mut self) -> Result<W, Self> {
+            if self.has_pending_input() {
+                return Err(self);
+            }
+            Ok(self.take_inner())
         }
 
         fn inner_ref(&self) -> &W {
@@ -1228,6 +1254,21 @@ pub mod stream {
             self.take_inner()
         }
 
+        /// Consumes the decoder reader only after the Base64 payload is fully
+        /// drained.
+        ///
+        /// For padded streams, terminal padding may leave adjacent framed bytes
+        /// unread in the wrapped reader. This method succeeds only after all
+        /// decoded output buffered by this adapter has been read, so recovering
+        /// the wrapped reader does not silently discard decoded bytes.
+        #[allow(clippy::result_large_err)]
+        pub fn try_into_inner(mut self) -> Result<R, Self> {
+            if !self.is_finished() {
+                return Err(self);
+            }
+            Ok(self.take_inner())
+        }
+
         fn inner_ref(&self) -> &R {
             match &self.inner {
                 Some(inner) => inner,
@@ -1484,6 +1525,20 @@ pub mod stream {
         #[must_use]
         pub fn into_inner(mut self) -> R {
             self.take_inner()
+        }
+
+        /// Consumes the encoder reader only after the encoded stream is fully
+        /// drained.
+        ///
+        /// This is a checked alternative to [`Self::into_inner`] for callers
+        /// that want to avoid accidentally discarding pending input or encoded
+        /// output buffered inside the adapter.
+        #[allow(clippy::result_large_err)]
+        pub fn try_into_inner(mut self) -> Result<R, Self> {
+            if !self.is_finished() {
+                return Err(self);
+            }
+            Ok(self.take_inner())
         }
 
         fn inner_ref(&self) -> &R {

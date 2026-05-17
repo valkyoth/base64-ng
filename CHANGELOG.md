@@ -78,6 +78,9 @@
   caller-owned buffers without switching to the diagnostic decoder.
 - Added `Engine::ct_decoder()` for explicit promotion to the matching
   constant-time-oriented decoder without type annotations.
+- Added checked stream adapter `try_into_inner()` helpers that recover the
+  wrapped reader or writer only when doing so will not discard pending input or
+  buffered output.
 
 ## 0.8.0 - 2026-05-16
 
