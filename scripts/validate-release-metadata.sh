@@ -155,6 +155,21 @@ do
     fi
 done
 
+for required_trust_text in \
+    "Runtime dependencies | Zero external crates" \
+    "Active backend | Scalar only" \
+    "no formal cryptographic constant-time guarantee" \
+    "formally verified cryptographic constant-time behavior" \
+    "an active hardware-accelerated backend" \
+    "async/Tokio support" \
+    "serde or bytes integration"
+do
+    if ! grep -q "$required_trust_text" docs/TRUST.md; then
+        echo "release metadata: trust dashboard is missing required text: $required_trust_text" >&2
+        exit 1
+    fi
+done
+
 package_list="$(
     cargo package --locked --allow-dirty --list
 )"

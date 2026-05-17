@@ -132,6 +132,9 @@
 - Hardened release metadata validation so the stable release gate must keep
   invoking the release-only evidence scripts for Miri, fuzz, cross-targets,
   backend evidence, Kani, assembly evidence, SBOMs, and reproducibility.
+- Hardened release metadata validation for the trust dashboard's
+  zero-dependency, scalar-only, constant-time non-claim, hardware-acceleration
+  non-claim, and deferred ecosystem-integration wording.
 
 ## 0.8.0 - 2026-05-16
 
