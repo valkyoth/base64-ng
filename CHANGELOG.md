@@ -32,6 +32,9 @@
   bcrypt-style, `crypt(3)`-style, and caller-defined alphabets.
 - Documented the accepted `v0.11` Kani verifier exception and the replacement
   release evidence required while local Kani remains behind Rust `1.95`.
+- Hardened dependency-free equal-length buffer comparisons with an optimizer
+  barrier in the byte-difference fold while keeping the API documented as
+  constant-time-oriented best effort.
 
 ## 0.10.0 - 2026-05-17
 

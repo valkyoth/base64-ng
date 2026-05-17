@@ -4169,10 +4169,9 @@ fn constant_time_eq_public_len(left: &[u8], right: &[u8]) -> bool {
         return false;
     }
 
-    let diff = left
-        .iter()
-        .zip(right)
-        .fold(0u8, |diff, (left, right)| diff | (*left ^ *right));
+    let diff = left.iter().zip(right).fold(0u8, |diff, (left, right)| {
+        diff | core::hint::black_box(*left ^ *right)
+    });
     diff == 0
 }
 
