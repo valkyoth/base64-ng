@@ -436,6 +436,13 @@ stack-backed buffers. It returns the backing array and visible length, so
 redacted formatting and drop-time cleanup no longer apply to the returned
 array.
 
+Stack-backed buffers clear their backing arrays when dropped, but they cannot
+clear historical stack-frame copies made by the compiler, caller code, panic
+machinery, or operating system crash capture. For highly sensitive payloads,
+prefer the clear-tail APIs as soon as the value is no longer needed, keep
+secret lifetimes short, and combine crate-level cleanup with process policies
+for core dumps, swap, and crash reporting.
+
 When an owned heap buffer is acceptable but accidental logging is not, use
 `encode_secret` and `decode_secret`:
 

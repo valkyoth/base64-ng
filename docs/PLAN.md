@@ -486,6 +486,9 @@ weakened or broken.
 - Expand or finalize proof harnesses for length helpers, slice encode/decode
   bounds, in-place decode bounds, clear-tail cleanup behavior, and
   constant-time-oriented validate/decode agreement.
+- Add focused formal-verification coverage for the `decode_chunk` bit-packing
+  logic so overflow and output-bound behavior are checked across all possible
+  decoded 6-bit input combinations.
 - Complete the panic-free public API audit for non-test scalar code. Document
   every remaining bounded internal index with proof, tests, or a local
   invariant in code or policy docs.

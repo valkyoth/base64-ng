@@ -149,6 +149,8 @@
 - Updated the roadmap to make `v0.10` an audit-preparation milestone, add
   `v0.11` verification hardening, add `v0.12` stabilization rehearsal, and keep
   `v1.0` gated on evidence instead of schedule.
+- Documented the high-assurance stack-frame cleanup boundary and added focused
+  `decode_chunk` bit-packing verification to the pre-`v1.0` roadmap.
 
 ## 0.8.0 - 2026-05-16
 

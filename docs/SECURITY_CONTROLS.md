@@ -30,6 +30,9 @@ The caller still owns:
 - avoiding accidental copies of secrets before wrapping them in `SecretBuffer`
 - treating stack-buffer `into_exposed_array` calls as boundaries where redacted
   formatting and drop-time cleanup intentionally stop for the returned arrays
+- understanding that stack-backed buffers can clear their own backing arrays
+  but cannot clear historical stack-frame copies made by compiler spills,
+  caller code, panic machinery, crash handlers, or operating system capture
 - treating `SecretBuffer::into_exposed_vec` as a boundary where redacted
   formatting and drop-time cleanup intentionally stop
 - process-wide memory hygiene such as core-dump policy, swap policy, crash
@@ -59,9 +62,12 @@ profiles are strict about the configured line ending and non-final line width.
 
 Cleanup APIs are best-effort initialized-byte cleanup. They are implemented
 without runtime dependencies and without unsafe code in scalar paths. They do
-not claim formal zeroization against compiler behavior, allocator spare
-capacity, copies made outside the wrapper, core dumps, swap, or arbitrary
-process memory disclosure vulnerabilities.
+not claim formal zeroization against compiler behavior, historical stack-frame
+copies, allocator internals, copies made outside the wrapper, core dumps, swap,
+or arbitrary process memory disclosure vulnerabilities. For high-assurance
+secret handling, use the clear-tail APIs promptly and pair them with operating
+system and deployment controls that reduce crash dumps, swap, and broad memory
+disclosure exposure.
 
 ### Side-Channel Posture
 
