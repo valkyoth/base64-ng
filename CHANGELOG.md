@@ -97,6 +97,9 @@
   quantum state, and reader-side fixed output queue capacity.
 - Expanded the isolated `stream_chunks` fuzz target to cover encoder-reader
   streaming and stream state-helper invariants.
+- Added writer-side stream output queues with buffered-output diagnostics so
+  wrapped writer failures can be retried without re-encoding or re-decoding
+  accepted input.
 
 ## 0.8.0 - 2026-05-16
 

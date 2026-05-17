@@ -562,16 +562,18 @@ has been reached and all buffered output has been drained, and
 padding but buffered output may still remain. Writer adapters expose
 `try_finish()` to finalize pending input and flush the wrapped writer without
 consuming the adapter, plus `is_finalized()` for explicit state inspection;
-after successful finalization, later writes are rejected. If a wrapped writer
-fails before pending input is emitted, the adapter remains unfinalized and the
-pending input can be retried. If final bytes were emitted but only `flush()`
-failed, retrying `try_finish()` flushes again without re-emitting the terminal
-Base64 quantum or decoded tail. All stream adapters also expose
-`can_into_inner()` and `try_into_inner()` as checked recovery paths that refuse
-to return the wrapped reader or writer while doing so would discard pending
-input or buffered output. Their `Debug` output reports adapter state without
-formatting the wrapped reader or writer, including recovery readiness, pending
-quantum state, and reader-side fixed output queue capacity.
+after successful finalization, later writes are rejected. Writer adapters also
+expose `buffered_output_len()`, `buffered_output_capacity()`,
+`buffered_output_remaining_capacity()`, and `has_buffered_output()` for encoded
+or decoded bytes accepted by the adapter but not yet drained into the wrapped
+writer. If a wrapped writer fails, retrying `flush()` or `try_finish()` drains
+the buffered output without re-encoding or re-decoding the accepted input. All
+stream adapters also expose `can_into_inner()` and `try_into_inner()` as
+checked recovery paths that refuse to return the wrapped reader or writer while
+doing so would discard pending input or buffered output. Their `Debug` output
+reports adapter state without formatting the wrapped reader or writer,
+including recovery readiness, pending quantum state, and fixed output queue
+capacity.
 
 URL-safe, no-padding encoding:
 

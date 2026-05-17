@@ -536,6 +536,14 @@ pub mod stream {
             Some(byte)
         }
 
+        const fn front(&self) -> Option<u8> {
+            if self.len == 0 {
+                None
+            } else {
+                Some(self.buffer[self.start])
+            }
+        }
+
         fn clear_all(&mut self) {
             crate::wipe_bytes(&mut self.buffer);
             self.start = 0;
@@ -556,6 +564,7 @@ pub mod stream {
         engine: Engine<A, PAD>,
         pending: [u8; 2],
         pending_len: usize,
+        output: OutputQueue<1024>,
         finalized: bool,
     }
 
@@ -571,6 +580,7 @@ pub mod stream {
                 engine,
                 pending: [0; 2],
                 pending_len: 0,
+                output: OutputQueue::new(),
                 finalized: false,
             }
         }
@@ -625,6 +635,34 @@ pub mod stream {
             }
         }
 
+        /// Returns the number of encoded bytes buffered for the wrapped
+        /// writer after a previous write or flush could not fully drain them.
+        #[must_use]
+        pub const fn buffered_output_len(&self) -> usize {
+            self.output.len()
+        }
+
+        /// Returns the maximum number of encoded bytes this adapter can buffer
+        /// before returning bytes to the caller.
+        #[must_use]
+        pub const fn buffered_output_capacity(&self) -> usize {
+            self.output.capacity()
+        }
+
+        /// Returns how many more encoded bytes can be buffered before this
+        /// adapter must drain the wrapped writer.
+        #[must_use]
+        pub const fn buffered_output_remaining_capacity(&self) -> usize {
+            self.output.available_capacity()
+        }
+
+        /// Returns whether this encoder has encoded output waiting to be
+        /// written to the wrapped writer.
+        #[must_use]
+        pub const fn has_buffered_output(&self) -> bool {
+            !self.output.is_empty()
+        }
+
         /// Returns whether this encoder has been finalized.
         ///
         /// Once this returns `true`, later non-empty writes return an error.
@@ -637,7 +675,7 @@ pub mod stream {
         /// writer without discarding pending input.
         #[must_use]
         pub const fn can_into_inner(&self) -> bool {
-            !self.has_pending_input()
+            !self.has_pending_input() && !self.has_buffered_output()
         }
 
         /// Consumes the encoder without flushing pending input.
@@ -686,6 +724,10 @@ pub mod stream {
             crate::wipe_bytes(&mut self.pending);
             self.pending_len = 0;
         }
+
+        fn clear_output(&mut self) {
+            self.output.clear_all();
+        }
     }
 
     impl<W, A, const PAD: bool> Drop for Encoder<W, A, PAD>
@@ -694,6 +736,7 @@ pub mod stream {
     {
         fn drop(&mut self) {
             self.clear_pending();
+            self.clear_output();
         }
     }
 
@@ -709,6 +752,12 @@ pub mod stream {
                 .field("pending", &"<redacted>")
                 .field("pending_len", &self.pending_len)
                 .field("pending_input_needed_len", &self.pending_input_needed_len())
+                .field("buffered_output_len", &self.output.len())
+                .field("buffered_output_capacity", &self.output.capacity())
+                .field(
+                    "buffered_output_remaining_capacity",
+                    &self.output.available_capacity(),
+                )
                 .field("can_into_inner", &self.can_into_inner())
                 .field("finalized", &self.finalized)
                 .finish()
@@ -731,10 +780,10 @@ pub mod stream {
         /// explicit recovery.
         pub fn try_finish(&mut self) -> io::Result<()> {
             if !self.finalized {
-                self.write_pending_final()?;
+                self.queue_pending_final()?;
                 self.finalized = true;
             }
-            self.inner_mut().flush()
+            self.flush()
         }
 
         /// Writes any pending input, flushes the wrapped writer, and returns it.
@@ -743,7 +792,7 @@ pub mod stream {
             Ok(self.take_inner())
         }
 
-        fn write_pending_final(&mut self) -> io::Result<()> {
+        fn queue_pending_final(&mut self) -> io::Result<()> {
             if self.pending_len == 0 {
                 return Ok(());
             }
@@ -752,14 +801,14 @@ pub mod stream {
             pending[..self.pending_len].copy_from_slice(&self.pending[..self.pending_len]);
             let pending_len = self.pending_len;
             let mut encoded = [0u8; 4];
-            let result = self.write_encoded_temp(&pending[..pending_len], &mut encoded);
+            let result = self.queue_encoded_temp(&pending[..pending_len], &mut encoded);
             crate::wipe_bytes(&mut pending);
             result?;
             self.clear_pending();
             Ok(())
         }
 
-        fn write_encoded_temp(&mut self, input: &[u8], encoded: &mut [u8]) -> io::Result<()> {
+        fn queue_encoded_temp(&mut self, input: &[u8], encoded: &mut [u8]) -> io::Result<()> {
             let written = match self.engine.encode_slice(input, encoded) {
                 Ok(written) => written,
                 Err(err) => {
@@ -768,9 +817,31 @@ pub mod stream {
                 }
             };
 
-            let result = self.inner_mut().write_all(&encoded[..written]);
+            let result = self.output.push_slice(&encoded[..written]);
             crate::wipe_bytes(encoded);
             result
+        }
+
+        fn drain_output(&mut self) -> io::Result<()> {
+            while let Some(byte) = self.output.front() {
+                let mut byte_buffer = [byte];
+                let result = self.inner_mut().write(&byte_buffer);
+                crate::wipe_bytes(&mut byte_buffer);
+                match result {
+                    Ok(0) => {
+                        return Err(io::Error::new(
+                            io::ErrorKind::WriteZero,
+                            "base64 stream encoder could not drain buffered output",
+                        ));
+                    }
+                    Ok(_) => {
+                        let _ = self.output.pop_front();
+                    }
+                    Err(err) => return Err(err),
+                }
+            }
+
+            Ok(())
         }
     }
 
@@ -781,8 +852,10 @@ pub mod stream {
     {
         fn write(&mut self, input: &[u8]) -> io::Result<usize> {
             if input.is_empty() {
+                self.drain_output()?;
                 return Ok(0);
             }
+            self.drain_output()?;
             if self.finalized {
                 return Err(io::Error::new(
                     io::ErrorKind::InvalidInput,
@@ -805,24 +878,24 @@ pub mod stream {
                 chunk[self.pending_len..].copy_from_slice(&input[..needed]);
 
                 let mut encoded = [0u8; 4];
-                let result = self.write_encoded_temp(&chunk, &mut encoded);
+                let result = self.queue_encoded_temp(&chunk, &mut encoded);
                 crate::wipe_bytes(&mut chunk);
                 result?;
                 self.clear_pending();
                 consumed += needed;
+                return Ok(consumed);
             }
 
             let remaining = &input[consumed..];
             let full_len = remaining.len() / 3 * 3;
-            let mut offset = 0;
-            let mut encoded = [0u8; 1024];
-            while offset < full_len {
-                let mut take = core::cmp::min(full_len - offset, 768);
+            if full_len > 0 {
+                let mut take = core::cmp::min(full_len, 768);
                 take -= take % 3;
                 debug_assert!(take > 0);
 
-                self.write_encoded_temp(&remaining[offset..offset + take], &mut encoded)?;
-                offset += take;
+                let mut encoded = [0u8; 1024];
+                self.queue_encoded_temp(&remaining[..take], &mut encoded)?;
+                return Ok(consumed + take);
             }
 
             let tail = &remaining[full_len..];
@@ -833,6 +906,7 @@ pub mod stream {
         }
 
         fn flush(&mut self) -> io::Result<()> {
+            self.drain_output()?;
             self.inner_mut().flush()
         }
     }
@@ -850,6 +924,7 @@ pub mod stream {
         engine: Engine<A, PAD>,
         pending: [u8; 4],
         pending_len: usize,
+        output: OutputQueue<1024>,
         finished: bool,
         finalized: bool,
     }
@@ -866,6 +941,7 @@ pub mod stream {
                 engine,
                 pending: [0; 4],
                 pending_len: 0,
+                output: OutputQueue::new(),
                 finished: false,
                 finalized: false,
             }
@@ -921,6 +997,34 @@ pub mod stream {
             }
         }
 
+        /// Returns the number of decoded bytes buffered for the wrapped writer
+        /// after a previous write or flush could not fully drain them.
+        #[must_use]
+        pub const fn buffered_output_len(&self) -> usize {
+            self.output.len()
+        }
+
+        /// Returns the maximum number of decoded bytes this adapter can buffer
+        /// before returning bytes to the caller.
+        #[must_use]
+        pub const fn buffered_output_capacity(&self) -> usize {
+            self.output.capacity()
+        }
+
+        /// Returns how many more decoded bytes can be buffered before this
+        /// adapter must drain the wrapped writer.
+        #[must_use]
+        pub const fn buffered_output_remaining_capacity(&self) -> usize {
+            self.output.available_capacity()
+        }
+
+        /// Returns whether this decoder has decoded output waiting to be
+        /// written to the wrapped writer.
+        #[must_use]
+        pub const fn has_buffered_output(&self) -> bool {
+            !self.output.is_empty()
+        }
+
         /// Returns whether this decoder has processed a terminal padded block.
         ///
         /// Once this returns `true`, later calls to [`Write::write`] with
@@ -943,7 +1047,7 @@ pub mod stream {
         /// writer without discarding pending encoded input.
         #[must_use]
         pub const fn can_into_inner(&self) -> bool {
-            !self.has_pending_input()
+            !self.has_pending_input() && !self.has_buffered_output()
         }
 
         /// Consumes the decoder without flushing pending input.
@@ -992,6 +1096,10 @@ pub mod stream {
             crate::wipe_bytes(&mut self.pending);
             self.pending_len = 0;
         }
+
+        fn clear_output(&mut self) {
+            self.output.clear_all();
+        }
     }
 
     impl<W, A, const PAD: bool> Drop for Decoder<W, A, PAD>
@@ -1000,6 +1108,7 @@ pub mod stream {
     {
         fn drop(&mut self) {
             self.clear_pending();
+            self.clear_output();
         }
     }
 
@@ -1015,6 +1124,12 @@ pub mod stream {
                 .field("pending", &"<redacted>")
                 .field("pending_len", &self.pending_len)
                 .field("pending_input_needed_len", &self.pending_input_needed_len())
+                .field("buffered_output_len", &self.output.len())
+                .field("buffered_output_capacity", &self.output.capacity())
+                .field(
+                    "buffered_output_remaining_capacity",
+                    &self.output.available_capacity(),
+                )
                 .field("can_into_inner", &self.can_into_inner())
                 .field("terminal_padding", &self.finished)
                 .field("finalized", &self.finalized)
@@ -1038,10 +1153,10 @@ pub mod stream {
         /// recovery.
         pub fn try_finish(&mut self) -> io::Result<()> {
             if !self.finalized {
-                self.write_pending_final()?;
+                self.queue_pending_final()?;
                 self.finalized = true;
             }
-            self.inner_mut().flush()
+            self.flush()
         }
 
         /// Validates final pending input, flushes the wrapped writer, and returns it.
@@ -1050,7 +1165,7 @@ pub mod stream {
             Ok(self.take_inner())
         }
 
-        fn write_pending_final(&mut self) -> io::Result<()> {
+        fn queue_pending_final(&mut self) -> io::Result<()> {
             if self.pending_len == 0 {
                 return Ok(());
             }
@@ -1059,16 +1174,16 @@ pub mod stream {
             pending[..self.pending_len].copy_from_slice(&self.pending[..self.pending_len]);
             let pending_len = self.pending_len;
             let mut decoded = [0u8; 3];
-            let result = self.write_decoded_temp(&pending[..pending_len], &mut decoded);
+            let result = self.queue_decoded_temp(&pending[..pending_len], &mut decoded);
             crate::wipe_bytes(&mut pending);
             result?;
             self.clear_pending();
             Ok(())
         }
 
-        fn write_full_quad(&mut self, mut input: [u8; 4]) -> io::Result<()> {
+        fn queue_full_quad(&mut self, mut input: [u8; 4]) -> io::Result<()> {
             let mut decoded = [0u8; 3];
-            let result = self.write_decoded_temp(&input, &mut decoded);
+            let result = self.queue_decoded_temp(&input, &mut decoded);
             crate::wipe_bytes(&mut input);
             let written = result?;
             if written < 3 {
@@ -1077,7 +1192,7 @@ pub mod stream {
             Ok(())
         }
 
-        fn write_decoded_temp(&mut self, input: &[u8], decoded: &mut [u8]) -> io::Result<usize> {
+        fn queue_decoded_temp(&mut self, input: &[u8], decoded: &mut [u8]) -> io::Result<usize> {
             let written = match self.engine.decode_slice(input, decoded) {
                 Ok(written) => written,
                 Err(err) => {
@@ -1086,12 +1201,32 @@ pub mod stream {
                 }
             };
 
-            let result = self.inner_mut().write_all(&decoded[..written]);
+            let result = self.output.push_slice(&decoded[..written]);
             crate::wipe_bytes(decoded);
-            match result {
-                Ok(()) => Ok(written),
-                Err(err) => Err(err),
+            result?;
+            Ok(written)
+        }
+
+        fn drain_output(&mut self) -> io::Result<()> {
+            while let Some(byte) = self.output.front() {
+                let mut byte_buffer = [byte];
+                let result = self.inner_mut().write(&byte_buffer);
+                crate::wipe_bytes(&mut byte_buffer);
+                match result {
+                    Ok(0) => {
+                        return Err(io::Error::new(
+                            io::ErrorKind::WriteZero,
+                            "base64 stream decoder could not drain buffered output",
+                        ));
+                    }
+                    Ok(_) => {
+                        let _ = self.output.pop_front();
+                    }
+                    Err(err) => return Err(err),
+                }
             }
+
+            Ok(())
         }
     }
 
@@ -1102,8 +1237,10 @@ pub mod stream {
     {
         fn write(&mut self, input: &[u8]) -> io::Result<usize> {
             if input.is_empty() {
+                self.drain_output()?;
                 return Ok(0);
             }
+            self.drain_output()?;
             if self.finalized {
                 return Err(io::Error::new(
                     io::ErrorKind::InvalidInput,
@@ -1127,34 +1264,23 @@ pub mod stream {
                 let mut quad = [0u8; 4];
                 quad[..self.pending_len].copy_from_slice(&self.pending[..self.pending_len]);
                 quad[self.pending_len..].copy_from_slice(&input[..needed]);
-                let result = self.write_full_quad(quad);
+                let result = self.queue_full_quad(quad);
                 crate::wipe_bytes(&mut quad);
                 result?;
                 self.clear_pending();
                 consumed += needed;
-                if self.finished && consumed < input.len() {
-                    return Err(trailing_input_after_padding_error());
-                }
+                return Ok(consumed);
             }
 
             let remaining = &input[consumed..];
             let full_len = remaining.len() / 4 * 4;
-            let mut offset = 0;
-            while offset < full_len {
-                let quad = [
-                    remaining[offset],
-                    remaining[offset + 1],
-                    remaining[offset + 2],
-                    remaining[offset + 3],
-                ];
+            if full_len > 0 {
+                let quad = [remaining[0], remaining[1], remaining[2], remaining[3]];
                 let mut quad = quad;
-                let result = self.write_full_quad(quad);
+                let result = self.queue_full_quad(quad);
                 crate::wipe_bytes(&mut quad);
                 result?;
-                offset += 4;
-                if self.finished && offset < remaining.len() {
-                    return Err(trailing_input_after_padding_error());
-                }
+                return Ok(consumed + 4);
             }
 
             let tail = &remaining[full_len..];
@@ -1165,6 +1291,7 @@ pub mod stream {
         }
 
         fn flush(&mut self) -> io::Result<()> {
+            self.drain_output()?;
             self.inner_mut().flush()
         }
     }

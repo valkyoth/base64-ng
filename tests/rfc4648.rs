@@ -2700,6 +2700,10 @@ fn stream_encoder_handles_chunk_boundaries() {
     assert_eq!(encoder.pending_len(), 0);
     assert_eq!(encoder.pending_input_needed_len(), 0);
     assert!(!encoder.has_pending_input());
+    assert_eq!(encoder.buffered_output_len(), 4);
+    assert_eq!(encoder.buffered_output_capacity(), 1024);
+    assert_eq!(encoder.buffered_output_remaining_capacity(), 1020);
+    assert!(encoder.has_buffered_output());
     encoder.write_all(b"lo").unwrap();
     assert_eq!(encoder.pending_len(), 2);
     assert_eq!(encoder.pending_input_needed_len(), 1);
@@ -2752,7 +2756,7 @@ fn stream_encoder_try_finish_keeps_adapter_available() {
 
 #[cfg(feature = "stream")]
 #[test]
-fn stream_encoder_try_finish_failure_does_not_finalize() {
+fn stream_encoder_try_finish_write_failure_buffers_output_for_retry() {
     let writer = FailOnceWriter {
         output: Vec::new(),
         fail_next: true,
@@ -2763,13 +2767,16 @@ fn stream_encoder_try_finish_failure_does_not_finalize() {
 
     let err = encoder.try_finish().unwrap_err();
     assert_eq!(err.kind(), std::io::ErrorKind::BrokenPipe);
-    assert!(!encoder.is_finalized());
-    assert_eq!(encoder.pending_len(), 2);
-    assert!(encoder.has_pending_input());
+    assert!(encoder.is_finalized());
+    assert_eq!(encoder.pending_len(), 0);
+    assert!(!encoder.has_pending_input());
+    assert!(encoder.has_buffered_output());
+    assert_eq!(encoder.get_ref().output, b"");
 
     encoder.try_finish().unwrap();
     assert!(encoder.is_finalized());
     assert_eq!(encoder.pending_len(), 0);
+    assert!(!encoder.has_buffered_output());
     assert_eq!(encoder.get_ref().output, b"aGU=");
 }
 
@@ -2809,15 +2816,22 @@ fn stream_encoder_write_failure_preserves_pending_input() {
     assert_eq!(encoder.pending_len(), 1);
     assert!(encoder.has_pending_input());
 
-    let err = encoder.write_all(b"el").unwrap_err();
-    assert_eq!(err.kind(), std::io::ErrorKind::BrokenPipe);
-    assert_eq!(encoder.pending_len(), 1);
-    assert!(encoder.has_pending_input());
-    assert_eq!(encoder.get_ref().output, b"");
-
     encoder.write_all(b"el").unwrap();
     assert_eq!(encoder.pending_len(), 0);
     assert!(!encoder.has_pending_input());
+    assert!(encoder.has_buffered_output());
+
+    let err = encoder.flush().unwrap_err();
+    assert_eq!(err.kind(), std::io::ErrorKind::BrokenPipe);
+    assert_eq!(encoder.pending_len(), 0);
+    assert!(!encoder.has_pending_input());
+    assert!(encoder.has_buffered_output());
+    assert_eq!(encoder.get_ref().output, b"");
+
+    encoder.flush().unwrap();
+    assert_eq!(encoder.pending_len(), 0);
+    assert!(!encoder.has_pending_input());
+    assert!(!encoder.has_buffered_output());
     assert_eq!(encoder.get_ref().output, b"aGVs");
 }
 
@@ -2854,6 +2868,9 @@ fn stream_encoder_try_into_inner_rejects_pending_input() {
 fn stream_encoder_try_into_inner_returns_writer_without_pending_input() {
     let mut encoder = Encoder::new(Vec::new(), STANDARD);
     encoder.write_all(b"hel").unwrap();
+    assert!(!encoder.can_into_inner());
+    assert!(encoder.has_buffered_output());
+    encoder.flush().unwrap();
     assert!(encoder.can_into_inner());
 
     let inner = encoder.try_into_inner().unwrap();
@@ -3055,6 +3072,10 @@ fn stream_decoder_handles_chunk_boundaries() {
     assert_eq!(decoder.pending_len(), 0);
     assert_eq!(decoder.pending_input_needed_len(), 0);
     assert!(!decoder.has_pending_input());
+    assert_eq!(decoder.buffered_output_len(), 3);
+    assert_eq!(decoder.buffered_output_capacity(), 1024);
+    assert_eq!(decoder.buffered_output_remaining_capacity(), 1021);
+    assert!(decoder.has_buffered_output());
     decoder.write_all(b"bG8=").unwrap();
     assert!(decoder.has_terminal_padding());
     let decoded = decoder.finish().unwrap();
@@ -3135,7 +3156,7 @@ fn stream_decoder_try_finish_flush_failure_does_not_reemit_final_bytes() {
 
 #[cfg(feature = "stream")]
 #[test]
-fn stream_decoder_try_finish_write_failure_does_not_finalize() {
+fn stream_decoder_try_finish_write_failure_buffers_output_for_retry() {
     let writer = FailOnceWriter {
         output: Vec::new(),
         fail_next: true,
@@ -3146,15 +3167,17 @@ fn stream_decoder_try_finish_write_failure_does_not_finalize() {
 
     let err = decoder.try_finish().unwrap_err();
     assert_eq!(err.kind(), std::io::ErrorKind::BrokenPipe);
-    assert!(!decoder.is_finalized());
-    assert_eq!(decoder.pending_len(), 3);
-    assert!(decoder.has_pending_input());
+    assert!(decoder.is_finalized());
+    assert_eq!(decoder.pending_len(), 0);
+    assert!(!decoder.has_pending_input());
+    assert!(decoder.has_buffered_output());
     assert_eq!(decoder.get_ref().output, b"");
 
     decoder.try_finish().unwrap();
     assert!(decoder.is_finalized());
     assert_eq!(decoder.pending_len(), 0);
     assert!(!decoder.has_pending_input());
+    assert!(!decoder.has_buffered_output());
     assert_eq!(decoder.get_ref().output, b"hi");
 }
 
@@ -3171,17 +3194,25 @@ fn stream_decoder_write_failure_preserves_pending_input() {
     assert_eq!(decoder.pending_len(), 1);
     assert!(decoder.has_pending_input());
 
-    let err = decoder.write_all(b"Gk=").unwrap_err();
-    assert_eq!(err.kind(), std::io::ErrorKind::BrokenPipe);
-    assert_eq!(decoder.pending_len(), 1);
-    assert!(decoder.has_pending_input());
-    assert!(!decoder.has_terminal_padding());
-    assert_eq!(decoder.get_ref().output, b"");
-
     decoder.write_all(b"Gk=").unwrap();
     assert_eq!(decoder.pending_len(), 0);
     assert!(!decoder.has_pending_input());
     assert!(decoder.has_terminal_padding());
+    assert!(decoder.has_buffered_output());
+
+    let err = decoder.flush().unwrap_err();
+    assert_eq!(err.kind(), std::io::ErrorKind::BrokenPipe);
+    assert_eq!(decoder.pending_len(), 0);
+    assert!(!decoder.has_pending_input());
+    assert!(decoder.has_terminal_padding());
+    assert!(decoder.has_buffered_output());
+    assert_eq!(decoder.get_ref().output, b"");
+
+    decoder.flush().unwrap();
+    assert_eq!(decoder.pending_len(), 0);
+    assert!(!decoder.has_pending_input());
+    assert!(decoder.has_terminal_padding());
+    assert!(!decoder.has_buffered_output());
     assert_eq!(decoder.get_ref().output, b"hi");
 }
 
@@ -3235,6 +3266,10 @@ fn stream_decoder_exposes_inner_writer_after_refactor() {
     let mut decoder = Decoder::new(Vec::new(), STANDARD);
     assert!(decoder.get_ref().is_empty());
     decoder.write_all(b"aGk=").unwrap();
+    assert!(decoder.has_buffered_output());
+    assert!(decoder.get_ref().is_empty());
+    decoder.flush().unwrap();
+    assert!(!decoder.has_buffered_output());
     assert_eq!(decoder.get_ref(), b"hi");
     let inner = decoder.finish().unwrap();
     assert_eq!(inner, b"hi");
@@ -3264,6 +3299,9 @@ fn stream_decoder_try_into_inner_rejects_pending_input() {
 
     assert_eq!(decoder.pending_len(), 2);
     decoder.write_all(b"k=").unwrap();
+    assert!(!decoder.can_into_inner());
+    assert!(decoder.has_buffered_output());
+    decoder.flush().unwrap();
     assert!(decoder.can_into_inner());
     assert_eq!(decoder.try_into_inner().unwrap(), b"hi");
 }
@@ -3273,6 +3311,9 @@ fn stream_decoder_try_into_inner_rejects_pending_input() {
 fn stream_decoder_try_into_inner_returns_writer_without_pending_input() {
     let mut decoder = Decoder::new(Vec::new(), STANDARD);
     decoder.write_all(b"aGk=").unwrap();
+    assert!(!decoder.can_into_inner());
+    assert!(decoder.has_buffered_output());
+    decoder.flush().unwrap();
     assert!(decoder.can_into_inner());
 
     let inner = decoder.try_into_inner().unwrap();
@@ -3528,6 +3569,9 @@ fn stream_debug_output_redacts_wrapped_io() {
     assert!(debug.contains("Encoder"));
     assert!(debug.contains("pending_len"));
     assert!(debug.contains("pending_input_needed_len"));
+    assert!(debug.contains("buffered_output_len"));
+    assert!(debug.contains("buffered_output_capacity"));
+    assert!(debug.contains("buffered_output_remaining_capacity"));
     assert!(debug.contains("can_into_inner"));
     assert!(debug.contains("<present>"));
     assert!(!debug.contains("raw-secret"));
@@ -3537,6 +3581,9 @@ fn stream_debug_output_redacts_wrapped_io() {
     let debug = format!("{decoder:?}");
     assert!(debug.contains("Decoder"));
     assert!(debug.contains("pending_input_needed_len"));
+    assert!(debug.contains("buffered_output_len"));
+    assert!(debug.contains("buffered_output_capacity"));
+    assert!(debug.contains("buffered_output_remaining_capacity"));
     assert!(debug.contains("can_into_inner"));
     assert!(debug.contains("terminal_padding"));
     assert!(!debug.contains("decoded-secret"));

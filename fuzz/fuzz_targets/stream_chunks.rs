@@ -66,7 +66,16 @@ fn exercise_decoder_chunks<A, const PAD: bool>(
     let mut decoder = Decoder::new(Vec::new(), engine);
     assert_decode_pending_state(decoder.pending_len(), decoder.pending_input_needed_len());
     assert_eq!(decoder.has_pending_input(), decoder.pending_len() != 0);
-    assert_eq!(decoder.can_into_inner(), !decoder.has_pending_input());
+    assert_reader_output_state(
+        decoder.buffered_output_len(),
+        decoder.buffered_output_capacity(),
+        decoder.buffered_output_remaining_capacity(),
+        decoder.has_buffered_output(),
+    );
+    assert_eq!(
+        decoder.can_into_inner(),
+        !decoder.has_pending_input() && !decoder.has_buffered_output()
+    );
 
     for chunk in input.chunks(chunk_size(split_seed)) {
         if decoder.write_all(chunk).is_err() {
@@ -74,7 +83,16 @@ fn exercise_decoder_chunks<A, const PAD: bool>(
         }
         assert_decode_pending_state(decoder.pending_len(), decoder.pending_input_needed_len());
         assert_eq!(decoder.has_pending_input(), decoder.pending_len() != 0);
-        assert_eq!(decoder.can_into_inner(), !decoder.has_pending_input());
+        assert_reader_output_state(
+            decoder.buffered_output_len(),
+            decoder.buffered_output_capacity(),
+            decoder.buffered_output_remaining_capacity(),
+            decoder.has_buffered_output(),
+        );
+        assert_eq!(
+            decoder.can_into_inner(),
+            !decoder.has_pending_input() && !decoder.has_buffered_output()
+        );
     }
 
     match (decoder.finish(), expected) {
@@ -97,13 +115,31 @@ fn exercise_encoder_chunks<A, const PAD: bool>(
     let mut encoder = Encoder::new(Vec::new(), engine);
     assert_encode_pending_state(encoder.pending_len(), encoder.pending_input_needed_len());
     assert_eq!(encoder.has_pending_input(), encoder.pending_len() != 0);
-    assert_eq!(encoder.can_into_inner(), !encoder.has_pending_input());
+    assert_reader_output_state(
+        encoder.buffered_output_len(),
+        encoder.buffered_output_capacity(),
+        encoder.buffered_output_remaining_capacity(),
+        encoder.has_buffered_output(),
+    );
+    assert_eq!(
+        encoder.can_into_inner(),
+        !encoder.has_pending_input() && !encoder.has_buffered_output()
+    );
 
     for chunk in input.chunks(chunk_size(split_seed)) {
         encoder.write_all(chunk).unwrap();
         assert_encode_pending_state(encoder.pending_len(), encoder.pending_input_needed_len());
         assert_eq!(encoder.has_pending_input(), encoder.pending_len() != 0);
-        assert_eq!(encoder.can_into_inner(), !encoder.has_pending_input());
+        assert_reader_output_state(
+            encoder.buffered_output_len(),
+            encoder.buffered_output_capacity(),
+            encoder.buffered_output_remaining_capacity(),
+            encoder.has_buffered_output(),
+        );
+        assert_eq!(
+            encoder.can_into_inner(),
+            !encoder.has_pending_input() && !encoder.has_buffered_output()
+        );
     }
 
     let streamed = encoder.finish().unwrap();
