@@ -2873,6 +2873,8 @@ fn stream_encoder_reader_handles_small_reads() {
     assert_eq!(reader.pending_input_needed_len(), 0);
     assert!(!reader.has_pending_input());
     assert_eq!(reader.buffered_output_len(), 0);
+    assert_eq!(reader.buffered_output_capacity(), 1024);
+    assert_eq!(reader.buffered_output_remaining_capacity(), 1024);
     assert!(!reader.has_buffered_output());
     let mut output = [0u8; 8];
     let mut written = 0;
@@ -2888,6 +2890,7 @@ fn stream_encoder_reader_handles_small_reads() {
     assert_eq!(reader.pending_input_needed_len(), 0);
     assert!(!reader.has_pending_input());
     assert_eq!(reader.buffered_output_len(), 0);
+    assert_eq!(reader.buffered_output_remaining_capacity(), 1024);
     assert!(!reader.has_buffered_output());
     assert!(reader.has_finished_input());
     assert!(reader.is_finished());
@@ -2905,6 +2908,8 @@ fn stream_encoder_reader_reports_buffered_output() {
     assert_eq!(reader.pending_input_needed_len(), 1);
     assert!(reader.has_pending_input());
     assert_eq!(reader.buffered_output_len(), 3);
+    assert_eq!(reader.buffered_output_capacity(), 1024);
+    assert_eq!(reader.buffered_output_remaining_capacity(), 1021);
     assert!(reader.has_buffered_output());
     assert!(!reader.has_finished_input());
     assert!(!reader.is_finished());
@@ -2914,6 +2919,7 @@ fn stream_encoder_reader_reports_buffered_output() {
     assert_eq!(rest, b"GVsbG8=");
     assert_eq!(reader.buffered_output_len(), 0);
     assert_eq!(reader.pending_input_needed_len(), 0);
+    assert_eq!(reader.buffered_output_remaining_capacity(), 1024);
     assert!(!reader.has_buffered_output());
     assert!(reader.has_finished_input());
     assert!(reader.is_finished());
@@ -3286,6 +3292,8 @@ fn stream_decoder_reader_handles_small_reads() {
     assert_eq!(reader.pending_input_needed_len(), 0);
     assert!(!reader.has_pending_input());
     assert_eq!(reader.buffered_output_len(), 0);
+    assert_eq!(reader.buffered_output_capacity(), 3);
+    assert_eq!(reader.buffered_output_remaining_capacity(), 3);
     assert!(!reader.has_buffered_output());
     assert!(!reader.has_terminal_padding());
     let mut output = [0u8; 5];
@@ -3301,6 +3309,7 @@ fn stream_decoder_reader_handles_small_reads() {
     assert_eq!(reader.pending_len(), 0);
     assert_eq!(reader.pending_input_needed_len(), 0);
     assert_eq!(reader.buffered_output_len(), 0);
+    assert_eq!(reader.buffered_output_remaining_capacity(), 3);
     assert!(!reader.has_buffered_output());
     assert!(reader.has_terminal_padding());
     assert!(reader.has_finished_input());
@@ -3316,6 +3325,8 @@ fn stream_decoder_reader_reports_buffered_output() {
     assert_eq!(reader.read(&mut first).unwrap(), 1);
     assert_eq!(first, [b'h']);
     assert_eq!(reader.buffered_output_len(), 2);
+    assert_eq!(reader.buffered_output_capacity(), 3);
+    assert_eq!(reader.buffered_output_remaining_capacity(), 1);
     assert!(reader.has_buffered_output());
     assert!(!reader.has_terminal_padding());
     assert!(!reader.has_finished_input());
@@ -3325,6 +3336,7 @@ fn stream_decoder_reader_reports_buffered_output() {
     reader.read_to_end(&mut rest).unwrap();
     assert_eq!(rest, b"ello");
     assert_eq!(reader.buffered_output_len(), 0);
+    assert_eq!(reader.buffered_output_remaining_capacity(), 3);
     assert!(!reader.has_buffered_output());
     assert!(reader.has_terminal_padding());
     assert!(reader.has_finished_input());

@@ -86,6 +86,8 @@
 - Added stream adapter `pending_input_needed_len()` helpers so callers can see
   how many more bytes are needed to complete a buffered encode or decode
   quantum.
+- Added reader-side stream `buffered_output_capacity()` and
+  `buffered_output_remaining_capacity()` helpers for fixed-queue diagnostics.
 
 ## 0.8.0 - 2026-05-16
 

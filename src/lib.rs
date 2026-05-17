@@ -498,6 +498,10 @@ pub mod stream {
             self.len
         }
 
+        const fn capacity(&self) -> usize {
+            self.len + self.available_capacity()
+        }
+
         fn push_slice(&mut self, input: &[u8]) -> io::Result<()> {
             if input.len() > self.available_capacity() {
                 return Err(io::Error::new(
@@ -1266,6 +1270,20 @@ pub mod stream {
             self.output.len()
         }
 
+        /// Returns the maximum number of decoded bytes this adapter can buffer
+        /// before returning bytes to the caller.
+        #[must_use]
+        pub const fn buffered_output_capacity(&self) -> usize {
+            self.output.capacity()
+        }
+
+        /// Returns how many more decoded bytes can be buffered before this
+        /// adapter must return bytes to the caller.
+        #[must_use]
+        pub const fn buffered_output_remaining_capacity(&self) -> usize {
+            self.output.available_capacity()
+        }
+
         /// Returns whether this decoder reader currently has decoded output
         /// waiting in its internal queue.
         #[must_use]
@@ -1568,6 +1586,20 @@ pub mod stream {
         #[must_use]
         pub const fn buffered_output_len(&self) -> usize {
             self.output.len()
+        }
+
+        /// Returns the maximum number of encoded bytes this adapter can buffer
+        /// before returning bytes to the caller.
+        #[must_use]
+        pub const fn buffered_output_capacity(&self) -> usize {
+            self.output.capacity()
+        }
+
+        /// Returns how many more encoded bytes can be buffered before this
+        /// adapter must return bytes to the caller.
+        #[must_use]
+        pub const fn buffered_output_remaining_capacity(&self) -> usize {
+            self.output.available_capacity()
         }
 
         /// Returns whether this encoder reader currently has encoded output

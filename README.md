@@ -551,14 +551,15 @@ The stream adapters expose `engine()` and `is_padded()` for policy inspection,
 plus `pending_len()` and `has_pending_input()` for partial Base64 quantum
 visibility, plus `pending_input_needed_len()` for the number of bytes needed to
 complete the partial quantum. Reader adapters also expose
-`buffered_output_len()` and `has_buffered_output()` for bytes already decoded
-or encoded but not yet returned to the caller. Decoders additionally expose
-`has_terminal_padding()` so framed protocols can tell when a padded payload has
-ended and leave adjacent bytes for the next protocol layer. Reader adapters
-also expose `is_finished()` once EOF or terminal padding has been reached and
-all buffered output has been drained, and `has_finished_input()` when the
-wrapped reader has reached EOF or terminal padding but buffered output may
-still remain. Writer adapters expose
+`buffered_output_len()`, `buffered_output_capacity()`,
+`buffered_output_remaining_capacity()`, and `has_buffered_output()` for bytes
+already decoded or encoded but not yet returned to the caller. Decoders
+additionally expose `has_terminal_padding()` so framed protocols can tell when
+a padded payload has ended and leave adjacent bytes for the next protocol
+layer. Reader adapters also expose `is_finished()` once EOF or terminal padding
+has been reached and all buffered output has been drained, and
+`has_finished_input()` when the wrapped reader has reached EOF or terminal
+padding but buffered output may still remain. Writer adapters expose
 `try_finish()` to finalize pending input and flush the wrapped writer without
 consuming the adapter, plus `is_finalized()` for explicit state inspection;
 after successful finalization, later writes are rejected. If a wrapped writer
