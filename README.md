@@ -491,9 +491,10 @@ stack-backed `EncodedBuffer` and `DecodedBuffer` values can also be consumed
 into `SecretBuffer`; the stack backing array is cleared when the consumed
 buffer drops at the end of the conversion.
 
-`TryFrom<&str>` and `TryFrom<&[u8]>` for `EncodedBuffer<CAP>` encode raw input
-bytes with strict standard padded Base64. The same conversions for
-`DecodedBuffer<CAP>` and `SecretBuffer` decode strict standard padded Base64.
+`TryFrom<&str>`, `TryFrom<&[u8]>`, and `TryFrom<&[u8; N]>` for
+`EncodedBuffer<CAP>` encode raw input bytes with strict standard padded Base64.
+The same byte and text conversions for `DecodedBuffer<CAP>` and `SecretBuffer`
+decode strict standard padded Base64.
 `DecodedBuffer<CAP>` and `SecretBuffer` also implement `FromStr` with the same
 strict standard padded decode policy. Use explicit engine or profile methods
 for URL-safe, no-padding, MIME/PEM, bcrypt-style, or custom alphabets.

@@ -183,8 +183,8 @@ the zero-runtime-dependency stance.
   no-alloc ownership escape hatches.
 - Internal best-effort wipe helpers for initialized bytes, vector spare
   capacity, and redacted `SecretBuffer` owned outputs when `alloc` is enabled.
-- Zero-dependency `TryFrom<&str>` and `TryFrom<&[u8]>` interop for strict
-  standard padded `EncodedBuffer` encoding plus `DecodedBuffer` and
+- Zero-dependency `TryFrom<&str>`, `TryFrom<&[u8]>`, and byte-array interop
+  for strict standard padded `EncodedBuffer` encoding plus `DecodedBuffer` and
   `SecretBuffer` decoding.
 - Redacted-buffer comparison interop for bytes, byte-string literals, borrowed
   strings, and owned strings, routed through the same

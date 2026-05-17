@@ -2730,6 +2730,19 @@ impl<const CAP: usize> TryFrom<&[u8]> for EncodedBuffer<CAP> {
     }
 }
 
+impl<const CAP: usize, const N: usize> TryFrom<&[u8; N]> for EncodedBuffer<CAP> {
+    type Error = EncodeError;
+
+    /// Encodes a byte array into strict standard padded Base64 in a
+    /// stack-backed buffer.
+    ///
+    /// Use [`Engine::encode_buffer`] or [`Profile::encode_buffer`] when a
+    /// different alphabet, padding mode, or line-wrapping profile is required.
+    fn try_from(input: &[u8; N]) -> Result<Self, Self::Error> {
+        Self::try_from(&input[..])
+    }
+}
+
 impl<const CAP: usize> TryFrom<&str> for EncodedBuffer<CAP> {
     type Error = EncodeError;
 
@@ -2956,6 +2969,19 @@ impl<const CAP: usize> TryFrom<&[u8]> for DecodedBuffer<CAP> {
     /// different alphabet, padding mode, or line-wrapping profile is required.
     fn try_from(input: &[u8]) -> Result<Self, Self::Error> {
         STANDARD.decode_buffer(input)
+    }
+}
+
+impl<const CAP: usize, const N: usize> TryFrom<&[u8; N]> for DecodedBuffer<CAP> {
+    type Error = DecodeError;
+
+    /// Decodes a strict standard padded Base64 byte array into a stack-backed
+    /// buffer.
+    ///
+    /// Use [`Engine::decode_buffer`] or [`Profile::decode_buffer`] when a
+    /// different alphabet, padding mode, or line-wrapping profile is required.
+    fn try_from(input: &[u8; N]) -> Result<Self, Self::Error> {
+        Self::try_from(&input[..])
     }
 }
 
@@ -3257,6 +3283,20 @@ impl TryFrom<&[u8]> for SecretBuffer {
     /// different alphabet, padding mode, or line-wrapping profile is required.
     fn try_from(input: &[u8]) -> Result<Self, Self::Error> {
         STANDARD.decode_secret(input)
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl<const N: usize> TryFrom<&[u8; N]> for SecretBuffer {
+    type Error = DecodeError;
+
+    /// Decodes a strict standard padded Base64 byte array into a redacted
+    /// owned buffer.
+    ///
+    /// Use [`Engine::decode_secret`] or [`Profile::decode_secret`] when a
+    /// different alphabet, padding mode, or line-wrapping profile is required.
+    fn try_from(input: &[u8; N]) -> Result<Self, Self::Error> {
+        Self::try_from(&input[..])
     }
 }
 

@@ -2372,6 +2372,9 @@ fn encoded_buffer_try_from_uses_strict_standard_base64() {
     let encoded = EncodedBuffer::<4>::try_from(&b"\xfb\xff"[..]).unwrap();
     assert_eq!(encoded.as_bytes(), b"+/8=");
 
+    let encoded = EncodedBuffer::<8>::try_from(b"hello").unwrap();
+    assert_eq!(encoded.as_bytes(), b"aGVsbG8=");
+
     assert_eq!(
         EncodedBuffer::<7>::try_from("hello").unwrap_err(),
         EncodeError::OutputTooSmall {
@@ -2467,6 +2470,9 @@ fn decoded_buffer_try_from_uses_strict_standard_base64() {
     );
 
     let decoded = DecodedBuffer::<5>::try_from(&b"aGVsbG8="[..]).unwrap();
+    assert_eq!(decoded.as_bytes(), b"hello");
+
+    let decoded = DecodedBuffer::<5>::try_from(b"aGVsbG8=").unwrap();
     assert_eq!(decoded.as_bytes(), b"hello");
 
     assert_eq!(
@@ -2631,6 +2637,18 @@ fn secret_buffer_from_vec_preserves_visible_bytes_with_spare_capacity() {
     let secret = SecretBuffer::from_slice(b"\xff");
     let secret = secret.try_into_exposed_string().unwrap_err();
     assert_eq!(secret.expose_secret(), b"\xff");
+}
+
+#[cfg(feature = "alloc")]
+#[test]
+fn secret_buffer_try_from_byte_array_uses_strict_standard_base64() {
+    let secret = SecretBuffer::try_from(b"aGVsbG8=").unwrap();
+    assert_eq!(secret.expose_secret(), b"hello");
+
+    assert_eq!(
+        SecretBuffer::try_from(b"aGVsbG8").unwrap_err(),
+        DecodeError::InvalidLength
+    );
 }
 
 #[cfg(feature = "alloc")]

@@ -121,6 +121,9 @@
   symbols are checked before packaging.
 - Added zero-dependency `FromStr` interop for `DecodedBuffer` and
   `SecretBuffer`, using the existing strict standard padded decode policy.
+- Added zero-dependency `TryFrom<&[u8; N]>` interop for `EncodedBuffer`,
+  `DecodedBuffer`, and `SecretBuffer` so byte-string literals use the same
+  explicit strict standard policy as byte slices.
 
 ## 0.8.0 - 2026-05-16
 
