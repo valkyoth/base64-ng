@@ -81,6 +81,13 @@ These are product decisions as much as technical ones. The crate is allowed to
 remain smaller than the broader ecosystem when dependency-free APIs preserve
 explicit security semantics.
 
+Downstream applications may still combine `base64-ng` with their own approved
+dependencies. For example, a service with an existing `zeroize` policy can
+decode into a caller-owned buffer with `decode_slice_clear_tail` and then call
+`Zeroize::zeroize()` on that buffer after the protocol step is complete. That
+keeps the published `base64-ng` crate dependency-free while allowing the
+application to apply its local memory-cleanup policy at the ownership boundary.
+
 ## Isolated Tooling
 
 Fuzzing, benchmark, and timing-evidence dependencies may live in isolated

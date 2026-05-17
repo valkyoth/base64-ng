@@ -19,6 +19,8 @@
 - Tightened security documentation for public ct success/failure and length
   boundaries, volatile best-effort cleanup limits, and const-array panic
   policy.
+- Added optional downstream guidance for applications that combine
+  caller-owned `base64-ng` buffers with their own admitted `zeroize` policy.
 
 ## 0.9.0 - 2026-05-17
 

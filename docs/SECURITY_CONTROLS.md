@@ -70,6 +70,9 @@ clear-tail APIs promptly and pair them with operating system and deployment
 controls that reduce crash dumps, swap, and broad memory disclosure exposure.
 If a platform requires a formal zeroization policy, apply that policy to
 caller-owned buffers in addition to the crate's dependency-free cleanup APIs.
+For applications that already admit `zeroize`, decode into caller-owned buffers
+and apply `Zeroize::zeroize()` after the Base64 step; `base64-ng` intentionally
+does not add that dependency for every user.
 
 ### Side-Channel Posture
 

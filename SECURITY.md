@@ -82,6 +82,36 @@ observation, or other process memory disclosure bugs. Callers that require a
 platform-specific formal zeroization policy should apply that policy to their
 own buffers in addition to using crate cleanup APIs.
 
+For projects that already admit the `zeroize` crate in their own dependency
+policy, the recommended pattern is to keep `base64-ng` dependency-free and
+zeroize the caller-owned buffers at the application boundary:
+
+```rust
+use base64_ng::{STANDARD, decoded_capacity};
+use zeroize::Zeroize;
+
+let input = b"aGVsbG8=";
+let mut output = vec![0u8; decoded_capacity(input.len())];
+
+let result = STANDARD.decode_slice_clear_tail(input, &mut output);
+match result {
+    Ok(written) => {
+        // Use output[..written] here.
+        output.zeroize();
+    }
+    Err(err) => {
+        // decode_slice_clear_tail already cleared output; this is an
+        // application-policy extra cleanup step.
+        output.zeroize();
+        return Err(err);
+    }
+}
+# Ok::<(), base64_ng::DecodeError>(())
+```
+
+This pattern lets high-assurance applications use their approved cleanup
+wrapper while the `base64-ng` crate itself remains zero-runtime-dependency.
+
 The `SecretBuffer` owned wrapper is available with the `alloc` feature for
 sensitive encoded or decoded bytes that should not be accidentally logged. It
 redacts `Debug` and `Display`, requires explicit reveal methods, and clears
