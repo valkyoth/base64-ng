@@ -3341,14 +3341,20 @@ fn stream_decoder_try_finish_reports_bad_final_pending_input() {
     let err = decoder.try_finish().unwrap_err();
     assert_eq!(err.kind(), std::io::ErrorKind::InvalidInput);
     assert!(!decoder.is_finalized());
-    assert_eq!(decoder.pending_len(), 1);
-    assert!(decoder.has_pending_input());
+    assert!(decoder.is_failed());
+    assert_eq!(decoder.pending_len(), 0);
+    assert!(!decoder.has_pending_input());
+    assert!(!decoder.can_into_inner());
     assert!(decoder.get_ref().is_empty());
 
-    decoder.write_all(b"Gk=").unwrap();
-    decoder.try_finish().unwrap();
-    assert!(decoder.is_finalized());
-    assert_eq!(decoder.get_ref(), b"hi");
+    assert_eq!(
+        decoder.write_all(b"Gk=").unwrap_err().kind(),
+        std::io::ErrorKind::InvalidInput
+    );
+    assert_eq!(
+        decoder.try_finish().unwrap_err().kind(),
+        std::io::ErrorKind::InvalidInput
+    );
 }
 
 #[cfg(feature = "stream")]
@@ -3357,6 +3363,8 @@ fn stream_decoder_rejects_trailing_input_after_padding() {
     let mut decoder = Decoder::new(Vec::new(), STANDARD);
     let err = decoder.write_all(b"aGk=AA").unwrap_err();
     assert_eq!(err.kind(), std::io::ErrorKind::InvalidInput);
+    assert!(decoder.is_failed());
+    assert!(!decoder.can_into_inner());
 }
 
 #[cfg(feature = "stream")]
@@ -3366,6 +3374,31 @@ fn stream_decoder_rejects_short_trailing_input_after_pending_padding() {
     decoder.write_all(b"aG").unwrap();
     let err = decoder.write_all(b"k=A").unwrap_err();
     assert_eq!(err.kind(), std::io::ErrorKind::InvalidInput);
+    assert!(decoder.is_failed());
+    assert_eq!(decoder.pending_len(), 0);
+    assert!(!decoder.can_into_inner());
+}
+
+#[cfg(feature = "stream")]
+#[test]
+fn stream_decoder_fails_closed_after_malformed_input() {
+    let mut decoder = Decoder::new(Vec::new(), STANDARD);
+
+    let err = decoder.write(b"!!!!").unwrap_err();
+    assert_eq!(err.kind(), std::io::ErrorKind::InvalidInput);
+    assert!(decoder.is_failed());
+    assert!(!decoder.is_finalized());
+    assert_eq!(decoder.pending_len(), 0);
+    assert!(!decoder.can_into_inner());
+
+    assert_eq!(
+        decoder.write(b"aGk=").unwrap_err().kind(),
+        std::io::ErrorKind::InvalidInput
+    );
+    assert_eq!(
+        decoder.flush().unwrap_err().kind(),
+        std::io::ErrorKind::InvalidInput
+    );
 }
 
 #[cfg(feature = "stream")]
@@ -3542,6 +3575,32 @@ fn stream_decoder_reader_rejects_bad_final_pending_input() {
     let mut reader = DecoderReader::new(&b"a"[..], STANDARD);
     let mut decoded = Vec::new();
     assert!(reader.read_to_end(&mut decoded).is_err());
+    assert!(reader.is_failed());
+    assert_eq!(reader.pending_len(), 0);
+    assert!(!reader.can_into_inner());
+
+    let mut output = [0u8; 1];
+    assert_eq!(
+        reader.read(&mut output).unwrap_err().kind(),
+        std::io::ErrorKind::InvalidInput
+    );
+}
+
+#[cfg(feature = "stream")]
+#[test]
+fn stream_decoder_reader_fails_closed_after_malformed_input() {
+    let mut reader = DecoderReader::new(Cursor::new(&b"!!!!aGk="[..]), STANDARD);
+    let mut output = [0u8; 1];
+
+    let err = reader.read(&mut output).unwrap_err();
+    assert_eq!(err.kind(), std::io::ErrorKind::InvalidInput);
+    assert!(reader.is_failed());
+    assert!(!reader.can_into_inner());
+
+    assert_eq!(
+        reader.read(&mut output).unwrap_err().kind(),
+        std::io::ErrorKind::InvalidInput
+    );
 }
 
 #[cfg(feature = "stream")]

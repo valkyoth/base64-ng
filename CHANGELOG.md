@@ -107,6 +107,8 @@
   short-write regressions for encoder and decoder adapters.
 - Changed reader-side stream output draining to copy queued data into caller
   buffers in bounded slices while clearing queue slots as bytes are consumed.
+- Hardened stream decoders to fail closed after malformed Base64 input, with
+  `is_failed()` state inspection and regressions for writer and reader adapters.
 
 ## 0.8.0 - 2026-05-16
 

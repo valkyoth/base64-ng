@@ -959,6 +959,7 @@ pub mod stream {
         output: OutputQueue<1024>,
         finished: bool,
         finalized: bool,
+        failed: bool,
     }
 
     impl<W, A, const PAD: bool> Decoder<W, A, PAD>
@@ -976,6 +977,7 @@ pub mod stream {
                 output: OutputQueue::new(),
                 finished: false,
                 finalized: false,
+                failed: false,
             }
         }
 
@@ -1075,11 +1077,21 @@ pub mod stream {
             self.finalized
         }
 
+        /// Returns whether this decoder has rejected malformed Base64 input.
+        ///
+        /// Once this returns `true`, later writes, flushes, and finalization
+        /// attempts return an error. The unchecked [`Self::into_inner`] method
+        /// can still be used for explicit recovery of the wrapped writer.
+        #[must_use]
+        pub const fn is_failed(&self) -> bool {
+            self.failed
+        }
+
         /// Returns whether [`Self::try_into_inner`] can recover the wrapped
         /// writer without discarding pending encoded input.
         #[must_use]
         pub const fn can_into_inner(&self) -> bool {
-            !self.has_pending_input() && !self.has_buffered_output()
+            !self.is_failed() && !self.has_pending_input() && !self.has_buffered_output()
         }
 
         /// Consumes the decoder without flushing pending input.
@@ -1165,6 +1177,7 @@ pub mod stream {
                 .field("can_into_inner", &self.can_into_inner())
                 .field("terminal_padding", &self.finished)
                 .field("finalized", &self.finalized)
+                .field("failed", &self.failed)
                 .finish()
         }
     }
@@ -1184,6 +1197,9 @@ pub mod stream {
         /// the caller still owns the decoder for diagnostics or explicit
         /// recovery.
         pub fn try_finish(&mut self) -> io::Result<()> {
+            if self.failed {
+                return Err(stream_decoder_failed_error());
+            }
             if !self.finalized {
                 self.queue_pending_final()?;
                 self.finalized = true;
@@ -1208,7 +1224,10 @@ pub mod stream {
             let mut decoded = [0u8; 3];
             let result = self.queue_decoded_temp(&pending[..pending_len], &mut decoded);
             crate::wipe_bytes(&mut pending);
-            result?;
+            if let Err(err) = result {
+                self.clear_pending();
+                return Err(err);
+            }
             self.clear_pending();
             Ok(())
         }
@@ -1229,6 +1248,7 @@ pub mod stream {
                 Ok(written) => written,
                 Err(err) => {
                     crate::wipe_bytes(decoded);
+                    self.failed = true;
                     return Err(decode_error_to_io(err));
                 }
             };
@@ -1275,6 +1295,9 @@ pub mod stream {
         A: Alphabet,
     {
         fn write(&mut self, input: &[u8]) -> io::Result<usize> {
+            if self.failed {
+                return Err(stream_decoder_failed_error());
+            }
             if input.is_empty() {
                 self.drain_output()?;
                 return Ok(0);
@@ -1287,6 +1310,7 @@ pub mod stream {
                 ));
             }
             if self.finished {
+                self.failed = true;
                 return Err(trailing_input_after_padding_error());
             }
 
@@ -1305,7 +1329,10 @@ pub mod stream {
                 quad[self.pending_len..].copy_from_slice(&input[..needed]);
                 let result = self.queue_full_quad(quad);
                 crate::wipe_bytes(&mut quad);
-                result?;
+                if let Err(err) = result {
+                    self.clear_pending();
+                    return Err(err);
+                }
                 self.clear_pending();
                 consumed += needed;
                 return Ok(consumed);
@@ -1330,6 +1357,9 @@ pub mod stream {
         }
 
         fn flush(&mut self) -> io::Result<()> {
+            if self.failed {
+                return Err(stream_decoder_failed_error());
+            }
             self.drain_output()?;
             self.inner_mut().flush()
         }
@@ -1343,6 +1373,13 @@ pub mod stream {
         io::Error::new(
             io::ErrorKind::InvalidInput,
             "base64 decoder received trailing input after padding",
+        )
+    }
+
+    fn stream_decoder_failed_error() -> io::Error {
+        io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "base64 stream decoder is failed after malformed input",
         )
     }
 
@@ -1363,6 +1400,7 @@ pub mod stream {
         output: OutputQueue<3>,
         finished: bool,
         terminal_seen: bool,
+        failed: bool,
     }
 
     impl<R, A, const PAD: bool> DecoderReader<R, A, PAD>
@@ -1380,6 +1418,7 @@ pub mod stream {
                 output: OutputQueue::new(),
                 finished: false,
                 terminal_seen: false,
+                failed: false,
             }
         }
 
@@ -1489,11 +1528,22 @@ pub mod stream {
             self.finished && self.output.is_empty()
         }
 
+        /// Returns whether this decoder reader has rejected malformed Base64
+        /// input.
+        ///
+        /// Once this returns `true`, later reads return an error. The unchecked
+        /// [`Self::into_inner`] method can still be used for explicit recovery
+        /// of the wrapped reader.
+        #[must_use]
+        pub const fn is_failed(&self) -> bool {
+            self.failed
+        }
+
         /// Returns whether [`Self::try_into_inner`] can recover the wrapped
         /// reader without discarding buffered decoded output.
         #[must_use]
         pub const fn can_into_inner(&self) -> bool {
-            self.is_finished()
+            !self.is_failed() && self.is_finished()
         }
 
         /// Consumes the decoder reader and returns the wrapped reader.
@@ -1575,6 +1625,7 @@ pub mod stream {
                 .field("can_into_inner", &self.can_into_inner())
                 .field("finished", &self.finished)
                 .field("terminal_padding", &self.terminal_seen)
+                .field("failed", &self.failed)
                 .finish()
         }
     }
@@ -1587,6 +1638,9 @@ pub mod stream {
         fn read(&mut self, output: &mut [u8]) -> io::Result<usize> {
             if output.is_empty() {
                 return Ok(0);
+            }
+            if self.failed {
+                return Err(stream_decoder_failed_error());
             }
 
             while self.output.is_empty() && !self.finished {
@@ -1603,6 +1657,9 @@ pub mod stream {
         A: Alphabet,
     {
         fn fill_output(&mut self) -> io::Result<()> {
+            if self.failed {
+                return Err(stream_decoder_failed_error());
+            }
             if self.terminal_seen {
                 self.finished = true;
                 return Ok(());
@@ -1656,6 +1713,7 @@ pub mod stream {
                 Ok(written) => written,
                 Err(err) => {
                     crate::wipe_bytes(&mut decoded);
+                    self.failed = true;
                     return Err(decode_error_to_io(err));
                 }
             };

@@ -117,6 +117,8 @@ The release gate runs:
   is retained until the wrapped writer reports bytes accepted
 - stream reader output queues drain into caller buffers in bounded slices while
   consumed queue slots are cleared
+- stream decoder fail-closed tests proving malformed Base64 input poisons the
+  adapter while preserving explicit unchecked inner recovery
 - stream fuzz coverage for chunked writers, fragmented reader sources, and
   adjacent framed payload boundaries
 - Kani proofs through `scripts/check_kani.sh` when Kani is installed and its

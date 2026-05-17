@@ -576,6 +576,9 @@ including recovery readiness, pending quantum state, and fixed output queue
 capacity. As with other `std::io::Write` implementations, direct `write()`
 calls may accept only part of the provided input while buffering encoded or
 decoded output; use `write_all()` when the whole input slice must be consumed.
+Decoder writer and reader adapters fail closed after malformed Base64 input;
+`is_failed()` exposes that state, while unchecked `into_inner()` remains
+available for explicit recovery of the wrapped object.
 
 URL-safe, no-padding encoding:
 
