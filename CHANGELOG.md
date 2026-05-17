@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.0-alpha.0 - Unreleased
+
+- Started the stable API and security-contract freeze candidate after the
+  `0.12.0` stabilization release.
+- Accepted the documented Kani verifier exception for the initial `1.0.0`
+  contract: Kani harnesses remain in-tree and release-gated, but incompatible
+  Kani compiler runs are policy skips backed by replacement evidence, not
+  proofs.
+
 ## 0.12.0 - 2026-05-17
 
 - Started the stabilization rehearsal cycle after the `0.11.0` release.

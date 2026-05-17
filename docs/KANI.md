@@ -47,15 +47,17 @@ Current harnesses cover:
 - clear-tail cleanup behavior on decode failures
 - constant-time-oriented validate/decode agreement for one quantum
 
-## v0.11 Verifier Exception
+## v1.0 Verifier Exception
 
-The accepted `v0.11` outcome is a documented verifier exception:
+The accepted `v1.0` outcome is a documented verifier exception:
 
 - keep all Kani harnesses in-tree and checked by `scripts/check_kani.sh`
 - treat an incompatible Kani compiler as an explicit skip, not a proof
 - require replacement evidence before release-sensitive changes are accepted
+- do not claim Kani-complete or formally verified behavior in the `1.0.0`
+  security contract
 
-Replacement evidence for `v0.11` consists of:
+Replacement evidence for `v1.0` consists of:
 
 - the full `scripts/checks.sh` gate
 - Miri evidence from `scripts/check_miri.sh`
@@ -67,10 +69,14 @@ Replacement evidence for `v0.11` consists of:
 - generated assembly evidence from `scripts/generate_ct_asm_evidence.sh`
 - invariant documentation in [INVARIANTS.md](INVARIANTS.md)
 - panic-policy enforcement through `scripts/validate-panic-policy.sh`
+- release metadata, MSRV/toolchain, dependency, unsafe-boundary,
+  constant-time-policy, and SIMD-admission validators
 
 This exception is intentionally narrower than a formal proof. It does not
-upgrade Kani status to "complete", and it does not satisfy the `v1.0` formal
-verification gate by itself.
+upgrade Kani status to "complete", and it keeps Kani proof completion outside
+the initial `1.0.0` guarantee. The stable `1.0.0` guarantee is the documented
+API and security contract backed by release evidence, not a formal-verification
+claim.
 
 ## Future Verifier Admission
 
@@ -112,4 +118,5 @@ cargo kani --version
 scripts/check_kani.sh
 ```
 
-The `v0.11` exception above must be revisited before `v1.0`.
+The `v1.0` exception above must be revisited for future `1.0.x` releases when
+Kani supports the pinned Rust toolchain.

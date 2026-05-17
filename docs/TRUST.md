@@ -21,7 +21,7 @@ stable release.
 | Cleanup posture | Clear-tail APIs, stream cleanup, `EncodedBuffer`, `DecodedBuffer`, and `SecretBuffer` provide best-effort cleanup; `SecretBuffer` also clears vector spare capacity when wrapping and dropping owned vectors | `SECURITY.md`, `docs/UNSAFE.md` |
 | Fuzzing | Isolated `cargo-fuzz` harnesses outside the published dependency graph | `fuzz/`, `docs/RELEASE_EVIDENCE.md` |
 | Miri | Release gate runs Miri when nightly Miri is installed and writes evidence artifacts | `scripts/check_miri.sh`, `target/release-evidence/miri/` |
-| Kani | Harnesses are gated and run when installed/toolchain-compatible; `v0.11` uses a documented verifier exception with replacement evidence when local Kani is behind the pinned Rust toolchain | `scripts/check_kani.sh`, `docs/KANI.md` |
+| Kani | Harnesses are gated and run when installed/toolchain-compatible; the initial `1.0.0` contract accepts a documented verifier exception with replacement evidence when local Kani is behind the pinned Rust toolchain. A Kani skip is not a proof. | `scripts/check_kani.sh`, `docs/KANI.md` |
 | Bounds invariants | Remaining internal indexing is grouped by documented local invariants | `docs/INVARIANTS.md` |
 | Audit | RustSec check required | `cargo audit`, `scripts/checks.sh` |
 | License policy | `cargo deny` and `cargo license --json` required | `deny.toml`, `scripts/checks.sh` |
@@ -53,6 +53,7 @@ check marked as enforced.
 - an active hardware-accelerated backend
 - async/Tokio support
 - serde or bytes integration
+- Kani-complete formal verification for the initial `1.0.0` contract
 
 Those features remain admission-gated until their evidence is strong enough for
 security-sensitive users.

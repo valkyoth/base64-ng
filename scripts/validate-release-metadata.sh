@@ -206,7 +206,9 @@ done
 for required_kani_text in \
     "Kani runs are compiler-integration-sensitive" \
     "A Kani skip is not the same as a proof" \
-    "Do not lower \`rust-version\` only to make Kani run"
+    "Do not lower \`rust-version\` only to make Kani run" \
+    "do not claim Kani-complete or formally verified behavior in the \`1.0.0\`" \
+    "The stable \`1.0.0\` guarantee is the documented"
 do
     if ! grep -F -q "$required_kani_text" docs/KANI.md; then
         echo "release metadata: Kani policy is missing required text: $required_kani_text" >&2
@@ -215,8 +217,8 @@ do
 done
 
 for required_dependency_review_text in \
-    "v0.12 Final Admission Review" \
-    "No optional ecosystem integration has a strong enough security and maintenance case" \
+    "v1.0 Final Admission Review" \
+    "No optional ecosystem integration has a strong enough security" \
     "zeroize\` and \`subtle\` remain deferred"
 do
     if ! grep -F -q "$required_dependency_review_text" docs/DEPENDENCIES.md; then

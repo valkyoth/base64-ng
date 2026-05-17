@@ -1,9 +1,8 @@
 # Public API Audit
 
-This document tracks the `v0.10` audit-preparation milestone. The goal is to
-enter the `v1.0` candidate series with a small, explicit, security-reviewed
-public surface. The audit favors removing or documenting ambiguous APIs over
-adding convenience.
+This document records the public API audit that prepared the `v1.0` candidate
+series. The goal is a small, explicit, security-reviewed public surface. The
+audit favors removing or documenting ambiguous APIs over adding convenience.
 
 ## Audit Rules
 
@@ -22,12 +21,12 @@ adding convenience.
 
 ## Status Legend
 
-- `candidate stable`: the current API shape looks suitable for `v1.0`, pending
-  final release-candidate evidence.
+- `candidate stable`: the current API shape is accepted for the `v1.0`
+  candidate, pending final CI and pentest evidence.
 - `documented boundary`: the API is acceptable only because its security or
   ownership boundary is explicit in docs and examples.
-- `review pending`: the API still needs audit before a stable `v0.10` release;
-  stable releases fail the local gate if any row remains in this state.
+- `review pending`: the API still needs audit before a stable release; stable
+  releases fail the local gate if any row remains in this state.
 - `deferred`: the API area is intentionally not admitted in this release
   series.
 
@@ -35,7 +34,7 @@ adding convenience.
 
 | Area | Status | Notes |
 | --- | --- | --- |
-| Engine constants and `Engine<A, PAD>` | candidate stable | Strict/default semantics are explicit; audit constructor naming and stream convenience methods before `v1.0`. |
+| Engine constants and `Engine<A, PAD>` | candidate stable | Strict/default semantics are explicit; constructor naming and stream convenience methods are accepted for the `v1.0` candidate. |
 | `Profile<A, PAD>` and named profiles | candidate stable | MIME, PEM, bcrypt-style, `crypt(3)`-style, wrapping, and padding behavior are explicit and covered by policy tests. |
 | Length helpers | candidate stable | Public helpers are recoverable and checked; keep examples focused on untrusted-size handling. |
 | Slice encode/decode APIs | candidate stable | Caller-owned output, checked lengths, and clear-tail variants are the preferred stable surface. |
@@ -283,7 +282,7 @@ Decision rationale:
 Stable boundary:
 
 - Keep existing variants unless a later release-candidate audit finds a
-  correctness reason to change them before `v1.0`.
+  correctness reason to change them during the `v1.0` candidate review.
 - Keep localized indexes for non-ct scalar diagnostics.
 - Keep ct malformed-content errors opaque.
 - Do not add panicking convenience APIs for error cases already represented by
@@ -300,3 +299,13 @@ Stable boundary:
 - Keep active dispatch scalar-only until SIMD admission evidence is complete.
 - Focus implementation work on audit findings, documentation gaps, tests, and
   evidence rather than new feature breadth.
+
+## `v1.0` Candidate Outcome
+
+- No public API area remains marked `review pending`.
+- Deferred ecosystem integrations remain outside the stable contract until
+  they pass dependency admission.
+- The `ct` module remains constant-time-oriented and does not claim formal
+  cryptographic constant-time behavior.
+- Active backend dispatch remains scalar-only; SIMD candidates remain governed
+  by the SIMD admission policy.

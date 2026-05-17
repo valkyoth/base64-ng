@@ -6,7 +6,8 @@ The crate starts conservative: a small scalar implementation, strict RFC 4648 be
 
 ## Current Status
 
-The current public release is `0.12.0`.
+The current public release is `0.12.0`. The development branch is
+`1.0.0-alpha.0`.
 
 Implemented now:
 
@@ -47,13 +48,15 @@ Implemented now:
 Planned behind admission evidence:
 
 - Admitted AVX2, AVX-512, SSSE3/SSE4.1, ARM NEON, and wasm `simd128`
-  fast paths after the SIMD admission evidence is complete. Current `0.12`
-  release remains scalar-only unless that full evidence package lands.
+  fast paths after the SIMD admission evidence is complete. Current `1.0`
+  development remains scalar-only unless that full evidence package lands.
 - Async streaming wrappers only after the `tokio` feature passes the
   dependency and cancellation-safety admission bar in [docs/ASYNC.md](docs/ASYNC.md).
 - Optional `serde` or `bytes` integration only if a concrete use case clears
   the dependency admission policy in [docs/DEPENDENCIES.md](docs/DEPENDENCIES.md).
-- Expanded Kani proof harnesses.
+- Kani proof execution once Kani's bundled compiler supports the pinned Rust
+  toolchain. The `1.0.0` contract accepts the documented verifier exception;
+  a Kani skip is not a proof.
 - Broader benchmark evidence against the established `base64` crate.
 
 ## Trust Dashboard
@@ -69,6 +72,7 @@ Planned behind admission evidence:
 | Legacy compatibility | Explicit opt-in APIs |
 | Constant-time posture | Constant-time-oriented scalar validation/decode with isolated dudect-style timing evidence; no formal cryptographic guarantee |
 | Cleanup posture | Best-effort initialized-byte cleanup and redacted secret wrappers |
+| Kani | Harnesses in-tree; initial `1.0.0` accepts a documented verifier exception until Kani supports the pinned Rust toolchain |
 | Release evidence | fmt, clippy, tests, docs, deny, audit, license, SBOM, reproducibility |
 
 Full adoption details live in [docs/TRUST.md](docs/TRUST.md). Security-control
@@ -78,7 +82,7 @@ and CWE mapping lives in [docs/SECURITY_CONTROLS.md](docs/SECURITY_CONTROLS.md).
 
 ```toml
 [dependencies]
-base64-ng = "0.12.0"
+base64-ng = "1.0.0-alpha.0"
 ```
 
 The crate is dual-licensed:
@@ -103,7 +107,7 @@ Disable defaults for embedded or freestanding use:
 
 ```toml
 [dependencies]
-base64-ng = { version = "0.12.0", default-features = false }
+base64-ng = { version = "1.0.0-alpha.0", default-features = false }
 ```
 
 ## Example
@@ -672,8 +676,12 @@ Security commitments:
 - Streaming wrappers clear internal pending and queued byte buffers on drop and
   as buffered bytes are consumed, as best-effort retention reduction.
 - Legacy compatibility must be opt-in.
-- Release gates include formatting, clippy, tests, Miri when installed, docs, dependency policy, audit, license review, isolated fuzz/perf dependency checks, SBOM, and reproducible build checks.
-- Future Kani proofs target in-place decoding bounds and scalar decoder invariants.
+- Release gates include formatting, clippy, tests, Miri when installed, docs,
+  dependency policy, audit, license review, isolated fuzz/perf dependency
+  checks, SBOM, and reproducible build checks.
+- Kani harnesses stay in-tree and release-gated. The initial `1.0.0` contract
+  accepts the documented verifier exception when Kani's bundled compiler is
+  behind the pinned Rust toolchain; that skip is not a proof.
 
 See [docs/PLAN.md](docs/PLAN.md), [SECURITY.md](SECURITY.md),
 [docs/RELEASE_EVIDENCE.md](docs/RELEASE_EVIDENCE.md), and

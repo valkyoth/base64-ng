@@ -233,30 +233,26 @@ the zero-runtime-dependency stance.
 
 ### Release Sequencing Assessment
 
-Do not treat `v0.10` as the automatic final stop before `v1.0`. The crate is
-feature-rich enough for normal Base64 use, but `v1.0` should mean the security
-contract is frozen and the evidence story is mature enough for conservative
-users. As of the `v0.9` release line, the remaining work is mostly assurance,
-not feature volume.
+The crate is feature-rich enough for normal Base64 use, and the remaining
+`v1.0` question is assurance quality rather than feature volume. The `v0.10`,
+`v0.11`, and `v0.12` lines completed the intended audit preparation,
+verification hardening, and stabilization rehearsal work.
 
 The current honest path is:
 
-- `v0.10`: release-candidate audit preparation. Freeze or reject feature ideas,
-  audit the public API, refresh docs, and make gaps explicit.
-- `v0.11`: verification and panic-policy hardening. Resolve the Kani/toolchain
-  gap through the policy in [KANI.md](KANI.md), document any accepted
-  substitute, deepen panic-free evidence, and turn any remaining bounded
-  indexing into audited invariants.
-- `v0.12`: stabilization rehearsal. Run the crate as a practical `v1.0`
-  candidate for one more release, with no broad new APIs unless an audit finds
-  a necessary correction.
-- `v1.0`: final API and security-contract freeze only after the previous
-  release has clean CI, clean pentest results, clean release evidence, and no
-  unresolved policy exceptions.
+- `v1.0.0-alpha.0`: freeze candidate for pentest, CI, and downstream review.
+  This version should change only for release blockers, documentation
+  corrections, or evidence-policy fixes.
+- `v1.0.0`: stable API and security-contract release after the alpha candidate
+  has clean local release evidence, clean CI, and clean external pentest
+  results.
+- `1.0.x`: maintenance and assurance releases. Kani proof execution remains a
+  high-priority `1.0.x` follow-up once Kani supports the pinned Rust toolchain.
 
-Additional `0.x` releases are acceptable if evidence is not ready. Calendar
-speed is less important than avoiding a stable contract that later needs to be
-weakened or broken.
+The initial `1.0.0` contract accepts the documented Kani verifier exception in
+[KANI.md](KANI.md). That exception is explicit replacement evidence, not a
+formal proof, and the crate must not claim Kani-complete or formally verified
+cryptographic behavior until compatible verifier evidence exists.
 
 ### v0.1
 
@@ -484,11 +480,11 @@ weakened or broken.
 - Resolve Kani execution for the pinned Rust toolchain, pin a compatible Kani
   workflow, or document through [KANI.md](KANI.md) why Kani remains unavailable
   and what evidence replaces it for `v1.0`.
-  Current `v0.11` direction: keep the Kani harnesses in-tree, document an
-  explicit verifier exception while local Kani is behind Rust `1.95`, and
-  require Miri, bounded fuzz smoke, generated-code evidence, panic-policy
-  checks, deterministic tests, and invariant documentation as replacement
-  release evidence. Revisit this exception before `v1.0`.
+  Completed direction: keep the Kani harnesses in-tree, document an explicit
+  verifier exception while local Kani is behind Rust `1.95`, and require Miri,
+  bounded fuzz smoke, generated-code evidence, panic-policy checks,
+  deterministic tests, release-policy validators, and invariant documentation
+  as replacement release evidence for the initial `1.0.0` contract.
 - Expand or finalize proof harnesses for length helpers, slice encode/decode
   bounds, in-place decode bounds, clear-tail cleanup behavior, and
   constant-time-oriented validate/decode agreement.
@@ -530,8 +526,12 @@ weakened or broken.
 ### v1.0
 
 - No unresolved `v0.10`, `v0.11`, or `v0.12` release-candidate blockers.
-- Kani proofs complete for scalar in-place decode, or an explicit documented
-  verifier exception with replacement evidence accepted before the release.
+- `1.0.0-alpha.0` pentest, GitHub CI, and local release evidence must be clean
+  before the stable `v1.0.0` tag.
+- Kani proofs are not required for the initial stable release if the documented
+  `v1.0` verifier exception remains accepted and the replacement evidence is
+  current. A Kani skip is not a proof, and this release must not claim
+  Kani-complete or formally verified behavior.
 - Formal or tool-backed evidence for panic-free scalar public APIs, including
   documented bounded-index invariants where indexing remains.
 - Stable profile API for RFC 4648 standard and URL-safe, MIME, PEM, bcrypt, and

@@ -17,10 +17,11 @@ new dependency expands the audit, license, advisory, and supply-chain surface.
   under `fuzz/`, `perf/`, and `dudect/`; the standard local gate checks them
   separately from the published crate dependency graph.
 
-## v0.12 Final Admission Review
+## v1.0 Final Admission Review
 
-The `v0.12` stabilization rehearsal keeps the published crate dependency-free.
-No optional ecosystem integration has a strong enough security and maintenance case to enter the `v1.0` candidate contract yet.
+The `v1.0` release candidate keeps the published crate dependency-free.
+No optional ecosystem integration has a strong enough security and maintenance
+case to enter the stable `v1.0` contract yet.
 
 Current decisions:
 

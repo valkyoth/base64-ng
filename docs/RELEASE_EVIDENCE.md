@@ -50,7 +50,7 @@ The release gate runs:
 - packaged release script presence, executable-bit, and shebang validation
 - zero-dependency policy check for the published crate
 - packaged dependency admission policy for future external-crate review
-- final `v0.12` dependency admission review keeping `tokio`, `serde`, `bytes`,
+- final `v1.0` dependency admission review keeping `tokio`, `serde`, `bytes`,
   `zeroize`, `subtle`, property-testing, and benchmark frameworks out of the
   published crate contract unless separately admitted
 - reserved feature placeholder checks for `tokio`, `kani`, and `fuzzing`,
@@ -149,9 +149,10 @@ The release gate runs:
 - bounded-index invariant documentation in [INVARIANTS.md](INVARIANTS.md)
 - explicit Kani compatibility or verifier-exception documentation in
   [KANI.md](KANI.md) when the installed Kani compiler cannot run the proofs
-- the `v0.11` Kani verifier exception requires replacement evidence from Miri,
-  bounded fuzz smoke, generated assembly evidence, panic-policy checks,
-  deterministic tests, and [INVARIANTS.md](INVARIANTS.md)
+- the initial `1.0.0` Kani verifier exception requires replacement evidence
+  from Miri, bounded fuzz smoke, generated assembly evidence,
+  panic-policy checks, deterministic tests, release-policy validators, and
+  [INVARIANTS.md](INVARIANTS.md)
 - SBOM generation
 - reproducible package/build check
 
