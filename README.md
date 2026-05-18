@@ -66,7 +66,7 @@ Planned behind admission evidence:
 | License | `MIT OR Apache-2.0` |
 | MSRV | Rust `1.95.0` |
 | Runtime dependencies | Zero external crates |
-| Unsafe policy | Scalar encode/decode remains safe Rust; audited unsafe is limited to volatile wiping and SIMD prototypes |
+| Unsafe policy | Scalar encode/decode remains safe Rust; audited unsafe is limited to volatile wiping, CT barriers, validated secret UTF-8 conversion, and test-only SIMD prototypes |
 | Active backend | Scalar only |
 | Strict decoding | Default, canonical, no whitespace |
 | Legacy compatibility | Explicit opt-in APIs |
@@ -550,6 +550,9 @@ security contract is sufficient. Length mismatch returns immediately and must
 be treated as public protocol information. Applications that require a
 formally audited comparison should admit that dependency at the application
 boundary, for example by comparing exposed bytes with `subtle`.
+`SecretBuffer` does not lock memory; high-assurance deployments should pair it
+with OS memory-locking, encrypted or disabled swap, crash-dump suppression, and
+allocator isolation where those controls are required.
 On `wasm32`, the same compiler-fence-only wipe-barrier caveat applies to owned
 secret buffers. `wasm32` builds fail closed by default; enable
 `allow-wasm32-best-effort-wipe` only when the deployment explicitly accepts the

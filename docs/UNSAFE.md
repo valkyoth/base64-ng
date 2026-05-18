@@ -2,20 +2,24 @@
 
 `base64-ng` keeps scalar encode/decode in safe Rust. The crate root uses
 `#![deny(unsafe_code)]`, and reviewed `allow(unsafe_code)` exceptions are
-limited to volatile wipe helpers, the constant-time error gate barrier in
-`src/lib.rs`, and the SIMD boundary in `src/simd.rs`.
+limited to volatile wipe helpers, the constant-time comparison accumulator
+barrier, the validated secret UTF-8 conversion helper, the constant-time error
+gate barrier in `src/lib.rs`, and the SIMD boundary in `src/simd.rs`.
 
 This inventory is intentionally small and release-gate enforced. Any new unsafe
 block must be added here before an accelerated backend can be admitted.
 
 ## Policy
 
-- Default builds compile audited unsafe volatile wipe helpers and the
-  constant-time error gate barrier.
-- Optional SIMD prototypes live only in `src/simd.rs`.
+- Default builds compile audited unsafe volatile wipe helpers, the
+  constant-time comparison accumulator barrier, the validated secret UTF-8
+  conversion helper, and the constant-time error gate barrier.
+- Optional SIMD prototypes live only in `src/simd.rs` and are compiled only
+  for tests until a real backend is admitted.
 - `scripts/validate-unsafe-boundary.sh` fails if `allow(unsafe_code)` appears
-  outside the volatile wipe helpers, the constant-time error gate barrier, or
-  `src/simd.rs`.
+  outside the volatile wipe helpers, the constant-time comparison accumulator
+  barrier, the validated secret UTF-8 conversion helper, the constant-time
+  error gate barrier, or `src/simd.rs`.
 - `scripts/validate-unsafe-boundary.sh` fails if architecture intrinsics, CPU
   feature detection, or `target_feature` gates appear outside `src/simd.rs`.
 - Every unsafe function and unsafe block must have a local safety explanation.
@@ -140,6 +144,79 @@ Limitations:
   They fail closed unless `allow-compiler-fence-only-wipe` is explicitly
   enabled after reviewing this weaker cleanup posture and applying platform
   memory controls.
+- On RISC-V, `fence rw, rw` is a store-ordering fence for wipe cleanup. It is
+  reported separately from the constant-time result gate posture and should not
+  be read as a Spectre-v1 speculation isolation guarantee.
+
+### `constant_time_eq_same_len`
+
+Location: `src/lib.rs`
+
+Status: active constant-time-oriented comparison primitive.
+
+Purpose:
+
+- Compare equal-length redacted buffer contents without short-circuiting on the
+  first differing byte.
+- Keep the byte-difference accumulator observable to the optimizer after each
+  iteration before the public equality result is reported.
+
+Preconditions:
+
+- Callers must pass slices with the same public length. The public-length
+  wrapper checks this before calling the helper.
+
+Unsafe operation:
+
+- `core::ptr::read_volatile` reads the initialized local `diff` accumulator
+  after each OR reduction.
+
+Safety argument:
+
+- `diff` is an initialized stack-local `u8` for the entire loop.
+- The volatile read does not read from caller memory and cannot violate bounds
+  or aliasing requirements.
+- The helper is `#[inline(never)]` and also passes the final accumulator
+  through `ct_error_gate_barrier` before returning the public equality result.
+
+Limitations:
+
+- This is dependency-free defense in depth against optimizer rewrites, not a
+  formal cryptographic comparison guarantee. Applications that require an
+  audited MAC, token, or password-hash comparison primitive should use one at
+  the application boundary.
+
+### `string_from_validated_secret_bytes`
+
+Location: `src/lib.rs`
+
+Status: active secret conversion helper when `alloc` is enabled.
+
+Purpose:
+
+- Convert bytes already validated as UTF-8 into `String` without a second
+  fallible conversion after the vector has been moved out of `SecretBuffer`.
+- Avoid an intermediate raw `Vec<u8>` drop path that would not run the crate's
+  best-effort cleanup on panic.
+
+Preconditions:
+
+- Caller must validate the exact vector contents as UTF-8 immediately before
+  handing ownership to this helper.
+- The vector must not be modified between validation and conversion.
+
+Unsafe operation:
+
+- `alloc::string::String::from_utf8_unchecked` converts the vector to a
+  string without revalidating.
+
+Safety argument:
+
+- `SecretBuffer::try_into_exposed_string` validates `self.expose_secret()` with
+  `core::str::from_utf8` before moving the same allocation into this helper.
+- No mutation occurs between validation and conversion.
+- The returned `ExposedSecretString` retains redacted formatting and drop-time
+  cleanup.
 
 ### `ct_error_gate_barrier`
 
@@ -215,13 +292,18 @@ Safety argument:
 
 - The loop writes only while `offset < capacity`, so each computed pointer is
   inside the vector allocation.
+- The helper returns before computing the barrier pointer when spare capacity
+  is zero. This avoids passing a one-past-the-end allocation pointer or a
+  dangling zero-capacity vector sentinel to the barrier.
 - A `Vec<u8>` allocation is valid and aligned for `u8` writes across its full
   capacity.
 - The helper does not read uninitialized spare-capacity bytes; it only writes
   zeros.
-- The barrier does not dereference the spare-capacity pointer. It exists to
-  keep the preceding volatile writes visible across the cleanup boundary before
-  the final `SeqCst` compiler fence.
+- When spare capacity is non-zero, the barrier pointer is computed with
+  `ptr.add(len)`, which points inside the vector allocation at the first spare
+  byte. The barrier does not dereference the pointer. It exists to keep the
+  preceding volatile writes visible across the cleanup boundary before the
+  final `SeqCst` compiler fence.
 
 Limitations:
 
@@ -235,7 +317,8 @@ Limitations:
 
 Location: `src/simd.rs`
 
-Status: inactive prototype, not dispatchable.
+Status: inactive test-only prototype, not compiled into release library builds
+and not dispatchable.
 
 Purpose:
 
@@ -275,7 +358,8 @@ Safety argument:
 
 Location: `src/simd.rs`
 
-Status: inactive prototype, not dispatchable.
+Status: inactive test-only prototype, not compiled into release library builds
+and not dispatchable.
 
 Purpose:
 
@@ -313,7 +397,8 @@ Safety argument:
 
 Location: `src/simd.rs`
 
-Status: inactive prototype, not dispatchable.
+Status: inactive test-only prototype, not compiled into release library builds
+and not dispatchable.
 
 Purpose:
 
@@ -351,7 +436,8 @@ Safety argument:
 
 Location: `src/simd.rs`
 
-Status: inactive prototype, not dispatchable.
+Status: inactive test-only prototype, not compiled into release library builds
+and not dispatchable.
 
 Purpose:
 

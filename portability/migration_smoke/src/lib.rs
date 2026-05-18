@@ -104,10 +104,10 @@ mod tests {
 
         let decoded: DecodedBuffer<5> = STANDARD.decode_buffer(encoded.as_bytes()).unwrap();
         assert_eq!(decoded.as_bytes(), b"hello");
-        assert!(decoded.constant_time_eq(b"hello"));
+        assert!(decoded.constant_time_eq_public_len(b"hello"));
 
         let secret = STANDARD.decode_secret(encoded.as_bytes()).unwrap();
-        assert!(secret.constant_time_eq(b"hello"));
+        assert!(secret.constant_time_eq_public_len(b"hello"));
         assert_eq!(
             format!("{secret:?}"),
             r#"SecretBuffer { bytes: "<redacted>", len: 5 }"#

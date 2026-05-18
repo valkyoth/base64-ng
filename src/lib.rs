@@ -262,8 +262,12 @@ pub mod runtime {
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     #[non_exhaustive]
     pub enum WipePosture {
-        /// The target uses a native hardware fence in addition to volatile
-        /// writes and compiler fences.
+        /// The target uses a native store-ordering hardware fence in addition
+        /// to volatile writes and compiler fences.
+        ///
+        /// This describes wipe-store ordering only. It is separate from
+        /// [`CtGatePosture`], which reports whether the constant-time result
+        /// gate has a speculation barrier or only an ordering fence.
         HardwareFence,
         /// The target uses volatile writes and compiler fences only.
         CompilerFenceOnly,
@@ -2365,6 +2369,21 @@ pub mod stream {
 /// content through one opaque error. It is not documented as a formally
 /// verified cryptographic constant-time API.
 ///
+/// # Security
+///
+/// Input length, decoded length, selected alphabet, and final success or
+/// failure remain public. The clear-tail methods wipe caller-owned output on
+/// error, but decoded bytes are written during the fixed-shape decode loop
+/// before final validation is reported. In shared-memory, enclave, or HSM-style
+/// threat models where another component can observe the output buffer during
+/// the call, prefer [`crate::ct::CtEngine::decode_slice_staged_clear_tail`]
+/// with a private staging buffer.
+///
+/// The dependency-free comparison helpers on redacted buffers are
+/// constant-time-oriented best effort, not formally audited MAC or token
+/// comparison primitives. Applications that can admit dependencies and need a
+/// reviewed comparison primitive should use one at the protocol boundary.
+///
 /// The CT decoder exposes only clear-tail and stack-backed decode APIs. The
 /// former non-clear-tail methods were removed before the `1.0` stable boundary
 /// because they could leave decoded plaintext in caller-owned buffers after
@@ -2908,6 +2927,11 @@ fn wipe_vec_spare_capacity(bytes: &mut alloc::vec::Vec<u8>) {
     let ptr = bytes.as_mut_ptr();
     let len = bytes.len();
     let capacity = bytes.capacity();
+    let spare = capacity - len;
+    if spare == 0 {
+        return;
+    }
+
     let mut offset = len;
     while offset < capacity {
         // SAFETY: `offset` is within the vector allocation's spare capacity, so
@@ -2918,7 +2942,10 @@ fn wipe_vec_spare_capacity(bytes: &mut alloc::vec::Vec<u8>) {
         }
         offset += 1;
     }
-    wipe_barrier(ptr.wrapping_add(len), capacity - len);
+    // SAFETY: `spare > 0`, so `len < capacity` and `ptr.add(len)` points
+    // inside the vector allocation at the first spare-capacity byte.
+    let spare_ptr = unsafe { ptr.add(len) };
+    wipe_barrier(spare_ptr, spare);
 }
 
 #[cfg(feature = "alloc")]
@@ -3118,16 +3145,6 @@ impl<const CAP: usize> EncodedBuffer<CAP> {
     #[must_use]
     pub fn constant_time_eq_public_len(&self, other: &[u8]) -> bool {
         constant_time_eq_public_len(self.as_bytes(), other)
-    }
-
-    /// Deprecated alias for [`Self::constant_time_eq_public_len`].
-    #[deprecated(
-        since = "1.0.0-alpha.0",
-        note = "use constant_time_eq_public_len; length mismatch is a public timing fact"
-    )]
-    #[must_use]
-    pub fn constant_time_eq(&self, other: &[u8]) -> bool {
-        self.constant_time_eq_public_len(other)
     }
 
     /// Consumes the wrapper and returns the backing array plus visible length
@@ -3432,16 +3449,6 @@ impl<const CAP: usize> DecodedBuffer<CAP> {
         constant_time_eq_public_len(self.as_bytes(), other)
     }
 
-    /// Deprecated alias for [`Self::constant_time_eq_public_len`].
-    #[deprecated(
-        since = "1.0.0-alpha.0",
-        note = "use constant_time_eq_public_len; length mismatch is a public timing fact"
-    )]
-    #[must_use]
-    pub fn constant_time_eq(&self, other: &[u8]) -> bool {
-        self.constant_time_eq_public_len(other)
-    }
-
     /// Consumes the wrapper and returns the backing array plus visible length
     /// inside a drop-wiping exposed wrapper.
     ///
@@ -3575,6 +3582,15 @@ impl<const CAP: usize> core::str::FromStr for DecodedBuffer<CAP> {
 /// internal best-effort wipe helpers. This is data-retention reduction, not a
 /// formal zeroization guarantee, and it cannot make claims about allocator
 /// behavior or historical copies outside the wrapper.
+///
+/// # Platform Memory Controls
+///
+/// `SecretBuffer` does not lock its allocation into physical memory. The OS
+/// may page its contents to disk, include them in hibernation images, or expose
+/// them through crash dumps. High-assurance deployments must combine
+/// `SecretBuffer` with platform memory-locking where available, encrypted or
+/// disabled swap, crash-dump suppression, and allocator isolation appropriate
+/// for their environment.
 ///
 /// On `wasm32` targets, the wipe barrier uses only a compiler fence. The wasm
 /// runtime JIT may still optimize or retain cleared bytes in ways this crate
@@ -3858,13 +3874,12 @@ impl SecretBuffer {
             return Err(self);
         }
 
-        let bytes = self
-            .into_exposed_vec()
-            .into_exposed_unprotected_vec_caller_must_zeroize();
-        match alloc::string::String::from_utf8(bytes) {
-            Ok(text) => Ok(ExposedSecretString::from_string(text)),
-            Err(error) => Err(Self::from_vec(error.into_bytes())),
-        }
+        let mut exposed = self.into_exposed_vec();
+        let bytes = core::mem::take(&mut exposed.bytes);
+        drop(exposed);
+        Ok(ExposedSecretString::from_string(
+            string_from_validated_secret_bytes(bytes),
+        ))
     }
 
     /// Compares this secret to `other` without short-circuiting on the first
@@ -3889,16 +3904,6 @@ impl SecretBuffer {
     #[must_use]
     pub fn constant_time_eq_public_len(&self, other: &[u8]) -> bool {
         constant_time_eq_public_len(self.expose_secret(), other)
-    }
-
-    /// Deprecated alias for [`Self::constant_time_eq_public_len`].
-    #[deprecated(
-        since = "1.0.0-alpha.0",
-        note = "use constant_time_eq_public_len; length mismatch is a public timing fact"
-    )]
-    #[must_use]
-    pub fn constant_time_eq(&self, other: &[u8]) -> bool {
-        self.constant_time_eq_public_len(other)
     }
 
     /// Clears the initialized bytes and makes the buffer empty.
@@ -4990,12 +4995,30 @@ fn constant_time_eq_fixed_width_array<const N: usize>(left: &[u8; N], right: &[u
 }
 
 #[inline(never)]
+#[allow(unsafe_code)]
 fn constant_time_eq_same_len(left: &[u8], right: &[u8]) -> bool {
-    let diff = left.iter().zip(right).fold(0u8, |diff, (left, right)| {
-        core::hint::black_box(core::hint::black_box(diff) | core::hint::black_box(*left ^ *right))
-    });
+    let mut diff = 0u8;
+    for (left, right) in left.iter().zip(right) {
+        diff = core::hint::black_box(
+            core::hint::black_box(diff) | core::hint::black_box(*left ^ *right),
+        );
+        // SAFETY: `diff` is an initialized local `u8`; the volatile read is a
+        // dependency-free optimizer barrier for the accumulation value and does
+        // not access caller memory.
+        diff = unsafe { core::ptr::read_volatile(&raw const diff) };
+    }
     ct_error_gate_barrier(diff, 0);
     diff == 0
+}
+
+#[cfg(feature = "alloc")]
+#[allow(unsafe_code)]
+fn string_from_validated_secret_bytes(bytes: alloc::vec::Vec<u8>) -> alloc::string::String {
+    // SAFETY: Callers validate the same byte vector as UTF-8 immediately before
+    // handing ownership to this helper, and the bytes are not modified between
+    // validation and conversion. Using the unchecked conversion avoids a
+    // second fallible conversion while the bytes are outside `SecretBuffer`.
+    unsafe { alloc::string::String::from_utf8_unchecked(bytes) }
 }
 
 mod backend {
@@ -7969,7 +7992,7 @@ fn read_tail(input: &[u8], offset: usize) -> Result<&[u8], DecodeError> {
     input.get(offset..).ok_or(DecodeError::InvalidLength)
 }
 
-#[inline]
+#[inline(never)]
 fn ct_decode_alphabet_byte<A: Alphabet>(byte: u8) -> (u8, u8) {
     let mut decoded = 0u8;
     let mut valid = 0u8;

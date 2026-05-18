@@ -11,33 +11,37 @@
 //! SSSE3/SSE4.1, NEON, and wasm `simd128` paths have scalar differential
 //! tests, fuzz coverage, and benchmark evidence.
 //!
-//! The fixed-block prototypes below are scaffolding only. Their SIMD
+//! The fixed-block prototypes below are test-only scaffolding. Their SIMD
 //! operations currently zero the destination block, then a scalar loop
 //! overwrites the entire output. The prototype tests therefore validate
 //! target-feature gating, unsafe isolation, and fixed-size plumbing, not
-//! vectorized Base64 correctness.
+//! vectorized Base64 correctness. They are not compiled into release library
+//! builds.
 
-#[cfg(any(
-    target_arch = "x86",
-    target_arch = "x86_64",
-    target_arch = "aarch64",
-    all(target_arch = "arm", target_feature = "neon")
+#[cfg(all(
+    test,
+    any(
+        target_arch = "x86",
+        target_arch = "x86_64",
+        target_arch = "aarch64",
+        all(target_arch = "arm", target_feature = "neon")
+    )
 ))]
 use super::{Alphabet, encode_base64_value};
-#[cfg(target_arch = "aarch64")]
+#[cfg(all(test, target_arch = "aarch64"))]
 use core::arch::aarch64::{uint8x16_t, vdupq_n_u8, vst1q_u8};
-#[cfg(all(target_arch = "arm", target_feature = "neon"))]
+#[cfg(all(test, target_arch = "arm", target_feature = "neon"))]
 use core::arch::arm::{uint8x16_t, vdupq_n_u8, vst1q_u8};
 // Keep intrinsic imports limited to operations used by the current scaffolding.
 // Adding shuffle, table-lookup, permutation, compare, or arithmetic intrinsics
 // is SIMD admission work and must update docs/SIMD_ACTIVATION_CHECKLIST.md,
 // unsafe inventory, differential tests, fuzz evidence, and benchmark evidence.
-#[cfg(target_arch = "x86")]
+#[cfg(all(test, target_arch = "x86"))]
 use core::arch::x86::{
     __m128i, __m256i, __m512i, _mm_setzero_si128, _mm_storeu_si128, _mm256_setzero_si256,
     _mm256_storeu_si256, _mm512_setzero_si512, _mm512_storeu_si512,
 };
-#[cfg(target_arch = "x86_64")]
+#[cfg(all(test, target_arch = "x86_64"))]
 use core::arch::x86_64::{
     __m128i, __m256i, __m512i, _mm_setzero_si128, _mm_storeu_si128, _mm256_setzero_si256,
     _mm256_storeu_si256, _mm512_setzero_si512, _mm512_storeu_si512,
@@ -183,7 +187,7 @@ fn wasm_simd128_available() -> bool {
 /// candidate bundle is available on the current CPU: `avx512f`, `avx512bw`,
 /// `avx512vl`, and `avx512vbmi`. The input and output sizes are fixed by their
 /// array types.
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+#[cfg(all(test, any(target_arch = "x86", target_arch = "x86_64")))]
 #[allow(dead_code, reason = "inactive prototype is not dispatchable yet")]
 #[expect(
     clippy::cast_ptr_alignment,
@@ -242,7 +246,7 @@ where
 ///
 /// The caller must execute this function only when AVX2 is available on the
 /// current CPU. The input and output sizes are fixed by their array types.
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+#[cfg(all(test, any(target_arch = "x86", target_arch = "x86_64")))]
 #[allow(dead_code, reason = "inactive prototype is not dispatchable yet")]
 #[expect(
     clippy::cast_ptr_alignment,
@@ -300,7 +304,7 @@ where
 /// The caller must execute this function only when SSSE3 and SSE4.1 are
 /// available on the current CPU. The input and output sizes are fixed by their
 /// array types.
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+#[cfg(all(test, any(target_arch = "x86", target_arch = "x86_64")))]
 #[allow(dead_code, reason = "inactive prototype is not dispatchable yet")]
 #[expect(
     clippy::cast_ptr_alignment,
@@ -359,9 +363,12 @@ where
 /// current CPU. NEON is mandatory on `aarch64`; `arm` builds must enable the
 /// `neon` target feature. The input and output sizes are fixed by their array
 /// types.
-#[cfg(any(
-    target_arch = "aarch64",
-    all(target_arch = "arm", target_feature = "neon")
+#[cfg(all(
+    test,
+    any(
+        target_arch = "aarch64",
+        all(target_arch = "arm", target_feature = "neon")
+    )
 ))]
 #[allow(dead_code, reason = "inactive prototype is not dispatchable yet")]
 unsafe fn encode_12_bytes_neon<A>(input: &[u8; 12], output: &mut [u8; 16])

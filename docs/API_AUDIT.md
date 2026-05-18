@@ -167,6 +167,8 @@ Decision rationale:
   `ExposedSecretString::into_exposed_unprotected_string_caller_must_zeroize`.
 - Drop-time cleanup uses the crate's volatile best-effort wipe helper for
   initialized bytes and vector spare capacity.
+- `SecretBuffer` does not lock allocations into physical memory. OS paging,
+  hibernation, and crash-dump controls remain deployment responsibilities.
 - Equality is intentionally not exposed through `PartialEq`/`==`. Callers must
   opt into the explicit `constant_time_eq_public_len` helper, whose equal-length
   scan is best-effort and whose length mismatch remains public.

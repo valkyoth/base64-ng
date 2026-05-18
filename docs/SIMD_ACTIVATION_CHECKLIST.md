@@ -1,8 +1,9 @@
 # SIMD Activation Checklist
 
 This checklist is mandatory before any SIMD code becomes dispatchable. Current
-SIMD prototypes are scaffolding only: they zero destination buffers with SIMD
-and then overwrite those buffers with scalar encoding.
+SIMD prototypes are test-only scaffolding: they zero destination buffers with
+SIMD and then overwrite those buffers with scalar encoding. They are not
+compiled into release library builds.
 
 ## Non-Negotiable Rule
 

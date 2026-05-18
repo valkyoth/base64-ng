@@ -3,10 +3,10 @@
 `base64-ng` is intentionally scalar-only in the `1.0.0-alpha.0` development
 branch unless a complete SIMD admission evidence package lands in the same
 release series. The crate uses `#![deny(unsafe_code)]` and permits reviewed
-`allow(unsafe_code)` exceptions only for volatile wipe/barrier helpers in
-`src/lib.rs` and the private `src/simd.rs` boundary. The `simd` feature remains
-reserved until architecture-specific code has enough evidence to justify
-enabling it.
+`allow(unsafe_code)` exceptions only for audited cleanup, CT barrier, validated
+secret conversion helpers in `src/lib.rs`, and the private `src/simd.rs`
+boundary. The `simd` feature remains reserved until architecture-specific code
+has enough evidence to justify enabling it.
 
 This is a security decision, not a rejection of hardware acceleration. SIMD
 must be added only when it can be isolated, tested, and reviewed without
@@ -14,10 +14,10 @@ weakening the scalar trust base.
 
 ## Current Status
 
-- Default builds compile audited unsafe volatile wipe/barrier helpers; scalar
-  encode/decode remains safe Rust.
+- Default builds compile audited unsafe cleanup, CT barrier, comparison, and
+  validated secret conversion helpers; scalar encode/decode remains safe Rust.
 - `scripts/validate-unsafe-boundary.sh` verifies that `allow(unsafe_code)` is
-  confined to the volatile wipe/barrier helpers and `src/simd.rs`.
+  confined to the reviewed root helpers and `src/simd.rs`.
 - `docs/UNSAFE.md` inventories every current unsafe site and its invariants.
 - The scalar implementation is the reference behavior.
 - Encode and decode entry points already pass through an internal backend
@@ -30,10 +30,11 @@ weakening the scalar trust base.
   the full planned feature bundle: `avx512f`, `avx512bw`, `avx512vl`, and
   `avx512vbmi`.
 - An inactive AVX-512 fixed-block encode prototype exists behind the SIMD
-  boundary and is tested against scalar output only when the full AVX-512
-  Base64 feature bundle is available. It currently zeroes the destination with
-  SIMD and then overwrites the block with scalar encoding; this is scaffolding,
-  not vectorized Base64 correctness evidence.
+  boundary as test-only scaffolding and is tested against scalar output only
+  when the full AVX-512 Base64 feature bundle is available. It currently zeroes
+  the destination with SIMD and then overwrites the block with scalar encoding;
+  this is scaffolding, not vectorized Base64 correctness evidence, and it is
+  not compiled into release library builds.
 - Runtime backend identifiers expose their required CPU feature bundles through
   `runtime::Backend::required_cpu_features()`.
 - Runtime backend reports include `candidate_required_cpu_features=[...]` in
@@ -46,19 +47,23 @@ weakening the scalar trust base.
 - SSSE3/SSE4.1 detection is reporting-only until an implementation has scalar
   differential tests, fuzz coverage, and benchmark evidence.
 - An inactive SSSE3/SSE4.1 fixed-block encode prototype exists behind the SIMD
-  boundary and is tested against scalar output only when SSSE3/SSE4.1 is
-  available. It currently zeroes the destination with SIMD and then overwrites
-  the block with scalar encoding; this is scaffolding, not vectorized Base64
-  correctness evidence.
+  boundary as test-only scaffolding and is tested against scalar output only
+  when SSSE3/SSE4.1 is available. It currently zeroes the destination with SIMD
+  and then overwrites the block with scalar encoding; this is scaffolding, not
+  vectorized Base64 correctness evidence, and it is not compiled into release
+  library builds.
 - An inactive AVX2 fixed-block encode prototype exists behind the SIMD boundary
-  and is tested against scalar output only when AVX2 is available. It currently
-  zeroes the destination with SIMD and then overwrites the block with scalar
-  encoding; this is scaffolding, not vectorized Base64 correctness evidence.
+  as test-only scaffolding and is tested against scalar output only when AVX2
+  is available. It currently zeroes the destination with SIMD and then
+  overwrites the block with scalar encoding; this is scaffolding, not vectorized
+  Base64 correctness evidence, and it is not compiled into release library
+  builds.
 - An inactive NEON fixed-block encode prototype exists behind the same boundary
-  and is tested against scalar output only on NEON-capable ARM targets. It
-  currently zeroes the destination with SIMD and then overwrites the block with
-  scalar encoding; this is scaffolding, not vectorized Base64 correctness
-  evidence.
+  as test-only scaffolding and is tested against scalar output only on
+  NEON-capable ARM targets. It currently zeroes the destination with SIMD and
+  then overwrites the block with scalar encoding; this is scaffolding, not
+  vectorized Base64 correctness evidence, and it is not compiled into release
+  library builds.
 - wasm `simd128` detection is reporting-only when `wasm32` is compiled with
   `target-feature=+simd128`; no wasm accelerated backend is active.
 - `runtime::backend_report()` reports the active backend, detected candidate,

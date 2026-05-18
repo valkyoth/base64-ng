@@ -299,20 +299,20 @@ buffer types intentionally do not implement `PartialEq`/`==`: the explicit
 method name is part of the security contract because this helper is best-effort
 and not a formal cryptographic comparison primitive.
 
-The old `constant_time_eq` method name remains only as a deprecated migration
-alias during the `1.0.0-alpha` window. New code should use the
-`constant_time_eq_public_len` name so the public-length contract is visible at
-the call site.
+The old `constant_time_eq` method name was removed during the `1.0.0-alpha`
+window. Use `constant_time_eq_public_len` so the public-length contract remains
+visible at the call site.
 
 Length mismatch returns immediately. Treat buffer length, the selected buffer
 type, and the final equality result as public. The helper scans every byte for
 equal-length inputs before returning. The per-byte difference is passed through
 `core::hint::black_box`; the accumulator is also passed through `black_box`
-after each OR reduction to reduce the risk of release-mode optimizer rewrites
-into early-exit equality checks. Before returning the public equality result,
-the helper also passes the accumulated difference through the same non-inlined
-CT gate barrier used by malformed-input reporting. The helper is marked
-`#[inline(never)]` and the release evidence script checks that
+after each OR reduction and then read through a volatile stack-local read to
+reduce the risk of release-mode optimizer rewrites into early-exit equality
+checks. Before returning the public equality result, the helper also passes the
+accumulated difference through the same non-inlined CT gate barrier used by
+malformed-input reporting. The helper is marked `#[inline(never)]` and the
+release evidence script checks that
 `constant_time_eq_public_len` remains visible as a separate text symbol in the
 LTO artifact.
 
