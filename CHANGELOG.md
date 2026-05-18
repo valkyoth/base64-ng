@@ -35,6 +35,9 @@
   prototypes on higher-tier hardware.
 - Added an explicit `Cargo.toml` comment documenting that the `tokio` feature
   is a reserved, dependency-free no-op until async admission is complete.
+- Added public `wasm32` cleanup caveats for `EncodedBuffer`, `DecodedBuffer`,
+  `SecretBuffer`, and memory-retention docs because wasm targets currently use
+  the compiler-fence-only wipe barrier.
 
 ## 0.12.0 - 2026-05-17
 

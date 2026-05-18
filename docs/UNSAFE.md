@@ -63,7 +63,9 @@ Limitations:
   spill slots, allocator spare capacity, swap, core dumps, CPU registers, cache
   lines, or buffers outside the slice provided to the API. Software-only wiping
   also cannot make claims about temporary stack copies created before the wipe
-  boundary. Miri and unknown architectures fall back to the compiler fence only.
+  boundary. Miri, `wasm32`, and unknown architectures fall back to the compiler
+  fence only. On `wasm32`, downstream runtime JIT behavior is outside this
+  crate's control.
 - Callers with platform-specific formal zeroization requirements should apply
   their own zeroization policy to caller-owned buffers in addition to using the
   crate cleanup APIs. Applications that already admit dependencies such as
@@ -112,6 +114,9 @@ Limitations:
   copies.
 - It does not upgrade `wipe_bytes` or `wipe_vec_spare_capacity` to a formal
   zeroization guarantee.
+- `wasm32` currently uses only the final compiler fence. Wasm runtime JITs may
+  apply additional optimizations or retain memory outside the Rust compiler
+  boundary.
 
 ### `wipe_vec_spare_capacity`
 

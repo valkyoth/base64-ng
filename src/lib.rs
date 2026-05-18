@@ -2750,6 +2750,11 @@ fn wipe_vec_all(bytes: &mut alloc::vec::Vec<u8>) {
 ///
 /// The backing array is cleared when the value is dropped. This is best-effort
 /// data-retention reduction and is not a formal zeroization guarantee.
+///
+/// On `wasm32` targets, the wipe barrier uses only a compiler fence. The wasm
+/// runtime JIT may still optimize or retain cleared bytes in ways this crate
+/// cannot control. High-assurance wasm deployments should apply their own
+/// memory strategy around stack-backed buffers.
 pub struct EncodedBuffer<const CAP: usize> {
     bytes: [u8; CAP],
     len: usize,
@@ -3016,6 +3021,11 @@ impl<const CAP: usize> TryFrom<&str> for EncodedBuffer<CAP> {
 ///
 /// The backing array is cleared when the value is dropped. This is best-effort
 /// data-retention reduction and is not a formal zeroization guarantee.
+///
+/// On `wasm32` targets, the wipe barrier uses only a compiler fence. The wasm
+/// runtime JIT may still optimize or retain cleared bytes in ways this crate
+/// cannot control. High-assurance wasm deployments should apply their own
+/// memory strategy around stack-backed buffers.
 pub struct DecodedBuffer<const CAP: usize> {
     bytes: [u8; CAP],
     len: usize,
@@ -3272,6 +3282,11 @@ impl<const CAP: usize> core::str::FromStr for DecodedBuffer<CAP> {
 /// internal best-effort wipe helpers. This is data-retention reduction, not a
 /// formal zeroization guarantee, and it cannot make claims about allocator
 /// behavior or historical copies outside the wrapper.
+///
+/// On `wasm32` targets, the wipe barrier uses only a compiler fence. The wasm
+/// runtime JIT may still optimize or retain cleared bytes in ways this crate
+/// cannot control. High-assurance wasm deployments should apply their own
+/// memory strategy around owned secret buffers.
 #[cfg(feature = "alloc")]
 pub struct SecretBuffer {
     bytes: alloc::vec::Vec<u8>,

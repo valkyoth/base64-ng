@@ -464,6 +464,10 @@ machinery, or operating system crash capture. For highly sensitive payloads,
 prefer the clear-tail APIs as soon as the value is no longer needed, keep
 secret lifetimes short, and combine crate-level cleanup with process policies
 for core dumps, swap, and crash reporting.
+On `wasm32`, the wipe barrier uses only a compiler fence; the wasm runtime JIT
+may still optimize or retain cleared bytes outside the crate's control.
+High-assurance wasm deployments should apply their own memory strategy around
+stack-backed buffers.
 
 When an owned heap buffer is acceptable but accidental logging is not, use
 `encode_secret` and `decode_secret`:
@@ -505,6 +509,8 @@ constant-time-oriented comparison as `constant_time_eq` for equal-length
 values, including direct comparisons with byte slices, byte-string literals,
 borrowed strings, and owned strings in either operand order. Length mismatch
 returns immediately and must be treated as public protocol information.
+On `wasm32`, the same compiler-fence-only wipe-barrier caveat applies to owned
+secret buffers.
 `expose_secret_utf8` provides an explicit borrowed text view when the secret
 bytes are valid UTF-8.
 
