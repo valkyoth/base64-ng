@@ -39,6 +39,12 @@ documents public length, output length, and final success/failure as public
 values; callers with stricter protocol requirements must continue processing
 with dummy data at the application layer.
 
+High-assurance deployments that use the `ct` module should also consider
+enforcing `runtime::BackendPolicy::HighAssuranceScalarOnly` at startup. That
+keeps execution on the audited scalar backend and avoids future SIMD-induced
+timing variation unless an accelerated backend has been admitted with its own
+side-channel evidence.
+
 ## Non-Goals
 
 - Do not describe Base64 itself as cryptography.
@@ -201,6 +207,8 @@ tracking code for:
 - no optimizer-introduced control flow that invalidates the documented mask
   arithmetic assumptions
 - no accidental dispatch into future SIMD code
+- high-assurance deployments that require scalar-only timing posture also
+  enforce `runtime::BackendPolicy::HighAssuranceScalarOnly`
 
 Generated assembly and reviewer notes should be archived with release evidence
 if a formal claim is made. Without that evidence, public documentation must keep

@@ -43,6 +43,9 @@ Use this policy when deterministic scalar execution matters more than future
 acceleration. It requires scalar execution, no detected SIMD candidate, the
 `simd` feature disabled, no active accelerated backend, and the unsafe-boundary
 check marked as enforced.
+For secret-bearing Base64 payloads, combine this policy with the `ct` module
+when avoiding future SIMD-induced timing variation is more important than
+hardware acceleration.
 
 ## Non-Claims
 

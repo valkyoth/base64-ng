@@ -87,6 +87,10 @@ formal cryptographic constant-time guarantee.
 Input length, padding length, decoded length, and final success/failure remain
 public protocol facts; callers that must hide those facts need fixed-shape
 protocol-level processing after decode failure.
+Deployments that require the most conservative side-channel posture should
+combine `base64_ng::ct` with
+`runtime::BackendPolicy::HighAssuranceScalarOnly` so sensitive decode paths
+remain on the scalar backend and are not affected by future SIMD admission.
 
 ### Supply Chain
 
