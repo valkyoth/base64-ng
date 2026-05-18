@@ -30,6 +30,9 @@
 - Renamed the internal padding-index helper to make its padding-present
   precondition explicit and added a debug assertion plus non-index sentinel for
   future misuse.
+- Changed SIMD prototype equivalence tests to gate on per-feature availability
+  and print explicit skip reasons instead of silently skipping lower-tier
+  prototypes on higher-tier hardware.
 
 ## 0.12.0 - 2026-05-17
 

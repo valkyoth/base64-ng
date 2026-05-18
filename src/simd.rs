@@ -390,7 +390,10 @@ mod tests {
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     #[test]
     fn avx512_encode_prototype_matches_scalar_when_available() {
-        if detected_candidate() != Candidate::Avx512Vbmi {
+        if !avx512_vbmi_base64_available() {
+            println!(
+                "skipped: AVX-512 VBMI prototype test requires avx512f,avx512bw,avx512vl,avx512vbmi"
+            );
             return;
         }
 
@@ -430,7 +433,8 @@ mod tests {
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     #[test]
     fn avx2_encode_prototype_matches_scalar_when_available() {
-        if detected_candidate() != Candidate::Avx2 {
+        if !avx2_available() {
+            println!("skipped: AVX2 prototype test requires avx2");
             return;
         }
 
@@ -440,7 +444,7 @@ mod tests {
 
             let mut avx2_standard = [0x55; 32];
             let mut scalar_standard = [0xaa; 32];
-            // SAFETY: The candidate check above uses runtime AVX2 detection on
+            // SAFETY: The feature check above uses runtime AVX2 detection on
             // std builds and compile-time target-feature detection otherwise.
             unsafe {
                 encode_24_bytes_avx2::<Standard>(&input, &mut avx2_standard);
@@ -453,7 +457,7 @@ mod tests {
 
             let mut avx2_url_safe = [0x55; 32];
             let mut scalar_url_safe = [0xaa; 32];
-            // SAFETY: The candidate check above proves AVX2 availability for
+            // SAFETY: The feature check above proves AVX2 availability for
             // this test invocation.
             unsafe {
                 encode_24_bytes_avx2::<UrlSafe>(&input, &mut avx2_url_safe);
@@ -469,7 +473,8 @@ mod tests {
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     #[test]
     fn ssse3_sse41_encode_prototype_matches_scalar_when_available() {
-        if detected_candidate() != Candidate::Ssse3Sse41 {
+        if !ssse3_sse41_available() {
+            println!("skipped: SSSE3/SSE4.1 prototype test requires ssse3 and sse4.1");
             return;
         }
 
@@ -512,7 +517,8 @@ mod tests {
     ))]
     #[test]
     fn neon_encode_prototype_matches_scalar_when_available() {
-        if detected_candidate() != Candidate::Neon {
+        if !neon_available() {
+            println!("skipped: NEON prototype test requires aarch64 or arm+neon");
             return;
         }
 
