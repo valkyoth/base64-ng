@@ -90,9 +90,13 @@ Any dependency addition must answer:
    - Optional feature.
 
 3. `simd`
-   - Future AVX2, AVX-512, and ARM NEON.
-   - Runtime dispatch under `std`.
-   - Compile-time target-feature paths for embedded or specialized builds.
+   - Future SSSE3/SSE4.1, AVX2, AVX-512 VBMI, ARM NEON, and wasm `simd128`.
+   - Runtime dispatch only under `std` for the first admitted accelerated
+     backends, because `std::is_x86_feature_detected!` provides the required
+     CPU-feature gate on x86/x86_64.
+   - `no_std` builds remain scalar-only unless a future API adds an explicit
+     unsafe caller-side CPU contract. Compile-time target-feature reporting is
+     not enough to dispatch safely on unknown hardware.
    - Unsafe isolated in `src/simd.rs` and documented.
 
 4. `stream`
@@ -122,10 +126,11 @@ Any dependency addition must answer:
 ### Hard Rules
 
 - Scalar encode/decode remains safe Rust.
-- The scalar-side volatile wipe helpers are the only non-SIMD unsafe
-  admissions.
+- The scalar-side unsafe admissions remain small and release-gate enforced:
+  volatile wipe helpers, CT comparison/result-gate barriers, and validated
+  secret UTF-8 conversion.
 - Unsafe SIMD must live under dedicated modules.
-- `allow(unsafe_code)` must remain confined to the volatile wipe helpers and
+- `allow(unsafe_code)` must remain confined to reviewed root helpers and
   `src/simd.rs`.
 - Every unsafe block requires a local safety explanation.
 - Every SIMD path must have deterministic and fuzzed differential tests against scalar.
@@ -558,6 +563,63 @@ cryptographic behavior until compatible verifier evidence exists.
 - Fuzz corpus stabilized.
 - API freeze and feature-admission freeze.
 - Release gate mandatory.
+
+### Post-1.0 Direction
+
+Post-`1.0` work should prefer assurance, measured evidence, and narrow API
+admission over speed. Hardware acceleration is valuable only when the scalar
+implementation remains the correctness reference and every unsafe backend has
+clear admission evidence.
+
+The recommended post-`1.0` SIMD path is incremental:
+
+- `1.0.x`: maintenance, documentation, verifier compatibility, and assurance
+  releases. Resolve Kani execution when the verifier supports the pinned Rust
+  toolchain, refresh Miri/fuzz/dudect/generated-assembly evidence, and avoid
+  broad API expansion.
+- `1.1`: replace the SSSE3/SSE4.1 fixed-block encode scaffold with real
+  vectorized encode logic for Standard and URL-safe alphabets only, still
+  non-dispatchable. The goal is meaningful scalar-equivalence tests, not active
+  acceleration. The implementation must avoid over-reading fixed input blocks;
+  any SIMD load must be backed by a proven readable region, masked load, or
+  safe staging strategy.
+- `1.2`: add a real AVX2 fixed-block encode prototype using the same
+  Standard/URL-safe semantics and evidence bar. Keep it inactive until fuzz,
+  differential, generated-code, unsafe-inventory, and register-cleanup evidence
+  is complete.
+- `1.3`: consider std-only runtime dispatch for admitted encode paths if and
+  only if SSSE3/SSE4.1 and AVX2 evidence is complete. `active_backend()` must
+  stay scalar until the admission manifest, release notes, benchmark evidence,
+  unsafe inventory, and backend policy tests are updated in the same series.
+- Later: evaluate AVX-512 VBMI encode, where direct 64-byte alphabet lookup may
+  support generic alphabets more naturally than SSSE3/AVX2 arithmetic mapping.
+  Do not admit AVX-512 dispatch without explicit ZMM/YMM/XMM register cleanup
+  evidence and generated-code review.
+- Later: evaluate NEON and wasm `simd128` encode only with platform-specific
+  evidence. Wasm remains especially sensitive because runtime/JIT behavior is
+  outside Rust's normal optimizer boundary.
+- Later: evaluate SIMD decode only after encode is admitted and stable. Decode
+  has higher security risk because it combines invalid-input handling,
+  canonicality, padding, output retention, and timing behavior.
+
+SIMD admission rules for all post-`1.0` work:
+
+- Start with encode, not decode.
+- Start with Standard and URL-safe alphabets. Bcrypt, `crypt(3)`, and custom
+  alphabets remain scalar unless an accelerated mapper is proven correct and
+  does not introduce secret-indexed lookup behavior outside documented
+  non-secret contexts.
+- Keep prototypes non-dispatchable until they have scalar differential tests,
+  fuzz coverage, generated assembly review, register-retention cleanup,
+  target-feature checks, and benchmark evidence.
+- Keep `no_std` acceleration disabled unless a future unsafe API makes the CPU
+  contract explicit at the call site.
+- Do not publish performance claims until the active backend, benchmark output,
+  hardware details, Rust version, feature flags, and release evidence all match
+  the claim.
+- Preserve `runtime::BackendPolicy::HighAssuranceScalarOnly` as the recommended
+  deployment policy for users who prefer the audited scalar path over any
+  accelerated backend.
 
 ## Release Gate
 
