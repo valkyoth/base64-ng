@@ -219,7 +219,7 @@ fn exercise_ct_decode<A, const PAD: bool>(
     A: base64_ng::Alphabet,
 {
     let mut output = vec![0u8; base64_ng::decoded_capacity(input.len()) + 3];
-    let ct_result = ct_engine.decode_slice(input, &mut output);
+    let ct_result = ct_engine.decode_slice_clear_tail(input, &mut output);
     let vec_result = engine.decode_vec(input);
 
     match (&ct_result, &vec_result) {

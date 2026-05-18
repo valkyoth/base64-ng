@@ -65,6 +65,8 @@
 - Documented the custom `Alphabet` timing contract: manual `encode`/`decode`
   overrides affect the normal `Engine` path, while the `ct` module scans
   `Alphabet::ENCODE` directly.
+- Added RFC 4648 ground-truth vectors to the differential fuzz target and
+  release-gated the fuzz workspace `cargo audit`/`cargo deny` checks.
 
 ## 0.12.0 - 2026-05-17
 

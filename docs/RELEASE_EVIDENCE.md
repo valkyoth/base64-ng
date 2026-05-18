@@ -198,6 +198,16 @@ scripts/check_fuzz.sh
 `fuzz/deny.toml` allows the NCSA license only for `libfuzzer-sys`. The root
 `deny.toml` remains stricter for the published crate.
 
+`scripts/check_fuzz.sh` explicitly runs:
+
+```sh
+cargo audit --file fuzz/Cargo.lock
+cargo deny --manifest-path fuzz/Cargo.toml check --config fuzz/deny.toml
+```
+
+The `differential` fuzz target includes static RFC 4648 ground-truth vectors in
+addition to comparison against the established `base64` crate oracle.
+
 The `stream_chunks` fuzz target covers:
 
 - chunked streaming encoders and decoders

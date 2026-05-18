@@ -265,6 +265,16 @@ do
     fi
 done
 
+for required_fuzz_gate_text in \
+    "cargo audit --file fuzz/Cargo.lock" \
+    "cargo deny --manifest-path fuzz/Cargo.toml check --config fuzz/deny.toml"
+do
+    if ! grep -F -q "$required_fuzz_gate_text" scripts/check_fuzz.sh docs/FUZZING.md docs/RELEASE_EVIDENCE.md; then
+        echo "release metadata: fuzz dependency gates are missing required text: $required_fuzz_gate_text" >&2
+        exit 1
+    fi
+done
+
 package_list="$(
     cargo package --locked --allow-dirty --list
 )"

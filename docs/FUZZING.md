@@ -28,7 +28,19 @@ Current fuzz targets:
 - `stream_chunks`: fragmented stream reader/writer state machines, adjacent
   framed payload boundaries, and stream state-helper invariants
 - `differential`: canonical output comparison against the established Base64
-  behavior used by the harness
+  behavior used by the harness, plus static RFC 4648 ground-truth vectors so
+  the differential oracle is not the only source of truth
+
+`scripts/check_fuzz.sh` also runs the fuzz workspace supply-chain gates:
+
+```sh
+cargo audit --file fuzz/Cargo.lock
+cargo deny --manifest-path fuzz/Cargo.toml check --config fuzz/deny.toml
+```
+
+The isolated `fuzz/deny.toml` permits the `libfuzzer-sys` license exception
+needed by the harness. The published crate remains governed by the stricter
+root `deny.toml`.
 
 ## Corpus Admission
 
