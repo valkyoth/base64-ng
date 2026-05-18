@@ -80,6 +80,9 @@
 - Hardened dependency-free equal-length buffer comparisons with an optimizer
   barrier in the byte-difference fold while keeping the API documented as
   constant-time-oriented best effort.
+- Clarified public docs for constant-time-oriented buffer comparisons: length
+  mismatch returns immediately and compared lengths must be public or
+  caller-normalized.
 
 ## 0.10.0 - 2026-05-17
 

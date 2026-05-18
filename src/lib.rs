@@ -2666,10 +2666,12 @@ impl<const CAP: usize> EncodedBuffer<CAP> {
     /// Compares this encoded output to `other` without short-circuiting on the
     /// first differing byte.
     ///
-    /// Length and the final equality result remain public. For equal-length
-    /// inputs, this helper scans every byte before returning. It is
-    /// constant-time-oriented best effort, not a formal cryptographic
-    /// constant-time guarantee.
+    /// Length and the final equality result remain public. Different lengths
+    /// return `false` immediately; use this helper only when the compared
+    /// lengths are public protocol facts or have been normalized by the
+    /// caller. For equal-length inputs, this helper scans every byte before
+    /// returning. It is constant-time-oriented best effort, not a formal
+    /// cryptographic constant-time guarantee.
     #[must_use]
     pub fn constant_time_eq(&self, other: &[u8]) -> bool {
         constant_time_eq_public_len(self.as_bytes(), other)
@@ -2915,10 +2917,12 @@ impl<const CAP: usize> DecodedBuffer<CAP> {
     /// Compares this decoded output to `other` without short-circuiting on the
     /// first differing byte.
     ///
-    /// Length and the final equality result remain public. For equal-length
-    /// inputs, this helper scans every byte before returning. It is
-    /// constant-time-oriented best effort, not a formal cryptographic
-    /// constant-time guarantee.
+    /// Length and the final equality result remain public. Different lengths
+    /// return `false` immediately; use this helper only when the compared
+    /// lengths are public protocol facts or have been normalized by the
+    /// caller. For equal-length inputs, this helper scans every byte before
+    /// returning. It is constant-time-oriented best effort, not a formal
+    /// cryptographic constant-time guarantee.
     #[must_use]
     pub fn constant_time_eq(&self, other: &[u8]) -> bool {
         constant_time_eq_public_len(self.as_bytes(), other)
@@ -3199,10 +3203,12 @@ impl SecretBuffer {
     /// Compares this secret to `other` without short-circuiting on the first
     /// differing byte.
     ///
-    /// Length and the final equality result remain public. For equal-length
-    /// inputs, this helper scans every byte before returning. It is
-    /// constant-time-oriented best effort, not a formal cryptographic
-    /// constant-time guarantee.
+    /// Length and the final equality result remain public. Different lengths
+    /// return `false` immediately; use this helper only when the compared
+    /// lengths are public protocol facts or have been normalized by the
+    /// caller. For equal-length inputs, this helper scans every byte before
+    /// returning. It is constant-time-oriented best effort, not a formal
+    /// cryptographic constant-time guarantee.
     #[must_use]
     pub fn constant_time_eq(&self, other: &[u8]) -> bool {
         constant_time_eq_public_len(self.expose_secret(), other)

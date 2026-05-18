@@ -437,9 +437,10 @@ Base64 text.
 `as_utf8` view for decoded text. Both expose `is_full()` and
 `remaining_capacity()` for no-alloc sizing checks, redact the payload from
 `Debug`, clear their backing arrays when dropped as best-effort data-retention
-reduction, and use constant-time-oriented equal-length equality, including
-direct comparisons with byte slices, byte-string literals, borrowed strings,
-and owned strings in either operand order.
+reduction, and use constant-time-oriented equality for equal-length values,
+including direct comparisons with byte slices, byte-string literals, borrowed
+strings, and owned strings in either operand order. Length mismatch returns
+immediately and must be treated as public protocol information.
 
 `into_exposed_array` is the explicit no-alloc ownership escape hatch for both
 stack-backed buffers. It returns the backing array and visible length, so
@@ -489,9 +490,10 @@ assert_eq!(decoded.expose_secret(), b"hello");
 initialized bytes plus spare capacity when dropped. It does not claim formal
 zeroization and cannot clean historical copies outside the wrapper or make
 guarantees about allocator behavior. `SecretBuffer` equality uses the same
-constant-time-oriented equal-length comparison as `constant_time_eq`, including
-direct comparisons with byte slices, byte-string literals, borrowed strings,
-and owned strings in either operand order.
+constant-time-oriented comparison as `constant_time_eq` for equal-length
+values, including direct comparisons with byte slices, byte-string literals,
+borrowed strings, and owned strings in either operand order. Length mismatch
+returns immediately and must be treated as public protocol information.
 `expose_secret_utf8` provides an explicit borrowed text view when the secret
 bytes are valid UTF-8.
 
