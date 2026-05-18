@@ -52,7 +52,8 @@ cat "$prototype_output"
     fi
     echo
     echo "interpretation:"
-    echo "This evidence records runtime backend reporting and inactive SIMD prototype scalar-equivalence results for this machine."
+    echo "This evidence records runtime backend reporting and inactive SIMD prototype scalar-equivalence scaffolding results for this machine."
+    echo "The prototypes currently zero output with SIMD and overwrite it with scalar encoding, so this does not prove vectorized Base64 correctness."
     echo "It does not admit accelerated dispatch or replace fuzzing, Miri, unsafe inventory review, benchmark evidence, or release notes."
 } >"$manifest"
 

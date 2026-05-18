@@ -169,8 +169,8 @@ Purpose:
 
 - Exercise AVX-512 target-feature plumbing.
 - Validate the unsafe boundary before an admitted AVX-512 path exists.
-- Provide scalar-equivalence test coverage before any real vector path is
-  admitted.
+- Provide scalar-equivalence scaffolding before any real vector path is
+  admitted. Current tests do not prove vectorized Base64 correctness.
 
 Preconditions:
 
@@ -191,6 +191,8 @@ Safety argument:
   required.
 - The function is guarded by the full AVX-512 Base64 target-feature contract.
 - The prototype then overwrites the block with scalar-equivalent Base64 output.
+  The SIMD zeroing is semantically overwritten and is not an implementation of
+  vectorized Base64.
 
 ### `encode_24_bytes_avx2`
 
@@ -202,8 +204,8 @@ Purpose:
 
 - Exercise AVX2 target-feature plumbing.
 - Validate the unsafe boundary.
-- Provide scalar-equivalence test coverage before any real vector path is
-  admitted.
+- Provide scalar-equivalence scaffolding before any real vector path is
+  admitted. Current tests do not prove vectorized Base64 correctness.
 
 Preconditions:
 
@@ -223,6 +225,8 @@ Safety argument:
   required.
 - The function is guarded by an AVX2 target-feature contract.
 - The prototype then overwrites the block with scalar-equivalent Base64 output.
+  The SIMD zeroing is semantically overwritten and is not an implementation of
+  vectorized Base64.
 
 ### `encode_12_bytes_ssse3_sse41`
 
@@ -234,8 +238,8 @@ Purpose:
 
 - Exercise lower-tier x86 target-feature plumbing.
 - Validate the unsafe boundary.
-- Provide scalar-equivalence test coverage before any real vector path is
-  admitted.
+- Provide scalar-equivalence scaffolding before any real vector path is
+  admitted. Current tests do not prove vectorized Base64 correctness.
 
 Preconditions:
 
@@ -255,6 +259,8 @@ Safety argument:
   required.
 - The function is guarded by an SSSE3/SSE4.1 target-feature contract.
 - The prototype then overwrites the block with scalar-equivalent Base64 output.
+  The SIMD zeroing is semantically overwritten and is not an implementation of
+  vectorized Base64.
 
 ### `encode_12_bytes_neon`
 
@@ -266,8 +272,8 @@ Purpose:
 
 - Exercise ARM NEON intrinsic plumbing.
 - Validate the unsafe boundary on ARM targets.
-- Provide scalar-equivalence test coverage before any real vector path is
-  admitted.
+- Provide scalar-equivalence scaffolding before any real vector path is
+  admitted. Current tests do not prove vectorized Base64 correctness.
 
 Preconditions:
 
@@ -290,6 +296,8 @@ Safety argument:
   target feature.
 - The function's safety contract requires runtime NEON availability.
 - The prototype then overwrites the block with scalar-equivalent Base64 output.
+  The NEON zeroing is semantically overwritten and is not an implementation of
+  vectorized Base64.
 
 ## Admission Rule
 

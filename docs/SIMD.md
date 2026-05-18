@@ -31,7 +31,9 @@ weakening the scalar trust base.
   `avx512vbmi`.
 - An inactive AVX-512 fixed-block encode prototype exists behind the SIMD
   boundary and is tested against scalar output only when the full AVX-512
-  Base64 feature bundle is available.
+  Base64 feature bundle is available. It currently zeroes the destination with
+  SIMD and then overwrites the block with scalar encoding; this is scaffolding,
+  not vectorized Base64 correctness evidence.
 - Runtime backend identifiers expose their required CPU feature bundles through
   `runtime::Backend::required_cpu_features()`.
 - Runtime backend reports include `candidate_required_cpu_features=[...]` in
@@ -42,11 +44,18 @@ weakening the scalar trust base.
   differential tests, fuzz coverage, and benchmark evidence.
 - An inactive SSSE3/SSE4.1 fixed-block encode prototype exists behind the SIMD
   boundary and is tested against scalar output only when SSSE3/SSE4.1 is
-  available.
+  available. It currently zeroes the destination with SIMD and then overwrites
+  the block with scalar encoding; this is scaffolding, not vectorized Base64
+  correctness evidence.
 - An inactive AVX2 fixed-block encode prototype exists behind the SIMD boundary
-  and is tested against scalar output only when AVX2 is available.
+  and is tested against scalar output only when AVX2 is available. It currently
+  zeroes the destination with SIMD and then overwrites the block with scalar
+  encoding; this is scaffolding, not vectorized Base64 correctness evidence.
 - An inactive NEON fixed-block encode prototype exists behind the same boundary
-  and is tested against scalar output only on NEON-capable ARM targets.
+  and is tested against scalar output only on NEON-capable ARM targets. It
+  currently zeroes the destination with SIMD and then overwrites the block with
+  scalar encoding; this is scaffolding, not vectorized Base64 correctness
+  evidence.
 - wasm `simd128` detection is reporting-only when `wasm32` is compiled with
   `target-feature=+simd128`; no wasm accelerated backend is active.
 - `runtime::backend_report()` reports the active backend, detected candidate,
@@ -104,8 +113,11 @@ scripts/check_backend_evidence.sh
 ```
 
 This prints the runtime backend-report test and runs the gated SIMD prototype
-scalar-equivalence tests with `--nocapture`, so local CPU evidence is easy to
-copy into release notes or issue discussion. It also writes
+scalar-equivalence scaffolding tests with `--nocapture`, so local CPU evidence
+is easy to copy into release notes or issue discussion. These prototype tests
+do not prove vectorized Base64 correctness; they only exercise target-feature
+gating, unsafe isolation, and fixed-block plumbing until real vector logic is
+admitted. The script also writes
 `target/release-evidence/backend/MANIFEST.txt` with toolchain metadata,
 commands, status values, and artifact checksums.
 

@@ -10,6 +10,12 @@
 //! feature remains a compile-time reservation until AVX-512, AVX2,
 //! SSSE3/SSE4.1, NEON, and wasm `simd128` paths have scalar differential
 //! tests, fuzz coverage, and benchmark evidence.
+//!
+//! The fixed-block prototypes below are scaffolding only. Their SIMD
+//! operations currently zero the destination block, then a scalar loop
+//! overwrites the entire output. The prototype tests therefore validate
+//! target-feature gating, unsafe isolation, and fixed-size plumbing, not
+//! vectorized Base64 correctness.
 
 #[cfg(any(
     target_arch = "x86",
@@ -158,7 +164,9 @@ fn wasm_simd128_available() -> bool {
 ///
 /// This is not an admitted fast path. It exists to exercise AVX-512 target
 /// feature plumbing, unsafe isolation, and scalar equivalence tests before a
-/// real vector encoder is allowed to participate in dispatch.
+/// real vector encoder is allowed to participate in dispatch. The current
+/// SIMD operation only zeroes the output before a scalar fallback loop
+/// overwrites every byte.
 ///
 /// # Safety
 ///
@@ -186,6 +194,10 @@ where
         _mm512_storeu_si512(output.as_mut_ptr().cast::<__m512i>(), zeros);
     }
 
+    // Temporary scaffolding: the AVX-512 store above only clears the sentinel
+    // output bytes. This scalar loop performs the actual encoding and
+    // overwrites the whole block, so the current equivalence test does not
+    // prove vectorized Base64 correctness.
     let mut read = 0;
     let mut write = 0;
     while read < input.len() {
@@ -207,7 +219,8 @@ where
 ///
 /// This is not an admitted fast path. It exists to exercise target-feature
 /// gating, unsafe isolation, and scalar equivalence tests before a real vector
-/// encoder is allowed to participate in dispatch.
+/// encoder is allowed to participate in dispatch. The current SIMD operation
+/// only zeroes the output before a scalar fallback loop overwrites every byte.
 ///
 /// # Safety
 ///
@@ -232,6 +245,10 @@ where
         _mm256_storeu_si256(output.as_mut_ptr().cast::<__m256i>(), zeros);
     }
 
+    // Temporary scaffolding: the AVX2 store above only clears the sentinel
+    // output bytes. This scalar loop performs the actual encoding and
+    // overwrites the whole block, so the current equivalence test does not
+    // prove vectorized Base64 correctness.
     let mut read = 0;
     let mut write = 0;
     while read < input.len() {
@@ -253,7 +270,9 @@ where
 ///
 /// This is not an admitted fast path. It exists to exercise lower-tier x86
 /// target-feature plumbing, unsafe isolation, and scalar equivalence before a
-/// real vector encoder is allowed to participate in dispatch.
+/// real vector encoder is allowed to participate in dispatch. The current
+/// SIMD operation only zeroes the output before a scalar fallback loop
+/// overwrites every byte.
 ///
 /// # Safety
 ///
@@ -280,6 +299,10 @@ where
         _mm_storeu_si128(output.as_mut_ptr().cast::<__m128i>(), zeros);
     }
 
+    // Temporary scaffolding: the SSSE3/SSE4.1 store above only clears the
+    // sentinel output bytes. This scalar loop performs the actual encoding and
+    // overwrites the whole block, so the current equivalence test does not
+    // prove vectorized Base64 correctness.
     let mut read = 0;
     let mut write = 0;
     while read < input.len() {
@@ -301,7 +324,8 @@ where
 ///
 /// This is not an admitted fast path. It exists to exercise ARM intrinsic
 /// plumbing, unsafe isolation, and scalar equivalence before a real vector
-/// encoder is allowed to participate in dispatch.
+/// encoder is allowed to participate in dispatch. The current NEON operation
+/// only zeroes the output before a scalar fallback loop overwrites every byte.
 ///
 /// # Safety
 ///
@@ -326,6 +350,10 @@ where
         vst1q_u8(output.as_mut_ptr(), zeros);
     }
 
+    // Temporary scaffolding: the NEON store above only clears the sentinel
+    // output bytes. This scalar loop performs the actual encoding and
+    // overwrites the whole block, so the current equivalence test does not
+    // prove vectorized Base64 correctness.
     let mut read = 0;
     let mut write = 0;
     while read < input.len() {
