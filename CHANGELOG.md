@@ -33,6 +33,8 @@
 - Changed SIMD prototype equivalence tests to gate on per-feature availability
   and print explicit skip reasons instead of silently skipping lower-tier
   prototypes on higher-tier hardware.
+- Added an explicit `Cargo.toml` comment documenting that the `tokio` feature
+  is a reserved, dependency-free no-op until async admission is complete.
 
 ## 0.12.0 - 2026-05-17
 
