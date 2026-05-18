@@ -282,10 +282,10 @@ cleanup steps before returning a protocol decision.
 
 `SecretBuffer::constant_time_eq`, `EncodedBuffer::constant_time_eq`, and
 `DecodedBuffer::constant_time_eq` provide dependency-free,
-constant-time-oriented comparison for equal-length buffers. Their `PartialEq`
-implementations use the same helper, including direct comparisons with byte
-slices, byte-string literals, borrowed strings, and owned strings where the
-relevant feature is enabled.
+constant-time-oriented comparison for equal-length buffers. These redacted
+buffer types intentionally do not implement `PartialEq`/`==`: the explicit
+method name is part of the security contract because this helper is best-effort
+and not a formal cryptographic comparison primitive.
 
 Length mismatch returns immediately. Treat buffer length, the selected buffer
 type, and the final equality result as public. The helper scans every byte for
@@ -294,4 +294,6 @@ equal-length inputs before returning. The per-byte difference is passed through
 after each OR reduction to reduce the risk of release-mode optimizer rewrites
 into early-exit equality checks. This remains a best-effort API and does not
 upgrade `base64-ng` to a formally verified cryptographic constant-time
-comparison crate.
+comparison crate. Applications that require a formally audited token, MAC, or
+password-hash comparison should admit that dependency at the application
+boundary, for example by comparing exposed bytes with `subtle`.

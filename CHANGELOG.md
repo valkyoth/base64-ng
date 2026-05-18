@@ -42,6 +42,11 @@
 - Added public `wasm32` cleanup caveats for `EncodedBuffer`, `DecodedBuffer`,
   `SecretBuffer`, and memory-retention docs because wasm targets currently use
   the compiler-fence-only wipe barrier.
+- Removed `PartialEq`/`Eq` implementations from `EncodedBuffer`,
+  `DecodedBuffer`, and `SecretBuffer` so `==` cannot imply a formal
+  constant-time token/MAC comparison guarantee; callers must use the explicit
+  best-effort `constant_time_eq` helper or an application-admitted audited
+  comparison crate.
 
 ## 0.12.0 - 2026-05-17
 

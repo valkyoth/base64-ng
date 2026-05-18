@@ -918,11 +918,11 @@ fn ct_decode_buffer_uses_stack_backed_output() {
 
     let too_small: Result<DecodedBuffer<4>, DecodeError> = ct::STANDARD.decode_buffer(b"aGVsbG8=");
     assert_eq!(
-        too_small,
-        Err(DecodeError::OutputTooSmall {
+        too_small.unwrap_err(),
+        DecodeError::OutputTooSmall {
             required: 5,
             available: 4,
-        })
+        }
     );
 
     assert_eq!(
@@ -2389,22 +2389,15 @@ fn stack_encoded_buffer_helpers_avoid_alloc_and_clear_tail() {
     assert!(encoded.constant_time_eq(b"aGVsbG8="));
     assert!(!encoded.constant_time_eq(b"aGVsbG9="));
     assert!(!encoded.constant_time_eq(b"aGVsbG8"));
-    assert_eq!(encoded, b"aGVsbG8=");
-    assert_eq!(encoded, &b"aGVsbG8="[..]);
-    assert_ne!(encoded, b"aGVsbG9=");
-    assert_eq!(b"aGVsbG8=", encoded);
-    assert_eq!(&b"aGVsbG8="[..], encoded);
-    assert_ne!(b"aGVsbG9=", encoded);
-    assert_eq!(encoded, "aGVsbG8=");
-    assert_ne!(encoded, "aGVsbG9=");
-    assert_eq!("aGVsbG8=", encoded);
-    assert_ne!("aGVsbG9=", encoded);
+    assert!(encoded.constant_time_eq(&b"aGVsbG8="[..]));
+    assert!(encoded.constant_time_eq("aGVsbG8=".as_bytes()));
+    assert!(!encoded.constant_time_eq("aGVsbG9=".as_bytes()));
     #[cfg(feature = "alloc")]
     {
-        assert_eq!(encoded, String::from("aGVsbG8="));
-        assert_ne!(encoded, String::from("aGVsbG9="));
-        assert_eq!(String::from("aGVsbG8="), encoded);
-        assert_ne!(String::from("aGVsbG9="), encoded);
+        let matching = String::from("aGVsbG8=");
+        let different = String::from("aGVsbG9=");
+        assert!(encoded.constant_time_eq(matching.as_bytes()));
+        assert!(!encoded.constant_time_eq(different.as_bytes()));
     }
     assert_eq!(
         format!("{encoded:?}"),
@@ -2412,9 +2405,9 @@ fn stack_encoded_buffer_helpers_avoid_alloc_and_clear_tail() {
     );
 
     let cloned = encoded.clone();
-    assert_eq!(encoded, cloned);
+    assert!(encoded.constant_time_eq(cloned.as_bytes()));
     let different = STANDARD.encode_buffer::<8>(b"world").unwrap();
-    assert_ne!(encoded, different);
+    assert!(!encoded.constant_time_eq(different.as_bytes()));
 
     let (array, len) = cloned.into_exposed_array();
     assert_eq!(len, 8);
@@ -2422,11 +2415,11 @@ fn stack_encoded_buffer_helpers_avoid_alloc_and_clear_tail() {
 
     let too_small: Result<EncodedBuffer<7>, EncodeError> = STANDARD.encode_buffer(b"hello");
     assert_eq!(
-        too_small,
-        Err(EncodeError::OutputTooSmall {
+        too_small.unwrap_err(),
+        EncodeError::OutputTooSmall {
             required: 8,
             available: 7,
-        })
+        }
     );
 
     let mut empty = EncodedBuffer::<8>::new();
@@ -2488,22 +2481,15 @@ fn stack_decoded_buffer_helpers_avoid_alloc_and_clear_tail() {
     assert!(decoded.constant_time_eq(b"hello"));
     assert!(!decoded.constant_time_eq(b"Hello"));
     assert!(!decoded.constant_time_eq(b"hello!"));
-    assert_eq!(decoded, b"hello");
-    assert_eq!(decoded, &b"hello"[..]);
-    assert_ne!(decoded, b"Hello");
-    assert_eq!(b"hello", decoded);
-    assert_eq!(&b"hello"[..], decoded);
-    assert_ne!(b"Hello", decoded);
-    assert_eq!(decoded, "hello");
-    assert_ne!(decoded, "Hello");
-    assert_eq!("hello", decoded);
-    assert_ne!("Hello", decoded);
+    assert!(decoded.constant_time_eq(&b"hello"[..]));
+    assert!(decoded.constant_time_eq("hello".as_bytes()));
+    assert!(!decoded.constant_time_eq("Hello".as_bytes()));
     #[cfg(feature = "alloc")]
     {
-        assert_eq!(decoded, String::from("hello"));
-        assert_ne!(decoded, String::from("Hello"));
-        assert_eq!(String::from("hello"), decoded);
-        assert_ne!(String::from("Hello"), decoded);
+        let matching = String::from("hello");
+        let different = String::from("Hello");
+        assert!(decoded.constant_time_eq(matching.as_bytes()));
+        assert!(!decoded.constant_time_eq(different.as_bytes()));
     }
     assert_eq!(
         format!("{decoded:?}"),
@@ -2511,9 +2497,9 @@ fn stack_decoded_buffer_helpers_avoid_alloc_and_clear_tail() {
     );
 
     let cloned = decoded.clone();
-    assert_eq!(decoded, cloned);
+    assert!(decoded.constant_time_eq(cloned.as_bytes()));
     let different = STANDARD.decode_buffer::<5>(b"d29ybGQ=").unwrap();
-    assert_ne!(decoded, different);
+    assert!(!decoded.constant_time_eq(different.as_bytes()));
 
     let binary = STANDARD.decode_buffer::<2>(b"//8=").unwrap();
     assert!(binary.as_utf8().is_err());
@@ -2524,11 +2510,11 @@ fn stack_decoded_buffer_helpers_avoid_alloc_and_clear_tail() {
 
     let too_small: Result<DecodedBuffer<4>, DecodeError> = STANDARD.decode_buffer(b"aGVsbG8=");
     assert_eq!(
-        too_small,
-        Err(DecodeError::OutputTooSmall {
+        too_small.unwrap_err(),
+        DecodeError::OutputTooSmall {
             required: 5,
             available: 4,
-        })
+        }
     );
 
     let mut empty = DecodedBuffer::<5>::new();
@@ -2661,25 +2647,18 @@ fn secret_buffer_redacts_and_reveals_explicitly() {
     assert!(secret.constant_time_eq(b"Token"));
     assert!(!secret.constant_time_eq(b"token"));
     assert!(!secret.constant_time_eq(b"Token!"));
-    assert_eq!(secret, b"Token");
-    assert_eq!(secret, &b"Token"[..]);
-    assert_ne!(secret, b"token");
-    assert_eq!(b"Token", secret);
-    assert_eq!(&b"Token"[..], secret);
-    assert_ne!(b"token", secret);
-    assert_eq!(secret, "Token");
-    assert_ne!(secret, "token");
-    assert_eq!("Token", secret);
-    assert_ne!("token", secret);
-    assert_eq!(secret, String::from("Token"));
-    assert_ne!(secret, String::from("token"));
-    assert_eq!(String::from("Token"), secret);
-    assert_ne!(String::from("token"), secret);
+    assert!(secret.constant_time_eq(&b"Token"[..]));
+    assert!(secret.constant_time_eq("Token".as_bytes()));
+    assert!(!secret.constant_time_eq("token".as_bytes()));
+    let matching = String::from("Token");
+    let different = String::from("token");
+    assert!(secret.constant_time_eq(matching.as_bytes()));
+    assert!(!secret.constant_time_eq(different.as_bytes()));
 
     let cloned = secret.clone();
-    assert_eq!(secret, cloned);
-    assert_ne!(secret, SecretBuffer::from_slice(b"token"));
-    assert_ne!(secret, SecretBuffer::from_slice(b"Token!"));
+    assert!(secret.constant_time_eq(cloned.expose_secret()));
+    assert!(!secret.constant_time_eq(SecretBuffer::from_slice(b"token").expose_secret()));
+    assert!(!secret.constant_time_eq(SecretBuffer::from_slice(b"Token!").expose_secret()));
 
     let exposed = cloned.into_exposed_vec();
     assert_eq!(exposed, b"Token");

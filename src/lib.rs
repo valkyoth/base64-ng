@@ -2858,7 +2858,10 @@ impl<const CAP: usize> EncodedBuffer<CAP> {
     /// lengths are public protocol facts or have been normalized by the
     /// caller. For equal-length inputs, this helper scans every byte before
     /// returning. It is constant-time-oriented best effort, not a formal
-    /// cryptographic constant-time guarantee.
+    /// cryptographic constant-time guarantee. This comparison is deliberately
+    /// explicit: redacted buffer types do not implement [`PartialEq`] because
+    /// `==` would make a best-effort helper look like a formal token/MAC
+    /// comparison primitive.
     #[must_use]
     pub fn constant_time_eq(&self, other: &[u8]) -> bool {
         constant_time_eq_public_len(self.as_bytes(), other)
@@ -2931,64 +2934,6 @@ impl<const CAP: usize> Default for EncodedBuffer<CAP> {
 impl<const CAP: usize> Drop for EncodedBuffer<CAP> {
     fn drop(&mut self) {
         self.clear();
-    }
-}
-
-impl<const CAP: usize> Eq for EncodedBuffer<CAP> {}
-
-impl<const CAP: usize> PartialEq for EncodedBuffer<CAP> {
-    fn eq(&self, other: &Self) -> bool {
-        self.constant_time_eq(other.as_bytes())
-    }
-}
-
-impl<const CAP: usize> PartialEq<&[u8]> for EncodedBuffer<CAP> {
-    fn eq(&self, other: &&[u8]) -> bool {
-        self.constant_time_eq(other)
-    }
-}
-
-impl<const CAP: usize, const N: usize> PartialEq<&[u8; N]> for EncodedBuffer<CAP> {
-    fn eq(&self, other: &&[u8; N]) -> bool {
-        self.constant_time_eq(&other[..])
-    }
-}
-
-impl<const CAP: usize> PartialEq<&str> for EncodedBuffer<CAP> {
-    fn eq(&self, other: &&str) -> bool {
-        self.constant_time_eq(other.as_bytes())
-    }
-}
-
-#[cfg(feature = "alloc")]
-impl<const CAP: usize> PartialEq<alloc::string::String> for EncodedBuffer<CAP> {
-    fn eq(&self, other: &alloc::string::String) -> bool {
-        self.constant_time_eq(other.as_bytes())
-    }
-}
-
-impl<const CAP: usize> PartialEq<EncodedBuffer<CAP>> for &[u8] {
-    fn eq(&self, other: &EncodedBuffer<CAP>) -> bool {
-        other.constant_time_eq(self)
-    }
-}
-
-impl<const CAP: usize, const N: usize> PartialEq<EncodedBuffer<CAP>> for &[u8; N] {
-    fn eq(&self, other: &EncodedBuffer<CAP>) -> bool {
-        other.constant_time_eq(&self[..])
-    }
-}
-
-impl<const CAP: usize> PartialEq<EncodedBuffer<CAP>> for &str {
-    fn eq(&self, other: &EncodedBuffer<CAP>) -> bool {
-        other.constant_time_eq(self.as_bytes())
-    }
-}
-
-#[cfg(feature = "alloc")]
-impl<const CAP: usize> PartialEq<EncodedBuffer<CAP>> for alloc::string::String {
-    fn eq(&self, other: &EncodedBuffer<CAP>) -> bool {
-        other.constant_time_eq(self.as_bytes())
     }
 }
 
@@ -3114,7 +3059,10 @@ impl<const CAP: usize> DecodedBuffer<CAP> {
     /// lengths are public protocol facts or have been normalized by the
     /// caller. For equal-length inputs, this helper scans every byte before
     /// returning. It is constant-time-oriented best effort, not a formal
-    /// cryptographic constant-time guarantee.
+    /// cryptographic constant-time guarantee. This comparison is deliberately
+    /// explicit: redacted buffer types do not implement [`PartialEq`] because
+    /// `==` would make a best-effort helper look like a formal token/MAC
+    /// comparison primitive.
     #[must_use]
     pub fn constant_time_eq(&self, other: &[u8]) -> bool {
         constant_time_eq_public_len(self.as_bytes(), other)
@@ -3181,64 +3129,6 @@ impl<const CAP: usize> Default for DecodedBuffer<CAP> {
 impl<const CAP: usize> Drop for DecodedBuffer<CAP> {
     fn drop(&mut self) {
         self.clear();
-    }
-}
-
-impl<const CAP: usize> Eq for DecodedBuffer<CAP> {}
-
-impl<const CAP: usize> PartialEq for DecodedBuffer<CAP> {
-    fn eq(&self, other: &Self) -> bool {
-        self.constant_time_eq(other.as_bytes())
-    }
-}
-
-impl<const CAP: usize> PartialEq<&[u8]> for DecodedBuffer<CAP> {
-    fn eq(&self, other: &&[u8]) -> bool {
-        self.constant_time_eq(other)
-    }
-}
-
-impl<const CAP: usize, const N: usize> PartialEq<&[u8; N]> for DecodedBuffer<CAP> {
-    fn eq(&self, other: &&[u8; N]) -> bool {
-        self.constant_time_eq(&other[..])
-    }
-}
-
-impl<const CAP: usize> PartialEq<&str> for DecodedBuffer<CAP> {
-    fn eq(&self, other: &&str) -> bool {
-        self.constant_time_eq(other.as_bytes())
-    }
-}
-
-#[cfg(feature = "alloc")]
-impl<const CAP: usize> PartialEq<alloc::string::String> for DecodedBuffer<CAP> {
-    fn eq(&self, other: &alloc::string::String) -> bool {
-        self.constant_time_eq(other.as_bytes())
-    }
-}
-
-impl<const CAP: usize> PartialEq<DecodedBuffer<CAP>> for &[u8] {
-    fn eq(&self, other: &DecodedBuffer<CAP>) -> bool {
-        other.constant_time_eq(self)
-    }
-}
-
-impl<const CAP: usize, const N: usize> PartialEq<DecodedBuffer<CAP>> for &[u8; N] {
-    fn eq(&self, other: &DecodedBuffer<CAP>) -> bool {
-        other.constant_time_eq(&self[..])
-    }
-}
-
-impl<const CAP: usize> PartialEq<DecodedBuffer<CAP>> for &str {
-    fn eq(&self, other: &DecodedBuffer<CAP>) -> bool {
-        other.constant_time_eq(self.as_bytes())
-    }
-}
-
-#[cfg(feature = "alloc")]
-impl<const CAP: usize> PartialEq<DecodedBuffer<CAP>> for alloc::string::String {
-    fn eq(&self, other: &DecodedBuffer<CAP>) -> bool {
-        other.constant_time_eq(self.as_bytes())
     }
 }
 
@@ -3405,7 +3295,10 @@ impl SecretBuffer {
     /// lengths are public protocol facts or have been normalized by the
     /// caller. For equal-length inputs, this helper scans every byte before
     /// returning. It is constant-time-oriented best effort, not a formal
-    /// cryptographic constant-time guarantee.
+    /// cryptographic constant-time guarantee. This comparison is deliberately
+    /// explicit: redacted buffer types do not implement [`PartialEq`] because
+    /// `==` would make a best-effort helper look like a formal token/MAC
+    /// comparison primitive.
     #[must_use]
     pub fn constant_time_eq(&self, other: &[u8]) -> bool {
         constant_time_eq_public_len(self.expose_secret(), other)
@@ -3447,72 +3340,6 @@ impl core::fmt::Display for SecretBuffer {
 impl Drop for SecretBuffer {
     fn drop(&mut self) {
         wipe_vec_all(&mut self.bytes);
-    }
-}
-
-#[cfg(feature = "alloc")]
-impl Eq for SecretBuffer {}
-
-#[cfg(feature = "alloc")]
-impl PartialEq for SecretBuffer {
-    fn eq(&self, other: &Self) -> bool {
-        self.constant_time_eq(other.expose_secret())
-    }
-}
-
-#[cfg(feature = "alloc")]
-impl PartialEq<&[u8]> for SecretBuffer {
-    fn eq(&self, other: &&[u8]) -> bool {
-        self.constant_time_eq(other)
-    }
-}
-
-#[cfg(feature = "alloc")]
-impl<const N: usize> PartialEq<&[u8; N]> for SecretBuffer {
-    fn eq(&self, other: &&[u8; N]) -> bool {
-        self.constant_time_eq(&other[..])
-    }
-}
-
-#[cfg(feature = "alloc")]
-impl PartialEq<&str> for SecretBuffer {
-    fn eq(&self, other: &&str) -> bool {
-        self.constant_time_eq(other.as_bytes())
-    }
-}
-
-#[cfg(feature = "alloc")]
-impl PartialEq<alloc::string::String> for SecretBuffer {
-    fn eq(&self, other: &alloc::string::String) -> bool {
-        self.constant_time_eq(other.as_bytes())
-    }
-}
-
-#[cfg(feature = "alloc")]
-impl PartialEq<SecretBuffer> for &[u8] {
-    fn eq(&self, other: &SecretBuffer) -> bool {
-        other.constant_time_eq(self)
-    }
-}
-
-#[cfg(feature = "alloc")]
-impl<const N: usize> PartialEq<SecretBuffer> for &[u8; N] {
-    fn eq(&self, other: &SecretBuffer) -> bool {
-        other.constant_time_eq(&self[..])
-    }
-}
-
-#[cfg(feature = "alloc")]
-impl PartialEq<SecretBuffer> for &str {
-    fn eq(&self, other: &SecretBuffer) -> bool {
-        other.constant_time_eq(self.as_bytes())
-    }
-}
-
-#[cfg(feature = "alloc")]
-impl PartialEq<SecretBuffer> for alloc::string::String {
-    fn eq(&self, other: &SecretBuffer) -> bool {
-        other.constant_time_eq(self.as_bytes())
     }
 }
 

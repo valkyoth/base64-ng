@@ -455,10 +455,13 @@ Base64 text.
 `as_utf8` view for decoded text. Both expose `is_full()` and
 `remaining_capacity()` for no-alloc sizing checks, redact the payload from
 `Debug`, clear their backing arrays when dropped as best-effort data-retention
-reduction, and use constant-time-oriented equality for equal-length values,
-including direct comparisons with byte slices, byte-string literals, borrowed
-strings, and owned strings in either operand order. Length mismatch returns
-immediately and must be treated as public protocol information.
+reduction, and provide explicit `constant_time_eq` helpers for equal-length
+values. They intentionally do not implement `PartialEq`/`==`: the helper is a
+dependency-free best-effort comparison, not a formal cryptographic token/MAC
+comparison primitive. Length mismatch returns immediately and must be treated
+as public protocol information. Applications that require a formally audited
+comparison should admit that dependency at the application boundary, for
+example by comparing exposed bytes with `subtle`.
 
 `into_exposed_array` is the explicit no-alloc ownership escape hatch for both
 stack-backed buffers. It returns the backing array and visible length, so
@@ -511,11 +514,13 @@ assert_eq!(decoded.expose_secret(), b"hello");
 `SecretBuffer` clears vector spare capacity when a vector is wrapped, and clears
 initialized bytes plus spare capacity when dropped. It does not claim formal
 zeroization and cannot clean historical copies outside the wrapper or make
-guarantees about allocator behavior. `SecretBuffer` equality uses the same
-constant-time-oriented comparison as `constant_time_eq` for equal-length
-values, including direct comparisons with byte slices, byte-string literals,
-borrowed strings, and owned strings in either operand order. Length mismatch
-returns immediately and must be treated as public protocol information.
+guarantees about allocator behavior. `SecretBuffer` intentionally does not
+implement `PartialEq`/`==`; use the explicit `constant_time_eq` helper only
+when its best-effort, public-length security contract is sufficient. Length
+mismatch returns immediately and must be treated as public protocol
+information. Applications that require a formally audited comparison should
+admit that dependency at the application boundary, for example by comparing
+exposed bytes with `subtle`.
 On `wasm32`, the same compiler-fence-only wipe-barrier caveat applies to owned
 secret buffers.
 `expose_secret_utf8` provides an explicit borrowed text view when the secret
