@@ -28,6 +28,10 @@ use super::{Alphabet, encode_base64_value};
 use core::arch::aarch64::{uint8x16_t, vdupq_n_u8, vst1q_u8};
 #[cfg(all(target_arch = "arm", target_feature = "neon"))]
 use core::arch::arm::{uint8x16_t, vdupq_n_u8, vst1q_u8};
+// Keep intrinsic imports limited to operations used by the current scaffolding.
+// Adding shuffle, table-lookup, permutation, compare, or arithmetic intrinsics
+// is SIMD admission work and must update docs/SIMD_ACTIVATION_CHECKLIST.md,
+// unsafe inventory, differential tests, fuzz evidence, and benchmark evidence.
 #[cfg(target_arch = "x86")]
 use core::arch::x86::{
     __m128i, __m256i, __m512i, _mm_setzero_si128, _mm_storeu_si128, _mm256_setzero_si256,

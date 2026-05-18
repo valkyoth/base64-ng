@@ -137,6 +137,9 @@ commands, status values, and artifact checksums.
 Any AVX2, NEON, AVX-512, wasm `simd128`, or runtime-dispatch implementation
 must include:
 
+- Completion of
+  [SIMD_ACTIVATION_CHECKLIST.md](SIMD_ACTIVATION_CHECKLIST.md) before the
+  backend is wired into dispatch.
 - The dedicated `src/simd.rs` boundary for all architecture-specific code.
 - Crate-level `deny(unsafe_code)` must continue to reject unsafe outside the
   volatile wipe helpers and SIMD module.

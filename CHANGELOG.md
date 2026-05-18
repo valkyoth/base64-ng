@@ -96,6 +96,8 @@
   reporting on `no_std` and other compile-time-only targets.
 - Normalized the SSSE3/SSE4.1 prototype test gate to use the same prioritized
   detected-candidate policy as the AVX-512, AVX2, and NEON prototype tests.
+- Documented the intentionally narrow SIMD intrinsic imports and added
+  `docs/SIMD_ACTIVATION_CHECKLIST.md` for future accelerated dispatch work.
 
 ## 0.10.0 - 2026-05-17
 

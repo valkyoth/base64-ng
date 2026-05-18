@@ -304,6 +304,8 @@ Safety argument:
 Unsafe SIMD can become an active backend only after scalar differential tests,
 fuzz evidence, architecture-specific build evidence, benchmark evidence, and
 review of this inventory all pass for that release.
+Future SIMD dispatch work must also complete
+[SIMD_ACTIVATION_CHECKLIST.md](SIMD_ACTIVATION_CHECKLIST.md).
 
 The admission bar applies equally to AVX2, AVX-512, SSSE3/SSE4.1, NEON, wasm
 `simd128`, and any other future vector backend.

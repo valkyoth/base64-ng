@@ -16,6 +16,10 @@ the admitted implementation.
 
 ## Required For Every Admitted Backend
 
+Before a backend is admitted, complete
+[SIMD_ACTIVATION_CHECKLIST.md](SIMD_ACTIVATION_CHECKLIST.md). The checklist is
+the contributor-facing expansion of this release manifest.
+
 Each admitted backend must have all of the following evidence before it can be
 added to `ActiveBackend` or used by runtime dispatch:
 
