@@ -72,11 +72,13 @@ profiles are strict about the configured line ending and non-final line width.
 
 Cleanup APIs are best-effort initialized-byte cleanup. They are implemented
 without runtime dependencies using audited volatile wipe helpers, an
-architecture-gated inline assembly barrier where stable Rust supports it, and
-compiler fences as inventoried in [UNSAFE.md](UNSAFE.md). They do not claim
-formal zeroization against compiler behavior, historical stack-frame copies,
-allocator internals, copies made outside the wrapper, core dumps, swap, CPU
-registers, cache lines, or arbitrary process memory disclosure vulnerabilities.
+architecture-gated inline assembly barrier, hardware store-ordering fences on
+supported native architectures, and compiler fences as inventoried in
+[UNSAFE.md](UNSAFE.md). They do not claim formal zeroization against compiler
+behavior, historical stack-frame copies, allocator internals, copies made
+outside the wrapper, core dumps, swap, hibernation images, cold-boot
+remanence, CPU registers, cache lines, write buffers, or arbitrary process
+memory disclosure vulnerabilities.
 On `wasm32`, the wipe barrier uses only a compiler fence; downstream wasm
 runtime JIT behavior is outside this crate's control. `wasm32` builds fail
 closed by default; deployments must enable `allow-wasm32-best-effort-wipe` to
@@ -85,7 +87,12 @@ apply their own memory strategy around `EncodedBuffer`, `DecodedBuffer`,
 `SecretBuffer`, and caller-owned output buffers.
 For high-assurance secret handling, use the clear-tail APIs promptly and pair
 them with operating system and deployment controls that reduce crash dumps,
-swap, and broad memory disclosure exposure.
+swap, hibernation, paging, allocator reuse, and broad memory disclosure
+exposure. Examples include locked memory where available (`mlock`,
+`VirtualLock`, or an RTOS equivalent), disabled or encrypted swap and
+hibernation, crash-dump suppression, short key lifetimes, allocator isolation
+for secret regions, and the deployment's approved zeroization primitive at the
+ownership boundary.
 For constant-time-oriented decode, use `ct::CtEngine::decode_slice_clear_tail`
 or `ct::CtEngine::decode_buffer` when a caller-owned output buffer may be
 reused after a rejected input. The non-clear-tail CT slice API was removed

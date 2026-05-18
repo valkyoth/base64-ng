@@ -75,13 +75,21 @@ The clear-tail encode and decode APIs provide best-effort cleanup for
 caller-owned buffers by writing zero bytes over unused tail bytes on success and
 over the whole buffer on encode/decode error. The cleanup primitive uses
 volatile byte writes plus an architecture-gated inline assembly barrier where
-stable Rust supports it, followed by a `SeqCst` compiler fence. Treat these APIs
-as buffer-retention reduction, not as a complete secret-erasure guarantee
-against historical stack-frame copies, compiler spills, CPU registers, cache
-lines, allocator behavior, core dumps, swap, hardware observation, or other
-process memory disclosure bugs. Callers that require a platform-specific formal
-zeroization policy should apply that policy to their own buffers in addition to
-using crate cleanup APIs.
+stable Rust supports it, a hardware store-ordering fence on supported native
+architectures, and a `SeqCst` compiler fence. Treat these APIs as
+buffer-retention reduction, not as a complete secret-erasure guarantee against
+historical stack-frame copies, compiler spills, CPU registers, cache lines,
+write buffers, allocator behavior, core dumps, swap, hibernation images,
+cold-boot remanence, hardware observation, or other process memory disclosure
+bugs. Callers that require a platform-specific formal zeroization policy should
+apply that policy to their own buffers in addition to using crate cleanup APIs.
+
+High-assurance deployments handling classified or long-lived key material
+should pair `base64-ng` with OS and platform memory controls: locked memory
+where available (`mlock`/`VirtualLock` or equivalent), disabled or encrypted
+swap and hibernation, crash-dump suppression, short key lifetimes, allocator
+isolation for secret buffers, and the deployment's approved zeroization
+primitive at the ownership boundary.
 
 The redacted buffer comparison helpers are dependency-free best-effort
 equal-length scans, not audited MAC, bearer-token, password-hash, or

@@ -482,7 +482,8 @@ clear historical stack-frame copies made by the compiler, caller code, panic
 machinery, or operating system crash capture. For highly sensitive payloads,
 prefer the clear-tail APIs as soon as the value is no longer needed, keep
 secret lifetimes short, and combine crate-level cleanup with process policies
-for core dumps, swap, and crash reporting.
+for locked memory, encrypted or disabled swap and hibernation, core dumps,
+crash reporting, and allocator isolation for secret regions.
 On `wasm32`, the wipe barrier uses only a compiler fence; the wasm runtime JIT
 may still optimize or retain cleared bytes outside the crate's control.
 For that reason, `wasm32` builds fail closed by default. Enable
@@ -675,8 +676,10 @@ Security commitments:
 - `no_std` core by default.
 - Scalar encode/decode remains safe Rust.
 - Audited unsafe helpers in `src/lib.rs` perform volatile best-effort wiping
-  plus an architecture-gated inline assembly barrier where stable Rust supports
-  it, so cleanup writes resist common dead-store elimination.
+  plus architecture-gated inline assembly and hardware store-ordering fences
+  where stable Rust supports them, so cleanup writes resist common dead-store
+  elimination and are ordered before the cleanup boundary on supported native
+  architectures.
 - Future unsafe SIMD remains isolated under `src/simd.rs`.
 - Local checks verify that `allow(unsafe_code)` is confined to the volatile
   wipe helpers and SIMD boundary, every unsafe function is inventoried, and

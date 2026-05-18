@@ -44,8 +44,9 @@ Unsafe operation:
 
 - `core::ptr::write_volatile` writes zero to each byte in the slice.
 - `wipe_barrier` receives the slice pointer and length after the volatile
-  writes and, on supported architectures, passes them through an empty
-  `core::arch::asm!` block as opaque inputs before the final compiler fence.
+  writes and, on supported native architectures, passes them through a
+  `core::arch::asm!` block as opaque inputs while also issuing a store-ordering
+  fence before the final compiler fence.
 
 Safety argument:
 
@@ -55,27 +56,32 @@ Safety argument:
   volatile pointer.
 - The barrier does not dereference the pointer. It exists to keep the preceding
   volatile writes visible across a cleanup boundary, including under more
-  aggressive optimization, before a `SeqCst` compiler fence.
+  aggressive optimization, and to order the issued zero stores on supported
+  native architectures before a `SeqCst` compiler fence.
 - `wipe_bytes` and `wipe_barrier` are both `#[inline(never)]` to preserve
   explicit cleanup call boundaries for generated-code review.
 
 Limitations:
 
 - This is best-effort data-retention reduction, not a formal zeroization
-  guarantee. The inline assembly barrier strengthens the optimizer boundary on
-  supported architectures, but it cannot clear historical copies, compiler
-  spill slots, allocator spare capacity, swap, core dumps, CPU registers, cache
-  lines, or buffers outside the slice provided to the API. Software-only wiping
-  also cannot make claims about temporary stack copies created before the wipe
-  boundary. Miri, `wasm32`, and unknown architectures fall back to the compiler
-  fence only. On `wasm32`, downstream runtime JIT behavior is outside this
-  crate's control; `wasm32` builds therefore fail closed unless
-  `allow-wasm32-best-effort-wipe` is explicitly enabled.
+  guarantee. The inline assembly barrier strengthens the optimizer boundary and
+  orders stores on supported native architectures, but it cannot clear
+  historical copies, compiler spill slots, allocator spare capacity, swap,
+  hibernation images, core dumps, CPU registers, cache lines, write buffers,
+  cold-boot remanence, or buffers outside the slice provided to the API.
+  Software-only wiping also cannot make claims about temporary stack copies
+  created before the wipe boundary. Miri, `wasm32`, and unknown architectures
+  fall back to the compiler fence only. On `wasm32`, downstream runtime JIT
+  behavior is outside this crate's control; `wasm32` builds therefore fail
+  closed unless `allow-wasm32-best-effort-wipe` is explicitly enabled.
 - Callers with platform-specific formal zeroization requirements should apply
   their own zeroization policy to caller-owned buffers in addition to using the
   crate cleanup APIs. Applications that already admit dependencies such as
   `zeroize` may combine them with `base64-ng` caller-owned buffers after the
   Base64 operation.
+  High-assurance deployments should also use OS controls such as locked memory
+  where available, disabled or encrypted swap and hibernation, crash-dump
+  suppression, short key lifetimes, and allocator isolation for secret regions.
 
 ### `wipe_barrier`
 
@@ -87,8 +93,9 @@ Purpose:
 
 - Keep volatile wipe writes observable across a cleanup boundary without adding
   a runtime dependency.
-- On supported architectures, provide a stable inline assembly optimizer
-  barrier similar in shape to dependency-backed zeroization crates.
+- On supported native architectures, provide a stable inline assembly optimizer
+  barrier and store-ordering fence similar in shape to dependency-backed
+  zeroization crates.
 - Fall back to a `SeqCst` compiler fence under Miri and on architectures where
   the crate does not enable inline assembly.
 
@@ -100,13 +107,14 @@ Preconditions:
 
 Unsafe operation:
 
-- `core::arch::asm!` emits an empty assembly block on non-Miri `aarch64`,
-  `arm`, `riscv32`, `riscv64`, `x86`, and `x86_64` builds.
+- `core::arch::asm!` emits `mfence` on non-Miri `x86`/`x86_64`,
+  `dsb sy; isb sy` on non-Miri `arm`/`aarch64`, and `fence rw, rw` on non-Miri
+  `riscv32`/`riscv64`. The pointer and length are also passed as opaque
+  operands.
 
 Safety argument:
 
-- The assembly block has no instructions and does not access memory through the
-  pointer.
+- The assembly block does not access memory through the pointer.
 - `options(nostack, preserves_flags)` states that the block does not use the
   stack or modify flags.
 - Pointer and length operands are used only as opaque inputs to prevent the
@@ -114,9 +122,10 @@ Safety argument:
 
 Limitations:
 
-- This is an optimizer barrier, not a hardware erasure primitive. It does not
-  clear registers, cache lines, stack spills, swap, core dumps, or historical
-  copies.
+- This is an optimizer and store-ordering barrier, not a hardware erasure
+  primitive. It does not clear registers, cache lines, write buffers, stack
+  spills, swap, hibernation images, core dumps, cold-boot remanence, or
+  historical copies.
 - It does not upgrade `wipe_bytes` or `wipe_vec_spare_capacity` to a formal
   zeroization guarantee.
 - `wasm32` currently uses only the final compiler fence. Wasm runtime JITs may
