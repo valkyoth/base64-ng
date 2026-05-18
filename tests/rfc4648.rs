@@ -464,7 +464,7 @@ fn runtime_backend_report_keeps_scalar_active() {
     );
     assert_eq!(snapshot.simd_feature_enabled, cfg!(feature = "simd"));
     assert!(!snapshot.accelerated_backend_active);
-    assert!(snapshot.unsafe_boundary_enforced);
+    assert_eq!(snapshot.unsafe_boundary_enforced, !cfg!(feature = "simd"));
     assert_eq!(snapshot.security_posture, report.security_posture.as_str());
     assert_eq!(report.active.as_str(), "scalar");
     assert_eq!(report.active.to_string(), "scalar");
@@ -494,7 +494,7 @@ fn runtime_backend_report_keeps_scalar_active() {
     assert!(display.contains("candidate_required_cpu_features="));
     assert!(display.contains("accelerated_backend_active=false"));
     assert!(!report.accelerated_backend_active);
-    assert!(report.unsafe_boundary_enforced);
+    assert_eq!(report.unsafe_boundary_enforced, !cfg!(feature = "simd"));
     assert_eq!(report.simd_feature_enabled, cfg!(feature = "simd"));
 
     if report.candidate == runtime::Backend::Scalar {
@@ -537,7 +537,7 @@ fn runtime_backend_policy_assertions_are_explicit() {
         candidate: runtime::Backend::Avx2,
         simd_feature_enabled: true,
         accelerated_backend_active: false,
-        unsafe_boundary_enforced: true,
+        unsafe_boundary_enforced: false,
         security_posture: runtime::SecurityPosture::SimdCandidateScalarActive,
     };
     let artificial_error = runtime::BackendPolicyError {
@@ -546,7 +546,7 @@ fn runtime_backend_policy_assertions_are_explicit() {
     };
     assert_eq!(
         artificial_error.to_string(),
-        "runtime backend policy `high-assurance-scalar-only` was not satisfied (active=scalar candidate=avx2 candidate_required_cpu_features=[avx2] simd_feature_enabled=true accelerated_backend_active=false unsafe_boundary_enforced=true security_posture=simd-candidate-scalar-active)"
+        "runtime backend policy `high-assurance-scalar-only` was not satisfied (active=scalar candidate=avx2 candidate_required_cpu_features=[avx2] simd_feature_enabled=true accelerated_backend_active=false unsafe_boundary_enforced=false security_posture=simd-candidate-scalar-active)"
     );
 
     let simd_feature_policy =

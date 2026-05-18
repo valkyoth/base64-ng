@@ -83,6 +83,9 @@
 - Clarified public docs for constant-time-oriented buffer comparisons: length
   mismatch returns immediately and compared lengths must be public or
   caller-normalized.
+- Made `runtime::BackendReport::unsafe_boundary_enforced` a conservative
+  compile-time posture signal that is false for `simd` builds instead of an
+  unconditional constant.
 
 ## 0.10.0 - 2026-05-17
 

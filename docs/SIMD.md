@@ -50,7 +50,11 @@ weakening the scalar trust base.
 - wasm `simd128` detection is reporting-only when `wasm32` is compiled with
   `target-feature=+simd128`; no wasm accelerated backend is active.
 - `runtime::backend_report()` reports the active backend, detected candidate,
-  SIMD feature status, and scalar-only security posture.
+  SIMD feature status, scalar-only security posture, and a conservative
+  unsafe-boundary posture flag. The flag is true only when the reserved `simd`
+  feature is disabled; SIMD-enabled builds include additional private
+  prototype boundaries and must use the release evidence scripts for boundary
+  validation.
 - `runtime::require_backend_policy()` allows deployments to enforce scalar
   execution, disabled SIMD features, or no detected SIMD candidate.
 - `BackendPolicy::HighAssuranceScalarOnly` combines scalar execution, disabled

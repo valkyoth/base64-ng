@@ -646,7 +646,10 @@ Security commitments:
 - [docs/DEPENDENCIES.md](docs/DEPENDENCIES.md) defines the dependency
   admission bar for any future external crate.
 - `runtime::backend_report()` exposes the active backend, detected candidate,
-  SIMD feature status, and scalar-only security posture for audit logging.
+  SIMD feature status, scalar-only security posture, and a conservative
+  unsafe-boundary posture flag for audit logging. The unsafe-boundary flag is
+  true only when the reserved `simd` feature is disabled; SIMD-enabled builds
+  must rely on the release evidence scripts for boundary validation.
 - `runtime::require_backend_policy()` lets deployments assert scalar execution,
   disabled SIMD features, or no detected SIMD candidate.
 - `BackendPolicy::HighAssuranceScalarOnly` combines the scalar/no-SIMD

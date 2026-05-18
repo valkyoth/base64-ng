@@ -11,7 +11,7 @@ stable release.
 | Runtime dependencies | Zero external crates | `scripts/validate-dependencies.sh` |
 | Default dev dependencies | Zero external crates | `Cargo.toml` |
 | Optional runtime features | `alloc`, `std`, `stream`; reserved `simd`, `tokio`, `kani`, `fuzzing` | `Cargo.toml`, `scripts/check_reserved_features.sh` |
-| Unsafe policy | Scalar encode/decode remains safe Rust; audited unsafe is limited to volatile wiping and SIMD prototypes | `src/lib.rs`, `src/simd.rs`, `docs/UNSAFE.md` |
+| Unsafe policy | Scalar encode/decode remains safe Rust; audited unsafe is limited to volatile wiping and SIMD prototypes; runtime unsafe-boundary reports are conservative and mark SIMD-enabled builds as not high-assurance-boundary-enforced | `src/lib.rs`, `src/simd.rs`, `docs/UNSAFE.md` |
 | Active backend | Scalar only | `runtime::backend_report()` tests |
 | SIMD status | Reserved prototypes only; no accelerated backend admitted | `docs/SIMD.md` |
 | Strict decoding | Default behavior rejects whitespace, mixed alphabets, malformed padding, and non-canonical trailing bits | integration tests |
@@ -41,8 +41,9 @@ base64_ng::runtime::require_backend_policy(
 
 Use this policy when deterministic scalar execution matters more than future
 acceleration. It requires scalar execution, no detected SIMD candidate, the
-`simd` feature disabled, no active accelerated backend, and the unsafe-boundary
-check marked as enforced.
+`simd` feature disabled, no active accelerated backend, and the conservative
+unsafe-boundary flag marked as enforced. That flag is intentionally false when
+the reserved `simd` feature is enabled, even if execution remains scalar-only.
 For secret-bearing Base64 payloads, combine this policy with the `ct` module
 when avoiding future SIMD-induced timing variation is more important than
 hardware acceleration.

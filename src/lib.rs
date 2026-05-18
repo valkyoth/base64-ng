@@ -244,7 +244,12 @@ pub mod runtime {
         pub simd_feature_enabled: bool,
         /// Whether an accelerated SIMD backend is active.
         pub accelerated_backend_active: bool,
-        /// Whether unsafe code is confined to the dedicated SIMD boundary.
+        /// Whether this build keeps the high-assurance scalar unsafe boundary.
+        ///
+        /// This is a conservative compile-time posture signal. It is `true`
+        /// only when the reserved `simd` feature is disabled; `simd` builds
+        /// expose additional private prototype boundaries and must use the
+        /// release evidence scripts for boundary validation.
         pub unsafe_boundary_enforced: bool,
         /// Current security posture.
         pub security_posture: SecurityPosture,
@@ -263,7 +268,11 @@ pub mod runtime {
         pub simd_feature_enabled: bool,
         /// Whether an accelerated SIMD backend is active.
         pub accelerated_backend_active: bool,
-        /// Whether unsafe code is confined to the dedicated SIMD boundary.
+        /// Whether this build keeps the high-assurance scalar unsafe boundary.
+        ///
+        /// This is `false` for `simd` builds even while execution remains
+        /// scalar-only, because those builds include additional private
+        /// prototype boundaries.
         pub unsafe_boundary_enforced: bool,
         /// Stable security posture identifier.
         pub security_posture: &'static str,
@@ -366,6 +375,7 @@ pub mod runtime {
         let active = active_backend();
         let candidate = detected_candidate();
         let accelerated_backend_active = active != Backend::Scalar;
+        let unsafe_boundary_enforced = !cfg!(feature = "simd");
         let security_posture = if accelerated_backend_active {
             SecurityPosture::Accelerated
         } else if candidate != Backend::Scalar {
@@ -379,7 +389,7 @@ pub mod runtime {
             candidate,
             simd_feature_enabled: cfg!(feature = "simd"),
             accelerated_backend_active,
-            unsafe_boundary_enforced: true,
+            unsafe_boundary_enforced,
             security_posture,
         }
     }
