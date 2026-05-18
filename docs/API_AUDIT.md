@@ -45,7 +45,7 @@ audit favors removing or documenting ambiguous APIs over adding convenience.
 | `ct` module | documented boundary | Keep non-claim wording and opaque error behavior explicit unless verification evidence changes. |
 | `stream` module | documented boundary | Fail-closed decode, retry semantics, state helpers, recovery helpers, and framed-reader behavior are explicit. |
 | Runtime backend reporting | candidate stable | Scalar-only posture and stable log identifiers are documented and release-gated. |
-| Feature flags | documented boundary | `tokio`, `kani`, `fuzzing`, and `simd` remain inert or reserved unless admitted by their policy docs. `deny-wasm32-best-effort-wipe` is an active fail-closed policy feature for high-assurance wasm builds. |
+| Feature flags | documented boundary | `tokio`, `kani`, `fuzzing`, and `simd` remain inert or reserved unless admitted by their policy docs. `allow-wasm32-best-effort-wipe` is an explicit opt-in for wasm builds that accept compiler-fence-only cleanup. |
 | Error types | candidate stable | Encode, decode, and alphabet errors are recoverable and diagnostic without committing ct errors to localized detail. |
 | Macros and custom alphabets | documented boundary | Compile-time validation and conservative fixed-scan performance/security tradeoffs are explicit. |
 

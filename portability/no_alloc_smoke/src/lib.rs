@@ -135,7 +135,7 @@ pub fn in_place_surfaces() -> bool {
     }
 
     let mut ct_decoded = *b"aGk=";
-    let ct_decoded = match ct::STANDARD.decode_in_place(&mut ct_decoded) {
+    let ct_decoded = match ct::STANDARD.decode_in_place_clear_tail(&mut ct_decoded) {
         Ok(decoded) => decoded,
         Err(_) => return false,
     };

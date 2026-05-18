@@ -64,19 +64,19 @@
 //! High-assurance applications should apply their own approved zeroization
 //! policy to caller-owned buffers at the protocol boundary. On `wasm32`, the
 //! wipe barrier is compiler-fence-only and cannot constrain downstream wasm
-//! runtime JITs. Deployments that must fail closed instead of accepting that
-//! posture can enable the `deny-wasm32-best-effort-wipe` feature in CI; that
-//! feature intentionally rejects `wasm32` builds.
+//! runtime JITs. For that reason, `wasm32` builds fail closed by default.
+//! Enable `allow-wasm32-best-effort-wipe` only when the deployment explicitly
+//! accepts compiler-fence-only cleanup and applies its own memory strategy.
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
-#[cfg(all(target_arch = "wasm32", feature = "deny-wasm32-best-effort-wipe"))]
+#[cfg(all(target_arch = "wasm32", not(feature = "allow-wasm32-best-effort-wipe")))]
 compile_error!(
-    "base64-ng: feature `deny-wasm32-best-effort-wipe` rejects wasm32 builds \
-     because cleanup uses a compiler-fence-only wipe barrier that cannot \
-     constrain downstream wasm runtime JITs. Use caller-owned, platform-approved \
-     zeroization for high-assurance wasm deployments."
+    "base64-ng: wasm32 builds use a compiler-fence-only wipe barrier that cannot \
+     constrain downstream wasm runtime JITs. Enable \
+     `allow-wasm32-best-effort-wipe` to accept this limitation and use \
+     caller-owned, platform-approved zeroization for high-assurance wasm deployments."
 );
 
 #[cfg(feature = "simd")]
@@ -2785,8 +2785,10 @@ fn wipe_vec_all(bytes: &mut alloc::vec::Vec<u8>) {
 ///
 /// On `wasm32` targets, the wipe barrier uses only a compiler fence. The wasm
 /// runtime JIT may still optimize or retain cleared bytes in ways this crate
-/// cannot control. High-assurance wasm deployments should apply their own
-/// memory strategy around stack-backed buffers.
+/// cannot control. `wasm32` builds fail closed by default; enable
+/// `allow-wasm32-best-effort-wipe` only when the deployment explicitly accepts
+/// this limitation and applies its own memory strategy around stack-backed
+/// buffers.
 pub struct EncodedBuffer<const CAP: usize> {
     bytes: [u8; CAP],
     len: usize,
@@ -3001,8 +3003,10 @@ impl<const CAP: usize> TryFrom<&str> for EncodedBuffer<CAP> {
 ///
 /// On `wasm32` targets, the wipe barrier uses only a compiler fence. The wasm
 /// runtime JIT may still optimize or retain cleared bytes in ways this crate
-/// cannot control. High-assurance wasm deployments should apply their own
-/// memory strategy around stack-backed buffers.
+/// cannot control. `wasm32` builds fail closed by default; enable
+/// `allow-wasm32-best-effort-wipe` only when the deployment explicitly accepts
+/// this limitation and applies its own memory strategy around stack-backed
+/// buffers.
 pub struct DecodedBuffer<const CAP: usize> {
     bytes: [u8; CAP],
     len: usize,
@@ -3207,8 +3211,10 @@ impl<const CAP: usize> core::str::FromStr for DecodedBuffer<CAP> {
 ///
 /// On `wasm32` targets, the wipe barrier uses only a compiler fence. The wasm
 /// runtime JIT may still optimize or retain cleared bytes in ways this crate
-/// cannot control. High-assurance wasm deployments should apply their own
-/// memory strategy around owned secret buffers.
+/// cannot control. `wasm32` builds fail closed by default; enable
+/// `allow-wasm32-best-effort-wipe` only when the deployment explicitly accepts
+/// this limitation and applies its own memory strategy around owned secret
+/// buffers.
 #[cfg(feature = "alloc")]
 pub struct SecretBuffer {
     bytes: alloc::vec::Vec<u8>,

@@ -55,9 +55,9 @@ The release gate runs:
   published crate contract unless separately admitted
 - reserved feature placeholder checks for `tokio`, `kani`, and `fuzzing`,
   including inert-feature and per-feature dependency graph validation
-- fail-closed wasm wipe policy check proving
-  `deny-wasm32-best-effort-wipe` rejects `wasm32` builds with the documented
-  compiler-fence-only cleanup caveat
+- fail-closed wasm wipe policy check proving default `wasm32` builds reject
+  compiler-fence-only cleanup and the explicit
+  `allow-wasm32-best-effort-wipe` opt-in build succeeds
 - clippy with warnings denied
 - default, all-features, and no-default-features tests
 - all-features and no-default-features doctests plus documentation builds

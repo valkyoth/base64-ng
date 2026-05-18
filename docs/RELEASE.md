@@ -38,7 +38,8 @@ The release gate covers:
 - packaged dependency admission policy
 - reserved feature placeholder checks with inert-feature and per-feature
   dependency graph validation
-- fail-closed wasm wipe policy check for `deny-wasm32-best-effort-wipe`
+- fail-closed wasm wipe policy check and explicit
+  `allow-wasm32-best-effort-wipe` opt-in build check
 - fuzz-only dependency checks when `fuzz/` is present
 - clippy
 - feature-mode tests

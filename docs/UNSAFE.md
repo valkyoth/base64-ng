@@ -65,7 +65,8 @@ Limitations:
   also cannot make claims about temporary stack copies created before the wipe
   boundary. Miri, `wasm32`, and unknown architectures fall back to the compiler
   fence only. On `wasm32`, downstream runtime JIT behavior is outside this
-  crate's control.
+  crate's control; `wasm32` builds therefore fail closed unless
+  `allow-wasm32-best-effort-wipe` is explicitly enabled.
 - Callers with platform-specific formal zeroization requirements should apply
   their own zeroization policy to caller-owned buffers in addition to using the
   crate cleanup APIs. Applications that already admit dependencies such as
@@ -116,7 +117,8 @@ Limitations:
   zeroization guarantee.
 - `wasm32` currently uses only the final compiler fence. Wasm runtime JITs may
   apply additional optimizations or retain memory outside the Rust compiler
-  boundary.
+  boundary. `wasm32` builds therefore fail closed unless
+  `allow-wasm32-best-effort-wipe` is explicitly enabled.
 
 ### `wipe_vec_spare_capacity`
 

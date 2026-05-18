@@ -32,7 +32,7 @@ fi
 if printf '%s\n' "$installed" | grep -qx "$wasm_target"; then
     echo "simd feature-bundle checks: wasm simd128 no_std reserved build for $wasm_target"
     RUSTFLAGS='-C target-feature=+simd128' \
-        cargo check --target "$wasm_target" --no-default-features --features simd --lib
+        cargo check --target "$wasm_target" --no-default-features --features simd,allow-wasm32-best-effort-wipe --lib
 else
     echo "simd feature-bundle checks: skipping $wasm_target; Rust target is not installed"
 fi

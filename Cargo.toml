@@ -35,7 +35,7 @@ alloc = []
 std = ["alloc"]
 simd = []
 stream = ["std"]
-deny-wasm32-best-effort-wipe = []
+allow-wasm32-best-effort-wipe = []
 # Placeholder for future async Tokio integration; currently no-op,
 # dependency-free, and enforced by scripts/check_reserved_features.sh.
 tokio = []

@@ -68,12 +68,11 @@ formal zeroization against compiler behavior, historical stack-frame copies,
 allocator internals, copies made outside the wrapper, core dumps, swap, CPU
 registers, cache lines, or arbitrary process memory disclosure vulnerabilities.
 On `wasm32`, the wipe barrier uses only a compiler fence; downstream wasm
-runtime JIT behavior is outside this crate's control. High-assurance wasm
-deployments should apply their own memory strategy around `EncodedBuffer`,
-`DecodedBuffer`, `SecretBuffer`, and caller-owned output buffers. Deployments
-that must fail closed in CI can enable the `deny-wasm32-best-effort-wipe`
-feature; `wasm32` builds with that feature intentionally fail at compile time
-with the cleanup caveat.
+runtime JIT behavior is outside this crate's control. `wasm32` builds fail
+closed by default; deployments must enable `allow-wasm32-best-effort-wipe` to
+accept compiler-fence-only cleanup. High-assurance wasm deployments should
+apply their own memory strategy around `EncodedBuffer`, `DecodedBuffer`,
+`SecretBuffer`, and caller-owned output buffers.
 For high-assurance secret handling, use the clear-tail APIs promptly and pair
 them with operating system and deployment controls that reduce crash dumps,
 swap, and broad memory disclosure exposure.

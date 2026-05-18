@@ -7,7 +7,11 @@ installed="$(rustup target list --installed)"
 for target in $targets; do
     if printf '%s\n' "$installed" | grep -qx "$target"; then
         echo "target checks: no_std simd-reserved build for $target"
-        cargo check --target "$target" --no-default-features --features simd --lib
+        features="simd"
+        if [ "$target" = "wasm32-unknown-unknown" ]; then
+            features="simd,allow-wasm32-best-effort-wipe"
+        fi
+        cargo check --target "$target" --no-default-features --features "$features" --lib
     else
         echo "target checks: skipping $target; Rust target is not installed"
     fi
