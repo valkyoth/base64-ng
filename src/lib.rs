@@ -62,10 +62,22 @@
 //! a formal zeroization guarantee and cannot clear historical copies,
 //! registers, cache lines, swap, core dumps, or OS-level memory snapshots.
 //! High-assurance applications should apply their own approved zeroization
-//! policy to caller-owned buffers at the protocol boundary.
+//! policy to caller-owned buffers at the protocol boundary. On `wasm32`, the
+//! wipe barrier is compiler-fence-only and cannot constrain downstream wasm
+//! runtime JITs. Deployments that must fail closed instead of accepting that
+//! posture can enable the `deny-wasm32-best-effort-wipe` feature in CI; that
+//! feature intentionally rejects `wasm32` builds.
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
+
+#[cfg(all(target_arch = "wasm32", feature = "deny-wasm32-best-effort-wipe"))]
+compile_error!(
+    "base64-ng: feature `deny-wasm32-best-effort-wipe` rejects wasm32 builds \
+     because cleanup uses a compiler-fence-only wipe barrier that cannot \
+     constrain downstream wasm runtime JITs. Use caller-owned, platform-approved \
+     zeroization for high-assurance wasm deployments."
+);
 
 #[cfg(feature = "simd")]
 mod simd;

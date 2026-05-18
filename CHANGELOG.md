@@ -51,6 +51,9 @@
   caller data into SIMD registers must implement, document, and provide
   generated-assembly evidence for explicit register cleanup before it can be
   dispatched.
+- Added the dependency-free `deny-wasm32-best-effort-wipe` policy feature and
+  release-gate check so high-assurance wasm deployments can fail closed instead
+  of accepting compiler-fence-only cleanup.
 
 ## 0.12.0 - 2026-05-17
 

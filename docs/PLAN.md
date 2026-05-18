@@ -50,6 +50,9 @@ External crates require written justification before inclusion:
   The default benchmark path should remain dependency-free unless a tool such
   as Criterion earns admission with better measurement evidence.
 - Kani support must stay feature-gated and must not affect normal users.
+- The `deny-wasm32-best-effort-wipe` feature is allowed as a dependency-free
+  policy switch that intentionally fails `wasm32` builds when compiler-fence
+  only cleanup is unacceptable.
 
 Rejected by default:
 

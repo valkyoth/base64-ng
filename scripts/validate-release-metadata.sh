@@ -91,6 +91,7 @@ for required_script in \
     "scripts/check_reserved_features.sh" \
     "scripts/check_simd_feature_bundles.sh" \
     "scripts/check_targets.sh" \
+    "scripts/check_wasm_wipe_policy.sh" \
     "scripts/checks.sh" \
     "scripts/ci_install_rust.sh" \
     "scripts/generate-sbom.sh" \

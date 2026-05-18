@@ -13,6 +13,9 @@ new dependency expands the audit, license, advisory, and supply-chain surface.
   `fuzzing` remain inert and dependency-free until admitted, and that deferred
   integration features such as `serde`, `bytes`, `zeroize`, `subtle`, and
   `criterion` are not exposed before dependency admission.
+- `deny-wasm32-best-effort-wipe` is a dependency-free policy feature, not a
+  dependency admission. It intentionally rejects `wasm32` builds when
+  compiler-fence-only cleanup is unacceptable for the deployment.
 - Fuzz, performance, and dudect-style timing harness dependencies are isolated
   under `fuzz/`, `perf/`, and `dudect/`; the standard local gate checks them
   separately from the published crate dependency graph.

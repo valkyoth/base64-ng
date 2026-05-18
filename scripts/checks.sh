@@ -25,6 +25,9 @@ scripts/check_reserved_features.sh
 echo "checks: unsafe boundary"
 scripts/validate-unsafe-boundary.sh
 
+echo "checks: wasm wipe policy"
+scripts/check_wasm_wipe_policy.sh
+
 echo "checks: SIMD admission policy"
 scripts/validate-simd-admission.sh
 

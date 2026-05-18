@@ -99,6 +99,7 @@ license = "MIT OR Apache-2.0"
 | `std` | yes | `std::error::Error` support and feature base for I/O. |
 | `simd` | no | Future hardware acceleration. |
 | `stream` | no | `std::io` streaming wrappers. |
+| `deny-wasm32-best-effort-wipe` | no | Fail `wasm32` builds instead of accepting compiler-fence-only cleanup. |
 | `tokio` | no | Reserved for future async streaming wrappers; currently inert and dependency-free. |
 | `kani` | no | Reserved for verifier harnesses; normal builds do not require Kani. |
 | `fuzzing` | no | Reserved for verifier and fuzz harness integration; published crate stays dependency-free. |
@@ -477,7 +478,9 @@ for core dumps, swap, and crash reporting.
 On `wasm32`, the wipe barrier uses only a compiler fence; the wasm runtime JIT
 may still optimize or retain cleared bytes outside the crate's control.
 High-assurance wasm deployments should apply their own memory strategy around
-stack-backed buffers.
+stack-backed buffers. Enable the `deny-wasm32-best-effort-wipe` feature in CI
+when a wasm build must fail closed unless the application supplies its own
+approved cleanup strategy.
 
 When an owned heap buffer is acceptable but accidental logging is not, use
 `encode_secret` and `decode_secret`:
@@ -522,7 +525,9 @@ information. Applications that require a formally audited comparison should
 admit that dependency at the application boundary, for example by comparing
 exposed bytes with `subtle`.
 On `wasm32`, the same compiler-fence-only wipe-barrier caveat applies to owned
-secret buffers.
+secret buffers. Enable the `deny-wasm32-best-effort-wipe` feature in CI when a
+wasm build must fail closed unless the application supplies its own approved
+cleanup strategy.
 `expose_secret_utf8` provides an explicit borrowed text view when the secret
 bytes are valid UTF-8.
 
@@ -764,6 +769,12 @@ Check reserved feature placeholders directly:
 
 ```sh
 scripts/check_reserved_features.sh
+```
+
+Check the wasm fail-closed cleanup policy directly:
+
+```sh
+scripts/check_wasm_wipe_policy.sh
 ```
 
 Run the release gate:
