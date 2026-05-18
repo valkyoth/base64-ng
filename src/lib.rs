@@ -4462,7 +4462,7 @@ fn constant_time_eq_public_len(left: &[u8], right: &[u8]) -> bool {
     }
 
     let diff = left.iter().zip(right).fold(0u8, |diff, (left, right)| {
-        diff | core::hint::black_box(*left ^ *right)
+        core::hint::black_box(core::hint::black_box(diff) | core::hint::black_box(*left ^ *right))
     });
     diff == 0
 }

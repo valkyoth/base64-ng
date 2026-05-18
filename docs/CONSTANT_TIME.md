@@ -280,7 +280,8 @@ relevant feature is enabled.
 Length mismatch returns immediately. Treat buffer length, the selected buffer
 type, and the final equality result as public. The helper scans every byte for
 equal-length inputs before returning. The per-byte difference is passed through
-`core::hint::black_box` before accumulation to reduce the risk of release-mode
-optimizer rewrites into early-exit equality checks. This remains a best-effort
-API and does not upgrade `base64-ng` to a formally verified cryptographic
-constant-time comparison crate.
+`core::hint::black_box`; the accumulator is also passed through `black_box`
+after each OR reduction to reduce the risk of release-mode optimizer rewrites
+into early-exit equality checks. This remains a best-effort API and does not
+upgrade `base64-ng` to a formally verified cryptographic constant-time
+comparison crate.

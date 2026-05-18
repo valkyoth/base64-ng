@@ -24,6 +24,9 @@
 - Clarified that `ct::CtEngine::decode_slice` can leave partially decoded bytes
   in caller-owned output on malformed input, and that reusable secret buffers
   should use `ct::CtEngine::decode_slice_clear_tail`.
+- Hardened the equal-length comparison helper by making the OR accumulator
+  opaque with `core::hint::black_box`, while preserving the documented
+  best-effort constant-time-oriented posture.
 
 ## 0.12.0 - 2026-05-17
 
