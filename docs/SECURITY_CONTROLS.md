@@ -82,10 +82,13 @@ The default scalar encoder avoids input-derived alphabet table indexes for
 built-in alphabets, and custom alphabet helper decoding now scans the full
 64-byte alphabet before returning. The default strict decoder still preserves
 localized errors and may return early for malformed input, padding, length, or
-output-size failures, so it is not a constant-time decoder. The `ct` module
-narrows the timing target further for scalar decode and uses a fixed scan over
-the selected alphabet for generic symbol mapping. It still does not carry a
-formal cryptographic constant-time guarantee.
+output-size failures, so it is not a constant-time decoder. Named engines and
+profiles such as `STANDARD`, `URL_SAFE_NO_PAD`, `MIME`, `PEM`, `BCRYPT`, and
+`CRYPT` are strict interoperability APIs, not token-comparison or key-material
+decode APIs. The `ct` module narrows the timing target further for scalar
+decode and uses a fixed scan over the selected alphabet for generic symbol
+mapping. It still does not carry a formal cryptographic constant-time
+guarantee.
 Input length, padding length, decoded length, and final success/failure remain
 public protocol facts; callers that must hide those facts need fixed-shape
 protocol-level processing after decode failure.

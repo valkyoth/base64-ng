@@ -407,6 +407,12 @@ The default strict decoders are not constant-time decoders: they preserve exact
 error indexes and may return early for malformed input, padding, length, or
 output-size errors. Use `base64_ng::ct` for secret-bearing payloads where decode
 timing posture matters more than localized error diagnostics.
+Do not use `STANDARD`, `STANDARD_NO_PAD`, `URL_SAFE`, `URL_SAFE_NO_PAD`,
+`MIME`, `PEM`, `BCRYPT`, or `CRYPT` as token-comparison or key-material decode
+APIs when the encoded bytes or rejection reason are sensitive. Use
+`ct::STANDARD`, `ct::URL_SAFE_NO_PAD`, or `STANDARD.ct_decoder()` instead and
+perform any final token comparison with a constant-time-oriented comparison
+appropriate for the protocol.
 
 For short values, `encode_buffer` returns a stack-backed `EncodedBuffer`
 and `decode_buffer` returns a stack-backed `DecodedBuffer` without requiring

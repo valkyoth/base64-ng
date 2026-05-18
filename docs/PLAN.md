@@ -464,6 +464,10 @@ cryptographic behavior until compatible verifier evidence exists.
 - Decide the `v1.0` constant-time wording. The default expectation is to keep
   the API explicitly "constant-time-oriented" unless the release has tool-backed
   generated-code and timing evidence strong enough for a formal guarantee.
+- Keep default engine docs explicit that `STANDARD`, `URL_SAFE_NO_PAD`,
+  wrapped profiles, bcrypt-style profiles, and custom strict decoders are not
+  token-comparison or key-material decode APIs. Sensitive decode entry points
+  are the `ct` constants and `Engine::ct_decoder()`.
 - Freeze profile behavior for strict, legacy, MIME, PEM, bcrypt-style,
   `crypt(3)`-style, custom alphabets, wrapped profiles, and validation-only
   APIs.
@@ -473,6 +477,9 @@ cryptographic behavior until compatible verifier evidence exists.
   record justifies them.
 - Rehearse release evidence with the stable release gate and record any skips
   or policy exceptions that would block `v1.0`.
+- Defer a secure-decode marker trait or wrapper type to a post-`v1.0` design
+  issue unless the final release-candidate audit proves the current `ct`
+  constants and docs are insufficient.
 
 ### v0.11
 

@@ -311,3 +311,8 @@ Stable boundary:
   cryptographic constant-time behavior.
 - Active backend dispatch remains scalar-only; SIMD candidates remain governed
   by the SIMD admission policy.
+- A future secure-decode marker trait or wrapper type remains a post-`v1.0`
+  candidate. It should be designed only after the stable `ct` contract is
+  exercised by downstream users, so the `v1.0` boundary relies on explicit
+  `ct` constants, `Engine::ct_decoder()`, and prominent default-decoder
+  warnings rather than a late broad API addition.

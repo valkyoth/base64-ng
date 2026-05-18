@@ -43,6 +43,16 @@
 //! assert_eq!(&encoded[..encoded_len], b"-_8");
 //! ```
 //!
+//! # Sensitive Decode Policy
+//!
+//! The default engines such as [`STANDARD`] and [`URL_SAFE_NO_PAD`] are strict
+//! scalar encoders/decoders with localized diagnostics. They are not
+//! constant-time token validators or key-material decoders: strict decode and
+//! validation may branch or return early based on malformed input. Use
+//! [`ct::STANDARD`], [`ct::URL_SAFE_NO_PAD`], or [`Engine::ct_decoder`] for
+//! secret-bearing payloads where decode timing posture matters more than exact
+//! error indexes.
+//!
 //! # Zeroization Caveat
 //!
 //! Cleanup APIs and redacted buffers use dependency-free best-effort wiping:
@@ -2453,27 +2463,69 @@ pub mod ct {
 }
 
 /// Standard Base64 engine with padding.
+///
+/// This default strict engine is not a constant-time token validator or
+/// key-material decoder. Use [`ct::STANDARD`] or [`Engine::ct_decoder`] for the
+/// matching constant-time-oriented decoder when timing posture matters.
+#[doc(alias = "ct")]
+#[doc(alias = "constant_time")]
+#[doc(alias = "sensitive")]
 pub const STANDARD: Engine<Standard, true> = Engine::new();
 
 /// Standard Base64 engine without padding.
+///
+/// This default strict engine is not a constant-time token validator or
+/// key-material decoder. Use [`ct::STANDARD_NO_PAD`] or [`Engine::ct_decoder`]
+/// for the matching constant-time-oriented decoder when timing posture
+/// matters.
+#[doc(alias = "ct")]
+#[doc(alias = "constant_time")]
+#[doc(alias = "sensitive")]
 pub const STANDARD_NO_PAD: Engine<Standard, false> = Engine::new();
 
 /// URL-safe Base64 engine with padding.
+///
+/// This default strict engine is not a constant-time token validator or
+/// key-material decoder. Use [`ct::URL_SAFE`] or [`Engine::ct_decoder`] for the
+/// matching constant-time-oriented decoder when timing posture matters.
+#[doc(alias = "ct")]
+#[doc(alias = "constant_time")]
+#[doc(alias = "sensitive")]
 pub const URL_SAFE: Engine<UrlSafe, true> = Engine::new();
 
 /// URL-safe Base64 engine without padding.
+///
+/// This default strict engine is not a constant-time token validator or
+/// key-material decoder. Use [`ct::URL_SAFE_NO_PAD`] or [`Engine::ct_decoder`]
+/// for the matching constant-time-oriented decoder when timing posture
+/// matters.
+#[doc(alias = "ct")]
+#[doc(alias = "constant_time")]
+#[doc(alias = "sensitive")]
 pub const URL_SAFE_NO_PAD: Engine<UrlSafe, false> = Engine::new();
 
 /// bcrypt-style Base64 engine without padding.
 ///
 /// This uses the bcrypt alphabet with the crate's normal Base64 bit packing.
-/// It does not parse complete bcrypt password-hash strings.
+/// It does not parse complete bcrypt password-hash strings. This default strict
+/// engine is not a constant-time token validator or key-material decoder; use
+/// [`Engine::ct_decoder`] for the matching constant-time-oriented decoder when
+/// timing posture matters.
+#[doc(alias = "ct")]
+#[doc(alias = "constant_time")]
+#[doc(alias = "sensitive")]
 pub const BCRYPT_NO_PAD: Engine<Bcrypt, false> = Engine::new();
 
 /// Unix `crypt(3)`-style Base64 engine without padding.
 ///
 /// This uses the `crypt(3)` alphabet with the crate's normal Base64 bit
-/// packing. It does not parse complete password-hash strings.
+/// packing. It does not parse complete password-hash strings. This default
+/// strict engine is not a constant-time token validator or key-material
+/// decoder; use [`Engine::ct_decoder`] for the matching constant-time-oriented
+/// decoder when timing posture matters.
+#[doc(alias = "ct")]
+#[doc(alias = "constant_time")]
+#[doc(alias = "sensitive")]
 pub const CRYPT_NO_PAD: Engine<Crypt, false> = Engine::new();
 
 /// Line ending used by wrapped Base64 output.
@@ -3856,24 +3908,57 @@ where
 }
 
 /// MIME Base64 profile: standard alphabet, padding, 76-column CRLF wrapping.
+///
+/// This profile uses the default strict decoder and is not a constant-time
+/// token validator or key-material decoder. Use [`ct::STANDARD`] with an
+/// application-level wrapping policy for sensitive fixed-shape protocols.
+#[doc(alias = "ct")]
+#[doc(alias = "constant_time")]
+#[doc(alias = "sensitive")]
 pub const MIME: Profile<Standard, true> = Profile::new(STANDARD, Some(LineWrap::MIME));
 
 /// PEM Base64 profile: standard alphabet, padding, 64-column LF wrapping.
+///
+/// This profile uses the default strict decoder and is not a constant-time
+/// token validator or key-material decoder. Use [`ct::STANDARD`] with an
+/// application-level wrapping policy for sensitive fixed-shape protocols.
+#[doc(alias = "ct")]
+#[doc(alias = "constant_time")]
+#[doc(alias = "sensitive")]
 pub const PEM: Profile<Standard, true> = Profile::new(STANDARD, Some(LineWrap::PEM));
 
 /// PEM Base64 profile with CRLF line endings.
+///
+/// This profile uses the default strict decoder and is not a constant-time
+/// token validator or key-material decoder. Use [`ct::STANDARD`] with an
+/// application-level wrapping policy for sensitive fixed-shape protocols.
+#[doc(alias = "ct")]
+#[doc(alias = "constant_time")]
+#[doc(alias = "sensitive")]
 pub const PEM_CRLF: Profile<Standard, true> = Profile::new(STANDARD, Some(LineWrap::PEM_CRLF));
 
 /// bcrypt-style no-padding Base64 profile.
 ///
 /// This profile carries the bcrypt alphabet and no padding. It does not parse
-/// complete bcrypt password-hash strings.
+/// complete bcrypt password-hash strings. Its default strict decoder is not a
+/// constant-time token validator or key-material decoder; use
+/// [`Profile::engine`] with [`Engine::ct_decoder`] for the matching
+/// constant-time-oriented decoder when timing posture matters.
+#[doc(alias = "ct")]
+#[doc(alias = "constant_time")]
+#[doc(alias = "sensitive")]
 pub const BCRYPT: Profile<Bcrypt, false> = Profile::new(BCRYPT_NO_PAD, None);
 
 /// Unix `crypt(3)`-style no-padding Base64 profile.
 ///
 /// This profile carries the `crypt(3)` alphabet and no padding. It does not
-/// parse complete password-hash strings.
+/// parse complete password-hash strings. Its default strict decoder is not a
+/// constant-time token validator or key-material decoder; use
+/// [`Profile::engine`] with [`Engine::ct_decoder`] for the matching
+/// constant-time-oriented decoder when timing posture matters.
+#[doc(alias = "ct")]
+#[doc(alias = "constant_time")]
+#[doc(alias = "sensitive")]
 pub const CRYPT: Profile<Crypt, false> = Profile::new(CRYPT_NO_PAD, None);
 
 /// Returns the encoded length for an input length and padding policy.
@@ -4742,6 +4827,9 @@ where
     /// This applies the same alphabet, padding, and canonical-bit checks as
     /// [`Self::decode_slice`]. Use this method when malformed-input
     /// diagnostics matter; use [`Self::validate`] when a boolean is enough.
+    /// This default validator is not constant-time; use
+    /// [`crate::ct::CtEngine::validate_result`] through [`Self::ct_decoder`]
+    /// for secret-bearing payloads where timing posture matters.
     ///
     /// # Examples
     ///
@@ -4757,7 +4845,10 @@ where
 
     /// Returns whether `input` is valid strict Base64 for this engine.
     ///
-    /// This is a convenience wrapper around [`Self::validate_result`].
+    /// This is a convenience wrapper around [`Self::validate_result`] and is
+    /// not constant-time. Use [`crate::ct::CtEngine::validate`] through
+    /// [`Self::ct_decoder`] for secret-bearing payloads where timing posture
+    /// matters.
     ///
     /// # Examples
     ///

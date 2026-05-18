@@ -18,6 +18,9 @@
 - Hardened dependency-free cleanup by adding an architecture-gated inline
   assembly barrier after volatile wipe loops, while keeping crate-level docs
   explicit that cleanup remains best-effort and not formal zeroization.
+- Strengthened default-engine and validation documentation so
+  `STANDARD`/`URL_SAFE_NO_PAD`/profile users are pointed at `ct` constants or
+  `Engine::ct_decoder()` for token validation and key-material decoding.
 
 ## 0.12.0 - 2026-05-17
 

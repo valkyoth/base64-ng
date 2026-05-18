@@ -33,6 +33,13 @@ means default methods such as `decode_slice`, `decode_in_place`,
 `validate_result`, profile decoders, and stream adapters may branch or return
 early based on malformed input content.
 
+Treat the named default engines and profiles, including `STANDARD`,
+`STANDARD_NO_PAD`, `URL_SAFE`, `URL_SAFE_NO_PAD`, `MIME`, `PEM`, `BCRYPT`, and
+`CRYPT`, as strict interoperability APIs rather than token-comparison or
+key-material decode APIs. For sensitive payloads, use the matching `ct`
+constant such as `ct::STANDARD` or `ct::URL_SAFE_NO_PAD`, or promote an engine
+with `Engine::ct_decoder()`.
+
 Use the `base64_ng::ct` module for secret-bearing payloads where timing posture
 matters more than localized malformed-input diagnostics. The `ct` module still
 documents public length, output length, and final success/failure as public
