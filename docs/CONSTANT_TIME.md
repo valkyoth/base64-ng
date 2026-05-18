@@ -190,12 +190,13 @@ scripts/generate_ct_asm_evidence.sh
 
 Normal CI and the release gate run this script. It writes release assembly
 artifacts and a checksum manifest under `target/release-evidence/asm/` for
-no-default-features and all-features builds. It wraps these raw compiler
-invocations:
+no-default-features, all-features, and all-features LTO builds. It wraps these
+raw compiler invocations:
 
 ```sh
 cargo rustc --release --lib --no-default-features -- --emit=asm
 cargo rustc --release --lib --all-features -- --emit=asm
+RUSTFLAGS="-C lto=fat -C embed-bitcode=yes" cargo rustc --release --lib --all-features -- --emit=asm
 ```
 
 Target-specific reviews must also include the targets named in the release

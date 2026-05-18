@@ -54,6 +54,8 @@
 - Changed `wasm32` builds to fail closed by default unless callers explicitly
   enable the dependency-free `allow-wasm32-best-effort-wipe` feature to accept
   compiler-fence-only cleanup.
+- Marked `wipe_bytes` as `#[inline(never)]` and extended generated assembly
+  evidence to include an all-features LTO artifact for cleanup-boundary review.
 
 ## 0.12.0 - 2026-05-17
 

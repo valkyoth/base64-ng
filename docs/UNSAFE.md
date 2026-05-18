@@ -33,6 +33,8 @@ Purpose:
   stream cleanup, stack-buffer cleanup, and secret-buffer cleanup APIs.
 - Use volatile writes so the compiler must retain the cleanup writes even when
   the memory is not read again before drop or reuse.
+- Keep the wipe loop behind an `#[inline(never)]` call boundary so release and
+  LTO builds have less surrounding caller context when optimizing cleanup.
 
 Preconditions:
 
@@ -54,6 +56,8 @@ Safety argument:
 - The barrier does not dereference the pointer. It exists to keep the preceding
   volatile writes visible across a cleanup boundary, including under more
   aggressive optimization, before a `SeqCst` compiler fence.
+- `wipe_bytes` and `wipe_barrier` are both `#[inline(never)]` to preserve
+  explicit cleanup call boundaries for generated-code review.
 
 Limitations:
 

@@ -307,10 +307,13 @@ with:
 scripts/generate_ct_asm_evidence.sh
 ```
 
-The script writes `target/release-evidence/asm/base64_ng-no-default-features.s`
-and `target/release-evidence/asm/base64_ng-all-features.s`, plus
+The script writes `target/release-evidence/asm/base64_ng-no-default-features.s`,
+`target/release-evidence/asm/base64_ng-all-features.s`, and
+`target/release-evidence/asm/base64_ng-all-features-lto.s`, plus
 `target/release-evidence/asm/MANIFEST.txt` with rustc metadata, commands,
-review focus, and artifact checksums.
+review focus, and artifact checksums. The LTO artifact exists so reviewers can
+check that cleanup primitives such as `wipe_bytes` and `wipe_barrier` remain
+visible call boundaries under aggressive optimization.
 
 ## Performance Evidence
 

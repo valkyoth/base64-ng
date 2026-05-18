@@ -16,6 +16,7 @@ Expected artifacts:
 
 - `target/release-evidence/asm/base64_ng-no-default-features.s`
 - `target/release-evidence/asm/base64_ng-all-features.s`
+- `target/release-evidence/asm/base64_ng-all-features-lto.s`
 - `target/release-evidence/asm/MANIFEST.txt`
 
 Review focus:
@@ -27,6 +28,7 @@ Review focus:
 - `ct_decode_unpadded_in_place`
 - `ct_decode_alphabet_byte`
 - `ct_mask_*` helpers
+- `wipe_bytes` and `wipe_barrier` cleanup call boundaries
 
 ## Review Questions
 
@@ -37,6 +39,8 @@ Review focus:
 - Are branches in the reviewed ct path based only on public facts such as
   input length, padding mode, selected alphabet, and caller output capacity?
 - Does generated code keep the scalar ct path independent from SIMD dispatch?
+- Do `wipe_bytes` and `wipe_barrier` remain non-inlined cleanup call
+  boundaries in release and LTO artifacts?
 - Are padding length, decoded length, and final success/failure still treated
   as public by documentation and API shape?
 

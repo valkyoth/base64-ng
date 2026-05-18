@@ -2697,6 +2697,7 @@ impl core::fmt::Display for LineWrap {
     }
 }
 
+#[inline(never)]
 #[allow(unsafe_code)]
 fn wipe_bytes(bytes: &mut [u8]) {
     for byte in bytes.iter_mut() {
