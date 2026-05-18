@@ -1460,13 +1460,12 @@ pub mod stream {
                     return Ok(consumed);
                 }
 
-                let quad = [
+                let mut quad = [
                     input[consumed],
                     input[consumed + 1],
                     input[consumed + 2],
                     input[consumed + 3],
                 ];
-                let mut quad = quad;
                 let mut decoded = [0u8; 3];
                 let written = match self.engine.decode_slice(&quad, &mut decoded) {
                     Ok(written) => written,
