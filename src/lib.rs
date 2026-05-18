@@ -133,6 +133,47 @@ pub mod runtime {
         }
     }
 
+    /// How SIMD backend candidates were detected for this build.
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+    #[non_exhaustive]
+    pub enum CandidateDetectionMode {
+        /// SIMD candidate detection is disabled because the `simd` feature is
+        /// not enabled.
+        SimdFeatureDisabled,
+        /// Candidate detection uses runtime CPU feature probing.
+        RuntimeCpuFeatures,
+        /// Candidate detection uses compile-time target features.
+        ///
+        /// This mode does not prove that the deployment CPU has the reported
+        /// feature; it only reflects how the binary was compiled.
+        CompileTimeTargetFeatures,
+    }
+
+    impl CandidateDetectionMode {
+        /// Returns the stable lowercase identifier for this detection mode.
+        ///
+        /// ```
+        /// assert_eq!(
+        ///     base64_ng::runtime::CandidateDetectionMode::SimdFeatureDisabled.as_str(),
+        ///     "simd-feature-disabled",
+        /// );
+        /// ```
+        #[must_use]
+        pub const fn as_str(self) -> &'static str {
+            match self {
+                Self::SimdFeatureDisabled => "simd-feature-disabled",
+                Self::RuntimeCpuFeatures => "runtime-cpu-features",
+                Self::CompileTimeTargetFeatures => "compile-time-target-features",
+            }
+        }
+    }
+
+    impl core::fmt::Display for CandidateDetectionMode {
+        fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+            formatter.write_str(self.as_str())
+        }
+    }
+
     /// Security posture for the active runtime backend.
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     #[non_exhaustive]
@@ -240,6 +281,9 @@ pub mod runtime {
         pub active: Backend,
         /// Strongest backend candidate visible to the current build.
         pub candidate: Backend,
+        /// Whether candidate visibility came from runtime CPU probing,
+        /// compile-time target features, or a disabled SIMD feature.
+        pub candidate_detection_mode: CandidateDetectionMode,
         /// Whether the `simd` feature is enabled in this build.
         pub simd_feature_enabled: bool,
         /// Whether an accelerated SIMD backend is active.
@@ -262,6 +306,8 @@ pub mod runtime {
         pub active: &'static str,
         /// Stable detected candidate identifier.
         pub candidate: &'static str,
+        /// Stable SIMD candidate detection-mode identifier.
+        pub candidate_detection_mode: &'static str,
         /// CPU features required by the detected candidate.
         pub candidate_required_cpu_features: &'static [&'static str],
         /// Whether the `simd` feature is enabled in this build.
@@ -282,8 +328,8 @@ pub mod runtime {
         fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
             write!(
                 formatter,
-                "active={} candidate={} candidate_required_cpu_features=",
-                self.active, self.candidate,
+                "active={} candidate={} candidate_detection_mode={} candidate_required_cpu_features=",
+                self.active, self.candidate, self.candidate_detection_mode,
             )?;
             write_feature_list(formatter, self.candidate_required_cpu_features())?;
             write!(
@@ -353,6 +399,7 @@ pub mod runtime {
             BackendSnapshot {
                 active: self.active.as_str(),
                 candidate: self.candidate.as_str(),
+                candidate_detection_mode: self.candidate_detection_mode.as_str(),
                 candidate_required_cpu_features: self.candidate_required_cpu_features(),
                 simd_feature_enabled: self.simd_feature_enabled,
                 accelerated_backend_active: self.accelerated_backend_active,
@@ -374,6 +421,7 @@ pub mod runtime {
     pub fn backend_report() -> BackendReport {
         let active = active_backend();
         let candidate = detected_candidate();
+        let candidate_detection_mode = candidate_detection_mode();
         let accelerated_backend_active = active != Backend::Scalar;
         let unsafe_boundary_enforced = !cfg!(feature = "simd");
         let security_posture = if accelerated_backend_active {
@@ -387,6 +435,7 @@ pub mod runtime {
         BackendReport {
             active,
             candidate,
+            candidate_detection_mode,
             simd_feature_enabled: cfg!(feature = "simd"),
             accelerated_backend_active,
             unsafe_boundary_enforced,
@@ -459,6 +508,28 @@ pub mod runtime {
     #[cfg(not(feature = "simd"))]
     const fn detected_candidate() -> Backend {
         Backend::Scalar
+    }
+
+    #[cfg(all(
+        feature = "simd",
+        feature = "std",
+        any(target_arch = "x86", target_arch = "x86_64")
+    ))]
+    const fn candidate_detection_mode() -> CandidateDetectionMode {
+        CandidateDetectionMode::RuntimeCpuFeatures
+    }
+
+    #[cfg(all(
+        feature = "simd",
+        not(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))
+    ))]
+    const fn candidate_detection_mode() -> CandidateDetectionMode {
+        CandidateDetectionMode::CompileTimeTargetFeatures
+    }
+
+    #[cfg(not(feature = "simd"))]
+    const fn candidate_detection_mode() -> CandidateDetectionMode {
+        CandidateDetectionMode::SimdFeatureDisabled
     }
 }
 

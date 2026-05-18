@@ -38,6 +38,9 @@ weakening the scalar trust base.
   `runtime::Backend::required_cpu_features()`.
 - Runtime backend reports include `candidate_required_cpu_features=[...]` in
   their stable key/value display output for audit logs.
+- Runtime backend reports include `candidate_detection_mode=...` so logs show
+  whether a SIMD candidate came from runtime CPU feature probing or from
+  compile-time target features.
 - Runtime backend reports expose `snapshot()` for structured audit logging
   without parsing formatted strings.
 - SSSE3/SSE4.1 detection is reporting-only until an implementation has scalar
@@ -59,11 +62,19 @@ weakening the scalar trust base.
 - wasm `simd128` detection is reporting-only when `wasm32` is compiled with
   `target-feature=+simd128`; no wasm accelerated backend is active.
 - `runtime::backend_report()` reports the active backend, detected candidate,
-  SIMD feature status, scalar-only security posture, and a conservative
-  unsafe-boundary posture flag. The flag is true only when the reserved `simd`
-  feature is disabled; SIMD-enabled builds include additional private
-  prototype boundaries and must use the release evidence scripts for boundary
-  validation.
+  detection mode, SIMD feature status, scalar-only security posture, and a
+  conservative unsafe-boundary posture flag. The flag is true only when the
+  reserved `simd` feature is disabled; SIMD-enabled builds include additional
+  private prototype boundaries and must use the release evidence scripts for
+  boundary validation.
+- On `x86`/`x86_64` with `std`, candidate detection uses
+  `std::is_x86_feature_detected!` runtime CPU probing. On `no_std`, wasm, and
+  current ARM builds, candidate detection is compile-time target-feature
+  reporting. A binary compiled with `-C target-feature=+avx2` can therefore
+  report an AVX2 candidate even if it is deployed on a CPU that cannot execute
+  AVX2 instructions. No SIMD dispatch is active today; any future `no_std`
+  SIMD activation must require an explicit caller-side CPU contract or remain
+  disabled where runtime probing is unavailable.
 - `runtime::require_backend_policy()` allows deployments to enforce scalar
   execution, disabled SIMD features, or no detected SIMD candidate.
 - `BackendPolicy::HighAssuranceScalarOnly` combines scalar execution, disabled

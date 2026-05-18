@@ -91,6 +91,9 @@
 - Clarified that inactive SIMD prototypes currently zero output with SIMD and
   then use scalar encoding, so prototype equivalence evidence validates
   scaffolding only and not vectorized Base64 correctness.
+- Added `candidate_detection_mode` to runtime backend reports and snapshots so
+  audit logs distinguish runtime CPU probing from compile-time target-feature
+  reporting on `no_std` and other compile-time-only targets.
 
 ## 0.10.0 - 2026-05-17
 

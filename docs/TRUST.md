@@ -31,7 +31,7 @@ stable release.
 ## Deployment Checks
 
 High-assurance deployments should record `runtime::backend_report()` at process
-startup and consider enforcing:
+startup, including `candidate_detection_mode`, and consider enforcing:
 
 ```rust
 base64_ng::runtime::require_backend_policy(
@@ -47,6 +47,9 @@ the reserved `simd` feature is enabled, even if execution remains scalar-only.
 For secret-bearing Base64 payloads, combine this policy with the `ct` module
 when avoiding future SIMD-induced timing variation is more important than
 hardware acceleration.
+Treat `candidate_detection_mode=compile-time-target-features` as a build-time
+statement, not a runtime CPU attestation. It is used on `no_std` and targets
+without `std`-equivalent runtime probing.
 
 ## Non-Claims
 

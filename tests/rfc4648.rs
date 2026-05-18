@@ -464,6 +464,10 @@ fn runtime_backend_report_keeps_scalar_active() {
     assert_eq!(snapshot.active, "scalar");
     assert_eq!(snapshot.candidate, report.candidate.as_str());
     assert_eq!(
+        snapshot.candidate_detection_mode,
+        report.candidate_detection_mode.as_str()
+    );
+    assert_eq!(
         snapshot.candidate_required_cpu_features,
         report.candidate_required_cpu_features()
     );
@@ -495,12 +499,44 @@ fn runtime_backend_report_keeps_scalar_active() {
         runtime::Backend::WasmSimd128.required_cpu_features(),
         ["simd128"]
     );
+    assert_eq!(
+        runtime::CandidateDetectionMode::SimdFeatureDisabled.as_str(),
+        "simd-feature-disabled"
+    );
+    assert_eq!(
+        runtime::CandidateDetectionMode::RuntimeCpuFeatures.to_string(),
+        "runtime-cpu-features"
+    );
+    assert_eq!(
+        runtime::CandidateDetectionMode::CompileTimeTargetFeatures.as_str(),
+        "compile-time-target-features"
+    );
     assert!(display.contains("active=scalar"));
+    assert!(display.contains("candidate_detection_mode="));
     assert!(display.contains("candidate_required_cpu_features="));
     assert!(display.contains("accelerated_backend_active=false"));
     assert!(!report.accelerated_backend_active);
     assert_eq!(report.unsafe_boundary_enforced, !cfg!(feature = "simd"));
     assert_eq!(report.simd_feature_enabled, cfg!(feature = "simd"));
+    if cfg!(feature = "simd")
+        && cfg!(feature = "std")
+        && cfg!(any(target_arch = "x86", target_arch = "x86_64"))
+    {
+        assert_eq!(
+            report.candidate_detection_mode,
+            runtime::CandidateDetectionMode::RuntimeCpuFeatures
+        );
+    } else if cfg!(feature = "simd") {
+        assert_eq!(
+            report.candidate_detection_mode,
+            runtime::CandidateDetectionMode::CompileTimeTargetFeatures
+        );
+    } else {
+        assert_eq!(
+            report.candidate_detection_mode,
+            runtime::CandidateDetectionMode::SimdFeatureDisabled
+        );
+    }
 
     if report.candidate == runtime::Backend::Scalar {
         assert_eq!(
@@ -540,6 +576,7 @@ fn runtime_backend_policy_assertions_are_explicit() {
     let artificial_report = runtime::BackendReport {
         active: runtime::Backend::Scalar,
         candidate: runtime::Backend::Avx2,
+        candidate_detection_mode: runtime::CandidateDetectionMode::CompileTimeTargetFeatures,
         simd_feature_enabled: true,
         accelerated_backend_active: false,
         unsafe_boundary_enforced: false,
@@ -551,7 +588,7 @@ fn runtime_backend_policy_assertions_are_explicit() {
     };
     assert_eq!(
         artificial_error.to_string(),
-        "runtime backend policy `high-assurance-scalar-only` was not satisfied (active=scalar candidate=avx2 candidate_required_cpu_features=[avx2] simd_feature_enabled=true accelerated_backend_active=false unsafe_boundary_enforced=false security_posture=simd-candidate-scalar-active)"
+        "runtime backend policy `high-assurance-scalar-only` was not satisfied (active=scalar candidate=avx2 candidate_detection_mode=compile-time-target-features candidate_required_cpu_features=[avx2] simd_feature_enabled=true accelerated_backend_active=false unsafe_boundary_enforced=false security_posture=simd-candidate-scalar-active)"
     );
 
     let simd_feature_policy =

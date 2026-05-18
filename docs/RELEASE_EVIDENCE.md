@@ -236,7 +236,10 @@ scripts/check_backend_evidence.sh
 ```
 
 The script runs the runtime backend-report test and the gated SIMD prototype
-scalar-equivalence scaffolding tests with `--nocapture`. On CPUs with
+scalar-equivalence scaffolding tests with `--nocapture`. The runtime report
+records `candidate_detection_mode`, which distinguishes x86/x86_64 `std`
+runtime CPU probing from compile-time target-feature reporting used by
+`no_std` and other compile-time-only targets. On CPUs with
 SSSE3/SSE4.1, AVX2, or the AVX-512 candidate bundle, those prototype tests
 execute the inactive prototype body and compare it against scalar output. These
 tests currently validate target-feature gating, unsafe isolation, and
