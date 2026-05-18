@@ -79,6 +79,10 @@ or `ct::CtEngine::decode_buffer` when a caller-owned output buffer may be
 reused after a rejected input. The deprecated `ct::CtEngine::decode_slice`
 reports malformed input after its fixed-shape pass and can leave decoded
 plaintext from valid leading quanta in the buffer on error.
+For constant-time-oriented in-place decode, use
+`ct::CtEngine::decode_in_place_clear_tail` unless a mixed error-state buffer is
+acceptable. The deprecated `ct::CtEngine::decode_in_place` can partially
+destroy the encoded input and retain decoded plaintext on error.
 If a platform requires a formal zeroization policy, apply that policy to
 caller-owned buffers in addition to the crate's dependency-free cleanup APIs.
 For applications that already admit `zeroize`, decode into caller-owned buffers

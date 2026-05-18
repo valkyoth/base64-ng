@@ -402,6 +402,12 @@ the same clear-tail decode variants for callers using the constant-time-oriented
 scalar decoder, `ct::CtEngine::decoded_len` for sizing caller-owned buffers
 under the same opaque malformed-input policy, plus
 `ct::CtEngine::decode_buffer` for stack-backed no-alloc decoded output.
+For constant-time-oriented in-place decode, prefer
+`ct::CtEngine::decode_in_place_clear_tail`: the deprecated
+`ct::CtEngine::decode_in_place` API can partially destroy the encoded input and
+retain decoded plaintext in the same buffer on error. If the encoded token must
+be logged or retried after failure, keep a separate copy before any in-place
+decode.
 
 The default strict decoders are not constant-time decoders: they preserve exact
 error indexes and may return early for malformed input, padding, length, or

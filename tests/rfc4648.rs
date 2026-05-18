@@ -1029,7 +1029,7 @@ fn ct_decode_in_place_matches_slice_for_canonical_inputs() {
         let mut in_place = [0u8; 128];
         in_place[..encoded_len].copy_from_slice(&encoded[..encoded_len]);
         let decoded = ct::STANDARD
-            .decode_in_place(&mut in_place[..encoded_len])
+            .decode_in_place_clear_tail(&mut in_place[..encoded_len])
             .unwrap();
         assert_eq!(decoded, &expected[..expected_len]);
 
@@ -1039,7 +1039,7 @@ fn ct_decode_in_place_matches_slice_for_canonical_inputs() {
             .unwrap();
         in_place[..encoded_len].copy_from_slice(&encoded[..encoded_len]);
         let decoded = ct::STANDARD_NO_PAD
-            .decode_in_place(&mut in_place[..encoded_len])
+            .decode_in_place_clear_tail(&mut in_place[..encoded_len])
             .unwrap();
         assert_eq!(decoded, &expected[..expected_len]);
     }

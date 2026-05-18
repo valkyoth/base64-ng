@@ -202,6 +202,10 @@ Stable boundary:
   decode pass that can leave decoded plaintext in caller-owned output on error;
   direct reusable secret buffers to `ct::CtEngine::decode_slice_clear_tail` or
   `ct::CtEngine::decode_buffer`.
+- Keep `ct::CtEngine::decode_in_place` deprecated and documented as a
+  destructive in-place pass whose error state may mix decoded plaintext and
+  remaining encoded bytes; direct sensitive in-place callers to
+  `ct::CtEngine::decode_in_place_clear_tail`.
 - Do not add unchecked in-place APIs to the public surface.
 
 ### Custom Alphabets

@@ -25,6 +25,9 @@
   plaintext in caller-owned output on malformed input; documentation, tests,
   and dudect evidence now use `decode_slice_clear_tail` or `decode_buffer` as
   the recommended constant-time-oriented decode surfaces.
+- Deprecated `ct::CtEngine::decode_in_place` because failed in-place decode can
+  partially destroy the encoded input and leave decoded plaintext in the same
+  buffer; sensitive callers should use `decode_in_place_clear_tail`.
 - Hardened the equal-length comparison helper by making the OR accumulator
   opaque with `core::hint::black_box`, while preserving the documented
   best-effort constant-time-oriented posture.

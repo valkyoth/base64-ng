@@ -46,6 +46,11 @@ Evidence:
   so `write <= read` after the first quantum and never overtakes unread input.
 - Legacy and wrapped in-place decode compact accepted input first, then call
   the same strict decode-to-front path.
+- Constant-time-oriented non-clear-tail in-place decode is destructive on
+  error and is deprecated for sensitive payloads. It may leave decoded
+  plaintext at the front of the buffer and unrecoverably overwrite part of the
+  encoded input. Use `ct::CtEngine::decode_in_place_clear_tail` when an error
+  should leave a known-zero buffer.
 
 Evidence:
 

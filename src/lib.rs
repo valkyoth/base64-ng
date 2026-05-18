@@ -2417,16 +2417,31 @@ pub mod ct {
         /// each Base64 quantum into local values before writing decoded bytes
         /// back to the front of the same buffer.
         ///
+        /// # Security Note
+        ///
+        /// In-place decoding is destructive. On error, the encoded input may
+        /// be partially overwritten by decoded plaintext and the buffer is left
+        /// in an indeterminate mixed state. Prefer
+        /// [`Self::decode_in_place_clear_tail`] for sensitive payloads and copy
+        /// the encoded input elsewhere before in-place decoding if it must be
+        /// preserved for audit logging or retry.
+        ///
         /// # Examples
         ///
         /// ```
         /// use base64_ng::ct;
         ///
         /// let mut buffer = *b"aGk=";
-        /// let decoded = ct::STANDARD.decode_in_place(&mut buffer).unwrap();
+        /// let decoded = ct::STANDARD
+        ///     .decode_in_place_clear_tail(&mut buffer)
+        ///     .unwrap();
         ///
         /// assert_eq!(decoded, b"hi");
         /// ```
+        #[deprecated(
+            since = "1.0.0-alpha.0",
+            note = "use decode_in_place_clear_tail; decode_in_place destroys input and can retain partial decoded output on error"
+        )]
         pub fn decode_in_place<'a>(
             &self,
             buffer: &'a mut [u8],
