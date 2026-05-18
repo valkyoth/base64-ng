@@ -409,7 +409,7 @@ mod tests {
         }
     }
 
-    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
     #[test]
     fn avx512_encode_prototype_matches_scalar_when_available() {
         if !avx512_vbmi_base64_available() {
@@ -452,7 +452,7 @@ mod tests {
         }
     }
 
-    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
     #[test]
     fn avx2_encode_prototype_matches_scalar_when_available() {
         if !avx2_available() {
@@ -492,7 +492,7 @@ mod tests {
         }
     }
 
-    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
     #[test]
     fn ssse3_sse41_encode_prototype_matches_scalar_when_available() {
         if !ssse3_sse41_available() {

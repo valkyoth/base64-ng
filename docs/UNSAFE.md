@@ -70,10 +70,12 @@ Limitations:
   hibernation images, core dumps, CPU registers, cache lines, write buffers,
   cold-boot remanence, or buffers outside the slice provided to the API.
   Software-only wiping also cannot make claims about temporary stack copies
-  created before the wipe boundary. Miri, `wasm32`, and unknown architectures
-  fall back to the compiler fence only. On `wasm32`, downstream runtime JIT
-  behavior is outside this crate's control; `wasm32` builds therefore fail
-  closed unless `allow-wasm32-best-effort-wipe` is explicitly enabled.
+  created before the wipe boundary. Miri, `wasm32`, and unsupported native
+  architectures fall back to the compiler fence only. On `wasm32`, downstream
+  runtime JIT behavior is outside this crate's control; `wasm32` builds
+  therefore fail closed unless `allow-wasm32-best-effort-wipe` is explicitly
+  enabled. Unsupported native architectures also fail closed unless
+  `allow-compiler-fence-only-wipe` is explicitly enabled after platform review.
 - Callers with platform-specific formal zeroization requirements should apply
   their own zeroization policy to caller-owned buffers in addition to using the
   crate cleanup APIs. Applications that already admit dependencies such as
@@ -132,6 +134,10 @@ Limitations:
   apply additional optimizations or retain memory outside the Rust compiler
   boundary. `wasm32` builds therefore fail closed unless
   `allow-wasm32-best-effort-wipe` is explicitly enabled.
+- Unsupported native architectures currently use only the final compiler fence.
+  They fail closed unless `allow-compiler-fence-only-wipe` is explicitly
+  enabled after reviewing this weaker cleanup posture and applying platform
+  memory controls.
 
 ### `wipe_vec_spare_capacity`
 

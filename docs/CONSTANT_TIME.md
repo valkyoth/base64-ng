@@ -260,6 +260,13 @@ or process-isolation boundary. A same-process observer with concurrent or
 unsafe access to the output buffer during the call could observe transient
 partial plaintext before the final wipe.
 
+Before reporting the opaque malformed-input result, the ct decoder passes the
+accumulated error mask through a non-inlined `ct_error_gate_barrier` that uses
+`core::hint::black_box` and a compiler fence. This is defense in depth against
+compiler reordering around the final public success/failure gate; it is not a
+hardware speculation barrier and does not change the transient-output window
+described above.
+
 The clear-tail APIs do not try to hide success, failure, or output length:
 those values are visible through the returned `Result` and decoded length. Any
 future cryptographic profile must document memory cleanup separately from timing

@@ -85,6 +85,10 @@ closed by default; deployments must enable `allow-wasm32-best-effort-wipe` to
 accept compiler-fence-only cleanup. High-assurance wasm deployments should
 apply their own memory strategy around `EncodedBuffer`, `DecodedBuffer`,
 `SecretBuffer`, and caller-owned output buffers.
+Unsupported native architectures without an implemented hardware wipe barrier
+also fail closed by default; deployments must enable
+`allow-compiler-fence-only-wipe` only after reviewing the weaker cleanup
+posture and applying platform memory controls.
 For high-assurance secret handling, use the clear-tail APIs promptly and pair
 them with operating system and deployment controls that reduce crash dumps,
 swap, hibernation, paging, allocator reuse, and broad memory disclosure
@@ -104,6 +108,10 @@ caller-owned output buffer before final malformed-input reporting, then
 reduces post-return retention, but it is not an isolation boundary: code running
 in the same process with concurrent or unsafe access to the output buffer during
 the decode call could observe transient partial plaintext before the final wipe.
+Before the opaque malformed-input result is reported, the accumulated ct error
+mask passes through a non-inlined compiler barrier. This is defense in depth
+against compiler reordering around the public success/failure gate, not a
+hardware speculation barrier.
 For constant-time-oriented in-place decode, use
 `ct::CtEngine::decode_in_place_clear_tail`. The non-clear-tail CT in-place API
 was removed before the `1.0` stable boundary because it could partially destroy

@@ -100,6 +100,7 @@ license = "MIT OR Apache-2.0"
 | `simd` | no | Future hardware acceleration. |
 | `stream` | no | `std::io` streaming wrappers. |
 | `allow-wasm32-best-effort-wipe` | no | Explicitly allow `wasm32` builds with compiler-fence-only cleanup. |
+| `allow-compiler-fence-only-wipe` | no | Explicitly allow unsupported native architectures to build with compiler-fence-only cleanup after platform review. |
 | `tokio` | no | Reserved for future async streaming wrappers; currently inert and dependency-free. |
 | `kani` | no | Reserved for verifier harnesses; normal builds do not require Kani. |
 | `fuzzing` | no | Reserved for verifier and fuzz harness integration; published crate stays dependency-free. |
@@ -457,7 +458,9 @@ assert_eq!(decoded.as_bytes(), &[0x5a; 58]);
 
 `EncodedBuffer` exposes bytes only through `as_bytes`, fallible `as_utf8`, and
 `as_str`, and implements `Display` for allocation-free formatting of encoded
-Base64 text.
+Base64 text. That `Display` implementation emits the full Base64 payload; do
+not use `EncodedBuffer` for encoded secrets that may reach logs or error
+messages.
 `DecodedBuffer` exposes bytes through `as_bytes` and provides a fallible
 `as_utf8` view for decoded text. Both expose `is_full()` and
 `remaining_capacity()` for no-alloc sizing checks, redact the payload from
@@ -484,12 +487,19 @@ prefer the clear-tail APIs as soon as the value is no longer needed, keep
 secret lifetimes short, and combine crate-level cleanup with process policies
 for locked memory, encrypted or disabled swap and hibernation, core dumps,
 crash reporting, and allocator isolation for secret regions.
+Cloning `EncodedBuffer` or `DecodedBuffer` creates a second live copy; avoid
+cloning secret material unless the duplicate lifetime is explicitly accounted
+for.
 On `wasm32`, the wipe barrier uses only a compiler fence; the wasm runtime JIT
 may still optimize or retain cleared bytes outside the crate's control.
 For that reason, `wasm32` builds fail closed by default. Enable
 `allow-wasm32-best-effort-wipe` only when the deployment explicitly accepts the
 limitation and applies its own approved memory strategy around stack-backed
 buffers.
+Other native architectures without an implemented hardware wipe barrier also
+fail closed by default. Enable `allow-compiler-fence-only-wipe` only after
+reviewing `docs/UNSAFE.md` and applying platform memory controls appropriate
+for that deployment.
 
 When an owned heap buffer is acceptable but accidental logging is not, use
 `encode_secret` and `decode_secret`:

@@ -58,6 +58,9 @@ The release gate runs:
 - fail-closed wasm wipe policy check proving default `wasm32` builds reject
   compiler-fence-only cleanup and the explicit
   `allow-wasm32-best-effort-wipe` opt-in build succeeds
+- fail-closed unsupported-native wipe policy documented through
+  `allow-compiler-fence-only-wipe` for architectures without an implemented
+  hardware wipe barrier
 - clippy with warnings denied
 - default, all-features, and no-default-features tests
 - all-features and no-default-features doctests plus documentation builds

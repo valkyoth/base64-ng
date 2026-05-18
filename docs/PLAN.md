@@ -53,6 +53,10 @@ External crates require written justification before inclusion:
 - The `allow-wasm32-best-effort-wipe` feature is allowed as a dependency-free
   policy switch for deployments that explicitly accept compiler-fence-only
   cleanup on `wasm32`; without it, `wasm32` builds fail closed.
+- The `allow-compiler-fence-only-wipe` feature is allowed as a dependency-free
+  policy switch for unsupported native architectures that explicitly accept
+  compiler-fence-only cleanup after platform review; without it, those builds
+  fail closed.
 
 Rejected by default:
 

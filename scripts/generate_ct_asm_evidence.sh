@@ -62,6 +62,7 @@ copy_single_asm "target/ct-asm-all-features-lto" "$output_dir/base64_ng-all-feat
 require_lto_symbol "10wipe_bytes"
 require_lto_symbol "12wipe_barrier"
 require_lto_symbol "27constant_time_eq_public_len"
+require_lto_symbol "21ct_error_gate_barrier"
 
 {
     echo "base64-ng constant-time assembly evidence"
@@ -87,8 +88,9 @@ require_lto_symbol "27constant_time_eq_public_len"
     echo "- absence of secret-indexed lookup tables in ct symbol mapping"
     echo "- absence of secret-byte-class branches in fixed-length ct decode loops"
     echo "- constant_time_eq_public_len equal-length comparison helper"
+    echo "- ct_error_gate_barrier remains a non-inlined malformed-input gate boundary"
     echo "- wipe_bytes and wipe_barrier remain non-inlined cleanup call boundaries"
-    echo "- LTO artifact contains separate wipe_bytes, wipe_barrier, and constant_time_eq_public_len text symbols"
+    echo "- LTO artifact contains separate wipe_bytes, wipe_barrier, constant_time_eq_public_len, and ct_error_gate_barrier text symbols"
 } >"$manifest"
 
 echo "ct asm evidence: wrote $output_dir"

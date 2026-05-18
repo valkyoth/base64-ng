@@ -65,11 +65,14 @@
 //! hibernation images, core dumps, cold-boot remanence, or OS-level memory
 //! snapshots.
 //! High-assurance applications should apply their own approved zeroization
-//! policy to caller-owned buffers at the protocol boundary. On `wasm32`, the
-//! wipe barrier is compiler-fence-only and cannot constrain downstream wasm
-//! runtime JITs. For that reason, `wasm32` builds fail closed by default.
-//! Enable `allow-wasm32-best-effort-wipe` only when the deployment explicitly
-//! accepts compiler-fence-only cleanup and applies its own memory strategy.
+//! policy to caller-owned buffers at the protocol boundary. Architectures
+//! without a native wipe barrier fail closed by default unless
+//! `allow-compiler-fence-only-wipe` is enabled after platform review. On
+//! `wasm32`, the wipe barrier is compiler-fence-only and cannot constrain
+//! downstream wasm runtime JITs. For that reason, `wasm32` builds fail closed
+//! by default. Enable `allow-wasm32-best-effort-wipe` only when the deployment
+//! explicitly accepts compiler-fence-only cleanup and applies its own memory
+//! strategy.
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
@@ -80,6 +83,25 @@ compile_error!(
      constrain downstream wasm runtime JITs. Enable \
      `allow-wasm32-best-effort-wipe` to accept this limitation and use \
      caller-owned, platform-approved zeroization for high-assurance wasm deployments."
+);
+
+#[cfg(all(
+    not(miri),
+    not(feature = "allow-compiler-fence-only-wipe"),
+    not(any(
+        target_arch = "aarch64",
+        target_arch = "arm",
+        target_arch = "riscv32",
+        target_arch = "riscv64",
+        target_arch = "wasm32",
+        target_arch = "x86",
+        target_arch = "x86_64",
+    ))
+))]
+compile_error!(
+    "base64-ng: this architecture has no native hardware wipe barrier in \
+     base64-ng. Enable `allow-compiler-fence-only-wipe` only after reviewing \
+     docs/UNSAFE.md and applying platform-approved memory hygiene controls."
 );
 
 #[cfg(feature = "simd")]
@@ -2889,6 +2911,13 @@ impl<const CAP: usize> AsRef<[u8]> for EncodedBuffer<CAP> {
 }
 
 impl<const CAP: usize> Clone for EncodedBuffer<CAP> {
+    /// Clones the visible encoded bytes into a second stack-backed buffer.
+    ///
+    /// Security note: cloning duplicates the visible bytes in memory. Both the
+    /// original and the clone must be dropped or explicitly cleared before the
+    /// duplicated bytes are gone on the crate's best-effort cleanup path. Avoid
+    /// cloning encoded secret material; use `SecretBuffer` when redacted
+    /// formatting and heap-owned secret handling are required.
     fn clone(&self) -> Self {
         let mut output = Self::new();
         output.bytes[..self.len].copy_from_slice(self.as_bytes());
@@ -2909,6 +2938,11 @@ impl<const CAP: usize> core::fmt::Debug for EncodedBuffer<CAP> {
 }
 
 impl<const CAP: usize> core::fmt::Display for EncodedBuffer<CAP> {
+    /// Writes the full Base64 text.
+    ///
+    /// Security note: this is intentionally not redacted. Do not use
+    /// `EncodedBuffer` for encoded secrets that may reach logs or error
+    /// messages; use `SecretBuffer` for redacted formatting.
     fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         formatter.write_str(self.as_str())
     }
@@ -3098,6 +3132,13 @@ impl<const CAP: usize> AsRef<[u8]> for DecodedBuffer<CAP> {
 }
 
 impl<const CAP: usize> Clone for DecodedBuffer<CAP> {
+    /// Clones the visible decoded bytes into a second stack-backed buffer.
+    ///
+    /// Security note: cloning duplicates decoded bytes in memory. Both the
+    /// original and the clone must be dropped or explicitly cleared before the
+    /// duplicated bytes are gone on the crate's best-effort cleanup path. For
+    /// high-assurance applications, avoid cloning decoded key material and use
+    /// `SecretBuffer` for heap-owned secrets without a `Clone` implementation.
     fn clone(&self) -> Self {
         let mut output = Self::new();
         output.bytes[..self.len].copy_from_slice(self.as_bytes());
@@ -6929,6 +6970,12 @@ fn ct_decode_in_place<A: Alphabet, const PAD: bool>(
     }
 }
 
+#[inline(never)]
+fn ct_error_gate_barrier(invalid_byte: u8, invalid_padding: u8) {
+    core::hint::black_box(invalid_byte | invalid_padding);
+    core::sync::atomic::compiler_fence(core::sync::atomic::Ordering::SeqCst);
+}
+
 fn ct_validate_decode<A: Alphabet, const PAD: bool>(input: &[u8]) -> Result<(), DecodeError> {
     if input.is_empty() {
         return Ok(());
@@ -7359,6 +7406,8 @@ fn ct_padding_len(input: &[u8]) -> usize {
 }
 
 fn report_ct_error(invalid_byte: u8, invalid_padding: u8) -> Result<(), DecodeError> {
+    ct_error_gate_barrier(invalid_byte, invalid_padding);
+
     if (invalid_byte | invalid_padding) != 0 {
         Err(DecodeError::InvalidInput)
     } else {

@@ -16,6 +16,10 @@ new dependency expands the audit, license, advisory, and supply-chain surface.
 - `allow-wasm32-best-effort-wipe` is a dependency-free policy feature, not a
   dependency admission. It is required to build for `wasm32`, where cleanup is
   limited to a compiler-fence-only wipe barrier.
+- `allow-compiler-fence-only-wipe` is a dependency-free policy feature, not a
+  dependency admission. It is required to build unsupported native architectures
+  that do not have a `base64-ng` hardware wipe barrier and therefore fall back
+  to compiler-fence-only cleanup.
 - Fuzz, performance, and dudect-style timing harness dependencies are isolated
   under `fuzz/`, `perf/`, and `dudect/`; the standard local gate checks them
   separately from the published crate dependency graph.
