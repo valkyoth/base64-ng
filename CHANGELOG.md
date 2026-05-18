@@ -47,6 +47,10 @@
   constant-time token/MAC comparison guarantee; callers must use the explicit
   best-effort `constant_time_eq` helper or an application-admitted audited
   comparison crate.
+- Tightened the SIMD admission policy so any future vector backend that loads
+  caller data into SIMD registers must implement, document, and provide
+  generated-assembly evidence for explicit register cleanup before it can be
+  dispatched.
 
 ## 0.12.0 - 2026-05-17
 

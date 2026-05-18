@@ -172,6 +172,11 @@ fn wasm_simd128_available() -> bool {
 /// SIMD operation only zeroes the output before a scalar fallback loop
 /// overwrites every byte.
 ///
+/// Admission note: a real AVX-512 implementation must explicitly clear every
+/// ZMM/YMM/XMM register that carries caller data before returning, document the
+/// exact cleanup sequence in `docs/UNSAFE.md`, and include generated-assembly
+/// evidence. This scaffold does not load caller bytes into SIMD registers.
+///
 /// # Safety
 ///
 /// The caller must execute this function only when the full AVX-512 Base64
@@ -226,6 +231,13 @@ where
 /// encoder is allowed to participate in dispatch. The current SIMD operation
 /// only zeroes the output before a scalar fallback loop overwrites every byte.
 ///
+/// Admission note: a real AVX2 implementation must explicitly clear every
+/// YMM/XMM register that carries caller data before returning, include the
+/// required AVX/SSE transition cleanup such as `vzeroupper` where applicable,
+/// document the exact sequence in `docs/UNSAFE.md`, and include
+/// generated-assembly evidence. This scaffold does not load caller bytes into
+/// SIMD registers.
+///
 /// # Safety
 ///
 /// The caller must execute this function only when AVX2 is available on the
@@ -277,6 +289,11 @@ where
 /// real vector encoder is allowed to participate in dispatch. The current
 /// SIMD operation only zeroes the output before a scalar fallback loop
 /// overwrites every byte.
+///
+/// Admission note: a real SSSE3/SSE4.1 implementation must explicitly clear
+/// every XMM register that carries caller data before returning, document the
+/// exact cleanup sequence in `docs/UNSAFE.md`, and include generated-assembly
+/// evidence. This scaffold does not load caller bytes into SIMD registers.
 ///
 /// # Safety
 ///
@@ -330,6 +347,11 @@ where
 /// plumbing, unsafe isolation, and scalar equivalence before a real vector
 /// encoder is allowed to participate in dispatch. The current NEON operation
 /// only zeroes the output before a scalar fallback loop overwrites every byte.
+///
+/// Admission note: a real NEON implementation must explicitly clear every
+/// vector register that carries caller data before returning, document the
+/// exact cleanup sequence in `docs/UNSAFE.md`, and include generated-assembly
+/// evidence. This scaffold does not load caller bytes into SIMD registers.
 ///
 /// # Safety
 ///

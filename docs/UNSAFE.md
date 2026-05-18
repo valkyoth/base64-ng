@@ -198,6 +198,11 @@ Safety argument:
 - The prototype then overwrites the block with scalar-equivalent Base64 output.
   The SIMD zeroing is semantically overwritten and is not an implementation of
   vectorized Base64.
+- Register-retention note: this prototype does not load caller bytes into SIMD
+  registers. Any future AVX-512 implementation that does so must document and
+  implement explicit cleanup for every secret-bearing ZMM/YMM/XMM register
+  before return, plus AVX transition cleanup such as `vzeroupper` where
+  applicable.
 
 ### `encode_24_bytes_avx2`
 
@@ -232,6 +237,10 @@ Safety argument:
 - The prototype then overwrites the block with scalar-equivalent Base64 output.
   The SIMD zeroing is semantically overwritten and is not an implementation of
   vectorized Base64.
+- Register-retention note: this prototype does not load caller bytes into SIMD
+  registers. Any future AVX2 implementation that does so must document and
+  implement explicit cleanup for every secret-bearing YMM/XMM register before
+  return, plus AVX transition cleanup such as `vzeroupper` where applicable.
 
 ### `encode_12_bytes_ssse3_sse41`
 
@@ -266,6 +275,10 @@ Safety argument:
 - The prototype then overwrites the block with scalar-equivalent Base64 output.
   The SIMD zeroing is semantically overwritten and is not an implementation of
   vectorized Base64.
+- Register-retention note: this prototype does not load caller bytes into SIMD
+  registers. Any future SSSE3/SSE4.1 implementation that does so must document
+  and implement explicit cleanup for every secret-bearing XMM register before
+  return.
 
 ### `encode_12_bytes_neon`
 
@@ -303,6 +316,10 @@ Safety argument:
 - The prototype then overwrites the block with scalar-equivalent Base64 output.
   The NEON zeroing is semantically overwritten and is not an implementation of
   vectorized Base64.
+- Register-retention note: this prototype does not load caller bytes into SIMD
+  registers. Any future NEON implementation that does so must document and
+  implement explicit cleanup for every secret-bearing V/Q register before
+  return.
 
 ## Admission Rule
 
@@ -317,8 +334,8 @@ The admission bar applies equally to AVX2, AVX-512, SSSE3/SSE4.1, NEON, wasm
 
 Any admitted SIMD path that processes caller data must also document its
 register-retention cleanup strategy and include the matching explicit register
-cleanup implementation and tests in the admission evidence. The current
-prototypes only construct and store zero vectors before scalar-equivalent
-writes; real vectorized implementations must explain whether target-specific
-cleanup such as `vzeroupper`, explicit zero registers, or another
-architecture-appropriate sequence is required before returning.
+cleanup implementation, generated-assembly evidence, and tests in the admission
+evidence. This is a hard release blocker before dispatch, not an optional
+follow-up. The current prototypes only construct and store zero vectors before
+scalar-equivalent writes; the exemption ends as soon as a prototype loads
+caller bytes into vector registers.

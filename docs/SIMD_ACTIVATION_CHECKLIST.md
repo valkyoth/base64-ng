@@ -10,13 +10,49 @@ Do not add an accelerated backend to `ActiveBackend`, runtime dispatch, public
 performance claims, or release notes until every item below is complete in the
 same release series.
 
+## Register Cleanup Admission Gate
+
+This is a hard blocker for every real SIMD backend. A vector path that loads,
+shuffles, masks, compares, or table-lookups caller bytes must not become
+dispatchable until it has an explicit register-retention cleanup strategy.
+
+The admission evidence must include:
+
+- A list of every SIMD register class and register number that may carry
+  caller data in the function body.
+- A cleanup sequence immediately before every return path from the SIMD
+  function.
+- Generated assembly showing the cleanup sequence is present in optimized
+  builds for the exact target-feature bundle being admitted.
+- A statement of what the cleanup does and does not claim. Register cleanup is
+  data-retention reduction inside the current thread context; it is not a
+  formal microarchitectural side-channel proof.
+- A review update in `docs/UNSAFE.md` for the admitted backend.
+
+Architecture-specific baseline requirements:
+
+- AVX-512: clear every used secret-bearing ZMM/YMM/XMM register before return
+  and include the appropriate AVX transition cleanup, such as `vzeroupper`,
+  when returning to code that may use narrower vector state.
+- AVX2: clear every used secret-bearing YMM/XMM register before return and
+  include `vzeroupper` where applicable.
+- SSSE3/SSE4.1: clear every used secret-bearing XMM register before return.
+- NEON: clear every used secret-bearing V/Q register before return.
+- wasm `simd128`: document the runtime's register-retention limitations and
+  provide generated-code evidence for the selected wasm toolchain/runtime.
+
+Current prototypes are exempt only because they construct zero vectors and do
+not load caller bytes into SIMD registers. That exemption ends the moment a
+prototype starts processing caller input with vector registers.
+
 ## Source Changes
 
 - Keep scalar encode/decode as the reference implementation.
 - Add only the intrinsics used by the admitted algorithm. Imported intrinsics
   are not evidence by themselves.
 - Document every unsafe function and unsafe block in `docs/UNSAFE.md`.
-- Explain vector register cleanup for every path that handles caller data.
+- Implement and explain vector register cleanup for every SIMD path that
+  handles caller data. Missing cleanup is a release blocker, not a TODO.
 - Keep scalar fallback behavior for unsupported targets and feature sets.
 - For `no_std`, do not dispatch from compile-time target-feature reporting
   alone unless the API includes an explicit caller-side CPU contract.
