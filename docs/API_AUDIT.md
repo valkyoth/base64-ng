@@ -154,6 +154,10 @@ Decision rationale:
 
 - Formatting is redacted by default through `Debug` and `Display`.
 - Secret exposure requires explicitly named borrowed or owned escape hatches.
+- `SecretBuffer::into_exposed_vec` returns `ExposedSecretVec`, which keeps
+  redacted formatting and drop-time cleanup. The raw-vector escape hatch is the
+  deliberately loud
+  `ExposedSecretVec::into_exposed_unprotected_vec_caller_must_zeroize`.
 - Drop-time cleanup uses the crate's volatile best-effort wipe helper for
   initialized bytes and vector spare capacity.
 - Equality is intentionally not exposed through `PartialEq`/`==`. Callers must
@@ -166,8 +170,9 @@ Decision rationale:
 Stable boundary:
 
 - Keep redaction as the default formatting behavior.
-- Keep `expose_secret`, `into_exposed_vec`, and `try_into_exposed_string`
-  explicit.
+- Keep `expose_secret`, `into_exposed_vec`,
+  `into_exposed_unprotected_vec_caller_must_zeroize`, and
+  `try_into_exposed_string` explicit.
 - Do not claim formal zeroization or allocator-wide cleanup.
 - Do not add broad conversions that hide profile, alphabet, padding, or
   wrapping policy.

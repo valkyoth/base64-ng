@@ -3164,6 +3164,106 @@ pub struct SecretBuffer {
     bytes: alloc::vec::Vec<u8>,
 }
 
+/// Owned secret bytes extracted from [`SecretBuffer`].
+///
+/// This wrapper keeps redacted formatting and best-effort drop-time cleanup
+/// after a [`SecretBuffer`] is consumed for owned interop. Use
+/// [`Self::into_exposed_unprotected_vec_caller_must_zeroize`] only when a raw
+/// `Vec<u8>` is unavoidable and the caller will handle cleanup.
+#[cfg(feature = "alloc")]
+pub struct ExposedSecretVec {
+    bytes: alloc::vec::Vec<u8>,
+}
+
+#[cfg(feature = "alloc")]
+impl ExposedSecretVec {
+    /// Wraps an owned vector as exposed secret material.
+    #[must_use]
+    pub fn from_vec(mut bytes: alloc::vec::Vec<u8>) -> Self {
+        wipe_vec_spare_capacity(&mut bytes);
+        Self { bytes }
+    }
+
+    /// Returns the number of initialized secret bytes.
+    #[must_use]
+    pub fn len(&self) -> usize {
+        self.bytes.len()
+    }
+
+    /// Returns whether the buffer contains no initialized secret bytes.
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.bytes.is_empty()
+    }
+
+    /// Reveals the secret bytes.
+    ///
+    /// This method is intentionally named to make secret access explicit at the
+    /// call site.
+    #[must_use]
+    pub fn expose_secret(&self) -> &[u8] {
+        &self.bytes
+    }
+
+    /// Reveals the secret bytes mutably.
+    ///
+    /// This method is intentionally named to make secret access explicit at the
+    /// call site.
+    #[must_use]
+    pub fn expose_secret_mut(&mut self) -> &mut [u8] {
+        &mut self.bytes
+    }
+
+    /// Consumes the wrapper and returns a raw `Vec<u8>`.
+    ///
+    /// This is an unprotected escape hatch. The returned vector is no longer
+    /// redacted by formatting and will not be cleared by this crate on drop.
+    /// Callers must clear it with their own approved zeroization policy.
+    #[must_use = "caller must zeroize the returned Vec"]
+    pub fn into_exposed_unprotected_vec_caller_must_zeroize(mut self) -> alloc::vec::Vec<u8> {
+        core::mem::take(&mut self.bytes)
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl core::fmt::Debug for ExposedSecretVec {
+    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        formatter
+            .debug_struct("ExposedSecretVec")
+            .field("bytes", &"<redacted>")
+            .field("len", &self.len())
+            .finish()
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl core::fmt::Display for ExposedSecretVec {
+    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        formatter.write_str("<redacted>")
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl Drop for ExposedSecretVec {
+    fn drop(&mut self) {
+        wipe_vec_all(&mut self.bytes);
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl AsRef<[u8]> for ExposedSecretVec {
+    fn as_ref(&self) -> &[u8] {
+        self.expose_secret()
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl AsMut<[u8]> for ExposedSecretVec {
+    fn as_mut(&mut self) -> &mut [u8] {
+        self.expose_secret_mut()
+    }
+}
+
 #[cfg(feature = "alloc")]
 impl SecretBuffer {
     /// Wraps an existing vector as sensitive material.
@@ -3218,15 +3318,14 @@ impl SecretBuffer {
         &mut self.bytes
     }
 
-    /// Consumes the wrapper and returns the owned secret bytes.
+    /// Consumes the wrapper and returns owned secret bytes.
     ///
     /// This is an explicit escape hatch for interop with APIs that require an
-    /// owned vector. The returned `Vec<u8>` is no longer redacted by
-    /// formatting and will not be cleared by `SecretBuffer` on drop; callers
-    /// that keep handling sensitive data should arrange their own cleanup.
+    /// owned vector-like value. The returned [`ExposedSecretVec`] remains
+    /// redacted by formatting and clears its vector on drop.
     #[must_use]
-    pub fn into_exposed_vec(mut self) -> alloc::vec::Vec<u8> {
-        core::mem::take(&mut self.bytes)
+    pub fn into_exposed_vec(mut self) -> ExposedSecretVec {
+        ExposedSecretVec::from_vec(core::mem::take(&mut self.bytes))
     }
 
     /// Consumes the wrapper and returns the owned secret bytes as UTF-8 text.
@@ -3243,7 +3342,10 @@ impl SecretBuffer {
             return Err(self);
         }
 
-        match alloc::string::String::from_utf8(self.into_exposed_vec()) {
+        let bytes = self
+            .into_exposed_vec()
+            .into_exposed_unprotected_vec_caller_must_zeroize();
+        match alloc::string::String::from_utf8(bytes) {
             Ok(text) => Ok(text),
             Err(error) => Err(Self::from_vec(error.into_bytes())),
         }

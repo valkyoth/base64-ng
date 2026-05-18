@@ -531,11 +531,13 @@ limitation and applies its own approved cleanup strategy.
 `expose_secret_utf8` provides an explicit borrowed text view when the secret
 bytes are valid UTF-8.
 
-`into_exposed_vec` is the explicit owned interop escape hatch. It consumes the
-wrapper and returns a normal `Vec<u8>`, so redacted formatting and drop-time
-cleanup no longer apply after that point. `try_into_exposed_string` provides
-the same explicit escape hatch for UTF-8 text and returns the redacted wrapper
-unchanged when the bytes are not valid UTF-8.
+`into_exposed_vec` consumes the wrapper and returns an `ExposedSecretVec`, which
+keeps redacted formatting and best-effort drop-time cleanup. If a raw `Vec<u8>`
+is unavoidable, call
+`into_exposed_unprotected_vec_caller_must_zeroize`; that method name is
+intentionally loud because cleanup becomes the caller's responsibility.
+`try_into_exposed_string` provides an explicit escape hatch for UTF-8 text and
+returns the redacted wrapper unchanged when the bytes are not valid UTF-8.
 
 `SecretBuffer` also implements `From<Vec<u8>>` and `From<String>` for callers
 that already own sensitive bytes or text and want to move them into the

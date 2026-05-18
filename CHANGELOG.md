@@ -58,6 +58,10 @@
   decode-slice APIs so secret-bearing callers are directed to the `ct` module.
 - Added debug bounds assertions around wrapped-output writes and made the
   wrapped-encode scratch-buffer fallback use explicit checked arithmetic.
+- Changed `SecretBuffer::into_exposed_vec` to return an `ExposedSecretVec`
+  wrapper that remains redacted and wiped on drop; raw `Vec<u8>` extraction now
+  requires the explicit
+  `into_exposed_unprotected_vec_caller_must_zeroize` escape hatch.
 
 ## 0.12.0 - 2026-05-17
 
@@ -369,7 +373,8 @@
 - Added `EncodedBuffer::constant_time_eq` and routed `EncodedBuffer` equality
   through the same constant-time-oriented equal-length comparison helper.
 - Added `SecretBuffer::into_exposed_vec` as an explicit owned interop escape
-  hatch where redaction and `SecretBuffer` drop-time cleanup intentionally end.
+  hatch. It now returns `ExposedSecretVec`; raw `Vec<u8>` extraction requires
+  the explicit unprotected escape hatch.
 - Added `DecodedBuffer` plus `Engine::decode_buffer` and
   `Profile::decode_buffer` for no-alloc stack-backed decoded output.
 - Added `ct::CtEngine::decode_buffer` for constant-time-oriented no-alloc

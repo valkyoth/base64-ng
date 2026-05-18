@@ -30,6 +30,8 @@ for required_text in \
     "Profile::checked_new" \
     "Keep validation/decode agreement release-tested" \
     "into_exposed_array" \
+    "ExposedSecretVec" \
+    "into_exposed_unprotected_vec_caller_must_zeroize" \
     "try_into_exposed_string" \
     "Encode-to-back and decode-to-front contracts" \
     "define_alphabet!" \

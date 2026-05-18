@@ -33,8 +33,9 @@ The caller still owns:
 - understanding that stack-backed buffers can clear their own backing arrays
   but cannot clear historical stack-frame copies made by compiler spills,
   caller code, panic machinery, crash handlers, or operating system capture
-- treating `SecretBuffer::into_exposed_vec` as a boundary where redacted
-  formatting and drop-time cleanup intentionally stop
+- treating `ExposedSecretVec::into_exposed_unprotected_vec_caller_must_zeroize`
+  as a boundary where redacted formatting and crate-owned drop-time cleanup
+  intentionally stop
 - process-wide memory hygiene such as core-dump policy, swap policy, crash
   handling, allocator behavior, and log retention
 - deciding whether the constant-time-oriented API is sufficient for the local

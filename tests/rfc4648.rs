@@ -2661,7 +2661,16 @@ fn secret_buffer_redacts_and_reveals_explicitly() {
     assert!(!secret.constant_time_eq(SecretBuffer::from_slice(b"Token!").expose_secret()));
 
     let exposed = cloned.into_exposed_vec();
-    assert_eq!(exposed, b"Token");
+    assert_eq!(exposed.len(), 5);
+    assert_eq!(exposed.expose_secret(), b"Token");
+    assert_eq!(
+        format!("{exposed:?}"),
+        "ExposedSecretVec { bytes: \"<redacted>\", len: 5 }"
+    );
+    assert_eq!(format!("{exposed}"), "<redacted>");
+    let mut unprotected = exposed.into_exposed_unprotected_vec_caller_must_zeroize();
+    assert_eq!(unprotected, b"Token");
+    unprotected.fill(0);
 
     secret.clear();
     assert!(secret.is_empty());
