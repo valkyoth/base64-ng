@@ -1347,25 +1347,57 @@ pub mod stream {
                 }
                 self.clear_pending();
                 consumed += needed;
-                return Ok(consumed);
+
+                if self.finished {
+                    return Ok(consumed);
+                }
             }
 
-            let remaining = &input[consumed..];
-            let full_len = remaining.len() / 4 * 4;
-            if full_len > 0 {
-                let quad = [remaining[0], remaining[1], remaining[2], remaining[3]];
+            while input.len() - consumed >= 4 {
+                if self.output.available_capacity() < 3 {
+                    return Ok(consumed);
+                }
+
+                let quad = [
+                    input[consumed],
+                    input[consumed + 1],
+                    input[consumed + 2],
+                    input[consumed + 3],
+                ];
                 let mut quad = quad;
-                let result = self.queue_full_quad(quad);
+                let mut decoded = [0u8; 3];
+                let written = match self.engine.decode_slice(&quad, &mut decoded) {
+                    Ok(written) => written,
+                    Err(err) => {
+                        crate::wipe_bytes(&mut quad);
+                        crate::wipe_bytes(&mut decoded);
+                        if consumed > 0 {
+                            return Ok(consumed);
+                        }
+
+                        self.failed = true;
+                        return Err(decode_error_to_io(err));
+                    }
+                };
+
+                let result = self.output.push_slice(&decoded[..written]);
                 crate::wipe_bytes(&mut quad);
+                crate::wipe_bytes(&mut decoded);
                 result?;
-                return Ok(consumed + 4);
+                consumed += 4;
+
+                if written < 3 {
+                    self.finished = true;
+                    return Ok(consumed);
+                }
             }
 
-            let tail = &remaining[full_len..];
+            let tail = &input[consumed..];
             self.pending[..tail.len()].copy_from_slice(tail);
             self.pending_len = tail.len();
+            consumed += tail.len();
 
-            Ok(input.len())
+            Ok(consumed)
         }
 
         fn flush(&mut self) -> io::Result<()> {

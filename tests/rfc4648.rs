@@ -3401,6 +3401,56 @@ fn stream_decoder_write_failure_preserves_pending_input() {
 
 #[cfg(feature = "stream")]
 #[test]
+fn stream_decoder_direct_write_processes_multiple_quads() {
+    let mut decoder = Decoder::new(Vec::new(), STANDARD);
+
+    let written = decoder.write(b"aGVsbG8=").unwrap();
+    assert_eq!(written, 8);
+    assert_eq!(decoder.buffered_output_len(), 5);
+    assert!(decoder.has_terminal_padding());
+
+    let decoded = decoder.finish().unwrap();
+    assert_eq!(decoded, b"hello");
+}
+
+#[cfg(feature = "stream")]
+#[test]
+fn stream_decoder_direct_write_continues_after_pending_quad() {
+    let mut decoder = Decoder::new(Vec::new(), STANDARD);
+
+    assert_eq!(decoder.write(b"a").unwrap(), 1);
+    assert_eq!(decoder.pending_len(), 1);
+
+    let written = decoder.write(b"GVsbG8=").unwrap();
+    assert_eq!(written, 7);
+    assert_eq!(decoder.pending_len(), 0);
+    assert_eq!(decoder.buffered_output_len(), 5);
+    assert!(decoder.has_terminal_padding());
+
+    let decoded = decoder.finish().unwrap();
+    assert_eq!(decoded, b"hello");
+}
+
+#[cfg(feature = "stream")]
+#[test]
+fn stream_decoder_direct_write_reports_partial_progress_for_large_input() {
+    let input = vec![b'a'; 1500];
+    let encoded = STANDARD.encode_vec(&input).unwrap();
+    let mut decoder = Decoder::new(Vec::new(), STANDARD);
+
+    let written = decoder.write(&encoded).unwrap();
+    assert_eq!(written, 1364);
+    assert_eq!(decoder.buffered_output_len(), 1023);
+    assert_eq!(decoder.pending_len(), 0);
+    assert!(decoder.has_buffered_output());
+
+    decoder.write_all(&encoded[written..]).unwrap();
+    let decoded = decoder.finish().unwrap();
+    assert_eq!(decoded, input);
+}
+
+#[cfg(feature = "stream")]
+#[test]
 fn stream_decoder_direct_write_reports_partial_progress() {
     let mut decoder = Decoder::new(Vec::new(), STANDARD);
 

@@ -12,6 +12,9 @@
   pending quantum continues through the current slice when buffer capacity
   allows, including preserving final 1-2 byte tails instead of forcing an
   early short write.
+- Hardened `stream::Decoder::write` so direct writes process multiple complete
+  Base64 quads per call, continue after completing pending input, and preserve
+  final partial quads as pending input when those bytes are accepted.
 
 ## 0.12.0 - 2026-05-17
 
