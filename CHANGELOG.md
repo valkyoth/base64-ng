@@ -27,6 +27,9 @@
 - Hardened the equal-length comparison helper by making the OR accumulator
   opaque with `core::hint::black_box`, while preserving the documented
   best-effort constant-time-oriented posture.
+- Renamed the internal padding-index helper to make its padding-present
+  precondition explicit and added a debug assertion plus non-index sentinel for
+  future misuse.
 
 ## 0.12.0 - 2026-05-17
 

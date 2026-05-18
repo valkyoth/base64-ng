@@ -6679,7 +6679,7 @@ fn read_quad(input: &[u8], offset: usize) -> Result<[u8; 4], DecodeError> {
     }
 }
 
-fn first_padding_index(input: [u8; 4]) -> usize {
+fn first_padding_index_unchecked(input: [u8; 4]) -> usize {
     let [b0, b1, b2, b3] = input;
     if b0 == b'=' {
         0
@@ -6690,7 +6690,11 @@ fn first_padding_index(input: [u8; 4]) -> usize {
     } else if b3 == b'=' {
         3
     } else {
-        0
+        debug_assert!(
+            false,
+            "first_padding_index_unchecked called with no padding"
+        );
+        4
     }
 }
 
@@ -6715,7 +6719,7 @@ fn validate_chunk<A: Alphabet, const PAD: bool>(input: [u8; 4]) -> Result<usize,
             Ok(2)
         }
         (b'=', _) | (_, b'=') => Err(DecodeError::InvalidPadding {
-            index: first_padding_index(input),
+            index: first_padding_index_unchecked(input),
         }),
         _ => {
             decode_byte::<A>(b2, 2)?;
@@ -6764,7 +6768,7 @@ fn decode_chunk<A: Alphabet, const PAD: bool>(
             Ok(2)
         }
         (b'=', _) | (_, b'=') => Err(DecodeError::InvalidPadding {
-            index: first_padding_index(input),
+            index: first_padding_index_unchecked(input),
         }),
         _ => {
             if output.len() < 3 {
