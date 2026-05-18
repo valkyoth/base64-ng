@@ -2,18 +2,20 @@
 
 `base64-ng` keeps scalar encode/decode in safe Rust. The crate root uses
 `#![deny(unsafe_code)]`, and reviewed `allow(unsafe_code)` exceptions are
-limited to volatile wipe helpers in `src/lib.rs` and the SIMD boundary in
-`src/simd.rs`.
+limited to volatile wipe helpers, the constant-time error gate barrier in
+`src/lib.rs`, and the SIMD boundary in `src/simd.rs`.
 
 This inventory is intentionally small and release-gate enforced. Any new unsafe
 block must be added here before an accelerated backend can be admitted.
 
 ## Policy
 
-- Default builds compile audited unsafe volatile wipe helpers.
+- Default builds compile audited unsafe volatile wipe helpers and the
+  constant-time error gate barrier.
 - Optional SIMD prototypes live only in `src/simd.rs`.
 - `scripts/validate-unsafe-boundary.sh` fails if `allow(unsafe_code)` appears
-  outside the volatile wipe helpers or `src/simd.rs`.
+  outside the volatile wipe helpers, the constant-time error gate barrier, or
+  `src/simd.rs`.
 - `scripts/validate-unsafe-boundary.sh` fails if architecture intrinsics, CPU
   feature detection, or `target_feature` gates appear outside `src/simd.rs`.
 - Every unsafe function and unsafe block must have a local safety explanation.
@@ -110,9 +112,9 @@ Preconditions:
 Unsafe operation:
 
 - `core::arch::asm!` emits `mfence` on non-Miri `x86`/`x86_64`,
-  `dsb sy; isb sy` on non-Miri `arm`/`aarch64`, and `fence rw, rw` on non-Miri
-  `riscv32`/`riscv64`. The pointer and length are also passed as opaque
-  operands.
+  `dsb sy; isb sy` on non-Miri `arm`, `dsb sy; isb sy; hint #20` on non-Miri
+  `aarch64`, and `fence rw, rw` on non-Miri `riscv32`/`riscv64`. The pointer
+  and length are also passed as opaque operands.
 
 Safety argument:
 
@@ -138,6 +140,43 @@ Limitations:
   They fail closed unless `allow-compiler-fence-only-wipe` is explicitly
   enabled after reviewing this weaker cleanup posture and applying platform
   memory controls.
+
+### `ct_error_gate_barrier`
+
+Location: `src/lib.rs`
+
+Status: active constant-time error-gate hardening primitive.
+
+Purpose:
+
+- Keep the accumulated constant-time decoder malformed-input mask visible
+  across a non-inlined boundary before the public success/failure branch.
+- Emit an architecture-specific speculation barrier where stable Rust supports
+  one locally.
+
+Preconditions:
+
+- Caller passes accumulated public error-mask bytes.
+
+Unsafe operation:
+
+- `core::arch::asm!` emits `lfence` on non-Miri `x86`/`x86_64`, `isb sy` on
+  non-Miri `arm`, and `isb sy; hint #20` on non-Miri `aarch64`.
+
+Safety argument:
+
+- The assembly blocks do not access memory.
+- `options(nostack, preserves_flags)` states that the blocks do not use the
+  stack or modify flags. The x86/x86_64 block also uses `nomem`.
+- The helper does not read or write through any pointer and cannot violate
+  Rust aliasing or bounds rules.
+
+Limitations:
+
+- This is defense in depth against speculation around the final public
+  malformed-input result. It does not make the ct decoder a formally verified
+  hardware side-channel resistant primitive.
+- Unsupported architectures fall back to the compiler fence only.
 
 ### `wipe_vec_spare_capacity`
 

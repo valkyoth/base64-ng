@@ -466,14 +466,16 @@ messages.
 `remaining_capacity()` for no-alloc sizing checks, redact the payload from
 `Debug`, clear their backing arrays when dropped as best-effort data-retention
 reduction, and provide explicit `constant_time_eq` helpers for equal-length
-values. They intentionally do not implement `PartialEq`/`==`: the helper is a
-dependency-free best-effort comparison, not a formal cryptographic token/MAC
-comparison primitive. Length mismatch returns immediately and must be treated
-as public protocol information. Applications that require a formally audited
-comparison should admit that dependency at the application boundary, for
-example by comparing exposed bytes with `subtle`. Do not use these helpers as
-the sole MAC, bearer-token, password-hash, or authentication-secret comparison
-primitive in high-assurance systems.
+reduction, and provide explicit equal-length comparison through
+`constant_time_eq_public_len`. They intentionally do not
+implement `PartialEq`/`==`: the helper is a dependency-free best-effort
+comparison, not a formal cryptographic token/MAC comparison primitive. Length
+mismatch returns immediately and must be treated as public protocol
+information. Applications that require a formally audited comparison should
+admit that dependency at the application boundary, for example by comparing
+exposed bytes with `subtle`. Do not use these helpers as the sole MAC,
+bearer-token, password-hash, or authentication-secret comparison primitive in
+high-assurance systems.
 
 `into_exposed_array` is the explicit no-alloc ownership escape hatch for both
 stack-backed buffers. It returns the backing array and visible length, so
@@ -513,7 +515,7 @@ assert_eq!(format!("{encoded:?}"), r#"SecretBuffer { bytes: "<redacted>", len: 8
 
 let decoded = STANDARD.decode_secret(encoded.expose_secret()).unwrap();
 assert_eq!(decoded.expose_secret(), b"hello");
-assert!(decoded.constant_time_eq(b"hello"));
+assert!(decoded.constant_time_eq_public_len(b"hello"));
 assert_eq!(format!("{decoded}"), "<redacted>");
 
 let wrapped = STANDARD
@@ -537,12 +539,12 @@ assert_eq!(decoded.expose_secret(), b"hello");
 initialized bytes plus spare capacity when dropped. It does not claim formal
 zeroization and cannot clean historical copies outside the wrapper or make
 guarantees about allocator behavior. `SecretBuffer` intentionally does not
-implement `PartialEq`/`==`; use the explicit `constant_time_eq` helper only
-when its best-effort, public-length security contract is sufficient. Length
-mismatch returns immediately and must be treated as public protocol
-information. Applications that require a formally audited comparison should
-admit that dependency at the application boundary, for example by comparing
-exposed bytes with `subtle`.
+implement `PartialEq`/`==`; use the explicit
+`constant_time_eq_public_len` helper only when its best-effort, public-length
+security contract is sufficient. Length mismatch returns immediately and must
+be treated as public protocol information. Applications that require a
+formally audited comparison should admit that dependency at the application
+boundary, for example by comparing exposed bytes with `subtle`.
 On `wasm32`, the same compiler-fence-only wipe-barrier caveat applies to owned
 secret buffers. `wasm32` builds fail closed by default; enable
 `allow-wasm32-best-effort-wipe` only when the deployment explicitly accepts the

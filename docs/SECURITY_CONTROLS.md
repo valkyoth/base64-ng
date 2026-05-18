@@ -16,17 +16,18 @@ The mapping is practical adoption guidance, not a certification claim.
 | CWE-226 Sensitive Information in Resource Not Removed Before Reuse | Caller-owned output buffers or crate-owned staging buffers retain partial sensitive data | Clear-tail APIs, stream cleanup, `EncodedBuffer`, `DecodedBuffer`, and `SecretBuffer` provide best-effort initialized-byte and spare-capacity cleanup. |
 | CWE-327 Use of Broken Or Risky Cryptographic Algorithm | Treating Base64 as encryption | Documentation describes Base64 as encoding, not encryption; secret wrappers are retention/logging helpers only. |
 | CWE-532 Insertion of Sensitive Information Into Log File | Accidentally logging sensitive encoded or decoded material | `SecretBuffer` redacts `Debug` and `Display` output and requires explicit reveal calls. |
-| CWE-208 Observable Timing Discrepancy | Sensitive comparison exits early on the first different byte | `SecretBuffer`, `EncodedBuffer`, and `DecodedBuffer` intentionally avoid `PartialEq`/`==` so best-effort comparison cannot be mistaken for a formal cryptographic primitive. Use explicit `constant_time_eq` for dependency-free equal-length scans; length mismatch returns immediately and is public. |
+| CWE-208 Observable Timing Discrepancy | Sensitive comparison exits early on the first different byte | `SecretBuffer`, `EncodedBuffer`, and `DecodedBuffer` intentionally avoid `PartialEq`/`==` so best-effort comparison cannot be mistaken for a formal cryptographic primitive. Use explicit `constant_time_eq_public_len` for dependency-free equal-length scans; length mismatch returns immediately and is public. |
 | CWE-829 Inclusion of Functionality From Untrusted Control Sphere | Runtime dependency compromise | Published crate has zero external runtime and default dev dependencies; dependency admission is documented and checked. |
 
-The `constant_time_eq` helpers are dependency-free hardening aids, not audited
-MAC, bearer-token, password-hash, or authentication-secret comparison
-primitives. Their implementation is release-evidence-gated through generated
-assembly review, including LTO symbol-presence checks for
-`constant_time_eq_public_len`, but no formal cryptographic constant-time
-comparison guarantee is claimed. High-assurance applications that can admit a
-comparison dependency should use a reviewed primitive such as `subtle` at the
-protocol boundary.
+The `constant_time_eq_public_len` helpers are dependency-free hardening aids,
+not audited MAC, bearer-token, password-hash, or authentication-secret
+comparison primitives. Their implementation is release-evidence-gated through
+generated assembly review, including LTO symbol-presence checks for the helper,
+but no formal cryptographic constant-time comparison guarantee is claimed.
+High-assurance applications that can admit a comparison dependency should use a
+reviewed primitive such as `subtle` at the protocol boundary. The shorter
+`constant_time_eq` name remains only as a deprecated migration alias during the
+`1.0.0-alpha` window.
 
 ## Caller Responsibilities
 
@@ -109,9 +110,10 @@ reduces post-return retention, but it is not an isolation boundary: code running
 in the same process with concurrent or unsafe access to the output buffer during
 the decode call could observe transient partial plaintext before the final wipe.
 Before the opaque malformed-input result is reported, the accumulated ct error
-mask passes through a non-inlined compiler barrier. This is defense in depth
-against compiler reordering around the public success/failure gate, not a
-hardware speculation barrier.
+mask passes through a non-inlined compiler barrier plus architecture-specific
+hardware speculation barriers where available. Shared-memory deployments that
+cannot tolerate transient writes to the caller output should use
+`CtEngine::decode_slice_staged_clear_tail` with a private staging buffer.
 For constant-time-oriented in-place decode, use
 `ct::CtEngine::decode_in_place_clear_tail`. The non-clear-tail CT in-place API
 was removed before the `1.0` stable boundary because it could partially destroy

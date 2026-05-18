@@ -190,7 +190,7 @@ fn wasm_simd128_available() -> bool {
     reason = "_mm512_storeu_si512 accepts unaligned pointers"
 )]
 #[target_feature(enable = "avx512f,avx512bw,avx512vl,avx512vbmi")]
-pub(super) unsafe fn encode_48_bytes_avx512<A>(input: &[u8; 48], output: &mut [u8; 64])
+unsafe fn encode_48_bytes_avx512<A>(input: &[u8; 48], output: &mut [u8; 64])
 where
     A: Alphabet,
 {
@@ -249,7 +249,7 @@ where
     reason = "_mm256_storeu_si256 accepts unaligned pointers"
 )]
 #[target_feature(enable = "avx2")]
-pub(super) unsafe fn encode_24_bytes_avx2<A>(input: &[u8; 24], output: &mut [u8; 32])
+unsafe fn encode_24_bytes_avx2<A>(input: &[u8; 24], output: &mut [u8; 32])
 where
     A: Alphabet,
 {
@@ -307,7 +307,7 @@ where
     reason = "_mm_storeu_si128 accepts unaligned pointers"
 )]
 #[target_feature(enable = "ssse3,sse4.1")]
-pub(super) unsafe fn encode_12_bytes_ssse3_sse41<A>(input: &[u8; 12], output: &mut [u8; 16])
+unsafe fn encode_12_bytes_ssse3_sse41<A>(input: &[u8; 12], output: &mut [u8; 16])
 where
     A: Alphabet,
 {
@@ -364,7 +364,7 @@ where
     all(target_arch = "arm", target_feature = "neon")
 ))]
 #[allow(dead_code, reason = "inactive prototype is not dispatchable yet")]
-pub(super) unsafe fn encode_12_bytes_neon<A>(input: &[u8; 12], output: &mut [u8; 16])
+unsafe fn encode_12_bytes_neon<A>(input: &[u8; 12], output: &mut [u8; 16])
 where
     A: Alphabet,
 {

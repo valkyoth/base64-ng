@@ -258,6 +258,34 @@ pub mod runtime {
         }
     }
 
+    /// Wipe-barrier posture for this build and target.
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+    #[non_exhaustive]
+    pub enum WipePosture {
+        /// The target uses a native hardware fence in addition to volatile
+        /// writes and compiler fences.
+        HardwareFence,
+        /// The target uses volatile writes and compiler fences only.
+        CompilerFenceOnly,
+    }
+
+    impl WipePosture {
+        /// Returns the stable lowercase identifier for this wipe posture.
+        #[must_use]
+        pub const fn as_str(self) -> &'static str {
+            match self {
+                Self::HardwareFence => "hardware-fence",
+                Self::CompilerFenceOnly => "compiler-fence-only",
+            }
+        }
+    }
+
+    impl core::fmt::Display for WipePosture {
+        fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+            formatter.write_str(self.as_str())
+        }
+    }
+
     /// Deployment policy for runtime backend assertions.
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     #[non_exhaustive]
@@ -344,6 +372,8 @@ pub mod runtime {
         pub unsafe_boundary_enforced: bool,
         /// Current security posture.
         pub security_posture: SecurityPosture,
+        /// Current wipe-barrier posture.
+        pub wipe_posture: WipePosture,
     }
 
     /// Compact structured backend snapshot for logging and policy evidence.
@@ -369,6 +399,8 @@ pub mod runtime {
         pub unsafe_boundary_enforced: bool,
         /// Stable security posture identifier.
         pub security_posture: &'static str,
+        /// Stable wipe-barrier posture identifier.
+        pub wipe_posture: &'static str,
     }
 
     impl core::fmt::Display for BackendReport {
@@ -381,11 +413,12 @@ pub mod runtime {
             write_feature_list(formatter, self.candidate_required_cpu_features())?;
             write!(
                 formatter,
-                " simd_feature_enabled={} accelerated_backend_active={} unsafe_boundary_enforced={} security_posture={}",
+                " simd_feature_enabled={} accelerated_backend_active={} unsafe_boundary_enforced={} security_posture={} wipe_posture={}",
                 self.simd_feature_enabled,
                 self.accelerated_backend_active,
                 self.unsafe_boundary_enforced,
                 self.security_posture,
+                self.wipe_posture,
             )
         }
     }
@@ -452,6 +485,7 @@ pub mod runtime {
                 accelerated_backend_active: self.accelerated_backend_active,
                 unsafe_boundary_enforced: self.unsafe_boundary_enforced,
                 security_posture: self.security_posture.as_str(),
+                wipe_posture: self.wipe_posture.as_str(),
             }
         }
     }
@@ -487,6 +521,22 @@ pub mod runtime {
             accelerated_backend_active,
             unsafe_boundary_enforced,
             security_posture,
+            wipe_posture: wipe_posture(),
+        }
+    }
+
+    const fn wipe_posture() -> WipePosture {
+        if cfg!(any(
+            target_arch = "aarch64",
+            target_arch = "arm",
+            target_arch = "riscv32",
+            target_arch = "riscv64",
+            target_arch = "x86",
+            target_arch = "x86_64",
+        )) {
+            WipePosture::HardwareFence
+        } else {
+            WipePosture::CompilerFenceOnly
         }
     }
 
@@ -2275,7 +2325,7 @@ pub mod stream {
 pub mod ct {
     use super::{
         Alphabet, DecodeError, DecodedBuffer, Standard, UrlSafe, ct_decode_in_place,
-        ct_decode_slice, ct_decoded_len, ct_validate_decode,
+        ct_decode_slice, ct_decode_slice_staged_clear_tail, ct_decoded_len, ct_validate_decode,
     };
     use core::marker::PhantomData;
 
@@ -2397,6 +2447,28 @@ pub mod ct {
             };
             crate::wipe_tail(output, written);
             Ok(written)
+        }
+
+        /// Decodes through caller-provided private staging before copying into
+        /// `output`.
+        ///
+        /// This variant is for shared-memory or sandboxed deployments where
+        /// the caller-owned `output` buffer must not contain transient decoded
+        /// bytes from malformed input. The `staging` buffer must be at least
+        /// the decoded length of `input` and must not be shared with
+        /// untrusted concurrent observers. On success, decoded bytes are
+        /// copied from `staging` into `output`; on error, both buffers are
+        /// cleared before returning.
+        ///
+        /// Input length, final success or failure, and decoded length remain
+        /// public.
+        pub fn decode_slice_staged_clear_tail(
+            &self,
+            input: &[u8],
+            output: &mut [u8],
+            staging: &mut [u8],
+        ) -> Result<usize, DecodeError> {
+            ct_decode_slice_staged_clear_tail::<A, PAD>(input, output, staging)
         }
 
         /// Decodes `input` into a stack-backed buffer.
@@ -2700,7 +2772,25 @@ fn wipe_barrier(ptr: *mut u8, len: usize) {
         }
     }
 
-    #[cfg(all(not(miri), any(target_arch = "aarch64", target_arch = "arm")))]
+    #[cfg(all(not(miri), target_arch = "aarch64"))]
+    {
+        // `dsb sy` completes prior explicit memory accesses before later
+        // instructions, and `isb sy` flushes subsequent instruction context.
+        // SAFETY: the assembly block does not read or write through the pointer.
+        unsafe {
+            core::arch::asm!(
+                "dsb sy",
+                "isb sy",
+                "hint #20",
+                "/* {0} {1} */",
+                in(reg) ptr,
+                in(reg) len,
+                options(nostack, preserves_flags)
+            );
+        }
+    }
+
+    #[cfg(all(not(miri), target_arch = "arm"))]
     {
         // `dsb sy` completes prior explicit memory accesses before later
         // instructions, and `isb sy` flushes subsequent instruction context.
@@ -2873,9 +2963,20 @@ impl<const CAP: usize> EncodedBuffer<CAP> {
     /// Applications that can admit dependencies should use a reviewed
     /// constant-time comparison primitive, such as `subtle`, at the protocol
     /// boundary.
+    #[doc(alias = "constant_time_eq")]
+    #[must_use]
+    pub fn constant_time_eq_public_len(&self, other: &[u8]) -> bool {
+        constant_time_eq_public_len(self.as_bytes(), other)
+    }
+
+    /// Deprecated alias for [`Self::constant_time_eq_public_len`].
+    #[deprecated(
+        since = "1.0.0-alpha.0",
+        note = "use constant_time_eq_public_len; length mismatch is a public timing fact"
+    )]
     #[must_use]
     pub fn constant_time_eq(&self, other: &[u8]) -> bool {
-        constant_time_eq_public_len(self.as_bytes(), other)
+        self.constant_time_eq_public_len(other)
     }
 
     /// Consumes the wrapper and returns the backing array plus visible length.
@@ -2885,7 +2986,7 @@ impl<const CAP: usize> EncodedBuffer<CAP> {
     /// redacted by formatting and will not be cleared by `EncodedBuffer` on
     /// drop; callers that keep handling sensitive data should arrange their
     /// own cleanup.
-    #[must_use]
+    #[must_use = "caller must zeroize the returned array; it has no drop-time cleanup after this call"]
     pub fn into_exposed_array(mut self) -> ([u8; CAP], usize) {
         let len = self.len;
         self.len = 0;
@@ -3094,9 +3195,20 @@ impl<const CAP: usize> DecodedBuffer<CAP> {
     /// Applications that can admit dependencies should use a reviewed
     /// constant-time comparison primitive, such as `subtle`, at the protocol
     /// boundary.
+    #[doc(alias = "constant_time_eq")]
+    #[must_use]
+    pub fn constant_time_eq_public_len(&self, other: &[u8]) -> bool {
+        constant_time_eq_public_len(self.as_bytes(), other)
+    }
+
+    /// Deprecated alias for [`Self::constant_time_eq_public_len`].
+    #[deprecated(
+        since = "1.0.0-alpha.0",
+        note = "use constant_time_eq_public_len; length mismatch is a public timing fact"
+    )]
     #[must_use]
     pub fn constant_time_eq(&self, other: &[u8]) -> bool {
-        constant_time_eq_public_len(self.as_bytes(), other)
+        self.constant_time_eq_public_len(other)
     }
 
     /// Consumes the wrapper and returns the backing array plus visible length.
@@ -3106,7 +3218,7 @@ impl<const CAP: usize> DecodedBuffer<CAP> {
     /// redacted by formatting and will not be cleared by `DecodedBuffer` on
     /// drop; callers that keep handling sensitive data should arrange their
     /// own cleanup.
-    #[must_use]
+    #[must_use = "caller must zeroize the returned array; it has no drop-time cleanup after this call"]
     pub fn into_exposed_array(mut self) -> ([u8; CAP], usize) {
         let len = self.len;
         self.len = 0;
@@ -3415,6 +3527,7 @@ impl SecretBuffer {
     ///
     /// If the secret bytes are not valid UTF-8, the original redacted wrapper
     /// is returned unchanged.
+    #[must_use = "the returned String has no drop-time cleanup; caller must overwrite it when done"]
     pub fn try_into_exposed_string(self) -> Result<alloc::string::String, Self> {
         if core::str::from_utf8(self.expose_secret()).is_err() {
             return Err(self);
@@ -3447,9 +3560,20 @@ impl SecretBuffer {
     /// Applications that can admit dependencies should use a reviewed
     /// constant-time comparison primitive, such as `subtle`, at the protocol
     /// boundary.
+    #[doc(alias = "constant_time_eq")]
+    #[must_use]
+    pub fn constant_time_eq_public_len(&self, other: &[u8]) -> bool {
+        constant_time_eq_public_len(self.expose_secret(), other)
+    }
+
+    /// Deprecated alias for [`Self::constant_time_eq_public_len`].
+    #[deprecated(
+        since = "1.0.0-alpha.0",
+        note = "use constant_time_eq_public_len; length mismatch is a public timing fact"
+    )]
     #[must_use]
     pub fn constant_time_eq(&self, other: &[u8]) -> bool {
-        constant_time_eq_public_len(self.expose_secret(), other)
+        self.constant_time_eq_public_len(other)
     }
 
     /// Clears the initialized bytes and makes the buffer empty.
@@ -3867,6 +3991,7 @@ where
 
     /// Encodes `input` into a newly allocated byte vector.
     #[cfg(feature = "alloc")]
+    #[must_use = "for secret-bearing payloads use encode_secret, which returns a redacted buffer with drop-time cleanup"]
     pub fn encode_vec(&self, input: &[u8]) -> Result<alloc::vec::Vec<u8>, EncodeError> {
         match self.wrap {
             Some(wrap) => self.engine.encode_wrapped_vec(input, wrap),
@@ -3891,6 +4016,7 @@ where
 
     /// Decodes `input` into a newly allocated byte vector.
     #[cfg(feature = "alloc")]
+    #[must_use = "for secret-bearing payloads use decode_secret, which returns a redacted buffer with drop-time cleanup"]
     pub fn decode_vec(&self, input: &[u8]) -> Result<alloc::vec::Vec<u8>, DecodeError> {
         match self.wrap {
             Some(wrap) => self.engine.decode_wrapped_vec(input, wrap),
@@ -5220,6 +5346,7 @@ where
 
     /// Encodes `input` with line wrapping into a newly allocated byte vector.
     #[cfg(feature = "alloc")]
+    #[must_use = "for secret-bearing payloads use encode_wrapped_secret, which returns a redacted buffer with drop-time cleanup"]
     pub fn encode_wrapped_vec(
         &self,
         input: &[u8],
@@ -5327,6 +5454,7 @@ where
 
     /// Encodes `input` into a newly allocated byte vector.
     #[cfg(feature = "alloc")]
+    #[must_use = "for secret-bearing payloads use encode_secret, which returns a redacted buffer with drop-time cleanup"]
     pub fn encode_vec(&self, input: &[u8]) -> Result<alloc::vec::Vec<u8>, EncodeError> {
         let required = checked_encoded_len(input.len(), PAD).ok_or(EncodeError::LengthOverflow)?;
         let mut output = alloc::vec![0; required];
@@ -5749,6 +5877,7 @@ where
     ///
     /// This is strict decoding with the same semantics as [`Self::decode_slice`].
     #[cfg(feature = "alloc")]
+    #[must_use = "for secret-bearing payloads use decode_secret, which returns a redacted buffer with drop-time cleanup"]
     pub fn decode_vec(&self, input: &[u8]) -> Result<alloc::vec::Vec<u8>, DecodeError> {
         let required = validate_decode::<A, PAD>(input)?;
         let mut output = alloc::vec![0; required];
@@ -5775,6 +5904,7 @@ where
     /// Decodes `input` into a newly allocated byte vector using the explicit
     /// legacy whitespace profile.
     #[cfg(feature = "alloc")]
+    #[must_use = "for secret-bearing payloads use decode_secret_legacy, which returns a redacted buffer with drop-time cleanup"]
     pub fn decode_vec_legacy(&self, input: &[u8]) -> Result<alloc::vec::Vec<u8>, DecodeError> {
         let required = validate_legacy_decode::<A, PAD>(input)?;
         let mut output = alloc::vec![0; required];
@@ -5802,6 +5932,7 @@ where
 
     /// Decodes line-wrapped input into a newly allocated byte vector.
     #[cfg(feature = "alloc")]
+    #[must_use = "for secret-bearing payloads use decode_wrapped_secret, which returns a redacted buffer with drop-time cleanup"]
     pub fn decode_wrapped_vec(
         &self,
         input: &[u8],
@@ -6956,6 +7087,53 @@ fn ct_decode_slice<A: Alphabet, const PAD: bool>(
     }
 }
 
+fn ct_decode_slice_staged_clear_tail<A: Alphabet, const PAD: bool>(
+    input: &[u8],
+    output: &mut [u8],
+    staging: &mut [u8],
+) -> Result<usize, DecodeError> {
+    let required = match ct_decoded_len::<A, PAD>(input) {
+        Ok(required) => required,
+        Err(err) => {
+            wipe_bytes(output);
+            wipe_bytes(staging);
+            return Err(err);
+        }
+    };
+
+    if output.len() < required {
+        wipe_bytes(output);
+        wipe_bytes(staging);
+        return Err(DecodeError::OutputTooSmall {
+            required,
+            available: output.len(),
+        });
+    }
+
+    if staging.len() < required {
+        wipe_bytes(output);
+        wipe_bytes(staging);
+        return Err(DecodeError::OutputTooSmall {
+            required,
+            available: staging.len(),
+        });
+    }
+
+    let written = match ct_decode_slice::<A, PAD>(input, &mut staging[..required]) {
+        Ok(written) => written,
+        Err(err) => {
+            wipe_bytes(output);
+            wipe_bytes(staging);
+            return Err(err);
+        }
+    };
+
+    output[..written].copy_from_slice(&staging[..written]);
+    wipe_bytes(staging);
+    wipe_tail(output, written);
+    Ok(written)
+}
+
 fn ct_decode_in_place<A: Alphabet, const PAD: bool>(
     buffer: &mut [u8],
 ) -> Result<usize, DecodeError> {
@@ -6971,9 +7149,38 @@ fn ct_decode_in_place<A: Alphabet, const PAD: bool>(
 }
 
 #[inline(never)]
+#[allow(unsafe_code)]
 fn ct_error_gate_barrier(invalid_byte: u8, invalid_padding: u8) {
     core::hint::black_box(invalid_byte | invalid_padding);
     core::sync::atomic::compiler_fence(core::sync::atomic::Ordering::SeqCst);
+
+    #[cfg(all(not(miri), any(target_arch = "x86", target_arch = "x86_64")))]
+    {
+        // SAFETY: `lfence` does not access memory and is used as a speculation
+        // barrier before the public success/failure branch is observed.
+        unsafe {
+            core::arch::asm!("lfence", options(nostack, preserves_flags, nomem));
+        }
+    }
+
+    #[cfg(all(not(miri), target_arch = "aarch64"))]
+    {
+        // SAFETY: these barriers do not access memory. `isb sy` is a
+        // best-effort speculation boundary and `hint #20` is the architectural
+        // CSDB hint encoding on AArch64.
+        unsafe {
+            core::arch::asm!("isb sy", "hint #20", options(nostack, preserves_flags));
+        }
+    }
+
+    #[cfg(all(not(miri), target_arch = "arm"))]
+    {
+        // SAFETY: `isb sy` does not access memory and is used as the best
+        // available stable ARM speculation boundary for this crate.
+        unsafe {
+            core::arch::asm!("isb sy", options(nostack, preserves_flags));
+        }
+    }
 }
 
 fn ct_validate_decode<A: Alphabet, const PAD: bool>(input: &[u8]) -> Result<(), DecodeError> {
@@ -7222,7 +7429,10 @@ fn ct_decode_padded_in_place<A: Alphabet>(buffer: &mut [u8]) -> Result<usize, De
     buffer[write..write + final_written].copy_from_slice(&final_bytes[..final_written]);
     write += final_written;
 
-    debug_assert_eq!(write, required);
+    if write != required {
+        wipe_bytes(buffer);
+        return Err(DecodeError::InvalidInput);
+    }
     report_ct_error(invalid_byte, invalid_padding)?;
     Ok(write)
 }
@@ -7370,7 +7580,10 @@ fn ct_decode_unpadded_in_place<A: Alphabet>(buffer: &mut [u8]) -> Result<usize, 
         _ => return Err(DecodeError::InvalidLength),
     }
 
-    debug_assert_eq!(write, required);
+    if write != required {
+        wipe_bytes(buffer);
+        return Err(DecodeError::InvalidInput);
+    }
     report_ct_error(invalid_byte, invalid_padding)?;
     Ok(write)
 }

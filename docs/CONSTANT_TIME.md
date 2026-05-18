@@ -262,10 +262,18 @@ partial plaintext before the final wipe.
 
 Before reporting the opaque malformed-input result, the ct decoder passes the
 accumulated error mask through a non-inlined `ct_error_gate_barrier` that uses
-`core::hint::black_box` and a compiler fence. This is defense in depth against
-compiler reordering around the final public success/failure gate; it is not a
-hardware speculation barrier and does not change the transient-output window
-described above.
+`core::hint::black_box`, a compiler fence, and architecture-specific hardware
+speculation barriers where available (`lfence` on x86/x86_64, `isb sy` on ARM,
+and `isb sy; hint #20` on AArch64). This is defense in depth around the final
+public success/failure gate; it does not make the ct decoder a formally
+verified hardware side-channel resistant primitive and does not change the
+transient-output window described above.
+
+For shared-memory or in-process sandbox threat models where even that transient
+output window is unacceptable, use
+`CtEngine::decode_slice_staged_clear_tail` with a private staging buffer. That
+API writes speculative decoded bytes into staging and copies into the caller's
+output only after validation succeeds.
 
 The clear-tail APIs do not try to hide success, failure, or output length:
 those values are visible through the returned `Result` and decoded length. Any
@@ -280,12 +288,18 @@ cleanup steps before returning a protocol decision.
 
 ## Buffer Comparisons
 
-`SecretBuffer::constant_time_eq`, `EncodedBuffer::constant_time_eq`, and
-`DecodedBuffer::constant_time_eq` provide dependency-free,
+`SecretBuffer::constant_time_eq_public_len`,
+`EncodedBuffer::constant_time_eq_public_len`, and
+`DecodedBuffer::constant_time_eq_public_len` provide dependency-free,
 constant-time-oriented comparison for equal-length buffers. These redacted
 buffer types intentionally do not implement `PartialEq`/`==`: the explicit
 method name is part of the security contract because this helper is best-effort
 and not a formal cryptographic comparison primitive.
+
+The old `constant_time_eq` method name remains only as a deprecated migration
+alias during the `1.0.0-alpha` window. New code should use the
+`constant_time_eq_public_len` name so the public-length contract is visible at
+the call site.
 
 Length mismatch returns immediately. Treat buffer length, the selected buffer
 type, and the final equality result as public. The helper scans every byte for

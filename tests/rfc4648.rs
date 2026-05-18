@@ -530,9 +530,23 @@ fn runtime_backend_report_keeps_scalar_active() {
     assert!(display.contains("candidate_detection_mode="));
     assert!(display.contains("candidate_required_cpu_features="));
     assert!(display.contains("accelerated_backend_active=false"));
+    assert!(display.contains("wipe_posture="));
     assert!(!report.accelerated_backend_active);
     assert_eq!(report.unsafe_boundary_enforced, !cfg!(feature = "simd"));
     assert_eq!(report.simd_feature_enabled, cfg!(feature = "simd"));
+    assert_eq!(report.wipe_posture.as_str(), report.snapshot().wipe_posture);
+    if cfg!(any(
+        target_arch = "aarch64",
+        target_arch = "arm",
+        target_arch = "riscv32",
+        target_arch = "riscv64",
+        target_arch = "x86",
+        target_arch = "x86_64",
+    )) {
+        assert_eq!(report.wipe_posture, runtime::WipePosture::HardwareFence);
+    } else {
+        assert_eq!(report.wipe_posture, runtime::WipePosture::CompilerFenceOnly);
+    }
     if cfg!(feature = "simd")
         && cfg!(feature = "std")
         && cfg!(any(target_arch = "x86", target_arch = "x86_64"))
@@ -596,6 +610,7 @@ fn runtime_backend_policy_assertions_are_explicit() {
         accelerated_backend_active: false,
         unsafe_boundary_enforced: false,
         security_posture: runtime::SecurityPosture::SimdCandidateScalarActive,
+        wipe_posture: runtime::WipePosture::HardwareFence,
     };
     let artificial_error = runtime::BackendPolicyError {
         policy: runtime::BackendPolicy::HighAssuranceScalarOnly,
@@ -603,7 +618,7 @@ fn runtime_backend_policy_assertions_are_explicit() {
     };
     assert_eq!(
         artificial_error.to_string(),
-        "runtime backend policy `high-assurance-scalar-only` was not satisfied (active=scalar candidate=avx2 candidate_detection_mode=compile-time-target-features candidate_required_cpu_features=[avx2] simd_feature_enabled=true accelerated_backend_active=false unsafe_boundary_enforced=false security_posture=simd-candidate-scalar-active)"
+        "runtime backend policy `high-assurance-scalar-only` was not satisfied (active=scalar candidate=avx2 candidate_detection_mode=compile-time-target-features candidate_required_cpu_features=[avx2] simd_feature_enabled=true accelerated_backend_active=false unsafe_boundary_enforced=false security_posture=simd-candidate-scalar-active wipe_posture=hardware-fence)"
     );
 
     let simd_feature_policy =
@@ -907,7 +922,7 @@ fn ct_validate_and_decode_agree_for_malformed_inputs() {
 fn ct_decode_buffer_uses_stack_backed_output() {
     let decoded = ct::STANDARD.decode_buffer::<5>(b"aGVsbG8=").unwrap();
     assert_eq!(decoded.as_bytes(), b"hello");
-    assert!(decoded.constant_time_eq(b"hello"));
+    assert!(decoded.constant_time_eq_public_len(b"hello"));
     assert_eq!(
         format!("{decoded:?}"),
         "DecodedBuffer { bytes: \"<redacted>\", len: 5, capacity: 5 }"
@@ -1008,6 +1023,51 @@ fn ct_decode_slice_clear_tail_scrubs_output_on_error() {
         })
     );
     assert!(too_small.iter().all(|byte| *byte == 0));
+}
+
+#[test]
+fn ct_decode_slice_staged_clear_tail_copies_only_after_success() {
+    let mut output = [0xee; 8];
+    let mut staging = [0xdd; 8];
+    let written = ct::STANDARD
+        .decode_slice_staged_clear_tail(b"aGk=", &mut output, &mut staging)
+        .unwrap();
+    assert_eq!(&output[..written], b"hi");
+    assert_eq!(&output[written..], &[0; 6]);
+    assert!(staging.iter().all(|byte| *byte == 0));
+
+    let mut output = [0xee; 8];
+    let mut staging = [0xdd; 8];
+    assert_eq!(
+        ct::STANDARD.decode_slice_staged_clear_tail(b"aGk=$", &mut output, &mut staging),
+        Err(DecodeError::InvalidLength)
+    );
+    assert!(output.iter().all(|byte| *byte == 0));
+    assert!(staging.iter().all(|byte| *byte == 0));
+
+    let mut output = [0xee; 1];
+    let mut staging = [0xdd; 8];
+    assert_eq!(
+        ct::STANDARD.decode_slice_staged_clear_tail(b"aGk=", &mut output, &mut staging),
+        Err(DecodeError::OutputTooSmall {
+            required: 2,
+            available: 1,
+        })
+    );
+    assert!(output.iter().all(|byte| *byte == 0));
+    assert!(staging.iter().all(|byte| *byte == 0));
+
+    let mut output = [0xee; 8];
+    let mut staging = [0xdd; 1];
+    assert_eq!(
+        ct::STANDARD.decode_slice_staged_clear_tail(b"aGk=", &mut output, &mut staging),
+        Err(DecodeError::OutputTooSmall {
+            required: 2,
+            available: 1,
+        })
+    );
+    assert!(output.iter().all(|byte| *byte == 0));
+    assert!(staging.iter().all(|byte| *byte == 0));
 }
 
 #[test]
@@ -1368,7 +1428,7 @@ fn encode_wrapped_buffer_uses_stack_backed_output() {
     let wrap = LineWrap::new(4, LineEnding::Lf);
     let encoded = STANDARD.encode_wrapped_buffer::<9>(b"hello", wrap).unwrap();
     assert_eq!(encoded.as_bytes(), b"aGVs\nbG8=");
-    assert!(encoded.constant_time_eq(b"aGVs\nbG8="));
+    assert!(encoded.constant_time_eq_public_len(b"aGVs\nbG8="));
 
     assert_eq!(
         STANDARD
@@ -2386,18 +2446,18 @@ fn stack_encoded_buffer_helpers_avoid_alloc_and_clear_tail() {
     assert_eq!(encoded.as_str(), "aGVsbG8=");
     assert_eq!(encoded.as_utf8().unwrap(), "aGVsbG8=");
     assert_eq!(encoded.as_ref(), b"aGVsbG8=");
-    assert!(encoded.constant_time_eq(b"aGVsbG8="));
-    assert!(!encoded.constant_time_eq(b"aGVsbG9="));
-    assert!(!encoded.constant_time_eq(b"aGVsbG8"));
-    assert!(encoded.constant_time_eq(&b"aGVsbG8="[..]));
-    assert!(encoded.constant_time_eq("aGVsbG8=".as_bytes()));
-    assert!(!encoded.constant_time_eq("aGVsbG9=".as_bytes()));
+    assert!(encoded.constant_time_eq_public_len(b"aGVsbG8="));
+    assert!(!encoded.constant_time_eq_public_len(b"aGVsbG9="));
+    assert!(!encoded.constant_time_eq_public_len(b"aGVsbG8"));
+    assert!(encoded.constant_time_eq_public_len(&b"aGVsbG8="[..]));
+    assert!(encoded.constant_time_eq_public_len("aGVsbG8=".as_bytes()));
+    assert!(!encoded.constant_time_eq_public_len("aGVsbG9=".as_bytes()));
     #[cfg(feature = "alloc")]
     {
         let matching = String::from("aGVsbG8=");
         let different = String::from("aGVsbG9=");
-        assert!(encoded.constant_time_eq(matching.as_bytes()));
-        assert!(!encoded.constant_time_eq(different.as_bytes()));
+        assert!(encoded.constant_time_eq_public_len(matching.as_bytes()));
+        assert!(!encoded.constant_time_eq_public_len(different.as_bytes()));
     }
     assert_eq!(
         format!("{encoded:?}"),
@@ -2405,9 +2465,9 @@ fn stack_encoded_buffer_helpers_avoid_alloc_and_clear_tail() {
     );
 
     let cloned = encoded.clone();
-    assert!(encoded.constant_time_eq(cloned.as_bytes()));
+    assert!(encoded.constant_time_eq_public_len(cloned.as_bytes()));
     let different = STANDARD.encode_buffer::<8>(b"world").unwrap();
-    assert!(!encoded.constant_time_eq(different.as_bytes()));
+    assert!(!encoded.constant_time_eq_public_len(different.as_bytes()));
 
     let (array, len) = cloned.into_exposed_array();
     assert_eq!(len, 8);
@@ -2478,18 +2538,18 @@ fn stack_decoded_buffer_helpers_avoid_alloc_and_clear_tail() {
     assert_eq!(decoded.as_bytes(), b"hello");
     assert_eq!(decoded.as_utf8().unwrap(), "hello");
     assert_eq!(decoded.as_ref(), b"hello");
-    assert!(decoded.constant_time_eq(b"hello"));
-    assert!(!decoded.constant_time_eq(b"Hello"));
-    assert!(!decoded.constant_time_eq(b"hello!"));
-    assert!(decoded.constant_time_eq(&b"hello"[..]));
-    assert!(decoded.constant_time_eq("hello".as_bytes()));
-    assert!(!decoded.constant_time_eq("Hello".as_bytes()));
+    assert!(decoded.constant_time_eq_public_len(b"hello"));
+    assert!(!decoded.constant_time_eq_public_len(b"Hello"));
+    assert!(!decoded.constant_time_eq_public_len(b"hello!"));
+    assert!(decoded.constant_time_eq_public_len(&b"hello"[..]));
+    assert!(decoded.constant_time_eq_public_len("hello".as_bytes()));
+    assert!(!decoded.constant_time_eq_public_len("Hello".as_bytes()));
     #[cfg(feature = "alloc")]
     {
         let matching = String::from("hello");
         let different = String::from("Hello");
-        assert!(decoded.constant_time_eq(matching.as_bytes()));
-        assert!(!decoded.constant_time_eq(different.as_bytes()));
+        assert!(decoded.constant_time_eq_public_len(matching.as_bytes()));
+        assert!(!decoded.constant_time_eq_public_len(different.as_bytes()));
     }
     assert_eq!(
         format!("{decoded:?}"),
@@ -2497,9 +2557,9 @@ fn stack_decoded_buffer_helpers_avoid_alloc_and_clear_tail() {
     );
 
     let cloned = decoded.clone();
-    assert!(decoded.constant_time_eq(cloned.as_bytes()));
+    assert!(decoded.constant_time_eq_public_len(cloned.as_bytes()));
     let different = STANDARD.decode_buffer::<5>(b"d29ybGQ=").unwrap();
-    assert!(!decoded.constant_time_eq(different.as_bytes()));
+    assert!(!decoded.constant_time_eq_public_len(different.as_bytes()));
 
     let binary = STANDARD.decode_buffer::<2>(b"//8=").unwrap();
     assert!(binary.as_utf8().is_err());
@@ -2644,21 +2704,25 @@ fn secret_buffer_redacts_and_reveals_explicitly() {
 
     secret.expose_secret_mut()[0] = b'T';
     assert_eq!(secret.expose_secret(), b"Token");
-    assert!(secret.constant_time_eq(b"Token"));
-    assert!(!secret.constant_time_eq(b"token"));
-    assert!(!secret.constant_time_eq(b"Token!"));
-    assert!(secret.constant_time_eq(&b"Token"[..]));
-    assert!(secret.constant_time_eq("Token".as_bytes()));
-    assert!(!secret.constant_time_eq("token".as_bytes()));
+    assert!(secret.constant_time_eq_public_len(b"Token"));
+    assert!(!secret.constant_time_eq_public_len(b"token"));
+    assert!(!secret.constant_time_eq_public_len(b"Token!"));
+    assert!(secret.constant_time_eq_public_len(&b"Token"[..]));
+    assert!(secret.constant_time_eq_public_len("Token".as_bytes()));
+    assert!(!secret.constant_time_eq_public_len("token".as_bytes()));
     let matching = String::from("Token");
     let different = String::from("token");
-    assert!(secret.constant_time_eq(matching.as_bytes()));
-    assert!(!secret.constant_time_eq(different.as_bytes()));
+    assert!(secret.constant_time_eq_public_len(matching.as_bytes()));
+    assert!(!secret.constant_time_eq_public_len(different.as_bytes()));
 
     let cloned = secret.clone();
-    assert!(secret.constant_time_eq(cloned.expose_secret()));
-    assert!(!secret.constant_time_eq(SecretBuffer::from_slice(b"token").expose_secret()));
-    assert!(!secret.constant_time_eq(SecretBuffer::from_slice(b"Token!").expose_secret()));
+    assert!(secret.constant_time_eq_public_len(cloned.expose_secret()));
+    assert!(
+        !secret.constant_time_eq_public_len(SecretBuffer::from_slice(b"token").expose_secret())
+    );
+    assert!(
+        !secret.constant_time_eq_public_len(SecretBuffer::from_slice(b"Token!").expose_secret())
+    );
 
     let exposed = cloned.into_exposed_vec();
     assert_eq!(exposed.len(), 5);

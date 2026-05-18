@@ -136,8 +136,8 @@ Decision rationale:
 - `into_exposed_array` is intentionally named as an ownership escape hatch
   where redaction and drop-time cleanup stop applying to the returned array.
 - Equality is intentionally not exposed through `PartialEq`/`==`. Callers must
-  opt into the explicit `constant_time_eq` helper, whose equal-length scan is
-  best-effort and whose length mismatch remains public.
+  opt into the explicit `constant_time_eq_public_len` helper, whose equal-length
+  scan is best-effort and whose length mismatch remains public.
 
 Stable boundary:
 
@@ -161,8 +161,8 @@ Decision rationale:
 - Drop-time cleanup uses the crate's volatile best-effort wipe helper for
   initialized bytes and vector spare capacity.
 - Equality is intentionally not exposed through `PartialEq`/`==`. Callers must
-  opt into the explicit `constant_time_eq` helper, whose equal-length scan is
-  best-effort and whose length mismatch remains public.
+  opt into the explicit `constant_time_eq_public_len` helper, whose equal-length
+  scan is best-effort and whose length mismatch remains public.
 - Strict standard padded `TryFrom` and `FromStr` implementations are kept only
   for native Rust ergonomics; non-standard profiles remain on explicit
   engine/profile methods.

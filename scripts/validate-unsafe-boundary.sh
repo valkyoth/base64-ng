@@ -20,8 +20,8 @@ if [ "$matches" != "$allowed" ]; then
 fi
 
 root_allow_count="$(grep -c '^#\[allow(unsafe_code)\]$' "$root_allowed" || true)"
-if [ "$root_allow_count" -ne 3 ]; then
-    echo "unsafe boundary: src/lib.rs must have exactly three reviewed allow(unsafe_code) cleanup helpers"
+if [ "$root_allow_count" -ne 4 ]; then
+    echo "unsafe boundary: src/lib.rs must have exactly four reviewed allow(unsafe_code) helpers"
     exit 1
 fi
 
@@ -29,15 +29,15 @@ if ! awk '
     /^#\[allow\(unsafe_code\)\]$/ {
         allow_line = NR
     }
-    /^fn wipe_bytes\(/ || /^fn wipe_barrier\(/ || /^fn wipe_vec_spare_capacity\(/ {
+    /^fn wipe_bytes\(/ || /^fn wipe_barrier\(/ || /^fn wipe_vec_spare_capacity\(/ || /^fn ct_error_gate_barrier\(/ {
         if (allow_line != NR - 1) {
             failed = 1
         }
         seen += 1
     }
-    END { exit failed || seen != 3 }
+    END { exit failed || seen != 4 }
 ' "$root_allowed"; then
-    echo "unsafe boundary: src/lib.rs allow(unsafe_code) must apply only to reviewed cleanup helpers"
+    echo "unsafe boundary: src/lib.rs allow(unsafe_code) must apply only to reviewed cleanup and CT gate helpers"
     exit 1
 fi
 
@@ -62,7 +62,7 @@ if [ ! -s docs/UNSAFE.md ]; then
     exit 1
 fi
 
-unsafe_functions="$(sed -n 's/^[[:space:]]*pub(super)[[:space:]]*unsafe[[:space:]]*fn[[:space:]]*\([A-Za-z0-9_][A-Za-z0-9_]*\).*/\1/p' "$simd_allowed")"
+unsafe_functions="$(sed -n 's/^[[:space:]]*unsafe[[:space:]]*fn[[:space:]]*\([A-Za-z0-9_][A-Za-z0-9_]*\).*/\1/p' "$simd_allowed")"
 
 if [ -z "$unsafe_functions" ]; then
     echo "unsafe boundary: expected documented prototype unsafe functions in $allowed"
