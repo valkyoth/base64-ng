@@ -250,6 +250,13 @@ They clear unused bytes after the decoded prefix on success and clear the whole
 caller-owned buffer on error. This reduces ordinary caller-buffer retention but
 does not provide a verified zeroization guarantee.
 
+The non-clear-tail `ct::CtEngine::decode_slice` API intentionally reports
+malformed input only after the fixed-shape decode pass. On error, the
+caller-owned output buffer may contain partially decoded bytes computed before
+rejection, often zero-derived bytes for invalid symbols. Use
+`decode_slice_clear_tail` when the output buffer may be reused after a failed
+decode or may have contained prior sensitive data.
+
 The clear-tail APIs do not try to hide success, failure, or output length:
 those values are visible through the returned `Result` and decoded length. Any
 future cryptographic profile must document memory cleanup separately from timing

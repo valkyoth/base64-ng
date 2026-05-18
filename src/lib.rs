@@ -2314,6 +2314,14 @@ pub mod ct {
         /// Malformed content errors are intentionally opaque and non-localized;
         /// use the normal strict decoder when exact diagnostics are required.
         ///
+        /// # Security Note
+        ///
+        /// To preserve the fixed-shape decode loop, malformed input is reported
+        /// after processing. On error, `output` may contain partially decoded
+        /// bytes computed before rejection. Use
+        /// [`Self::decode_slice_clear_tail`] when `output` may be reused after
+        /// a failed decode attempt or may have contained prior sensitive data.
+        ///
         /// # Examples
         ///
         /// ```

@@ -70,6 +70,11 @@ registers, cache lines, or arbitrary process memory disclosure vulnerabilities.
 For high-assurance secret handling, use the clear-tail APIs promptly and pair
 them with operating system and deployment controls that reduce crash dumps,
 swap, and broad memory disclosure exposure.
+For constant-time-oriented decode, prefer
+`ct::CtEngine::decode_slice_clear_tail` when a caller-owned output buffer may be
+reused after a rejected input: `ct::CtEngine::decode_slice` reports malformed
+input after its fixed-shape pass and can leave partially decoded bytes in the
+buffer on error.
 If a platform requires a formal zeroization policy, apply that policy to
 caller-owned buffers in addition to the crate's dependency-free cleanup APIs.
 For applications that already admit `zeroize`, decode into caller-owned buffers
