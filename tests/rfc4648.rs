@@ -68,6 +68,21 @@ impl Read for FramedChunkedReader<'_> {
 }
 
 #[cfg(feature = "stream")]
+struct PoisoningReadError<'a> {
+    poison: &'a [u8],
+    kind: std::io::ErrorKind,
+}
+
+#[cfg(feature = "stream")]
+impl Read for PoisoningReadError<'_> {
+    fn read(&mut self, output: &mut [u8]) -> std::io::Result<usize> {
+        let len = self.poison.len().min(output.len());
+        output[..len].copy_from_slice(&self.poison[..len]);
+        Err(std::io::Error::new(self.kind, "injected read failure"))
+    }
+}
+
+#[cfg(feature = "stream")]
 #[derive(Default)]
 struct FailOnceWriter {
     output: Vec<u8>,
@@ -3287,6 +3302,27 @@ fn stream_encoder_reader_handles_fragmented_sources() {
 
 #[cfg(feature = "stream")]
 #[test]
+fn stream_encoder_reader_propagates_read_error_after_wiping_input_buffer() {
+    let source = PoisoningReadError {
+        poison: b"raw-private-key-material",
+        kind: std::io::ErrorKind::Interrupted,
+    };
+    let mut reader = EncoderReader::new(source, STANDARD);
+    let mut output = [0u8; 8];
+
+    let err = reader.read(&mut output).unwrap_err();
+
+    assert_eq!(err.kind(), std::io::ErrorKind::Interrupted);
+    assert_eq!(reader.pending_len(), 0);
+    assert!(!reader.has_pending_input());
+    assert_eq!(reader.buffered_output_len(), 0);
+    assert!(!reader.has_buffered_output());
+    assert!(!reader.has_finished_input());
+    assert!(!reader.is_finished());
+}
+
+#[cfg(feature = "stream")]
+#[test]
 fn stream_decoder_handles_chunk_boundaries() {
     let mut decoder = Decoder::new(Vec::new(), STANDARD);
     assert_eq!(decoder.engine(), STANDARD);
@@ -3816,6 +3852,28 @@ fn stream_decoder_reader_fails_closed_after_malformed_input() {
         reader.read(&mut output).unwrap_err().kind(),
         std::io::ErrorKind::InvalidInput
     );
+}
+
+#[cfg(feature = "stream")]
+#[test]
+fn stream_decoder_reader_propagates_read_error_after_wiping_input_buffer() {
+    let source = PoisoningReadError {
+        poison: b"aGVs",
+        kind: std::io::ErrorKind::Interrupted,
+    };
+    let mut reader = DecoderReader::new(source, STANDARD);
+    let mut output = [0u8; 3];
+
+    let err = reader.read(&mut output).unwrap_err();
+
+    assert_eq!(err.kind(), std::io::ErrorKind::Interrupted);
+    assert_eq!(reader.pending_len(), 0);
+    assert!(!reader.has_pending_input());
+    assert_eq!(reader.buffered_output_len(), 0);
+    assert!(!reader.has_buffered_output());
+    assert!(!reader.has_finished_input());
+    assert!(!reader.is_finished());
+    assert!(!reader.is_failed());
 }
 
 #[cfg(feature = "stream")]

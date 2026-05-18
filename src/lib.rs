@@ -1803,7 +1803,13 @@ pub mod stream {
 
             let mut input = [0u8; 4];
             let available = 4 - self.pending_len;
-            let read = self.inner_mut().read(&mut input[..available])?;
+            let read = match self.inner_mut().read(&mut input[..available]) {
+                Ok(read) => read,
+                Err(err) => {
+                    crate::wipe_bytes(&mut input);
+                    return Err(err);
+                }
+            };
             if read == 0 {
                 crate::wipe_bytes(&mut input);
                 self.finished = true;
@@ -2101,7 +2107,13 @@ pub mod stream {
     {
         fn fill_output(&mut self) -> io::Result<()> {
             let mut input = [0u8; 768];
-            let read = self.inner_mut().read(&mut input)?;
+            let read = match self.inner_mut().read(&mut input) {
+                Ok(read) => read,
+                Err(err) => {
+                    crate::wipe_bytes(&mut input);
+                    return Err(err);
+                }
+            };
             if read == 0 {
                 crate::wipe_bytes(&mut input);
                 self.finished = true;

@@ -98,6 +98,8 @@
   detected-candidate policy as the AVX-512, AVX2, and NEON prototype tests.
 - Documented the intentionally narrow SIMD intrinsic imports and added
   `docs/SIMD_ACTIVATION_CHECKLIST.md` for future accelerated dispatch work.
+- Wiped `EncoderReader` and `DecoderReader` stack input buffers before
+  propagating underlying `Read` errors.
 
 ## 0.10.0 - 2026-05-17
 
