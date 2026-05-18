@@ -198,13 +198,11 @@ Stable boundary:
   module name.
 - Keep clear-tail variants explicit rather than making cleanup an implicit
   default for all in-place APIs.
-- Keep `ct::CtEngine::decode_slice` deprecated and documented as a fixed-shape
-  decode pass that can leave decoded plaintext in caller-owned output on error;
-  direct reusable secret buffers to `ct::CtEngine::decode_slice_clear_tail` or
-  `ct::CtEngine::decode_buffer`.
-- Keep `ct::CtEngine::decode_in_place` deprecated and documented as a
-  destructive in-place pass whose error state may mix decoded plaintext and
-  remaining encoded bytes; direct sensitive in-place callers to
+- Keep the removed non-clear-tail `ct::CtEngine::decode_slice` and
+  `ct::CtEngine::decode_in_place` APIs out of the stable surface. They could
+  leave decoded plaintext in caller-owned buffers on malformed input errors.
+  Direct reusable secret buffers to `ct::CtEngine::decode_slice_clear_tail`,
+  `ct::CtEngine::decode_buffer`, or
   `ct::CtEngine::decode_in_place_clear_tail`.
 - Do not add unchecked in-place APIs to the public surface.
 

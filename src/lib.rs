@@ -2228,6 +2228,25 @@ pub mod stream {
 /// by secret input bytes while mapping Base64 symbols and reports malformed
 /// content through one opaque error. It is not documented as a formally
 /// verified cryptographic constant-time API.
+///
+/// The CT decoder exposes only clear-tail and stack-backed decode APIs. The
+/// former non-clear-tail methods were removed before the `1.0` stable boundary
+/// because they could leave decoded plaintext in caller-owned buffers after
+/// malformed input errors.
+///
+/// ```compile_fail
+/// use base64_ng::ct;
+///
+/// let mut output = [0u8; 8];
+/// let _ = ct::STANDARD.decode_slice(b"aGk=", &mut output);
+/// ```
+///
+/// ```compile_fail
+/// use base64_ng::ct;
+///
+/// let mut buffer = *b"aGk=";
+/// let _ = ct::STANDARD.decode_in_place(&mut buffer);
+/// ```
 pub mod ct {
     use super::{
         Alphabet, DecodeError, DecodedBuffer, Standard, UrlSafe, ct_decode_in_place,
@@ -2275,8 +2294,9 @@ pub mod ct {
         /// Validates `input` without writing decoded bytes.
         ///
         /// This uses the same constant-time-oriented symbol mapping and opaque
-        /// malformed-input error behavior as [`Self::decode_slice`]. Input
-        /// length, padding length, and final success or failure remain public.
+        /// malformed-input error behavior as
+        /// [`Self::decode_slice_clear_tail`]. Input length, padding length, and
+        /// final success or failure remain public.
         ///
         /// # Examples
         ///
@@ -2315,45 +2335,6 @@ pub mod ct {
         /// padding length, and final success or failure remain public.
         pub fn decoded_len(&self, input: &[u8]) -> Result<usize, DecodeError> {
             ct_decoded_len::<A, PAD>(input)
-        }
-
-        /// Decodes `input` into `output`, returning the number of bytes
-        /// written.
-        ///
-        /// This path uses a fixed alphabet scan for Base64 symbol mapping and
-        /// avoids secret-indexed lookup tables. Input length, padding length,
-        /// output length, and final success or failure remain public.
-        /// Malformed content errors are intentionally opaque and non-localized;
-        /// use the normal strict decoder when exact diagnostics are required.
-        ///
-        /// # Security Note
-        ///
-        /// To preserve the fixed-shape decode loop, malformed input is
-        /// reported after processing. On error, `output` may contain decoded
-        /// plaintext from valid leading quanta before later malformed input was
-        /// rejected. Prefer [`Self::decode_slice_clear_tail`] or
-        /// [`Self::decode_buffer`] for sensitive payloads and reusable output
-        /// buffers.
-        ///
-        /// # Examples
-        ///
-        /// ```
-        /// use base64_ng::ct;
-        ///
-        /// let mut output = [0u8; 5];
-        /// let written = ct::STANDARD
-        ///     .decode_slice_clear_tail(b"aGVsbG8=", &mut output)
-        ///     .unwrap();
-        ///
-        /// assert_eq!(&output[..written], b"hello");
-        /// ```
-        #[deprecated(
-            since = "1.0.0-alpha.0",
-            note = "use decode_slice_clear_tail or decode_buffer; decode_slice can retain partially decoded output on error"
-        )]
-        #[must_use = "handle decode errors; prefer decode_slice_clear_tail for secret-bearing payloads"]
-        pub fn decode_slice(&self, input: &[u8], output: &mut [u8]) -> Result<usize, DecodeError> {
-            ct_decode_slice::<A, PAD>(input, output)
         }
 
         /// Decodes `input` into `output` and clears all bytes after the
@@ -2422,45 +2403,6 @@ pub mod ct {
             };
             output.len = written;
             Ok(output)
-        }
-
-        /// Decodes `buffer` in place and returns the decoded prefix.
-        ///
-        /// This uses the constant-time-oriented scalar decoder while reading
-        /// each Base64 quantum into local values before writing decoded bytes
-        /// back to the front of the same buffer.
-        ///
-        /// # Security Note
-        ///
-        /// In-place decoding is destructive. On error, the encoded input may
-        /// be partially overwritten by decoded plaintext and the buffer is left
-        /// in an indeterminate mixed state. Prefer
-        /// [`Self::decode_in_place_clear_tail`] for sensitive payloads and copy
-        /// the encoded input elsewhere before in-place decoding if it must be
-        /// preserved for audit logging or retry.
-        ///
-        /// # Examples
-        ///
-        /// ```
-        /// use base64_ng::ct;
-        ///
-        /// let mut buffer = *b"aGk=";
-        /// let decoded = ct::STANDARD
-        ///     .decode_in_place_clear_tail(&mut buffer)
-        ///     .unwrap();
-        ///
-        /// assert_eq!(decoded, b"hi");
-        /// ```
-        #[deprecated(
-            since = "1.0.0-alpha.0",
-            note = "use decode_in_place_clear_tail; decode_in_place destroys input and can retain partial decoded output on error"
-        )]
-        pub fn decode_in_place<'a>(
-            &self,
-            buffer: &'a mut [u8],
-        ) -> Result<&'a mut [u8], DecodeError> {
-            let len = ct_decode_in_place::<A, PAD>(buffer)?;
-            Ok(&mut buffer[..len])
         }
 
         /// Decodes `buffer` in place and clears all bytes after the decoded

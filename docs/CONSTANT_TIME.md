@@ -109,20 +109,7 @@ pub mod ct {
             input: &[u8],
         ) -> Result<DecodedBuffer<CAP>, DecodeError>;
 
-        #[deprecated(note = "use decode_slice_clear_tail or decode_buffer")]
-        pub fn decode_slice(
-            &self,
-            input: &[u8],
-            output: &mut [u8],
-        ) -> Result<usize, DecodeError>;
-
         pub fn decode_in_place_clear_tail<'a>(
-            &self,
-            buffer: &'a mut [u8],
-        ) -> Result<&'a mut [u8], DecodeError>;
-
-        #[deprecated(note = "use decode_in_place_clear_tail")]
-        pub fn decode_in_place<'a>(
             &self,
             buffer: &'a mut [u8],
         ) -> Result<&'a mut [u8], DecodeError>;
@@ -260,20 +247,11 @@ They clear unused bytes after the decoded prefix on success and clear the whole
 caller-owned buffer on error. This reduces ordinary caller-buffer retention but
 does not provide a verified zeroization guarantee.
 
-The non-clear-tail `ct::CtEngine::decode_slice` API is deprecated. It
-intentionally reports malformed input only after the fixed-shape decode pass.
-On error, the caller-owned output buffer may contain real decoded plaintext
-from valid leading quanta before later malformed input was rejected. Use
-`decode_slice_clear_tail` or `decode_buffer` for sensitive payloads and
-reusable output buffers.
-
-The non-clear-tail `ct::CtEngine::decode_in_place` API is also deprecated for
-sensitive payloads. It is destructive by design: on error, the original encoded
-input may be partially overwritten and the same buffer may contain a mix of
-decoded plaintext and remaining encoded bytes. Use `decode_in_place_clear_tail`
-when a failed decode should leave a known-zero buffer, and copy the encoded
-input before in-place decode if it must be preserved for audit logging or
-retry.
+The non-clear-tail `ct::CtEngine::decode_slice` and
+`ct::CtEngine::decode_in_place` APIs were removed before the `1.0` stable
+boundary. They could leave decoded plaintext in caller-owned buffers after a
+malformed input error. Use `decode_slice_clear_tail`, `decode_buffer`, or
+`decode_in_place_clear_tail` for constant-time-oriented decoding.
 
 The clear-tail APIs do not try to hide success, failure, or output length:
 those values are visible through the returned `Result` and decoded length. Any

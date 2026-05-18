@@ -404,11 +404,11 @@ scalar decoder, `ct::CtEngine::decoded_len` for sizing caller-owned buffers
 under the same opaque malformed-input policy, plus
 `ct::CtEngine::decode_buffer` for stack-backed no-alloc decoded output.
 For constant-time-oriented in-place decode, prefer
-`ct::CtEngine::decode_in_place_clear_tail`: the deprecated
-`ct::CtEngine::decode_in_place` API can partially destroy the encoded input and
-retain decoded plaintext in the same buffer on error. If the encoded token must
-be logged or retried after failure, keep a separate copy before any in-place
-decode.
+`ct::CtEngine::decode_in_place_clear_tail`. The non-clear-tail CT in-place API
+was removed before the `1.0` stable boundary because failed in-place decode can
+partially destroy the encoded input and retain decoded plaintext in the same
+buffer. If the encoded token must be logged or retried after failure, keep a
+separate copy before any in-place decode.
 
 The default strict decoders are not constant-time decoders: they preserve exact
 error indexes and may return early for malformed input, padding, length, or
@@ -421,10 +421,10 @@ APIs when the encoded bytes or rejection reason are sensitive. Use
 perform any final token comparison with a constant-time-oriented comparison
 appropriate for the protocol.
 For reusable secret output buffers, use `ct::CtEngine::decode_slice_clear_tail`
-or `ct::CtEngine::decode_buffer`. The non-clear-tail
-`ct::CtEngine::decode_slice` API is deprecated because it can leave real
-decoded plaintext from valid leading quanta in `output` when later malformed
-input is rejected after the fixed-shape decode pass.
+or `ct::CtEngine::decode_buffer`. The non-clear-tail CT slice API was removed
+before the `1.0` stable boundary because it can leave real decoded plaintext
+from valid leading quanta in `output` when later malformed input is rejected
+after the fixed-shape decode pass.
 
 For short values, `encode_buffer` returns a stack-backed `EncodedBuffer`
 and `decode_buffer` returns a stack-backed `DecodedBuffer` without requiring

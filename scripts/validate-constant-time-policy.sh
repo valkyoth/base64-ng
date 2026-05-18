@@ -31,10 +31,25 @@ for required_source_text in \
     "Do not use this method for token comparison, key-material" \
     "[\`crate::ct::STANDARD\`]" \
     "[\`crate::ct::URL_SAFE_NO_PAD\`]" \
+    "The CT decoder exposes only clear-tail and stack-backed decode APIs." \
     "#[must_use = \"handle decode errors; use crate::ct for secret-bearing payloads\"]"
 do
     if ! grep -F -q "$required_source_text" src/lib.rs; then
         echo "constant-time policy: src/lib.rs is missing decode security warning text: $required_source_text" >&2
+        exit 1
+    fi
+done
+
+ct_public_methods="$(
+    sed -n '/^pub mod ct {/,/impl<A, const PAD: bool> core::fmt::Display for CtEngine/p' src/lib.rs
+)"
+
+for removed_method in \
+    "pub fn decode_slice(&self" \
+    "pub fn decode_in_place<'a>(&self"
+do
+    if printf '%s\n' "$ct_public_methods" | grep -F -q "$removed_method"; then
+        echo "constant-time policy: removed ct API is still public: $removed_method" >&2
         exit 1
     fi
 done

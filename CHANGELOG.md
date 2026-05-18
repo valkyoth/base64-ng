@@ -21,13 +21,11 @@
 - Strengthened default-engine and validation documentation so
   `STANDARD`/`URL_SAFE_NO_PAD`/profile users are pointed at `ct` constants or
   `Engine::ct_decoder()` for token validation and key-material decoding.
-- Deprecated `ct::CtEngine::decode_slice` because it can leave decoded
-  plaintext in caller-owned output on malformed input; documentation, tests,
-  and dudect evidence now use `decode_slice_clear_tail` or `decode_buffer` as
-  the recommended constant-time-oriented decode surfaces.
-- Deprecated `ct::CtEngine::decode_in_place` because failed in-place decode can
-  partially destroy the encoded input and leave decoded plaintext in the same
-  buffer; sensitive callers should use `decode_in_place_clear_tail`.
+- Removed the non-clear-tail `ct::CtEngine::decode_slice` and
+  `ct::CtEngine::decode_in_place` APIs before the `1.0` stable boundary because
+  failed CT decodes could leave decoded plaintext in caller-owned buffers.
+  Use `decode_slice_clear_tail`, `decode_buffer`, or
+  `decode_in_place_clear_tail`.
 - Hardened the equal-length comparison helper by making the OR accumulator
   opaque with `core::hint::black_box`, while preserving the documented
   best-effort constant-time-oriented posture.
@@ -643,7 +641,9 @@
 - Added `ct::CtEngine::decode_slice_clear_tail`,
   `ct::CtEngine::decode_in_place`, and
   `ct::CtEngine::decode_in_place_clear_tail` so constant-time-oriented decode
-  callers can clear partially decoded output on rejected sensitive input.
+  callers can clear partially decoded output on rejected sensitive input. The
+  non-clear-tail CT methods were later removed before the `1.0` stable
+  boundary.
 - Hardened streaming encoders to clear plaintext pending buffers on drop, and
   after pending plaintext is consumed, while preserving `finish()` and
   `into_inner()` behavior.

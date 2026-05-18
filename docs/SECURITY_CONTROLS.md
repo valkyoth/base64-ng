@@ -78,13 +78,13 @@ them with operating system and deployment controls that reduce crash dumps,
 swap, and broad memory disclosure exposure.
 For constant-time-oriented decode, use `ct::CtEngine::decode_slice_clear_tail`
 or `ct::CtEngine::decode_buffer` when a caller-owned output buffer may be
-reused after a rejected input. The deprecated `ct::CtEngine::decode_slice`
-reports malformed input after its fixed-shape pass and can leave decoded
-plaintext from valid leading quanta in the buffer on error.
+reused after a rejected input. The non-clear-tail CT slice API was removed
+before the `1.0` stable boundary because it could leave decoded plaintext from
+valid leading quanta in the buffer on error.
 For constant-time-oriented in-place decode, use
-`ct::CtEngine::decode_in_place_clear_tail` unless a mixed error-state buffer is
-acceptable. The deprecated `ct::CtEngine::decode_in_place` can partially
-destroy the encoded input and retain decoded plaintext on error.
+`ct::CtEngine::decode_in_place_clear_tail`. The non-clear-tail CT in-place API
+was removed before the `1.0` stable boundary because it could partially destroy
+the encoded input and retain decoded plaintext on error.
 If a platform requires a formal zeroization policy, apply that policy to
 caller-owned buffers in addition to the crate's dependency-free cleanup APIs.
 For applications that already admit `zeroize`, decode into caller-owned buffers
