@@ -62,6 +62,9 @@
   wrapper that remains redacted and wiped on drop; raw `Vec<u8>` extraction now
   requires the explicit
   `into_exposed_unprotected_vec_caller_must_zeroize` escape hatch.
+- Documented the custom `Alphabet` timing contract: manual `encode`/`decode`
+  overrides affect the normal `Engine` path, while the `ct` module scans
+  `Alphabet::ENCODE` directly.
 
 ## 0.12.0 - 2026-05-17
 

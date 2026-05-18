@@ -326,6 +326,12 @@ alphabets override this with optimized arithmetic mappers. For very large
 payloads and custom alphabets, benchmark this tradeoff before using them on
 untrusted high-volume traffic.
 
+If you implement `Alphabet` manually, overriding `encode` with
+`ENCODE[value as usize]` makes normal `Engine` encoding timing-sensitive with
+respect to the 6-bit value. Similarly, a custom `decode` implementation affects
+the normal strict decoder. The `ct` module does not call `Alphabet::decode`; it
+scans `Alphabet::ENCODE` directly with its own fixed 64-entry mapper.
+
 Built-in non-RFC alphabets are available for explicit interoperability:
 
 ```rust

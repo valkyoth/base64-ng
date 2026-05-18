@@ -228,11 +228,17 @@ Decision rationale:
   for every emitted byte. This preserves the conservative no secret-indexed
   lookup posture, but it is slower than the arithmetic mappers used by built-in
   alphabets.
+- Manual `Alphabet` implementations can override `encode` or `decode`; those
+  overrides affect the normal `Engine` path. The `ct` module scans
+  `Alphabet::ENCODE` directly and does not depend on custom `decode`
+  implementations.
 
 Stable boundary:
 
 - Keep compile-time validation in the macro.
 - Keep custom-alphabet performance tradeoffs documented.
+- Keep the custom-alphabet timing contract documented on the `Alphabet` trait
+  and in the macro docs.
 - Do not add a faster custom-alphabet path unless it has its own audit record.
 - Do not accept non-visible ASCII or padding bytes in Base64 alphabets.
 

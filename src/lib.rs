@@ -4086,6 +4086,11 @@ pub fn decoded_len(input: &[u8], padded: bool) -> Result<usize, DecodeError> {
 /// 64-entry scan to avoid secret-indexed table lookups. Built-in alphabets use
 /// optimized arithmetic mappers.
 ///
+/// The generated [`Alphabet::decode`] implementation delegates to
+/// [`decode_alphabet_byte`]. The constant-time-oriented [`ct`] module scans the
+/// generated `ENCODE` table directly and does not call the generated `decode`
+/// method.
+///
 /// # Examples
 ///
 /// ```
@@ -4217,6 +4222,21 @@ pub const fn decode_alphabet_byte(byte: u8, encode: &[u8; 64]) -> Option<u8> {
 }
 
 /// A Base64 alphabet.
+///
+/// # Security
+///
+/// The default [`Alphabet::encode`] implementation is constant-time-oriented:
+/// it scans all 64 alphabet entries instead of using `ENCODE[value as usize]`.
+/// If an implementation overrides `encode` with a direct table lookup, normal
+/// [`Engine`] encoding becomes timing-sensitive with respect to the emitted
+/// 6-bit value.
+///
+/// The normal strict decode path calls [`Alphabet::decode`] and is not a
+/// constant-time decoder. The [`ct`] module does not call
+/// [`Alphabet::decode`]; it scans [`Alphabet::ENCODE`] directly with its own
+/// fixed 64-entry mapper. A custom non-constant-time `decode` implementation
+/// therefore affects normal strict decode diagnostics and timing, but not the
+/// `ct` module's symbol-mapping loop.
 pub trait Alphabet {
     /// Encoding table indexed by 6-bit values.
     const ENCODE: [u8; 64];
@@ -4237,6 +4257,11 @@ pub trait Alphabet {
     }
 
     /// Decode one byte into a 6-bit value.
+    ///
+    /// Implementations that want conservative custom-alphabet timing posture
+    /// should delegate to [`decode_alphabet_byte`], which scans all 64 entries
+    /// before returning. The `ct` module ignores this method and scans
+    /// [`Self::ENCODE`] directly.
     fn decode(byte: u8) -> Option<u8>;
 }
 

@@ -35,6 +35,9 @@ for required_text in \
     "try_into_exposed_string" \
     "Encode-to-back and decode-to-front contracts" \
     "define_alphabet!" \
+    "The \`ct\` module scans" \
+    "\`Alphabet::ENCODE\` directly" \
+    "Keep the custom-alphabet timing contract documented" \
     "Padded \`DecoderReader\` stops after terminal padding" \
     "Keep ct malformed-content errors opaque"
 do
