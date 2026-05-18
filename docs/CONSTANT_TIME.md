@@ -133,6 +133,13 @@ pub mod ct {
 The stack-backed `decode_buffer` helper avoids allocator behavior while keeping
 the same cleanup and redacted formatting posture as `DecodedBuffer`.
 
+The normal `Engine::decode_slice`, `Profile::decode_slice`,
+`decode_slice_legacy`, and `decode_slice_wrapped` methods are documented with a
+`# Security` section and a `#[must_use]` attribute. Those methods remain the
+right APIs for strict diagnostics and ordinary throughput, but they may branch
+or return early on malformed input. Secret-bearing payloads should use the
+`ct` module, preferably `decode_slice_clear_tail` or `decode_buffer`.
+
 ## Implementation Rules
 
 - Accumulate validity into masks instead of returning early on input-dependent

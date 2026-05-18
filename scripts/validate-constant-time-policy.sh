@@ -26,4 +26,17 @@ if ! grep -q "not currently claim a formally verified cryptographic constant-tim
     exit 1
 fi
 
+for required_source_text in \
+    "# Security" \
+    "Do not use this method for token comparison, key-material" \
+    "[\`crate::ct::STANDARD\`]" \
+    "[\`crate::ct::URL_SAFE_NO_PAD\`]" \
+    "#[must_use = \"handle decode errors; use crate::ct for secret-bearing payloads\"]"
+do
+    if ! grep -F -q "$required_source_text" src/lib.rs; then
+        echo "constant-time policy: src/lib.rs is missing decode security warning text: $required_source_text" >&2
+        exit 1
+    fi
+done
+
 echo "constant-time policy: ok"

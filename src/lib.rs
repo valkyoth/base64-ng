@@ -2351,6 +2351,7 @@ pub mod ct {
             since = "1.0.0-alpha.0",
             note = "use decode_slice_clear_tail or decode_buffer; decode_slice can retain partially decoded output on error"
         )]
+        #[must_use = "handle decode errors; prefer decode_slice_clear_tail for secret-bearing payloads"]
         pub fn decode_slice(&self, input: &[u8], output: &mut [u8]) -> Result<usize, DecodeError> {
             ct_decode_slice::<A, PAD>(input, output)
         }
@@ -3631,6 +3632,17 @@ where
     }
 
     /// Decodes `input` into `output` according to this profile.
+    ///
+    /// # Security
+    ///
+    /// Profile decoders use the normal strict decode path. They may branch or
+    /// return early based on malformed input, padding position, wrapping, and
+    /// output capacity in order to return precise [`DecodeError`] diagnostics.
+    /// Do not use this method for token comparison, key-material decoding, or
+    /// secret-bearing validation where malformed-input timing matters. Use
+    /// [`crate::ct`] with a matching unwrapped engine for constant-time-oriented
+    /// secret decoding.
+    #[must_use = "handle decode errors; use crate::ct for secret-bearing payloads"]
     pub fn decode_slice(&self, input: &[u8], output: &mut [u8]) -> Result<usize, DecodeError> {
         match self.wrap {
             Some(wrap) => self.engine.decode_slice_wrapped(input, output, wrap),
@@ -5330,11 +5342,17 @@ where
     /// This is strict decoding. Whitespace, mixed alphabets, malformed padding,
     /// and trailing non-padding data are rejected.
     ///
+    /// # Security
+    ///
     /// This default scalar decoder prioritizes strict validation, exact error
     /// reporting, and ordinary throughput. It may branch or return early based
-    /// on malformed input and padding position. Use [`crate::ct`] for
-    /// secret-bearing payloads where timing behavior matters more than exact
-    /// malformed-input diagnostics.
+    /// on byte validity, malformed input, padding position, and output
+    /// capacity. Do not use this method for token comparison, key-material
+    /// decoding, or secret-bearing validation where malformed-input timing
+    /// matters. Use [`crate::ct`], [`crate::ct::STANDARD`],
+    /// [`crate::ct::URL_SAFE_NO_PAD`], or [`Self::ct_decoder`] with
+    /// `decode_slice_clear_tail` for constant-time-oriented secret decoding.
+    #[must_use = "handle decode errors; use crate::ct for secret-bearing payloads"]
     pub fn decode_slice(&self, input: &[u8], output: &mut [u8]) -> Result<usize, DecodeError> {
         backend::decode_slice::<A, PAD>(input, output)
     }
@@ -5409,6 +5427,14 @@ where
     /// ASCII space, tab, carriage return, and line feed bytes are ignored.
     /// Alphabet selection, padding placement, trailing data after padding, and
     /// non-canonical trailing bits remain strict.
+    ///
+    /// # Security
+    ///
+    /// This method uses the normal strict decode path after legacy whitespace
+    /// handling. It may branch or return early based on malformed input and is
+    /// not a constant-time token validator or key-material decoder. Use
+    /// [`crate::ct`] for secret-bearing payloads.
+    #[must_use = "handle decode errors; use crate::ct for secret-bearing payloads"]
     pub fn decode_slice_legacy(
         &self,
         input: &[u8],
@@ -5488,6 +5514,14 @@ where
     /// lines must contain exactly `wrap.line_len` encoded bytes; the final line
     /// may be shorter. A single trailing line ending after the final line is
     /// accepted.
+    ///
+    /// # Security
+    ///
+    /// This method uses the normal strict decode path after line-profile
+    /// validation. It may branch or return early based on malformed input and
+    /// is not a constant-time token validator or key-material decoder. Use
+    /// [`crate::ct`] for secret-bearing payloads.
+    #[must_use = "handle decode errors; use crate::ct for secret-bearing payloads"]
     pub fn decode_slice_wrapped(
         &self,
         input: &[u8],
