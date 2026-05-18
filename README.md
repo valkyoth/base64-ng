@@ -432,6 +432,9 @@ or `ct::CtEngine::decode_buffer`. The non-clear-tail CT slice API was removed
 before the `1.0` stable boundary because it can leave real decoded plaintext
 from valid leading quanta in `output` when later malformed input is rejected
 after the fixed-shape decode pass.
+For shared-memory, HSM-adjacent, sandboxed, or other multi-principal threat
+models where even transient writes to caller-owned output are unacceptable, use
+`ct::CtEngine::decode_slice_staged_clear_tail` with a private staging buffer.
 
 For short values, `encode_buffer` returns a stack-backed `EncodedBuffer`
 and `decode_buffer` returns a stack-backed `DecodedBuffer` without requiring
@@ -478,9 +481,11 @@ bearer-token, password-hash, or authentication-secret comparison primitive in
 high-assurance systems.
 
 `into_exposed_array` is the explicit no-alloc ownership escape hatch for both
-stack-backed buffers. It returns the backing array and visible length, so
-redacted formatting and drop-time cleanup no longer apply to the returned
-array.
+stack-backed buffers. It returns `ExposedEncodedArray` or
+`ExposedDecodedArray`, keeping redacted formatting and best-effort drop-time
+cleanup after ownership transfer. If a bare array is unavoidable, call
+`into_exposed_unprotected_array_caller_must_zeroize`; cleanup then becomes the
+caller responsibility.
 
 Stack-backed buffers clear their backing arrays when dropped, but they cannot
 clear historical stack-frame copies made by the compiler, caller code, panic

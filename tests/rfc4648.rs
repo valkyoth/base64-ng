@@ -2,8 +2,9 @@ use base64_ng::{
     Alphabet, AlphabetError, BCRYPT, BCRYPT_NO_PAD, Bcrypt, CRYPT, CRYPT_NO_PAD, Crypt,
     DecodeError, DecodedBuffer, EncodeError, EncodedBuffer, Engine, LineEnding, LineWrap, MIME,
     PEM, PEM_CRLF, Profile, STANDARD, STANDARD_NO_PAD, Standard, URL_SAFE, URL_SAFE_NO_PAD,
-    UrlSafe, checked_encoded_len, checked_wrapped_encoded_len, ct, decode_alphabet_byte,
-    decoded_capacity, decoded_len, encoded_len, runtime, validate_alphabet, wrapped_encoded_len,
+    UrlSafe, checked_encoded_len, checked_wrapped_encoded_len, constant_time_eq_fixed_width, ct,
+    decode_alphabet_byte, decoded_capacity, decoded_len, encoded_len, runtime, validate_alphabet,
+    wrapped_encoded_len,
 };
 
 #[cfg(feature = "stream")]
@@ -554,7 +555,6 @@ fn runtime_backend_report_keeps_scalar_active() {
     }
     if cfg!(any(
         target_arch = "aarch64",
-        target_arch = "arm",
         target_arch = "x86",
         target_arch = "x86_64",
     )) {
@@ -562,7 +562,11 @@ fn runtime_backend_report_keeps_scalar_active() {
             report.ct_gate_posture,
             runtime::CtGatePosture::HardwareSpeculationBarrier
         );
-    } else if cfg!(any(target_arch = "riscv32", target_arch = "riscv64")) {
+    } else if cfg!(any(
+        target_arch = "arm",
+        target_arch = "riscv32",
+        target_arch = "riscv64"
+    )) {
         assert_eq!(
             report.ct_gate_posture,
             runtime::CtGatePosture::OrderingFence
@@ -2496,9 +2500,17 @@ fn stack_encoded_buffer_helpers_avoid_alloc_and_clear_tail() {
     let different = STANDARD.encode_buffer::<8>(b"world").unwrap();
     assert!(!encoded.constant_time_eq_public_len(different.as_bytes()));
 
-    let (array, len) = cloned.into_exposed_array();
+    let array = cloned.into_exposed_array();
+    assert_eq!(array.len(), 8);
+    assert_eq!(array.capacity(), 8);
+    assert_eq!(array.as_bytes(), b"aGVsbG8=");
+    assert_eq!(
+        format!("{array:?}"),
+        r#"ExposedEncodedArray { bytes: "<redacted>", len: 8, capacity: 8 }"#
+    );
+    let (raw_array, len) = array.into_exposed_unprotected_array_caller_must_zeroize();
     assert_eq!(len, 8);
-    assert_eq!(&array[..len], b"aGVsbG8=");
+    assert_eq!(&raw_array[..len], b"aGVsbG8=");
 
     let too_small: Result<EncodedBuffer<7>, EncodeError> = STANDARD.encode_buffer(b"hello");
     assert_eq!(
@@ -2555,6 +2567,13 @@ fn encoded_buffer_try_from_uses_strict_standard_base64() {
 }
 
 #[test]
+fn fixed_width_comparison_scans_fixed_arrays() {
+    assert!(constant_time_eq_fixed_width(b"token", b"token"));
+    assert!(!constant_time_eq_fixed_width(b"token", b"Token"));
+    assert!(constant_time_eq_fixed_width::<0>(b"", b""));
+}
+
+#[test]
 fn stack_decoded_buffer_helpers_avoid_alloc_and_clear_tail() {
     let decoded = STANDARD.decode_buffer::<5>(b"aGVsbG8=").unwrap();
     assert_eq!(decoded.len(), 5);
@@ -2591,9 +2610,17 @@ fn stack_decoded_buffer_helpers_avoid_alloc_and_clear_tail() {
     let binary = STANDARD.decode_buffer::<2>(b"//8=").unwrap();
     assert!(binary.as_utf8().is_err());
 
-    let (array, len) = cloned.into_exposed_array();
+    let array = cloned.into_exposed_array();
+    assert_eq!(array.len(), 5);
+    assert_eq!(array.capacity(), 5);
+    assert_eq!(array.as_bytes(), b"hello");
+    assert_eq!(
+        format!("{array:?}"),
+        r#"ExposedDecodedArray { bytes: "<redacted>", len: 5, capacity: 5 }"#
+    );
+    let (raw_array, len) = array.into_exposed_unprotected_array_caller_must_zeroize();
     assert_eq!(len, 5);
-    assert_eq!(&array[..len], b"hello");
+    assert_eq!(&raw_array[..len], b"hello");
 
     let too_small: Result<DecodedBuffer<4>, DecodeError> = STANDARD.decode_buffer(b"aGVsbG8=");
     assert_eq!(

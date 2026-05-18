@@ -38,8 +38,10 @@ The caller still owns:
 - choosing strict, legacy, wrapped, MIME, PEM, bcrypt-style, or custom profiles
   intentionally
 - avoiding accidental copies of secrets before wrapping them in `SecretBuffer`
-- treating stack-buffer `into_exposed_array` calls as boundaries where redacted
-  formatting and drop-time cleanup intentionally stop for the returned arrays
+- treating
+  `into_exposed_unprotected_array_caller_must_zeroize` calls as boundaries
+  where redacted formatting and crate-owned drop-time cleanup intentionally
+  stop for returned bare arrays
 - understanding that stack-backed buffers can clear their own backing arrays
   but cannot clear historical stack-frame copies made by compiler spills,
   caller code, panic machinery, crash handlers, or operating system capture
@@ -104,9 +106,12 @@ for secret regions, and the deployment's approved zeroization primitive at the
 ownership boundary.
 For constant-time-oriented decode, use `ct::CtEngine::decode_slice_clear_tail`
 or `ct::CtEngine::decode_buffer` when a caller-owned output buffer may be
-reused after a rejected input. The non-clear-tail CT slice API was removed
-before the `1.0` stable boundary because it could leave decoded plaintext from
-valid leading quanta in the buffer on error.
+reused after a rejected input. For shared-memory, HSM-adjacent, sandboxed, or
+multi-principal environments where even transient writes to caller output are
+unacceptable, use `ct::CtEngine::decode_slice_staged_clear_tail` with a private
+staging buffer. The non-clear-tail CT slice API was removed before the `1.0`
+stable boundary because it could leave decoded plaintext from valid leading
+quanta in the buffer on error.
 The internal constant-time-oriented decode loop writes decoded bytes to the
 caller-owned output buffer before final malformed-input reporting, then
 `decode_slice_clear_tail` wipes the buffer before returning an error. This

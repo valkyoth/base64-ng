@@ -133,8 +133,11 @@ Decision rationale:
   Base64 text through explicit display/text APIs.
 - Drop-time cleanup is best-effort and scoped to the buffer's current backing
   array, not historical stack-frame copies.
-- `into_exposed_array` is intentionally named as an ownership escape hatch
-  where redaction and drop-time cleanup stop applying to the returned array.
+- `into_exposed_array` is intentionally named as an ownership escape hatch and
+  returns `ExposedEncodedArray` or `ExposedDecodedArray`, preserving redaction
+  and drop-time cleanup after ownership transfer. The raw-array escape hatch is
+  deliberately loud:
+  `into_exposed_unprotected_array_caller_must_zeroize`.
 - Equality is intentionally not exposed through `PartialEq`/`==`. Callers must
   opt into the explicit `constant_time_eq_public_len` helper, whose equal-length
   scan is best-effort and whose length mismatch remains public.

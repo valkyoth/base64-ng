@@ -292,6 +292,10 @@ pub mod runtime {
     pub enum CtGatePosture {
         /// The target uses a native speculation barrier before public CT
         /// success/failure or equality-result branches.
+        ///
+        /// On `AArch64` this uses `isb sy` plus the CSDB hint encoding. Full
+        /// CSDB effectiveness depends on the deployed ARM architecture level;
+        /// older cores may treat the hint as a no-op.
         HardwareSpeculationBarrier,
         /// The target uses an ordering fence where the base ISA does not
         /// provide a canonical speculation barrier.
@@ -582,12 +586,15 @@ pub mod runtime {
     const fn ct_gate_posture() -> CtGatePosture {
         if cfg!(any(
             target_arch = "aarch64",
-            target_arch = "arm",
             target_arch = "x86",
-            target_arch = "x86_64",
+            target_arch = "x86_64"
         )) {
             CtGatePosture::HardwareSpeculationBarrier
-        } else if cfg!(any(target_arch = "riscv32", target_arch = "riscv64")) {
+        } else if cfg!(any(
+            target_arch = "arm",
+            target_arch = "riscv32",
+            target_arch = "riscv64"
+        )) {
             CtGatePosture::OrderingFence
         } else {
             CtGatePosture::CompilerFenceOnly
@@ -2498,6 +2505,7 @@ pub mod ct {
         /// assert_eq!(&output[..written], b"hi");
         /// assert!(output[written..].iter().all(|byte| *byte == 0));
         /// ```
+        #[must_use = "handle decode errors; use decode_slice_staged_clear_tail for shared-memory or HSM-style threat models"]
         pub fn decode_slice_clear_tail(
             &self,
             input: &[u8],
@@ -2940,6 +2948,84 @@ pub struct EncodedBuffer<const CAP: usize> {
     len: usize,
 }
 
+/// Owned stack array extracted from [`EncodedBuffer`].
+///
+/// This wrapper keeps the extracted encoded bytes on the crate's best-effort
+/// drop-time cleanup path. Use
+/// [`Self::into_exposed_unprotected_array_caller_must_zeroize`] only when a
+/// bare array is unavoidable and the caller will handle cleanup.
+pub struct ExposedEncodedArray<const CAP: usize> {
+    bytes: [u8; CAP],
+    len: usize,
+}
+
+impl<const CAP: usize> ExposedEncodedArray<CAP> {
+    /// Wraps an encoded backing array and visible length.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `len` is greater than `CAP`.
+    #[must_use]
+    pub const fn from_array(bytes: [u8; CAP], len: usize) -> Self {
+        assert!(len <= CAP, "visible length exceeds array capacity");
+        Self { bytes, len }
+    }
+
+    /// Returns the visible encoded bytes.
+    #[must_use]
+    pub fn as_bytes(&self) -> &[u8] {
+        &self.bytes[..self.len]
+    }
+
+    /// Returns the number of visible encoded bytes.
+    #[must_use]
+    pub const fn len(&self) -> usize {
+        self.len
+    }
+
+    /// Returns whether there are no visible encoded bytes.
+    #[must_use]
+    pub const fn is_empty(&self) -> bool {
+        self.len == 0
+    }
+
+    /// Returns the backing array capacity.
+    #[must_use]
+    pub const fn capacity(&self) -> usize {
+        CAP
+    }
+
+    /// Consumes the wrapper and returns a bare array plus visible length.
+    ///
+    /// This is an unprotected escape hatch. The returned array will not be
+    /// cleared by this crate on drop. Callers must clear it with their own
+    /// approved zeroization policy.
+    #[must_use = "caller must zeroize the returned array"]
+    pub fn into_exposed_unprotected_array_caller_must_zeroize(mut self) -> ([u8; CAP], usize) {
+        let len = self.len;
+        self.len = 0;
+        (core::mem::replace(&mut self.bytes, [0u8; CAP]), len)
+    }
+}
+
+impl<const CAP: usize> Drop for ExposedEncodedArray<CAP> {
+    fn drop(&mut self) {
+        wipe_bytes(&mut self.bytes);
+        self.len = 0;
+    }
+}
+
+impl<const CAP: usize> core::fmt::Debug for ExposedEncodedArray<CAP> {
+    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        formatter
+            .debug_struct("ExposedEncodedArray")
+            .field("bytes", &"<redacted>")
+            .field("len", &self.len)
+            .field("capacity", &CAP)
+            .finish()
+    }
+}
+
 impl<const CAP: usize> EncodedBuffer<CAP> {
     /// Creates an empty encoded buffer.
     #[must_use]
@@ -3044,18 +3130,18 @@ impl<const CAP: usize> EncodedBuffer<CAP> {
         self.constant_time_eq_public_len(other)
     }
 
-    /// Consumes the wrapper and returns the backing array plus visible length.
+    /// Consumes the wrapper and returns the backing array plus visible length
+    /// inside a drop-wiping exposed wrapper.
     ///
     /// This is an explicit escape hatch for no-alloc interop with APIs that
-    /// require ownership of a fixed array. The returned array is no longer
-    /// redacted by formatting and will not be cleared by `EncodedBuffer` on
-    /// drop; callers that keep handling sensitive data should arrange their
-    /// own cleanup.
-    #[must_use = "caller must zeroize the returned array; it has no drop-time cleanup after this call"]
-    pub fn into_exposed_array(mut self) -> ([u8; CAP], usize) {
+    /// require ownership of a fixed array. The returned
+    /// [`ExposedEncodedArray`] remains redacted by formatting and clears its
+    /// backing array on drop.
+    #[must_use]
+    pub fn into_exposed_array(mut self) -> ExposedEncodedArray<CAP> {
         let len = self.len;
         self.len = 0;
-        (core::mem::replace(&mut self.bytes, [0u8; CAP]), len)
+        ExposedEncodedArray::from_array(core::mem::replace(&mut self.bytes, [0u8; CAP]), len)
     }
 
     /// Clears the visible bytes and the full backing array.
@@ -3189,6 +3275,84 @@ pub struct DecodedBuffer<const CAP: usize> {
     len: usize,
 }
 
+/// Owned stack array extracted from [`DecodedBuffer`].
+///
+/// This wrapper keeps the extracted decoded bytes on the crate's best-effort
+/// drop-time cleanup path. Use
+/// [`Self::into_exposed_unprotected_array_caller_must_zeroize`] only when a
+/// bare array is unavoidable and the caller will handle cleanup.
+pub struct ExposedDecodedArray<const CAP: usize> {
+    bytes: [u8; CAP],
+    len: usize,
+}
+
+impl<const CAP: usize> ExposedDecodedArray<CAP> {
+    /// Wraps a decoded backing array and visible length.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `len` is greater than `CAP`.
+    #[must_use]
+    pub const fn from_array(bytes: [u8; CAP], len: usize) -> Self {
+        assert!(len <= CAP, "visible length exceeds array capacity");
+        Self { bytes, len }
+    }
+
+    /// Returns the visible decoded bytes.
+    #[must_use]
+    pub fn as_bytes(&self) -> &[u8] {
+        &self.bytes[..self.len]
+    }
+
+    /// Returns the number of visible decoded bytes.
+    #[must_use]
+    pub const fn len(&self) -> usize {
+        self.len
+    }
+
+    /// Returns whether there are no visible decoded bytes.
+    #[must_use]
+    pub const fn is_empty(&self) -> bool {
+        self.len == 0
+    }
+
+    /// Returns the backing array capacity.
+    #[must_use]
+    pub const fn capacity(&self) -> usize {
+        CAP
+    }
+
+    /// Consumes the wrapper and returns a bare array plus visible length.
+    ///
+    /// This is an unprotected escape hatch. The returned array will not be
+    /// cleared by this crate on drop. Callers must clear it with their own
+    /// approved zeroization policy.
+    #[must_use = "caller must zeroize the returned array"]
+    pub fn into_exposed_unprotected_array_caller_must_zeroize(mut self) -> ([u8; CAP], usize) {
+        let len = self.len;
+        self.len = 0;
+        (core::mem::replace(&mut self.bytes, [0u8; CAP]), len)
+    }
+}
+
+impl<const CAP: usize> Drop for ExposedDecodedArray<CAP> {
+    fn drop(&mut self) {
+        wipe_bytes(&mut self.bytes);
+        self.len = 0;
+    }
+}
+
+impl<const CAP: usize> core::fmt::Debug for ExposedDecodedArray<CAP> {
+    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        formatter
+            .debug_struct("ExposedDecodedArray")
+            .field("bytes", &"<redacted>")
+            .field("len", &self.len)
+            .field("capacity", &CAP)
+            .finish()
+    }
+}
+
 impl<const CAP: usize> DecodedBuffer<CAP> {
     /// Creates an empty decoded buffer.
     #[must_use]
@@ -3278,18 +3442,18 @@ impl<const CAP: usize> DecodedBuffer<CAP> {
         self.constant_time_eq_public_len(other)
     }
 
-    /// Consumes the wrapper and returns the backing array plus visible length.
+    /// Consumes the wrapper and returns the backing array plus visible length
+    /// inside a drop-wiping exposed wrapper.
     ///
     /// This is an explicit escape hatch for no-alloc interop with APIs that
-    /// require ownership of a fixed array. The returned array is no longer
-    /// redacted by formatting and will not be cleared by `DecodedBuffer` on
-    /// drop; callers that keep handling sensitive data should arrange their
-    /// own cleanup.
-    #[must_use = "caller must zeroize the returned array; it has no drop-time cleanup after this call"]
-    pub fn into_exposed_array(mut self) -> ([u8; CAP], usize) {
+    /// require ownership of a fixed array. The returned
+    /// [`ExposedDecodedArray`] remains redacted by formatting and clears its
+    /// backing array on drop.
+    #[must_use]
+    pub fn into_exposed_array(mut self) -> ExposedDecodedArray<CAP> {
         let len = self.len;
         self.len = 0;
-        (core::mem::replace(&mut self.bytes, [0u8; CAP]), len)
+        ExposedDecodedArray::from_array(core::mem::replace(&mut self.bytes, [0u8; CAP]), len)
     }
 
     /// Clears the visible bytes and the full backing array.
@@ -4402,6 +4566,28 @@ pub const fn checked_encoded_len(input_len: usize, padded: bool) -> Option<usize
     }
 }
 
+/// Compares two fixed-width byte arrays without a length-mismatch branch.
+///
+/// Use this helper when the value length itself should not be represented as a
+/// timing-distinct branch in the comparison API. The array length `N` is a
+/// compile-time public type fact, and the helper scans exactly `N` bytes before
+/// returning. The final equality result remains public. This is still a
+/// dependency-free, constant-time-oriented best-effort helper, not a formally
+/// verified cryptographic comparison primitive.
+///
+/// # Examples
+///
+/// ```
+/// use base64_ng::constant_time_eq_fixed_width;
+///
+/// assert!(constant_time_eq_fixed_width(b"token", b"token"));
+/// assert!(!constant_time_eq_fixed_width(b"token", b"Token"));
+/// ```
+#[must_use]
+pub fn constant_time_eq_fixed_width<const N: usize>(left: &[u8; N], right: &[u8; N]) -> bool {
+    constant_time_eq_fixed_width_array(left, right)
+}
+
 /// Returns the maximum decoded length for an encoded input length.
 ///
 /// # Examples
@@ -4795,6 +4981,16 @@ fn constant_time_eq_public_len(left: &[u8], right: &[u8]) -> bool {
         return false;
     }
 
+    constant_time_eq_same_len(left, right)
+}
+
+#[inline(never)]
+fn constant_time_eq_fixed_width_array<const N: usize>(left: &[u8; N], right: &[u8; N]) -> bool {
+    constant_time_eq_same_len(left, right)
+}
+
+#[inline(never)]
+fn constant_time_eq_same_len(left: &[u8], right: &[u8]) -> bool {
     let diff = left.iter().zip(right).fold(0u8, |diff, (left, right)| {
         core::hint::black_box(core::hint::black_box(diff) | core::hint::black_box(*left ^ *right))
     });

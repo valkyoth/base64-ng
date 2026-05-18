@@ -151,8 +151,8 @@ Purpose:
 
 - Keep the accumulated constant-time decoder malformed-input mask visible
   across a non-inlined boundary before the public success/failure branch.
-- Emit an architecture-specific speculation barrier where stable Rust supports
-  one locally.
+- Emit an architecture-specific speculation or ordering barrier where stable
+  Rust supports one locally.
 
 Preconditions:
 
@@ -161,7 +161,7 @@ Preconditions:
 Unsafe operation:
 
 - `core::arch::asm!` emits `lfence` on non-Miri `x86`/`x86_64`, `isb sy` on
-  non-Miri `arm`, `isb sy; hint #20` on non-Miri `aarch64`, and
+  non-Miri 32-bit `arm`, `isb sy; hint #20` on non-Miri `aarch64`, and
   `fence rw, rw` on non-Miri `riscv32`/`riscv64`.
 
 Safety argument:
@@ -177,9 +177,12 @@ Limitations:
 - This is defense in depth against speculation around the final public
   malformed-input result. It does not make the ct decoder a formally verified
   hardware side-channel resistant primitive.
-- RISC-V base ISA has no canonical speculation barrier. The crate reports its
-  CT gate posture as `ordering-fence` on RISCV rather than
-  `hardware-speculation-barrier`.
+- 32-bit ARM uses `isb sy` without CSDB, and RISC-V base ISA has no canonical
+  speculation barrier. The crate reports both CT gate postures as
+  `ordering-fence` rather than `hardware-speculation-barrier`.
+- On AArch64, the CSDB hint may be treated as a no-op on older cores. The
+  runtime posture reports the emitted barrier sequence, not a formal
+  microarchitecture certification.
 - Unsupported architectures fall back to the compiler fence only.
 
 ### `wipe_vec_spare_capacity`

@@ -263,14 +263,14 @@ partial plaintext before the final wipe.
 Before reporting the opaque malformed-input result, the ct decoder passes the
 accumulated error mask through a non-inlined `ct_error_gate_barrier` that uses
 `core::hint::black_box`, a compiler fence, and architecture-specific hardware
-speculation barriers where available (`lfence` on x86/x86_64, `isb sy` on ARM,
-and `isb sy; hint #20` on AArch64). On RISCV the gate uses `fence rw, rw`,
-which is an ordering fence rather than a canonical speculation barrier in the
-base ISA. The runtime backend report exposes this separately through
-`ct_gate_posture`. This is defense in depth around the final public
-success/failure gate; it does not make the ct decoder a formally verified
-hardware side-channel resistant primitive and does not change the transient
-output window described above.
+speculation barriers where available (`lfence` on x86/x86_64 and
+`isb sy; hint #20` on AArch64). On 32-bit ARM the gate uses `isb sy`, and on
+RISCV it uses `fence rw, rw`; both are reported as `ordering-fence` because the
+base ISA path is not a canonical Spectre-v1 data-flow speculation barrier. The
+runtime backend report exposes this separately through `ct_gate_posture`. This
+is defense in depth around the final public success/failure gate; it does not
+make the ct decoder a formally verified hardware side-channel resistant
+primitive and does not change the transient output window described above.
 
 For shared-memory or in-process sandbox threat models where even that transient
 output window is unacceptable, use
@@ -315,6 +315,10 @@ CT gate barrier used by malformed-input reporting. The helper is marked
 `#[inline(never)]` and the release evidence script checks that
 `constant_time_eq_public_len` remains visible as a separate text symbol in the
 LTO artifact.
+
+When the value length itself should not be modeled as a runtime branch, use
+`constant_time_eq_fixed_width` with fixed-size arrays. Its length is a
+compile-time type fact and it scans exactly that width before returning.
 
 This remains a best-effort API and does not upgrade `base64-ng` to a formally
 verified cryptographic constant-time comparison crate. Do not use this helper
