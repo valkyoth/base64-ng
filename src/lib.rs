@@ -2299,7 +2299,7 @@ pub mod ct {
         /// Returns the exact decoded length for valid input.
         ///
         /// This uses the same constant-time-oriented validation policy as
-        /// [`Self::decode_slice`] before returning a length. Input length,
+        /// [`Self::validate_result`] before returning a length. Input length,
         /// padding length, and final success or failure remain public.
         pub fn decoded_len(&self, input: &[u8]) -> Result<usize, DecodeError> {
             ct_decoded_len::<A, PAD>(input)
@@ -2316,11 +2316,12 @@ pub mod ct {
         ///
         /// # Security Note
         ///
-        /// To preserve the fixed-shape decode loop, malformed input is reported
-        /// after processing. On error, `output` may contain partially decoded
-        /// bytes computed before rejection. Use
-        /// [`Self::decode_slice_clear_tail`] when `output` may be reused after
-        /// a failed decode attempt or may have contained prior sensitive data.
+        /// To preserve the fixed-shape decode loop, malformed input is
+        /// reported after processing. On error, `output` may contain decoded
+        /// plaintext from valid leading quanta before later malformed input was
+        /// rejected. Prefer [`Self::decode_slice_clear_tail`] or
+        /// [`Self::decode_buffer`] for sensitive payloads and reusable output
+        /// buffers.
         ///
         /// # Examples
         ///
@@ -2329,11 +2330,15 @@ pub mod ct {
         ///
         /// let mut output = [0u8; 5];
         /// let written = ct::STANDARD
-        ///     .decode_slice(b"aGVsbG8=", &mut output)
+        ///     .decode_slice_clear_tail(b"aGVsbG8=", &mut output)
         ///     .unwrap();
         ///
         /// assert_eq!(&output[..written], b"hello");
         /// ```
+        #[deprecated(
+            since = "1.0.0-alpha.0",
+            note = "use decode_slice_clear_tail or decode_buffer; decode_slice can retain partially decoded output on error"
+        )]
         pub fn decode_slice(&self, input: &[u8], output: &mut [u8]) -> Result<usize, DecodeError> {
             ct_decode_slice::<A, PAD>(input, output)
         }
@@ -2364,7 +2369,7 @@ pub mod ct {
             input: &[u8],
             output: &mut [u8],
         ) -> Result<usize, DecodeError> {
-            let written = match self.decode_slice(input, output) {
+            let written = match ct_decode_slice::<A, PAD>(input, output) {
                 Ok(written) => written,
                 Err(err) => {
                     crate::wipe_bytes(output);
@@ -7516,7 +7521,7 @@ mod kani_proofs {
     fn ct_standard_decode_slice_returns_written_within_output() {
         let input = kani::any::<[u8; 4]>();
         let mut output = kani::any::<[u8; 3]>();
-        let result = ct::STANDARD.decode_slice(&input, &mut output);
+        let result = ct::STANDARD.decode_slice_clear_tail(&input, &mut output);
 
         if let Ok(written) = result {
             assert!(written <= output.len());
@@ -7553,7 +7558,9 @@ mod kani_proofs {
         let mut output = kani::any::<[u8; 3]>();
 
         let validate_ok = ct::STANDARD.validate_result(&input).is_ok();
-        let decode_ok = ct::STANDARD.decode_slice(&input, &mut output).is_ok();
+        let decode_ok = ct::STANDARD
+            .decode_slice_clear_tail(&input, &mut output)
+            .is_ok();
 
         assert!(validate_ok == decode_ok);
     }

@@ -18,7 +18,7 @@ payloads:
 use base64_ng::ct;
 
 let mut output = [0u8; 32];
-let written = ct::STANDARD.decode_slice(b"...", &mut output)?;
+let written = ct::STANDARD.decode_slice_clear_tail(b"...", &mut output)?;
 ```
 
 The API should be separate from the default strict decoder so users can choose
@@ -98,12 +98,6 @@ pub mod ct {
 
         pub fn validate(&self, input: &[u8]) -> bool;
 
-        pub fn decode_slice(
-            &self,
-            input: &[u8],
-            output: &mut [u8],
-        ) -> Result<usize, DecodeError>;
-
         pub fn decode_slice_clear_tail(
             &self,
             input: &[u8],
@@ -114,6 +108,13 @@ pub mod ct {
             &self,
             input: &[u8],
         ) -> Result<DecodedBuffer<CAP>, DecodeError>;
+
+        #[deprecated(note = "use decode_slice_clear_tail or decode_buffer")]
+        pub fn decode_slice(
+            &self,
+            input: &[u8],
+            output: &mut [u8],
+        ) -> Result<usize, DecodeError>;
 
         pub fn decode_in_place<'a>(
             &self,
@@ -250,12 +251,12 @@ They clear unused bytes after the decoded prefix on success and clear the whole
 caller-owned buffer on error. This reduces ordinary caller-buffer retention but
 does not provide a verified zeroization guarantee.
 
-The non-clear-tail `ct::CtEngine::decode_slice` API intentionally reports
-malformed input only after the fixed-shape decode pass. On error, the
-caller-owned output buffer may contain partially decoded bytes computed before
-rejection, often zero-derived bytes for invalid symbols. Use
-`decode_slice_clear_tail` when the output buffer may be reused after a failed
-decode or may have contained prior sensitive data.
+The non-clear-tail `ct::CtEngine::decode_slice` API is deprecated. It
+intentionally reports malformed input only after the fixed-shape decode pass.
+On error, the caller-owned output buffer may contain real decoded plaintext
+from valid leading quanta before later malformed input was rejected. Use
+`decode_slice_clear_tail` or `decode_buffer` for sensitive payloads and
+reusable output buffers.
 
 The clear-tail APIs do not try to hide success, failure, or output length:
 those values are visible through the returned `Result` and decoded length. Any

@@ -697,7 +697,7 @@ fn ct_decoder_matches_strict_for_canonical_inputs() {
             .decode_slice(&encoded[..encoded_len], &mut strict)
             .unwrap();
         let ct_len = ct::STANDARD
-            .decode_slice(&encoded[..encoded_len], &mut ct_output)
+            .decode_slice_clear_tail(&encoded[..encoded_len], &mut ct_output)
             .unwrap();
         assert_eq!(&ct_output[..ct_len], &strict[..strict_len]);
 
@@ -706,7 +706,7 @@ fn ct_decoder_matches_strict_for_canonical_inputs() {
             .decode_slice(&encoded[..encoded_len], &mut strict)
             .unwrap();
         let ct_len = ct::STANDARD_NO_PAD
-            .decode_slice(&encoded[..encoded_len], &mut ct_output)
+            .decode_slice_clear_tail(&encoded[..encoded_len], &mut ct_output)
             .unwrap();
         assert_eq!(&ct_output[..ct_len], &strict[..strict_len]);
 
@@ -715,7 +715,7 @@ fn ct_decoder_matches_strict_for_canonical_inputs() {
             .decode_slice(&encoded[..encoded_len], &mut strict)
             .unwrap();
         let ct_len = ct::URL_SAFE
-            .decode_slice(&encoded[..encoded_len], &mut ct_output)
+            .decode_slice_clear_tail(&encoded[..encoded_len], &mut ct_output)
             .unwrap();
         assert_eq!(&ct_output[..ct_len], &strict[..strict_len]);
 
@@ -724,7 +724,7 @@ fn ct_decoder_matches_strict_for_canonical_inputs() {
             .decode_slice(&encoded[..encoded_len], &mut strict)
             .unwrap();
         let ct_len = ct::URL_SAFE_NO_PAD
-            .decode_slice(&encoded[..encoded_len], &mut ct_output)
+            .decode_slice_clear_tail(&encoded[..encoded_len], &mut ct_output)
             .unwrap();
         assert_eq!(&ct_output[..ct_len], &strict[..strict_len]);
     }
@@ -752,7 +752,7 @@ fn ct_decoder_respects_generic_alphabets() {
             .decode_slice(bcrypt_encoded, &mut strict)
             .unwrap();
         let ct_len = ct_bcrypt
-            .decode_slice(bcrypt_encoded, &mut ct_output)
+            .decode_slice_clear_tail(bcrypt_encoded, &mut ct_output)
             .unwrap();
         assert_eq!(&ct_output[..ct_len], &strict[..strict_len]);
         assert!(ct_bcrypt.validate(bcrypt_encoded));
@@ -763,7 +763,7 @@ fn ct_decoder_respects_generic_alphabets() {
             .decode_slice(crypt_encoded, &mut strict)
             .unwrap();
         let ct_len = ct_crypt
-            .decode_slice(crypt_encoded, &mut ct_output)
+            .decode_slice_clear_tail(crypt_encoded, &mut ct_output)
             .unwrap();
         assert_eq!(&ct_output[..ct_len], &strict[..strict_len]);
         assert!(ct_crypt.validate(crypt_encoded));
@@ -862,7 +862,7 @@ fn assert_ct_validate_decode_agree<A, const PAD: bool>(
     let mut output = [0u8; 32];
     for input in cases {
         let validate_result = engine.validate_result(input);
-        let decode_result = engine.decode_slice(input, &mut output);
+        let decode_result = engine.decode_slice_clear_tail(input, &mut output);
 
         assert_eq!(
             validate_result.is_ok(),
@@ -936,29 +936,29 @@ fn ct_decoder_rejects_malformed_inputs() {
     let mut output = [0u8; 8];
 
     assert_eq!(
-        ct::STANDARD.decode_slice(b"AA-A", &mut output),
+        ct::STANDARD.decode_slice_clear_tail(b"AA-A", &mut output),
         Err(DecodeError::InvalidInput)
     );
     assert_eq!(
-        ct::URL_SAFE.decode_slice(b"AA+A", &mut output),
+        ct::URL_SAFE.decode_slice_clear_tail(b"AA+A", &mut output),
         Err(DecodeError::InvalidInput)
     );
     assert_eq!(
-        ct::STANDARD.decode_slice(b"AA=A", &mut output),
+        ct::STANDARD.decode_slice_clear_tail(b"AA=A", &mut output),
         Err(DecodeError::InvalidInput)
     );
     assert_eq!(
-        ct::STANDARD.decode_slice(b"Zh==", &mut output),
+        ct::STANDARD.decode_slice_clear_tail(b"Zh==", &mut output),
         Err(DecodeError::InvalidInput)
     );
     assert_eq!(
-        ct::STANDARD_NO_PAD.decode_slice(b"Zg==", &mut output),
+        ct::STANDARD_NO_PAD.decode_slice_clear_tail(b"Zg==", &mut output),
         Err(DecodeError::InvalidInput)
     );
 
     let mut too_small = [0u8; 1];
     assert_eq!(
-        ct::STANDARD.decode_slice(b"aGk=", &mut too_small),
+        ct::STANDARD.decode_slice_clear_tail(b"aGk=", &mut too_small),
         Err(DecodeError::OutputTooSmall {
             required: 2,
             available: 1,
@@ -1024,7 +1024,7 @@ fn ct_decode_in_place_matches_slice_for_canonical_inputs() {
 
         let encoded_len = STANDARD.encode_slice(input, &mut encoded).unwrap();
         let expected_len = ct::STANDARD
-            .decode_slice(&encoded[..encoded_len], &mut expected)
+            .decode_slice_clear_tail(&encoded[..encoded_len], &mut expected)
             .unwrap();
         let mut in_place = [0u8; 128];
         in_place[..encoded_len].copy_from_slice(&encoded[..encoded_len]);
@@ -1035,7 +1035,7 @@ fn ct_decode_in_place_matches_slice_for_canonical_inputs() {
 
         let encoded_len = STANDARD_NO_PAD.encode_slice(input, &mut encoded).unwrap();
         let expected_len = ct::STANDARD_NO_PAD
-            .decode_slice(&encoded[..encoded_len], &mut expected)
+            .decode_slice_clear_tail(&encoded[..encoded_len], &mut expected)
             .unwrap();
         in_place[..encoded_len].copy_from_slice(&encoded[..encoded_len]);
         let decoded = ct::STANDARD_NO_PAD
@@ -1088,14 +1088,14 @@ fn ct_decoder_uses_non_localized_malformed_errors() {
 
     for input in [b"$AAA", b"A$AA", b"AA$A", b"AAA$"] {
         assert_eq!(
-            ct::STANDARD.decode_slice(input, &mut output),
+            ct::STANDARD.decode_slice_clear_tail(input, &mut output),
             Err(DecodeError::InvalidInput)
         );
     }
 
     for input in [b"AA=A", b"Zm9=", b"Zh=="] {
         assert_eq!(
-            ct::STANDARD.decode_slice(input, &mut output),
+            ct::STANDARD.decode_slice_clear_tail(input, &mut output),
             Err(DecodeError::InvalidInput)
         );
     }
@@ -4076,7 +4076,7 @@ fn assert_ct_round_trip<A, const PAD: bool>(
     let encoded_len = engine.encode_slice(input, &mut encoded).unwrap();
     let mut decoded = [0u8; 2];
     let decoded_len = ct_engine
-        .decode_slice(&encoded[..encoded_len], &mut decoded)
+        .decode_slice_clear_tail(&encoded[..encoded_len], &mut decoded)
         .unwrap();
     assert_eq!(&decoded[..decoded_len], input);
 }

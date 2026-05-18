@@ -157,7 +157,7 @@ fn measure_decode(
     let start = Instant::now();
     for _ in 0..iterations {
         let written = base64_ng::ct::STANDARD_NO_PAD
-            .decode_slice(black_box(input), black_box(output))
+            .decode_slice_clear_tail(black_box(input), black_box(output))
             .map_err(|error| format!("constant-time decode failed: {error}"))?;
         black_box(written);
         black_box(&*output);

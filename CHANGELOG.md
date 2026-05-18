@@ -21,9 +21,10 @@
 - Strengthened default-engine and validation documentation so
   `STANDARD`/`URL_SAFE_NO_PAD`/profile users are pointed at `ct` constants or
   `Engine::ct_decoder()` for token validation and key-material decoding.
-- Clarified that `ct::CtEngine::decode_slice` can leave partially decoded bytes
-  in caller-owned output on malformed input, and that reusable secret buffers
-  should use `ct::CtEngine::decode_slice_clear_tail`.
+- Deprecated `ct::CtEngine::decode_slice` because it can leave decoded
+  plaintext in caller-owned output on malformed input; documentation, tests,
+  and dudect evidence now use `decode_slice_clear_tail` or `decode_buffer` as
+  the recommended constant-time-oriented decode surfaces.
 - Hardened the equal-length comparison helper by making the OR accumulator
   opaque with `core::hint::black_box`, while preserving the documented
   best-effort constant-time-oriented posture.

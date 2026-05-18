@@ -413,10 +413,11 @@ APIs when the encoded bytes or rejection reason are sensitive. Use
 `ct::STANDARD`, `ct::URL_SAFE_NO_PAD`, or `STANDARD.ct_decoder()` instead and
 perform any final token comparison with a constant-time-oriented comparison
 appropriate for the protocol.
-For reusable secret output buffers, prefer `ct::CtEngine::decode_slice_clear_tail`
-over `ct::CtEngine::decode_slice`: the non-clear-tail constant-time-oriented
-decode API can leave partially decoded bytes in `output` when malformed input
-is rejected after the fixed-shape decode pass.
+For reusable secret output buffers, use `ct::CtEngine::decode_slice_clear_tail`
+or `ct::CtEngine::decode_buffer`. The non-clear-tail
+`ct::CtEngine::decode_slice` API is deprecated because it can leave real
+decoded plaintext from valid leading quanta in `output` when later malformed
+input is rejected after the fixed-shape decode pass.
 
 For short values, `encode_buffer` returns a stack-backed `EncodedBuffer`
 and `decode_buffer` returns a stack-backed `DecodedBuffer` without requiring

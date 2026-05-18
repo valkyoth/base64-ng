@@ -198,9 +198,10 @@ Stable boundary:
   module name.
 - Keep clear-tail variants explicit rather than making cleanup an implicit
   default for all in-place APIs.
-- Keep `ct::CtEngine::decode_slice` documented as a fixed-shape decode pass
-  that can leave partial decoded bytes in caller-owned output on error; direct
-  reusable secret buffers to `ct::CtEngine::decode_slice_clear_tail`.
+- Keep `ct::CtEngine::decode_slice` deprecated and documented as a fixed-shape
+  decode pass that can leave decoded plaintext in caller-owned output on error;
+  direct reusable secret buffers to `ct::CtEngine::decode_slice_clear_tail` or
+  `ct::CtEngine::decode_buffer`.
 - Do not add unchecked in-place APIs to the public surface.
 
 ### Custom Alphabets

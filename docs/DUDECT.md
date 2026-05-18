@@ -5,7 +5,7 @@ under `dudect/`. The harness is not included in the published crate and does
 not add dependencies to the root package.
 
 The harness measures fixed-vs-random valid Base64 inputs of the same public
-length through `ct::STANDARD_NO_PAD.decode_slice()` and reports a Welch
+length through `ct::STANDARD_NO_PAD.decode_slice_clear_tail()` and reports a Welch
 t-statistic. It is empirical evidence for review, not a formal proof and not a
 standalone cryptographic constant-time claim.
 
