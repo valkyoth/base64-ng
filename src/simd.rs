@@ -465,7 +465,7 @@ mod tests {
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     #[test]
     fn ssse3_sse41_encode_prototype_matches_scalar_when_available() {
-        if !ssse3_sse41_available() {
+        if detected_candidate() != Candidate::Ssse3Sse41 {
             return;
         }
 

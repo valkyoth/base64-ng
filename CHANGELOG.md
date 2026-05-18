@@ -94,6 +94,8 @@
 - Added `candidate_detection_mode` to runtime backend reports and snapshots so
   audit logs distinguish runtime CPU probing from compile-time target-feature
   reporting on `no_std` and other compile-time-only targets.
+- Normalized the SSSE3/SSE4.1 prototype test gate to use the same prioritized
+  detected-candidate policy as the AVX-512, AVX2, and NEON prototype tests.
 
 ## 0.10.0 - 2026-05-17
 
