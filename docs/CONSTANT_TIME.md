@@ -253,6 +253,13 @@ boundary. They could leave decoded plaintext in caller-owned buffers after a
 malformed input error. Use `decode_slice_clear_tail`, `decode_buffer`, or
 `decode_in_place_clear_tail` for constant-time-oriented decoding.
 
+The clear-tail slice decoder still writes decoded bytes to caller-owned output
+during the fixed-shape decode loop before it reports a malformed-input error.
+On error it wipes the output before returning, but this is not a synchronization
+or process-isolation boundary. A same-process observer with concurrent or
+unsafe access to the output buffer during the call could observe transient
+partial plaintext before the final wipe.
+
 The clear-tail APIs do not try to hide success, failure, or output length:
 those values are visible through the returned `Result` and decoded length. Any
 future cryptographic profile must document memory cleanup separately from timing

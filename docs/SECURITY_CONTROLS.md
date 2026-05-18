@@ -82,6 +82,12 @@ or `ct::CtEngine::decode_buffer` when a caller-owned output buffer may be
 reused after a rejected input. The non-clear-tail CT slice API was removed
 before the `1.0` stable boundary because it could leave decoded plaintext from
 valid leading quanta in the buffer on error.
+The internal constant-time-oriented decode loop writes decoded bytes to the
+caller-owned output buffer before final malformed-input reporting, then
+`decode_slice_clear_tail` wipes the buffer before returning an error. This
+reduces post-return retention, but it is not an isolation boundary: code running
+in the same process with concurrent or unsafe access to the output buffer during
+the decode call could observe transient partial plaintext before the final wipe.
 For constant-time-oriented in-place decode, use
 `ct::CtEngine::decode_in_place_clear_tail`. The non-clear-tail CT in-place API
 was removed before the `1.0` stable boundary because it could partially destroy

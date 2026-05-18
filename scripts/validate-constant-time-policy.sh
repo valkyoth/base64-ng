@@ -8,13 +8,20 @@ for required_phrase in \
     "generated-code review" \
     "cargo rustc --release --lib --no-default-features -- --emit=asm" \
     "cargo rustc --release --lib --all-features -- --emit=asm" \
-    "constant-time-oriented"
+    "constant-time-oriented" \
+    "transient" \
+    "partial plaintext before the final wipe"
 do
     if ! grep -qi -- "$required_phrase" docs/CONSTANT_TIME.md; then
         echo "constant-time policy: docs/CONSTANT_TIME.md missing required phrase: $required_phrase" >&2
         exit 1
     fi
 done
+
+if ! grep -q "concurrent or unsafe access to the output buffer during" docs/SECURITY_CONTROLS.md; then
+    echo "constant-time policy: docs/SECURITY_CONTROLS.md must document the transient CT output-buffer observation window" >&2
+    exit 1
+fi
 
 if ! grep -q "documented as a formally verified cryptographic constant-time API" README.md; then
     echo "constant-time policy: README.md must keep the non-claim wording" >&2

@@ -67,6 +67,9 @@
   `Alphabet::ENCODE` directly.
 - Added RFC 4648 ground-truth vectors to the differential fuzz target and
   release-gated the fuzz workspace `cargo audit`/`cargo deny` checks.
+- Documented that `ct::CtEngine::decode_slice_clear_tail` wipes caller output
+  before returning errors, but same-process concurrent or unsafe access during
+  decode could observe transient partial plaintext before that wipe.
 
 ## 0.12.0 - 2026-05-17
 
