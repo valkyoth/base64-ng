@@ -86,6 +86,8 @@
 - Made `runtime::BackendReport::unsafe_boundary_enforced` a conservative
   compile-time posture signal that is false for `simd` builds instead of an
   unconditional constant.
+- Hardened `LineWrap::new` so zero-length wrapping is rejected at construction
+  time; checked construction remains available for untrusted configuration.
 
 ## 0.10.0 - 2026-05-17
 

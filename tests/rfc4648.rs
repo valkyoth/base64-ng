@@ -15,6 +15,11 @@ use base64_ng::SecretBuffer;
 #[cfg(feature = "stream")]
 use std::io::{Cursor, Read, Write};
 
+const INVALID_LINE_WRAP: LineWrap = LineWrap {
+    line_len: 0,
+    line_ending: LineEnding::Lf,
+};
+
 #[cfg(feature = "stream")]
 struct ChunkedReader<'a> {
     input: &'a [u8],
@@ -288,7 +293,7 @@ fn named_profiles_expose_expected_policies() {
         Some(MIME)
     );
     assert_eq!(
-        Profile::checked_new(STANDARD, Some(LineWrap::new(0, LineEnding::Lf))),
+        Profile::checked_new(STANDARD, Some(INVALID_LINE_WRAP)),
         None
     );
 }
@@ -1197,7 +1202,7 @@ fn wrapped_encoded_len_accounts_for_inserted_line_endings() {
     assert!(lf_4.is_valid());
     assert_eq!(LineWrap::checked_new(4, LineEnding::Lf), Some(lf_4));
     assert_eq!(LineWrap::checked_new(0, LineEnding::Lf), None);
-    assert!(!LineWrap::new(0, LineEnding::Lf).is_valid());
+    assert!(!INVALID_LINE_WRAP.is_valid());
 
     assert_eq!(wrapped_encoded_len(0, true, lf_4), Ok(0));
     assert_eq!(wrapped_encoded_len(5, true, lf_4), Ok(9));
@@ -1211,11 +1216,11 @@ fn wrapped_encoded_len_accounts_for_inserted_line_endings() {
         Some(8)
     );
     assert_eq!(
-        wrapped_encoded_len(5, true, LineWrap::new(0, LineEnding::Lf)),
+        wrapped_encoded_len(5, true, INVALID_LINE_WRAP),
         Err(EncodeError::InvalidLineWrap { line_len: 0 })
     );
     assert_eq!(
-        checked_wrapped_encoded_len(5, true, LineWrap::new(0, LineEnding::Lf)),
+        checked_wrapped_encoded_len(5, true, INVALID_LINE_WRAP),
         None
     );
     assert_eq!(LineEnding::Lf.as_bytes(), b"\n");
@@ -1236,6 +1241,12 @@ fn wrapped_encoded_len_accounts_for_inserted_line_endings() {
     assert_eq!(LineWrap::PEM_CRLF.line_ending(), LineEnding::CrLf);
     assert_eq!(LineWrap::MIME.to_string(), "76:CRLF");
     assert_eq!(LineWrap::PEM.to_string(), "64:LF");
+}
+
+#[test]
+#[should_panic(expected = "base64 line wrap length must be non-zero")]
+fn line_wrap_new_rejects_zero_length() {
+    let _ = LineWrap::new(0, LineEnding::Lf);
 }
 
 #[test]
@@ -1278,7 +1289,7 @@ fn encode_slice_wrapped_reports_errors_and_clear_tail_scrubs() {
     );
 
     assert_eq!(
-        STANDARD.encode_slice_wrapped(b"hello", &mut too_small, LineWrap::new(0, LineEnding::Lf)),
+        STANDARD.encode_slice_wrapped(b"hello", &mut too_small, INVALID_LINE_WRAP),
         Err(EncodeError::InvalidLineWrap { line_len: 0 })
     );
 
@@ -1318,7 +1329,7 @@ fn encode_wrapped_buffer_uses_stack_backed_output() {
     );
     assert_eq!(
         STANDARD
-            .encode_wrapped_buffer::<9>(b"hello", LineWrap::new(0, LineEnding::Lf))
+            .encode_wrapped_buffer::<9>(b"hello", INVALID_LINE_WRAP)
             .unwrap_err(),
         EncodeError::InvalidLineWrap { line_len: 0 }
     );
@@ -1395,7 +1406,7 @@ fn decode_slice_wrapped_rejects_malformed_line_profiles() {
         Err(DecodeError::InvalidLineWrap { index: 0 })
     );
     assert_eq!(
-        STANDARD.decode_slice_wrapped(b"aGVs\nbG8=", &mut output, LineWrap::new(0, LineEnding::Lf)),
+        STANDARD.decode_slice_wrapped(b"aGVs\nbG8=", &mut output, INVALID_LINE_WRAP),
         Err(DecodeError::InvalidLineWrap { index: 0 })
     );
     assert!(!STANDARD.validate_wrapped(b"aG\nVsbG8=", wrap));
@@ -2738,7 +2749,7 @@ fn explicit_profile_secret_helpers_round_trip() {
 
     assert_eq!(
         STANDARD
-            .encode_wrapped_secret(b"hello", LineWrap::new(0, LineEnding::Lf))
+            .encode_wrapped_secret(b"hello", INVALID_LINE_WRAP)
             .unwrap_err(),
         EncodeError::InvalidLineWrap { line_len: 0 }
     );

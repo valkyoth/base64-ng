@@ -232,7 +232,8 @@ allocation-free policy inspection. `name()` and `Display` return printable
 identifiers such as `LF` and `CRLF`; `as_str()` returns the literal line-ending
 bytes. `LineWrap` exposes `line_len()`, `line_ending()`, and `is_valid()` for
 const-friendly policy checks and implements `Display` as `line_len:name`, for
-example `76:CRLF`.
+example `76:CRLF`. `LineWrap::new` rejects zero line lengths; use
+`LineWrap::checked_new` when wrapping policy comes from configuration.
 
 Named profiles carry the wrapping policy for common protocols:
 

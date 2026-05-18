@@ -2465,8 +2465,18 @@ impl LineWrap {
     pub const PEM_CRLF: Self = Self::new(64, LineEnding::CrLf);
 
     /// Creates a wrapping policy.
+    ///
+    /// Use [`Self::checked_new`] when the line length comes from
+    /// configuration or another untrusted source.
+    ///
+    /// # Panics
+    ///
+    /// Panics when `line_len` is zero. Base64 wrapping requires a non-zero
+    /// encoded line length; accepting zero would make progress impossible for
+    /// wrapped encoders.
     #[must_use]
     pub const fn new(line_len: usize, line_ending: LineEnding) -> Self {
+        assert!(line_len != 0, "base64 line wrap length must be non-zero");
         Self {
             line_len,
             line_ending,
@@ -3856,7 +3866,7 @@ pub const fn wrapped_encoded_len(
 ///
 /// let wrap = LineWrap::new(4, LineEnding::Lf);
 /// assert_eq!(checked_wrapped_encoded_len(5, true, wrap), Some(9));
-/// assert_eq!(checked_wrapped_encoded_len(5, true, LineWrap::new(0, LineEnding::Lf)), None);
+/// assert_eq!(LineWrap::checked_new(0, LineEnding::Lf), None);
 /// ```
 #[must_use]
 pub const fn checked_wrapped_encoded_len(
