@@ -158,6 +158,10 @@ Decision rationale:
   redacted formatting and drop-time cleanup. The raw-vector escape hatch is the
   deliberately loud
   `ExposedSecretVec::into_exposed_unprotected_vec_caller_must_zeroize`.
+- `SecretBuffer::try_into_exposed_string` returns `ExposedSecretString`, which
+  keeps redacted formatting and drop-time cleanup. The raw-string escape hatch
+  is the deliberately loud
+  `ExposedSecretString::into_exposed_unprotected_string_caller_must_zeroize`.
 - Drop-time cleanup uses the crate's volatile best-effort wipe helper for
   initialized bytes and vector spare capacity.
 - Equality is intentionally not exposed through `PartialEq`/`==`. Callers must
@@ -172,7 +176,8 @@ Stable boundary:
 - Keep redaction as the default formatting behavior.
 - Keep `expose_secret`, `into_exposed_vec`,
   `into_exposed_unprotected_vec_caller_must_zeroize`, and
-  `try_into_exposed_string` explicit.
+  `try_into_exposed_string`,
+  `into_exposed_unprotected_string_caller_must_zeroize` explicit.
 - Do not claim formal zeroization or allocator-wide cleanup.
 - Do not add broad conversions that hide profile, alphabet, padding, or
   wrapping policy.

@@ -558,7 +558,10 @@ is unavoidable, call
 `into_exposed_unprotected_vec_caller_must_zeroize`; that method name is
 intentionally loud because cleanup becomes the caller's responsibility.
 `try_into_exposed_string` provides an explicit escape hatch for UTF-8 text and
-returns the redacted wrapper unchanged when the bytes are not valid UTF-8.
+returns an `ExposedSecretString`, which keeps redacted formatting and
+best-effort drop-time cleanup. If a raw `String` is unavoidable, call
+`into_exposed_unprotected_string_caller_must_zeroize`; cleanup then becomes the
+caller responsibility. Invalid UTF-8 returns the redacted wrapper unchanged.
 
 `SecretBuffer` also implements `From<Vec<u8>>` and `From<String>` for callers
 that already own sensitive bytes or text and want to move them into the

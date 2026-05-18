@@ -286,6 +286,38 @@ pub mod runtime {
         }
     }
 
+    /// Constant-time result-gate barrier posture for this build and target.
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+    #[non_exhaustive]
+    pub enum CtGatePosture {
+        /// The target uses a native speculation barrier before public CT
+        /// success/failure or equality-result branches.
+        HardwareSpeculationBarrier,
+        /// The target uses an ordering fence where the base ISA does not
+        /// provide a canonical speculation barrier.
+        OrderingFence,
+        /// The target uses compiler fences only.
+        CompilerFenceOnly,
+    }
+
+    impl CtGatePosture {
+        /// Returns the stable lowercase identifier for this CT gate posture.
+        #[must_use]
+        pub const fn as_str(self) -> &'static str {
+            match self {
+                Self::HardwareSpeculationBarrier => "hardware-speculation-barrier",
+                Self::OrderingFence => "ordering-fence",
+                Self::CompilerFenceOnly => "compiler-fence-only",
+            }
+        }
+    }
+
+    impl core::fmt::Display for CtGatePosture {
+        fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+            formatter.write_str(self.as_str())
+        }
+    }
+
     /// Deployment policy for runtime backend assertions.
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     #[non_exhaustive]
@@ -374,6 +406,8 @@ pub mod runtime {
         pub security_posture: SecurityPosture,
         /// Current wipe-barrier posture.
         pub wipe_posture: WipePosture,
+        /// Current constant-time result-gate barrier posture.
+        pub ct_gate_posture: CtGatePosture,
     }
 
     /// Compact structured backend snapshot for logging and policy evidence.
@@ -401,6 +435,8 @@ pub mod runtime {
         pub security_posture: &'static str,
         /// Stable wipe-barrier posture identifier.
         pub wipe_posture: &'static str,
+        /// Stable constant-time result-gate barrier posture identifier.
+        pub ct_gate_posture: &'static str,
     }
 
     impl core::fmt::Display for BackendReport {
@@ -413,12 +449,13 @@ pub mod runtime {
             write_feature_list(formatter, self.candidate_required_cpu_features())?;
             write!(
                 formatter,
-                " simd_feature_enabled={} accelerated_backend_active={} unsafe_boundary_enforced={} security_posture={} wipe_posture={}",
+                " simd_feature_enabled={} accelerated_backend_active={} unsafe_boundary_enforced={} security_posture={} wipe_posture={} ct_gate_posture={}",
                 self.simd_feature_enabled,
                 self.accelerated_backend_active,
                 self.unsafe_boundary_enforced,
                 self.security_posture,
                 self.wipe_posture,
+                self.ct_gate_posture,
             )
         }
     }
@@ -486,6 +523,7 @@ pub mod runtime {
                 unsafe_boundary_enforced: self.unsafe_boundary_enforced,
                 security_posture: self.security_posture.as_str(),
                 wipe_posture: self.wipe_posture.as_str(),
+                ct_gate_posture: self.ct_gate_posture.as_str(),
             }
         }
     }
@@ -522,6 +560,7 @@ pub mod runtime {
             unsafe_boundary_enforced,
             security_posture,
             wipe_posture: wipe_posture(),
+            ct_gate_posture: ct_gate_posture(),
         }
     }
 
@@ -537,6 +576,21 @@ pub mod runtime {
             WipePosture::HardwareFence
         } else {
             WipePosture::CompilerFenceOnly
+        }
+    }
+
+    const fn ct_gate_posture() -> CtGatePosture {
+        if cfg!(any(
+            target_arch = "aarch64",
+            target_arch = "arm",
+            target_arch = "x86",
+            target_arch = "x86_64",
+        )) {
+            CtGatePosture::HardwareSpeculationBarrier
+        } else if cfg!(any(target_arch = "riscv32", target_arch = "riscv64")) {
+            CtGatePosture::OrderingFence
+        } else {
+            CtGatePosture::CompilerFenceOnly
         }
     }
 
@@ -2420,6 +2474,17 @@ pub mod ct {
         /// partially decoded bytes from rejected input should not remain in the
         /// caller-owned output buffer.
         ///
+        /// # Warning: Transient Plaintext Window
+        ///
+        /// Decoded bytes are written to `output` progressively during the
+        /// fixed-shape decode loop before malformed-input detection is
+        /// complete. On error, the entire `output` is wiped before returning,
+        /// but a concurrent same-process observer with access to `output`
+        /// during the call may observe partial decoded plaintext. For
+        /// shared-memory or sandboxed deployments where even transient writes
+        /// are unacceptable, use [`Self::decode_slice_staged_clear_tail`] with
+        /// a private staging buffer.
+        ///
         /// # Examples
         ///
         /// ```
@@ -3016,8 +3081,10 @@ impl<const CAP: usize> Clone for EncodedBuffer<CAP> {
     ///
     /// Security note: cloning duplicates the visible bytes in memory. Both the
     /// original and the clone must be dropped or explicitly cleared before the
-    /// duplicated bytes are gone on the crate's best-effort cleanup path. Avoid
-    /// cloning encoded secret material; use `SecretBuffer` when redacted
+    /// duplicated bytes are gone on the crate's best-effort cleanup path. The
+    /// compiler may also create temporary stack copies while performing the
+    /// copy; those intermediates are outside this crate's cleanup boundary.
+    /// Avoid cloning encoded secret material; use `SecretBuffer` when redacted
     /// formatting and heap-owned secret handling are required.
     fn clone(&self) -> Self {
         let mut output = Self::new();
@@ -3248,7 +3315,9 @@ impl<const CAP: usize> Clone for DecodedBuffer<CAP> {
     ///
     /// Security note: cloning duplicates decoded bytes in memory. Both the
     /// original and the clone must be dropped or explicitly cleared before the
-    /// duplicated bytes are gone on the crate's best-effort cleanup path. For
+    /// duplicated bytes are gone on the crate's best-effort cleanup path. The
+    /// compiler may also create temporary stack copies while performing the
+    /// copy; those intermediates are outside this crate's cleanup boundary. For
     /// high-assurance applications, avoid cloning decoded key material and use
     /// `SecretBuffer` for heap-owned secrets without a `Clone` implementation.
     fn clone(&self) -> Self {
@@ -3454,6 +3523,99 @@ impl AsMut<[u8]> for ExposedSecretVec {
     }
 }
 
+/// Owned secret UTF-8 text extracted from [`SecretBuffer`].
+///
+/// This wrapper keeps redacted formatting and best-effort drop-time cleanup
+/// after a [`SecretBuffer`] is consumed for string interop. Use
+/// [`Self::into_exposed_unprotected_string_caller_must_zeroize`] only when a
+/// raw `String` is unavoidable and the caller will handle cleanup.
+#[cfg(feature = "alloc")]
+pub struct ExposedSecretString {
+    text: alloc::string::String,
+}
+
+#[cfg(feature = "alloc")]
+impl ExposedSecretString {
+    /// Wraps an owned UTF-8 string as exposed secret text.
+    #[must_use]
+    pub fn from_string(text: alloc::string::String) -> Self {
+        Self { text }
+    }
+
+    /// Returns the length of the secret text in bytes.
+    #[must_use]
+    pub fn len(&self) -> usize {
+        self.text.len()
+    }
+
+    /// Returns whether the secret text is empty.
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.text.is_empty()
+    }
+
+    /// Reveals the secret text.
+    ///
+    /// This method is intentionally named to make secret access explicit at
+    /// the call site.
+    #[must_use]
+    pub fn expose_secret(&self) -> &str {
+        &self.text
+    }
+
+    /// Reveals the secret text as bytes.
+    ///
+    /// This method is intentionally named to make secret access explicit at
+    /// the call site.
+    #[must_use]
+    pub fn expose_secret_bytes(&self) -> &[u8] {
+        self.text.as_bytes()
+    }
+
+    /// Consumes the wrapper and returns a raw `String`.
+    ///
+    /// This is an unprotected escape hatch. The returned string is no longer
+    /// redacted by formatting and will not be cleared by this crate on drop.
+    /// Callers must clear it with their own approved zeroization policy.
+    #[must_use = "caller must zeroize the returned String"]
+    pub fn into_exposed_unprotected_string_caller_must_zeroize(mut self) -> alloc::string::String {
+        core::mem::take(&mut self.text)
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl core::fmt::Debug for ExposedSecretString {
+    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        formatter
+            .debug_struct("ExposedSecretString")
+            .field("text", &"<redacted>")
+            .field("len", &self.len())
+            .finish()
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl core::fmt::Display for ExposedSecretString {
+    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        formatter.write_str("<redacted>")
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl Drop for ExposedSecretString {
+    fn drop(&mut self) {
+        let mut bytes = core::mem::take(&mut self.text).into_bytes();
+        wipe_vec_all(&mut bytes);
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl AsRef<str> for ExposedSecretString {
+    fn as_ref(&self) -> &str {
+        self.expose_secret()
+    }
+}
+
 #[cfg(feature = "alloc")]
 impl SecretBuffer {
     /// Wraps an existing vector as sensitive material.
@@ -3521,14 +3683,13 @@ impl SecretBuffer {
     /// Consumes the wrapper and returns the owned secret bytes as UTF-8 text.
     ///
     /// This is an explicit escape hatch for interop with APIs that require an
-    /// owned string. The returned `String` is no longer redacted by formatting
-    /// and will not be cleared by `SecretBuffer` on drop; callers that keep
-    /// handling sensitive data should arrange their own cleanup.
+    /// owned string-like value. The returned [`ExposedSecretString`] remains
+    /// redacted by formatting and clears its heap allocation on drop.
     ///
     /// If the secret bytes are not valid UTF-8, the original redacted wrapper
     /// is returned unchanged.
-    #[must_use = "the returned String has no drop-time cleanup; caller must overwrite it when done"]
-    pub fn try_into_exposed_string(self) -> Result<alloc::string::String, Self> {
+    #[must_use = "handle invalid UTF-8 errors and keep the returned wrapper protected"]
+    pub fn try_into_exposed_string(self) -> Result<ExposedSecretString, Self> {
         if core::str::from_utf8(self.expose_secret()).is_err() {
             return Err(self);
         }
@@ -3537,7 +3698,7 @@ impl SecretBuffer {
             .into_exposed_vec()
             .into_exposed_unprotected_vec_caller_must_zeroize();
         match alloc::string::String::from_utf8(bytes) {
-            Ok(text) => Ok(text),
+            Ok(text) => Ok(ExposedSecretString::from_string(text)),
             Err(error) => Err(Self::from_vec(error.into_bytes())),
         }
     }
@@ -4637,6 +4798,7 @@ fn constant_time_eq_public_len(left: &[u8], right: &[u8]) -> bool {
     let diff = left.iter().zip(right).fold(0u8, |diff, (left, right)| {
         core::hint::black_box(core::hint::black_box(diff) | core::hint::black_box(*left ^ *right))
     });
+    ct_error_gate_barrier(diff, 0);
     diff == 0
 }
 
@@ -5278,7 +5440,7 @@ where
                     &mut output_offset,
                     &mut column,
                     wrap,
-                );
+                )?;
                 wipe_bytes(&mut scratch[..encoded]);
                 input_offset += take;
             }
@@ -5292,7 +5454,7 @@ where
             let mut read = required;
             while read < required + encoded {
                 let byte = output[read];
-                write_wrapped_byte(byte, output, &mut output_offset, &mut column, wrap);
+                write_wrapped_byte(byte, output, &mut output_offset, &mut column, wrap)?;
                 read += 1;
             }
             wipe_bytes(&mut output[required..required + encoded]);
@@ -6197,10 +6359,11 @@ fn write_wrapped_bytes(
     output_offset: &mut usize,
     column: &mut usize,
     wrap: LineWrap,
-) {
+) -> Result<(), EncodeError> {
     for byte in input {
-        write_wrapped_byte(*byte, output, output_offset, column, wrap);
+        write_wrapped_byte(*byte, output, output_offset, column, wrap)?;
     }
+    Ok(())
 }
 
 fn write_wrapped_byte(
@@ -6209,15 +6372,17 @@ fn write_wrapped_byte(
     output_offset: &mut usize,
     column: &mut usize,
     wrap: LineWrap,
-) {
+) -> Result<(), EncodeError> {
     if *column == wrap.line_len {
         let line_ending = wrap.line_ending.as_bytes();
         let mut index = 0;
         while index < line_ending.len() {
-            debug_assert!(
-                *output_offset < output.len(),
-                "write_wrapped_byte: line ending output_offset out of bounds"
-            );
+            if *output_offset >= output.len() {
+                return Err(EncodeError::OutputTooSmall {
+                    required: *output_offset + 1,
+                    available: output.len(),
+                });
+            }
             output[*output_offset] = line_ending[index];
             *output_offset += 1;
             index += 1;
@@ -6225,13 +6390,16 @@ fn write_wrapped_byte(
         *column = 0;
     }
 
-    debug_assert!(
-        *output_offset < output.len(),
-        "write_wrapped_byte: output_offset out of bounds"
-    );
+    if *output_offset >= output.len() {
+        return Err(EncodeError::OutputTooSmall {
+            required: *output_offset + 1,
+            available: output.len(),
+        });
+    }
     output[*output_offset] = byte;
     *output_offset += 1;
     *column += 1;
+    Ok(())
 }
 
 /// Encoding error.
@@ -7181,6 +7349,17 @@ fn ct_error_gate_barrier(invalid_byte: u8, invalid_padding: u8) {
             core::arch::asm!("isb sy", options(nostack, preserves_flags));
         }
     }
+
+    #[cfg(all(not(miri), any(target_arch = "riscv32", target_arch = "riscv64")))]
+    {
+        // RISC-V base ISA does not provide a canonical speculation barrier.
+        // `fence rw, rw` is the available ordering primitive for the CT public
+        // result gate and is reported separately as `ordering-fence`.
+        // SAFETY: the assembly block does not access memory.
+        unsafe {
+            core::arch::asm!("fence rw, rw", options(nostack, preserves_flags));
+        }
+    }
 }
 
 fn ct_validate_decode<A: Alphabet, const PAD: bool>(input: &[u8]) -> Result<(), DecodeError> {
@@ -7430,6 +7609,7 @@ fn ct_decode_padded_in_place<A: Alphabet>(buffer: &mut [u8]) -> Result<usize, De
     write += final_written;
 
     if write != required {
+        ct_error_gate_barrier(invalid_byte, invalid_padding);
         wipe_bytes(buffer);
         return Err(DecodeError::InvalidInput);
     }
@@ -7581,6 +7761,7 @@ fn ct_decode_unpadded_in_place<A: Alphabet>(buffer: &mut [u8]) -> Result<usize, 
     }
 
     if write != required {
+        ct_error_gate_barrier(invalid_byte, invalid_padding);
         wipe_bytes(buffer);
         return Err(DecodeError::InvalidInput);
     }

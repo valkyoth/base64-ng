@@ -46,6 +46,10 @@ The caller still owns:
 - treating `ExposedSecretVec::into_exposed_unprotected_vec_caller_must_zeroize`
   as a boundary where redacted formatting and crate-owned drop-time cleanup
   intentionally stop
+- treating
+  `ExposedSecretString::into_exposed_unprotected_string_caller_must_zeroize` as
+  a boundary where redacted formatting and crate-owned drop-time cleanup
+  intentionally stop
 - process-wide memory hygiene such as core-dump policy, swap policy, crash
   handling, allocator behavior, and log retention
 - deciding whether the constant-time-oriented API is sufficient for the local

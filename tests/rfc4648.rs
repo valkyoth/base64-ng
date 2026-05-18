@@ -531,10 +531,15 @@ fn runtime_backend_report_keeps_scalar_active() {
     assert!(display.contains("candidate_required_cpu_features="));
     assert!(display.contains("accelerated_backend_active=false"));
     assert!(display.contains("wipe_posture="));
+    assert!(display.contains("ct_gate_posture="));
     assert!(!report.accelerated_backend_active);
     assert_eq!(report.unsafe_boundary_enforced, !cfg!(feature = "simd"));
     assert_eq!(report.simd_feature_enabled, cfg!(feature = "simd"));
     assert_eq!(report.wipe_posture.as_str(), report.snapshot().wipe_posture);
+    assert_eq!(
+        report.ct_gate_posture.as_str(),
+        report.snapshot().ct_gate_posture
+    );
     if cfg!(any(
         target_arch = "aarch64",
         target_arch = "arm",
@@ -546,6 +551,27 @@ fn runtime_backend_report_keeps_scalar_active() {
         assert_eq!(report.wipe_posture, runtime::WipePosture::HardwareFence);
     } else {
         assert_eq!(report.wipe_posture, runtime::WipePosture::CompilerFenceOnly);
+    }
+    if cfg!(any(
+        target_arch = "aarch64",
+        target_arch = "arm",
+        target_arch = "x86",
+        target_arch = "x86_64",
+    )) {
+        assert_eq!(
+            report.ct_gate_posture,
+            runtime::CtGatePosture::HardwareSpeculationBarrier
+        );
+    } else if cfg!(any(target_arch = "riscv32", target_arch = "riscv64")) {
+        assert_eq!(
+            report.ct_gate_posture,
+            runtime::CtGatePosture::OrderingFence
+        );
+    } else {
+        assert_eq!(
+            report.ct_gate_posture,
+            runtime::CtGatePosture::CompilerFenceOnly
+        );
     }
     if cfg!(feature = "simd")
         && cfg!(feature = "std")
@@ -611,6 +637,7 @@ fn runtime_backend_policy_assertions_are_explicit() {
         unsafe_boundary_enforced: false,
         security_posture: runtime::SecurityPosture::SimdCandidateScalarActive,
         wipe_posture: runtime::WipePosture::HardwareFence,
+        ct_gate_posture: runtime::CtGatePosture::HardwareSpeculationBarrier,
     };
     let artificial_error = runtime::BackendPolicyError {
         policy: runtime::BackendPolicy::HighAssuranceScalarOnly,
@@ -618,7 +645,7 @@ fn runtime_backend_policy_assertions_are_explicit() {
     };
     assert_eq!(
         artificial_error.to_string(),
-        "runtime backend policy `high-assurance-scalar-only` was not satisfied (active=scalar candidate=avx2 candidate_detection_mode=compile-time-target-features candidate_required_cpu_features=[avx2] simd_feature_enabled=true accelerated_backend_active=false unsafe_boundary_enforced=false security_posture=simd-candidate-scalar-active wipe_posture=hardware-fence)"
+        "runtime backend policy `high-assurance-scalar-only` was not satisfied (active=scalar candidate=avx2 candidate_detection_mode=compile-time-target-features candidate_required_cpu_features=[avx2] simd_feature_enabled=true accelerated_backend_active=false unsafe_boundary_enforced=false security_posture=simd-candidate-scalar-active wipe_posture=hardware-fence ct_gate_posture=hardware-speculation-barrier)"
     );
 
     let simd_feature_policy =
@@ -2774,7 +2801,14 @@ fn secret_buffer_from_vec_preserves_visible_bytes_with_spare_capacity() {
     assert_eq!(secret.expose_secret(), b"hello");
 
     let secret = SecretBuffer::from_slice(b"token");
-    assert_eq!(secret.try_into_exposed_string().unwrap(), "token");
+    let exposed = secret.try_into_exposed_string().unwrap();
+    assert_eq!(exposed.expose_secret(), "token");
+    assert_eq!(exposed.expose_secret_bytes(), b"token");
+    assert_eq!(
+        format!("{exposed:?}"),
+        r#"ExposedSecretString { text: "<redacted>", len: 5 }"#
+    );
+    assert_eq!(exposed.to_string(), "<redacted>");
 
     let secret = SecretBuffer::from_slice(b"\xff");
     let secret = secret.try_into_exposed_string().unwrap_err();

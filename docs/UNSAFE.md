@@ -161,7 +161,8 @@ Preconditions:
 Unsafe operation:
 
 - `core::arch::asm!` emits `lfence` on non-Miri `x86`/`x86_64`, `isb sy` on
-  non-Miri `arm`, and `isb sy; hint #20` on non-Miri `aarch64`.
+  non-Miri `arm`, `isb sy; hint #20` on non-Miri `aarch64`, and
+  `fence rw, rw` on non-Miri `riscv32`/`riscv64`.
 
 Safety argument:
 
@@ -176,6 +177,9 @@ Limitations:
 - This is defense in depth against speculation around the final public
   malformed-input result. It does not make the ct decoder a formally verified
   hardware side-channel resistant primitive.
+- RISC-V base ISA has no canonical speculation barrier. The crate reports its
+  CT gate posture as `ordering-fence` on RISCV rather than
+  `hardware-speculation-barrier`.
 - Unsupported architectures fall back to the compiler fence only.
 
 ### `wipe_vec_spare_capacity`
