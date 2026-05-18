@@ -2963,24 +2963,36 @@ fn stream_encoder_write_failure_preserves_pending_input() {
 
 #[cfg(feature = "stream")]
 #[test]
-fn stream_encoder_direct_write_reports_partial_progress() {
+fn stream_encoder_direct_write_buffers_tail_bytes() {
     let mut encoder = Encoder::new(Vec::new(), STANDARD);
 
     let written = encoder.write(b"hello").unwrap();
-    assert_eq!(written, 3);
+    assert_eq!(written, 5);
     assert_eq!(encoder.get_ref(), b"");
     assert_eq!(encoder.buffered_output_len(), 4);
     assert!(encoder.has_buffered_output());
-    assert!(!encoder.can_into_inner());
-
-    let written = encoder.write(b"lo").unwrap();
-    assert_eq!(written, 2);
-    assert_eq!(encoder.get_ref(), b"aGVs");
     assert_eq!(encoder.pending_len(), 2);
-    assert!(!encoder.has_buffered_output());
+    assert!(!encoder.can_into_inner());
 
     let encoded = encoder.finish().unwrap();
     assert_eq!(encoded, b"aGVsbG8=");
+}
+
+#[cfg(feature = "stream")]
+#[test]
+fn stream_encoder_direct_write_reports_partial_progress_for_large_input() {
+    let input = vec![b'a'; 1025];
+    let mut encoder = Encoder::new(Vec::new(), STANDARD);
+
+    let written = encoder.write(&input).unwrap();
+    assert_eq!(written, 768);
+    assert_eq!(encoder.buffered_output_len(), 1024);
+    assert_eq!(encoder.pending_len(), 0);
+    assert!(encoder.has_buffered_output());
+
+    encoder.write_all(&input[written..]).unwrap();
+    let encoded = encoder.finish().unwrap();
+    assert_eq!(encoded, STANDARD.encode_vec(&input).unwrap());
 }
 
 #[cfg(feature = "stream")]
@@ -2993,14 +3005,14 @@ fn stream_encoder_drains_buffered_output_with_short_writes() {
     };
     let mut encoder = Encoder::new(writer, STANDARD);
 
-    assert_eq!(encoder.write(b"hello").unwrap(), 3);
+    assert_eq!(encoder.write(b"hello").unwrap(), 5);
     assert_eq!(encoder.buffered_output_len(), 4);
+    assert_eq!(encoder.pending_len(), 2);
     encoder.flush().unwrap();
     assert_eq!(encoder.buffered_output_len(), 0);
     assert_eq!(encoder.get_ref().output, b"aGVs");
     assert_eq!(encoder.get_ref().write_calls, 2);
 
-    assert_eq!(encoder.write(b"lo").unwrap(), 2);
     let writer = encoder.finish().unwrap();
     assert_eq!(writer.output, b"aGVsbG8=");
     assert_eq!(writer.write_calls, 4);

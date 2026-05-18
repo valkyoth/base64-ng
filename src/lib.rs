@@ -913,26 +913,34 @@ pub mod stream {
                 result?;
                 self.clear_pending();
                 consumed += needed;
-                return Ok(consumed);
             }
 
             let remaining = &input[consumed..];
             let full_len = remaining.len() / 3 * 3;
             if full_len > 0 {
-                let mut take = core::cmp::min(full_len, 768);
+                let max_by_queue = self.output.available_capacity() / 4 * 3;
+                let mut take = core::cmp::min(full_len, core::cmp::min(768, max_by_queue));
                 take -= take % 3;
-                debug_assert!(take > 0);
+
+                if take == 0 {
+                    return Ok(consumed);
+                }
 
                 let mut encoded = [0u8; 1024];
                 self.queue_encoded_temp(&remaining[..take], &mut encoded)?;
-                return Ok(consumed + take);
+                consumed += take;
+
+                if take < full_len {
+                    return Ok(consumed);
+                }
             }
 
-            let tail = &remaining[full_len..];
+            let tail = &input[consumed..];
             self.pending[..tail.len()].copy_from_slice(tail);
             self.pending_len = tail.len();
+            consumed += tail.len();
 
-            Ok(input.len())
+            Ok(consumed)
         }
 
         fn flush(&mut self) -> io::Result<()> {

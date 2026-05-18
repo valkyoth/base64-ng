@@ -8,6 +8,10 @@
   contract: Kani harnesses remain in-tree and release-gated, but incompatible
   Kani compiler runs are policy skips backed by replacement evidence, not
   proofs.
+- Hardened `stream::Encoder::write` so accepted input after a completed
+  pending quantum continues through the current slice when buffer capacity
+  allows, including preserving final 1-2 byte tails instead of forcing an
+  early short write.
 
 ## 0.12.0 - 2026-05-17
 
