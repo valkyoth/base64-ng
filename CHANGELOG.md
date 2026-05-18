@@ -56,6 +56,8 @@
   evidence to include an all-features LTO artifact for cleanup-boundary review.
 - Added `#[must_use]` and stronger `# Security` rustdoc guidance to standard
   decode-slice APIs so secret-bearing callers are directed to the `ct` module.
+- Added debug bounds assertions around wrapped-output writes and made the
+  wrapped-encode scratch-buffer fallback use explicit checked arithmetic.
 
 ## 0.12.0 - 2026-05-17
 

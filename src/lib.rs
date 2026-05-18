@@ -4910,7 +4910,13 @@ where
             return Ok(0);
         }
 
-        if output.len() < required.saturating_add(encoded_len) {
+        // If the temporary in-buffer layout size overflows, fall back to the
+        // fixed scratch buffer path rather than relying on saturated arithmetic.
+        let combined_required = match required.checked_add(encoded_len) {
+            Some(len) => len,
+            None => usize::MAX,
+        };
+        if output.len() < combined_required {
             let mut scratch = [0u8; 1024];
             let mut input_offset = 0;
             let mut output_offset = 0;
@@ -5865,6 +5871,10 @@ fn write_wrapped_byte(
         let line_ending = wrap.line_ending.as_bytes();
         let mut index = 0;
         while index < line_ending.len() {
+            debug_assert!(
+                *output_offset < output.len(),
+                "write_wrapped_byte: line ending output_offset out of bounds"
+            );
             output[*output_offset] = line_ending[index];
             *output_offset += 1;
             index += 1;
@@ -5872,6 +5882,10 @@ fn write_wrapped_byte(
         *column = 0;
     }
 
+    debug_assert!(
+        *output_offset < output.len(),
+        "write_wrapped_byte: output_offset out of bounds"
+    );
     output[*output_offset] = byte;
     *output_offset += 1;
     *column += 1;
