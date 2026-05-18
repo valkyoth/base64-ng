@@ -35,7 +35,7 @@ copy_single_asm() {
     test -s "$output_file"
 }
 
-require_lto_cleanup_symbol() {
+require_lto_symbol() {
     symbol="$1"
 
     if ! grep -F -q ".text._ZN9base64_ng${symbol}" "$output_dir/base64_ng-all-features-lto.s"; then
@@ -59,8 +59,9 @@ CARGO_TARGET_DIR="target/ct-asm-all-features-lto" \
 RUSTFLAGS="-C lto=fat -C embed-bitcode=yes" \
     cargo rustc --release --lib --all-features -- --emit=asm
 copy_single_asm "target/ct-asm-all-features-lto" "$output_dir/base64_ng-all-features-lto.s"
-require_lto_cleanup_symbol "10wipe_bytes"
-require_lto_cleanup_symbol "12wipe_barrier"
+require_lto_symbol "10wipe_bytes"
+require_lto_symbol "12wipe_barrier"
+require_lto_symbol "27constant_time_eq_public_len"
 
 {
     echo "base64-ng constant-time assembly evidence"
@@ -85,8 +86,9 @@ require_lto_cleanup_symbol "12wipe_barrier"
     echo "- ct_mask_* arithmetic helpers"
     echo "- absence of secret-indexed lookup tables in ct symbol mapping"
     echo "- absence of secret-byte-class branches in fixed-length ct decode loops"
+    echo "- constant_time_eq_public_len equal-length comparison helper"
     echo "- wipe_bytes and wipe_barrier remain non-inlined cleanup call boundaries"
-    echo "- LTO artifact contains separate wipe_bytes and wipe_barrier text symbols"
+    echo "- LTO artifact contains separate wipe_bytes, wipe_barrier, and constant_time_eq_public_len text symbols"
 } >"$manifest"
 
 echo "ct asm evidence: wrote $output_dir"

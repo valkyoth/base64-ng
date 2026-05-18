@@ -28,6 +28,7 @@ Review focus:
 - `ct_decode_unpadded_in_place`
 - `ct_decode_alphabet_byte`
 - `ct_mask_*` helpers
+- `constant_time_eq_public_len`
 - `wipe_bytes` and `wipe_barrier` cleanup call boundaries
 
 ## Review Questions
@@ -39,6 +40,9 @@ Review focus:
 - Are branches in the reviewed ct path based only on public facts such as
   input length, padding mode, selected alphabet, and caller output capacity?
 - Does generated code keep the scalar ct path independent from SIMD dispatch?
+- Does `constant_time_eq_public_len` remain a separate non-inlined symbol in
+  release and LTO artifacts, and does the equal-length loop scan all bytes
+  rather than lowering into an early-exit compare?
 - Do `wipe_bytes` and `wipe_barrier` remain non-inlined cleanup call
   boundaries in release and LTO artifacts?
 - Are padding length, decoded length, and final success/failure still treated

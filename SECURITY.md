@@ -83,6 +83,12 @@ process memory disclosure bugs. Callers that require a platform-specific formal
 zeroization policy should apply that policy to their own buffers in addition to
 using crate cleanup APIs.
 
+The redacted buffer comparison helpers are dependency-free best-effort
+equal-length scans, not audited MAC, bearer-token, password-hash, or
+authentication-secret comparison primitives. High-assurance applications that
+can admit dependencies should use a reviewed constant-time comparison primitive
+such as `subtle` at the protocol boundary.
+
 For projects that already admit the `zeroize` crate in their own dependency
 policy, the recommended pattern is to keep `base64-ng` dependency-free and
 zeroize the caller-owned buffers at the application boundary:

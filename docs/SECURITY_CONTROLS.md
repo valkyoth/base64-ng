@@ -19,6 +19,15 @@ The mapping is practical adoption guidance, not a certification claim.
 | CWE-208 Observable Timing Discrepancy | Sensitive comparison exits early on the first different byte | `SecretBuffer`, `EncodedBuffer`, and `DecodedBuffer` intentionally avoid `PartialEq`/`==` so best-effort comparison cannot be mistaken for a formal cryptographic primitive. Use explicit `constant_time_eq` for dependency-free equal-length scans; length mismatch returns immediately and is public. |
 | CWE-829 Inclusion of Functionality From Untrusted Control Sphere | Runtime dependency compromise | Published crate has zero external runtime and default dev dependencies; dependency admission is documented and checked. |
 
+The `constant_time_eq` helpers are dependency-free hardening aids, not audited
+MAC, bearer-token, password-hash, or authentication-secret comparison
+primitives. Their implementation is release-evidence-gated through generated
+assembly review, including LTO symbol-presence checks for
+`constant_time_eq_public_len`, but no formal cryptographic constant-time
+comparison guarantee is claimed. High-assurance applications that can admit a
+comparison dependency should use a reviewed primitive such as `subtle` at the
+protocol boundary.
+
 ## Caller Responsibilities
 
 The caller still owns:

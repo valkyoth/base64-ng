@@ -147,6 +147,8 @@ The release gate runs:
 - generated constant-time assembly artifacts through
   `scripts/generate_ct_asm_evidence.sh`
 - manual generated-code review checklist in [CT_ASM_REVIEW.md](CT_ASM_REVIEW.md)
+- LTO symbol-presence checks for non-inlined wipe boundaries and the
+  `constant_time_eq_public_len` equal-length comparison helper
 - Kani proofs through `scripts/check_kani.sh` when Kani is installed and its
   bundled compiler supports this crate's pinned `rust-version`
 - bounded Kani coverage for constant-time-oriented decode result bounds,

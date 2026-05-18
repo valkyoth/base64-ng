@@ -468,7 +468,9 @@ dependency-free best-effort comparison, not a formal cryptographic token/MAC
 comparison primitive. Length mismatch returns immediately and must be treated
 as public protocol information. Applications that require a formally audited
 comparison should admit that dependency at the application boundary, for
-example by comparing exposed bytes with `subtle`.
+example by comparing exposed bytes with `subtle`. Do not use these helpers as
+the sole MAC, bearer-token, password-hash, or authentication-secret comparison
+primitive in high-assurance systems.
 
 `into_exposed_array` is the explicit no-alloc ownership escape hatch for both
 stack-backed buffers. It returns the backing array and visible length, so

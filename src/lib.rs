@@ -2820,6 +2820,12 @@ impl<const CAP: usize> EncodedBuffer<CAP> {
     /// explicit: redacted buffer types do not implement [`PartialEq`] because
     /// `==` would make a best-effort helper look like a formal token/MAC
     /// comparison primitive.
+    ///
+    /// Do not use this helper as the sole MAC, bearer-token, password-hash, or
+    /// authentication-secret comparison primitive in high-assurance systems.
+    /// Applications that can admit dependencies should use a reviewed
+    /// constant-time comparison primitive, such as `subtle`, at the protocol
+    /// boundary.
     #[must_use]
     pub fn constant_time_eq(&self, other: &[u8]) -> bool {
         constant_time_eq_public_len(self.as_bytes(), other)
@@ -3023,6 +3029,12 @@ impl<const CAP: usize> DecodedBuffer<CAP> {
     /// explicit: redacted buffer types do not implement [`PartialEq`] because
     /// `==` would make a best-effort helper look like a formal token/MAC
     /// comparison primitive.
+    ///
+    /// Do not use this helper as the sole MAC, bearer-token, password-hash, or
+    /// authentication-secret comparison primitive in high-assurance systems.
+    /// Applications that can admit dependencies should use a reviewed
+    /// constant-time comparison primitive, such as `subtle`, at the protocol
+    /// boundary.
     #[must_use]
     pub fn constant_time_eq(&self, other: &[u8]) -> bool {
         constant_time_eq_public_len(self.as_bytes(), other)
@@ -3363,6 +3375,12 @@ impl SecretBuffer {
     /// explicit: redacted buffer types do not implement [`PartialEq`] because
     /// `==` would make a best-effort helper look like a formal token/MAC
     /// comparison primitive.
+    ///
+    /// Do not use this helper as the sole MAC, bearer-token, password-hash, or
+    /// authentication-secret comparison primitive in high-assurance systems.
+    /// Applications that can admit dependencies should use a reviewed
+    /// constant-time comparison primitive, such as `subtle`, at the protocol
+    /// boundary.
     #[must_use]
     pub fn constant_time_eq(&self, other: &[u8]) -> bool {
         constant_time_eq_public_len(self.expose_secret(), other)
@@ -4418,6 +4436,7 @@ const fn ct_mask_lt_u8(left: u8, right: u8) -> u8 {
     ct_mask_bit((diff >> 8) as u8)
 }
 
+#[inline(never)]
 fn constant_time_eq_public_len(left: &[u8], right: &[u8]) -> bool {
     if left.len() != right.len() {
         return false;

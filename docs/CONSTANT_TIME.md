@@ -285,8 +285,14 @@ type, and the final equality result as public. The helper scans every byte for
 equal-length inputs before returning. The per-byte difference is passed through
 `core::hint::black_box`; the accumulator is also passed through `black_box`
 after each OR reduction to reduce the risk of release-mode optimizer rewrites
-into early-exit equality checks. This remains a best-effort API and does not
-upgrade `base64-ng` to a formally verified cryptographic constant-time
-comparison crate. Applications that require a formally audited token, MAC, or
-password-hash comparison should admit that dependency at the application
-boundary, for example by comparing exposed bytes with `subtle`.
+into early-exit equality checks. The helper is marked `#[inline(never)]` and
+the release evidence script checks that `constant_time_eq_public_len` remains
+visible as a separate text symbol in the LTO artifact.
+
+This remains a best-effort API and does not upgrade `base64-ng` to a formally
+verified cryptographic constant-time comparison crate. Do not use this helper
+as the sole MAC, bearer-token, password-hash, or authentication-secret
+comparison primitive in high-assurance systems. Applications that require a
+formally audited token, MAC, or password-hash comparison should admit that
+dependency at the application boundary, for example by comparing exposed bytes
+with `subtle`.

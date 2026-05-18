@@ -10,7 +10,8 @@ for required_phrase in \
     "cargo rustc --release --lib --all-features -- --emit=asm" \
     "constant-time-oriented" \
     "transient" \
-    "partial plaintext before the final wipe"
+    "partial plaintext before the final wipe" \
+    "sole MAC, bearer-token"
 do
     if ! grep -qi -- "$required_phrase" docs/CONSTANT_TIME.md; then
         echo "constant-time policy: docs/CONSTANT_TIME.md missing required phrase: $required_phrase" >&2
@@ -39,6 +40,7 @@ for required_source_text in \
     "[\`crate::ct::STANDARD\`]" \
     "[\`crate::ct::URL_SAFE_NO_PAD\`]" \
     "The CT decoder exposes only clear-tail and stack-backed decode APIs." \
+    "Do not use this helper as the sole MAC" \
     "#[must_use = \"handle decode errors; use crate::ct for secret-bearing payloads\"]"
 do
     if ! grep -F -q "$required_source_text" src/lib.rs; then
