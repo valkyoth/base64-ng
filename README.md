@@ -628,8 +628,9 @@ Security commitments:
 - Stable Rust first. Current toolchain pin: Rust `1.95.0`.
 - `no_std` core by default.
 - Scalar encode/decode remains safe Rust.
-- Audited unsafe helpers in `src/lib.rs` perform volatile best-effort wiping so
-  cleanup writes are not optimized away.
+- Audited unsafe helpers in `src/lib.rs` perform volatile best-effort wiping
+  plus an architecture-gated inline assembly barrier where stable Rust supports
+  it, so cleanup writes resist common dead-store elimination.
 - Future unsafe SIMD remains isolated under `src/simd.rs`.
 - Local checks verify that `allow(unsafe_code)` is confined to the volatile
   wipe helpers and SIMD boundary, every unsafe function is inventoried, and

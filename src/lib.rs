@@ -42,6 +42,17 @@
 //! let encoded_len = URL_SAFE_NO_PAD.encode_slice(b"\xfb\xff", &mut encoded).unwrap();
 //! assert_eq!(&encoded[..encoded_len], b"-_8");
 //! ```
+//!
+//! # Zeroization Caveat
+//!
+//! Cleanup APIs and redacted buffers use dependency-free best-effort wiping:
+//! byte-wise volatile zero writes followed by an architecture-gated inline
+//! assembly barrier where stable Rust supports it, and a compiler fence on all
+//! targets. This resists common compiler dead-store elimination, but it is not
+//! a formal zeroization guarantee and cannot clear historical copies,
+//! registers, cache lines, swap, core dumps, or OS-level memory snapshots.
+//! High-assurance applications should apply their own approved zeroization
+//! policy to caller-owned buffers at the protocol boundary.
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
@@ -2494,7 +2505,7 @@ impl core::fmt::Display for LineWrap {
 
 #[allow(unsafe_code)]
 fn wipe_bytes(bytes: &mut [u8]) {
-    for byte in bytes {
+    for byte in bytes.iter_mut() {
         // SAFETY: `byte` comes from a unique mutable slice iterator, so the
         // pointer is non-null, aligned, valid for one `u8` write, and does not
         // alias another live mutable reference during this iteration.
@@ -2502,6 +2513,40 @@ fn wipe_bytes(bytes: &mut [u8]) {
             core::ptr::write_volatile(byte, 0);
         }
     }
+    wipe_barrier(bytes.as_mut_ptr(), bytes.len());
+}
+
+#[inline(never)]
+#[allow(unsafe_code)]
+fn wipe_barrier(ptr: *mut u8, len: usize) {
+    let _ = (ptr, len);
+
+    #[cfg(all(
+        not(miri),
+        any(
+            target_arch = "aarch64",
+            target_arch = "arm",
+            target_arch = "riscv32",
+            target_arch = "riscv64",
+            target_arch = "x86",
+            target_arch = "x86_64"
+        )
+    ))]
+    {
+        // SAFETY: this empty assembly block does not read or write through the
+        // pointer. The pointer and length are passed as opaque inputs so the
+        // optimizer must conservatively keep the preceding volatile writes
+        // visible across this cleanup boundary.
+        unsafe {
+            core::arch::asm!(
+                "/* {0} {1} */",
+                in(reg) ptr,
+                in(reg) len,
+                options(nostack, preserves_flags)
+            );
+        }
+    }
+
     core::sync::atomic::compiler_fence(core::sync::atomic::Ordering::SeqCst);
 }
 
@@ -2513,8 +2558,10 @@ fn wipe_tail(bytes: &mut [u8], start: usize) {
 #[allow(unsafe_code)]
 fn wipe_vec_spare_capacity(bytes: &mut alloc::vec::Vec<u8>) {
     let ptr = bytes.as_mut_ptr();
-    let mut offset = bytes.len();
-    while offset < bytes.capacity() {
+    let len = bytes.len();
+    let capacity = bytes.capacity();
+    let mut offset = len;
+    while offset < capacity {
         // SAFETY: `offset` is within the vector allocation's spare capacity, so
         // the pointer is valid, aligned, and writable for one `u8`. This writes
         // a zero byte without reading the prior uninitialized value.
@@ -2523,7 +2570,7 @@ fn wipe_vec_spare_capacity(bytes: &mut alloc::vec::Vec<u8>) {
         }
         offset += 1;
     }
-    core::sync::atomic::compiler_fence(core::sync::atomic::Ordering::SeqCst);
+    wipe_barrier(ptr.wrapping_add(len), capacity - len);
 }
 
 #[cfg(feature = "alloc")]

@@ -44,7 +44,7 @@ fuzzing = []
 [dev-dependencies]
 
 [lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ["cfg(kani)"] }
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(kani)", "cfg(miri)"] }
 
 [package.metadata.docs.rs]
 all-features = true

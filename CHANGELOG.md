@@ -15,6 +15,9 @@
 - Hardened `stream::Decoder::write` so direct writes process multiple complete
   Base64 quads per call, continue after completing pending input, and preserve
   final partial quads as pending input when those bytes are accepted.
+- Hardened dependency-free cleanup by adding an architecture-gated inline
+  assembly barrier after volatile wipe loops, while keeping crate-level docs
+  explicit that cleanup remains best-effort and not formal zeroization.
 
 ## 0.12.0 - 2026-05-17
 

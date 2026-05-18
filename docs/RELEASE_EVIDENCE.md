@@ -95,9 +95,11 @@ The release gate runs:
   active accelerated dispatch and no SIMD performance claims unless a complete
   backend admission evidence package lands
 - unsafe-boundary validation that confines `allow(unsafe_code)` to the audited
-  volatile wipe helpers in `src/lib.rs` and the SIMD boundary in `src/simd.rs`
-- unsafe-boundary validation that confines architecture intrinsics, CPU feature
-  detection, and `target_feature` gates to `src/simd.rs`
+  volatile wipe/barrier helpers in `src/lib.rs` and the SIMD boundary in
+  `src/simd.rs`
+- unsafe-boundary validation that confines inline assembly to the root cleanup
+  barrier and confines CPU feature detection and `target_feature` gates to
+  `src/simd.rs`
 - unsafe-boundary validation that requires inventory documentation for every
   SIMD-boundary unsafe function and a nearby `SAFETY:` explanation for every
   unsafe block

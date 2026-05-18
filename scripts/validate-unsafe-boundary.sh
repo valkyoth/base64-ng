@@ -20,8 +20,8 @@ if [ "$matches" != "$allowed" ]; then
 fi
 
 root_allow_count="$(grep -c '^#\[allow(unsafe_code)\]$' "$root_allowed" || true)"
-if [ "$root_allow_count" -ne 2 ]; then
-    echo "unsafe boundary: src/lib.rs must have exactly two reviewed allow(unsafe_code) cleanup helpers"
+if [ "$root_allow_count" -ne 3 ]; then
+    echo "unsafe boundary: src/lib.rs must have exactly three reviewed allow(unsafe_code) cleanup helpers"
     exit 1
 fi
 
@@ -29,25 +29,31 @@ if ! awk '
     /^#\[allow\(unsafe_code\)\]$/ {
         allow_line = NR
     }
-    /^fn wipe_bytes\(/ || /^fn wipe_vec_spare_capacity\(/ {
+    /^fn wipe_bytes\(/ || /^fn wipe_barrier\(/ || /^fn wipe_vec_spare_capacity\(/ {
         if (allow_line != NR - 1) {
             failed = 1
         }
         seen += 1
     }
-    END { exit failed || seen != 2 }
+    END { exit failed || seen != 3 }
 ' "$root_allowed"; then
     echo "unsafe boundary: src/lib.rs allow(unsafe_code) must apply only to reviewed cleanup helpers"
     exit 1
 fi
 
-arch_matches="$(grep -RIl -e 'core::arch' -e 'std::arch' -e 'is_x86_feature_detected!' -e 'target_feature' src || true)"
+arch_matches="$(grep -RIl -e 'core::arch' -e 'std::arch' -e 'is_x86_feature_detected!' -e 'target_feature' src | sort || true)"
+arch_allowed="$(printf '%s\n%s' "$root_allowed" "$simd_allowed" | sort)"
 
-if [ "$arch_matches" != "$simd_allowed" ]; then
-    echo "unsafe boundary: architecture intrinsics and target-feature gates may appear only in $simd_allowed"
+if [ "$arch_matches" != "$arch_allowed" ]; then
+    echo "unsafe boundary: architecture intrinsics may appear only in $root_allowed cleanup barriers and $simd_allowed"
     if [ -n "$arch_matches" ]; then
         echo "$arch_matches"
     fi
+    exit 1
+fi
+
+if ! grep -q 'core::arch::asm!' "$root_allowed"; then
+    echo "unsafe boundary: src/lib.rs cleanup barrier must use the reviewed inline assembly barrier"
     exit 1
 fi
 

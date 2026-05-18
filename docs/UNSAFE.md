@@ -41,6 +41,9 @@ Preconditions:
 Unsafe operation:
 
 - `core::ptr::write_volatile` writes zero to each byte in the slice.
+- `wipe_barrier` receives the slice pointer and length after the volatile
+  writes and, on supported architectures, passes them through an empty
+  `core::arch::asm!` block as opaque inputs before the final compiler fence.
 
 Safety argument:
 
@@ -48,22 +51,67 @@ Safety argument:
 - Each pointer is valid, aligned, non-null, and writable for exactly one `u8`.
 - The helper writes only within the provided slice and does not read through the
   volatile pointer.
-- A `SeqCst` compiler fence follows the volatile write loop to prevent
-  reordering around the cleanup boundary.
+- The barrier does not dereference the pointer. It exists to keep the preceding
+  volatile writes visible across a cleanup boundary, including under more
+  aggressive optimization, before a `SeqCst` compiler fence.
 
 Limitations:
 
 - This is best-effort data-retention reduction, not a formal zeroization
-  guarantee. It cannot clear historical copies, compiler spill slots,
-  allocator spare capacity, swap, core dumps, CPU registers, or buffers outside
-  the slice provided to the API. Software-only wiping also cannot make claims
-  about cache residency, registers, or temporary stack copies created before the
-  wipe boundary.
+  guarantee. The inline assembly barrier strengthens the optimizer boundary on
+  supported architectures, but it cannot clear historical copies, compiler
+  spill slots, allocator spare capacity, swap, core dumps, CPU registers, cache
+  lines, or buffers outside the slice provided to the API. Software-only wiping
+  also cannot make claims about temporary stack copies created before the wipe
+  boundary. Miri and unknown architectures fall back to the compiler fence only.
 - Callers with platform-specific formal zeroization requirements should apply
   their own zeroization policy to caller-owned buffers in addition to using the
   crate cleanup APIs. Applications that already admit dependencies such as
   `zeroize` may combine them with `base64-ng` caller-owned buffers after the
   Base64 operation.
+
+### `wipe_barrier`
+
+Location: `src/lib.rs`
+
+Status: active cleanup-boundary hardening primitive.
+
+Purpose:
+
+- Keep volatile wipe writes observable across a cleanup boundary without adding
+  a runtime dependency.
+- On supported architectures, provide a stable inline assembly optimizer
+  barrier similar in shape to dependency-backed zeroization crates.
+- Fall back to a `SeqCst` compiler fence under Miri and on architectures where
+  the crate does not enable inline assembly.
+
+Preconditions:
+
+- Caller passes a pointer and length describing the region that was just wiped.
+- The function does not dereference the pointer, so empty or dangling
+  zero-length slice pointers are accepted as opaque optimizer inputs.
+
+Unsafe operation:
+
+- `core::arch::asm!` emits an empty assembly block on non-Miri `aarch64`,
+  `arm`, `riscv32`, `riscv64`, `x86`, and `x86_64` builds.
+
+Safety argument:
+
+- The assembly block has no instructions and does not access memory through the
+  pointer.
+- `options(nostack, preserves_flags)` states that the block does not use the
+  stack or modify flags.
+- Pointer and length operands are used only as opaque inputs to prevent the
+  optimizer from reasoning away the preceding volatile writes.
+
+Limitations:
+
+- This is an optimizer barrier, not a hardware erasure primitive. It does not
+  clear registers, cache lines, stack spills, swap, core dumps, or historical
+  copies.
+- It does not upgrade `wipe_bytes` or `wipe_vec_spare_capacity` to a formal
+  zeroization guarantee.
 
 ### `wipe_vec_spare_capacity`
 
@@ -88,6 +136,8 @@ Unsafe operation:
   `capacity`.
 - `ptr.add(offset)` computes a pointer inside the vector allocation's spare
   capacity.
+- `wipe_barrier` is called for the spare-capacity region after the volatile
+  write loop.
 
 Safety argument:
 
@@ -97,8 +147,9 @@ Safety argument:
   capacity.
 - The helper does not read uninitialized spare-capacity bytes; it only writes
   zeros.
-- A `SeqCst` compiler fence follows the volatile write loop to prevent
-  reordering around the cleanup boundary.
+- The barrier does not dereference the spare-capacity pointer. It exists to
+  keep the preceding volatile writes visible across the cleanup boundary before
+  the final `SeqCst` compiler fence.
 
 Limitations:
 

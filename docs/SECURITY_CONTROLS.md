@@ -61,13 +61,15 @@ profiles are strict about the configured line ending and non-final line width.
 ### Memory Retention Reduction
 
 Cleanup APIs are best-effort initialized-byte cleanup. They are implemented
-without runtime dependencies using the audited volatile wipe helpers inventoried
-in [UNSAFE.md](UNSAFE.md). They do not claim formal zeroization against
-compiler behavior, historical stack-frame copies, allocator internals, copies
-made outside the wrapper, core dumps, swap, or arbitrary process memory
-disclosure vulnerabilities. For high-assurance secret handling, use the
-clear-tail APIs promptly and pair them with operating system and deployment
-controls that reduce crash dumps, swap, and broad memory disclosure exposure.
+without runtime dependencies using audited volatile wipe helpers, an
+architecture-gated inline assembly barrier where stable Rust supports it, and
+compiler fences as inventoried in [UNSAFE.md](UNSAFE.md). They do not claim
+formal zeroization against compiler behavior, historical stack-frame copies,
+allocator internals, copies made outside the wrapper, core dumps, swap, CPU
+registers, cache lines, or arbitrary process memory disclosure vulnerabilities.
+For high-assurance secret handling, use the clear-tail APIs promptly and pair
+them with operating system and deployment controls that reduce crash dumps,
+swap, and broad memory disclosure exposure.
 If a platform requires a formal zeroization policy, apply that policy to
 caller-owned buffers in addition to the crate's dependency-free cleanup APIs.
 For applications that already admit `zeroize`, decode into caller-owned buffers

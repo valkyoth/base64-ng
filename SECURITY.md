@@ -38,7 +38,7 @@ scalar and in-place safety surface that benefits most from interpreter checks.
 
 The scalar encode/decode implementation remains safe Rust. The crate root uses
 `#![deny(unsafe_code)]`, with reviewed `allow(unsafe_code)` exceptions only for
-the volatile wipe helper in `src/lib.rs` and the dedicated private SIMD
+the volatile wipe/barrier helpers in `src/lib.rs` and the dedicated private SIMD
 admission boundary in `src/simd.rs`. The reserved `simd` feature may detect CPU
 candidates, but it does not activate an accelerated backend until the SIMD
 admission policy is satisfied. `docs/UNSAFE.md` inventories every current
@@ -74,13 +74,14 @@ input length, padding length, or decoded length from the surrounding protocol.
 The clear-tail encode and decode APIs provide best-effort cleanup for
 caller-owned buffers by writing zero bytes over unused tail bytes on success and
 over the whole buffer on encode/decode error. The cleanup primitive uses
-volatile byte writes plus a `SeqCst` compiler fence so cleanup writes are not
-optimized away. Treat these APIs as buffer-retention reduction, not as a
-complete secret-erasure guarantee against historical stack-frame copies,
-compiler spills, CPU registers, allocator behavior, core dumps, swap, hardware
-observation, or other process memory disclosure bugs. Callers that require a
-platform-specific formal zeroization policy should apply that policy to their
-own buffers in addition to using crate cleanup APIs.
+volatile byte writes plus an architecture-gated inline assembly barrier where
+stable Rust supports it, followed by a `SeqCst` compiler fence. Treat these APIs
+as buffer-retention reduction, not as a complete secret-erasure guarantee
+against historical stack-frame copies, compiler spills, CPU registers, cache
+lines, allocator behavior, core dumps, swap, hardware observation, or other
+process memory disclosure bugs. Callers that require a platform-specific formal
+zeroization policy should apply that policy to their own buffers in addition to
+using crate cleanup APIs.
 
 For projects that already admit the `zeroize` crate in their own dependency
 policy, the recommended pattern is to keep `base64-ng` dependency-free and
@@ -148,7 +149,7 @@ decoded buffer.
 
 Required before unsafe SIMD stabilizes:
 
-- `allow(unsafe_code)` remains confined to the volatile wipe helper and
+- `allow(unsafe_code)` remains confined to the volatile wipe/barrier helpers and
   `src/simd.rs`.
 - Every unsafe block has a local safety explanation.
 - Scalar/SIMD differential tests.
