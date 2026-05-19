@@ -3274,6 +3274,7 @@ fn stream_encoder_reader_handles_small_reads() {
 #[test]
 fn stream_encoder_reader_reports_buffered_output() {
     let mut reader = EncoderReader::new(&b"hello"[..], STANDARD);
+    assert!(!reader.is_failed());
     assert!(!reader.is_finished());
     let mut first = [0u8; 1];
     assert_eq!(reader.read(&mut first).unwrap(), 1);
@@ -3297,6 +3298,7 @@ fn stream_encoder_reader_reports_buffered_output() {
     assert!(!reader.has_buffered_output());
     assert!(reader.has_finished_input());
     assert!(reader.is_finished());
+    assert!(!reader.is_failed());
 }
 
 #[cfg(feature = "stream")]

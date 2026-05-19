@@ -1232,8 +1232,8 @@ pub mod stream {
         pending_len: usize,
         output: OutputQueue<1024>,
         finished: bool,
-        finalized: bool,
         failed: bool,
+        finalized: bool,
     }
 
     impl<W, A, const PAD: bool> Decoder<W, A, PAD>
@@ -1693,6 +1693,13 @@ pub mod stream {
         )
     }
 
+    fn stream_encoder_failed_error() -> io::Error {
+        io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "base64 stream encoder is failed after internal error",
+        )
+    }
+
     /// A streaming Base64 decoder for `std::io::Read`.
     ///
     /// For padded engines, this reader stops at the terminal padded Base64
@@ -2067,6 +2074,7 @@ pub mod stream {
         pending_len: usize,
         output: OutputQueue<1024>,
         finished: bool,
+        failed: bool,
     }
 
     impl<R, A, const PAD: bool> EncoderReader<R, A, PAD>
@@ -2083,6 +2091,7 @@ pub mod stream {
                 pending_len: 0,
                 output: OutputQueue::new(),
                 finished: false,
+                failed: false,
             }
         }
 
@@ -2181,11 +2190,18 @@ pub mod stream {
             self.finished && self.output.is_empty()
         }
 
+        /// Returns whether this adapter has failed closed after an internal
+        /// stream error.
+        #[must_use]
+        pub const fn is_failed(&self) -> bool {
+            self.failed
+        }
+
         /// Returns whether [`Self::try_into_inner`] can recover the wrapped
         /// reader without discarding pending input or buffered encoded output.
         #[must_use]
         pub const fn can_into_inner(&self) -> bool {
-            self.is_finished()
+            self.is_finished() && !self.failed
         }
 
         /// Consumes the encoder reader and returns the wrapped reader.
@@ -2265,6 +2281,7 @@ pub mod stream {
                 )
                 .field("can_into_inner", &self.can_into_inner())
                 .field("finished", &self.finished)
+                .field("failed", &self.failed)
                 .finish()
         }
     }
@@ -2275,6 +2292,10 @@ pub mod stream {
         A: Alphabet,
     {
         fn read(&mut self, output: &mut [u8]) -> io::Result<usize> {
+            if self.failed {
+                return Err(stream_encoder_failed_error());
+            }
+
             if output.is_empty() {
                 return Ok(0);
             }
@@ -2304,7 +2325,10 @@ pub mod stream {
             if read == 0 {
                 crate::wipe_bytes(&mut input);
                 self.finished = true;
-                self.push_final_pending()?;
+                if let Err(err) = self.push_final_pending() {
+                    self.failed = true;
+                    return Err(err);
+                }
                 return Ok(());
             }
 
@@ -2326,6 +2350,7 @@ pub mod stream {
                 crate::wipe_bytes(&mut chunk);
                 if let Err(err) = result {
                     crate::wipe_bytes(&mut input);
+                    self.failed = true;
                     return Err(err);
                 }
                 self.clear_pending();
@@ -2345,6 +2370,7 @@ pub mod stream {
             crate::wipe_bytes(&mut input);
             if let Err(err) = result {
                 crate::wipe_bytes(&mut tail);
+                self.failed = true;
                 return Err(err);
             }
             self.pending[..tail_len].copy_from_slice(&tail[..tail_len]);
@@ -7720,7 +7746,8 @@ fn ct_validate_padded<A: Alphabet>(input: &[u8]) -> Result<(), DecodeError> {
     let mut read = 0;
 
     while read + 4 < input.len() {
-        let [b0, b1, b2, b3] = read_quad(input, read)?;
+        let [b0, b1, b2, b3] =
+            read_quad_or_mark_invalid(input, read, &mut invalid_byte, &mut invalid_padding);
         let (_, valid0) = ct_decode_alphabet_byte::<A>(b0);
         let (_, valid1) = ct_decode_alphabet_byte::<A>(b1);
         let (_, valid2) = ct_decode_alphabet_byte::<A>(b2);
@@ -7735,7 +7762,8 @@ fn ct_validate_padded<A: Alphabet>(input: &[u8]) -> Result<(), DecodeError> {
         read += 4;
     }
 
-    let final_chunk = read_quad(input, read)?;
+    let final_chunk =
+        read_quad_or_mark_invalid(input, read, &mut invalid_byte, &mut invalid_padding);
     let (_, final_invalid_byte, final_invalid_padding, _) =
         ct_padded_final_quantum::<A>(final_chunk, padding);
     invalid_byte |= final_invalid_byte;
@@ -7754,7 +7782,8 @@ fn ct_validate_unpadded<A: Alphabet>(input: &[u8]) -> Result<(), DecodeError> {
     let mut read = 0;
 
     while read + 4 <= input.len() {
-        let [b0, b1, b2, b3] = read_quad(input, read)?;
+        let [b0, b1, b2, b3] =
+            read_quad_or_mark_invalid(input, read, &mut invalid_byte, &mut invalid_padding);
         let (_, valid0) = ct_decode_alphabet_byte::<A>(b0);
         let (_, valid1) = ct_decode_alphabet_byte::<A>(b1);
         let (_, valid2) = ct_decode_alphabet_byte::<A>(b2);
@@ -7772,9 +7801,9 @@ fn ct_validate_unpadded<A: Alphabet>(input: &[u8]) -> Result<(), DecodeError> {
         read += 4;
     }
 
-    match input.get(read..) {
-        Some([]) => {}
-        Some([b0, b1]) => {
+    match read_tail_or_mark_invalid(input, read, &mut invalid_byte, &mut invalid_padding) {
+        [] => {}
+        [b0, b1] => {
             let (_, valid0) = ct_decode_alphabet_byte::<A>(*b0);
             let (v1, valid1) = ct_decode_alphabet_byte::<A>(*b1);
             invalid_byte |= !valid0;
@@ -7783,7 +7812,7 @@ fn ct_validate_unpadded<A: Alphabet>(input: &[u8]) -> Result<(), DecodeError> {
             invalid_padding |= ct_mask_eq_u8(*b1, b'=');
             invalid_padding |= ct_mask_nonzero_u8(v1 & 0b0000_1111);
         }
-        Some([b0, b1, b2]) => {
+        [b0, b1, b2] => {
             let (_, valid0) = ct_decode_alphabet_byte::<A>(*b0);
             let (_, valid1) = ct_decode_alphabet_byte::<A>(*b1);
             let (v2, valid2) = ct_decode_alphabet_byte::<A>(*b2);
@@ -7795,7 +7824,10 @@ fn ct_validate_unpadded<A: Alphabet>(input: &[u8]) -> Result<(), DecodeError> {
             invalid_padding |= ct_mask_eq_u8(*b2, b'=');
             invalid_padding |= ct_mask_nonzero_u8(v2 & 0b0000_0011);
         }
-        _ => return Err(DecodeError::InvalidLength),
+        _ => {
+            invalid_byte = 0xff;
+            invalid_padding = 0xff;
+        }
     }
 
     report_ct_error(invalid_byte, invalid_padding)
@@ -7815,7 +7847,7 @@ fn ct_padded_final_quantum<A: Alphabet>(
         0 => 0,
         1 => 1,
         2 => 2,
-        _ => 3,
+        _ => return ([0; 3], 0xff, 0xff, 0),
     };
     let no_padding = ct_mask_eq_u8(padding_byte, 0);
     let one_padding = ct_mask_eq_u8(padding_byte, 1);
@@ -7856,7 +7888,8 @@ fn ct_decode_padded<A: Alphabet>(input: &[u8], output: &mut [u8]) -> Result<usiz
     let mut read = 0;
 
     while read + 4 < input.len() {
-        let [b0, b1, b2, b3] = read_quad(input, read)?;
+        let [b0, b1, b2, b3] =
+            read_quad_or_mark_invalid(input, read, &mut invalid_byte, &mut invalid_padding);
         let (v0, valid0) = ct_decode_alphabet_byte::<A>(b0);
         let (v1, valid1) = ct_decode_alphabet_byte::<A>(b1);
         let (v2, valid2) = ct_decode_alphabet_byte::<A>(b2);
@@ -7875,7 +7908,8 @@ fn ct_decode_padded<A: Alphabet>(input: &[u8], output: &mut [u8]) -> Result<usiz
         read += 4;
     }
 
-    let final_chunk = read_quad(input, read)?;
+    let final_chunk =
+        read_quad_or_mark_invalid(input, read, &mut invalid_byte, &mut invalid_padding);
     let (final_bytes, final_invalid_byte, final_invalid_padding, final_written) =
         ct_padded_final_quantum::<A>(final_chunk, padding);
     invalid_byte |= final_invalid_byte;
@@ -7905,13 +7939,8 @@ fn ct_decode_padded_in_place<A: Alphabet>(buffer: &mut [u8]) -> Result<usize, De
     let mut read = 0;
 
     while read + 4 < buffer.len() {
-        let [b0, b1, b2, b3] = match read_quad(buffer, read) {
-            Ok(quad) => quad,
-            Err(err) => {
-                wipe_bytes(buffer);
-                return Err(err);
-            }
-        };
+        let [b0, b1, b2, b3] =
+            read_quad_or_mark_invalid(buffer, read, &mut invalid_byte, &mut invalid_padding);
         let (v0, valid0) = ct_decode_alphabet_byte::<A>(b0);
         let (v1, valid1) = ct_decode_alphabet_byte::<A>(b1);
         let (v2, valid2) = ct_decode_alphabet_byte::<A>(b2);
@@ -7930,13 +7959,8 @@ fn ct_decode_padded_in_place<A: Alphabet>(buffer: &mut [u8]) -> Result<usize, De
         read += 4;
     }
 
-    let final_chunk = match read_quad(buffer, read) {
-        Ok(quad) => quad,
-        Err(err) => {
-            wipe_bytes(buffer);
-            return Err(err);
-        }
-    };
+    let final_chunk =
+        read_quad_or_mark_invalid(buffer, read, &mut invalid_byte, &mut invalid_padding);
     let (final_bytes, final_invalid_byte, final_invalid_padding, final_written) =
         ct_padded_final_quantum::<A>(final_chunk, padding);
     invalid_byte |= final_invalid_byte;
@@ -7972,7 +7996,8 @@ fn ct_decode_unpadded<A: Alphabet>(input: &[u8], output: &mut [u8]) -> Result<us
     let mut read = 0;
 
     while read + 4 <= input.len() {
-        let [b0, b1, b2, b3] = read_quad(input, read)?;
+        let [b0, b1, b2, b3] =
+            read_quad_or_mark_invalid(input, read, &mut invalid_byte, &mut invalid_padding);
         let (v0, valid0) = ct_decode_alphabet_byte::<A>(b0);
         let (v1, valid1) = ct_decode_alphabet_byte::<A>(b1);
         let (v2, valid2) = ct_decode_alphabet_byte::<A>(b2);
@@ -7994,9 +8019,9 @@ fn ct_decode_unpadded<A: Alphabet>(input: &[u8], output: &mut [u8]) -> Result<us
         write += 3;
     }
 
-    match input.get(read..) {
-        Some([]) => {}
-        Some([b0, b1]) => {
+    match read_tail_or_mark_invalid(input, read, &mut invalid_byte, &mut invalid_padding) {
+        [] => {}
+        [b0, b1] => {
             let (v0, valid0) = ct_decode_alphabet_byte::<A>(*b0);
             let (v1, valid1) = ct_decode_alphabet_byte::<A>(*b1);
             invalid_byte |= !valid0;
@@ -8007,7 +8032,7 @@ fn ct_decode_unpadded<A: Alphabet>(input: &[u8], output: &mut [u8]) -> Result<us
             output[write] = (v0 << 2) | (v1 >> 4);
             write += 1;
         }
-        Some([b0, b1, b2]) => {
+        [b0, b1, b2] => {
             let (v0, valid0) = ct_decode_alphabet_byte::<A>(*b0);
             let (v1, valid1) = ct_decode_alphabet_byte::<A>(*b1);
             let (v2, valid2) = ct_decode_alphabet_byte::<A>(*b2);
@@ -8022,7 +8047,10 @@ fn ct_decode_unpadded<A: Alphabet>(input: &[u8], output: &mut [u8]) -> Result<us
             output[write + 1] = (v1 << 4) | (v2 >> 2);
             write += 2;
         }
-        _ => return Err(DecodeError::InvalidLength),
+        _ => {
+            invalid_byte = 0xff;
+            invalid_padding = 0xff;
+        }
     }
 
     report_ct_error(invalid_byte, invalid_padding)?;
@@ -8046,13 +8074,8 @@ fn ct_decode_unpadded_in_place<A: Alphabet>(buffer: &mut [u8]) -> Result<usize, 
     let mut read = 0;
 
     while read + 4 <= buffer.len() {
-        let [b0, b1, b2, b3] = match read_quad(buffer, read) {
-            Ok(quad) => quad,
-            Err(err) => {
-                wipe_bytes(buffer);
-                return Err(err);
-            }
-        };
+        let [b0, b1, b2, b3] =
+            read_quad_or_mark_invalid(buffer, read, &mut invalid_byte, &mut invalid_padding);
         let (v0, valid0) = ct_decode_alphabet_byte::<A>(b0);
         let (v1, valid1) = ct_decode_alphabet_byte::<A>(b1);
         let (v2, valid2) = ct_decode_alphabet_byte::<A>(b2);
@@ -8074,13 +8097,7 @@ fn ct_decode_unpadded_in_place<A: Alphabet>(buffer: &mut [u8]) -> Result<usize, 
         write += 3;
     }
 
-    let tail = match read_tail(buffer, read) {
-        Ok(tail) => tail,
-        Err(err) => {
-            wipe_bytes(buffer);
-            return Err(err);
-        }
-    };
+    let tail = read_tail_or_mark_invalid(buffer, read, &mut invalid_byte, &mut invalid_padding);
     match tail {
         [] => {}
         [b0, b1] => {
@@ -8109,7 +8126,10 @@ fn ct_decode_unpadded_in_place<A: Alphabet>(buffer: &mut [u8]) -> Result<usize, 
             buffer[write + 1] = (v1 << 4) | (v2 >> 2);
             write += 2;
         }
-        _ => return Err(DecodeError::InvalidLength),
+        _ => {
+            invalid_byte = 0xff;
+            invalid_padding = 0xff;
+        }
     }
 
     if write != required {
@@ -8123,6 +8143,44 @@ fn ct_decode_unpadded_in_place<A: Alphabet>(buffer: &mut [u8]) -> Result<usize, 
 
 fn read_tail(input: &[u8], offset: usize) -> Result<&[u8], DecodeError> {
     input.get(offset..).ok_or(DecodeError::InvalidLength)
+}
+
+fn read_quad_or_mark_invalid(
+    input: &[u8],
+    offset: usize,
+    invalid_byte: &mut u8,
+    invalid_padding: &mut u8,
+) -> [u8; 4] {
+    if let Ok(quad) = read_quad(input, offset) {
+        quad
+    } else {
+        debug_assert!(
+            false,
+            "read_quad failed inside length-validated constant-time decode loop"
+        );
+        *invalid_byte = 0xff;
+        *invalid_padding = 0xff;
+        [0; 4]
+    }
+}
+
+fn read_tail_or_mark_invalid<'a>(
+    input: &'a [u8],
+    offset: usize,
+    invalid_byte: &mut u8,
+    invalid_padding: &mut u8,
+) -> &'a [u8] {
+    if let Ok(tail) = read_tail(input, offset) {
+        tail
+    } else {
+        debug_assert!(
+            false,
+            "read_tail failed inside length-validated constant-time decode loop"
+        );
+        *invalid_byte = 0xff;
+        *invalid_padding = 0xff;
+        &[]
+    }
 }
 
 #[inline(never)]
@@ -8547,6 +8605,20 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn ct_padded_final_quantum_fails_closed_for_invalid_padding_count() {
+        let (_, invalid_byte, invalid_padding, written) =
+            ct_padded_final_quantum::<Standard>(*b"ABCD", 3);
+
+        assert_ne!(invalid_byte, 0);
+        assert_ne!(invalid_padding, 0);
+        assert_eq!(written, 0);
+        assert_eq!(
+            report_ct_error(invalid_byte, invalid_padding),
+            Err(DecodeError::InvalidInput)
+        );
     }
 
     #[cfg(feature = "simd")]
