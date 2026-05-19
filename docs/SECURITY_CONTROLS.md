@@ -26,8 +26,8 @@ generated assembly review, including LTO symbol-presence checks for the helper,
 but no formal cryptographic constant-time comparison guarantee is claimed.
 High-assurance applications that can admit a comparison dependency should use a
 reviewed primitive such as `subtle` at the protocol boundary. The shorter
-`constant_time_eq` name was removed during the `1.0.0-alpha` window so the
-public-length comparison contract stays visible at call sites.
+`constant_time_eq` name was removed before `1.0.0` so the public-length
+comparison contract stays visible at call sites.
 
 ## Caller Responsibilities
 

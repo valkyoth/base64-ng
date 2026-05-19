@@ -250,14 +250,12 @@ The crate is feature-rich enough for normal Base64 use, and the remaining
 `v0.11`, and `v0.12` lines completed the intended audit preparation,
 verification hardening, and stabilization rehearsal work.
 
-The current honest path is:
+The current release path is:
 
-- `v1.0.0-alpha.0`: freeze candidate for pentest, CI, and downstream review.
-  This version should change only for release blockers, documentation
-  corrections, or evidence-policy fixes.
-- `v1.0.0`: stable API and security-contract release after the alpha candidate
-  has clean local release evidence, clean CI, and clean external pentest
-  results.
+- `v1.0.0`: stable API and security-contract release after the freeze
+  candidate had clean local release evidence, clean CI, and clean external
+  pentest results. This line should change only for release blockers,
+  documentation corrections, or evidence-policy fixes before tagging.
 - `1.0.x`: maintenance and assurance releases. Kani proof execution remains a
   high-priority `1.0.x` follow-up once Kani supports the pinned Rust toolchain.
 
@@ -545,7 +543,7 @@ cryptographic behavior until compatible verifier evidence exists.
 ### v1.0
 
 - No unresolved `v0.10`, `v0.11`, or `v0.12` release-candidate blockers.
-- `1.0.0-alpha.0` pentest, GitHub CI, and local release evidence must be clean
+- `1.0.0` pentest, GitHub CI, and local release evidence must be clean
   before the stable `v1.0.0` tag.
 - Kani proofs are not required for the initial stable release if the documented
   `v1.0` verifier exception remains accepted and the replacement evidence is

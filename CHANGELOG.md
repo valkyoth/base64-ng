@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.0-alpha.0 - Unreleased
+## 1.0.0 - 2026-05-19
 
 - Started the stable API and security-contract freeze candidate after the
   `0.12.0` stabilization release.

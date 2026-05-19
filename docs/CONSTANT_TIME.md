@@ -299,8 +299,8 @@ buffer types intentionally do not implement `PartialEq`/`==`: the explicit
 method name is part of the security contract because this helper is best-effort
 and not a formal cryptographic comparison primitive.
 
-The old `constant_time_eq` method name was removed during the `1.0.0-alpha`
-window. Use `constant_time_eq_public_len` so the public-length contract remains
+The old `constant_time_eq` method name was removed before `1.0.0`. Use
+`constant_time_eq_public_len` so the public-length contract remains
 visible at the call site.
 
 Length mismatch returns immediately. Treat buffer length, the selected buffer

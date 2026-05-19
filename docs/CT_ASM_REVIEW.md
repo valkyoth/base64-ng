@@ -53,11 +53,11 @@ Review focus:
 
 ## Current Release Position
 
-For the current `1.0.0-alpha.0` development branch:
+For the `1.0.0` release:
 
 - Assembly evidence generation is release-gated.
-- Manual review is required before a stable release that strengthens ct
-  wording.
+- Manual review is required before any future release that strengthens ct
+  wording beyond "constant-time-oriented".
 - The public documentation continues to use "constant-time-oriented" wording.
 - No formally verified cryptographic constant-time guarantee is claimed.
 
