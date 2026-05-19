@@ -3671,8 +3671,9 @@ pub struct SecretBuffer {
 
 /// Owned secret bytes extracted from [`SecretBuffer`].
 ///
-/// This wrapper keeps redacted formatting and best-effort drop-time cleanup
-/// after a [`SecretBuffer`] is consumed for owned interop. Use
+/// This wrapper keeps redacted formatting, best-effort spare-capacity clearing
+/// at construction time, and best-effort full wipe on drop after a
+/// [`SecretBuffer`] is consumed for owned interop. Use
 /// [`Self::into_exposed_unprotected_vec_caller_must_zeroize`] only when a raw
 /// `Vec<u8>` is unavoidable and the caller will handle cleanup.
 #[cfg(feature = "alloc")]
@@ -3771,8 +3772,9 @@ impl AsMut<[u8]> for ExposedSecretVec {
 
 /// Owned secret UTF-8 text extracted from [`SecretBuffer`].
 ///
-/// This wrapper keeps redacted formatting and best-effort drop-time cleanup
-/// after a [`SecretBuffer`] is consumed for string interop. Use
+/// This wrapper keeps redacted formatting, best-effort spare-capacity clearing
+/// at construction time, and best-effort full wipe on drop after a
+/// [`SecretBuffer`] is consumed for string interop. Use
 /// [`Self::into_exposed_unprotected_string_caller_must_zeroize`] only when a
 /// raw `String` is unavoidable and the caller will handle cleanup.
 #[cfg(feature = "alloc")]
@@ -3785,6 +3787,9 @@ impl ExposedSecretString {
     /// Wraps an owned UTF-8 string as exposed secret text.
     #[must_use]
     pub fn from_string(text: alloc::string::String) -> Self {
+        let mut bytes = text.into_bytes();
+        wipe_vec_spare_capacity(&mut bytes);
+        let text = string_from_validated_secret_bytes(bytes);
         Self { text }
     }
 
@@ -5084,7 +5089,11 @@ fn constant_time_eq_same_len(left: &[u8], right: &[u8]) -> bool {
         diff = unsafe { core::ptr::read_volatile(&raw const diff) };
     }
     ct_error_gate_barrier(diff, 0);
-    diff == 0
+    // SAFETY: `diff` is an initialized local `u8`; this final volatile read
+    // keeps the public equality comparison dependent on a post-barrier load of
+    // the accumulated value.
+    let result = unsafe { core::ptr::read_volatile(&raw const diff) };
+    result == 0
 }
 
 #[cfg(feature = "alloc")]
@@ -7973,7 +7982,10 @@ fn ct_decode_padded_in_place<A: Alphabet>(buffer: &mut [u8]) -> Result<usize, De
         wipe_bytes(buffer);
         return Err(DecodeError::InvalidInput);
     }
-    report_ct_error(invalid_byte, invalid_padding)?;
+    if let Err(err) = report_ct_error(invalid_byte, invalid_padding) {
+        wipe_bytes(buffer);
+        return Err(err);
+    }
     Ok(write)
 }
 
@@ -8137,7 +8149,10 @@ fn ct_decode_unpadded_in_place<A: Alphabet>(buffer: &mut [u8]) -> Result<usize, 
         wipe_bytes(buffer);
         return Err(DecodeError::InvalidInput);
     }
-    report_ct_error(invalid_byte, invalid_padding)?;
+    if let Err(err) = report_ct_error(invalid_byte, invalid_padding) {
+        wipe_bytes(buffer);
+        return Err(err);
+    }
     Ok(write)
 }
 
@@ -8184,15 +8199,30 @@ fn read_tail_or_mark_invalid<'a>(
 }
 
 #[inline(never)]
+#[allow(unsafe_code)]
 fn ct_decode_alphabet_byte<A: Alphabet>(byte: u8) -> (u8, u8) {
     let mut decoded = 0u8;
     let mut valid = 0u8;
     let mut candidate = 0u8;
 
     while candidate < 64 {
-        let matches = ct_mask_eq_u8(byte, A::ENCODE[candidate as usize]);
-        decoded |= candidate & matches;
-        valid |= matches;
+        let matches = core::hint::black_box(ct_mask_eq_u8(
+            core::hint::black_box(byte),
+            core::hint::black_box(A::ENCODE[candidate as usize]),
+        ));
+        decoded = core::hint::black_box(
+            core::hint::black_box(decoded) | core::hint::black_box(candidate & matches),
+        );
+        // SAFETY: `decoded` is an initialized local `u8`; the volatile read is
+        // an optimizer barrier for the fixed 64-iteration alphabet scan and
+        // does not access caller memory.
+        decoded = unsafe { core::ptr::read_volatile(&raw const decoded) };
+        valid =
+            core::hint::black_box(core::hint::black_box(valid) | core::hint::black_box(matches));
+        // SAFETY: `valid` is an initialized local `u8`; the volatile read is an
+        // optimizer barrier for the fixed 64-iteration alphabet scan and does
+        // not access caller memory.
+        valid = unsafe { core::ptr::read_volatile(&raw const valid) };
         candidate += 1;
     }
 

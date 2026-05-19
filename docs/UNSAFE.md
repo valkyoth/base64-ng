@@ -194,15 +194,17 @@ Status: active secret conversion helper when `alloc` is enabled.
 
 Purpose:
 
-- Convert bytes already validated as UTF-8 into `String` without a second
-  fallible conversion after the vector has been moved out of `SecretBuffer`.
+- Convert bytes already validated as UTF-8, or bytes just extracted from a
+  valid `String`, back into `String` without a second fallible conversion after
+  the vector has crossed a secret-wrapper boundary.
 - Avoid an intermediate raw `Vec<u8>` drop path that would not run the crate's
   best-effort cleanup on panic.
 
 Preconditions:
 
 - Caller must validate the exact vector contents as UTF-8 immediately before
-  handing ownership to this helper.
+  handing ownership to this helper, or pass bytes produced directly by
+  `String::into_bytes` without modifying the initialized prefix.
 - The vector must not be modified between validation and conversion.
 
 Unsafe operation:
@@ -214,6 +216,9 @@ Safety argument:
 
 - `SecretBuffer::try_into_exposed_string` validates `self.expose_secret()` with
   `core::str::from_utf8` before moving the same allocation into this helper.
+- `ExposedSecretString::from_string` receives a valid `String`, converts it to
+  bytes, wipes only spare capacity past the initialized UTF-8 prefix, and then
+  moves the same initialized prefix into this helper.
 - No mutation occurs between validation and conversion.
 - The returned `ExposedSecretString` retains redacted formatting and drop-time
   cleanup.
@@ -261,6 +266,44 @@ Limitations:
   runtime posture reports the emitted barrier sequence, not a formal
   microarchitecture certification.
 - Unsupported architectures fall back to the compiler fence only.
+
+### `ct_decode_alphabet_byte`
+
+Location: `src/lib.rs`
+
+Status: active constant-time-oriented alphabet scanner.
+
+Purpose:
+
+- Decode one Base64 symbol by scanning all 64 alphabet entries instead of
+  indexing a decode table or returning at the first match.
+- Keep the decoded-value and validity accumulators observable to the optimizer
+  on every iteration of the fixed scan.
+
+Preconditions:
+
+- `A::ENCODE` is a validated 64-byte Base64 alphabet. Built-in alphabets and
+  the `define_alphabet!` macro enforce this.
+
+Unsafe operation:
+
+- `core::ptr::read_volatile` reads initialized local `decoded` and `valid`
+  accumulators after each OR reduction.
+
+Safety argument:
+
+- `decoded` and `valid` are initialized stack-local `u8` values for the entire
+  loop.
+- The volatile reads do not read from caller memory and cannot violate bounds
+  or aliasing requirements.
+- The function remains `#[inline(never)]` so generated-code review can inspect
+  the scanner as a distinct helper.
+
+Limitations:
+
+- These volatile reads are optimizer barriers, not a formal proof of
+  microarchitectural constant-time behavior. Release evidence and dudect remain
+  required for high-assurance review.
 
 ### `wipe_vec_spare_capacity`
 

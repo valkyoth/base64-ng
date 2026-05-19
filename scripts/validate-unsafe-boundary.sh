@@ -20,8 +20,8 @@ if [ "$matches" != "$allowed" ]; then
 fi
 
 root_allow_count="$(grep -c '^#\[allow(unsafe_code)\]$' "$root_allowed" || true)"
-if [ "$root_allow_count" -ne 6 ]; then
-    echo "unsafe boundary: src/lib.rs must have exactly six reviewed allow(unsafe_code) helpers"
+if [ "$root_allow_count" -ne 7 ]; then
+    echo "unsafe boundary: src/lib.rs must have exactly seven reviewed allow(unsafe_code) helpers"
     exit 1
 fi
 
@@ -29,15 +29,15 @@ if ! awk '
     /^#\[allow\(unsafe_code\)\]$/ {
         allow_line = NR
     }
-    /^fn wipe_bytes\(/ || /^fn wipe_barrier\(/ || /^fn wipe_vec_spare_capacity\(/ || /^fn ct_error_gate_barrier\(/ || /^fn constant_time_eq_same_len\(/ || /^fn string_from_validated_secret_bytes\(/ {
+    /^fn wipe_bytes\(/ || /^fn wipe_barrier\(/ || /^fn wipe_vec_spare_capacity\(/ || /^fn ct_error_gate_barrier\(/ || /^fn constant_time_eq_same_len\(/ || /^fn string_from_validated_secret_bytes\(/ || /^fn ct_decode_alphabet_byte/ {
         if (allow_line != NR - 1) {
             failed = 1
         }
         seen += 1
     }
-    END { exit failed || seen != 6 }
+    END { exit failed || seen != 7 }
 ' "$root_allowed"; then
-    echo "unsafe boundary: src/lib.rs allow(unsafe_code) must apply only to reviewed cleanup, secret-conversion, comparison, and CT gate helpers"
+    echo "unsafe boundary: src/lib.rs allow(unsafe_code) must apply only to reviewed cleanup, secret-conversion, comparison, CT scan, and CT gate helpers"
     exit 1
 fi
 

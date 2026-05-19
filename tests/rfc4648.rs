@@ -11,7 +11,7 @@ use base64_ng::{
 use base64_ng::stream::{Decoder, DecoderReader, Encoder, EncoderReader};
 
 #[cfg(feature = "alloc")]
-use base64_ng::SecretBuffer;
+use base64_ng::{ExposedSecretString, ExposedSecretVec, SecretBuffer};
 
 #[cfg(feature = "stream")]
 use std::io::{Cursor, Read, Write};
@@ -2838,6 +2838,46 @@ fn secret_buffer_from_vec_preserves_visible_bytes_with_spare_capacity() {
     let secret = SecretBuffer::from_slice(b"\xff");
     let secret = secret.try_into_exposed_string().unwrap_err();
     assert_eq!(secret.expose_secret(), b"\xff");
+}
+
+#[cfg(feature = "alloc")]
+fn assert_vec_spare_capacity_zeroed(mut bytes: Vec<u8>, len: usize) {
+    let capacity = bytes.capacity();
+    assert!(capacity > len);
+
+    // SAFETY: the tested wrappers explicitly initialize spare capacity with
+    // zero bytes before this helper receives the vector. Extending the length
+    // lets the regression test inspect the spare region that would otherwise
+    // remain outside safe slice access.
+    unsafe {
+        bytes.set_len(capacity);
+    }
+    assert!(bytes[len..].iter().all(|byte| *byte == 0));
+    bytes.fill(0);
+}
+
+#[cfg(feature = "alloc")]
+#[test]
+fn secret_wrappers_clear_spare_capacity_at_construction() {
+    let mut bytes = vec![0xab; 64];
+    bytes.truncate(32);
+    let exposed = ExposedSecretVec::from_vec(bytes);
+    let bytes = exposed.into_exposed_unprotected_vec_caller_must_zeroize();
+    assert_vec_spare_capacity_zeroed(bytes, 32);
+
+    let mut bytes = vec![0xcd; 64];
+    bytes.truncate(32);
+    let secret = SecretBuffer::from_vec(bytes);
+    let exposed = secret.into_exposed_vec();
+    let bytes = exposed.into_exposed_unprotected_vec_caller_must_zeroize();
+    assert_vec_spare_capacity_zeroed(bytes, 32);
+
+    let mut text = String::with_capacity(64);
+    text.push_str("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
+    text.truncate(32);
+    let exposed = ExposedSecretString::from_string(text);
+    let text = exposed.into_exposed_unprotected_string_caller_must_zeroize();
+    assert_vec_spare_capacity_zeroed(text.into_bytes(), 32);
 }
 
 #[cfg(feature = "alloc")]
