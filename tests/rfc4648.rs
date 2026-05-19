@@ -2769,8 +2769,6 @@ fn secret_buffer_redacts_and_reveals_explicitly() {
     assert!(secret.constant_time_eq_public_len(matching.as_bytes()));
     assert!(!secret.constant_time_eq_public_len(different.as_bytes()));
 
-    let cloned = secret.clone();
-    assert!(secret.constant_time_eq_public_len(cloned.expose_secret()));
     assert!(
         !secret.constant_time_eq_public_len(SecretBuffer::from_slice(b"token").expose_secret())
     );
@@ -2778,7 +2776,11 @@ fn secret_buffer_redacts_and_reveals_explicitly() {
         !secret.constant_time_eq_public_len(SecretBuffer::from_slice(b"Token!").expose_secret())
     );
 
-    let exposed = cloned.into_exposed_vec();
+    secret.clear();
+    assert!(secret.is_empty());
+    assert_eq!(secret.expose_secret(), b"");
+
+    let exposed = SecretBuffer::from_slice(b"Token").into_exposed_vec();
     assert_eq!(exposed.len(), 5);
     assert_eq!(exposed.expose_secret(), b"Token");
     assert_eq!(
@@ -2789,10 +2791,6 @@ fn secret_buffer_redacts_and_reveals_explicitly() {
     let mut unprotected = exposed.into_exposed_unprotected_vec_caller_must_zeroize();
     assert_eq!(unprotected, b"Token");
     unprotected.fill(0);
-
-    secret.clear();
-    assert!(secret.is_empty());
-    assert_eq!(secret.expose_secret(), b"");
 
     let binary = SecretBuffer::from_slice(b"\xff");
     assert!(binary.expose_secret_utf8().is_err());
@@ -3665,6 +3663,21 @@ fn stream_decoder_direct_write_reports_partial_progress() {
 
     let err = decoder.write(b"AA").unwrap_err();
     assert_eq!(err.kind(), std::io::ErrorKind::InvalidInput);
+}
+
+#[cfg(feature = "stream")]
+#[test]
+fn stream_decoder_direct_write_marks_failed_after_deferred_error() {
+    let mut decoder = Decoder::new(Vec::new(), STANDARD);
+
+    let written = decoder.write(b"Zm9v$$$$").unwrap();
+    assert_eq!(written, 4);
+    assert!(decoder.is_failed());
+    assert_eq!(decoder.buffered_output_len(), 3);
+
+    let err = decoder.write(b"YmFy").unwrap_err();
+    assert_eq!(err.kind(), std::io::ErrorKind::InvalidInput);
+    assert!(decoder.is_failed());
 }
 
 #[cfg(feature = "stream")]

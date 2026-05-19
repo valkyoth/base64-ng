@@ -169,6 +169,9 @@ Decision rationale:
   initialized bytes and vector spare capacity.
 - `SecretBuffer` does not lock allocations into physical memory. OS paging,
   hibernation, and crash-dump controls remain deployment responsibilities.
+- `SecretBuffer` intentionally does not implement `Clone`; callers that need a
+  second copy must spell that out through `from_slice`, making secret
+  duplication visible at the call site.
 - Equality is intentionally not exposed through `PartialEq`/`==`. Callers must
   opt into the explicit `constant_time_eq_public_len` helper, whose equal-length
   scan is best-effort and whose length mismatch remains public.

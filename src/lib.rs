@@ -1214,6 +1214,14 @@ pub mod stream {
     /// output until [`Write::flush`], [`Self::try_finish`], [`Self::finish`],
     /// or a later write drains the wrapped writer. Use [`Write::write_all`]
     /// when the whole input slice must be consumed.
+    ///
+    /// # Security
+    ///
+    /// This adapter uses the normal strict decoder, not the [`crate::ct`]
+    /// module. It may branch or return early based on malformed input and it
+    /// preserves strict error diagnostics. Do not use it for secret-bearing
+    /// payloads when malformed-input timing matters; decode a complete frame
+    /// with the matching `ct` engine instead.
     pub struct Decoder<W, A, const PAD: bool>
     where
         A: Alphabet,
@@ -1233,6 +1241,11 @@ pub mod stream {
         A: Alphabet,
     {
         /// Creates a new streaming decoder.
+        ///
+        /// # Security
+        ///
+        /// Streaming decoders use the normal strict decode path. They are not
+        /// constant-time-oriented secret decoders.
         #[must_use]
         pub const fn new(inner: W, engine: Engine<A, PAD>) -> Self {
             Self {
@@ -1624,11 +1637,11 @@ pub mod stream {
                     Err(err) => {
                         crate::wipe_bytes(&mut quad);
                         crate::wipe_bytes(&mut decoded);
+                        self.failed = true;
                         if consumed > 0 {
                             return Ok(consumed);
                         }
 
-                        self.failed = true;
                         return Err(decode_error_to_io(err));
                     }
                 };
@@ -1686,6 +1699,14 @@ pub mod stream {
     /// block and leaves later bytes unread in the wrapped reader. This preserves
     /// boundaries for callers that decode one Base64 payload from a larger
     /// stream.
+    ///
+    /// # Security
+    ///
+    /// This adapter uses the normal strict decoder, not the [`crate::ct`]
+    /// module. It may branch or return early based on malformed input and it
+    /// preserves strict error diagnostics. Do not use it for secret-bearing
+    /// payloads when malformed-input timing matters; decode a complete frame
+    /// with the matching `ct` engine instead.
     pub struct DecoderReader<R, A, const PAD: bool>
     where
         A: Alphabet,
@@ -1705,6 +1726,11 @@ pub mod stream {
         A: Alphabet,
     {
         /// Creates a new streaming decoder reader.
+        ///
+        /// # Security
+        ///
+        /// Streaming decoder readers use the normal strict decode path. They
+        /// are not constant-time-oriented secret decoders.
         #[must_use]
         pub fn new(inner: R, engine: Engine<A, PAD>) -> Self {
             Self {
@@ -2500,16 +2526,17 @@ pub mod ct {
         /// partially decoded bytes from rejected input should not remain in the
         /// caller-owned output buffer.
         ///
-        /// # Warning: Transient Plaintext Window
+        /// # Security: Transient Plaintext Window
         ///
         /// Decoded bytes are written to `output` progressively during the
         /// fixed-shape decode loop before malformed-input detection is
         /// complete. On error, the entire `output` is wiped before returning,
         /// but a concurrent same-process observer with access to `output`
-        /// during the call may observe partial decoded plaintext. For
-        /// shared-memory or sandboxed deployments where even transient writes
-        /// are unacceptable, use [`Self::decode_slice_staged_clear_tail`] with
-        /// a private staging buffer.
+        /// during the call may observe transient partial plaintext from valid
+        /// leading quanta. For shared-memory, enclave-adjacent, HSM-style, or
+        /// multi-principal deployments where even transient writes are
+        /// unacceptable, use [`Self::decode_slice_staged_clear_tail`] with a
+        /// private staging buffer.
         ///
         /// # Examples
         ///
@@ -2599,6 +2626,17 @@ pub mod ct {
         ///
         /// If decoding fails, the entire buffer is cleared before the error is
         /// returned.
+        ///
+        /// # Security: Transient Plaintext Window
+        ///
+        /// This in-place API writes decoded bytes into `buffer` during the
+        /// fixed-shape decode loop before malformed-input detection is
+        /// complete. On error, the entire buffer is wiped before returning,
+        /// but concurrent same-process observers with access to the same memory
+        /// can observe transient partial plaintext. Use
+        /// [`Self::decode_slice_staged_clear_tail`] with a private staging
+        /// buffer when shared-memory or enclave-adjacent deployments cannot
+        /// tolerate that window.
         ///
         /// # Examples
         ///
@@ -2772,8 +2810,10 @@ impl LineWrap {
 
     /// Creates a wrapping policy.
     ///
-    /// Use [`Self::checked_new`] when the line length comes from
-    /// configuration or another untrusted source.
+    /// This constructor is intended for fixed, trusted values such as
+    /// compile-time MIME or PEM profile constants. Use [`Self::checked_new`]
+    /// when the line length comes from configuration, network input, file
+    /// metadata, or another untrusted runtime source.
     ///
     /// # Panics
     ///
@@ -3874,6 +3914,10 @@ impl SecretBuffer {
             return Err(self);
         }
 
+        // Security invariant: do not add fallible or allocating work between
+        // taking `exposed.bytes` and wrapping it as `ExposedSecretString`.
+        // During that narrow move-only window the bytes are temporarily in a
+        // plain `Vec<u8>`.
         let mut exposed = self.into_exposed_vec();
         let bytes = core::mem::take(&mut exposed.bytes);
         drop(exposed);
@@ -3910,13 +3954,6 @@ impl SecretBuffer {
     pub fn clear(&mut self) {
         wipe_vec_all(&mut self.bytes);
         self.bytes.clear();
-    }
-}
-
-#[cfg(feature = "alloc")]
-impl Clone for SecretBuffer {
-    fn clone(&self) -> Self {
-        Self::from_slice(self.expose_secret())
     }
 }
 
@@ -4219,7 +4256,8 @@ where
     ///
     /// Profile decoders use the normal strict decode path. They may branch or
     /// return early based on malformed input, padding position, wrapping, and
-    /// output capacity in order to return precise [`DecodeError`] diagnostics.
+    /// output capacity in order to return precise [`DecodeError`] diagnostics,
+    /// including exact invalid-byte values and positions.
     /// Do not use this method for token comparison, key-material decoding, or
     /// secret-bearing validation where malformed-input timing matters. Use
     /// [`crate::ct`] with a matching unwrapped engine for constant-time-oriented
@@ -4272,6 +4310,18 @@ where
     ///
     /// For wrapped profiles, configured line endings are compacted out before
     /// decoding. If validation fails, the buffer contents are unspecified.
+    /// On success, bytes after the returned decoded prefix may retain compacted
+    /// encoded input. Use [`Self::decode_in_place_clear_tail`] when the buffer
+    /// may be reused or freed without a caller-managed wipe.
+    ///
+    /// # Security
+    ///
+    /// Profile in-place decoders use the normal strict decode path. They may
+    /// branch or return early based on malformed input, padding position,
+    /// wrapping, and output capacity in order to return precise
+    /// [`DecodeError`] diagnostics. Do not use this method for token
+    /// comparison, key-material decoding, or secret-bearing validation where
+    /// malformed-input timing matters.
     ///
     /// # Examples
     ///
@@ -5276,6 +5326,12 @@ where
     /// decoder.write_all(b"aGVsbG8=").unwrap();
     /// assert_eq!(decoder.finish().unwrap(), b"hello");
     /// ```
+    ///
+    /// # Security
+    ///
+    /// Streaming decoders use the normal strict decode path, not the
+    /// [`crate::ct`] module. Do not use this adapter for secret-bearing
+    /// payloads when malformed-input timing matters.
     #[cfg(feature = "stream")]
     #[must_use]
     pub fn decoder_writer<W>(&self, inner: W) -> stream::Decoder<W, A, PAD> {
@@ -5316,6 +5372,12 @@ where
     /// reader.read_to_end(&mut decoded).unwrap();
     /// assert_eq!(decoded, b"hello");
     /// ```
+    ///
+    /// # Security
+    ///
+    /// Streaming decoder readers use the normal strict decode path, not the
+    /// [`crate::ct`] module. Do not use this adapter for secret-bearing
+    /// payloads when malformed-input timing matters.
     #[cfg(feature = "stream")]
     #[must_use]
     pub fn decoder_reader<R>(&self, inner: R) -> stream::DecoderReader<R, A, PAD> {
@@ -5651,15 +5713,25 @@ where
                     take = remaining;
                 }
 
-                let encoded =
-                    self.encode_slice(&input[input_offset..input_offset + take], &mut scratch)?;
-                write_wrapped_bytes(
+                let encoded = match self
+                    .encode_slice(&input[input_offset..input_offset + take], &mut scratch)
+                {
+                    Ok(encoded) => encoded,
+                    Err(err) => {
+                        wipe_bytes(&mut scratch);
+                        return Err(err);
+                    }
+                };
+                if let Err(err) = write_wrapped_bytes(
                     &scratch[..encoded],
                     output,
                     &mut output_offset,
                     &mut column,
                     wrap,
-                )?;
+                ) {
+                    wipe_bytes(&mut scratch);
+                    return Err(err);
+                }
                 wipe_bytes(&mut scratch[..encoded]);
                 input_offset += take;
             }
@@ -5969,6 +6041,9 @@ where
             buffer[write + 3] = encode_base64_value_runtime::<A>(b2 & 0b0011_1111);
         }
 
+        // The right-to-left loop consumes exactly three input bytes for every
+        // four output bytes. If this invariant changes, returning a shifted
+        // slice would silently corrupt the in-place output.
         debug_assert_eq!(write, 0);
         Ok(&mut buffer[..required])
     }
@@ -6016,11 +6091,13 @@ where
     /// This default scalar decoder prioritizes strict validation, exact error
     /// reporting, and ordinary throughput. It may branch or return early based
     /// on byte validity, malformed input, padding position, and output
-    /// capacity. Do not use this method for token comparison, key-material
-    /// decoding, or secret-bearing validation where malformed-input timing
-    /// matters. Use [`crate::ct`], [`crate::ct::STANDARD`],
-    /// [`crate::ct::URL_SAFE_NO_PAD`], or [`Self::ct_decoder`] with
-    /// `decode_slice_clear_tail` for constant-time-oriented secret decoding.
+    /// capacity. It also reports exact failure positions and invalid byte
+    /// values through [`DecodeError`]. Do not use this method for token
+    /// comparison, key-material decoding, or secret-bearing validation where
+    /// malformed-input timing matters. Use [`crate::ct`],
+    /// [`crate::ct::STANDARD`], [`crate::ct::URL_SAFE_NO_PAD`], or
+    /// [`Self::ct_decoder`] with `decode_slice_clear_tail` for
+    /// constant-time-oriented secret decoding.
     #[must_use = "handle decode errors; use crate::ct for secret-bearing payloads"]
     pub fn decode_slice(&self, input: &[u8], output: &mut [u8]) -> Result<usize, DecodeError> {
         backend::decode_slice::<A, PAD>(input, output)
@@ -6354,6 +6431,10 @@ where
     /// lines must contain exactly `wrap.line_len` encoded bytes; the final line
     /// may be shorter. A single trailing line ending after the final line is
     /// accepted. If validation fails, the buffer contents are unspecified.
+    /// On success, bytes after the returned decoded prefix may retain the
+    /// compacted encoded representation. Use
+    /// [`Self::decode_in_place_wrapped_clear_tail`] when the buffer may be
+    /// reused or freed without a caller-managed wipe.
     ///
     /// # Examples
     ///
@@ -6429,6 +6510,19 @@ where
 
     /// Decodes the buffer in place and returns the decoded prefix.
     ///
+    /// On success, bytes after the returned decoded prefix may retain encoded
+    /// input bytes. Use [`Self::decode_in_place_clear_tail`] when the buffer
+    /// may be reused or freed without a caller-managed wipe.
+    ///
+    /// # Security
+    ///
+    /// This default scalar decoder prioritizes strict validation, exact error
+    /// reporting, and ordinary throughput. It may branch or return early based
+    /// on malformed input and reports exact failure positions and invalid byte
+    /// values through [`DecodeError`]. Do not use this method for token
+    /// comparison, key-material decoding, or secret-bearing validation where
+    /// malformed-input timing matters.
+    ///
     /// # Examples
     ///
     /// ```
@@ -6477,7 +6571,10 @@ where
     /// Decodes `buffer` in place using the explicit legacy whitespace profile.
     ///
     /// Ignored whitespace is compacted out before decoding. If validation
-    /// fails, the buffer contents are unspecified.
+    /// fails, the buffer contents are unspecified. On success, bytes after the
+    /// returned decoded prefix may retain the compacted encoded
+    /// representation. Use [`Self::decode_in_place_legacy_clear_tail`] when the
+    /// buffer may be reused or freed without a caller-managed wipe.
     pub fn decode_in_place_legacy<'a>(
         &self,
         buffer: &'a mut [u8],
@@ -7714,7 +7811,12 @@ fn ct_padded_final_quantum<A: Alphabet>(
     let (v2, valid2) = ct_decode_alphabet_byte::<A>(b2);
     let (v3, valid3) = ct_decode_alphabet_byte::<A>(b3);
 
-    let padding_byte = padding.to_le_bytes()[0];
+    let padding_byte = match padding {
+        0 => 0,
+        1 => 1,
+        2 => 2,
+        _ => 3,
+    };
     let no_padding = ct_mask_eq_u8(padding_byte, 0);
     let one_padding = ct_mask_eq_u8(padding_byte, 1);
     let two_padding = ct_mask_eq_u8(padding_byte, 2);
@@ -7792,7 +7894,10 @@ fn ct_decode_padded_in_place<A: Alphabet>(buffer: &mut [u8]) -> Result<usize, De
 
     let padding = ct_padding_len(buffer);
     let required = buffer.len() / 4 * 3 - padding;
-    debug_assert!(required <= buffer.len());
+    if required > buffer.len() {
+        wipe_bytes(buffer);
+        return Err(DecodeError::InvalidInput);
+    }
 
     let mut invalid_byte = 0u8;
     let mut invalid_padding = 0u8;
@@ -7800,7 +7905,13 @@ fn ct_decode_padded_in_place<A: Alphabet>(buffer: &mut [u8]) -> Result<usize, De
     let mut read = 0;
 
     while read + 4 < buffer.len() {
-        let [b0, b1, b2, b3] = read_quad(buffer, read)?;
+        let [b0, b1, b2, b3] = match read_quad(buffer, read) {
+            Ok(quad) => quad,
+            Err(err) => {
+                wipe_bytes(buffer);
+                return Err(err);
+            }
+        };
         let (v0, valid0) = ct_decode_alphabet_byte::<A>(b0);
         let (v1, valid1) = ct_decode_alphabet_byte::<A>(b1);
         let (v2, valid2) = ct_decode_alphabet_byte::<A>(b2);
@@ -7819,7 +7930,13 @@ fn ct_decode_padded_in_place<A: Alphabet>(buffer: &mut [u8]) -> Result<usize, De
         read += 4;
     }
 
-    let final_chunk = read_quad(buffer, read)?;
+    let final_chunk = match read_quad(buffer, read) {
+        Ok(quad) => quad,
+        Err(err) => {
+            wipe_bytes(buffer);
+            return Err(err);
+        }
+    };
     let (final_bytes, final_invalid_byte, final_invalid_padding, final_written) =
         ct_padded_final_quantum::<A>(final_chunk, padding);
     invalid_byte |= final_invalid_byte;
@@ -7918,7 +8035,10 @@ fn ct_decode_unpadded_in_place<A: Alphabet>(buffer: &mut [u8]) -> Result<usize, 
     }
 
     let required = decoded_capacity(buffer.len());
-    debug_assert!(required <= buffer.len());
+    if required > buffer.len() {
+        wipe_bytes(buffer);
+        return Err(DecodeError::InvalidInput);
+    }
 
     let mut invalid_byte = 0u8;
     let mut invalid_padding = 0u8;
@@ -7926,7 +8046,13 @@ fn ct_decode_unpadded_in_place<A: Alphabet>(buffer: &mut [u8]) -> Result<usize, 
     let mut read = 0;
 
     while read + 4 <= buffer.len() {
-        let [b0, b1, b2, b3] = read_quad(buffer, read)?;
+        let [b0, b1, b2, b3] = match read_quad(buffer, read) {
+            Ok(quad) => quad,
+            Err(err) => {
+                wipe_bytes(buffer);
+                return Err(err);
+            }
+        };
         let (v0, valid0) = ct_decode_alphabet_byte::<A>(b0);
         let (v1, valid1) = ct_decode_alphabet_byte::<A>(b1);
         let (v2, valid2) = ct_decode_alphabet_byte::<A>(b2);
@@ -7948,7 +8074,14 @@ fn ct_decode_unpadded_in_place<A: Alphabet>(buffer: &mut [u8]) -> Result<usize, 
         write += 3;
     }
 
-    match read_tail(buffer, read)? {
+    let tail = match read_tail(buffer, read) {
+        Ok(tail) => tail,
+        Err(err) => {
+            wipe_bytes(buffer);
+            return Err(err);
+        }
+    };
+    match tail {
         [] => {}
         [b0, b1] => {
             let (v0, valid0) = ct_decode_alphabet_byte::<A>(*b0);
