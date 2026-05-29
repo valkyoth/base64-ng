@@ -8,8 +8,9 @@ fi
 
 host="$(rustc -vV | sed -n 's/^host: //p')"
 machine="$(uname -m)"
+toolchain="$(rustup show active-toolchain | sed 's/ .*//')"
 
-echo "macOS checks: host=$host machine=$machine"
+echo "macOS checks: host=$host machine=$machine toolchain=$toolchain"
 
 case "$host" in
     aarch64-apple-darwin|x86_64-apple-darwin)
@@ -46,9 +47,16 @@ echo "macOS checks: host clippy all features"
 cargo clippy --all-targets --all-features -- -D warnings
 
 for target in aarch64-apple-darwin x86_64-apple-darwin; do
-    if ! rustup target list --installed | grep -qx "$target"; then
-        echo "macOS checks: installing missing Rust target $target"
-        rustup target add "$target"
+    if ! rustup target list --installed --toolchain "$toolchain" | grep -qx "$target"; then
+        echo "macOS checks: installing missing Rust target $target for $toolchain"
+        rustup target add --toolchain "$toolchain" "$target"
+    fi
+
+    if ! rustc --target "$target" --print target-libdir >/dev/null 2>&1; then
+        echo "macOS checks: Rust target $target is not usable for $toolchain" >&2
+        echo "macOS checks: installed targets for $toolchain:" >&2
+        rustup target list --installed --toolchain "$toolchain" >&2
+        exit 1
     fi
 
     echo "macOS checks: target compile all features for $target"
