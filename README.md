@@ -29,7 +29,7 @@ The crate starts conservative: a small scalar implementation, strict RFC 4648 be
 
 ## Current Status
 
-The current public release is `1.0.1`.
+The current public release is `1.0.2`.
 
 Implemented now:
 
@@ -70,7 +70,7 @@ Implemented now:
 Planned behind admission evidence:
 
 - Admitted AVX2, AVX-512, SSSE3/SSE4.1, ARM NEON, and wasm `simd128`
-  fast paths after the SIMD admission evidence is complete. The `1.0.1`
+  fast paths after the SIMD admission evidence is complete. The `1.0.2`
   release remains scalar-only.
 - Async streaming wrappers only after the `tokio` feature passes the
   dependency and cancellation-safety admission bar in [docs/ASYNC.md](docs/ASYNC.md).
@@ -105,7 +105,7 @@ and CWE mapping lives in [docs/SECURITY_CONTROLS.md](docs/SECURITY_CONTROLS.md).
 The minimum supported Rust version is Rust `1.90.0`. New deployments should
 prefer the latest stable Rust; as of May 29, 2026, that is Rust `1.96.0`.
 
-Compatibility evidence for `1.0.1`:
+Compatibility evidence for `1.0.2`:
 
 | Rust | Local Evidence |
 | --- | --- |
@@ -121,7 +121,7 @@ Compatibility evidence for `1.0.1`:
 
 ```toml
 [dependencies]
-base64-ng = "1.0.1"
+base64-ng = "1.0.2"
 ```
 
 The crate is dual-licensed:
@@ -148,7 +148,7 @@ Disable defaults for embedded or freestanding use:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.0.1", default-features = false }
+base64-ng = { version = "1.0.2", default-features = false }
 ```
 
 ## Example

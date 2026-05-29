@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.2 - 2026-05-29
+
+- Started the `1.0.x` source-layout series by splitting the `std::io`
+  streaming adapters into `src/stream.rs` and stream integration tests into
+  `tests/stream.rs` while preserving the public `base64_ng::stream::*` API
+  surface.
+
 ## 1.0.1 - 2026-05-29
 
 - Lowered the documented MSRV from Rust `1.95.0` to Rust `1.90.0` after
