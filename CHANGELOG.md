@@ -10,6 +10,9 @@
   (`macos-15-intel`) while keeping `macos-latest` as the moving-label signal.
 - Added `scripts/check_macos.sh` for local macOS verification on Apple Silicon
   and Intel Macs, including host tests plus Apple Darwin target compile checks.
+- Split alphabet definitions, custom alphabet validation, the alphabet macro,
+  and `AlphabetError` into `src/alphabet.rs` while preserving all public root
+  exports.
 
 ## 1.0.2 - 2026-05-29
 

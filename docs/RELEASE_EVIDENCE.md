@@ -68,6 +68,9 @@ The release gate runs:
   `macos-latest` as a moving-label migration signal
 - local macOS host verification through `scripts/check_macos.sh`, which runs
   the full host test/clippy set and compile-checks both Apple Darwin triples
+- moved-code review for the `src/alphabet.rs` extraction, preserving root
+  public exports for built-in alphabets, custom alphabet validation, and the
+  `define_alphabet!` macro
 - all-features and no-default-features doctests plus documentation builds
 - `cargo deny check`
 - `cargo audit`
