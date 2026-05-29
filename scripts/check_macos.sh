@@ -7,14 +7,20 @@ if [ "$(uname -s)" != "Darwin" ]; then
 fi
 
 toolchain="$(rustup show active-toolchain | sed 's/ .*//')"
+rustc_path="$(rustup which --toolchain "$toolchain" rustc)"
 host="$(rustup run "$toolchain" rustc -vV | sed -n 's/^host: //p')"
 machine="$(uname -m)"
-script_revision="2026-05-29-host-target-v2"
+script_revision="2026-05-29-host-target-v3"
+
+cargo_check() {
+    RUSTC="$rustc_path" rustup run "$toolchain" cargo "$@"
+}
 
 echo "macOS checks: script=$script_revision"
 echo "macOS checks: host=$host machine=$machine toolchain=$toolchain"
 echo "macOS checks: rustc=$(rustup run "$toolchain" rustc --version)"
 echo "macOS checks: cargo=$(rustup run "$toolchain" cargo --version)"
+echo "macOS checks: rustc path=$rustc_path"
 
 case "$host" in
     aarch64-apple-darwin|x86_64-apple-darwin)
@@ -64,26 +70,26 @@ for target in aarch64-apple-darwin x86_64-apple-darwin; do
 done
 
 echo "macOS checks: host test default features"
-rustup run "$toolchain" cargo test --target "$host" --all-targets
+cargo_check test --target "$host" --all-targets
 
 echo "macOS checks: host test all features"
-rustup run "$toolchain" cargo test --target "$host" --all-targets --all-features
+cargo_check test --target "$host" --all-targets --all-features
 
 echo "macOS checks: host check no_std library"
-rustup run "$toolchain" cargo check --target "$host" --no-default-features --lib
+cargo_check check --target "$host" --no-default-features --lib
 
 echo "macOS checks: host test no default features"
-rustup run "$toolchain" cargo test --target "$host" --no-default-features --all-targets
+cargo_check test --target "$host" --no-default-features --all-targets
 
 echo "macOS checks: host clippy all features"
-rustup run "$toolchain" cargo clippy --target "$host" --all-targets --all-features -- -D warnings
+cargo_check clippy --target "$host" --all-targets --all-features -- -D warnings
 
 for target in aarch64-apple-darwin x86_64-apple-darwin; do
     echo "macOS checks: target compile all features for $target"
-    rustup run "$toolchain" cargo check --target "$target" --all-features --lib
+    cargo_check check --target "$target" --all-features --lib
 
     echo "macOS checks: target compile no default features for $target"
-    rustup run "$toolchain" cargo check --target "$target" --no-default-features --lib
+    cargo_check check --target "$target" --no-default-features --lib
 done
 
 echo "macOS checks: ok"
