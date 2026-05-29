@@ -52,6 +52,20 @@ keeps execution on the audited scalar backend and avoids future SIMD-induced
 timing variation unless an accelerated backend has been admitted with its own
 side-channel evidence.
 
+`HighAssuranceScalarOnly` is still a build and target posture assertion, not a
+runtime microarchitecture attestation. On AArch64, the crate emits `isb sy`
+plus the CSDB hint for the CT result gate, but deployments must verify through
+processor documentation, BSP notes, or platform certification that CSDB is
+effective on the specific core. On RISC-V, the crate reports
+`CtGatePosture::OrderingFence`; the base ISA provides memory ordering, not a
+canonical Spectre-v1 speculation barrier. RISC-V deployments with speculative
+execution threat models need platform-level mitigations outside this crate.
+
+The dependency-free equality helpers are also best-effort review aids, not
+FIPS-validated comparison primitives. High-assurance authentication boundaries
+should use a deployment-approved constant-time comparison primitive for MACs,
+bearer tokens, password hashes, and equivalent protocol decisions.
+
 ## Non-Goals
 
 - Do not describe Base64 itself as cryptography.

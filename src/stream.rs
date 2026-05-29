@@ -243,7 +243,7 @@ where
 
     /// Returns whether this encoder has been finalized.
     ///
-    /// Once this returns `true`, later non-empty writes return an error.
+    /// Once this returns `true`, later writes return an error.
     #[must_use]
     pub const fn is_finalized(&self) -> bool {
         self.finalized
@@ -436,16 +436,15 @@ where
     A: Alphabet,
 {
     fn write(&mut self, input: &[u8]) -> io::Result<usize> {
-        if input.is_empty() {
-            self.drain_output()?;
-            return Ok(0);
-        }
         self.drain_output()?;
         if self.finalized {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
                 "base64 stream encoder received input after finalization",
             ));
+        }
+        if input.is_empty() {
+            return Ok(0);
         }
 
         let mut consumed = 0;

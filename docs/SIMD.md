@@ -87,7 +87,10 @@ weakening the scalar trust base.
   CT result gate classified as a hardware speculation barrier. It rejects
   targets that report only an ordering fence or compiler fence. On AArch64,
   this reports emitted `isb sy` plus CSDB hint code; deployments must still
-  attest whether that hint is effective on their specific core.
+  attest whether that hint is effective on their specific core. On RISC-V, the
+  reported CT gate is intentionally only `ordering-fence`; the base ISA does
+  not provide a canonical Spectre-v1 speculation barrier, so platform-level
+  mitigations are required for that threat model.
 - Runtime backend, posture, and policy enums provide stable string identifiers
   for logs and release evidence.
 - Runtime backend reports and policy failures format as stable key/value

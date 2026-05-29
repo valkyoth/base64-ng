@@ -6,6 +6,13 @@
   streaming adapters into `src/stream.rs` and stream integration tests into
   `tests/stream.rs` while preserving the public `base64_ng::stream::*` API
   surface.
+- Added `#[must_use]` to `ct::CtEngine::decode_slice_staged_clear_tail` and
+  strengthened CT documentation for staged decode, AArch64 CSDB attestation,
+  RISC-V ordering-fence posture, and high-assurance comparison boundaries.
+- Added a debug UTF-8 invariant check before the internal secret-string
+  unchecked conversion, clarified `SecretBuffer::clear` ordering, and made
+  `stream::Encoder` reject empty writes after finalization consistently with
+  non-empty writes.
 
 ## 1.0.1 - 2026-05-29
 

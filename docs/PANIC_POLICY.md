@@ -29,8 +29,10 @@ The current reviewed exceptions are:
   also unwind; do not route attacker-controlled sizing decisions through this
   API.
 - `LineWrap::new` may panic when `line_len == 0`. It is intended for fixed,
-  trusted values and profile constants. Use `LineWrap::checked_new` when a line
-  length comes from runtime configuration, file metadata, network input, or
+  trusted values and profile constants. This remains true when the `const fn`
+  is called at runtime: passing attacker-controlled or externally supplied
+  zero values can unwind. Use `LineWrap::checked_new` when a line length comes
+  from runtime configuration, file metadata, network input, a database row, or
   another untrusted source.
 - Internal remainder matches use `_ => unreachable!()` after matching
   `len % 3` or equivalent remainder values. The preceding arithmetic bounds

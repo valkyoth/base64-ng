@@ -213,6 +213,8 @@ fn stream_encoder_try_finish_keeps_adapter_available() {
     assert_eq!(encoder.get_ref(), b"aGU=");
     assert_eq!(encoder.pending_len(), 0);
     assert!(!encoder.has_pending_input());
+    let err = encoder.write(&[]).unwrap_err();
+    assert_eq!(err.kind(), std::io::ErrorKind::InvalidInput);
     let err = encoder.write_all(b"llo").unwrap_err();
     assert_eq!(err.kind(), std::io::ErrorKind::InvalidInput);
 

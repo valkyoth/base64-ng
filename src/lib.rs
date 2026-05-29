@@ -725,7 +725,10 @@ pub mod stream;
 /// before final validation is reported. In shared-memory, enclave, or HSM-style
 /// threat models where another component can observe the output buffer during
 /// the call, prefer [`crate::ct::CtEngine::decode_slice_staged_clear_tail`]
-/// with a private staging buffer.
+/// with a private staging buffer. In those deployments,
+/// [`crate::ct::CtEngine::decode_slice_clear_tail`] is not sufficient by
+/// itself because it wipes caller-owned output only after the internal decode
+/// loop reaches the final error gate.
 ///
 /// The dependency-free comparison helpers on redacted buffers are
 /// constant-time-oriented best effort, not formally audited MAC or token
@@ -770,6 +773,17 @@ pub mod ct {
     pub const URL_SAFE_NO_PAD: CtEngine<UrlSafe, false> = CtEngine::new();
 
     /// A zero-sized constant-time-oriented Base64 decoder.
+    ///
+    /// # Security
+    ///
+    /// For ordinary secret-bearing inputs, prefer
+    /// [`Self::decode_slice_clear_tail`], [`Self::decode_buffer`], or
+    /// [`Self::decode_in_place_clear_tail`]. For shared-memory,
+    /// enclave-adjacent, HSM-style, or multi-principal deployments where
+    /// another component can observe caller-owned output during the call, use
+    /// [`Self::decode_slice_staged_clear_tail`] with a private staging buffer
+    /// so malformed input cannot transiently write decoded bytes into the
+    /// public output buffer before the final error gate.
     #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
     pub struct CtEngine<A, const PAD: bool> {
         alphabet: PhantomData<A>,
@@ -903,6 +917,7 @@ pub mod ct {
         ///
         /// Input length, final success or failure, and decoded length remain
         /// public.
+        #[must_use = "handle decode errors; staged decode is for shared-memory or HSM-style threat models"]
         pub fn decode_slice_staged_clear_tail(
             &self,
             input: &[u8],
@@ -2317,8 +2332,8 @@ impl SecretBuffer {
 
     /// Clears the initialized bytes and makes the buffer empty.
     pub fn clear(&mut self) {
-        wipe_vec_all(&mut self.bytes);
         self.bytes.clear();
+        wipe_vec_all(&mut self.bytes);
     }
 }
 
@@ -3433,6 +3448,10 @@ fn constant_time_eq_same_len(left: &[u8], right: &[u8]) -> bool {
 #[cfg(feature = "alloc")]
 #[allow(unsafe_code)]
 fn string_from_validated_secret_bytes(bytes: alloc::vec::Vec<u8>) -> alloc::string::String {
+    debug_assert!(
+        core::str::from_utf8(&bytes).is_ok(),
+        "string_from_validated_secret_bytes called with invalid UTF-8",
+    );
     // SAFETY: Callers validate the same byte vector as UTF-8 immediately before
     // handing ownership to this helper, and the bytes are not modified between
     // validation and conversion. Using the unchecked conversion avoids a

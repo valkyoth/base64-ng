@@ -125,6 +125,13 @@ mask passes through a non-inlined compiler barrier plus architecture-specific
 hardware speculation barriers where available. Shared-memory deployments that
 cannot tolerate transient writes to the caller output should use
 `CtEngine::decode_slice_staged_clear_tail` with a private staging buffer.
+On AArch64, the emitted CT gate uses `isb sy` plus the CSDB hint encoding.
+Deployments that rely on `runtime::BackendPolicy::HighAssuranceScalarOnly`
+must attest that the deployed core treats CSDB as an effective speculation
+barrier; older ARM cores may treat the hint as a no-op. On RISC-V, the crate
+reports an ordering-fence CT gate because the base ISA does not provide a
+canonical speculation barrier. RISC-V deployments in Spectre-v1 threat models
+must rely on platform-level mitigations outside this crate.
 For constant-time-oriented in-place decode, use
 `ct::CtEngine::decode_in_place_clear_tail`. The non-clear-tail CT in-place API
 was removed before the `1.0` stable boundary because it could partially destroy
@@ -134,6 +141,11 @@ caller-owned buffers in addition to the crate's dependency-free cleanup APIs.
 For applications that already admit `zeroize`, decode into caller-owned buffers
 and apply `Zeroize::zeroize()` after the Base64 step; `base64-ng` intentionally
 does not add that dependency for every user.
+Avoid cloning stack-backed decoded or encoded buffers that contain secret
+material. `DecodedBuffer` and `EncodedBuffer` implement `Clone` for ergonomic
+no-alloc interop, but cloning duplicates visible bytes and may create compiler
+temporaries outside the crate's cleanup boundary. Use `SecretBuffer` for
+heap-owned secret material when clone-free redacted handling is required.
 
 ### Side-Channel Posture
 
@@ -148,6 +160,10 @@ decode APIs. The `ct` module narrows the timing target further for scalar
 decode and uses a fixed scan over the selected alphabet for generic symbol
 mapping. It still does not carry a formal cryptographic constant-time
 guarantee.
+For high-assurance MAC, bearer-token, password-hash, or equivalent protocol
+comparisons, use a deployment-approved reviewed constant-time comparison
+primitive at the protocol boundary. The crate's dependency-free comparison
+helpers are intentionally documented as best-effort and public-length only.
 Input length, padding length, decoded length, and final success/failure remain
 public protocol facts; callers that must hide those facts need fixed-shape
 protocol-level processing after decode failure.
