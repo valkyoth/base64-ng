@@ -71,6 +71,8 @@ The release gate runs:
 - moved-code review for the `src/alphabet.rs` extraction, preserving root
   public exports for built-in alphabets, custom alphabet validation, and the
   `define_alphabet!` macro
+- moved-code review for the `src/profiles.rs` extraction, preserving root
+  public exports for `Profile` and the named MIME/PEM/bcrypt/crypt profiles
 - all-features and no-default-features doctests plus documentation builds
 - `cargo deny check`
 - `cargo audit`

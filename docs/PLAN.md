@@ -590,14 +590,14 @@ Recommended `1.0.x` source-layout sequence:
   `src/stream.rs`, preserving `base64_ng::stream::*`.
 - `1.0.3`: split runtime backend reporting and backend-policy types into
   `src/runtime.rs`; split alphabets, custom alphabet validation, the alphabet
-  macro, and alphabet errors into `src/alphabet.rs`.
-- `1.0.4`: split profile wrappers into `src/profiles.rs`.
-- `1.0.5`: split stack/owned buffer wrappers and best-effort cleanup helpers
+  macro, and alphabet errors into `src/alphabet.rs`; split profile wrappers
+  into `src/profiles.rs`.
+- `1.0.4`: split stack/owned buffer wrappers and best-effort cleanup helpers
   into `src/buffers.rs` and `src/cleanup.rs`.
-- `1.0.6`: split constant-time-oriented decode, validation, masks, and CT
+- `1.0.5`: split constant-time-oriented decode, validation, masks, and CT
   barriers into `src/ct.rs`. This comes later because it is the most
   security-sensitive move.
-- `1.0.7`: split length helpers, line wrapping, and scalar core encode/decode
+- `1.0.6`: split length helpers, line wrapping, and scalar core encode/decode
   helpers into `src/length.rs`, `src/wrap.rs`, and `src/scalar.rs` if the
   previous smaller splits stayed clean.
 

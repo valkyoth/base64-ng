@@ -13,6 +13,8 @@
 - Split alphabet definitions, custom alphabet validation, the alphabet macro,
   and `AlphabetError` into `src/alphabet.rs` while preserving all public root
   exports.
+- Split `Profile` and the named MIME/PEM/bcrypt/crypt profile constants into
+  `src/profiles.rs` while preserving all public root exports.
 
 ## 1.0.2 - 2026-05-29
 
