@@ -95,28 +95,22 @@ pub(crate) fn wipe_tail(bytes: &mut [u8], start: usize) {
 #[cfg(feature = "alloc")]
 #[allow(unsafe_code)]
 pub(crate) fn wipe_vec_spare_capacity(bytes: &mut alloc::vec::Vec<u8>) {
-    let ptr = bytes.as_mut_ptr();
-    let len = bytes.len();
-    let capacity = bytes.capacity();
-    let spare = capacity - len;
-    if spare == 0 {
+    let spare = bytes.spare_capacity_mut();
+    if spare.is_empty() {
         return;
     }
 
-    let mut offset = len;
-    while offset < capacity {
-        // SAFETY: `offset` is within the vector allocation's spare capacity, so
-        // the pointer is valid, aligned, and writable for one `u8`. This writes
-        // a zero byte without reading the prior uninitialized value.
+    let spare_ptr = spare.as_mut_ptr().cast::<u8>();
+    let spare_len = spare.len();
+    for byte in spare.iter_mut() {
+        // SAFETY: `byte` is a unique `MaybeUninit<u8>` slot from the vector's
+        // spare capacity. `as_mut_ptr` points at writable storage for one
+        // `u8`, and this write does not read the previous uninitialized value.
         unsafe {
-            core::ptr::write_volatile(ptr.add(offset), 0);
+            core::ptr::write_volatile(byte.as_mut_ptr(), 0);
         }
-        offset += 1;
     }
-    // SAFETY: `spare > 0`, so `len < capacity` and `ptr.add(len)` points
-    // inside the vector allocation at the first spare-capacity byte.
-    let spare_ptr = unsafe { ptr.add(len) };
-    wipe_barrier(spare_ptr, spare);
+    wipe_barrier(spare_ptr, spare_len);
 }
 
 #[cfg(feature = "alloc")]

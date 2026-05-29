@@ -5,6 +5,28 @@
 //! available when the wrapped reader or writer must be explicitly
 //! recovered after a decode error.
 //!
+//! # Security
+//!
+//! Streaming decoders use the normal strict decode path. They preserve
+//! localized I/O-style errors and are not constant-time decoders. For
+//! secret-bearing frames where timing posture matters, collect the complete
+//! framed payload first and then use `base64_ng::ct`:
+//!
+//! ```no_run
+//! use std::io::Read;
+//! use base64_ng::ct;
+//!
+//! const MAX_FRAME: usize = 4096;
+//!
+//! # fn decode_secret_frame<R: Read>(mut reader: R) -> Result<(), Box<dyn std::error::Error>> {
+//! let mut frame = Vec::new();
+//! reader.read_to_end(&mut frame)?;
+//! let decoded = ct::STANDARD.decode_buffer::<MAX_FRAME>(&frame)?;
+//! # let _ = decoded;
+//! # Ok(())
+//! # }
+//! ```
+//!
 //! ```
 //! use std::io::{Read, Write};
 //! use base64_ng::{STANDARD, stream::{Decoder, DecoderReader, Encoder, EncoderReader}};

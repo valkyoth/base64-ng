@@ -167,6 +167,11 @@ helpers are intentionally documented as best-effort and public-length only.
 Input length, padding length, decoded length, and final success/failure remain
 public protocol facts; callers that must hide those facts need fixed-shape
 protocol-level processing after decode failure.
+Avoid the `stream` decoder adapters for secret-bearing Base64 when
+constant-time behavior is required. Streaming decoders intentionally use the
+normal strict decoder so they can preserve I/O-style behavior and avoid
+buffering unbounded frames. For secrets, collect one complete protocol frame
+under an application size limit and decode it with `ct::CtEngine`.
 Deployments that require the most conservative side-channel posture should
 combine `base64_ng::ct` with
 `runtime::BackendPolicy::HighAssuranceScalarOnly` so sensitive decode paths

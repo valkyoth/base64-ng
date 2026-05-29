@@ -60,6 +60,16 @@ effective on the specific core. On RISC-V, the crate reports
 `CtGatePosture::OrderingFence`; the base ISA provides memory ordering, not a
 canonical Spectre-v1 speculation barrier. RISC-V deployments with speculative
 execution threat models need platform-level mitigations outside this crate.
+In deployment checklists for RISC-V systems with a Spectre-v1 threat model,
+assert the policy at startup and treat a failure as expected until the
+platform provides an approved mitigation:
+
+```rust
+base64_ng::runtime::require_backend_policy(
+    base64_ng::runtime::BackendPolicy::HighAssuranceScalarOnly,
+)
+.expect("RISC-V builds need platform-level speculation mitigation");
+```
 
 The dependency-free equality helpers are also best-effort review aids, not
 FIPS-validated comparison primitives. High-assurance authentication boundaries

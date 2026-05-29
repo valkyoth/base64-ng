@@ -188,43 +188,6 @@ Limitations:
   audited MAC, token, or password-hash comparison primitive should use one at
   the application boundary.
 
-### `string_from_validated_secret_bytes`
-
-Location: `src/lib.rs`
-
-Status: active secret conversion helper when `alloc` is enabled.
-
-Purpose:
-
-- Convert bytes already validated as UTF-8, or bytes just extracted from a
-  valid `String`, back into `String` without a second fallible conversion after
-  the vector has crossed a secret-wrapper boundary.
-- Avoid an intermediate raw `Vec<u8>` drop path that would not run the crate's
-  best-effort cleanup on panic.
-
-Preconditions:
-
-- Caller must validate the exact vector contents as UTF-8 immediately before
-  handing ownership to this helper, or pass bytes produced directly by
-  `String::into_bytes` without modifying the initialized prefix.
-- The vector must not be modified between validation and conversion.
-
-Unsafe operation:
-
-- `alloc::string::String::from_utf8_unchecked` converts the vector to a
-  string without revalidating.
-
-Safety argument:
-
-- `SecretBuffer::try_into_exposed_string` validates `self.expose_secret()` with
-  `core::str::from_utf8` before moving the same allocation into this helper.
-- `ExposedSecretString::from_string` receives a valid `String`, converts it to
-  bytes, wipes only spare capacity past the initialized UTF-8 prefix, and then
-  moves the same initialized prefix into this helper.
-- No mutation occurs between validation and conversion.
-- The returned `ExposedSecretString` retains redacted formatting and drop-time
-  cleanup.
-
 ### `ct_error_gate_barrier`
 
 Location: `src/lib.rs`
@@ -306,6 +269,11 @@ Limitations:
 - These volatile reads are optimizer barriers, not a formal proof of
   microarchitectural constant-time behavior. Release evidence and dudect remain
   required for high-assurance review.
+- `#[inline(never)]` is supported by generated-code evidence, not by a
+  language-level formal guarantee under all future LTO optimizers. The release
+  evidence script checks that this scanner remains a separate text symbol in
+  the LTO artifact; high-assurance deployments should keep that evidence check
+  in their release gate.
 
 ### `wipe_vec_spare_capacity`
 
@@ -326,29 +294,26 @@ Preconditions:
 
 Unsafe operation:
 
-- `core::ptr::write_volatile` writes zero to each byte from `len` up to
-  `capacity`.
-- `ptr.add(offset)` computes a pointer inside the vector allocation's spare
-  capacity.
+- `Vec::spare_capacity_mut` exposes the uninitialized spare allocation as
+  `&mut [MaybeUninit<u8>]`.
+- `core::ptr::write_volatile` writes zero to each spare-capacity byte through
+  the slot's `MaybeUninit<u8>::as_mut_ptr`.
 - `wipe_barrier` is called for the spare-capacity region after the volatile
   write loop.
 
 Safety argument:
 
-- The loop writes only while `offset < capacity`, so each computed pointer is
-  inside the vector allocation.
+- `spare_capacity_mut` only returns slots inside the vector allocation after
+  the initialized length.
 - The helper returns before computing the barrier pointer when spare capacity
-  is zero. This avoids passing a one-past-the-end allocation pointer or a
-  dangling zero-capacity vector sentinel to the barrier.
-- A `Vec<u8>` allocation is valid and aligned for `u8` writes across its full
-  capacity.
+  is zero. This avoids passing a dangling zero-capacity vector sentinel to the
+  barrier.
 - The helper does not read uninitialized spare-capacity bytes; it only writes
   zeros.
-- When spare capacity is non-zero, the barrier pointer is computed with
-  `ptr.add(len)`, which points inside the vector allocation at the first spare
-  byte. The barrier does not dereference the pointer. It exists to keep the
-  preceding volatile writes visible across the cleanup boundary before the
-  final `SeqCst` compiler fence.
+- When spare capacity is non-zero, the barrier pointer is the start of the
+  spare-capacity slice. The barrier does not dereference the pointer. It exists
+  to keep the preceding volatile writes visible across the cleanup boundary
+  before the final `SeqCst` compiler fence.
 
 Limitations:
 

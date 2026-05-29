@@ -1629,8 +1629,8 @@ impl SecretBuffer {
 
     /// Clears the initialized bytes and makes the buffer empty.
     pub fn clear(&mut self) {
-        self.bytes.clear();
         wipe_vec_all(&mut self.bytes);
+        self.bytes.clear();
     }
 }
 
@@ -2010,17 +2010,15 @@ fn constant_time_eq_same_len(left: &[u8], right: &[u8]) -> bool {
 }
 
 #[cfg(feature = "alloc")]
-#[allow(unsafe_code)]
 fn string_from_validated_secret_bytes(bytes: alloc::vec::Vec<u8>) -> alloc::string::String {
-    debug_assert!(
-        core::str::from_utf8(&bytes).is_ok(),
-        "string_from_validated_secret_bytes called with invalid UTF-8",
-    );
-    // SAFETY: Callers validate the same byte vector as UTF-8 immediately before
-    // handing ownership to this helper, and the bytes are not modified between
-    // validation and conversion. Using the unchecked conversion avoids a
-    // second fallible conversion while the bytes are outside `SecretBuffer`.
-    unsafe { alloc::string::String::from_utf8_unchecked(bytes) }
+    match alloc::string::String::from_utf8(bytes) {
+        Ok(string) => string,
+        Err(error) => {
+            let mut bytes = error.into_bytes();
+            wipe_vec_all(&mut bytes);
+            unreachable!("string_from_validated_secret_bytes called with invalid UTF-8")
+        }
+    }
 }
 
 mod backend {
@@ -3382,11 +3380,18 @@ where
     /// The wrapped profile accepts only the configured line ending. Non-final
     /// lines must contain exactly `wrap.line_len` encoded bytes; the final line
     /// may be shorter. A single trailing line ending after the final line is
-    /// accepted. If validation fails, the buffer contents are unspecified.
-    /// On success, bytes after the returned decoded prefix may retain the
-    /// compacted encoded representation. Use
+    /// accepted.
+    ///
+    /// # Security
+    ///
+    /// This method compacts line endings in place before decoding. If
+    /// validation or decoding fails, the buffer contents are unspecified and
+    /// may contain a compacted encoded prefix. On success, bytes after the
+    /// returned decoded prefix may retain the compacted encoded representation.
+    /// Use
     /// [`Self::decode_in_place_wrapped_clear_tail`] when the buffer may be
-    /// reused or freed without a caller-managed wipe.
+    /// reused or freed without a caller-managed wipe; treat that clear-tail
+    /// variant as the default for secret-bearing wrapped payloads.
     ///
     /// # Examples
     ///

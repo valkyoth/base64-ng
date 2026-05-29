@@ -133,6 +133,10 @@ Decision rationale:
   Base64 text through explicit display/text APIs.
 - Drop-time cleanup is best-effort and scoped to the buffer's current backing
   array, not historical stack-frame copies.
+- `EncodedBuffer<CAP>` and `DecodedBuffer<CAP>` rely on Rust auto traits for
+  `Send` and `Sync`; no explicit `unsafe impl` is used. If a future internal
+  field is not thread-safe, auto-trait derivation should fail instead of being
+  overridden by a stale manual implementation.
 - `into_exposed_array` is intentionally named as an ownership escape hatch and
   returns `ExposedEncodedArray` or `ExposedDecodedArray`, preserving redaction
   and drop-time cleanup after ownership transfer. The raw-array escape hatch is
@@ -172,6 +176,9 @@ Decision rationale:
 - `SecretBuffer` intentionally does not implement `Clone`; callers that need a
   second copy must spell that out through `from_slice`, making secret
   duplication visible at the call site.
+- `SecretBuffer` relies on Rust auto traits for `Send` and `Sync`; no explicit
+  `unsafe impl` is used. This is deliberate because a future non-thread-safe
+  field should remove those auto traits automatically.
 - Equality is intentionally not exposed through `PartialEq`/`==`. Callers must
   opt into the explicit `constant_time_eq_public_len` helper, whose equal-length
   scan is best-effort and whose length mismatch remains public.
