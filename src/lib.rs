@@ -2016,7 +2016,7 @@ fn string_from_validated_secret_bytes(bytes: alloc::vec::Vec<u8>) -> alloc::stri
         Err(error) => {
             let mut bytes = error.into_bytes();
             wipe_vec_all(&mut bytes);
-            unreachable!("string_from_validated_secret_bytes called with invalid UTF-8")
+            alloc::string::String::new()
         }
     }
 }

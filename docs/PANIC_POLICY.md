@@ -37,8 +37,11 @@ The current reviewed exceptions are:
 - Internal remainder matches use `_ => unreachable!()` after matching
   `len % 3` or equivalent remainder values. The preceding arithmetic bounds
   make those arms unreachable.
-- `String::from_utf8` conversions after Base64 encoding use `unreachable!`
-  because crate encoders produce ASCII bytes by construction.
+- `String::from_utf8` conversions after Base64 encoding use a reviewed
+  `unreachable!` because crate encoders produce ASCII bytes by construction.
+  Secret string conversions do not use this exception; if an already validated
+  secret byte vector somehow fails UTF-8 conversion, the helper wipes the bytes
+  and returns an empty string rather than panicking or using unchecked UTF-8.
 - Stream `get_ref`, `get_mut`, and `into_inner` internal helpers use
   `unreachable!` if a wrapper has already consumed its inner value. The public
   API consumes `self` for `into_inner`/`finish`, so this state is not reachable
