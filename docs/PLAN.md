@@ -256,8 +256,11 @@ The current release path is:
   candidate had clean local release evidence, clean CI, and clean external
   pentest results. This line should change only for release blockers,
   documentation corrections, or evidence-policy fixes before tagging.
-- `1.0.x`: maintenance and assurance releases. Kani proof execution remains a
-  high-priority `1.0.x` follow-up once Kani supports the pinned Rust toolchain.
+- `1.0.x`: maintenance, assurance, and move-only source-layout releases. Kani
+  proof execution remains a high-priority `1.0.x` follow-up once Kani supports
+  the pinned Rust toolchain. Before any `1.1` feature work, reduce
+  `src/lib.rs` review size through small module splits that preserve the public
+  API and behavior.
 
 The initial `1.0.0` contract accepts the documented Kani verifier exception in
 [KANI.md](KANI.md). That exception is explicit replacement evidence, not a
@@ -569,12 +572,41 @@ admission over speed. Hardware acceleration is valuable only when the scalar
 implementation remains the correctness reference and every unsafe backend has
 clear admission evidence.
 
+Before `1.1`, run a `1.0.x` source-layout series. These releases are intended
+to help review and community contribution without changing behavior.
+
+Rules for every source-layout release:
+
+- Move code only; do not mix logic edits with file extraction.
+- Preserve all public paths, re-exports, docs examples, and feature behavior.
+- Review with moved-code-aware diffs.
+- Run the full release gate, package verification, and public API audit.
+- Treat any behavior change, new API, or security semantics change as out of
+  scope for that split release.
+
+Recommended `1.0.x` source-layout sequence:
+
+- `1.0.2`: split `std::io` streaming adapters and stream tests into
+  `src/stream.rs`, preserving `base64_ng::stream::*`.
+- `1.0.3`: split runtime backend reporting and backend-policy types into
+  `src/runtime.rs`.
+- `1.0.4`: split alphabets, custom alphabet validation, the alphabet macro, and
+  profile wrappers into `src/alphabet.rs` and `src/profiles.rs`.
+- `1.0.5`: split stack/owned buffer wrappers and best-effort cleanup helpers
+  into `src/buffers.rs` and `src/cleanup.rs`.
+- `1.0.6`: split constant-time-oriented decode, validation, masks, and CT
+  barriers into `src/ct.rs`. This comes later because it is the most
+  security-sensitive move.
+- `1.0.7`: split length helpers, line wrapping, and scalar core encode/decode
+  helpers into `src/length.rs`, `src/wrap.rs`, and `src/scalar.rs` if the
+  previous smaller splits stayed clean.
+
 The recommended post-`1.0` SIMD path is incremental:
 
-- `1.0.x`: maintenance, documentation, verifier compatibility, and assurance
-  releases. Resolve Kani execution when the verifier supports the pinned Rust
-  toolchain, refresh Miri/fuzz/dudect/generated-assembly evidence, and avoid
-  broad API expansion.
+- Remaining `1.0.x`: maintenance, documentation, verifier compatibility, and
+  assurance releases. Resolve Kani execution when the verifier supports the
+  pinned Rust toolchain, refresh Miri/fuzz/dudect/generated-assembly evidence,
+  and avoid broad API expansion.
 - `1.1`: replace the SSSE3/SSE4.1 fixed-block encode scaffold with real
   vectorized encode logic for Standard and URL-safe alphabets only, still
   non-dispatchable. The goal is meaningful scalar-equivalence tests, not active
