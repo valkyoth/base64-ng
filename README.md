@@ -875,6 +875,16 @@ installed target list:
 scripts/check_no_alloc_smoke.sh
 ```
 
+Run the macOS host verification on an Apple Silicon or Intel Mac:
+
+```sh
+scripts/check_macos.sh
+```
+
+On an M2 MacBook Pro this runs the real host tests on
+`aarch64-apple-darwin`, then compile-checks both `aarch64-apple-darwin` and
+`x86_64-apple-darwin`.
+
 Required security tools:
 
 CI and local release scripts use `scripts/ci_install_rust.sh`; that script uses rust-toolchain.toml as the single source of truth for the pinned stable Rust toolchain.

@@ -8,6 +8,8 @@
 - Expanded GitHub Actions platform coverage with pinned macOS ARM runners
   (`macos-15`, `macos-26`) and a pinned Intel macOS runner
   (`macos-15-intel`) while keeping `macos-latest` as the moving-label signal.
+- Added `scripts/check_macos.sh` for local macOS verification on Apple Silicon
+  and Intel Macs, including host tests plus Apple Darwin target compile checks.
 
 ## 1.0.2 - 2026-05-29
 

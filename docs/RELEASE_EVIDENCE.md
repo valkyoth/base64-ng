@@ -66,6 +66,8 @@ The release gate runs:
 - CI platform tests on Linux, Windows, pinned macOS ARM images
   (`macos-15`, `macos-26`), pinned Intel macOS (`macos-15-intel`), and
   `macos-latest` as a moving-label migration signal
+- local macOS host verification through `scripts/check_macos.sh`, which runs
+  the full host test/clippy set and compile-checks both Apple Darwin triples
 - all-features and no-default-features doctests plus documentation builds
 - `cargo deny check`
 - `cargo audit`
