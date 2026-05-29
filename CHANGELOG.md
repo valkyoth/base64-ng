@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.3 - 2026-05-29
+
+- Continued the `1.0.x` source-layout series by splitting runtime backend
+  reporting and backend-policy types into `src/runtime.rs` while preserving the
+  public `base64_ng::runtime::*` API surface.
+- Expanded GitHub Actions platform coverage with pinned macOS ARM runners
+  (`macos-15`, `macos-26`) and a pinned Intel macOS runner
+  (`macos-15-intel`) while keeping `macos-latest` as the moving-label signal.
+
 ## 1.0.2 - 2026-05-29
 
 - Started the `1.0.x` source-layout series by splitting the `std::io`

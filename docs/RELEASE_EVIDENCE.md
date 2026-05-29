@@ -63,6 +63,9 @@ The release gate runs:
   hardware wipe barrier
 - clippy with warnings denied
 - default, all-features, and no-default-features tests
+- CI platform tests on Linux, Windows, pinned macOS ARM images
+  (`macos-15`, `macos-26`), pinned Intel macOS (`macos-15-intel`), and
+  `macos-latest` as a moving-label migration signal
 - all-features and no-default-features doctests plus documentation builds
 - `cargo deny check`
 - `cargo audit`
