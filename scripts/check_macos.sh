@@ -9,7 +9,9 @@ fi
 toolchain="$(rustup show active-toolchain | sed 's/ .*//')"
 host="$(rustup run "$toolchain" rustc -vV | sed -n 's/^host: //p')"
 machine="$(uname -m)"
+script_revision="2026-05-29-host-target-v2"
 
+echo "macOS checks: script=$script_revision"
 echo "macOS checks: host=$host machine=$machine toolchain=$toolchain"
 echo "macOS checks: rustc=$(rustup run "$toolchain" rustc --version)"
 echo "macOS checks: cargo=$(rustup run "$toolchain" cargo --version)"
@@ -43,12 +45,22 @@ for target in aarch64-apple-darwin x86_64-apple-darwin; do
         rustup target add --toolchain "$toolchain" "$target"
     fi
 
-    if ! rustup run "$toolchain" rustc --target "$target" --print target-libdir >/dev/null 2>&1; then
+    if ! target_libdir="$(rustup run "$toolchain" rustc --target "$target" --print target-libdir 2>/dev/null)"; then
         echo "macOS checks: Rust target $target is not usable for $toolchain" >&2
         echo "macOS checks: installed targets for $toolchain:" >&2
         rustup target list --installed --toolchain "$toolchain" >&2
         exit 1
     fi
+
+    if ! ls "$target_libdir"/libstd-*.rlib >/dev/null 2>&1; then
+        echo "macOS checks: target $target is installed but std is missing for $toolchain" >&2
+        echo "macOS checks: target libdir: $target_libdir" >&2
+        echo "macOS checks: try: rustup target remove --toolchain $toolchain $target" >&2
+        echo "macOS checks: then: rustup target add --toolchain $toolchain $target" >&2
+        exit 1
+    fi
+
+    echo "macOS checks: target $target std ok at $target_libdir"
 done
 
 echo "macOS checks: host test default features"
