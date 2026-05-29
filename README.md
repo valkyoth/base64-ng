@@ -1,8 +1,4 @@
 <p align="center">
-  <img src="./.github/images/base64-ng-logo.webp" alt="base64-ng logo" width="128">
-</p>
-
-<p align="center">
   <b>Secure, no_std-first Base64 for Rust.</b><br>
   Strict decoding, caller-owned buffers, zero runtime dependencies, and release-gated security evidence.
 </p>
