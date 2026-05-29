@@ -765,7 +765,8 @@ Security commitments:
 - `runtime::require_backend_policy()` lets deployments assert scalar execution,
   disabled SIMD features, or no detected SIMD candidate.
 - `BackendPolicy::HighAssuranceScalarOnly` combines the scalar/no-SIMD
-  deployment checks into one assertion.
+  deployment checks into one assertion and rejects CT gate postures that are
+  ordering-only, compiler-fence-only, or hardware-barrier-unattested.
 - Runtime backend, posture, and policy enums expose stable string identifiers
   for CI artifacts, audit logs, and deployment evidence.
 - Runtime backend reports and policy failures use stable key/value display

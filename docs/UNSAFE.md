@@ -228,8 +228,9 @@ Limitations:
   speculation barrier. The crate reports both CT gate postures as
   `ordering-fence` rather than `hardware-speculation-barrier`.
 - On AArch64, the CSDB hint may be treated as a no-op on older cores. The
-  runtime posture reports the emitted barrier sequence, not a formal
-  microarchitecture certification.
+  runtime posture reports `hardware-speculation-barrier-unattested`, not a
+  formal microarchitecture certification or a passing
+  `HighAssuranceScalarOnly` posture.
 - Unsupported architectures fall back to the compiler fence only.
 
 ### `ct_decode_alphabet_byte`

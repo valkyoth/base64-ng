@@ -649,7 +649,9 @@ SIMD admission rules for all post-`1.0` work:
   the claim.
 - Preserve `runtime::BackendPolicy::HighAssuranceScalarOnly` as the recommended
   deployment policy for users who prefer the audited scalar path over any
-  accelerated backend.
+  accelerated backend, while keeping platform-specific speculation-barrier
+  attestation outside the crate when the runtime report marks a CT gate as
+  unattested.
 
 ## Release Gate
 

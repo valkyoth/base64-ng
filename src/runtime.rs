@@ -187,11 +187,14 @@ impl core::fmt::Display for WipePosture {
 pub enum CtGatePosture {
     /// The target uses a native speculation barrier before public CT
     /// success/failure or equality-result branches.
+    HardwareSpeculationBarrier,
+    /// The target emits a hardware speculation-barrier sequence whose
+    /// effectiveness depends on platform or core-level attestation.
     ///
     /// On `AArch64` this uses `isb sy` plus the CSDB hint encoding. Full
     /// CSDB effectiveness depends on the deployed ARM architecture level;
     /// older cores may treat the hint as a no-op.
-    HardwareSpeculationBarrier,
+    HardwareSpeculationBarrierUnattested,
     /// The target uses an ordering fence where the base ISA does not
     /// provide a canonical speculation barrier.
     OrderingFence,
@@ -205,6 +208,7 @@ impl CtGatePosture {
     pub const fn as_str(self) -> &'static str {
         match self {
             Self::HardwareSpeculationBarrier => "hardware-speculation-barrier",
+            Self::HardwareSpeculationBarrierUnattested => "hardware-speculation-barrier-unattested",
             Self::OrderingFence => "ordering-fence",
             Self::CompilerFenceOnly => "compiler-fence-only",
         }
@@ -232,10 +236,10 @@ pub enum BackendPolicy {
     /// classified as a native hardware speculation barrier.
     ///
     /// This policy intentionally rejects targets that report only an
-    /// ordering fence or compiler fence for the CT result gate. On `AArch64`,
-    /// the reported hardware barrier means the crate emitted `isb sy` plus
-    /// the CSDB hint; deployments must still attest whether that hint is
-    /// effective on their specific core.
+    /// unattested hardware barrier, ordering fence, or compiler fence for the
+    /// CT result gate. On `AArch64`, the crate emits `isb sy` plus the CSDB
+    /// hint but reports that posture as unattested; deployments that rely on
+    /// CSDB must carry platform evidence outside this built-in policy check.
     HighAssuranceScalarOnly,
 }
 
@@ -490,12 +494,10 @@ const fn wipe_posture() -> WipePosture {
 }
 
 const fn ct_gate_posture() -> CtGatePosture {
-    if cfg!(any(
-        target_arch = "aarch64",
-        target_arch = "x86",
-        target_arch = "x86_64"
-    )) {
+    if cfg!(any(target_arch = "x86", target_arch = "x86_64")) {
         CtGatePosture::HardwareSpeculationBarrier
+    } else if cfg!(target_arch = "aarch64") {
+        CtGatePosture::HardwareSpeculationBarrierUnattested
     } else if cfg!(any(
         target_arch = "arm",
         target_arch = "riscv32",

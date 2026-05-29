@@ -42,8 +42,12 @@ base64_ng::runtime::require_backend_policy(
 Use this policy when deterministic scalar execution matters more than future
 acceleration. It requires scalar execution, no detected SIMD candidate, the
 `simd` feature disabled, no active accelerated backend, and the conservative
-unsafe-boundary flag marked as enforced. That flag is intentionally false when
-the reserved `simd` feature is enabled, even if execution remains scalar-only.
+unsafe-boundary flag marked as enforced. It also requires an attested hardware
+speculation barrier for the CT result gate; AArch64 reports its CSDB sequence
+as `hardware-speculation-barrier-unattested`, so deployments that rely on CSDB
+must carry platform attestation outside this built-in policy. The
+unsafe-boundary flag is intentionally false when the reserved `simd` feature is
+enabled, even if execution remains scalar-only.
 For secret-bearing Base64 payloads, combine this policy with the `ct` module
 when avoiding future SIMD-induced timing variation is more important than
 hardware acceleration.

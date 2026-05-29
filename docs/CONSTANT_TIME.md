@@ -54,9 +54,12 @@ side-channel evidence.
 
 `HighAssuranceScalarOnly` is still a build and target posture assertion, not a
 runtime microarchitecture attestation. On AArch64, the crate emits `isb sy`
-plus the CSDB hint for the CT result gate, but deployments must verify through
-processor documentation, BSP notes, or platform certification that CSDB is
-effective on the specific core. On RISC-V, the crate reports
+plus the CSDB hint for the CT result gate, but reports
+`CtGatePosture::HardwareSpeculationBarrierUnattested` so the built-in
+`HighAssuranceScalarOnly` policy does not pass without deployment-side
+evidence. Operators must verify through processor documentation, BSP notes, or
+platform certification that CSDB is effective on the specific core. On RISC-V,
+the crate reports
 `CtGatePosture::OrderingFence`; the base ISA provides memory ordering, not a
 canonical Spectre-v1 speculation barrier. RISC-V deployments with speculative
 execution threat models need platform-level mitigations outside this crate.
@@ -288,13 +291,16 @@ Before reporting the opaque malformed-input result, the ct decoder passes the
 accumulated error mask through a non-inlined `ct_error_gate_barrier` that uses
 `core::hint::black_box`, a compiler fence, and architecture-specific hardware
 speculation barriers where available (`lfence` on x86/x86_64 and
-`isb sy; hint #20` on AArch64). On 32-bit ARM the gate uses `isb sy`, and on
-RISCV it uses `fence rw, rw`; both are reported as `ordering-fence` because the
-base ISA path is not a canonical Spectre-v1 data-flow speculation barrier. The
-runtime backend report exposes this separately through `ct_gate_posture`. This
-is defense in depth around the final public success/failure gate; it does not
-make the ct decoder a formally verified hardware side-channel resistant
-primitive and does not change the transient output window described above.
+`isb sy; hint #20` on AArch64). AArch64 reports
+`hardware-speculation-barrier-unattested` because the crate cannot prove the
+deployed core treats CSDB as effective. On 32-bit ARM the gate uses `isb sy`,
+and on RISCV it uses `fence rw, rw`; both are reported as `ordering-fence`
+because the base ISA path is not a canonical Spectre-v1 data-flow speculation
+barrier. The runtime backend report exposes this separately through
+`ct_gate_posture`. This is defense in depth around the final public
+success/failure gate; it does not make the ct decoder a formally verified
+hardware side-channel resistant primitive and does not change the transient
+output window described above.
 
 For shared-memory or in-process sandbox threat models where even that transient
 output window is unacceptable, use

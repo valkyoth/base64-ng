@@ -428,14 +428,15 @@ fn runtime_backend_report_keeps_scalar_active() {
     } else {
         assert_eq!(report.wipe_posture, runtime::WipePosture::CompilerFenceOnly);
     }
-    if cfg!(any(
-        target_arch = "aarch64",
-        target_arch = "x86",
-        target_arch = "x86_64",
-    )) {
+    if cfg!(any(target_arch = "x86", target_arch = "x86_64")) {
         assert_eq!(
             report.ct_gate_posture,
             runtime::CtGatePosture::HardwareSpeculationBarrier
+        );
+    } else if cfg!(target_arch = "aarch64") {
+        assert_eq!(
+            report.ct_gate_posture,
+            runtime::CtGatePosture::HardwareSpeculationBarrierUnattested
         );
     } else if cfg!(any(
         target_arch = "arm",
@@ -538,6 +539,18 @@ fn runtime_backend_policy_assertions_are_explicit() {
         ct_gate_posture: runtime::CtGatePosture::OrderingFence,
     };
     assert!(!ordering_fence_report.satisfies(runtime::BackendPolicy::HighAssuranceScalarOnly));
+    let unattested_barrier_report = runtime::BackendReport {
+        active: runtime::Backend::Scalar,
+        candidate: runtime::Backend::Scalar,
+        candidate_detection_mode: runtime::CandidateDetectionMode::SimdFeatureDisabled,
+        simd_feature_enabled: false,
+        accelerated_backend_active: false,
+        unsafe_boundary_enforced: true,
+        security_posture: runtime::SecurityPosture::ScalarOnly,
+        wipe_posture: runtime::WipePosture::HardwareFence,
+        ct_gate_posture: runtime::CtGatePosture::HardwareSpeculationBarrierUnattested,
+    };
+    assert!(!unattested_barrier_report.satisfies(runtime::BackendPolicy::HighAssuranceScalarOnly));
 
     let simd_feature_policy =
         runtime::require_backend_policy(runtime::BackendPolicy::SimdFeatureDisabled);

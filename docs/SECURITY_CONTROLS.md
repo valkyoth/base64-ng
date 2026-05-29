@@ -126,8 +126,11 @@ hardware speculation barriers where available. Shared-memory deployments that
 cannot tolerate transient writes to the caller output should use
 `CtEngine::decode_slice_staged_clear_tail` with a private staging buffer.
 On AArch64, the emitted CT gate uses `isb sy` plus the CSDB hint encoding.
-Deployments that rely on `runtime::BackendPolicy::HighAssuranceScalarOnly`
-must attest that the deployed core treats CSDB as an effective speculation
+The runtime report classifies this as
+`CtGatePosture::HardwareSpeculationBarrierUnattested`, so
+`runtime::BackendPolicy::HighAssuranceScalarOnly` does not pass on AArch64
+solely because the instruction sequence was emitted. Deployments that rely on
+CSDB must attest that the deployed core treats it as an effective speculation
 barrier; older ARM cores may treat the hint as a no-op. On RISC-V, the crate
 reports an ordering-fence CT gate because the base ISA does not provide a
 canonical speculation barrier. RISC-V deployments in Spectre-v1 threat models

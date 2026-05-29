@@ -85,13 +85,14 @@ weakening the scalar trust base.
   execution, disabled SIMD features, or no detected SIMD candidate.
 - `BackendPolicy::HighAssuranceScalarOnly` combines scalar execution, disabled
   SIMD features, no detected SIMD candidate, unsafe-boundary enforcement, and a
-  CT result gate classified as a hardware speculation barrier. It rejects
-  targets that report only an ordering fence or compiler fence. On AArch64,
-  this reports emitted `isb sy` plus CSDB hint code; deployments must still
-  attest whether that hint is effective on their specific core. On RISC-V, the
-  reported CT gate is intentionally only `ordering-fence`; the base ISA does
-  not provide a canonical Spectre-v1 speculation barrier, so platform-level
-  mitigations are required for that threat model.
+  CT result gate classified as an attested hardware speculation barrier. It
+  rejects targets that report an unattested hardware barrier, ordering fence,
+  or compiler fence. On AArch64, the crate emits `isb sy` plus CSDB hint code
+  but reports `hardware-speculation-barrier-unattested` because deployments
+  must attest whether that hint is effective on their specific core. On RISC-V,
+  the reported CT gate is intentionally only `ordering-fence`; the base ISA
+  does not provide a canonical Spectre-v1 speculation barrier, so
+  platform-level mitigations are required for that threat model.
 - Runtime backend, posture, and policy enums provide stable string identifiers
   for logs and release evidence.
 - Runtime backend reports and policy failures format as stable key/value
