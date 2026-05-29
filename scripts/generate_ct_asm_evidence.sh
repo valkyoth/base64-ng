@@ -36,10 +36,11 @@ copy_single_asm() {
 }
 
 require_lto_symbol() {
-    symbol="$1"
+    symbol_len="$1"
+    symbol_name="$2"
 
-    if ! grep -F -q ".text._ZN9base64_ng${symbol}" "$output_dir/base64_ng-all-features-lto.s"; then
-        echo "ct asm evidence: missing non-inlined ${symbol} symbol in LTO assembly" >&2
+    if ! grep -E -q "\\.text\\._ZN9base64_ng.*${symbol_len}${symbol_name}17h" "$output_dir/base64_ng-all-features-lto.s"; then
+        echo "ct asm evidence: missing non-inlined ${symbol_name} symbol in LTO assembly" >&2
         exit 1
     fi
 }
@@ -59,10 +60,10 @@ CARGO_TARGET_DIR="target/ct-asm-all-features-lto" \
 RUSTFLAGS="-C lto=fat -C embed-bitcode=yes" \
     cargo rustc --release --lib --all-features -- --emit=asm
 copy_single_asm "target/ct-asm-all-features-lto" "$output_dir/base64_ng-all-features-lto.s"
-require_lto_symbol "10wipe_bytes"
-require_lto_symbol "12wipe_barrier"
-require_lto_symbol "27constant_time_eq_public_len"
-require_lto_symbol "21ct_error_gate_barrier"
+require_lto_symbol "10" "wipe_bytes"
+require_lto_symbol "12" "wipe_barrier"
+require_lto_symbol "27" "constant_time_eq_public_len"
+require_lto_symbol "21" "ct_error_gate_barrier"
 
 {
     echo "base64-ng constant-time assembly evidence"
