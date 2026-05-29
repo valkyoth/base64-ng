@@ -8,7 +8,7 @@ Build `base64-ng` as a modern, secure, `no_std`-first Base64 implementation for 
 
 ## Current Baseline
 
-- Rust stable: `1.95.0`.
+- Rust stable/MSRV: `1.90.0`.
 - License: `MIT OR Apache-2.0`.
 - Project name: `base64-ng`.
 - Runtime and dev dependency graph: zero external crates.
@@ -498,7 +498,7 @@ cryptographic behavior until compatible verifier evidence exists.
   workflow, or document through [KANI.md](KANI.md) why Kani remains unavailable
   and what evidence replaces it for `v1.0`.
   Completed direction: keep the Kani harnesses in-tree, document an explicit
-  verifier exception while local Kani is behind Rust `1.95`, and require Miri,
+  verifier exception while local Kani is behind Rust `1.90`, and require Miri,
   bounded fuzz smoke, generated-code evidence, panic-policy checks,
   deterministic tests, release-policy validators, and invariant documentation
   as replacement release evidence for the initial `1.0.0` contract.

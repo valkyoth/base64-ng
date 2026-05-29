@@ -5,13 +5,13 @@ on the compiler bundled with the installed `cargo-kani` release.
 
 ## Current Status
 
-- Local Rust toolchain: Rust `1.95.0`.
+- Local Rust toolchain: Rust `1.90.0`.
 - Locally tested Kani: `cargo-kani 0.67.0`.
 - Current result: `scripts/check_kani.sh` records an explicit skip because the
   installed Kani compiler is older than this crate's `rust-version`.
 
 This is not a normal Cargo dependency-resolution issue. Kani runs are compiler-integration-sensitive because Kani is a verifier with its own compiler integration.
-Updating the project to Rust `1.95` does not make an older Kani release
+Updating the project to Rust `1.90` does not make an older Kani release
 understand that toolchain automatically.
 
 ## How To Check

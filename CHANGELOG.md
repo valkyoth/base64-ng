@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.1 - 2026-05-29
+
+- Lowered the documented MSRV from Rust `1.95.0` to Rust `1.90.0` after
+  confirming the current code builds, tests, lints, and documents cleanly on
+  Rust `1.90.0` without code changes.
+- Added README compiler-compatibility evidence for Rust `1.90.0` through
+  Rust `1.96.0`, while continuing to recommend the latest stable Rust for new
+  deployments.
+
 ## 1.0.0 - 2026-05-19
 
 - Started the stable API and security-contract freeze candidate after the

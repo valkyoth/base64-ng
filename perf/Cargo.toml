@@ -6,4 +6,4 @@ publish = false
 
 [dependencies]
 base64 = "0.22.1"
-base64-ng = { path = "..", version = "1.0.0", features = ["alloc", "std"] }
+base64-ng = { path = "..", version = "1.0.1", features = ["alloc", "std"] }

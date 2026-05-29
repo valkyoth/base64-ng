@@ -6,7 +6,7 @@ The crate starts conservative: a small scalar implementation, strict RFC 4648 be
 
 ## Current Status
 
-The current public release is `1.0.0`.
+The current public release is `1.0.1`.
 
 Implemented now:
 
@@ -47,7 +47,7 @@ Implemented now:
 Planned behind admission evidence:
 
 - Admitted AVX2, AVX-512, SSSE3/SSE4.1, ARM NEON, and wasm `simd128`
-  fast paths after the SIMD admission evidence is complete. The `1.0.0`
+  fast paths after the SIMD admission evidence is complete. The `1.0.1`
   release remains scalar-only.
 - Async streaming wrappers only after the `tokio` feature passes the
   dependency and cancellation-safety admission bar in [docs/ASYNC.md](docs/ASYNC.md).
@@ -63,7 +63,7 @@ Planned behind admission evidence:
 | Area | Status |
 | --- | --- |
 | License | `MIT OR Apache-2.0` |
-| MSRV | Rust `1.95.0` |
+| MSRV | Rust `1.90.0` |
 | Runtime dependencies | Zero external crates |
 | Unsafe policy | Scalar encode/decode remains safe Rust; audited unsafe is limited to volatile wiping, CT barriers, validated secret UTF-8 conversion, and test-only SIMD prototypes |
 | Active backend | Scalar only |
@@ -77,11 +77,28 @@ Planned behind admission evidence:
 Full adoption details live in [docs/TRUST.md](docs/TRUST.md). Security-control
 and CWE mapping lives in [docs/SECURITY_CONTROLS.md](docs/SECURITY_CONTROLS.md).
 
+## Rust Version Support
+
+The minimum supported Rust version is Rust `1.90.0`. New deployments should
+prefer the latest stable Rust; as of May 29, 2026, that is Rust `1.96.0`.
+
+Compatibility evidence for `1.0.1`:
+
+| Rust | Local Evidence |
+| --- | --- |
+| `1.90.0` | ✓ full release gate |
+| `1.91.0` | ✓ `cargo check --all-features` |
+| `1.92.0` | ✓ `cargo check --all-features` |
+| `1.93.0` | ✓ `cargo check --all-features` |
+| `1.94.0` | ✓ `cargo check --all-features` |
+| `1.95.0` | ✓ `cargo check --all-features` |
+| `1.96.0` | ✓ `cargo check --all-features` |
+
 ## Install
 
 ```toml
 [dependencies]
-base64-ng = "1.0.0"
+base64-ng = "1.0.1"
 ```
 
 The crate is dual-licensed:
@@ -108,7 +125,7 @@ Disable defaults for embedded or freestanding use:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.0.0", default-features = false }
+base64-ng = { version = "1.0.1", default-features = false }
 ```
 
 ## Example
@@ -694,7 +711,8 @@ assert_eq!(&encoded[..written], b"aGVsbG8");
 
 Security commitments:
 
-- Stable Rust first. Current toolchain pin: Rust `1.95.0`.
+- Stable Rust first. Current MSRV toolchain pin: Rust `1.90.0`. New deployments
+  should prefer the latest stable Rust, currently Rust `1.96.0`.
 - `no_std` core by default.
 - Scalar encode/decode remains safe Rust.
 - Audited unsafe helpers in `src/lib.rs` perform volatile best-effort wiping

@@ -7,7 +7,7 @@ stable release.
 | Area | Current Status | Evidence |
 | --- | --- | --- |
 | License | `MIT OR Apache-2.0` | `Cargo.toml`, `LICENSE-MIT`, `LICENSE-APACHE` |
-| MSRV | Rust `1.95.0` | `Cargo.toml`, `rust-toolchain.toml` |
+| MSRV | Rust `1.90.0` | `Cargo.toml`, `rust-toolchain.toml` |
 | Runtime dependencies | Zero external crates | `scripts/validate-dependencies.sh` |
 | Default dev dependencies | Zero external crates | `Cargo.toml` |
 | Optional runtime features | `alloc`, `std`, `stream`; `allow-wasm32-best-effort-wipe` explicit wasm cleanup-limit acceptance; `allow-compiler-fence-only-wipe` explicit unsupported-native cleanup-limit acceptance; reserved `simd`, `tokio`, `kani`, `fuzzing` | `Cargo.toml`, `scripts/check_reserved_features.sh`, `scripts/check_wasm_wipe_policy.sh` |
