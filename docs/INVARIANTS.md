@@ -95,6 +95,11 @@ Evidence:
   access and public length dispatch.
 - Malformed-content errors are accumulated and reported as an opaque error to
   avoid localizing the first malformed byte in the ct path.
+- Internal CT loop guard failures use debug assertions during development and
+  fail closed to `DecodeError::InvalidInput` in release builds by setting the
+  accumulated invalid-input masks. This creates a deliberate debug/release
+  diagnostic difference: debug builds catch invariant violations loudly, while
+  release builds avoid panicking on sensitive decode paths.
 
 Evidence:
 

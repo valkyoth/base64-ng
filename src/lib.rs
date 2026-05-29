@@ -337,7 +337,14 @@ pub mod runtime {
         /// Require no SIMD candidate to be visible to this build and target.
         NoDetectedSimdCandidate,
         /// Require scalar execution, the `simd` feature disabled, no detected
-        /// SIMD candidate, and the unsafe boundary enforced.
+        /// SIMD candidate, the unsafe boundary enforced, and a CT result gate
+        /// classified as a native hardware speculation barrier.
+        ///
+        /// This policy intentionally rejects targets that report only an
+        /// ordering fence or compiler fence for the CT result gate. On `AArch64`,
+        /// the reported hardware barrier means the crate emitted `isb sy` plus
+        /// the CSDB hint; deployments must still attest whether that hint is
+        /// effective on their specific core.
         HighAssuranceScalarOnly,
     }
 
@@ -492,6 +499,10 @@ pub mod runtime {
                         && !self.simd_feature_enabled
                         && !self.accelerated_backend_active
                         && self.unsafe_boundary_enforced
+                        && matches!(
+                            self.ct_gate_posture,
+                            CtGatePosture::HardwareSpeculationBarrier
+                        )
                 }
             }
         }
@@ -2845,7 +2856,9 @@ impl LineWrap {
     ///
     /// Panics when `line_len` is zero. Base64 wrapping requires a non-zero
     /// encoded line length; accepting zero would make progress impossible for
-    /// wrapped encoders.
+    /// wrapped encoders. This constructor is callable at runtime, so do not
+    /// pass attacker-controlled or externally configured values here; use
+    /// [`Self::checked_new`] for those cases.
     #[must_use]
     pub const fn new(line_len: usize, line_ending: LineEnding) -> Self {
         assert!(line_len != 0, "base64 line wrap length must be non-zero");
@@ -3093,6 +3106,12 @@ impl<const CAP: usize> ExposedEncodedArray<CAP> {
     /// This is an unprotected escape hatch. The returned array will not be
     /// cleared by this crate on drop. Callers must clear it with their own
     /// approved zeroization policy.
+    ///
+    /// # Security
+    ///
+    /// Treat this as a cleanup-boundary API. Failing to clear the returned
+    /// array leaves the encoded bytes in ordinary caller-owned memory until
+    /// overwritten by later stack or heap activity.
     #[must_use = "caller must zeroize the returned array"]
     pub fn into_exposed_unprotected_array_caller_must_zeroize(mut self) -> ([u8; CAP], usize) {
         let len = self.len;
@@ -3410,6 +3429,12 @@ impl<const CAP: usize> ExposedDecodedArray<CAP> {
     /// This is an unprotected escape hatch. The returned array will not be
     /// cleared by this crate on drop. Callers must clear it with their own
     /// approved zeroization policy.
+    ///
+    /// # Security
+    ///
+    /// Treat this as a cleanup-boundary API. Failing to clear the returned
+    /// array leaves decoded bytes, which may be secret-bearing, in ordinary
+    /// caller-owned memory until overwritten by later stack or heap activity.
     #[must_use = "caller must zeroize the returned array"]
     pub fn into_exposed_unprotected_array_caller_must_zeroize(mut self) -> ([u8; CAP], usize) {
         let len = self.len;
@@ -3757,6 +3782,32 @@ impl Drop for ExposedSecretVec {
 }
 
 #[cfg(feature = "alloc")]
+struct WipeVecGuard {
+    bytes: alloc::vec::Vec<u8>,
+}
+
+#[cfg(feature = "alloc")]
+impl WipeVecGuard {
+    fn from_vec(bytes: alloc::vec::Vec<u8>) -> Self {
+        Self { bytes }
+    }
+
+    fn into_validated_secret_string(mut self) -> alloc::string::String {
+        wipe_vec_spare_capacity(&mut self.bytes);
+        let bytes = core::mem::take(&mut self.bytes);
+        core::mem::forget(self);
+        string_from_validated_secret_bytes(bytes)
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl Drop for WipeVecGuard {
+    fn drop(&mut self) {
+        wipe_vec_all(&mut self.bytes);
+    }
+}
+
+#[cfg(feature = "alloc")]
 impl AsRef<[u8]> for ExposedSecretVec {
     fn as_ref(&self) -> &[u8] {
         self.expose_secret()
@@ -3945,15 +3996,13 @@ impl SecretBuffer {
             return Err(self);
         }
 
-        // Security invariant: do not add fallible or allocating work between
-        // taking `exposed.bytes` and wrapping it as `ExposedSecretString`.
-        // During that narrow move-only window the bytes are temporarily in a
-        // plain `Vec<u8>`.
+        // Keep the bytes behind a wiping guard until the final infallible
+        // ownership transfer into `String`.
         let mut exposed = self.into_exposed_vec();
-        let bytes = core::mem::take(&mut exposed.bytes);
+        let guard = WipeVecGuard::from_vec(core::mem::take(&mut exposed.bytes));
         drop(exposed);
         Ok(ExposedSecretString::from_string(
-            string_from_validated_secret_bytes(bytes),
+            guard.into_validated_secret_string(),
         ))
     }
 
@@ -6892,6 +6941,13 @@ pub enum DecodeError {
         /// Available output bytes.
         available: usize,
     },
+    /// The caller-provided constant-time staging buffer is too small.
+    StagingTooSmall {
+        /// Required staging bytes.
+        required: usize,
+        /// Available staging bytes.
+        available: usize,
+    },
 }
 
 impl core::fmt::Display for DecodeError {
@@ -6913,6 +6969,13 @@ impl core::fmt::Display for DecodeError {
                 f,
                 "base64 decode output buffer too small: required {required}, available {available}"
             ),
+            Self::StagingTooSmall {
+                required,
+                available,
+            } => write!(
+                f,
+                "base64 decode staging buffer too small: required {required}, available {available}"
+            ),
         }
     }
 }
@@ -6930,7 +6993,10 @@ impl DecodeError {
             Self::InvalidLineWrap { index } => Self::InvalidLineWrap {
                 index: index + offset,
             },
-            Self::InvalidInput | Self::InvalidLength | Self::OutputTooSmall { .. } => self,
+            Self::InvalidInput
+            | Self::InvalidLength
+            | Self::OutputTooSmall { .. }
+            | Self::StagingTooSmall { .. } => self,
         }
     }
 }
@@ -6938,19 +7004,40 @@ impl DecodeError {
 #[cfg(feature = "std")]
 impl std::error::Error for DecodeError {}
 
+struct LegacyBytes<'a> {
+    input: &'a [u8],
+    index: usize,
+}
+
+impl<'a> LegacyBytes<'a> {
+    const fn new(input: &'a [u8]) -> Self {
+        Self { input, index: 0 }
+    }
+
+    fn next_byte(&mut self) -> Option<(usize, u8)> {
+        while self.index < self.input.len() {
+            let index = self.index;
+            let byte = self.input[index];
+            self.index += 1;
+            if !is_legacy_whitespace(byte) {
+                return Some((index, byte));
+            }
+        }
+        None
+    }
+}
+
 fn validate_legacy_decode<A: Alphabet, const PAD: bool>(
     input: &[u8],
 ) -> Result<usize, DecodeError> {
+    let mut bytes = LegacyBytes::new(input);
     let mut chunk = [0u8; 4];
     let mut indexes = [0usize; 4];
     let mut chunk_len = 0;
     let mut required = 0;
     let mut terminal_seen = false;
 
-    for (index, byte) in input.iter().copied().enumerate() {
-        if is_legacy_whitespace(byte) {
-            continue;
-        }
+    while let Some((index, byte)) = bytes.next_byte() {
         if terminal_seen {
             return Err(DecodeError::InvalidPadding { index });
         }
@@ -6984,16 +7071,14 @@ fn decode_legacy_to_slice<A: Alphabet, const PAD: bool>(
     input: &[u8],
     output: &mut [u8],
 ) -> Result<usize, DecodeError> {
+    let mut bytes = LegacyBytes::new(input);
     let mut chunk = [0u8; 4];
     let mut indexes = [0usize; 4];
     let mut chunk_len = 0;
     let mut write = 0;
     let mut terminal_seen = false;
 
-    for (index, byte) in input.iter().copied().enumerate() {
-        if is_legacy_whitespace(byte) {
-            continue;
-        }
+    while let Some((index, byte)) = bytes.next_byte() {
         if terminal_seen {
             return Err(DecodeError::InvalidPadding { index });
         }
@@ -7095,7 +7180,9 @@ impl<'a> WrappedBytes<'a> {
 
     fn starts_with_line_ending(&self) -> bool {
         let line_ending = self.wrap.line_ending.as_bytes();
-        let end = self.index + line_ending.len();
+        let Some(end) = self.index.checked_add(line_ending.len()) else {
+            return false;
+        };
         end <= self.input.len() && &self.input[self.index..end] == line_ending
     }
 }
@@ -7230,7 +7317,8 @@ fn map_chunk_error(err: DecodeError, indexes: &[usize; 4]) -> DecodeError {
         DecodeError::InvalidInput
         | DecodeError::InvalidLineWrap { .. }
         | DecodeError::InvalidLength
-        | DecodeError::OutputTooSmall { .. } => err,
+        | DecodeError::OutputTooSmall { .. }
+        | DecodeError::StagingTooSmall { .. } => err,
     }
 }
 
@@ -7248,7 +7336,8 @@ fn map_partial_chunk_error(err: DecodeError, indexes: &[usize; 4], len: usize) -
         | DecodeError::InvalidLineWrap { .. }
         | DecodeError::InvalidInput
         | DecodeError::InvalidLength
-        | DecodeError::OutputTooSmall { .. } => err,
+        | DecodeError::OutputTooSmall { .. }
+        | DecodeError::StagingTooSmall { .. } => err,
     }
 }
 
@@ -7632,7 +7721,7 @@ fn ct_decode_slice_staged_clear_tail<A: Alphabet, const PAD: bool>(
     if staging.len() < required {
         wipe_bytes(output);
         wipe_bytes(staging);
-        return Err(DecodeError::OutputTooSmall {
+        return Err(DecodeError::StagingTooSmall {
             required,
             available: staging.len(),
         });

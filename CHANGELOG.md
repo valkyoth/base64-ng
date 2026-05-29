@@ -8,6 +8,17 @@
 - Added README compiler-compatibility evidence for Rust `1.90.0` through
   Rust `1.96.0`, while continuing to recommend the latest stable Rust for new
   deployments.
+- Hardened wrapped-line decode prefix checks with checked offset arithmetic.
+- Made `ct::CtEngine::decode_slice_staged_clear_tail` report
+  `DecodeError::StagingTooSmall` when the private staging buffer, rather than
+  the caller output buffer, is undersized.
+- Tightened `BackendPolicy::HighAssuranceScalarOnly` so it also requires a CT
+  result gate classified as a hardware speculation barrier.
+- Reduced legacy whitespace decode traversal drift by sharing the byte
+  iterator used by validation and decode.
+- Added a guarded transfer when converting `SecretBuffer` into
+  `ExposedSecretString`, plus documentation for cleanup-boundary escape hatches
+  and CT loop guard debug/release behavior.
 
 ## 1.0.0 - 2026-05-19
 

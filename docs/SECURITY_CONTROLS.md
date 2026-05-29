@@ -41,7 +41,9 @@ The caller still owns:
 - treating
   `into_exposed_unprotected_array_caller_must_zeroize` calls as boundaries
   where redacted formatting and crate-owned drop-time cleanup intentionally
-  stop for returned bare arrays
+  stop for returned bare arrays. These methods are safe Rust escape hatches,
+  but they have a quasi-unsafe cleanup contract: callers must zero the returned
+  array with their own approved mechanism before it leaves scope.
 - understanding that stack-backed buffers can clear their own backing arrays
   but cannot clear historical stack-frame copies made by compiler spills,
   caller code, panic machinery, crash handlers, or operating system capture

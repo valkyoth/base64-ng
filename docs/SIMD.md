@@ -83,7 +83,11 @@ weakening the scalar trust base.
 - `runtime::require_backend_policy()` allows deployments to enforce scalar
   execution, disabled SIMD features, or no detected SIMD candidate.
 - `BackendPolicy::HighAssuranceScalarOnly` combines scalar execution, disabled
-  SIMD features, no detected SIMD candidate, and unsafe-boundary enforcement.
+  SIMD features, no detected SIMD candidate, unsafe-boundary enforcement, and a
+  CT result gate classified as a hardware speculation barrier. It rejects
+  targets that report only an ordering fence or compiler fence. On AArch64,
+  this reports emitted `isb sy` plus CSDB hint code; deployments must still
+  attest whether that hint is effective on their specific core.
 - Runtime backend, posture, and policy enums provide stable string identifiers
   for logs and release evidence.
 - Runtime backend reports and policy failures format as stable key/value

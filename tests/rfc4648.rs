@@ -651,6 +651,18 @@ fn runtime_backend_policy_assertions_are_explicit() {
         artificial_error.to_string(),
         "runtime backend policy `high-assurance-scalar-only` was not satisfied (active=scalar candidate=avx2 candidate_detection_mode=compile-time-target-features candidate_required_cpu_features=[avx2] simd_feature_enabled=true accelerated_backend_active=false unsafe_boundary_enforced=false security_posture=simd-candidate-scalar-active wipe_posture=hardware-fence ct_gate_posture=hardware-speculation-barrier)"
     );
+    let ordering_fence_report = runtime::BackendReport {
+        active: runtime::Backend::Scalar,
+        candidate: runtime::Backend::Scalar,
+        candidate_detection_mode: runtime::CandidateDetectionMode::SimdFeatureDisabled,
+        simd_feature_enabled: false,
+        accelerated_backend_active: false,
+        unsafe_boundary_enforced: true,
+        security_posture: runtime::SecurityPosture::ScalarOnly,
+        wipe_posture: runtime::WipePosture::HardwareFence,
+        ct_gate_posture: runtime::CtGatePosture::OrderingFence,
+    };
+    assert!(!ordering_fence_report.satisfies(runtime::BackendPolicy::HighAssuranceScalarOnly));
 
     let simd_feature_policy =
         runtime::require_backend_policy(runtime::BackendPolicy::SimdFeatureDisabled);
@@ -1092,7 +1104,7 @@ fn ct_decode_slice_staged_clear_tail_copies_only_after_success() {
     let mut staging = [0xdd; 1];
     assert_eq!(
         ct::STANDARD.decode_slice_staged_clear_tail(b"aGk=", &mut output, &mut staging),
-        Err(DecodeError::OutputTooSmall {
+        Err(DecodeError::StagingTooSmall {
             required: 2,
             available: 1,
         })
