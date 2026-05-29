@@ -12,6 +12,7 @@ readme = "README.md"
 keywords = ["base64", "encoding", "no-std", "simd"]
 categories = ["encoding", "no-std"]
 include = [
+    ".github/images/**",
     "src/**",
     "tests/**",
     "benches/**",

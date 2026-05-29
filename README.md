@@ -1,3 +1,30 @@
+<p align="center">
+  <img src="./.github/images/base64-ng-logo.webp" alt="base64-ng logo" width="128">
+</p>
+
+<p align="center">
+  <b>Secure, no_std-first Base64 for Rust.</b><br>
+  Strict decoding, caller-owned buffers, zero runtime dependencies, and release-gated security evidence.
+</p>
+
+<div align="center">
+  <a href="https://docs.rs/base64-ng">Docs.rs</a>
+  |
+  <a href="docs/TRUST.md">Trust Dashboard</a>
+  |
+  <a href="docs/SECURITY_CONTROLS.md">Security Controls</a>
+  |
+  <a href="docs/PLAN.md">Roadmap</a>
+  |
+  <a href="SECURITY.md">Security</a>
+</div>
+
+<br>
+
+<p align="center">
+  <img src="./.github/images/base64-ng.webp" alt="base64-ng Rust crate overview">
+</p>
+
 # base64-ng
 
 `base64-ng` is a `no_std`-first Base64 crate focused on correctness, strict decoding, caller-owned buffers, and a security-heavy release process. The long-term goal is to provide modern hardware acceleration without making unsafe SIMD the foundation of trust.
