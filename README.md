@@ -18,7 +18,7 @@
 <br>
 
 <p align="center">
-  <img src="./.github/images/base64-ng.webp" alt="base64-ng Rust crate overview">
+  <img src="https://raw.githubusercontent.com/valkyoth/base64-ng/main/.github/images/base64-ng.webp" alt="base64-ng Rust crate overview">
 </p>
 
 # base64-ng
