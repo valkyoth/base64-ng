@@ -15,6 +15,8 @@
   exports.
 - Split `Profile` and the named MIME/PEM/bcrypt/crypt profile constants into
   `src/profiles.rs` while preserving all public root exports.
+- Split best-effort cleanup and wipe helpers into `src/cleanup.rs`, preserving
+  internal call paths and updating the unsafe-boundary release gate.
 
 ## 1.0.2 - 2026-05-29
 

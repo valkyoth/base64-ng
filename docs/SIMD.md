@@ -2,11 +2,12 @@
 
 `base64-ng` is intentionally scalar-only in the `1.0.3` release. Future SIMD
 dispatch remains gated unless a complete SIMD admission evidence package lands
-in a later release series. The crate uses `#![deny(unsafe_code)]` and permits reviewed
-`allow(unsafe_code)` exceptions only for audited cleanup, CT barrier, validated
-secret conversion helpers in `src/lib.rs`, and the private `src/simd.rs`
-boundary. The `simd` feature remains reserved until architecture-specific code
-has enough evidence to justify enabling it.
+in a later release series. The crate uses `#![deny(unsafe_code)]` and permits
+reviewed `allow(unsafe_code)` exceptions only for audited cleanup in
+`src/cleanup.rs`, CT barrier and validated secret conversion helpers in
+`src/lib.rs`, and the private `src/simd.rs` boundary. The `simd` feature
+remains reserved until architecture-specific code has enough evidence to
+justify enabling it.
 
 This is a security decision, not a rejection of hardware acceleration. SIMD
 must be added only when it can be isolated, tested, and reviewed without

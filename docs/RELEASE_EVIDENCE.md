@@ -73,6 +73,9 @@ The release gate runs:
   `define_alphabet!` macro
 - moved-code review for the `src/profiles.rs` extraction, preserving root
   public exports for `Profile` and the named MIME/PEM/bcrypt/crypt profiles
+- moved-code review for the `src/cleanup.rs` extraction, preserving internal
+  cleanup call paths and updating the unsafe-boundary gate for the new audited
+  unsafe location
 - all-features and no-default-features doctests plus documentation builds
 - `cargo deny check`
 - `cargo audit`
