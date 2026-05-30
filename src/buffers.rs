@@ -641,6 +641,15 @@ impl<const CAP: usize> TryFrom<&[u8]> for DecodedBuffer<CAP> {
     ///
     /// Use [`crate::Engine::decode_buffer`] or [`crate::Profile::decode_buffer`] when a
     /// different alphabet, padding mode, or line-wrapping profile is required.
+    ///
+    /// # Security
+    ///
+    /// This idiomatic conversion uses the strict standard decoder, not the
+    /// constant-time-oriented decoder. It may branch or return early on
+    /// malformed input and reports exact [`DecodeError`] positions. For
+    /// secret-bearing tokens or key material where malformed-input timing
+    /// matters, use [`crate::ct::STANDARD`].`decode_buffer::<CAP>(input)`
+    /// instead.
     fn try_from(input: &[u8]) -> Result<Self, Self::Error> {
         STANDARD.decode_buffer(input)
     }
@@ -654,6 +663,15 @@ impl<const CAP: usize, const N: usize> TryFrom<&[u8; N]> for DecodedBuffer<CAP> 
     ///
     /// Use [`crate::Engine::decode_buffer`] or [`crate::Profile::decode_buffer`] when a
     /// different alphabet, padding mode, or line-wrapping profile is required.
+    ///
+    /// # Security
+    ///
+    /// This idiomatic conversion uses the strict standard decoder, not the
+    /// constant-time-oriented decoder. It may branch or return early on
+    /// malformed input and reports exact [`DecodeError`] positions. For
+    /// secret-bearing tokens or key material where malformed-input timing
+    /// matters, use [`crate::ct::STANDARD`].`decode_buffer::<CAP>(input)`
+    /// instead.
     fn try_from(input: &[u8; N]) -> Result<Self, Self::Error> {
         Self::try_from(&input[..])
     }
@@ -666,6 +684,15 @@ impl<const CAP: usize> TryFrom<&str> for DecodedBuffer<CAP> {
     ///
     /// Use [`crate::Engine::decode_buffer`] or [`crate::Profile::decode_buffer`] when a
     /// different alphabet, padding mode, or line-wrapping profile is required.
+    ///
+    /// # Security
+    ///
+    /// This idiomatic conversion uses the strict standard decoder, not the
+    /// constant-time-oriented decoder. It may branch or return early on
+    /// malformed input and reports exact [`DecodeError`] positions. For
+    /// secret-bearing tokens or key material where malformed-input timing
+    /// matters, use [`crate::ct::STANDARD`].`decode_buffer::<CAP>(input)`
+    /// instead.
     fn try_from(input: &str) -> Result<Self, Self::Error> {
         Self::try_from(input.as_bytes())
     }
@@ -678,6 +705,15 @@ impl<const CAP: usize> core::str::FromStr for DecodedBuffer<CAP> {
     ///
     /// Use [`crate::Engine::decode_buffer`] or [`crate::Profile::decode_buffer`] when a
     /// different alphabet, padding mode, or line-wrapping profile is required.
+    ///
+    /// # Security
+    ///
+    /// This idiomatic conversion uses the strict standard decoder, not the
+    /// constant-time-oriented decoder. It may branch or return early on
+    /// malformed input and reports exact [`DecodeError`] positions. For
+    /// secret-bearing tokens or key material where malformed-input timing
+    /// matters, use [`crate::ct::STANDARD`].`decode_buffer::<CAP>(input)`
+    /// instead.
     fn from_str(input: &str) -> Result<Self, Self::Err> {
         Self::try_from(input)
     }
@@ -1137,6 +1173,16 @@ impl TryFrom<&[u8]> for SecretBuffer {
     ///
     /// Use [`crate::Engine::decode_secret`] or [`crate::Profile::decode_secret`] when a
     /// different alphabet, padding mode, or line-wrapping profile is required.
+    ///
+    /// # Security
+    ///
+    /// This idiomatic conversion uses the strict standard decoder, not the
+    /// constant-time-oriented decoder. It may branch or return early on
+    /// malformed input and reports exact [`DecodeError`] positions. For
+    /// secret-bearing tokens or key material where malformed-input timing
+    /// matters, use [`crate::ct::STANDARD`].`decode_buffer(input)` or
+    /// [`crate::ct::STANDARD`].`decode_slice_staged_clear_tail(...)` and then
+    /// wrap the successful output in `SecretBuffer`.
     fn try_from(input: &[u8]) -> Result<Self, Self::Error> {
         STANDARD.decode_secret(input)
     }
@@ -1151,6 +1197,16 @@ impl<const N: usize> TryFrom<&[u8; N]> for SecretBuffer {
     ///
     /// Use [`crate::Engine::decode_secret`] or [`crate::Profile::decode_secret`] when a
     /// different alphabet, padding mode, or line-wrapping profile is required.
+    ///
+    /// # Security
+    ///
+    /// This idiomatic conversion uses the strict standard decoder, not the
+    /// constant-time-oriented decoder. It may branch or return early on
+    /// malformed input and reports exact [`DecodeError`] positions. For
+    /// secret-bearing tokens or key material where malformed-input timing
+    /// matters, use [`crate::ct::STANDARD`].`decode_buffer(input)` or
+    /// [`crate::ct::STANDARD`].`decode_slice_staged_clear_tail(...)` and then
+    /// wrap the successful output in `SecretBuffer`.
     fn try_from(input: &[u8; N]) -> Result<Self, Self::Error> {
         Self::try_from(&input[..])
     }
@@ -1164,6 +1220,16 @@ impl TryFrom<&str> for SecretBuffer {
     ///
     /// Use [`crate::Engine::decode_secret`] or [`crate::Profile::decode_secret`] when a
     /// different alphabet, padding mode, or line-wrapping profile is required.
+    ///
+    /// # Security
+    ///
+    /// This idiomatic conversion uses the strict standard decoder, not the
+    /// constant-time-oriented decoder. It may branch or return early on
+    /// malformed input and reports exact [`DecodeError`] positions. For
+    /// secret-bearing tokens or key material where malformed-input timing
+    /// matters, use [`crate::ct::STANDARD`].`decode_buffer(input)` or
+    /// [`crate::ct::STANDARD`].`decode_slice_staged_clear_tail(...)` and then
+    /// wrap the successful output in `SecretBuffer`.
     fn try_from(input: &str) -> Result<Self, Self::Error> {
         Self::try_from(input.as_bytes())
     }
@@ -1177,6 +1243,16 @@ impl core::str::FromStr for SecretBuffer {
     ///
     /// Use [`crate::Engine::decode_secret`] or [`crate::Profile::decode_secret`] when a
     /// different alphabet, padding mode, or line-wrapping profile is required.
+    ///
+    /// # Security
+    ///
+    /// This idiomatic conversion uses the strict standard decoder, not the
+    /// constant-time-oriented decoder. It may branch or return early on
+    /// malformed input and reports exact [`DecodeError`] positions. For
+    /// secret-bearing tokens or key material where malformed-input timing
+    /// matters, use [`crate::ct::STANDARD`].`decode_buffer(input)` or
+    /// [`crate::ct::STANDARD`].`decode_slice_staged_clear_tail(...)` and then
+    /// wrap the successful output in `SecretBuffer`.
     fn from_str(input: &str) -> Result<Self, Self::Err> {
         Self::try_from(input)
     }
