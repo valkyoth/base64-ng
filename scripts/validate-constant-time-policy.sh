@@ -43,7 +43,7 @@ for required_source_text in \
     "Do not use this helper as the sole MAC" \
     "#[must_use = \"handle decode errors; use crate::ct for secret-bearing payloads\"]"
 do
-    if ! grep -F -q "$required_source_text" src/lib.rs src/profiles.rs; then
+    if ! grep -F -q "$required_source_text" src/lib.rs src/profiles.rs src/buffers.rs; then
         echo "constant-time policy: source is missing decode security warning text: $required_source_text" >&2
         exit 1
     fi

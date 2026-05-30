@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.0.4 - 2026-05-30
+
+- Continued the `1.0.x` source-layout series by splitting stack-backed
+  `EncodedBuffer`/`DecodedBuffer`, exposed array wrappers, `SecretBuffer`, and
+  exposed secret wrappers into `src/buffers.rs` while preserving public root
+  exports and API behavior.
+- Excluded local README image assets from the published crate package and
+  switched the README image to a GitHub raw URL so repository visuals do not
+  inflate crates.io artifacts.
+- Tightened runtime CT gate reporting on AArch64 by adding
+  `CtGatePosture::HardwareSpeculationBarrierUnattested`; the built-in
+  `HighAssuranceScalarOnly` policy now requires an attested hardware
+  speculation barrier and no longer treats emitted AArch64 CSDB hint code as
+  sufficient without platform evidence.
+
 ## 1.0.3 - 2026-05-29
 
 - Continued the `1.0.x` source-layout series by splitting runtime backend

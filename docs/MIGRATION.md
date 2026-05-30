@@ -29,14 +29,14 @@ After:
 
 ```toml
 [dependencies]
-base64-ng = "1.0.3"
+base64-ng = "1.0.4"
 ```
 
 For embedded or freestanding use:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.0.3", default-features = false }
+base64-ng = { version = "1.0.4", default-features = false }
 ```
 
 ## Engine Mapping
@@ -168,7 +168,7 @@ Enable the `stream` feature for `std::io` wrappers:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.0.3", features = ["stream"] }
+base64-ng = { version = "1.0.4", features = ["stream"] }
 ```
 
 ```rust

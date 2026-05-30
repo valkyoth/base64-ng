@@ -29,7 +29,7 @@ The crate starts conservative: a small scalar implementation, strict RFC 4648 be
 
 ## Current Status
 
-The current public release is `1.0.3`.
+The current public release is `1.0.4`.
 
 Implemented now:
 
@@ -70,7 +70,7 @@ Implemented now:
 Planned behind admission evidence:
 
 - Admitted AVX2, AVX-512, SSSE3/SSE4.1, ARM NEON, and wasm `simd128`
-  fast paths after the SIMD admission evidence is complete. The `1.0.3`
+  fast paths after the SIMD admission evidence is complete. The `1.0.4`
   release remains scalar-only.
 - Async streaming wrappers only after the `tokio` feature passes the
   dependency and cancellation-safety admission bar in [docs/ASYNC.md](docs/ASYNC.md).
@@ -105,7 +105,7 @@ and CWE mapping lives in [docs/SECURITY_CONTROLS.md](docs/SECURITY_CONTROLS.md).
 The minimum supported Rust version is Rust `1.90.0`. New deployments should
 prefer the latest stable Rust; as of May 29, 2026, that is Rust `1.96.0`.
 
-Compatibility evidence for `1.0.3`:
+Compatibility evidence for `1.0.4`:
 
 | Rust | Local Evidence |
 | --- | --- |
@@ -121,7 +121,7 @@ Compatibility evidence for `1.0.3`:
 
 ```toml
 [dependencies]
-base64-ng = "1.0.3"
+base64-ng = "1.0.4"
 ```
 
 The crate is dual-licensed:
@@ -148,7 +148,7 @@ Disable defaults for embedded or freestanding use:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.0.3", default-features = false }
+base64-ng = { version = "1.0.4", default-features = false }
 ```
 
 ## Example
@@ -738,11 +738,12 @@ Security commitments:
   should prefer the latest stable Rust, currently Rust `1.96.0`.
 - `no_std` core by default.
 - Scalar encode/decode remains safe Rust.
-- Audited unsafe helpers in `src/lib.rs` perform volatile best-effort wiping
-  plus architecture-gated inline assembly and hardware store-ordering fences
-  where stable Rust supports them, so cleanup writes resist common dead-store
-  elimination and are ordered before the cleanup boundary on supported native
-  architectures.
+- Audited unsafe helpers in `src/cleanup.rs` perform volatile best-effort
+  wiping plus architecture-gated inline assembly and hardware store-ordering
+  fences where stable Rust supports them, so cleanup writes resist common
+  dead-store elimination and are ordered before the cleanup boundary on
+  supported native architectures. Constant-time comparison, CT scan, and CT
+  result-gate hardening remain audited in `src/lib.rs`.
 - Future unsafe SIMD remains isolated under `src/simd.rs`.
 - Local checks verify that `allow(unsafe_code)` is confined to the volatile
   wipe helpers and SIMD boundary, every unsafe function is inventoried, and

@@ -76,6 +76,9 @@ The release gate runs:
 - moved-code review for the `src/cleanup.rs` extraction, preserving internal
   cleanup call paths and updating the unsafe-boundary gate for the new audited
   unsafe location
+- moved-code review for the `src/buffers.rs` extraction, preserving root
+  public exports for stack-backed buffers, exposed ownership wrappers, and
+  `SecretBuffer`
 - all-features and no-default-features doctests plus documentation builds
 - `cargo deny check`
 - `cargo audit`
