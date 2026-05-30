@@ -89,7 +89,9 @@ fn wipe_barrier(ptr: *mut u8, len: usize) {
 }
 
 pub(crate) fn wipe_tail(bytes: &mut [u8], start: usize) {
-    wipe_bytes(&mut bytes[start..]);
+    if start < bytes.len() {
+        wipe_bytes(&mut bytes[start..]);
+    }
 }
 
 #[cfg(feature = "alloc")]

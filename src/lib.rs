@@ -991,6 +991,12 @@ where
     /// implementation writes from right to left, so unread input bytes are not
     /// overwritten before they are encoded.
     ///
+    /// # Panics
+    ///
+    /// Panics only if an internal right-to-left encode invariant is violated.
+    /// This indicates a bug in `base64-ng`; valid or malformed caller input is
+    /// reported through [`EncodeError`] instead.
+    ///
     /// # Examples
     ///
     /// ```
@@ -1081,7 +1087,10 @@ where
         // The right-to-left loop consumes exactly three input bytes for every
         // four output bytes. If this invariant changes, returning a shifted
         // slice would silently corrupt the in-place output.
-        debug_assert_eq!(write, 0);
+        assert_eq!(
+            write, 0,
+            "encode_in_place invariant violated: right-to-left loop did not complete"
+        );
         Ok(&mut buffer[..required])
     }
 
@@ -2075,7 +2084,7 @@ mod tests {
     }
 
     #[test]
-    pub(crate) fn decode_chunk_bit_packing_matches_exhaustive_small_inputs() {
+    fn decode_chunk_bit_packing_matches_exhaustive_small_inputs() {
         for byte in u8::MIN..=u8::MAX {
             assert_standard_decode_chunk_matches_input(&[byte]);
         }
@@ -2088,7 +2097,7 @@ mod tests {
     }
 
     #[test]
-    pub(crate) fn decode_chunk_bit_packing_matches_representative_full_quanta() {
+    fn decode_chunk_bit_packing_matches_representative_full_quanta() {
         const SAMPLES: [u8; 16] = [
             0, 1, 2, 15, 16, 31, 32, 63, 64, 95, 127, 128, 191, 192, 254, 255,
         ];

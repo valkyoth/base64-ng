@@ -14,6 +14,8 @@ use alloc::{string::String, vec::Vec};
 /// unnecessary but manually sizing and passing a separate output slice is
 /// noisy. Its visible bytes are produced by crate encoders, so [`Self::as_str`]
 /// can return `&str` without exposing a fallible UTF-8 conversion to callers.
+/// [`core::fmt::Display`] intentionally writes the full encoded text; use
+/// `SecretBuffer` for encoded secrets that may reach logs or error messages.
 ///
 /// The backing array is cleared when the value is dropped. This is best-effort
 /// data-retention reduction and is not a formal zeroization guarantee.
@@ -852,7 +854,6 @@ impl WipeVecGuard {
     fn into_validated_secret_string(mut self) -> alloc::string::String {
         wipe_vec_spare_capacity(&mut self.bytes);
         let bytes = core::mem::take(&mut self.bytes);
-        core::mem::forget(self);
         string_from_validated_secret_bytes(bytes)
     }
 }

@@ -333,6 +333,15 @@ where
     }
 
     /// Decodes `input` into a redacted owned secret buffer.
+    ///
+    /// # Security
+    ///
+    /// This uses the profile's normal strict decoder, not the
+    /// constant-time-oriented [`crate::ct`] module. It may branch or return
+    /// early on malformed input and reports localized decode errors. For
+    /// secret-bearing payloads where malformed-input timing matters, use the
+    /// matching [`crate::ct::CtEngine`] explicitly and wrap successful output in
+    /// [`SecretBuffer`].
     #[cfg(feature = "alloc")]
     pub fn decode_secret(&self, input: &[u8]) -> Result<SecretBuffer, DecodeError> {
         self.decode_vec(input).map(SecretBuffer::from_vec)

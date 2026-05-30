@@ -1,6 +1,8 @@
 //! Streaming Base64 wrappers for `std::io`.
 //!
-//! Decoder adapters fail closed after malformed Base64 input. Use
+//! Decoder adapters fail closed after malformed Base64 input. Encoder writer
+//! adapters also expose failed-state diagnostics for unrecoverable internal
+//! queue/encoding errors. Use
 //! `is_failed()` for diagnostics; unchecked `into_inner()` remains
 //! available when the wrapped reader or writer must be explicitly
 //! recovered after a decode error.
@@ -166,6 +168,7 @@ where
     pending_len: usize,
     output: OutputQueue<1024>,
     finalized: bool,
+    failed: bool,
 }
 
 impl<W, A, const PAD: bool> Encoder<W, A, PAD>
@@ -182,6 +185,7 @@ where
             pending_len: 0,
             output: OutputQueue::new(),
             finalized: false,
+            failed: false,
         }
     }
 
@@ -271,11 +275,23 @@ where
         self.finalized
     }
 
+    /// Returns whether this encoder has failed closed after an unrecoverable
+    /// internal encoding or buffering error.
+    ///
+    /// Ordinary wrapped-writer I/O errors are retryable and do not set this
+    /// flag. Once this returns `true`, later writes, flushes, and finalization
+    /// attempts return an error. The unchecked [`Self::into_inner`] method can
+    /// still be used for explicit recovery of the wrapped writer.
+    #[must_use]
+    pub const fn is_failed(&self) -> bool {
+        self.failed
+    }
+
     /// Returns whether [`Self::try_into_inner`] can recover the wrapped
     /// writer without discarding pending input.
     #[must_use]
     pub const fn can_into_inner(&self) -> bool {
-        !self.has_pending_input() && !self.has_buffered_output()
+        !self.is_failed() && !self.has_pending_input() && !self.has_buffered_output()
     }
 
     /// Consumes the encoder without flushing pending input.
@@ -360,6 +376,7 @@ where
             )
             .field("can_into_inner", &self.can_into_inner())
             .field("finalized", &self.finalized)
+            .field("failed", &self.failed)
             .finish()
     }
 }
@@ -379,6 +396,9 @@ where
     /// while keeping the stream adapter available for diagnostics or
     /// explicit recovery.
     pub fn try_finish(&mut self) -> io::Result<()> {
+        if self.failed {
+            return Err(stream_encoder_failed_error());
+        }
         if !self.finalized {
             self.queue_pending_final()?;
             self.finalized = true;
@@ -413,12 +433,16 @@ where
             Ok(written) => written,
             Err(err) => {
                 crate::wipe_bytes(encoded);
+                self.failed = true;
                 return Err(encode_error_to_io(err));
             }
         };
 
         let result = self.output.push_slice(&encoded[..written]);
         crate::wipe_bytes(encoded);
+        if result.is_err() {
+            self.failed = true;
+        }
         result
     }
 
@@ -437,6 +461,7 @@ where
                 }
                 Ok(written) => {
                     if written > pending {
+                        self.failed = true;
                         return Err(io::Error::new(
                             io::ErrorKind::InvalidData,
                             "wrapped writer reported more bytes than provided",
@@ -458,6 +483,9 @@ where
     A: Alphabet,
 {
     fn write(&mut self, input: &[u8]) -> io::Result<usize> {
+        if self.failed {
+            return Err(stream_encoder_failed_error());
+        }
         self.drain_output()?;
         if self.finalized {
             return Err(io::Error::new(
@@ -520,6 +548,9 @@ where
     }
 
     fn flush(&mut self) -> io::Result<()> {
+        if self.failed {
+            return Err(stream_encoder_failed_error());
+        }
         self.drain_output()?;
         self.inner_mut().flush()
     }

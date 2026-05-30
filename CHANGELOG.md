@@ -12,6 +12,10 @@
   into `src/scalar.rs`, and public error types into `src/errors.rs`.
 - Updated release-gate scripts and unsafe-boundary checks for the new module
   layout without adding runtime dependencies or changing behavior.
+- Addressed follow-up audit feedback by making secret-string conversion
+  panic-safe without `mem::forget`, guarding tail cleanup bounds, adding
+  failed-state diagnostics to the stream encoder, and documenting CT platform
+  posture and strict non-CT secret conversion paths more explicitly.
 - Refreshed documentation and release metadata to mark `1.0.5` as the final
   planned `1.0.x` cleanup before parking feature work for broader testing.
 

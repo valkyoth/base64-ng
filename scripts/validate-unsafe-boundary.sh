@@ -14,7 +14,7 @@ matches="$(grep -RIl 'allow(unsafe_code)' src | sort || true)"
 allowed="$(printf '%s\n%s\n%s' "$cleanup_allowed" "$ct_allowed" "$simd_allowed" | sort)"
 
 if [ "$matches" != "$allowed" ]; then
-    echo "unsafe boundary: allow(unsafe_code) may appear only in $root_allowed, $cleanup_allowed, $ct_allowed, and $simd_allowed"
+    echo "unsafe boundary: allow(unsafe_code) may appear only in $cleanup_allowed, $ct_allowed, and $simd_allowed"
     if [ -n "$matches" ]; then
         echo "$matches"
     fi

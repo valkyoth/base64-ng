@@ -17,7 +17,23 @@
 //! with a private staging buffer. In those deployments,
 //! [`crate::ct::CtEngine::decode_slice_clear_tail`] is not sufficient by
 //! itself because it wipes caller-owned output only after the internal decode
-//! loop reaches the final error gate.
+//! loop reaches the final error gate. Treat
+//! [`crate::ct::CtEngine::decode_slice_staged_clear_tail`] as the default for
+//! shared-memory, enclave, HSM-adjacent, or multi-principal deployments;
+//! [`crate::ct::CtEngine::decode_slice_clear_tail`] is appropriate only when
+//! the output buffer is not observable during the call.
+//!
+//! # Platform Posture
+//!
+//! The CT result gate uses architecture-specific best-effort barriers where
+//! stable Rust exposes them. On `AArch64`, the emitted CSDB hint is reported as
+//! `hardware-speculation-barrier-unattested` because older cores may treat it
+//! as a no-op; deployments must attest the exact core behavior before relying
+//! on it for high assurance. On RISC-V, `fence rw, rw` is an ordering fence,
+//! not a Spectre-v1 speculation barrier, and the built-in high-assurance
+//! runtime policy intentionally rejects that posture. RISC-V deployments on
+//! speculative cores need platform-level mitigations and startup policy checks
+//! that make the gap explicit.
 //!
 //! The dependency-free comparison helpers on redacted buffers are
 //! constant-time-oriented best effort, not formally audited MAC or token
@@ -450,9 +466,9 @@ fn ct_error_gate_barrier(invalid_byte: u8, invalid_padding: u8) {
 
     #[cfg(all(not(miri), target_arch = "aarch64"))]
     {
-        // SAFETY: these barriers do not access memory. `isb sy` is a
-        // best-effort speculation boundary and `hint #20` is the architectural
-        // CSDB hint encoding on AArch64.
+        // Older cores may treat CSDB as a no-op; runtime reporting marks this
+        // as unattested until the deployment provides platform evidence.
+        // SAFETY: these barriers do not access memory.
         unsafe {
             core::arch::asm!("isb sy", "hint #20", options(nostack, preserves_flags));
         }
@@ -471,7 +487,9 @@ fn ct_error_gate_barrier(invalid_byte: u8, invalid_padding: u8) {
     {
         // RISC-V base ISA does not provide a canonical speculation barrier.
         // `fence rw, rw` is the available ordering primitive for the CT public
-        // result gate and is reported separately as `ordering-fence`.
+        // result gate and is reported separately as `ordering-fence`; callers
+        // on speculative RISC-V cores must use platform mitigations because
+        // this does not satisfy `BackendPolicy::HighAssuranceScalarOnly`.
         // SAFETY: the assembly block does not access memory.
         unsafe {
             core::arch::asm!("fence rw, rw", options(nostack, preserves_flags));

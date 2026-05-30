@@ -124,6 +124,20 @@ impl Write for ShortWriter {
 }
 
 #[cfg(feature = "stream")]
+struct OverReportingWriter;
+
+#[cfg(feature = "stream")]
+impl Write for OverReportingWriter {
+    fn write(&mut self, input: &[u8]) -> std::io::Result<usize> {
+        Ok(input.len() + 1)
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        Ok(())
+    }
+}
+
+#[cfg(feature = "stream")]
 #[test]
 fn stream_engine_convenience_constructors_attach_policy() {
     let mut encoder = STANDARD.encoder_writer(Vec::new());
@@ -401,6 +415,22 @@ fn stream_encoder_try_into_inner_returns_writer_without_pending_input() {
     let inner = encoder.try_into_inner().unwrap();
 
     assert_eq!(inner, b"aGVs");
+}
+
+#[cfg(feature = "stream")]
+#[test]
+fn stream_encoder_marks_failed_after_unrecoverable_internal_error() {
+    let mut encoder = Encoder::new(OverReportingWriter, STANDARD);
+    encoder.write_all(b"hel").unwrap();
+
+    let err = encoder.flush().unwrap_err();
+    assert_eq!(err.kind(), std::io::ErrorKind::InvalidData);
+    assert!(encoder.is_failed());
+    assert!(!encoder.can_into_inner());
+    assert_eq!(
+        encoder.write(b"lo").unwrap_err().kind(),
+        std::io::ErrorKind::InvalidInput
+    );
 }
 
 #[cfg(feature = "stream")]
