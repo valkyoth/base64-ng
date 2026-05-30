@@ -373,14 +373,14 @@ pub mod ct {
             input: &[u8],
         ) -> Result<DecodedBuffer<CAP>, DecodeError> {
             let mut output = DecodedBuffer::new();
-            let written = match self.decode_slice_clear_tail(input, &mut output.bytes) {
+            let written = match self.decode_slice_clear_tail(input, output.as_mut_capacity()) {
                 Ok(written) => written,
                 Err(err) => {
                     output.clear();
                     return Err(err);
                 }
             };
-            output.len = written;
+            output.set_filled(written)?;
             Ok(output)
         }
 
@@ -1600,14 +1600,15 @@ where
         wrap: LineWrap,
     ) -> Result<EncodedBuffer<CAP>, EncodeError> {
         let mut output = EncodedBuffer::new();
-        let written = match self.encode_slice_wrapped_clear_tail(input, &mut output.bytes, wrap) {
-            Ok(written) => written,
-            Err(err) => {
-                output.clear();
-                return Err(err);
-            }
-        };
-        output.len = written;
+        let written =
+            match self.encode_slice_wrapped_clear_tail(input, output.as_mut_capacity(), wrap) {
+                Ok(written) => written,
+                Err(err) => {
+                    output.clear();
+                    return Err(err);
+                }
+            };
+        output.set_filled(written)?;
         Ok(output)
     }
 
@@ -1708,14 +1709,14 @@ where
         input: &[u8],
     ) -> Result<EncodedBuffer<CAP>, EncodeError> {
         let mut output = EncodedBuffer::new();
-        let written = match self.encode_slice_clear_tail(input, &mut output.bytes) {
+        let written = match self.encode_slice_clear_tail(input, output.as_mut_capacity()) {
             Ok(written) => written,
             Err(err) => {
                 output.clear();
                 return Err(err);
             }
         };
-        output.len = written;
+        output.set_filled(written)?;
         Ok(output)
     }
 
@@ -1971,14 +1972,14 @@ where
         input: &[u8],
     ) -> Result<DecodedBuffer<CAP>, DecodeError> {
         let mut output = DecodedBuffer::new();
-        let written = match self.decode_slice_clear_tail(input, &mut output.bytes) {
+        let written = match self.decode_slice_clear_tail(input, output.as_mut_capacity()) {
             Ok(written) => written,
             Err(err) => {
                 output.clear();
                 return Err(err);
             }
         };
-        output.len = written;
+        output.set_filled(written)?;
         Ok(output)
     }
 
@@ -2057,14 +2058,14 @@ where
         input: &[u8],
     ) -> Result<DecodedBuffer<CAP>, DecodeError> {
         let mut output = DecodedBuffer::new();
-        let written = match self.decode_slice_legacy_clear_tail(input, &mut output.bytes) {
+        let written = match self.decode_slice_legacy_clear_tail(input, output.as_mut_capacity()) {
             Ok(written) => written,
             Err(err) => {
                 output.clear();
                 return Err(err);
             }
         };
-        output.len = written;
+        output.set_filled(written)?;
         Ok(output)
     }
 
@@ -2134,14 +2135,15 @@ where
         wrap: LineWrap,
     ) -> Result<DecodedBuffer<CAP>, DecodeError> {
         let mut output = DecodedBuffer::new();
-        let written = match self.decode_slice_wrapped_clear_tail(input, &mut output.bytes, wrap) {
-            Ok(written) => written,
-            Err(err) => {
-                output.clear();
-                return Err(err);
-            }
-        };
-        output.len = written;
+        let written =
+            match self.decode_slice_wrapped_clear_tail(input, output.as_mut_capacity(), wrap) {
+                Ok(written) => written,
+                Err(err) => {
+                    output.clear();
+                    return Err(err);
+                }
+            };
+        output.set_filled(written)?;
         Ok(output)
     }
 

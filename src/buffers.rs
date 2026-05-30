@@ -25,8 +25,8 @@ use alloc::{string::String, vec::Vec};
 /// this limitation and applies its own memory strategy around stack-backed
 /// buffers.
 pub struct EncodedBuffer<const CAP: usize> {
-    pub(crate) bytes: [u8; CAP],
-    pub(crate) len: usize,
+    bytes: [u8; CAP],
+    len: usize,
 }
 
 /// Owned stack array extracted from [`EncodedBuffer`].
@@ -121,6 +121,29 @@ impl<const CAP: usize> EncodedBuffer<CAP> {
             bytes: [0u8; CAP],
             len: 0,
         }
+    }
+
+    /// Returns the full backing array as an output slice for crate-internal
+    /// encode paths.
+    pub(crate) fn as_mut_capacity(&mut self) -> &mut [u8] {
+        &mut self.bytes
+    }
+
+    /// Sets the visible length after a crate-internal encode path succeeds.
+    pub(crate) fn set_filled(&mut self, written: usize) -> Result<(), EncodeError> {
+        debug_assert!(
+            written <= CAP,
+            "encoder wrote past stack-backed buffer capacity"
+        );
+        if written > CAP {
+            self.clear();
+            return Err(EncodeError::OutputTooSmall {
+                required: written,
+                available: CAP,
+            });
+        }
+        self.len = written;
+        Ok(())
     }
 
     /// Returns the number of visible encoded bytes.
@@ -348,8 +371,8 @@ impl<const CAP: usize> TryFrom<&str> for EncodedBuffer<CAP> {
 /// this limitation and applies its own memory strategy around stack-backed
 /// buffers.
 pub struct DecodedBuffer<const CAP: usize> {
-    pub(crate) bytes: [u8; CAP],
-    pub(crate) len: usize,
+    bytes: [u8; CAP],
+    len: usize,
 }
 
 /// Owned stack array extracted from [`DecodedBuffer`].
@@ -444,6 +467,29 @@ impl<const CAP: usize> DecodedBuffer<CAP> {
             bytes: [0u8; CAP],
             len: 0,
         }
+    }
+
+    /// Returns the full backing array as an output slice for crate-internal
+    /// decode paths.
+    pub(crate) fn as_mut_capacity(&mut self) -> &mut [u8] {
+        &mut self.bytes
+    }
+
+    /// Sets the visible length after a crate-internal decode path succeeds.
+    pub(crate) fn set_filled(&mut self, written: usize) -> Result<(), DecodeError> {
+        debug_assert!(
+            written <= CAP,
+            "decoder wrote past stack-backed buffer capacity"
+        );
+        if written > CAP {
+            self.clear();
+            return Err(DecodeError::OutputTooSmall {
+                required: written,
+                available: CAP,
+            });
+        }
+        self.len = written;
+        Ok(())
     }
 
     /// Returns the number of visible decoded bytes.

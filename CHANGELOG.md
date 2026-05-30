@@ -14,6 +14,9 @@
   `HighAssuranceScalarOnly` policy now requires an attested hardware
   speculation barrier and no longer treats emitted AArch64 CSDB hint code as
   sufficient without platform evidence.
+- Kept stack-backed buffer length invariants module-owned after the
+  `src/buffers.rs` split by routing crate-internal writes through checked
+  `set_filled` methods instead of exposing visible lengths crate-wide.
 
 ## 1.0.3 - 2026-05-29
 

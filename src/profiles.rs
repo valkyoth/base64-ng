@@ -167,14 +167,14 @@ where
         input: &[u8],
     ) -> Result<EncodedBuffer<CAP>, EncodeError> {
         let mut output = EncodedBuffer::new();
-        let written = match self.encode_slice_clear_tail(input, &mut output.bytes) {
+        let written = match self.encode_slice_clear_tail(input, output.as_mut_capacity()) {
             Ok(written) => written,
             Err(err) => {
                 output.clear();
                 return Err(err);
             }
         };
-        output.len = written;
+        output.set_filled(written)?;
         Ok(output)
     }
 
@@ -223,14 +223,14 @@ where
         input: &[u8],
     ) -> Result<DecodedBuffer<CAP>, DecodeError> {
         let mut output = DecodedBuffer::new();
-        let written = match self.decode_slice_clear_tail(input, &mut output.bytes) {
+        let written = match self.decode_slice_clear_tail(input, output.as_mut_capacity()) {
             Ok(written) => written,
             Err(err) => {
                 output.clear();
                 return Err(err);
             }
         };
-        output.len = written;
+        output.set_filled(written)?;
         Ok(output)
     }
 
