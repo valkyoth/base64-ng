@@ -40,7 +40,14 @@ check_file() {
 
 test -s docs/PANIC_POLICY.md
 
+check_file src/buffers.rs
+check_file src/ct.rs
+check_file src/errors.rs
+check_file src/length.rs
 check_file src/lib.rs
+check_file src/scalar.rs
 check_file src/simd.rs
+check_file src/stream.rs
+check_file src/wrap.rs
 
 echo "panic policy: ok"

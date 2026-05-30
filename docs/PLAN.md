@@ -127,11 +127,10 @@ Any dependency addition must answer:
 
 - Scalar encode/decode remains safe Rust.
 - The scalar-side unsafe admissions remain small and release-gate enforced:
-  volatile wipe helpers, CT comparison/result-gate barriers, and validated
-  secret UTF-8 conversion.
+  volatile wipe helpers and CT comparison/result-gate barriers.
 - Unsafe SIMD must live under dedicated modules.
-- `allow(unsafe_code)` must remain confined to reviewed root helpers and
-  `src/simd.rs`.
+- `allow(unsafe_code)` must remain confined to reviewed cleanup, CT, and SIMD
+  helper files.
 - Every unsafe block requires a local safety explanation.
 - Every SIMD path must have deterministic and fuzzed differential tests against scalar.
 - Padding behavior must be canonical by default.
@@ -594,17 +593,19 @@ Recommended `1.0.x` source-layout sequence:
   into `src/profiles.rs`; split best-effort cleanup helpers into
   `src/cleanup.rs`.
 - `1.0.4`: split stack/owned buffer wrappers into `src/buffers.rs`.
-- `1.0.5`: split constant-time-oriented decode, validation, masks, and CT
-  barriers into `src/ct.rs`. This comes later because it is the most
-  security-sensitive move.
-- `1.0.6`: split length helpers, line wrapping, and scalar core encode/decode
-  helpers into `src/length.rs`, `src/wrap.rs`, and `src/scalar.rs` if the
-  previous smaller splits stayed clean.
+- `1.0.5`: combined final source-layout cleanup before the pause window. Split
+  constant-time-oriented decode, validation, masks, and CT barriers into
+  `src/ct.rs`; split length helpers into `src/length.rs`; split wrapping and
+  legacy transport handling into `src/wrap.rs`; split scalar core
+  encode/decode helpers into `src/scalar.rs`; and split public error types into
+  `src/errors.rs`.
+- After `1.0.5`: park feature work for a few weeks so users can test the stable
+  API and report issues before any `1.1` SIMD-admission work starts.
 
 The recommended post-`1.0` SIMD path is incremental:
 
-- Remaining `1.0.x`: maintenance, documentation, verifier compatibility, and
-  assurance releases. Resolve Kani execution when the verifier supports the
+- Remaining `1.0.x`: maintenance-only fixes if users report real issues during
+  the pause window. Resolve Kani execution when the verifier supports the
   pinned Rust toolchain, refresh Miri/fuzz/dudect/generated-assembly evidence,
   and avoid broad API expansion.
 - `1.1`: replace the SSSE3/SSE4.1 fixed-block encode scaffold with real

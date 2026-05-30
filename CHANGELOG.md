@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.0.5 - 2026-05-30
+
+- Combined the remaining `1.0.x` source-layout cleanup into one final
+  maintenance release before the community test pause.
+- Split constant-time-oriented decode, validation, masks, comparison helpers,
+  and CT result-gate barriers into `src/ct.rs` while preserving the public
+  `base64_ng::ct::*` API surface.
+- Split length and wrapping policy helpers into `src/length.rs`, strict and
+  legacy wrapping internals into `src/wrap.rs`, scalar encode/decode internals
+  into `src/scalar.rs`, and public error types into `src/errors.rs`.
+- Updated release-gate scripts and unsafe-boundary checks for the new module
+  layout without adding runtime dependencies or changing behavior.
+- Refreshed documentation and release metadata to mark `1.0.5` as the final
+  planned `1.0.x` cleanup before parking feature work for broader testing.
+
 ## 1.0.4 - 2026-05-30
 
 - Continued the `1.0.x` source-layout series by splitting stack-backed

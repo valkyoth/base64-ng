@@ -3,9 +3,8 @@
 `base64-ng` keeps scalar encode/decode in safe Rust. The crate root uses
 `#![deny(unsafe_code)]`, and reviewed `allow(unsafe_code)` exceptions are
 limited to volatile wipe helpers in `src/cleanup.rs`, the constant-time
-comparison accumulator barrier, the validated secret UTF-8 conversion helper,
-the constant-time error gate barrier in `src/lib.rs`, and the SIMD boundary in
-`src/simd.rs`.
+comparison accumulator barrier and constant-time error gate barrier in
+`src/ct.rs`, and the SIMD boundary in `src/simd.rs`.
 
 This inventory is intentionally small and release-gate enforced. Any new unsafe
 block must be added here before an accelerated backend can be admitted.
@@ -13,14 +12,12 @@ block must be added here before an accelerated backend can be admitted.
 ## Policy
 
 - Default builds compile audited unsafe volatile wipe helpers, the
-  constant-time comparison accumulator barrier, the validated secret UTF-8
-  conversion helper, and the constant-time error gate barrier.
+  constant-time comparison accumulator barrier, and the constant-time error
+  gate barrier.
 - Optional SIMD prototypes live only in `src/simd.rs` and are compiled only
   for tests until a real backend is admitted.
 - `scripts/validate-unsafe-boundary.sh` fails if `allow(unsafe_code)` appears
-  outside `src/cleanup.rs`, the constant-time comparison accumulator barrier,
-  the validated secret UTF-8 conversion helper, the constant-time error gate
-  barrier, or `src/simd.rs`.
+  outside `src/cleanup.rs`, `src/ct.rs`, or `src/simd.rs`.
 - `scripts/validate-unsafe-boundary.sh` fails if architecture intrinsics, CPU
   feature detection, or `target_feature` gates appear outside the reviewed
   cleanup, constant-time gate, and SIMD boundaries.
@@ -152,7 +149,7 @@ Limitations:
 
 ### `constant_time_eq_same_len`
 
-Location: `src/lib.rs`
+Location: `src/ct.rs`
 
 Status: active constant-time-oriented comparison primitive.
 
@@ -190,7 +187,7 @@ Limitations:
 
 ### `ct_error_gate_barrier`
 
-Location: `src/lib.rs`
+Location: `src/ct.rs`
 
 Status: active constant-time error-gate hardening primitive.
 
@@ -235,7 +232,7 @@ Limitations:
 
 ### `ct_decode_alphabet_byte`
 
-Location: `src/lib.rs`
+Location: `src/ct.rs`
 
 Status: active constant-time-oriented alphabet scanner.
 

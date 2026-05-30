@@ -9,11 +9,12 @@ fi
 simd_allowed='src/simd.rs'
 root_allowed='src/lib.rs'
 cleanup_allowed='src/cleanup.rs'
+ct_allowed='src/ct.rs'
 matches="$(grep -RIl 'allow(unsafe_code)' src | sort || true)"
-allowed="$(printf '%s\n%s\n%s' "$root_allowed" "$cleanup_allowed" "$simd_allowed" | sort)"
+allowed="$(printf '%s\n%s\n%s' "$cleanup_allowed" "$ct_allowed" "$simd_allowed" | sort)"
 
 if [ "$matches" != "$allowed" ]; then
-    echo "unsafe boundary: allow(unsafe_code) may appear only in $root_allowed, $cleanup_allowed, and $simd_allowed"
+    echo "unsafe boundary: allow(unsafe_code) may appear only in $root_allowed, $cleanup_allowed, $ct_allowed, and $simd_allowed"
     if [ -n "$matches" ]; then
         echo "$matches"
     fi
@@ -21,14 +22,20 @@ if [ "$matches" != "$allowed" ]; then
 fi
 
 root_allow_count="$(grep -c '^#\[allow(unsafe_code)\]$' "$root_allowed" || true)"
-if [ "$root_allow_count" -ne 3 ]; then
-    echo "unsafe boundary: src/lib.rs must have exactly three reviewed allow(unsafe_code) helpers"
+if [ "$root_allow_count" -ne 0 ]; then
+    echo "unsafe boundary: src/lib.rs must not carry module-local allow(unsafe_code) helpers"
     exit 1
 fi
 
 cleanup_allow_count="$(grep -c '^#\[allow(unsafe_code)\]$' "$cleanup_allowed" || true)"
 if [ "$cleanup_allow_count" -ne 3 ]; then
     echo "unsafe boundary: src/cleanup.rs must have exactly three reviewed allow(unsafe_code) helpers"
+    exit 1
+fi
+
+ct_allow_count="$(grep -c '^#\[allow(unsafe_code)\]$' "$ct_allowed" || true)"
+if [ "$ct_allow_count" -ne 3 ]; then
+    echo "unsafe boundary: src/ct.rs must have exactly three reviewed allow(unsafe_code) helpers"
     exit 1
 fi
 
@@ -43,16 +50,16 @@ if ! awk '
         seen += 1
     }
     END { exit failed || seen != 6 }
-' "$root_allowed" "$cleanup_allowed"; then
+' "$cleanup_allowed" "$ct_allowed"; then
     echo "unsafe boundary: allow(unsafe_code) must apply only to reviewed cleanup, comparison, CT scan, and CT gate helpers"
     exit 1
 fi
 
 arch_matches="$(grep -RIl -e 'core::arch' -e 'std::arch' -e 'is_x86_feature_detected!' -e 'target_feature' src | sort || true)"
-arch_allowed="$(printf '%s\n%s\n%s' "$root_allowed" "$cleanup_allowed" "$simd_allowed" | sort)"
+arch_allowed="$(printf '%s\n%s\n%s' "$ct_allowed" "$cleanup_allowed" "$simd_allowed" | sort)"
 
 if [ "$arch_matches" != "$arch_allowed" ]; then
-    echo "unsafe boundary: architecture intrinsics may appear only in $root_allowed CT barriers, $cleanup_allowed cleanup barriers, and $simd_allowed"
+    echo "unsafe boundary: architecture intrinsics may appear only in $ct_allowed CT barriers, $cleanup_allowed cleanup barriers, and $simd_allowed"
     if [ -n "$arch_matches" ]; then
         echo "$arch_matches"
     fi
@@ -97,7 +104,7 @@ if ! awk '
         prev1 = $0
     }
     END { exit failed }
-' "$root_allowed" "$cleanup_allowed" "$simd_allowed"; then
+' "$ct_allowed" "$cleanup_allowed" "$simd_allowed"; then
     echo "unsafe boundary: every unsafe block must have a nearby SAFETY explanation"
     exit 1
 fi

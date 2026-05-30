@@ -43,14 +43,14 @@ for required_source_text in \
     "Do not use this helper as the sole MAC" \
     "#[must_use = \"handle decode errors; use crate::ct for secret-bearing payloads\"]"
 do
-    if ! grep -F -q "$required_source_text" src/lib.rs src/profiles.rs src/buffers.rs; then
+    if ! grep -F -q "$required_source_text" src/lib.rs src/ct.rs src/profiles.rs src/buffers.rs; then
         echo "constant-time policy: source is missing decode security warning text: $required_source_text" >&2
         exit 1
     fi
 done
 
 ct_public_methods="$(
-    sed -n '/^pub mod ct {/,/impl<A, const PAD: bool> core::fmt::Display for CtEngine/p' src/lib.rs
+    sed -n '/^pub struct CtEngine/,/impl<A, const PAD: bool> core::fmt::Display for CtEngine/p' src/ct.rs
 )"
 
 for removed_method in \

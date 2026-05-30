@@ -337,7 +337,19 @@ for required_package_file in \
     "scripts/validate-release-metadata.sh" \
     "scripts/validate-simd-admission.sh" \
     "scripts/validate-unsafe-boundary.sh" \
+    "src/alphabet.rs" \
+    "src/buffers.rs" \
+    "src/cleanup.rs" \
+    "src/ct.rs" \
+    "src/errors.rs" \
+    "src/length.rs" \
     "src/lib.rs" \
+    "src/profiles.rs" \
+    "src/runtime.rs" \
+    "src/scalar.rs" \
+    "src/simd.rs" \
+    "src/stream.rs" \
+    "src/wrap.rs" \
     "tests/rfc4648.rs"
 do
     if ! printf '%s\n' "$package_list" | grep -qx "$required_package_file"; then

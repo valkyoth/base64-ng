@@ -1,11 +1,11 @@
 # SIMD Admission Policy
 
-`base64-ng` is intentionally scalar-only in the `1.0.4` release. Future SIMD
+`base64-ng` is intentionally scalar-only in the `1.0.5` release. Future SIMD
 dispatch remains gated unless a complete SIMD admission evidence package lands
 in a later release series. The crate uses `#![deny(unsafe_code)]` and permits
 reviewed `allow(unsafe_code)` exceptions only for audited cleanup in
 `src/cleanup.rs`, CT comparison, CT scan, and CT result-gate helpers in
-`src/lib.rs`, and the private `src/simd.rs` boundary. The `simd` feature
+`src/ct.rs`, and the private `src/simd.rs` boundary. The `simd` feature
 remains reserved until architecture-specific code has enough evidence to
 justify enabling it.
 
@@ -15,10 +15,10 @@ weakening the scalar trust base.
 
 ## Current Status
 
-- Default builds compile audited unsafe cleanup, CT barrier, comparison, and
-  validated secret conversion helpers; scalar encode/decode remains safe Rust.
+- Default builds compile audited unsafe cleanup, CT barrier, and comparison
+  helpers; scalar encode/decode remains safe Rust.
 - `scripts/validate-unsafe-boundary.sh` verifies that `allow(unsafe_code)` is
-  confined to the reviewed root helpers and `src/simd.rs`.
+  confined to the reviewed cleanup, CT, and SIMD helper files.
 - `docs/UNSAFE.md` inventories every current unsafe site and its invariants.
 - The scalar implementation is the reference behavior.
 - Encode and decode entry points already pass through an internal backend
