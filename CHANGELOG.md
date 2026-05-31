@@ -15,6 +15,10 @@
 - Strengthened idiomatic `TryFrom`/`FromStr` documentation for decoded and
   secret buffers so callers know those conversions always use strict standard
   Base64 and should use explicit engines or profiles for other alphabets.
+- Addressed 1.0.6 audit follow-up by making stream decoder over-reporting
+  fail closed like the stream encoder, restoring `wipe_tail` invariant checks,
+  documenting CT owned-decode transient plaintext behavior, and adding
+  `ct::CtEngine::decode_secret_staged` for stack-staged owned secret decode.
 - Kept `serde` deferred as a future optional integration candidate instead of
   adding an external dependency to the `1.0.x` line.
 

@@ -602,6 +602,19 @@ let decoded = ct::STANDARD.decode_secret(b"aGVsbG8=").unwrap();
 assert!(decoded.constant_time_eq_public_len(b"hello"));
 ```
 
+For shared-memory, enclave-adjacent, HSM-style, or multi-principal deployments
+where even transient writes into the final heap allocation are unacceptable,
+use stack-staged owned decode:
+
+```rust
+use base64_ng::ct;
+
+let decoded = ct::STANDARD
+    .decode_secret_staged::<5>(b"aGVsbG8=")
+    .unwrap();
+assert!(decoded.constant_time_eq_public_len(b"hello"));
+```
+
 `SecretBuffer` clears vector spare capacity when a vector is wrapped, and clears
 initialized bytes plus spare capacity when dropped. It does not claim formal
 zeroization and cannot clean historical copies outside the wrapper or make

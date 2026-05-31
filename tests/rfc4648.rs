@@ -2506,6 +2506,18 @@ fn ct_alloc_helpers_return_owned_outputs() {
         format!("{secret:?}"),
         r#"SecretBuffer { bytes: "<redacted>", len: 5 }"#
     );
+
+    let staged = ct::STANDARD.decode_secret_staged::<5>(b"aGVsbG8=").unwrap();
+    assert!(staged.constant_time_eq_public_len(b"hello"));
+    assert_eq!(
+        ct::STANDARD
+            .decode_secret_staged::<4>(b"aGVsbG8=")
+            .unwrap_err(),
+        DecodeError::StagingTooSmall {
+            required: 5,
+            available: 4,
+        }
+    );
 }
 
 #[test]

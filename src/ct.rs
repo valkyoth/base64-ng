@@ -271,19 +271,17 @@ where
     /// output buffer is cleared before the error is returned.
     ///
     /// Use [`Self::decode_secret`] for secret-bearing payloads that should stay
-    /// on the crate's redacted, drop-wiping buffer path.
+    /// on the crate's redacted, drop-wiping buffer path. Use
+    /// [`Self::decode_secret_staged`] for shared-memory, enclave-adjacent,
+    /// HSM-style, or multi-principal deployments where even transient writes
+    /// into the final heap allocation are unacceptable.
     #[cfg(feature = "alloc")]
     #[must_use = "for secret-bearing payloads use decode_secret, which returns a redacted buffer with drop-time cleanup"]
     pub fn decode_vec(&self, input: &[u8]) -> Result<alloc::vec::Vec<u8>, DecodeError> {
         let required = self.decoded_len(input)?;
         let mut output = alloc::vec![0; required];
-        let written = match self.decode_slice_clear_tail(input, &mut output) {
-            Ok(written) => written,
-            Err(err) => {
-                wipe_bytes(&mut output);
-                return Err(err);
-            }
-        };
+        // decode_slice_clear_tail wipes output on error.
+        let written = self.decode_slice_clear_tail(input, &mut output)?;
         output.truncate(written);
         Ok(output)
     }
@@ -294,6 +292,18 @@ where
     /// payloads. It decodes with [`Self::decode_vec`] and then wraps the result
     /// in [`SecretBuffer`], which redacts formatting and clears initialized
     /// bytes plus spare vector capacity on drop.
+    ///
+    /// # Security: Transient Plaintext Window
+    ///
+    /// This function uses the non-staged CT decode path. Decoded bytes are
+    /// written transiently into the heap allocation before the final error
+    /// gate. On error, the allocation is wiped before returning, but a
+    /// concurrent same-process observer with access to that allocation during
+    /// the call may observe transient partial plaintext. For shared-memory,
+    /// enclave-adjacent, HSM-style, or multi-principal deployments where even
+    /// transient writes into the final heap allocation are unacceptable, use
+    /// [`Self::decode_secret_staged`] with a stack-backed private staging
+    /// capacity large enough for the decoded value.
     ///
     /// # Examples
     ///
@@ -306,6 +316,44 @@ where
     #[cfg(feature = "alloc")]
     pub fn decode_secret(&self, input: &[u8]) -> Result<SecretBuffer, DecodeError> {
         self.decode_vec(input).map(SecretBuffer::from_vec)
+    }
+
+    /// Decodes `input` into a redacted owned secret buffer through private
+    /// stack staging.
+    ///
+    /// `STAGE` must be at least the decoded length of `input`. Decoded bytes
+    /// are written to a stack-backed staging buffer first and copied into the
+    /// returned heap buffer only after the full constant-time-oriented decode
+    /// succeeds. On error, both staging and heap output buffers are wiped before
+    /// returning.
+    ///
+    /// This is the preferred owned decode API for shared-memory,
+    /// enclave-adjacent, HSM-style, or multi-principal deployments where the
+    /// final heap allocation must not contain transient partial plaintext from
+    /// rejected input.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use base64_ng::ct;
+    ///
+    /// let decoded = ct::STANDARD
+    ///     .decode_secret_staged::<5>(b"aGVsbG8=")
+    ///     .unwrap();
+    /// assert!(decoded.constant_time_eq_public_len(b"hello"));
+    /// ```
+    #[cfg(feature = "alloc")]
+    pub fn decode_secret_staged<const STAGE: usize>(
+        &self,
+        input: &[u8],
+    ) -> Result<SecretBuffer, DecodeError> {
+        let required = self.decoded_len(input)?;
+        let mut staging = DecodedBuffer::<STAGE>::new();
+        let mut output = alloc::vec![0; required];
+        let written =
+            self.decode_slice_staged_clear_tail(input, &mut output, staging.as_mut_capacity())?;
+        output.truncate(written);
+        Ok(SecretBuffer::from_vec(output))
     }
 
     /// Decodes `buffer` in place and clears all bytes after the decoded

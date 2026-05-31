@@ -312,6 +312,14 @@ pub fn constant_time_eq_fixed_width<const N: usize>(left: &[u8; N], right: &[u8;
 /// dependency-free, constant-time-oriented best-effort helper, not a formally
 /// verified cryptographic MAC, password, or bearer-token comparison primitive.
 ///
+/// # Security
+///
+/// This helper is intended to avoid ordinary early-exit equality on values
+/// whose length is public. It is not a formal constant-time guarantee and
+/// should not be the sole primitive admitted at MAC, password, or bearer-token
+/// protocol boundaries in high-assurance systems. Use a reviewed comparison
+/// primitive at that boundary when your dependency policy allows one.
+///
 /// # Examples
 ///
 /// ```

@@ -435,6 +435,22 @@ fn stream_encoder_marks_failed_after_unrecoverable_internal_error() {
 
 #[cfg(feature = "stream")]
 #[test]
+fn stream_decoder_marks_failed_after_unrecoverable_internal_error() {
+    let mut decoder = Decoder::new(OverReportingWriter, STANDARD);
+    assert_eq!(decoder.write(b"aGk=AA").unwrap(), 4);
+
+    let err = decoder.flush().unwrap_err();
+    assert_eq!(err.kind(), std::io::ErrorKind::InvalidData);
+    assert!(decoder.is_failed());
+    assert!(!decoder.can_into_inner());
+    assert_eq!(
+        decoder.write(b"AA").unwrap_err().kind(),
+        std::io::ErrorKind::InvalidInput
+    );
+}
+
+#[cfg(feature = "stream")]
+#[test]
 fn stream_encoder_reader_handles_small_reads() {
     let mut reader = EncoderReader::new(&b"hello"[..], STANDARD);
     assert_eq!(reader.engine(), STANDARD);

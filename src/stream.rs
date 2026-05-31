@@ -906,6 +906,7 @@ where
                 }
                 Ok(written) => {
                     if written > pending {
+                        self.failed = true;
                         return Err(io::Error::new(
                             io::ErrorKind::InvalidData,
                             "wrapped writer reported more bytes than provided",
