@@ -53,6 +53,25 @@
 //! secret-bearing payloads where decode timing posture matters more than exact
 //! error indexes.
 //!
+//! Recommended heap-owning pattern for secret-bearing standard Base64:
+//!
+//! ```
+//! # #[cfg(feature = "alloc")]
+//! # {
+//! use base64_ng::ct;
+//!
+//! let expected = b"session-key";
+//! let decoded = ct::STANDARD.decode_secret(b"c2Vzc2lvbi1rZXk=").unwrap();
+//!
+//! assert!(decoded.constant_time_eq_public_len(expected));
+//! # }
+//! ```
+//!
+//! For shared-memory, enclave-adjacent, HSM-style, or multi-principal
+//! deployments where even transient writes into caller-owned output are
+//! unacceptable, use [`ct::CtEngine::decode_slice_staged_clear_tail`] with a
+//! private staging buffer.
+//!
 //! # Zeroization Caveat
 //!
 //! Cleanup APIs and redacted buffers use dependency-free best-effort wiping:
@@ -227,6 +246,43 @@ pub const BCRYPT_NO_PAD: Engine<Bcrypt, false> = Engine::new();
 #[doc(alias = "sensitive")]
 pub const CRYPT_NO_PAD: Engine<Crypt, false> = Engine::new();
 
+/// Encodes `input` as strict standard padded Base64.
+///
+/// This is a convenience wrapper around [`Engine::encode_string`] on
+/// [`STANDARD`] for callers migrating from simpler Base64 APIs. It requires
+/// the `alloc` feature because it returns an owned string.
+///
+/// # Examples
+///
+/// ```
+/// assert_eq!(base64_ng::encode(b"hello").unwrap(), "aGVsbG8=");
+/// ```
+#[cfg(feature = "alloc")]
+pub fn encode(input: &[u8]) -> Result<alloc::string::String, EncodeError> {
+    STANDARD.encode_string(input)
+}
+
+/// Decodes strict standard padded Base64 into an owned byte vector.
+///
+/// This is a convenience wrapper around [`Engine::decode_vec`] on
+/// [`STANDARD`].
+/// It uses the normal strict decoder, not the [`crate::ct`] module, and may
+/// branch or return early on malformed input. For secret-bearing payloads where
+/// malformed-input timing matters, use
+/// [`crate::ct::CtEngine::decode_secret`] through [`crate::ct::STANDARD`]
+/// instead.
+///
+/// # Examples
+///
+/// ```
+/// assert_eq!(base64_ng::decode("aGVsbG8=").unwrap(), b"hello");
+/// ```
+#[cfg(feature = "alloc")]
+#[must_use = "handle decode errors; use crate::ct for secret-bearing payloads"]
+pub fn decode(input: impl AsRef<[u8]>) -> Result<alloc::vec::Vec<u8>, DecodeError> {
+    STANDARD.decode_vec(input.as_ref())
+}
+
 /// Compares two fixed-width byte arrays without a length-mismatch branch.
 ///
 /// Use this helper when the value length itself should not be represented as a
@@ -247,6 +303,25 @@ pub const CRYPT_NO_PAD: Engine<Crypt, false> = Engine::new();
 #[must_use]
 pub fn constant_time_eq_fixed_width<const N: usize>(left: &[u8; N], right: &[u8; N]) -> bool {
     constant_time_eq_fixed_width_array(left, right)
+}
+
+/// Compares two byte slices with a public length-mismatch branch.
+///
+/// Equal-length inputs are scanned fully before returning. Different lengths
+/// return `false` immediately because length is treated as public. This is a
+/// dependency-free, constant-time-oriented best-effort helper, not a formally
+/// verified cryptographic MAC, password, or bearer-token comparison primitive.
+///
+/// # Examples
+///
+/// ```
+/// assert!(base64_ng::constant_time_eq(b"token", b"token"));
+/// assert!(!base64_ng::constant_time_eq(b"token", b"Token"));
+/// assert!(!base64_ng::constant_time_eq(b"token", b"token2"));
+/// ```
+#[must_use]
+pub fn constant_time_eq(left: &[u8], right: &[u8]) -> bool {
+    constant_time_eq_public_len(left, right)
 }
 
 /// A zero-sized Base64 engine parameterized by alphabet and padding policy.

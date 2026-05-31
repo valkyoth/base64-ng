@@ -29,7 +29,7 @@ The crate starts conservative: a small scalar implementation, strict RFC 4648 be
 
 ## Current Status
 
-The current public release is `1.0.5`.
+The current public release is `1.0.6`.
 
 Implemented now:
 
@@ -70,7 +70,7 @@ Implemented now:
 Planned behind admission evidence:
 
 - Admitted AVX2, AVX-512, SSSE3/SSE4.1, ARM NEON, and wasm `simd128`
-  fast paths after the SIMD admission evidence is complete. The `1.0.5`
+  fast paths after the SIMD admission evidence is complete. The `1.0.6`
   release remains scalar-only.
 - Async streaming wrappers only after the `tokio` feature passes the
   dependency and cancellation-safety admission bar in [docs/ASYNC.md](docs/ASYNC.md).
@@ -105,7 +105,7 @@ and CWE mapping lives in [docs/SECURITY_CONTROLS.md](docs/SECURITY_CONTROLS.md).
 The minimum supported Rust version is Rust `1.90.0`. New deployments should
 prefer the latest stable Rust; as of May 29, 2026, that is Rust `1.96.0`.
 
-Compatibility evidence for `1.0.5`:
+Compatibility evidence for `1.0.6`:
 
 | Rust | Local Evidence |
 | --- | --- |
@@ -121,7 +121,7 @@ Compatibility evidence for `1.0.5`:
 
 ```toml
 [dependencies]
-base64-ng = "1.0.5"
+base64-ng = "1.0.6"
 ```
 
 The crate is dual-licensed:
@@ -148,8 +148,21 @@ Disable defaults for embedded or freestanding use:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.0.5", default-features = false }
+base64-ng = { version = "1.0.6", default-features = false }
 ```
+
+## Convenience API
+
+For strict standard padded Base64 on `alloc` targets:
+
+```rust
+assert_eq!(base64_ng::encode(b"hello").unwrap(), "aGVsbG8=");
+assert_eq!(base64_ng::decode("aGVsbG8=").unwrap(), b"hello");
+```
+
+These helpers are intended for ordinary data and migration from simpler
+Base64 APIs. For secret-bearing payloads, use the explicit engine, profile, or
+`ct` APIs below so the security contract is visible at the call site.
 
 ## Example
 
@@ -577,6 +590,16 @@ assert_eq!(legacy.expose_secret(), b"hello");
 
 let decoded = base64_ng::SecretBuffer::try_from("aGVsbG8=").unwrap();
 assert_eq!(decoded.expose_secret(), b"hello");
+```
+
+For malformed-input timing-sensitive payloads, prefer the `ct` owned secret
+helper:
+
+```rust
+use base64_ng::ct;
+
+let decoded = ct::STANDARD.decode_secret(b"aGVsbG8=").unwrap();
+assert!(decoded.constant_time_eq_public_len(b"hello"));
 ```
 
 `SecretBuffer` clears vector spare capacity when a vector is wrapped, and clears

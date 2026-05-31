@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.0.6 - 2026-05-31
+
+- Added alloc-gated top-level `base64_ng::encode` and `base64_ng::decode`
+  convenience wrappers for strict standard padded Base64 migration use cases.
+- Added alloc-gated `ct::CtEngine::decode_vec` and `decode_secret` helpers so
+  sensitive payload callers have an owned constant-time-oriented decode path
+  that clears failed allocations and can return a redacted `SecretBuffer`.
+- Added public `base64_ng::constant_time_eq` for explicit public-length
+  best-effort equal-length scans, while keeping docs clear that it is not a
+  formally verified MAC/password/token comparison primitive.
+- Expanded README and crate-level cookbook examples for CT owned secret decode
+  and comparison ergonomics.
+- Strengthened idiomatic `TryFrom`/`FromStr` documentation for decoded and
+  secret buffers so callers know those conversions always use strict standard
+  Base64 and should use explicit engines or profiles for other alphabets.
+- Kept `serde` deferred as a future optional integration candidate instead of
+  adding an external dependency to the `1.0.x` line.
+
 ## 1.0.5 - 2026-05-30
 
 - Combined the remaining `1.0.x` source-layout cleanup into one final

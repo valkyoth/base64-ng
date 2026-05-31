@@ -599,7 +599,13 @@ Recommended `1.0.x` source-layout sequence:
   legacy transport handling into `src/wrap.rs`; split scalar core
   encode/decode helpers into `src/scalar.rs`; and split public error types into
   `src/errors.rs`.
-- After `1.0.5`: park feature work for a few weeks so users can test the stable
+- `1.0.6`: secure ergonomics release without adding dependencies. Add
+  alloc-gated top-level strict standard `encode`/`decode` wrappers,
+  `ct::CtEngine::decode_vec`, `ct::CtEngine::decode_secret`, public
+  `constant_time_eq`, cookbook examples, and clearer idiomatic-conversion
+  alphabet notes. Keep `serde` deferred as a future optional integration
+  candidate until a concrete use case passes dependency admission review.
+- After `1.0.6`: park feature work for a few weeks so users can test the stable
   API and report issues before any `1.1` SIMD-admission work starts.
 
 The recommended post-`1.0` SIMD path is incremental:

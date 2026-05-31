@@ -641,8 +641,11 @@ impl<const CAP: usize> TryFrom<&[u8]> for DecodedBuffer<CAP> {
 
     /// Decodes strict standard padded Base64 into a stack-backed buffer.
     ///
-    /// Use [`crate::Engine::decode_buffer`] or [`crate::Profile::decode_buffer`] when a
-    /// different alphabet, padding mode, or line-wrapping profile is required.
+    /// Use [`crate::Engine::decode_buffer`] or [`crate::Profile::decode_buffer`]
+    /// when a different alphabet, padding mode, or line-wrapping profile is
+    /// required. These conversions always use [`crate::STANDARD`]; URL-safe,
+    /// bcrypt, crypt, MIME, PEM, and custom alphabets must use an explicit
+    /// engine or profile.
     ///
     /// # Security
     ///
@@ -650,8 +653,8 @@ impl<const CAP: usize> TryFrom<&[u8]> for DecodedBuffer<CAP> {
     /// constant-time-oriented decoder. It may branch or return early on
     /// malformed input and reports exact [`DecodeError`] positions. For
     /// secret-bearing tokens or key material where malformed-input timing
-    /// matters, use [`crate::ct::STANDARD`].`decode_buffer::<CAP>(input)`
-    /// instead.
+    /// matters, use [`crate::ct::CtEngine::decode_buffer`] through
+    /// [`crate::ct::STANDARD`] instead.
     fn try_from(input: &[u8]) -> Result<Self, Self::Error> {
         STANDARD.decode_buffer(input)
     }
@@ -663,8 +666,11 @@ impl<const CAP: usize, const N: usize> TryFrom<&[u8; N]> for DecodedBuffer<CAP> 
     /// Decodes a strict standard padded Base64 byte array into a stack-backed
     /// buffer.
     ///
-    /// Use [`crate::Engine::decode_buffer`] or [`crate::Profile::decode_buffer`] when a
-    /// different alphabet, padding mode, or line-wrapping profile is required.
+    /// Use [`crate::Engine::decode_buffer`] or [`crate::Profile::decode_buffer`]
+    /// when a different alphabet, padding mode, or line-wrapping profile is
+    /// required. These conversions always use [`crate::STANDARD`]; URL-safe,
+    /// bcrypt, crypt, MIME, PEM, and custom alphabets must use an explicit
+    /// engine or profile.
     ///
     /// # Security
     ///
@@ -672,8 +678,8 @@ impl<const CAP: usize, const N: usize> TryFrom<&[u8; N]> for DecodedBuffer<CAP> 
     /// constant-time-oriented decoder. It may branch or return early on
     /// malformed input and reports exact [`DecodeError`] positions. For
     /// secret-bearing tokens or key material where malformed-input timing
-    /// matters, use [`crate::ct::STANDARD`].`decode_buffer::<CAP>(input)`
-    /// instead.
+    /// matters, use [`crate::ct::CtEngine::decode_buffer`] through
+    /// [`crate::ct::STANDARD`] instead.
     fn try_from(input: &[u8; N]) -> Result<Self, Self::Error> {
         Self::try_from(&input[..])
     }
@@ -684,8 +690,11 @@ impl<const CAP: usize> TryFrom<&str> for DecodedBuffer<CAP> {
 
     /// Decodes strict standard padded Base64 text into a stack-backed buffer.
     ///
-    /// Use [`crate::Engine::decode_buffer`] or [`crate::Profile::decode_buffer`] when a
-    /// different alphabet, padding mode, or line-wrapping profile is required.
+    /// Use [`crate::Engine::decode_buffer`] or [`crate::Profile::decode_buffer`]
+    /// when a different alphabet, padding mode, or line-wrapping profile is
+    /// required. These conversions always use [`crate::STANDARD`]; URL-safe,
+    /// bcrypt, crypt, MIME, PEM, and custom alphabets must use an explicit
+    /// engine or profile.
     ///
     /// # Security
     ///
@@ -693,8 +702,8 @@ impl<const CAP: usize> TryFrom<&str> for DecodedBuffer<CAP> {
     /// constant-time-oriented decoder. It may branch or return early on
     /// malformed input and reports exact [`DecodeError`] positions. For
     /// secret-bearing tokens or key material where malformed-input timing
-    /// matters, use [`crate::ct::STANDARD`].`decode_buffer::<CAP>(input)`
-    /// instead.
+    /// matters, use [`crate::ct::CtEngine::decode_buffer`] through
+    /// [`crate::ct::STANDARD`] instead.
     fn try_from(input: &str) -> Result<Self, Self::Error> {
         Self::try_from(input.as_bytes())
     }
@@ -705,8 +714,11 @@ impl<const CAP: usize> core::str::FromStr for DecodedBuffer<CAP> {
 
     /// Decodes strict standard padded Base64 text into a stack-backed buffer.
     ///
-    /// Use [`crate::Engine::decode_buffer`] or [`crate::Profile::decode_buffer`] when a
-    /// different alphabet, padding mode, or line-wrapping profile is required.
+    /// Use [`crate::Engine::decode_buffer`] or [`crate::Profile::decode_buffer`]
+    /// when a different alphabet, padding mode, or line-wrapping profile is
+    /// required. These conversions always use [`crate::STANDARD`]; URL-safe,
+    /// bcrypt, crypt, MIME, PEM, and custom alphabets must use an explicit
+    /// engine or profile.
     ///
     /// # Security
     ///
@@ -714,8 +726,8 @@ impl<const CAP: usize> core::str::FromStr for DecodedBuffer<CAP> {
     /// constant-time-oriented decoder. It may branch or return early on
     /// malformed input and reports exact [`DecodeError`] positions. For
     /// secret-bearing tokens or key material where malformed-input timing
-    /// matters, use [`crate::ct::STANDARD`].`decode_buffer::<CAP>(input)`
-    /// instead.
+    /// matters, use [`crate::ct::CtEngine::decode_buffer`] through
+    /// [`crate::ct::STANDARD`] instead.
     fn from_str(input: &str) -> Result<Self, Self::Err> {
         Self::try_from(input)
     }
@@ -1172,8 +1184,11 @@ impl TryFrom<&[u8]> for SecretBuffer {
 
     /// Decodes strict standard padded Base64 into a redacted owned buffer.
     ///
-    /// Use [`crate::Engine::decode_secret`] or [`crate::Profile::decode_secret`] when a
-    /// different alphabet, padding mode, or line-wrapping profile is required.
+    /// Use [`crate::Engine::decode_secret`] or [`crate::Profile::decode_secret`]
+    /// when a different alphabet, padding mode, or line-wrapping profile is
+    /// required. These conversions always use [`crate::STANDARD`]; URL-safe,
+    /// bcrypt, crypt, MIME, PEM, and custom alphabets must use an explicit
+    /// engine or profile.
     ///
     /// # Security
     ///
@@ -1181,9 +1196,9 @@ impl TryFrom<&[u8]> for SecretBuffer {
     /// constant-time-oriented decoder. It may branch or return early on
     /// malformed input and reports exact [`DecodeError`] positions. For
     /// secret-bearing tokens or key material where malformed-input timing
-    /// matters, use [`crate::ct::STANDARD`].`decode_buffer(input)` or
-    /// [`crate::ct::STANDARD`].`decode_slice_staged_clear_tail(...)` and then
-    /// wrap the successful output in `SecretBuffer`.
+    /// matters, use [`crate::ct::CtEngine::decode_secret`] through
+    /// [`crate::ct::STANDARD`], or use staged decode and then wrap the
+    /// successful output in `SecretBuffer`.
     fn try_from(input: &[u8]) -> Result<Self, Self::Error> {
         STANDARD.decode_secret(input)
     }
@@ -1196,8 +1211,11 @@ impl<const N: usize> TryFrom<&[u8; N]> for SecretBuffer {
     /// Decodes a strict standard padded Base64 byte array into a redacted
     /// owned buffer.
     ///
-    /// Use [`crate::Engine::decode_secret`] or [`crate::Profile::decode_secret`] when a
-    /// different alphabet, padding mode, or line-wrapping profile is required.
+    /// Use [`crate::Engine::decode_secret`] or [`crate::Profile::decode_secret`]
+    /// when a different alphabet, padding mode, or line-wrapping profile is
+    /// required. These conversions always use [`crate::STANDARD`]; URL-safe,
+    /// bcrypt, crypt, MIME, PEM, and custom alphabets must use an explicit
+    /// engine or profile.
     ///
     /// # Security
     ///
@@ -1205,9 +1223,9 @@ impl<const N: usize> TryFrom<&[u8; N]> for SecretBuffer {
     /// constant-time-oriented decoder. It may branch or return early on
     /// malformed input and reports exact [`DecodeError`] positions. For
     /// secret-bearing tokens or key material where malformed-input timing
-    /// matters, use [`crate::ct::STANDARD`].`decode_buffer(input)` or
-    /// [`crate::ct::STANDARD`].`decode_slice_staged_clear_tail(...)` and then
-    /// wrap the successful output in `SecretBuffer`.
+    /// matters, use [`crate::ct::CtEngine::decode_secret`] through
+    /// [`crate::ct::STANDARD`], or use staged decode and then wrap the
+    /// successful output in `SecretBuffer`.
     fn try_from(input: &[u8; N]) -> Result<Self, Self::Error> {
         Self::try_from(&input[..])
     }
@@ -1219,8 +1237,11 @@ impl TryFrom<&str> for SecretBuffer {
 
     /// Decodes strict standard padded Base64 text into a redacted owned buffer.
     ///
-    /// Use [`crate::Engine::decode_secret`] or [`crate::Profile::decode_secret`] when a
-    /// different alphabet, padding mode, or line-wrapping profile is required.
+    /// Use [`crate::Engine::decode_secret`] or [`crate::Profile::decode_secret`]
+    /// when a different alphabet, padding mode, or line-wrapping profile is
+    /// required. These conversions always use [`crate::STANDARD`]; URL-safe,
+    /// bcrypt, crypt, MIME, PEM, and custom alphabets must use an explicit
+    /// engine or profile.
     ///
     /// # Security
     ///
@@ -1228,9 +1249,9 @@ impl TryFrom<&str> for SecretBuffer {
     /// constant-time-oriented decoder. It may branch or return early on
     /// malformed input and reports exact [`DecodeError`] positions. For
     /// secret-bearing tokens or key material where malformed-input timing
-    /// matters, use [`crate::ct::STANDARD`].`decode_buffer(input)` or
-    /// [`crate::ct::STANDARD`].`decode_slice_staged_clear_tail(...)` and then
-    /// wrap the successful output in `SecretBuffer`.
+    /// matters, use [`crate::ct::CtEngine::decode_secret`] through
+    /// [`crate::ct::STANDARD`], or use staged decode and then wrap the
+    /// successful output in `SecretBuffer`.
     fn try_from(input: &str) -> Result<Self, Self::Error> {
         Self::try_from(input.as_bytes())
     }
@@ -1242,8 +1263,11 @@ impl core::str::FromStr for SecretBuffer {
 
     /// Decodes strict standard padded Base64 text into a redacted owned buffer.
     ///
-    /// Use [`crate::Engine::decode_secret`] or [`crate::Profile::decode_secret`] when a
-    /// different alphabet, padding mode, or line-wrapping profile is required.
+    /// Use [`crate::Engine::decode_secret`] or [`crate::Profile::decode_secret`]
+    /// when a different alphabet, padding mode, or line-wrapping profile is
+    /// required. These conversions always use [`crate::STANDARD`]; URL-safe,
+    /// bcrypt, crypt, MIME, PEM, and custom alphabets must use an explicit
+    /// engine or profile.
     ///
     /// # Security
     ///
@@ -1251,9 +1275,9 @@ impl core::str::FromStr for SecretBuffer {
     /// constant-time-oriented decoder. It may branch or return early on
     /// malformed input and reports exact [`DecodeError`] positions. For
     /// secret-bearing tokens or key material where malformed-input timing
-    /// matters, use [`crate::ct::STANDARD`].`decode_buffer(input)` or
-    /// [`crate::ct::STANDARD`].`decode_slice_staged_clear_tail(...)` and then
-    /// wrap the successful output in `SecretBuffer`.
+    /// matters, use [`crate::ct::CtEngine::decode_secret`] through
+    /// [`crate::ct::STANDARD`], or use staged decode and then wrap the
+    /// successful output in `SecretBuffer`.
     fn from_str(input: &str) -> Result<Self, Self::Err> {
         Self::try_from(input)
     }

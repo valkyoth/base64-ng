@@ -2,9 +2,9 @@ use base64_ng::{
     Alphabet, AlphabetError, BCRYPT, BCRYPT_NO_PAD, Bcrypt, CRYPT, CRYPT_NO_PAD, Crypt,
     DecodeError, DecodedBuffer, EncodeError, EncodedBuffer, Engine, LineEnding, LineWrap, MIME,
     PEM, PEM_CRLF, Profile, STANDARD, STANDARD_NO_PAD, Standard, URL_SAFE, URL_SAFE_NO_PAD,
-    UrlSafe, checked_encoded_len, checked_wrapped_encoded_len, constant_time_eq_fixed_width, ct,
-    decode_alphabet_byte, decoded_capacity, decoded_len, encoded_len, runtime, validate_alphabet,
-    wrapped_encoded_len,
+    UrlSafe, checked_encoded_len, checked_wrapped_encoded_len, constant_time_eq,
+    constant_time_eq_fixed_width, ct, decode_alphabet_byte, decoded_capacity, decoded_len,
+    encoded_len, runtime, validate_alphabet, wrapped_encoded_len,
 };
 
 #[cfg(feature = "alloc")]
@@ -2471,6 +2471,41 @@ fn fixed_width_comparison_scans_fixed_arrays() {
     assert!(constant_time_eq_fixed_width(b"token", b"token"));
     assert!(!constant_time_eq_fixed_width(b"token", b"Token"));
     assert!(constant_time_eq_fixed_width::<0>(b"", b""));
+}
+
+#[test]
+fn slice_comparison_treats_length_as_public() {
+    assert!(constant_time_eq(b"token", b"token"));
+    assert!(!constant_time_eq(b"token", b"Token"));
+    assert!(!constant_time_eq(b"token", b"token2"));
+    assert!(constant_time_eq(b"", b""));
+}
+
+#[cfg(feature = "alloc")]
+#[test]
+fn top_level_alloc_convenience_uses_strict_standard_base64() {
+    assert_eq!(base64_ng::encode(b"hello").unwrap(), "aGVsbG8=");
+    assert_eq!(base64_ng::decode("aGVsbG8=").unwrap(), b"hello");
+    assert_eq!(base64_ng::decode(b"aGVsbG8=").unwrap(), b"hello");
+    assert_eq!(
+        base64_ng::decode("aGVsbG8").unwrap_err(),
+        DecodeError::InvalidLength
+    );
+}
+
+#[cfg(feature = "alloc")]
+#[test]
+fn ct_alloc_helpers_return_owned_outputs() {
+    let decoded = ct::STANDARD.decode_vec(b"aGVsbG8=").unwrap();
+    assert_eq!(decoded, b"hello");
+
+    let secret = ct::STANDARD.decode_secret(b"aGVsbG8=").unwrap();
+    assert_eq!(secret.expose_secret(), b"hello");
+    assert!(secret.constant_time_eq_public_len(b"hello"));
+    assert_eq!(
+        format!("{secret:?}"),
+        r#"SecretBuffer { bytes: "<redacted>", len: 5 }"#
+    );
 }
 
 #[test]

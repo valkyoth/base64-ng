@@ -58,6 +58,8 @@
 //! let mut buffer = *b"aGk=";
 //! let _ = ct::STANDARD.decode_in_place(&mut buffer);
 //! ```
+#[cfg(feature = "alloc")]
+use crate::SecretBuffer;
 use crate::{
     Alphabet, DecodeError, DecodedBuffer, Standard, UrlSafe, decoded_capacity, read_quad,
     wipe_bytes, wipe_tail,
@@ -260,6 +262,50 @@ where
         };
         output.set_filled(written)?;
         Ok(output)
+    }
+
+    /// Decodes `input` into an owned byte vector.
+    ///
+    /// This uses the same constant-time-oriented scalar decoder as
+    /// [`Self::decode_slice_clear_tail`]. If decoding fails, the allocated
+    /// output buffer is cleared before the error is returned.
+    ///
+    /// Use [`Self::decode_secret`] for secret-bearing payloads that should stay
+    /// on the crate's redacted, drop-wiping buffer path.
+    #[cfg(feature = "alloc")]
+    #[must_use = "for secret-bearing payloads use decode_secret, which returns a redacted buffer with drop-time cleanup"]
+    pub fn decode_vec(&self, input: &[u8]) -> Result<alloc::vec::Vec<u8>, DecodeError> {
+        let required = self.decoded_len(input)?;
+        let mut output = alloc::vec![0; required];
+        let written = match self.decode_slice_clear_tail(input, &mut output) {
+            Ok(written) => written,
+            Err(err) => {
+                wipe_bytes(&mut output);
+                return Err(err);
+            }
+        };
+        output.truncate(written);
+        Ok(output)
+    }
+
+    /// Decodes `input` into a redacted owned secret buffer.
+    ///
+    /// This is the recommended heap-owning CT decode path for secret-bearing
+    /// payloads. It decodes with [`Self::decode_vec`] and then wraps the result
+    /// in [`SecretBuffer`], which redacts formatting and clears initialized
+    /// bytes plus spare vector capacity on drop.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use base64_ng::ct;
+    ///
+    /// let decoded = ct::STANDARD.decode_secret(b"aGVsbG8=").unwrap();
+    /// assert!(decoded.constant_time_eq_public_len(b"hello"));
+    /// ```
+    #[cfg(feature = "alloc")]
+    pub fn decode_secret(&self, input: &[u8]) -> Result<SecretBuffer, DecodeError> {
+        self.decode_vec(input).map(SecretBuffer::from_vec)
     }
 
     /// Decodes `buffer` in place and clears all bytes after the decoded
