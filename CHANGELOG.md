@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.0.7 - 2026-06-07
 
 - Enabled the current full no-default-features Kani harness set on the pinned
   Rust `1.90.0` toolchain with `cargo-kani 0.67.0`.

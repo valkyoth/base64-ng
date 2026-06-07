@@ -79,9 +79,10 @@ Replacement evidence for `v1.0` consists of:
   constant-time-policy, and SIMD-admission validators
 
 That exception was intentionally narrower than a formal proof. Current `1.0.x`
-evidence now includes the bounded Kani harness set, but the stable contract is
-still the documented API and security contract backed by release evidence, not
-a whole-crate or cryptographic formal-verification claim.
+evidence now includes the bounded Kani harness set.
+The stable `1.0.0` guarantee is the documented API and security contract backed
+by release evidence, not a whole-crate or cryptographic formal-verification
+claim.
 
 ## Future Verifier Admission
 

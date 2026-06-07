@@ -604,15 +604,19 @@ Recommended `1.0.x` source-layout sequence:
   `constant_time_eq`, cookbook examples, and clearer idiomatic-conversion
   alphabet notes. Keep `serde` deferred as a future optional integration
   candidate until a concrete use case passes dependency admission review.
-- After `1.0.6`: park feature work for a few weeks so users can test the stable
+- `1.0.7`: assurance evidence release. Enable the current bounded
+  no-default-features Kani harness set on Rust `1.90.0` with
+  `cargo-kani 0.67.0`, strengthen constant-time-oriented byte accumulation,
+  add AArch64 CSDB attestation posture reporting, expose memory-locking
+  posture, and document streaming decoder partial-output semantics.
+- After `1.0.7`: park feature work for a few weeks so users can test the stable
   API and report issues before any `1.1` SIMD-admission work starts.
 
 The recommended post-`1.0` SIMD path is incremental:
 
 - Remaining `1.0.x`: maintenance-only fixes if users report real issues during
-  the pause window. Resolve Kani execution when the verifier supports the
-  pinned Rust toolchain, refresh Miri/fuzz/dudect/generated-assembly evidence,
-  and avoid broad API expansion.
+  the pause window. Keep the current Kani proof gate running, refresh
+  Miri/fuzz/dudect/generated-assembly evidence, and avoid broad API expansion.
 - `1.1`: replace the SSSE3/SSE4.1 fixed-block encode scaffold with real
   vectorized encode logic for Standard and URL-safe alphabets only, still
   non-dispatchable. The goal is meaningful scalar-equivalence tests, not active

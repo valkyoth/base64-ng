@@ -25,11 +25,11 @@
 
 `base64-ng` is a `no_std`-first Base64 crate focused on correctness, strict decoding, caller-owned buffers, and a security-heavy release process. The long-term goal is to provide modern hardware acceleration without making unsafe SIMD the foundation of trust.
 
-The crate starts conservative: a small scalar implementation, strict RFC 4648 behavior, and a test/release system modeled after hardened Rust service projects. Streaming is available behind an explicit feature, fuzz harnesses are isolated from the published crate, and future SIMD and Kani work remain gated until they have evidence.
+The crate starts conservative: a small scalar implementation, strict RFC 4648 behavior, and a test/release system modeled after hardened Rust service projects. Streaming is available behind an explicit feature, fuzz harnesses are isolated from the published crate, and future SIMD and broader Kani work remain gated until they have evidence.
 
 ## Current Status
 
-The current public release is `1.0.6`.
+The current public release is `1.0.7`.
 
 Implemented now:
 
@@ -64,13 +64,15 @@ Implemented now:
   chunk-boundary behavior.
 - Isolated dudect-style timing harness for the constant-time-oriented scalar
   decoder.
+- Bounded Kani proof harnesses that run on Rust `1.90.0` with
+  `cargo-kani 0.67.0`.
 - Constant-time assembly evidence generation for reviewer inspection.
 - Local check scripts, release gate, dependency policy, audit config, CI, SBOM script, and reproducible build check.
 
 Planned behind admission evidence:
 
 - Admitted AVX2, AVX-512, SSSE3/SSE4.1, ARM NEON, and wasm `simd128`
-  fast paths after the SIMD admission evidence is complete. The `1.0.6`
+  fast paths after the SIMD admission evidence is complete. The `1.0.7`
   release remains scalar-only.
 - Async streaming wrappers only after the `tokio` feature passes the
   dependency and cancellation-safety admission bar in [docs/ASYNC.md](docs/ASYNC.md).
@@ -105,7 +107,7 @@ and CWE mapping lives in [docs/SECURITY_CONTROLS.md](docs/SECURITY_CONTROLS.md).
 The minimum supported Rust version is Rust `1.90.0`. New deployments should
 prefer the latest stable Rust; as of May 29, 2026, that is Rust `1.96.0`.
 
-Compatibility evidence for `1.0.6`:
+Compatibility evidence for `1.0.7`:
 
 | Rust | Local Evidence |
 | --- | --- |
@@ -121,7 +123,7 @@ Compatibility evidence for `1.0.6`:
 
 ```toml
 [dependencies]
-base64-ng = "1.0.6"
+base64-ng = "1.0.7"
 ```
 
 The crate is dual-licensed:
@@ -149,7 +151,7 @@ Disable defaults for embedded or freestanding use:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.0.6", default-features = false }
+base64-ng = { version = "1.0.7", default-features = false }
 ```
 
 ## Convenience API
