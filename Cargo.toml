@@ -37,7 +37,6 @@ simd = []
 stream = ["std"]
 allow-wasm32-best-effort-wipe = []
 allow-compiler-fence-only-wipe = []
-aarch64-csdb-attested = []
 # Placeholder for future async Tokio integration; currently no-op,
 # dependency-free, and enforced by scripts/check_reserved_features.sh.
 tokio = []
@@ -49,7 +48,11 @@ fuzzing = []
 [dev-dependencies]
 
 [lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ["cfg(kani)", "cfg(miri)"] }
+unexpected_cfgs = { level = "warn", check-cfg = [
+    "cfg(base64_ng_aarch64_csdb_attested)",
+    "cfg(kani)",
+    "cfg(miri)",
+] }
 
 [package.metadata.docs.rs]
 all-features = true

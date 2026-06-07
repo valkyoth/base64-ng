@@ -13,9 +13,9 @@
   now-clean bounded harness set from a whole-crate or cryptographic
   formal-verification claim.
 - Strengthened constant-time-oriented byte accumulation through a non-inlined
-  volatile helper, added AArch64 CSDB attestation posture reporting, exposed a
-  programmatic memory-locking posture method, and documented streaming decoder
-  partial-output semantics more prominently.
+  volatile helper, added AArch64 CSDB attestation posture reporting through an
+  explicit custom cfg, exposed a programmatic memory-locking posture method,
+  and documented streaming decoder partial-output semantics more prominently.
 - Updated unsafe-boundary validation and unsafe-site documentation for the
   reviewed constant-time accumulator helper.
 

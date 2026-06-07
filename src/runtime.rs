@@ -535,7 +535,7 @@ const fn ct_gate_posture() -> CtGatePosture {
     if cfg!(any(
         target_arch = "x86",
         target_arch = "x86_64",
-        all(target_arch = "aarch64", feature = "aarch64-csdb-attested")
+        all(target_arch = "aarch64", base64_ng_aarch64_csdb_attested)
     )) {
         CtGatePosture::HardwareSpeculationBarrier
     } else if cfg!(target_arch = "aarch64") {

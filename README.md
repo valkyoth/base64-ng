@@ -142,7 +142,6 @@ license = "MIT OR Apache-2.0"
 | `stream` | no | `std::io` streaming wrappers. |
 | `allow-wasm32-best-effort-wipe` | no | Explicitly allow `wasm32` builds with compiler-fence-only cleanup. |
 | `allow-compiler-fence-only-wipe` | no | Explicitly allow unsupported native architectures to build with compiler-fence-only cleanup after platform review. |
-| `aarch64-csdb-attested` | no | Operator attestation that the deployed AArch64 core treats CSDB as an effective speculation barrier for the CT result gate. |
 | `tokio` | no | Reserved for future async streaming wrappers; currently inert and dependency-free. |
 | `kani` | no | Reserved for verifier harnesses; normal builds do not require Kani. |
 | `fuzzing` | no | Reserved for verifier and fuzz harness integration; published crate stays dependency-free. |
@@ -807,9 +806,10 @@ Security commitments:
 - `BackendPolicy::HighAssuranceScalarOnly` combines the scalar/no-SIMD
   deployment checks into one assertion and rejects CT gate postures that are
   ordering-only, compiler-fence-only, or hardware-barrier-unattested. AArch64
-  deployments that have platform evidence for CSDB may enable
-  `aarch64-csdb-attested`; that feature is an operator attestation, not an
-  automatic CPU probe.
+  deployments that have platform evidence for CSDB may compile with
+  `--cfg base64_ng_aarch64_csdb_attested`; that cfg is an operator
+  attestation, not an automatic CPU probe, and is intentionally not a Cargo
+  feature so `--all-features` cannot enable it by accident.
 - Runtime backend, posture, and policy enums expose stable string identifiers
   for CI artifacts, audit logs, and deployment evidence.
 - Runtime backend reports and policy failures use stable key/value display

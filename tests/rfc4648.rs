@@ -428,7 +428,11 @@ fn runtime_backend_report_keeps_scalar_active() {
     } else {
         assert_eq!(report.wipe_posture, runtime::WipePosture::CompilerFenceOnly);
     }
-    if cfg!(any(target_arch = "x86", target_arch = "x86_64")) {
+    if cfg!(any(
+        target_arch = "x86",
+        target_arch = "x86_64",
+        all(target_arch = "aarch64", base64_ng_aarch64_csdb_attested)
+    )) {
         assert_eq!(
             report.ct_gate_posture,
             runtime::CtGatePosture::HardwareSpeculationBarrier
