@@ -451,13 +451,7 @@ pub(crate) fn constant_time_eq_fixed_width_array<const N: usize>(
 fn constant_time_eq_same_len(left: &[u8], right: &[u8]) -> bool {
     let mut diff = 0u8;
     for (left, right) in left.iter().zip(right) {
-        diff = core::hint::black_box(
-            core::hint::black_box(diff) | core::hint::black_box(*left ^ *right),
-        );
-        // SAFETY: `diff` is an initialized local `u8`; the volatile read is a
-        // dependency-free optimizer barrier for the accumulation value and does
-        // not access caller memory.
-        diff = unsafe { core::ptr::read_volatile(&raw const diff) };
+        diff = ct_accumulate_u8(diff, *left ^ *right);
     }
     ct_error_gate_barrier(diff, 0);
     // SAFETY: `diff` is an initialized local `u8`; this final volatile read
@@ -465,6 +459,16 @@ fn constant_time_eq_same_len(left: &[u8], right: &[u8]) -> bool {
     // the accumulated value.
     let result = unsafe { core::ptr::read_volatile(&raw const diff) };
     result == 0
+}
+
+#[inline(never)]
+#[allow(unsafe_code)]
+fn ct_accumulate_u8(accumulator: u8, value: u8) -> u8 {
+    let result = core::hint::black_box(accumulator) | core::hint::black_box(value);
+    // SAFETY: `result` is an initialized local `u8`; the volatile read is a
+    // dependency-free optimizer barrier for the accumulation value and does not
+    // access caller memory.
+    unsafe { core::ptr::read_volatile(&raw const result) }
 }
 
 fn ct_decode_slice<A: Alphabet, const PAD: bool>(
@@ -1092,19 +1096,8 @@ fn ct_decode_alphabet_byte<A: Alphabet>(byte: u8) -> (u8, u8) {
             core::hint::black_box(byte),
             core::hint::black_box(A::ENCODE[candidate as usize]),
         ));
-        decoded = core::hint::black_box(
-            core::hint::black_box(decoded) | core::hint::black_box(candidate & matches),
-        );
-        // SAFETY: `decoded` is an initialized local `u8`; the volatile read is
-        // an optimizer barrier for the fixed 64-iteration alphabet scan and
-        // does not access caller memory.
-        decoded = unsafe { core::ptr::read_volatile(&raw const decoded) };
-        valid =
-            core::hint::black_box(core::hint::black_box(valid) | core::hint::black_box(matches));
-        // SAFETY: `valid` is an initialized local `u8`; the volatile read is an
-        // optimizer barrier for the fixed 64-iteration alphabet scan and does
-        // not access caller memory.
-        valid = unsafe { core::ptr::read_volatile(&raw const valid) };
+        decoded = ct_accumulate_u8(decoded, candidate & matches);
+        valid = ct_accumulate_u8(valid, matches);
         candidate += 1;
     }
 

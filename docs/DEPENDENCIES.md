@@ -20,6 +20,10 @@ new dependency expands the audit, license, advisory, and supply-chain surface.
   dependency admission. It is required to build unsupported native architectures
   that do not have a `base64-ng` hardware wipe barrier and therefore fall back
   to compiler-fence-only cleanup.
+- `aarch64-csdb-attested` is a dependency-free operator-attestation feature,
+  not a dependency admission. It should only be enabled after the deployment
+  has evidence that the target AArch64 core treats CSDB as an effective
+  speculation barrier for the CT result gate.
 - Fuzz, performance, and dudect-style timing harness dependencies are isolated
   under `fuzz/`, `perf/`, and `dudect/`; the standard local gate checks them
   separately from the published crate dependency graph.

@@ -12,6 +12,10 @@
 - Updated Kani documentation and trust-dashboard wording to distinguish the
   now-clean bounded harness set from a whole-crate or cryptographic
   formal-verification claim.
+- Strengthened constant-time-oriented byte accumulation through a non-inlined
+  volatile helper, added AArch64 CSDB attestation posture reporting, exposed a
+  programmatic memory-locking posture method, and documented streaming decoder
+  partial-output semantics more prominently.
 
 ## 1.0.6 - 2026-05-31
 

@@ -228,6 +228,10 @@ Limitations:
   runtime posture reports `hardware-speculation-barrier-unattested`, not a
   formal microarchitecture certification or a passing
   `HighAssuranceScalarOnly` posture.
+- On AArch64, `aarch64-csdb-attested` is an operator attestation feature. It
+  changes the runtime posture only after the deployment has independently
+  verified that the target core treats CSDB as an effective speculation
+  barrier.
 - Unsupported architectures fall back to the compiler fence only.
 
 ### `ct_decode_alphabet_byte`

@@ -221,6 +221,31 @@ impl core::fmt::Display for CtGatePosture {
     }
 }
 
+/// Whether this crate locks secret allocations into physical memory.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[non_exhaustive]
+pub enum MemoryLockPosture {
+    /// The crate does not lock memory. Deployments that need locked secret
+    /// pages must use platform controls outside `base64-ng`.
+    NotProvided,
+}
+
+impl MemoryLockPosture {
+    /// Returns the stable lowercase identifier for this memory-locking posture.
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::NotProvided => "not-provided",
+        }
+    }
+}
+
+impl core::fmt::Display for MemoryLockPosture {
+    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        formatter.write_str(self.as_str())
+    }
+}
+
 /// Deployment policy for runtime backend assertions.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[non_exhaustive]
@@ -417,6 +442,19 @@ impl BackendReport {
         self.candidate.required_cpu_features()
     }
 
+    /// Returns whether `base64-ng` itself locks secret buffers into physical
+    /// memory.
+    ///
+    /// This crate intentionally has no OS-specific `mlock`/`VirtualLock`
+    /// integration. High-assurance deployments should pair secret buffers with
+    /// their own platform-approved memory-locking, swap, hibernation, and
+    /// crash-dump controls.
+    #[must_use]
+    pub const fn memory_lock_posture(self) -> MemoryLockPosture {
+        let _ = self;
+        MemoryLockPosture::NotProvided
+    }
+
     /// Returns a compact structured snapshot with stable string values.
     ///
     /// ```
@@ -494,7 +532,11 @@ const fn wipe_posture() -> WipePosture {
 }
 
 const fn ct_gate_posture() -> CtGatePosture {
-    if cfg!(any(target_arch = "x86", target_arch = "x86_64")) {
+    if cfg!(any(
+        target_arch = "x86",
+        target_arch = "x86_64",
+        all(target_arch = "aarch64", feature = "aarch64-csdb-attested")
+    )) {
         CtGatePosture::HardwareSpeculationBarrier
     } else if cfg!(target_arch = "aarch64") {
         CtGatePosture::HardwareSpeculationBarrierUnattested

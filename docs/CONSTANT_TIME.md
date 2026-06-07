@@ -52,14 +52,14 @@ keeps execution on the audited scalar backend and avoids future SIMD-induced
 timing variation unless an accelerated backend has been admitted with its own
 side-channel evidence.
 
-`HighAssuranceScalarOnly` is still a build and target posture assertion, not a
-runtime microarchitecture attestation. On AArch64, the crate emits `isb sy`
-plus the CSDB hint for the CT result gate, but reports
-`CtGatePosture::HardwareSpeculationBarrierUnattested` so the built-in
-`HighAssuranceScalarOnly` policy does not pass without deployment-side
-evidence. Operators must verify through processor documentation, BSP notes, or
-platform certification that CSDB is effective on the specific core. On RISC-V,
-the crate reports
+`HighAssuranceScalarOnly` is still a build and target posture assertion. On
+AArch64, the crate emits `isb sy` plus the CSDB hint for the CT result gate.
+By default this reports `CtGatePosture::HardwareSpeculationBarrierUnattested`
+so the built-in `HighAssuranceScalarOnly` policy does not pass without
+deployment-side evidence. Operators that have verified CSDB effectiveness
+through processor documentation, BSP notes, or platform certification may build
+with `aarch64-csdb-attested`; that feature is an operator attestation, not an
+automatic runtime CPU probe. On RISC-V, the crate reports
 `CtGatePosture::OrderingFence`; the base ISA provides memory ordering, not a
 canonical Spectre-v1 speculation barrier. RISC-V deployments with speculative
 execution threat models need platform-level mitigations outside this crate.

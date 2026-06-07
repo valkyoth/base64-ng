@@ -131,7 +131,9 @@ The runtime report classifies this as
 `runtime::BackendPolicy::HighAssuranceScalarOnly` does not pass on AArch64
 solely because the instruction sequence was emitted. Deployments that rely on
 CSDB must attest that the deployed core treats it as an effective speculation
-barrier; older ARM cores may treat the hint as a no-op. On RISC-V, the crate
+barrier; older ARM cores may treat the hint as a no-op. If that platform
+evidence exists, build with `aarch64-csdb-attested` to make the runtime posture
+reflect the deployment attestation. On RISC-V, the crate
 reports an ordering-fence CT gate because the base ISA does not provide a
 canonical speculation barrier. RISC-V deployments in Spectre-v1 threat models
 must rely on platform-level mitigations outside this crate.

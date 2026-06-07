@@ -14,6 +14,15 @@
 //! secret-bearing frames where timing posture matters, collect the complete
 //! framed payload first and then use `base64_ng::ct`:
 //!
+//! Streaming decoder writers commit decoded bytes as quads are accepted. If a
+//! later quad in the same logical frame is malformed, valid leading decoded
+//! bytes may already have reached the wrapped writer before `finish()` reports
+//! failure. Callers that require atomic frame semantics must buffer the full
+//! encoded frame first and use a non-streaming decoder. Callers that use
+//! streaming decode for untrusted frames must not trust the wrapped writer's
+//! output until `finish()` succeeds, and can inspect [`Decoder::is_failed`] for
+//! diagnostics after each write.
+//!
 //! ```no_run
 //! use std::io::Read;
 //! use base64_ng::ct;
