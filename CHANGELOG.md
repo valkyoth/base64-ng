@@ -16,6 +16,8 @@
   volatile helper, added AArch64 CSDB attestation posture reporting, exposed a
   programmatic memory-locking posture method, and documented streaming decoder
   partial-output semantics more prominently.
+- Updated unsafe-boundary validation and unsafe-site documentation for the
+  reviewed constant-time accumulator helper.
 
 ## 1.0.6 - 2026-05-31
 

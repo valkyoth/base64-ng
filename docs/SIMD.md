@@ -4,7 +4,7 @@
 dispatch remains gated unless a complete SIMD admission evidence package lands
 in a later release series. The crate uses `#![deny(unsafe_code)]` and permits
 reviewed `allow(unsafe_code)` exceptions only for audited cleanup in
-`src/cleanup.rs`, CT comparison, CT scan, and CT result-gate helpers in
+`src/cleanup.rs`, CT comparison, byte accumulation, CT scan, and CT result-gate helpers in
 `src/ct.rs`, and the private `src/simd.rs` boundary. The `simd` feature
 remains reserved until architecture-specific code has enough evidence to
 justify enabling it.

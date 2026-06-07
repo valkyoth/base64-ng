@@ -781,8 +781,8 @@ Security commitments:
   wiping plus architecture-gated inline assembly and hardware store-ordering
   fences where stable Rust supports them, so cleanup writes resist common
   dead-store elimination and are ordered before the cleanup boundary on
-  supported native architectures. Constant-time comparison, CT scan, and CT
-  result-gate hardening remain audited in `src/ct.rs`.
+  supported native architectures. Constant-time comparison, byte accumulation,
+  CT scan, and CT result-gate hardening remain audited in `src/ct.rs`.
 - Future unsafe SIMD remains isolated under `src/simd.rs`.
 - Local checks verify that `allow(unsafe_code)` is confined to the volatile
   wipe helpers and SIMD boundary, every unsafe function is inventoried, and

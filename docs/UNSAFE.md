@@ -185,6 +185,40 @@ Limitations:
   audited MAC, token, or password-hash comparison primitive should use one at
   the application boundary.
 
+### `ct_accumulate_u8`
+
+Location: `src/ct.rs`
+
+Status: active constant-time-oriented accumulator hardening primitive.
+
+Purpose:
+
+- Accumulate byte masks and decoded-byte state through a non-inlined helper so
+  comparison and alphabet-scan loops do not expose the OR reduction as a simple
+  in-loop optimizer pattern.
+- Keep each accumulator update observable through a volatile read.
+
+Preconditions:
+
+- Caller passes initialized `u8` values.
+
+Unsafe operation:
+
+- `core::ptr::read_volatile` reads the initialized local `result` accumulator.
+
+Safety argument:
+
+- `result` is an initialized stack-local `u8`.
+- The volatile read does not read from caller memory and cannot violate bounds
+  or aliasing requirements.
+- The helper is `#[inline(never)]`; callers use it only for local byte-mask
+  accumulation in constant-time-oriented helpers.
+
+Limitations:
+
+- This strengthens the optimizer boundary but is still dependency-free,
+  best-effort hardening rather than a formal machine-code constant-time proof.
+
 ### `ct_error_gate_barrier`
 
 Location: `src/ct.rs`
