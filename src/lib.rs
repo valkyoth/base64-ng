@@ -1832,7 +1832,7 @@ mod kani_proofs {
     }
 
     #[kani::proof]
-    #[kani::unwind(3)]
+    #[kani::unwind(70)]
     fn standard_in_place_decode_returns_prefix_within_buffer() {
         let mut buffer = kani::any::<[u8; 8]>();
         let result = STANDARD.decode_in_place(&mut buffer);
@@ -1843,7 +1843,7 @@ mod kani_proofs {
     }
 
     #[kani::proof]
-    #[kani::unwind(3)]
+    #[kani::unwind(70)]
     fn standard_decode_slice_returns_written_within_output() {
         let input = kani::any::<[u8; 4]>();
         let mut output = kani::any::<[u8; 3]>();
@@ -1855,7 +1855,7 @@ mod kani_proofs {
     }
 
     #[kani::proof]
-    #[kani::unwind(3)]
+    #[kani::unwind(70)]
     fn standard_decode_chunk_returns_written_within_output() {
         let input = kani::any::<[u8; 4]>();
         let mut output = kani::any::<[u8; 3]>();
@@ -1868,7 +1868,7 @@ mod kani_proofs {
     }
 
     #[kani::proof]
-    #[kani::unwind(3)]
+    #[kani::unwind(70)]
     fn standard_decode_chunk_bit_packing_matches_decoded_values() {
         let input = kani::any::<[u8; 4]>();
         let mut output = kani::any::<[u8; 3]>();
@@ -1894,7 +1894,7 @@ mod kani_proofs {
     }
 
     #[kani::proof]
-    #[kani::unwind(3)]
+    #[kani::unwind(70)]
     fn standard_validate_tail_unpadded_accepts_or_rejects_without_panic() {
         let input = kani::any::<[u8; 3]>();
         let len = usize::from(kani::any::<u8>() % 4);
@@ -1906,7 +1906,7 @@ mod kani_proofs {
     }
 
     #[kani::proof]
-    #[kani::unwind(3)]
+    #[kani::unwind(70)]
     fn standard_decode_two_byte_tail_returns_written_within_output() {
         let input = kani::any::<[u8; 2]>();
         let mut output = kani::any::<[u8; 1]>();
@@ -1919,7 +1919,7 @@ mod kani_proofs {
     }
 
     #[kani::proof]
-    #[kani::unwind(3)]
+    #[kani::unwind(70)]
     fn standard_decode_three_byte_tail_returns_written_within_output() {
         let input = kani::any::<[u8; 3]>();
         let mut output = kani::any::<[u8; 2]>();
@@ -1932,7 +1932,7 @@ mod kani_proofs {
     }
 
     #[kani::proof]
-    #[kani::unwind(3)]
+    #[kani::unwind(70)]
     fn standard_decode_slice_clear_tail_clears_output_on_error() {
         let input = kani::any::<[u8; 4]>();
         let mut output = kani::any::<[u8; 3]>();
@@ -1944,7 +1944,7 @@ mod kani_proofs {
     }
 
     #[kani::proof]
-    #[kani::unwind(3)]
+    #[kani::unwind(70)]
     fn standard_encode_slice_returns_written_within_output() {
         let input = kani::any::<[u8; 3]>();
         let mut output = kani::any::<[u8; 4]>();
@@ -1956,7 +1956,7 @@ mod kani_proofs {
     }
 
     #[kani::proof]
-    #[kani::unwind(4)]
+    #[kani::unwind(70)]
     fn standard_encode_in_place_returns_prefix_within_buffer() {
         let mut buffer = kani::any::<[u8; 8]>();
         let input_len = usize::from(kani::any::<u8>() % 9);
@@ -1968,7 +1968,7 @@ mod kani_proofs {
     }
 
     #[kani::proof]
-    #[kani::unwind(3)]
+    #[kani::unwind(70)]
     fn standard_clear_tail_decode_clears_buffer_on_error() {
         let mut buffer = kani::any::<[u8; 4]>();
         let result = STANDARD.decode_in_place_clear_tail(&mut buffer);
@@ -1979,7 +1979,7 @@ mod kani_proofs {
     }
 
     #[kani::proof]
-    #[kani::unwind(3)]
+    #[kani::unwind(70)]
     fn ct_standard_decode_slice_returns_written_within_output() {
         let input = kani::any::<[u8; 4]>();
         let mut output = kani::any::<[u8; 3]>();
@@ -1991,7 +1991,7 @@ mod kani_proofs {
     }
 
     #[kani::proof]
-    #[kani::unwind(3)]
+    #[kani::unwind(70)]
     fn ct_standard_decode_slice_clear_tail_clears_output_on_error() {
         let input = kani::any::<[u8; 4]>();
         let mut output = kani::any::<[u8; 3]>();
@@ -2003,7 +2003,7 @@ mod kani_proofs {
     }
 
     #[kani::proof]
-    #[kani::unwind(3)]
+    #[kani::unwind(70)]
     fn ct_standard_decode_in_place_clear_tail_clears_buffer_on_error() {
         let mut buffer = kani::any::<[u8; 4]>();
         let result = ct::STANDARD.decode_in_place_clear_tail(&mut buffer);
@@ -2014,7 +2014,7 @@ mod kani_proofs {
     }
 
     #[kani::proof]
-    #[kani::unwind(3)]
+    #[kani::unwind(70)]
     fn ct_standard_validate_matches_decode_for_one_quantum() {
         let input = kani::any::<[u8; 4]>();
         let mut output = kani::any::<[u8; 3]>();

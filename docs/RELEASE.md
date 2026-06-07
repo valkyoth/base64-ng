@@ -129,10 +129,12 @@ Kani may need a one-time setup after `cargo install --locked kani-verifier`:
 cargo kani setup
 ```
 
-Kani bundles its own Rust compiler. If that compiler is older than this crate's
-`rust-version`, `scripts/check_kani.sh` records an explicit skip until a newer
-Kani release supports the pinned toolchain.
-The Kani compatibility and verifier-exception policy is documented in
+Kani bundles its own Rust compiler. The current supported local path is Rust
+`1.90.0` with `cargo-kani 0.67.0`; `scripts/check_kani.sh` runs the
+no-default-features harness set when that pairing is available. If a future
+Kani/compiler pairing is incompatible with this crate's `rust-version`, the
+script records an explicit skip rather than treating it as proof.
+The Kani compatibility and verifier policy is documented in
 [`KANI.md`](KANI.md).
 
 The standard local gate runs isolated dudect, fuzz, and performance harness

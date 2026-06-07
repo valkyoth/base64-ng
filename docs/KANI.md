@@ -1,14 +1,15 @@
 # Kani Verification Policy
 
-`base64-ng` keeps Kani proof harnesses in the crate, but Kani execution depends
-on the compiler bundled with the installed `cargo-kani` release.
+`base64-ng` keeps Kani proof harnesses in the crate. Kani execution depends on
+the compiler bundled with the installed `cargo-kani` release, so the supported
+pairing is documented rather than assumed.
 
 ## Current Status
 
 - Local Rust toolchain: Rust `1.90.0`.
 - Locally tested Kani: `cargo-kani 0.67.0`.
-- Current result: `scripts/check_kani.sh` records an explicit skip because the
-  installed Kani compiler is older than this crate's `rust-version`.
+- Current result: `scripts/check_kani.sh` verifies the full current
+  no-default-features Kani harness set: 17 harnesses, 0 failures.
 
 This is not a normal Cargo dependency-resolution issue. Kani runs are compiler-integration-sensitive because Kani is a verifier with its own compiler integration.
 Updating the project to Rust `1.90` does not make an older Kani release
@@ -29,6 +30,11 @@ If the installed Kani compiler is compatible, `scripts/check_kani.sh` runs:
 cargo kani --no-default-features
 ```
 
+The source-level harness unwind bound is intentionally set to `70` because the
+constant-time-oriented alphabet scanner runs a fixed 64-iteration loop. Kani's
+global `--unwind` flag only applies to filtered single-harness runs, so the full
+suite carries the bound on the harness attributes.
+
 If Kani reports that its compiler requires an older Rust version than this
 crate declares, the script prints a skip and exits successfully. The stable
 release gate treats that as an explicit policy skip, not as completed formal
@@ -47,9 +53,9 @@ Current harnesses cover:
 - clear-tail cleanup behavior on decode failures
 - constant-time-oriented validate/decode agreement for one quantum
 
-## v1.0 Verifier Exception
+## Historical v1.0.0 Verifier Exception
 
-The accepted `v1.0` outcome is a documented verifier exception:
+The initial `1.0.0` outcome accepted a documented verifier exception:
 
 - keep all Kani harnesses in-tree and checked by `scripts/check_kani.sh`
 - treat an incompatible Kani compiler as an explicit skip, not a proof
@@ -72,11 +78,10 @@ Replacement evidence for `v1.0` consists of:
 - release metadata, MSRV/toolchain, dependency, unsafe-boundary,
   constant-time-policy, and SIMD-admission validators
 
-This exception is intentionally narrower than a formal proof. It does not
-upgrade Kani status to "complete", and it keeps Kani proof completion outside
-the initial `1.0.0` guarantee. The stable `1.0.0` guarantee is the documented
-API and security contract backed by release evidence, not a formal-verification
-claim.
+That exception was intentionally narrower than a formal proof. Current `1.0.x`
+evidence now includes the bounded Kani harness set, but the stable contract is
+still the documented API and security contract backed by release evidence, not
+a whole-crate or cryptographic formal-verification claim.
 
 ## Future Verifier Admission
 
@@ -118,5 +123,5 @@ cargo kani --version
 scripts/check_kani.sh
 ```
 
-The `v1.0` exception above must be revisited for future `1.0.x` releases when
-Kani supports the pinned Rust toolchain.
+For future releases, revisit this document whenever the installed Kani release,
+the pinned Rust toolchain, or the harness unwind policy changes.

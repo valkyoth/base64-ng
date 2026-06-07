@@ -255,16 +255,16 @@ The current release path is:
   candidate had clean local release evidence, clean CI, and clean external
   pentest results. This line should change only for release blockers,
   documentation corrections, or evidence-policy fixes before tagging.
-- `1.0.x`: maintenance, assurance, and move-only source-layout releases. Kani
-  proof execution remains a high-priority `1.0.x` follow-up once Kani supports
-  the pinned Rust toolchain. Before any `1.1` feature work, reduce
-  `src/lib.rs` review size through small module splits that preserve the public
-  API and behavior.
+- `1.0.x`: maintenance, assurance, and move-only source-layout releases. The
+  current bounded no-default-features Kani harness set now runs on the pinned
+  Rust `1.90.0` toolchain with `cargo-kani 0.67.0`; future `1.0.x` work may
+  expand the harness scope, but the crate must still avoid claiming
+  whole-crate or cryptographic formal verification.
 
-The initial `1.0.0` contract accepts the documented Kani verifier exception in
-[KANI.md](KANI.md). That exception is explicit replacement evidence, not a
-formal proof, and the crate must not claim Kani-complete or formally verified
-cryptographic behavior until compatible verifier evidence exists.
+The initial `1.0.0` contract accepted the documented Kani verifier exception in
+[KANI.md](KANI.md). Current `1.0.x` evidence now includes a clean bounded Kani
+harness run, but the crate must not claim Kani-complete or formally verified
+cryptographic behavior until that stronger evidence exists.
 
 ### v0.1
 
@@ -384,8 +384,9 @@ cryptographic behavior until compatible verifier evidence exists.
 - Completed the constant-time verification plan with generated-code review
   requirements and a release-gated non-claim wording check.
 - Expanded gated Kani proof harness definitions for length helpers, in-place
-  bounds, slice encode/decode bounds, and clear-tail decode cleanup. Execution
-  remains gated until Kani supports the pinned Rust toolchain.
+  bounds, slice encode/decode bounds, and clear-tail decode cleanup. Current
+  `1.0.x` evidence now runs these bounded harnesses on Rust `1.90.0` with
+  `cargo-kani 0.67.0`.
 - Hardened scalar chunk validation and decode internals with checked quad reads
   and typed chunk helper inputs across strict, legacy, wrapped, and in-place
   decode paths.
@@ -497,13 +498,11 @@ cryptographic behavior until compatible verifier evidence exists.
 
 - Verification and panic-policy hardening.
 - Resolve Kani execution for the pinned Rust toolchain, pin a compatible Kani
-  workflow, or document through [KANI.md](KANI.md) why Kani remains unavailable
-  and what evidence replaces it for `v1.0`.
-  Completed direction: keep the Kani harnesses in-tree, document an explicit
-  verifier exception while local Kani is behind Rust `1.90`, and require Miri,
-  bounded fuzz smoke, generated-code evidence, panic-policy checks,
-  deterministic tests, release-policy validators, and invariant documentation
-  as replacement release evidence for the initial `1.0.0` contract.
+  workflow, or document through [KANI.md](KANI.md) why a verifier exception is
+  required and what evidence replaces it for `v1.0`.
+  Completed direction: keep the Kani harnesses in-tree, document the initial
+  `1.0.0` verifier exception, then enable the current bounded harness set once
+  Rust `1.90.0` and `cargo-kani 0.67.0` were compatible.
 - Expand or finalize proof harnesses for length helpers, slice encode/decode
   bounds, in-place decode bounds, clear-tail cleanup behavior, and
   constant-time-oriented validate/decode agreement.
@@ -547,10 +546,10 @@ cryptographic behavior until compatible verifier evidence exists.
 - No unresolved `v0.10`, `v0.11`, or `v0.12` release-candidate blockers.
 - `1.0.0` pentest, GitHub CI, and local release evidence must be clean
   before the stable `v1.0.0` tag.
-- Kani proofs are not required for the initial stable release if the documented
-  `v1.0` verifier exception remains accepted and the replacement evidence is
-  current. A Kani skip is not a proof, and this release must not claim
-  Kani-complete or formally verified behavior.
+- The initial stable release allowed the documented `v1.0` Kani verifier
+  exception. Current `1.0.x` evidence includes a clean bounded Kani harness
+  run, but this release line must not claim Kani-complete or formally verified
+  cryptographic behavior.
 - Formal or tool-backed evidence for panic-free scalar public APIs, including
   documented bounded-index invariants where indexing remains.
 - Stable profile API for RFC 4648 standard and URL-safe, MIME, PEM, bcrypt, and

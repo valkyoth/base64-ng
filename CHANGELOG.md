@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+- Enabled the current full no-default-features Kani harness set on the pinned
+  Rust `1.90.0` toolchain with `cargo-kani 0.67.0`.
+- Raised Kani harness unwind bounds for the fixed 64-step
+  constant-time-oriented alphabet scanner and slice loops.
+- Gated inline assembly cleanup and constant-time result barriers out of Kani
+  runs so the verifier models the compiler-fence fallback path instead of
+  rejecting unreachable assembly.
+- Updated Kani documentation and trust-dashboard wording to distinguish the
+  now-clean bounded harness set from a whole-crate or cryptographic
+  formal-verification claim.
+
 ## 1.0.6 - 2026-05-31
 
 - Added alloc-gated top-level `base64_ng::encode` and `base64_ng::decode`

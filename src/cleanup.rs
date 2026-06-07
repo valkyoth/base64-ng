@@ -19,7 +19,7 @@ pub(crate) fn wipe_bytes(bytes: &mut [u8]) {
 fn wipe_barrier(ptr: *mut u8, len: usize) {
     let _ = (ptr, len);
 
-    #[cfg(all(not(miri), any(target_arch = "x86", target_arch = "x86_64")))]
+    #[cfg(all(not(miri), not(kani), any(target_arch = "x86", target_arch = "x86_64")))]
     {
         // `mfence` orders prior stores before later memory operations on
         // x86/x86_64, while the pointer and length are opaque optimizer inputs.
@@ -35,7 +35,7 @@ fn wipe_barrier(ptr: *mut u8, len: usize) {
         }
     }
 
-    #[cfg(all(not(miri), target_arch = "aarch64"))]
+    #[cfg(all(not(miri), not(kani), target_arch = "aarch64"))]
     {
         // `dsb sy` completes prior explicit memory accesses before later
         // instructions, and `isb sy` flushes subsequent instruction context.
@@ -53,7 +53,7 @@ fn wipe_barrier(ptr: *mut u8, len: usize) {
         }
     }
 
-    #[cfg(all(not(miri), target_arch = "arm"))]
+    #[cfg(all(not(miri), not(kani), target_arch = "arm"))]
     {
         // `dsb sy` completes prior explicit memory accesses before later
         // instructions, and `isb sy` flushes subsequent instruction context.
@@ -70,7 +70,11 @@ fn wipe_barrier(ptr: *mut u8, len: usize) {
         }
     }
 
-    #[cfg(all(not(miri), any(target_arch = "riscv32", target_arch = "riscv64")))]
+    #[cfg(all(
+        not(miri),
+        not(kani),
+        any(target_arch = "riscv32", target_arch = "riscv64")
+    ))]
     {
         // `fence rw, rw` orders prior reads/writes before later reads/writes.
         // SAFETY: the assembly block does not read or write through the pointer.

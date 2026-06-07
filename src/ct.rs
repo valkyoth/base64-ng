@@ -549,7 +549,7 @@ fn ct_error_gate_barrier(invalid_byte: u8, invalid_padding: u8) {
     core::hint::black_box(invalid_byte | invalid_padding);
     core::sync::atomic::compiler_fence(core::sync::atomic::Ordering::SeqCst);
 
-    #[cfg(all(not(miri), any(target_arch = "x86", target_arch = "x86_64")))]
+    #[cfg(all(not(miri), not(kani), any(target_arch = "x86", target_arch = "x86_64")))]
     {
         // SAFETY: `lfence` does not access memory and is used as a speculation
         // barrier before the public success/failure branch is observed.
@@ -558,7 +558,7 @@ fn ct_error_gate_barrier(invalid_byte: u8, invalid_padding: u8) {
         }
     }
 
-    #[cfg(all(not(miri), target_arch = "aarch64"))]
+    #[cfg(all(not(miri), not(kani), target_arch = "aarch64"))]
     {
         // Older cores may treat CSDB as a no-op; runtime reporting marks this
         // as unattested until the deployment provides platform evidence.
@@ -568,7 +568,7 @@ fn ct_error_gate_barrier(invalid_byte: u8, invalid_padding: u8) {
         }
     }
 
-    #[cfg(all(not(miri), target_arch = "arm"))]
+    #[cfg(all(not(miri), not(kani), target_arch = "arm"))]
     {
         // SAFETY: `isb sy` does not access memory and is used as the best
         // available stable ARM speculation boundary for this crate.
@@ -577,7 +577,11 @@ fn ct_error_gate_barrier(invalid_byte: u8, invalid_padding: u8) {
         }
     }
 
-    #[cfg(all(not(miri), any(target_arch = "riscv32", target_arch = "riscv64")))]
+    #[cfg(all(
+        not(miri),
+        not(kani),
+        any(target_arch = "riscv32", target_arch = "riscv64")
+    ))]
     {
         // RISC-V base ISA does not provide a canonical speculation barrier.
         // `fence rw, rw` is the available ordering primitive for the CT public

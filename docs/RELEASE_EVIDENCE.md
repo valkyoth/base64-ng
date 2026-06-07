@@ -168,13 +168,14 @@ The release gate runs:
 - manual generated-code review checklist in [CT_ASM_REVIEW.md](CT_ASM_REVIEW.md)
 - LTO symbol-presence checks for non-inlined wipe boundaries and the
   `constant_time_eq_public_len` equal-length comparison helper
-- Kani proofs through `scripts/check_kani.sh` when Kani is installed and its
-  bundled compiler supports this crate's pinned `rust-version`
+- Kani proofs through `scripts/check_kani.sh`; current local evidence is the
+  full no-default-features harness set on Rust `1.90.0` with
+  `cargo-kani 0.67.0`
 - bounded Kani coverage for constant-time-oriented decode result bounds,
   clear-tail cleanup on error, and validate/decode agreement
 - bounded-index invariant documentation in [INVARIANTS.md](INVARIANTS.md)
 - explicit Kani compatibility or verifier-exception documentation in
-  [KANI.md](KANI.md) when the installed Kani compiler cannot run the proofs
+  [KANI.md](KANI.md) if a future installed Kani compiler cannot run the proofs
 - the initial `1.0.0` Kani verifier exception requires replacement evidence
   from Miri, bounded fuzz smoke, generated assembly evidence,
   panic-policy checks, deterministic tests, release-policy validators, and

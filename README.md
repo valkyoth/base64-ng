@@ -76,9 +76,9 @@ Planned behind admission evidence:
   dependency and cancellation-safety admission bar in [docs/ASYNC.md](docs/ASYNC.md).
 - Optional `serde` or `bytes` integration only if a concrete use case clears
   the dependency admission policy in [docs/DEPENDENCIES.md](docs/DEPENDENCIES.md).
-- Kani proof execution once Kani's bundled compiler supports the pinned Rust
-  toolchain. The `1.0.0` contract accepts the documented verifier exception;
-  a Kani skip is not a proof.
+- Additional Kani harnesses beyond the current bounded no-default-features
+  proof set. A clean Kani run proves only the scoped harness properties, not a
+  whole-crate or cryptographic constant-time guarantee.
 - Broader benchmark evidence against the established `base64` crate.
 
 ## Trust Dashboard
@@ -94,7 +94,7 @@ Planned behind admission evidence:
 | Legacy compatibility | Explicit opt-in APIs |
 | Constant-time posture | Constant-time-oriented scalar validation/decode with isolated dudect-style timing evidence; no formal cryptographic guarantee |
 | Cleanup posture | Best-effort initialized-byte cleanup and redacted secret wrappers |
-| Kani | Harnesses in-tree; initial `1.0.0` accepts a documented verifier exception until Kani supports the pinned Rust toolchain |
+| Kani | 17 bounded no-default-features harnesses verified with Rust `1.90.0` and `cargo-kani 0.67.0`; not a whole-crate formal-verification claim |
 | Release evidence | fmt, clippy, tests, docs, deny, audit, license, SBOM, reproducibility |
 
 Full adoption details live in [docs/TRUST.md](docs/TRUST.md). Security-control
@@ -838,9 +838,10 @@ Security commitments:
 - Release gates include formatting, clippy, tests, Miri when installed, docs,
   dependency policy, audit, license review, isolated fuzz/perf dependency
   checks, SBOM, and reproducible build checks.
-- Kani harnesses stay in-tree and release-gated. The initial `1.0.0` contract
-  accepts the documented verifier exception when Kani's bundled compiler is
-  behind the pinned Rust toolchain; that skip is not a proof.
+- Kani harnesses stay in-tree and release-gated. The current
+  no-default-features harness set verifies cleanly with Rust `1.90.0` and
+  `cargo-kani 0.67.0`; this is scoped bounded evidence, not a whole-crate
+  formal-verification claim.
 
 See [docs/PLAN.md](docs/PLAN.md), [SECURITY.md](SECURITY.md),
 [docs/RELEASE_EVIDENCE.md](docs/RELEASE_EVIDENCE.md), and
