@@ -97,16 +97,24 @@ jobs:
         with:
           cache-on-failure: true
 
+      - name: Run macOS verification
+        if: startsWith(matrix.os, 'macos')
+        run: scripts/check_macos.sh
+
       - name: Test default features
+        if: ${{ !startsWith(matrix.os, 'macos') }}
         run: cargo test --all-targets
 
       - name: Test all features
+        if: ${{ !startsWith(matrix.os, 'macos') }}
         run: cargo test --all-targets --all-features
 
       - name: Check no_std library build
+        if: ${{ !startsWith(matrix.os, 'macos') }}
         run: cargo check --no-default-features --lib
 
       - name: Test no default features
+        if: ${{ !startsWith(matrix.os, 'macos') }}
         run: cargo test --no-default-features --all-targets
 
   target-build:
