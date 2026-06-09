@@ -15,7 +15,7 @@ The mapping is practical adoption guidance, not a certification claim.
 | CWE-209 Information Exposure Through Error Messages | Constant-time-oriented malformed decode reveals exact failure location or category | `ct` malformed-content errors are intentionally opaque and non-localized. |
 | CWE-226 Sensitive Information in Resource Not Removed Before Reuse | Caller-owned output buffers or crate-owned staging buffers retain partial sensitive data | Clear-tail APIs, stream cleanup, `EncodedBuffer`, `DecodedBuffer`, and `SecretBuffer` provide best-effort initialized-byte and spare-capacity cleanup. |
 | CWE-327 Use of Broken Or Risky Cryptographic Algorithm | Treating Base64 as encryption | Documentation describes Base64 as encoding, not encryption; secret wrappers are retention/logging helpers only. |
-| CWE-532 Insertion of Sensitive Information Into Log File | Accidentally logging sensitive encoded or decoded material | `SecretBuffer` redacts `Debug` and `Display` output and requires explicit reveal calls. |
+| CWE-532 Insertion of Sensitive Information Into Log File | Accidentally logging sensitive encoded or decoded material | `SecretBuffer` redacts `Debug` and `Display` output and requires explicit reveal calls. Strict `DecodeError` values may include input bytes or indexes; log `DecodeError::kind()` for secret-adjacent input. |
 | CWE-208 Observable Timing Discrepancy | Sensitive comparison exits early on the first different byte | `SecretBuffer`, `EncodedBuffer`, and `DecodedBuffer` intentionally avoid `PartialEq`/`==` so best-effort comparison cannot be mistaken for a formal cryptographic primitive. Use explicit `constant_time_eq_public_len` for dependency-free equal-length scans; length mismatch returns immediately and is public. |
 | CWE-829 Inclusion of Functionality From Untrusted Control Sphere | Runtime dependency compromise | Published crate has zero external runtime and default dev dependencies; dependency admission is documented and checked. |
 
@@ -58,6 +58,12 @@ The caller still owns:
   handling, allocator behavior, and log retention
 - deciding whether the constant-time-oriented API is sufficient for the local
   threat model
+- enforcing protocol-level maximum input sizes before calling allocation
+  helpers or constant-time-oriented decode on untrusted input. `decode_vec` and
+  `encode_vec` allocate proportionally to input size, and the `ct` decoder
+  deliberately spends fixed work scanning all 64 alphabet entries per symbol.
+  Use streaming adapters or stack-backed `decode_buffer::<MAX>()` style APIs for
+  bounded services.
 - running the release gate and reviewing release evidence for the exact
   version being adopted
 
@@ -73,6 +79,13 @@ Strict APIs reject:
 - malformed padding
 - trailing data after padding
 - non-canonical trailing bits
+
+Strict errors are diagnostic objects. `DecodeError::InvalidByte` carries the
+offending byte and `DecodeError` variants can carry exact input indexes. Do not
+log full strict errors verbatim when the input may contain secrets,
+secret-adjacent tokens, or attacker-probed fragments of those values. Use
+`DecodeError::kind()` for redacted logging, or use the `ct` module for opaque
+malformed-content errors.
 
 Legacy whitespace handling is opt-in through explicitly named APIs. Wrapped
 profiles are strict about the configured line ending and non-final line width.
@@ -133,8 +146,11 @@ solely because the instruction sequence was emitted. Deployments that rely on
 CSDB must attest that the deployed core treats it as an effective speculation
 barrier; older ARM cores may treat the hint as a no-op. If that platform
 evidence exists, build with `--cfg base64_ng_aarch64_csdb_attested` to make the
-runtime posture reflect the deployment attestation. This is intentionally not a
-Cargo feature. On RISC-V, the crate
+runtime posture reflect the deployment attestation as
+`CtGatePosture::HardwareSpeculationBarrierBuildAsserted`
+(`hardware-speculation-barrier-build-asserted`). This is intentionally not a
+Cargo feature, and the distinct posture string keeps audit logs from confusing
+operator attestation with a native target guarantee. On RISC-V, the crate
 reports an ordering-fence CT gate because the base ISA does not provide a
 canonical speculation barrier. RISC-V deployments in Spectre-v1 threat models
 must rely on platform-level mitigations outside this crate.

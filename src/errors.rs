@@ -95,6 +95,52 @@ pub enum DecodeError {
     },
 }
 
+/// Redacted decoding error class.
+///
+/// This type intentionally omits input-derived bytes and indexes so callers can
+/// log error classes without logging secret-adjacent input content.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[non_exhaustive]
+pub enum DecodeErrorKind {
+    /// The encoded input is malformed, but the decoder intentionally does not
+    /// disclose a more specific error class.
+    InvalidInput,
+    /// The encoded input length is impossible for the selected padding policy.
+    InvalidLength,
+    /// A byte is not valid for the selected alphabet.
+    InvalidByte,
+    /// Padding is missing, misplaced, or non-canonical.
+    InvalidPadding,
+    /// Line wrapping is missing, misplaced, or uses the wrong line ending.
+    InvalidLineWrap,
+    /// The output buffer is too small.
+    OutputTooSmall,
+    /// The caller-provided constant-time staging buffer is too small.
+    StagingTooSmall,
+}
+
+impl DecodeErrorKind {
+    /// Returns the stable lowercase identifier for this error class.
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::InvalidInput => "invalid-input",
+            Self::InvalidLength => "invalid-length",
+            Self::InvalidByte => "invalid-byte",
+            Self::InvalidPadding => "invalid-padding",
+            Self::InvalidLineWrap => "invalid-line-wrap",
+            Self::OutputTooSmall => "output-too-small",
+            Self::StagingTooSmall => "staging-too-small",
+        }
+    }
+}
+
+impl core::fmt::Display for DecodeErrorKind {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
 impl core::fmt::Display for DecodeError {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
@@ -126,6 +172,25 @@ impl core::fmt::Display for DecodeError {
 }
 
 impl DecodeError {
+    /// Returns a redacted error class without input-derived bytes or indexes.
+    ///
+    /// Strict decoders keep exact diagnostics in [`DecodeError`] and
+    /// [`core::fmt::Display`] for developer debugging. When input may contain
+    /// secrets or secret-adjacent material, log this kind instead of logging
+    /// the full error value.
+    #[must_use]
+    pub const fn kind(self) -> DecodeErrorKind {
+        match self {
+            Self::InvalidInput => DecodeErrorKind::InvalidInput,
+            Self::InvalidLength => DecodeErrorKind::InvalidLength,
+            Self::InvalidByte { .. } => DecodeErrorKind::InvalidByte,
+            Self::InvalidPadding { .. } => DecodeErrorKind::InvalidPadding,
+            Self::InvalidLineWrap { .. } => DecodeErrorKind::InvalidLineWrap,
+            Self::OutputTooSmall { .. } => DecodeErrorKind::OutputTooSmall,
+            Self::StagingTooSmall { .. } => DecodeErrorKind::StagingTooSmall,
+        }
+    }
+
     pub(crate) fn with_index_offset(self, offset: usize) -> Self {
         match self {
             Self::InvalidByte { index, byte } => Self::InvalidByte {

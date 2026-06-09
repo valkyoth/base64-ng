@@ -808,8 +808,10 @@ Security commitments:
   ordering-only, compiler-fence-only, or hardware-barrier-unattested. AArch64
   deployments that have platform evidence for CSDB may compile with
   `--cfg base64_ng_aarch64_csdb_attested`; that cfg is an operator
-  attestation, not an automatic CPU probe, and is intentionally not a Cargo
-  feature so `--all-features` cannot enable it by accident.
+  attestation, not an automatic CPU probe. It reports
+  `hardware-speculation-barrier-build-asserted` so logs distinguish a
+  deployment assertion from a native target guarantee, and it is intentionally
+  not a Cargo feature so `--all-features` cannot enable it by accident.
 - Runtime backend, posture, and policy enums expose stable string identifiers
   for CI artifacts, audit logs, and deployment evidence.
 - Runtime backend reports and policy failures use stable key/value display

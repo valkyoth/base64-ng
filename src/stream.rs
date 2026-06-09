@@ -896,6 +896,9 @@ where
 
         let result = self.output.push_slice(&decoded[..written]);
         crate::wipe_bytes(decoded);
+        if result.is_err() {
+            self.failed = true;
+        }
         result?;
         Ok(written)
     }
@@ -1418,6 +1421,9 @@ where
         };
         let result = self.output.push_slice(&decoded[..written]);
         crate::wipe_bytes(&mut decoded);
+        if result.is_err() {
+            self.failed = true;
+        }
         result?;
         if input.len() == 4 && written < 3 {
             self.terminal_seen = true;

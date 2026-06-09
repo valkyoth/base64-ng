@@ -64,6 +64,13 @@ buffer. This reduces easy timing and retention pitfalls, but `base64-ng` does
 not currently claim a formally verified cryptographic constant-time encode or
 decode API.
 
+The default strict decoders intentionally return detailed diagnostics.
+`DecodeError::InvalidByte` includes the rejected byte and strict error values
+may include exact input indexes. Do not log strict `DecodeError` values
+verbatim for secret-bearing or secret-adjacent input; log
+`DecodeError::kind()` or use the `ct` module's opaque malformed-input errors
+where error-content disclosure matters.
+
 If a deployment treats final success/failure timing or exact ciphertext length
 as sensitive, the caller must continue protocol processing in a fixed-shape
 way after decode failure, for example by substituting dummy output and running
@@ -90,6 +97,13 @@ where available (`mlock`/`VirtualLock` or equivalent), disabled or encrypted
 swap and hibernation, crash-dump suppression, short key lifetimes, allocator
 isolation for secret buffers, and the deployment's approved zeroization
 primitive at the ownership boundary.
+
+Services that accept attacker-controlled payloads must enforce protocol-level
+size caps before calling allocation helpers or constant-time-oriented decode.
+The allocation helpers allocate proportionally to accepted input size, and the
+`ct` decoder deliberately spends fixed work scanning all 64 alphabet entries
+per input symbol. Use streaming adapters, caller-owned slices, or stack-backed
+`decode_buffer::<MAX>()` APIs when a service needs bounded memory and CPU.
 
 The redacted buffer comparison helpers are dependency-free best-effort
 equal-length scans, not audited MAC, bearer-token, password-hash, or

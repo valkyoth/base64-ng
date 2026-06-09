@@ -188,6 +188,15 @@ pub enum CtGatePosture {
     /// The target uses a native speculation barrier before public CT
     /// success/failure or equality-result branches.
     HardwareSpeculationBarrier,
+    /// The target is treated as having an effective speculation barrier only
+    /// because the build provided an explicit operator attestation cfg.
+    ///
+    /// On `AArch64`, this is reported when the build sets
+    /// `base64_ng_aarch64_csdb_attested`. It remains distinct from
+    /// [`Self::HardwareSpeculationBarrier`] so logs preserve the evidence
+    /// chain instead of making a build assertion look like a native target
+    /// guarantee.
+    HardwareSpeculationBarrierBuildAsserted,
     /// The target emits a hardware speculation-barrier sequence whose
     /// effectiveness depends on platform or core-level attestation.
     ///
@@ -208,6 +217,9 @@ impl CtGatePosture {
     pub const fn as_str(self) -> &'static str {
         match self {
             Self::HardwareSpeculationBarrier => "hardware-speculation-barrier",
+            Self::HardwareSpeculationBarrierBuildAsserted => {
+                "hardware-speculation-barrier-build-asserted"
+            }
             Self::HardwareSpeculationBarrierUnattested => "hardware-speculation-barrier-unattested",
             Self::OrderingFence => "ordering-fence",
             Self::CompilerFenceOnly => "compiler-fence-only",
@@ -422,6 +434,7 @@ impl BackendReport {
                     && matches!(
                         self.ct_gate_posture,
                         CtGatePosture::HardwareSpeculationBarrier
+                            | CtGatePosture::HardwareSpeculationBarrierBuildAsserted
                     )
             }
         }
@@ -532,12 +545,13 @@ const fn wipe_posture() -> WipePosture {
 }
 
 const fn ct_gate_posture() -> CtGatePosture {
-    if cfg!(any(
-        target_arch = "x86",
-        target_arch = "x86_64",
-        all(target_arch = "aarch64", base64_ng_aarch64_csdb_attested)
-    )) {
+    if cfg!(any(target_arch = "x86", target_arch = "x86_64")) {
         CtGatePosture::HardwareSpeculationBarrier
+    } else if cfg!(all(
+        target_arch = "aarch64",
+        base64_ng_aarch64_csdb_attested
+    )) {
+        CtGatePosture::HardwareSpeculationBarrierBuildAsserted
     } else if cfg!(target_arch = "aarch64") {
         CtGatePosture::HardwareSpeculationBarrierUnattested
     } else if cfg!(any(

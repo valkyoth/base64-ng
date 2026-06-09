@@ -1,8 +1,8 @@
 use base64_ng::{
     Alphabet, AlphabetError, BCRYPT, BCRYPT_NO_PAD, Bcrypt, CRYPT, CRYPT_NO_PAD, Crypt,
-    DecodeError, DecodedBuffer, EncodeError, EncodedBuffer, Engine, LineEnding, LineWrap, MIME,
-    PEM, PEM_CRLF, Profile, STANDARD, STANDARD_NO_PAD, Standard, URL_SAFE, URL_SAFE_NO_PAD,
-    UrlSafe, checked_encoded_len, checked_wrapped_encoded_len, constant_time_eq,
+    DecodeError, DecodeErrorKind, DecodedBuffer, EncodeError, EncodedBuffer, Engine, LineEnding,
+    LineWrap, MIME, PEM, PEM_CRLF, Profile, STANDARD, STANDARD_NO_PAD, Standard, URL_SAFE,
+    URL_SAFE_NO_PAD, UrlSafe, checked_encoded_len, checked_wrapped_encoded_len, constant_time_eq,
     constant_time_eq_fixed_width, ct, decode_alphabet_byte, decoded_capacity, decoded_len,
     encoded_len, runtime, validate_alphabet, wrapped_encoded_len,
 };
@@ -428,14 +428,18 @@ fn runtime_backend_report_keeps_scalar_active() {
     } else {
         assert_eq!(report.wipe_posture, runtime::WipePosture::CompilerFenceOnly);
     }
-    if cfg!(any(
-        target_arch = "x86",
-        target_arch = "x86_64",
-        all(target_arch = "aarch64", base64_ng_aarch64_csdb_attested)
-    )) {
+    if cfg!(any(target_arch = "x86", target_arch = "x86_64")) {
         assert_eq!(
             report.ct_gate_posture,
             runtime::CtGatePosture::HardwareSpeculationBarrier
+        );
+    } else if cfg!(all(
+        target_arch = "aarch64",
+        base64_ng_aarch64_csdb_attested
+    )) {
+        assert_eq!(
+            report.ct_gate_posture,
+            runtime::CtGatePosture::HardwareSpeculationBarrierBuildAsserted
         );
     } else if cfg!(target_arch = "aarch64") {
         assert_eq!(
@@ -555,6 +559,20 @@ fn runtime_backend_policy_assertions_are_explicit() {
         ct_gate_posture: runtime::CtGatePosture::HardwareSpeculationBarrierUnattested,
     };
     assert!(!unattested_barrier_report.satisfies(runtime::BackendPolicy::HighAssuranceScalarOnly));
+    let build_asserted_barrier_report = runtime::BackendReport {
+        active: runtime::Backend::Scalar,
+        candidate: runtime::Backend::Scalar,
+        candidate_detection_mode: runtime::CandidateDetectionMode::SimdFeatureDisabled,
+        simd_feature_enabled: false,
+        accelerated_backend_active: false,
+        unsafe_boundary_enforced: true,
+        security_posture: runtime::SecurityPosture::ScalarOnly,
+        wipe_posture: runtime::WipePosture::HardwareFence,
+        ct_gate_posture: runtime::CtGatePosture::HardwareSpeculationBarrierBuildAsserted,
+    };
+    assert!(
+        build_asserted_barrier_report.satisfies(runtime::BackendPolicy::HighAssuranceScalarOnly)
+    );
 
     let simd_feature_policy =
         runtime::require_backend_policy(runtime::BackendPolicy::SimdFeatureDisabled);
@@ -2261,6 +2279,25 @@ fn reports_absolute_invalid_byte_indexes() {
             index: 6,
             byte: b'$',
         })
+    );
+}
+
+#[test]
+fn decode_error_kind_redacts_input_details() {
+    let invalid = DecodeError::InvalidByte {
+        index: 4,
+        byte: b'$',
+    };
+    assert_eq!(invalid.kind(), DecodeErrorKind::InvalidByte);
+    assert_eq!(invalid.kind().as_str(), "invalid-byte");
+    assert_eq!(invalid.kind().to_string(), "invalid-byte");
+    assert_eq!(
+        DecodeError::OutputTooSmall {
+            required: 8,
+            available: 4,
+        }
+        .kind(),
+        DecodeErrorKind::OutputTooSmall
     );
 }
 

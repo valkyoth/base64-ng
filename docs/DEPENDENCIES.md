@@ -24,9 +24,15 @@ new dependency expands the audit, license, advisory, and supply-chain surface.
   attestation, not a dependency admission and not a Cargo feature. It should
   only be enabled after the deployment has evidence that the target AArch64
   core treats CSDB as an effective speculation barrier for the CT result gate.
+  Builds that set it report `hardware-speculation-barrier-build-asserted` so
+  audit logs preserve the operator-attestation boundary.
 - Fuzz, performance, and dudect-style timing harness dependencies are isolated
   under `fuzz/`, `perf/`, and `dudect/`; the standard local gate checks them
   separately from the published crate dependency graph.
+- CI toolchain setup requires `rustup` and `cargo` from the runner image. The
+  repository script intentionally refuses unauthenticated `curl | sh` rustup
+  bootstrap during CI; missing toolchain managers are treated as infrastructure
+  failures, not as a reason to execute freshly downloaded shell installers.
 
 ## v1.0 Final Admission Review
 

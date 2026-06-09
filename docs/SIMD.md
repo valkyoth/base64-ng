@@ -89,7 +89,10 @@ weakening the scalar trust base.
   rejects targets that report an unattested hardware barrier, ordering fence,
   or compiler fence. On AArch64, the crate emits `isb sy` plus CSDB hint code
   but reports `hardware-speculation-barrier-unattested` because deployments
-  must attest whether that hint is effective on their specific core. On RISC-V,
+  must attest whether that hint is effective on their specific core. Builds
+  using the explicit `base64_ng_aarch64_csdb_attested` cfg report
+  `hardware-speculation-barrier-build-asserted` so audit logs show the posture
+  came from deployment evidence rather than a native target guarantee. On RISC-V,
   the reported CT gate is intentionally only `ordering-fence`; the base ISA
   does not provide a canonical Spectre-v1 speculation barrier, so
   platform-level mitigations are required for that threat model.

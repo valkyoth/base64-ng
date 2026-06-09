@@ -27,6 +27,7 @@ stable release.
 | License policy | `cargo deny` and `cargo license --json` required | `deny.toml`, `scripts/checks.sh` |
 | SBOM | SPDX and CycloneDX SBOM generation in release evidence | `scripts/generate-sbom.sh` |
 | Reproducibility | Package/build reproducibility check in release gate | `scripts/stable_release_gate.sh` |
+| CI bootstrap | Runner-provided `rustup`/`cargo` required; CI refuses `curl \| sh` rustup bootstrap | `scripts/ci_install_rust.sh` |
 
 ## Deployment Checks
 
@@ -43,9 +44,12 @@ Use this policy when deterministic scalar execution matters more than future
 acceleration. It requires scalar execution, no detected SIMD candidate, the
 `simd` feature disabled, no active accelerated backend, and the conservative
 unsafe-boundary flag marked as enforced. It also requires an attested hardware
-speculation barrier for the CT result gate; AArch64 reports its CSDB sequence
-as `hardware-speculation-barrier-unattested`, so deployments that rely on CSDB
-must carry platform attestation outside this built-in policy. The
+speculation barrier for the CT result gate. AArch64 reports its CSDB sequence
+as `hardware-speculation-barrier-unattested` by default. Deployments that rely
+on CSDB must build with the explicit `base64_ng_aarch64_csdb_attested` cfg only
+after platform attestation; that path reports
+`hardware-speculation-barrier-build-asserted` so logs preserve the distinction
+from native target guarantees. The
 unsafe-boundary flag is intentionally false when the reserved `simd` feature is
 enabled, even if execution remains scalar-only.
 For secret-bearing Base64 payloads, combine this policy with the `ct` module

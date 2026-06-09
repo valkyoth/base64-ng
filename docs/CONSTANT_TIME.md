@@ -60,7 +60,9 @@ deployment-side evidence. Operators that have verified CSDB effectiveness
 through processor documentation, BSP notes, or platform certification may build
 with `--cfg base64_ng_aarch64_csdb_attested`; that cfg is an operator
 attestation, not an automatic runtime CPU probe, and is intentionally not a
-Cargo feature. On RISC-V, the crate reports
+Cargo feature. With that cfg, runtime reports use
+`hardware-speculation-barrier-build-asserted` so audit logs distinguish
+operator attestation from a native target guarantee. On RISC-V, the crate reports
 `CtGatePosture::OrderingFence`; the base ISA provides memory ordering, not a
 canonical Spectre-v1 speculation barrier. RISC-V deployments with speculative
 execution threat models need platform-level mitigations outside this crate.

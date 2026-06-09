@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+- Made stream decoder queue-overflow paths latch their failed state, matching
+  the encoder fail-closed behavior for unreachable internal queue capacity
+  errors.
+- Added `DecodeErrorKind` and `DecodeError::kind()` so applications can log
+  strict decode error classes without logging input-derived bytes or indexes.
+- Split AArch64 CSDB attestation reporting into a distinct
+  `hardware-speculation-barrier-build-asserted` posture so audit logs preserve
+  the operator-attestation boundary.
+- Hardened CI toolchain bootstrap by requiring runner-provided `rustup` and
+  `cargo` instead of downloading and executing `sh.rustup.rs` during CI.
+- Updated fuzz and dudect harness path dependency metadata to `1.0.7`.
+
 ## 1.0.7 - 2026-06-07
 
 - Enabled the current full no-default-features Kani harness set on the pinned

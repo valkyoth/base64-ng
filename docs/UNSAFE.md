@@ -265,8 +265,11 @@ Limitations:
 - On AArch64, `base64_ng_aarch64_csdb_attested` is an operator attestation cfg.
   It changes the runtime posture only after the deployment has independently
   verified that the target core treats CSDB as an effective speculation
-  barrier. It is intentionally not a Cargo feature, so `--all-features` cannot
-  enable it accidentally.
+  barrier. The reported posture is
+  `hardware-speculation-barrier-build-asserted`, not the generic native
+  `hardware-speculation-barrier`, so audit logs retain the evidence boundary.
+  It is intentionally not a Cargo feature, so `--all-features` cannot enable it
+  accidentally.
 - Unsupported architectures fall back to the compiler fence only.
 
 ### `ct_decode_alphabet_byte`

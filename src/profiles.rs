@@ -188,6 +188,8 @@ where
     /// including exact invalid-byte values and positions.
     /// Do not use this method for token comparison, key-material decoding, or
     /// secret-bearing validation where malformed-input timing matters. Use
+    /// [`DecodeError::kind`] instead of logging full strict errors when input
+    /// may be secret-bearing or secret-adjacent. Use
     /// [`crate::ct`] with a matching unwrapped engine for constant-time-oriented
     /// secret decoding.
     #[must_use = "handle decode errors; use crate::ct for secret-bearing payloads"]
@@ -249,7 +251,9 @@ where
     /// wrapping, and output capacity in order to return precise
     /// [`DecodeError`] diagnostics. Do not use this method for token
     /// comparison, key-material decoding, or secret-bearing validation where
-    /// malformed-input timing matters.
+    /// malformed-input timing matters. Use [`DecodeError::kind`] instead of
+    /// logging full strict errors when input may be secret-bearing or
+    /// secret-adjacent.
     ///
     /// # Examples
     ///

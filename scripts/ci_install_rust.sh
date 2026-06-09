@@ -41,30 +41,16 @@ add_ci_cargo_wrapper() {
     export PATH="$wrapper_dir:$PATH"
 }
 
-install_rustup() {
-    case "$(uname -s)" in
-        MINGW* | MSYS* | CYGWIN*)
-            echo "ci rust: rustup/cargo is broken on Windows; install Rust from the runner image" >&2
-            exit 1
-            ;;
-        *)
-            echo "ci rust: installing rustup"
-            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
-                | sh -s -- -y --profile minimal --default-toolchain none
-            add_cargo_path
-            ;;
-    esac
-}
-
 add_cargo_path
 
 if ! command -v rustup >/dev/null 2>&1; then
-    install_rustup
+    echo "ci rust: rustup is required from the runner image; refusing curl-pipe-shell bootstrap" >&2
+    exit 1
 fi
 
 if ! cargo --version >/dev/null 2>&1; then
-    echo "ci rust: cargo proxy is not usable before toolchain setup; reinstalling rustup"
-    install_rustup
+    echo "ci rust: cargo proxy is not usable before toolchain setup" >&2
+    exit 1
 fi
 
 rustup set profile minimal

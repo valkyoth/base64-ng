@@ -48,10 +48,12 @@
 //! The default engines such as [`STANDARD`] and [`URL_SAFE_NO_PAD`] are strict
 //! scalar encoders/decoders with localized diagnostics. They are not
 //! constant-time token validators or key-material decoders: strict decode and
-//! validation may branch or return early based on malformed input. Use
-//! [`ct::STANDARD`], [`ct::URL_SAFE_NO_PAD`], or [`Engine::ct_decoder`] for
-//! secret-bearing payloads where decode timing posture matters more than exact
-//! error indexes.
+//! validation may branch or return early based on malformed input, and strict
+//! [`DecodeError`] values can include input-derived bytes and indexes. Do not
+//! log strict decode errors verbatim for secret-bearing input; log
+//! [`DecodeError::kind`] instead. Use [`ct::STANDARD`],
+//! [`ct::URL_SAFE_NO_PAD`], or [`Engine::ct_decoder`] for secret-bearing
+//! payloads where decode timing posture matters more than exact error indexes.
 //!
 //! Recommended heap-owning pattern for secret-bearing standard Base64:
 //!
@@ -149,7 +151,7 @@ pub(crate) use ct::{
 };
 #[cfg(test)]
 pub(crate) use ct::{ct_padded_final_quantum, report_ct_error};
-pub use errors::{DecodeError, EncodeError};
+pub use errors::{DecodeError, DecodeErrorKind, EncodeError};
 pub use length::{
     LineEnding, LineWrap, checked_encoded_len, checked_wrapped_encoded_len, decoded_capacity,
     decoded_len, encoded_len, wrapped_encoded_len,
@@ -1223,7 +1225,9 @@ where
     /// capacity. It also reports exact failure positions and invalid byte
     /// values through [`DecodeError`]. Do not use this method for token
     /// comparison, key-material decoding, or secret-bearing validation where
-    /// malformed-input timing matters. Use [`crate::ct`],
+    /// malformed-input timing matters. Do not log strict decode errors
+    /// verbatim for secret-bearing input; log [`DecodeError::kind`] instead.
+    /// Use [`crate::ct`],
     /// [`crate::ct::STANDARD`], [`crate::ct::URL_SAFE_NO_PAD`], or
     /// [`Self::ct_decoder`] with `decode_slice_clear_tail` for
     /// constant-time-oriented secret decoding.
@@ -1658,7 +1662,8 @@ where
     /// on malformed input and reports exact failure positions and invalid byte
     /// values through [`DecodeError`]. Do not use this method for token
     /// comparison, key-material decoding, or secret-bearing validation where
-    /// malformed-input timing matters.
+    /// malformed-input timing matters. Do not log strict decode errors
+    /// verbatim for secret-bearing input; log [`DecodeError::kind`] instead.
     ///
     /// # Examples
     ///
