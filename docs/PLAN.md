@@ -609,7 +609,13 @@ Recommended `1.0.x` source-layout sequence:
   `cargo-kani 0.67.0`, strengthen constant-time-oriented byte accumulation,
   add AArch64 CSDB attestation posture reporting, expose memory-locking
   posture, and document streaming decoder partial-output semantics.
-- After `1.0.7`: park feature work for a few weeks so users can test the stable
+- `1.0.8`: audit-log and fail-closed maintenance release. Add redacted
+  `DecodeErrorKind` classification, make stream decoder internal queue
+  overflow paths latch failure like the encoder, split AArch64 CSDB
+  build-asserted posture from native target guarantees, require runner-provided
+  CI toolchains instead of unauthenticated rustup bootstrap, and refresh
+  harness metadata.
+- After `1.0.8`: park feature work for a few weeks so users can test the stable
   API and report issues before any `1.1` SIMD-admission work starts.
 
 The recommended post-`1.0` SIMD path is incremental:

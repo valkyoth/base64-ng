@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.0.8 - 2026-06-09
 
 - Made stream decoder queue-overflow paths latch their failed state, matching
   the encoder fail-closed behavior for unreachable internal queue capacity
@@ -12,7 +12,8 @@
   the operator-attestation boundary.
 - Hardened CI toolchain bootstrap by requiring runner-provided `rustup` and
   `cargo` instead of downloading and executing `sh.rustup.rs` during CI.
-- Updated fuzz and dudect harness path dependency metadata to `1.0.7`.
+- Updated fuzz, dudect, and performance harness path dependency metadata to
+  `1.0.8`.
 
 ## 1.0.7 - 2026-06-07
 
