@@ -53,6 +53,7 @@ test -s LICENSE-MIT
 test -s LICENSE-APACHE
 test -s rust-toolchain.toml
 test -s deny.toml
+test -s release-crates.toml
 test -s README.md
 test -s CONTRIBUTING.md
 test -s SECURITY.md
@@ -76,6 +77,23 @@ test -s docs/SIMD.md
 test -s docs/SIMD_ADMISSION.md
 test -s docs/TRUST.md
 test -s docs/UNSAFE.md
+test -x scripts/release_crates.py
+test -s scripts/test-release-crates.py
+
+if [ "$(sed -n '1p' scripts/release_crates.py)" != "#!/usr/bin/env python3" ]; then
+    echo "release metadata: scripts/release_crates.py must use #!/usr/bin/env python3" >&2
+    exit 1
+fi
+
+if ! grep -F -q '[release]' release-crates.toml; then
+    echo "release metadata: release-crates.toml is missing [release]" >&2
+    exit 1
+fi
+
+if ! grep -F -q "version = \"$cargo_version\"" release-crates.toml; then
+    echo "release metadata: release-crates.toml version must match Cargo.toml version $cargo_version" >&2
+    exit 1
+fi
 
 for required_script in \
     "scripts/check_backend_evidence.sh" \
@@ -254,6 +272,8 @@ done
 for required_checks_command in \
     "scripts/validate-api-audit.sh" \
     "scripts/validate-msrv-policy.sh" \
+    "scripts/release_crates.py --check" \
+    "python3 scripts/test-release-crates.py" \
     "scripts/check_migration_smoke.sh" \
     "cargo test --doc --all-features" \
     "cargo test --doc --no-default-features" \
@@ -286,6 +306,7 @@ for required_package_file in \
     "deny.toml" \
     "LICENSE-APACHE" \
     "LICENSE-MIT" \
+    "release-crates.toml" \
     "README.md" \
     "rust-toolchain.toml" \
     "SECURITY.md" \
@@ -329,7 +350,9 @@ for required_package_file in \
     "scripts/generate-sbom.sh" \
     "scripts/generate_ct_asm_evidence.sh" \
     "scripts/reproducible_build_check.sh" \
+    "scripts/release_crates.py" \
     "scripts/stable_release_gate.sh" \
+    "scripts/test-release-crates.py" \
     "scripts/validate-constant-time-policy.sh" \
     "scripts/validate-dependencies.sh" \
     "scripts/validate-doc-versions.sh" \

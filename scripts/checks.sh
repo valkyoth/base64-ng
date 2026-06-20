@@ -7,6 +7,10 @@ cargo fmt --all --check
 echo "checks: release metadata"
 scripts/validate-release-metadata.sh
 
+echo "checks: crate publish plan"
+scripts/release_crates.py --check
+python3 scripts/test-release-crates.py
+
 echo "checks: MSRV policy"
 scripts/validate-msrv-policy.sh
 

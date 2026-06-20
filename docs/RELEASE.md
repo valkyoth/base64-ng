@@ -211,15 +211,22 @@ equivalence output.
 After the release gate passes:
 
 ```sh
-cargo publish --dry-run
-cargo publish
+scripts/release_crates.py --check
+scripts/release_crates.py --dry-run
+scripts/release_crates.py
 ```
 
-For releases that include optional companion crates, publish the core package
-first, wait until crates.io serves the new `base64-ng` version, then verify and
-publish the companion package:
+`scripts/release_crates.py` reads `release-crates.toml`, validates workspace
+crate versions and dependency order, runs the local release gate, publishes
+`base64-ng` first, waits for crates.io visibility, and then publishes
+dependent companion crates such as `base64-ng-sanitization`.
+
+For manual fallback, publish the core package first, wait until crates.io serves
+the new `base64-ng` version, then verify and publish the companion package:
 
 ```sh
+cargo publish -p base64-ng --dry-run
+cargo publish -p base64-ng
 cargo package -p base64-ng-sanitization
 cargo publish -p base64-ng-sanitization --dry-run
 cargo publish -p base64-ng-sanitization
@@ -229,9 +236,9 @@ This order is required because companion crates depend on the same released
 `base64-ng` version from crates.io while using a local path only during
 repository development.
 
-The dry run is intentionally kept as a manual publish preflight rather than
-part of `scripts/stable_release_gate.sh`, because it updates the crates.io index
-and may require network access.
+The publish sequence is intentionally kept out of
+`scripts/stable_release_gate.sh`, because publishing updates the crates.io index
+and requires release credentials.
 
 Create and push the git tag only after the published crate is verified.
 

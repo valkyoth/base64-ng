@@ -387,14 +387,22 @@ Before publishing:
 
 ```sh
 scripts/stable_release_gate.sh release
-cargo publish --dry-run
+scripts/release_crates.py --check
+scripts/release_crates.py --dry-run
 ```
 
-When a release includes optional companion crates, publish `base64-ng` first.
-After crates.io serves that exact version, verify and publish each companion
-crate, for example:
+Publish with:
 
 ```sh
+scripts/release_crates.py
+```
+
+The helper reads `release-crates.toml`, publishes `base64-ng` first, waits for
+crates.io visibility, and then publishes dependent companion crates. Manual
+fallback for companion releases:
+
+```sh
+cargo publish -p base64-ng
 cargo package -p base64-ng-sanitization
 cargo publish -p base64-ng-sanitization --dry-run
 cargo publish -p base64-ng-sanitization
