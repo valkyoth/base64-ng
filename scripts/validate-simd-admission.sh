@@ -70,6 +70,9 @@ for required_text in \
     "Benchmark evidence that reports hardware" \
     "register-retention cleanup strategy" \
     "explicit register cleanup implementation and tests" \
+    "real non-dispatchable prototype" \
+    "candidate only" \
+    "admitted backend" \
     "Performance numbers are release notes evidence only" \
     "Admitted backends: none" \
     "Active backend: scalar only" \
@@ -80,5 +83,37 @@ do
         exit 1
     fi
 done
+
+backend_rows="$(
+    awk '
+        /^\| AVX-512 VBMI / || /^\| AVX2 / || /^\| SSSE3\/SSE4\.1 / || /^\| NEON / || /^\| wasm `simd128` / {
+            print
+        }
+    ' docs/SIMD_ADMISSION.md
+)"
+
+backend_row_count="$(printf '%s\n' "$backend_rows" | sed '/^$/d' | wc -l | tr -d ' ')"
+if [ "$backend_row_count" -ne 5 ]; then
+    echo "simd admission: expected exactly five backend rows in docs/SIMD_ADMISSION.md" >&2
+    printf '%s\n' "$backend_rows" >&2
+    exit 1
+fi
+
+if printf '%s\n' "$backend_rows" | grep -v '| candidate only |' >/dev/null 2>&1; then
+    echo "simd admission: every backend row must remain candidate-only until admission" >&2
+    printf '%s\n' "$backend_rows" >&2
+    exit 1
+fi
+
+if printf '%s\n' "$backend_rows" | grep 'real fixed-block encode prototype' | grep -v 'non-dispatchable' >/dev/null 2>&1; then
+    echo "simd admission: real prototype rows must say non-dispatchable" >&2
+    printf '%s\n' "$backend_rows" >&2
+    exit 1
+fi
+
+if grep -q 'admitted active backend' docs/SIMD_ADMISSION.md docs/SIMD.md; then
+    echo "simd admission: admitted active backend wording requires gate update" >&2
+    exit 1
+fi
 
 echo "simd admission: scalar-only dispatch gate ok"

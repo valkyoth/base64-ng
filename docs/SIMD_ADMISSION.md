@@ -42,6 +42,16 @@ added to `ActiveBackend` or used by runtime dispatch:
 
 ## Backend Rows
 
+State labels are intentionally strict:
+
+- `candidate only` means the build may report that the CPU feature bundle is
+  visible, but runtime dispatch must still execute scalar code.
+- `real non-dispatchable prototype` means fixed-block vector code exists for
+  tests or generated evidence, but it is not called by public encode/decode
+  APIs and is not represented by `ActiveBackend`.
+- `admitted backend` means the backend is allowed to participate in runtime
+  dispatch. No backend has this state today.
+
 | Backend | State | Required CPU features | Evidence |
 | --- | --- | --- | --- |
 | AVX-512 VBMI | candidate only | `avx512f`, `avx512bw`, `avx512vl`, `avx512vbmi` | real fixed-block encode prototype for all alphabets; non-dispatchable |

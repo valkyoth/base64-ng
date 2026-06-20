@@ -186,7 +186,9 @@ vector encode prototypes against scalar output. On AArch64 NEON-capable hosts,
 the NEON test exercises the inactive fixed-block vector prototype for Standard
 and URL-safe alphabets; 32-bit ARM remains scaffold evidence. The script also writes
 `target/release-evidence/backend/MANIFEST.txt` with toolchain metadata,
-commands, status values, and artifact checksums.
+commands, status values, artifact checksums, and explicit
+`prototype_state=real-non-dispatchable` /
+`active_backend_admitted=false` labels.
 
 Capture generated assembly evidence for the inactive x86 encode prototypes:
 

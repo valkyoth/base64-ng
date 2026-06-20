@@ -287,7 +287,10 @@ kept in `scripts/check_simd_feature_bundles.sh` as compile/test-binary evidence
 only because runtime JIT behavior is outside the crate's release gate. The
 script writes
 `target/release-evidence/backend/MANIFEST.txt`, `runtime-backend-report.txt`,
-and `simd-prototype-equivalence.txt` so local CPU evidence can be archived.
+and `simd-prototype-equivalence.txt` so local CPU evidence can be archived. The
+manifest labels prototype evidence as `real-non-dispatchable` and separately
+records `active_backend_admitted=false`, so audit logs do not confuse fixed
+block prototype execution with active dispatch admission.
 
 The release gate also runs:
 

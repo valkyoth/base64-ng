@@ -20,6 +20,8 @@
   scaffold path because portable wasm SIMD has no direct 64-byte lookup.
 - Added wasm `simd128` test-binary compile evidence to the SIMD feature-bundle
   check while keeping wasm cleanup/JIT caveats and scalar-only runtime dispatch.
+- Hardened SIMD admission tooling and backend evidence manifests to distinguish
+  real non-dispatchable prototypes from admitted active backends.
 - Added a real non-dispatchable AVX2 fixed-block encode prototype for Standard
   and URL-safe alphabets. The prototype remains test-only and active runtime
   backend selection remains scalar-only.

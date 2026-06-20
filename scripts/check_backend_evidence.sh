@@ -41,6 +41,10 @@ cat "$prototype_output"
     echo "status:"
     echo "runtime_backend_report=$runtime_status"
     echo "simd_prototype_equivalence=$prototype_status"
+    echo "runtime_dispatch=scalar-only"
+    echo "active_backend_admitted=false"
+    echo "prototype_state=real-non-dispatchable"
+    echo "wasm_simd128_evidence=compile-test-binary-only"
     echo
     echo "artifacts:"
     if command -v sha256sum >/dev/null 2>&1; then
@@ -53,8 +57,10 @@ cat "$prototype_output"
     echo
     echo "interpretation:"
     echo "This evidence records runtime backend reporting and inactive SIMD prototype scalar-equivalence results for this machine."
+    echo "Prototype results are real non-dispatchable evidence; they are not active backend admission evidence."
     echo "The x86 prototypes exercise real fixed-block vector encode logic when the required CPU feature bundles are available."
     echo "On AArch64 NEON-capable hosts, the NEON test exercises real fixed-block vector encode logic for Standard and URL-safe alphabets; 32-bit ARM remains scaffold evidence."
+    echo "Wasm simd128 evidence is produced by scripts/check_simd_feature_bundles.sh as compile/test-binary evidence only."
     echo "It does not admit accelerated dispatch or replace fuzzing, Miri, unsafe inventory review, generated assembly evidence, benchmark evidence, or release notes."
 } >"$manifest"
 
