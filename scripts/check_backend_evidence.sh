@@ -53,7 +53,8 @@ cat "$prototype_output"
     echo
     echo "interpretation:"
     echo "This evidence records runtime backend reporting and inactive SIMD prototype scalar-equivalence results for this machine."
-    echo "The x86 prototypes exercise real fixed-block vector encode logic when the required CPU feature bundles are available; NEON remains scaffold evidence."
+    echo "The x86 prototypes exercise real fixed-block vector encode logic when the required CPU feature bundles are available."
+    echo "On AArch64 NEON-capable hosts, the NEON test exercises real fixed-block vector encode logic for Standard and URL-safe alphabets; 32-bit ARM remains scaffold evidence."
     echo "It does not admit accelerated dispatch or replace fuzzing, Miri, unsafe inventory review, generated assembly evidence, benchmark evidence, or release notes."
 } >"$manifest"
 

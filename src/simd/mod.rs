@@ -12,11 +12,10 @@
 //! tests, fuzz coverage, and benchmark evidence.
 //!
 //! The fixed-block prototypes below are test-only and non-dispatchable. The
-//! SSSE3/SSE4.1 prototype contains real fixed-block encode logic for Standard
-//! and URL-safe alphabets. The AVX-512, AVX2, and NEON prototypes remain
-//! scalar-equivalence scaffolding that zero the destination block before a
-//! scalar loop overwrites the output. None of these prototypes are compiled
-//! into release library builds.
+//! x86 prototypes contain real fixed-block encode logic, and the `AArch64` NEON
+//! prototype contains real fixed-block encode logic for Standard and URL-safe
+//! alphabets. The 32-bit ARM NEON path remains scalar-equivalence scaffolding.
+//! None of these prototypes are reachable from runtime backend selection.
 
 #[cfg(all(
     test,
@@ -27,7 +26,11 @@
 ))]
 use super::{Alphabet, encode_base64_value};
 #[cfg(all(test, target_arch = "aarch64"))]
-use core::arch::aarch64::{uint8x16_t, vdupq_n_u8, vst1q_u8};
+use core::arch::aarch64::{
+    uint8x16_t, uint32x4_t, vaddq_u8, vandq_u8, vandq_u32, vbslq_u8, vceqq_u8, vcgeq_u8, vcltq_u8,
+    vdupq_n_u8, vdupq_n_u32, vld1q_u8, vorrq_u32, vqtbl1q_u8, vreinterpretq_u8_u32,
+    vreinterpretq_u32_u8, vshlq_n_u32, vshrq_n_u32, vst1q_u8, vsubq_u8,
+};
 #[cfg(all(test, target_arch = "arm", target_feature = "neon"))]
 use core::arch::arm::{uint8x16_t, vdupq_n_u8, vst1q_u8};
 
@@ -161,13 +164,15 @@ fn wasm_simd128_available() -> bool {
 ///
 /// This is not an admitted fast path. It exists to exercise ARM intrinsic
 /// plumbing, unsafe isolation, and scalar equivalence before a real vector
-/// encoder is allowed to participate in dispatch. The current NEON operation
-/// only zeroes the output before a scalar fallback loop overwrites every byte.
+/// encoder is allowed to participate in dispatch. On `aarch64`, Standard and
+/// URL-safe alphabets use real NEON fixed-block logic. Other alphabets and
+/// 32-bit `arm+neon` builds use the scalar fallback scaffold.
 ///
 /// Admission note: a real NEON implementation must explicitly clear every
 /// vector register that carries caller data before returning, document the
 /// exact cleanup sequence in `docs/UNSAFE.md`, and include generated-assembly
-/// evidence. This scaffold does not load caller bytes into SIMD registers.
+/// evidence. The AArch64 prototype clears its used NEON registers before
+/// return as best-effort register-retention reduction.
 ///
 /// # Safety
 ///
@@ -187,18 +192,41 @@ unsafe fn encode_12_bytes_neon<A>(input: &[u8; 12], output: &mut [u8; 16])
 where
     A: Alphabet,
 {
-    // SAFETY: `output` is a valid 16-byte mutable array. NEON availability is
-    // guaranteed by this function's precondition. `vdupq_n_u8` constructs one
-    // NEON vector, and `vst1q_u8` writes it to the provided byte pointer.
+    #[cfg(target_arch = "aarch64")]
+    {
+        if is_standard_or_url_safe_family::<A>() {
+            // SAFETY: The caller has proven NEON availability. The helper uses
+            // fixed input/output arrays and supports this alphabet family.
+            unsafe {
+                encode_12_bytes_neon_aarch64_standard_family::<A>(input, output);
+            }
+            return;
+        }
+    }
+
+    // Temporary 32-bit ARM/custom-alphabet scaffolding.
+    #[cfg(all(test, target_arch = "arm", target_feature = "neon"))]
+    // SAFETY: `output` is a valid 16-byte mutable array and NEON availability
+    // is guaranteed by this function's precondition.
     unsafe {
         let zeros: uint8x16_t = vdupq_n_u8(0);
         vst1q_u8(output.as_mut_ptr(), zeros);
     }
 
-    // Temporary scaffolding: the NEON store above only clears the sentinel
-    // output bytes. This scalar loop performs the actual encoding and
-    // overwrites the whole block, so the current equivalence test does not
-    // prove vectorized Base64 correctness.
+    scalar_encode_block::<A>(input, output);
+}
+
+#[cfg(all(
+    test,
+    any(
+        target_arch = "aarch64",
+        all(target_arch = "arm", target_feature = "neon")
+    )
+))]
+fn scalar_encode_block<A>(input: &[u8; 12], output: &mut [u8; 16])
+where
+    A: Alphabet,
+{
     let mut read = 0;
     let mut write = 0;
     while read < input.len() {
@@ -213,6 +241,124 @@ where
 
         read += 3;
         write += 4;
+    }
+}
+
+#[cfg(all(test, target_arch = "aarch64"))]
+fn is_standard_or_url_safe_family<A>() -> bool
+where
+    A: Alphabet,
+{
+    let encode = A::ENCODE;
+    let mut index = 0;
+    while index < 62 {
+        if encode[index] != super::Standard::ENCODE[index] {
+            return false;
+        }
+        index += 1;
+    }
+
+    (encode[62] == b'+' && encode[63] == b'/') || (encode[62] == b'-' && encode[63] == b'_')
+}
+
+#[cfg(all(test, target_arch = "aarch64"))]
+#[target_feature(enable = "neon")]
+unsafe fn encode_12_bytes_neon_aarch64_standard_family<A>(input: &[u8; 12], output: &mut [u8; 16])
+where
+    A: Alphabet,
+{
+    let mut staged = [
+        input[0], input[1], input[2], 0, input[3], input[4], input[5], 0, input[6], input[7],
+        input[8], 0, input[9], input[10], input[11], 0,
+    ];
+    let shuffle_mask = [2, 1, 0, 255, 5, 4, 3, 255, 8, 7, 6, 255, 11, 10, 9, 255];
+
+    // SAFETY: Fixed arrays back every unaligned 128-bit load/store, the
+    // target-feature contract enables NEON, shuffle zero lanes read only
+    // staged zeros, and indices are masked to `0..=63`.
+    unsafe {
+        let input_vec = vld1q_u8(staged.as_ptr());
+        let shuffle = vld1q_u8(shuffle_mask.as_ptr());
+        let lanes = vqtbl1q_u8(input_vec, shuffle);
+        let lane_words: uint32x4_t = vreinterpretq_u32_u8(lanes);
+
+        let index0 = vandq_u32(vshrq_n_u32(lane_words, 18), vdupq_n_u32(0x0000_003f));
+        let index1 = vandq_u32(vshrq_n_u32(lane_words, 4), vdupq_n_u32(0x0000_3f00));
+        let index2 = vandq_u32(vshlq_n_u32(lane_words, 10), vdupq_n_u32(0x003f_0000));
+        let index3 = vandq_u32(vshlq_n_u32(lane_words, 24), vdupq_n_u32(0x3f00_0000));
+        let indices = vreinterpretq_u8_u32(vorrq_u32(
+            vorrq_u32(index0, index1),
+            vorrq_u32(index2, index3),
+        ));
+
+        let encoded = encode_standard_family_indices_neon::<A>(indices);
+        vst1q_u8(output.as_mut_ptr(), encoded);
+        clear_neon_registers_for_test_prototype();
+    }
+    crate::wipe_bytes(&mut staged);
+}
+
+#[cfg(all(test, target_arch = "aarch64"))]
+#[target_feature(enable = "neon")]
+unsafe fn encode_standard_family_indices_neon<A>(indices: uint8x16_t) -> uint8x16_t
+where
+    A: Alphabet,
+{
+    let upper = vcltq_u8(indices, vdupq_n_u8(26));
+    let lower = vandq_u8(
+        vcgeq_u8(indices, vdupq_n_u8(26)),
+        vcltq_u8(indices, vdupq_n_u8(52)),
+    );
+    let digit = vandq_u8(
+        vcgeq_u8(indices, vdupq_n_u8(52)),
+        vcltq_u8(indices, vdupq_n_u8(62)),
+    );
+    let plus = vceqq_u8(indices, vdupq_n_u8(62));
+    let slash = vceqq_u8(indices, vdupq_n_u8(63));
+    let plus_char = A::ENCODE[62];
+    let slash_char = A::ENCODE[63];
+
+    let mut encoded = vdupq_n_u8(0);
+    encoded = vbslq_u8(upper, vaddq_u8(indices, vdupq_n_u8(b'A')), encoded);
+    encoded = vbslq_u8(
+        lower,
+        vaddq_u8(vsubq_u8(indices, vdupq_n_u8(26)), vdupq_n_u8(b'a')),
+        encoded,
+    );
+    encoded = vbslq_u8(
+        digit,
+        vaddq_u8(vsubq_u8(indices, vdupq_n_u8(52)), vdupq_n_u8(b'0')),
+        encoded,
+    );
+    encoded = vbslq_u8(plus, vdupq_n_u8(plus_char), encoded);
+    vbslq_u8(slash, vdupq_n_u8(slash_char), encoded)
+}
+
+#[cfg(all(test, target_arch = "aarch64"))]
+unsafe fn clear_neon_registers_for_test_prototype() {
+    // SAFETY: This test-only cleanup runs after the prototype stores its
+    // output. The explicit outputs tell the compiler these vector registers are
+    // clobbered while the assembly clears them.
+    unsafe {
+        core::arch::asm!(
+            "eor v0.16b, v0.16b, v0.16b",
+            "eor v1.16b, v1.16b, v1.16b",
+            "eor v2.16b, v2.16b, v2.16b",
+            "eor v3.16b, v3.16b, v3.16b",
+            "eor v4.16b, v4.16b, v4.16b",
+            "eor v5.16b, v5.16b, v5.16b",
+            "eor v6.16b, v6.16b, v6.16b",
+            "eor v7.16b, v7.16b, v7.16b",
+            out("v0") _,
+            out("v1") _,
+            out("v2") _,
+            out("v3") _,
+            out("v4") _,
+            out("v5") _,
+            out("v6") _,
+            out("v7") _,
+            options(nostack, preserves_flags)
+        );
     }
 }
 

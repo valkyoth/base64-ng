@@ -713,8 +713,10 @@ Purpose:
 
 - Exercise ARM NEON intrinsic plumbing.
 - Validate the unsafe boundary on ARM targets.
-- Provide scalar-equivalence scaffolding before any real vector path is
-  admitted. Current tests do not prove vectorized Base64 correctness.
+- Provide real AArch64 fixed-block vector encode evidence for Standard and
+  URL-safe alphabets before any runtime dispatch is admitted.
+- Keep 32-bit `arm+neon` and custom alphabets on scalar-equivalence scaffold
+  paths until their architecture-specific evidence is complete.
 
 Preconditions:
 
@@ -726,8 +728,12 @@ Preconditions:
 
 Unsafe operations:
 
-- `vdupq_n_u8` constructs one 128-bit NEON vector.
-- `vst1q_u8` stores that vector into the output buffer.
+- On `aarch64` with Standard or URL-safe alphabets, this wrapper calls
+  `encode_12_bytes_neon_aarch64_standard_family`.
+- On 32-bit `arm+neon`, `vdupq_n_u8` constructs one 128-bit NEON zero vector
+  and `vst1q_u8` stores that vector into the output buffer before the scalar
+  fallback overwrites the block.
+- Custom alphabets use the scalar fallback path.
 
 Safety argument:
 
@@ -736,13 +742,123 @@ Safety argument:
 - The function is compiled only for `aarch64` or `arm` builds with the `neon`
   target feature.
 - The function's safety contract requires runtime NEON availability.
-- The prototype then overwrites the block with scalar-equivalent Base64 output.
-  The NEON zeroing is semantically overwritten and is not an implementation of
-  vectorized Base64.
-- Register-retention note: this prototype does not load caller bytes into SIMD
-  registers. Any future NEON implementation that does so must document and
-  implement explicit cleanup for every secret-bearing V/Q register before
-  return.
+- The AArch64 vector path remains test-only and non-dispatchable. Runtime
+  acceleration is still blocked by the SIMD admission manifest.
+- Register-retention note: the AArch64 vector path loads caller bytes into NEON
+  state and calls `clear_neon_registers_for_test_prototype` before return. This
+  is retention reduction for the inactive prototype, not a formal
+  microarchitectural side-channel proof.
+
+### `encode_12_bytes_neon_aarch64_standard_family`
+
+Location: `src/simd/mod.rs`
+
+Status: private helper for the inactive AArch64 NEON test-only prototype, not
+dispatchable and not reachable from runtime backend selection.
+
+Purpose:
+
+- Encode one 12-byte fixed block to 16 Base64 bytes using AArch64 NEON for
+  Standard and URL-safe alphabets.
+
+Preconditions:
+
+- Caller must prove NEON is available on the current CPU.
+- Input is exactly 12 bytes.
+- Output is exactly 16 bytes.
+- The alphabet must be Standard-family as checked by the caller.
+
+Unsafe operation:
+
+- `vld1q_u8` loads from a local 16-byte staging array that contains the 12-byte
+  input plus four zero bytes.
+- `vld1q_u8` loads a fixed shuffle mask.
+- `vqtbl1q_u8` reshapes staged bytes into four 24-bit lanes without reading
+  past the fixed staging array.
+- NEON shifts, masks, and OR operations produce sixteen 6-bit indices.
+- `encode_standard_family_indices_neon` maps those indices to Standard or
+  URL-safe alphabet bytes with NEON comparisons and bit selects.
+- `vst1q_u8` stores the 16 encoded bytes into the output buffer.
+- `clear_neon_registers_for_test_prototype` clears used AArch64 NEON registers
+  before return.
+- The local staging array is wiped with the crate cleanup primitive before the
+  function returns.
+
+Safety argument:
+
+- The input and output array types provide fixed readable and writable bounds.
+- The SIMD load reads only from a local 16-byte staging array, so the prototype
+  does not over-read the 12-byte caller input.
+- The staging array is mutable and wiped after the SIMD store and register
+  cleanup, reducing stack retention of the copied caller bytes in this inactive
+  prototype.
+- The function is guarded by a NEON target-feature contract.
+- The index vector is masked to `0..=63` before alphabet mapping.
+- The output length is fixed by the output array type.
+- The prototype remains test-only and non-dispatchable.
+
+### `encode_standard_family_indices_neon`
+
+Location: `src/simd/mod.rs`
+
+Status: private helper for the inactive AArch64 NEON test-only prototype, not
+dispatchable and not reachable from runtime backend selection.
+
+Purpose:
+
+- Map sixteen 6-bit indices to Standard or URL-safe alphabet bytes with NEON
+  comparisons and bit selects instead of scalar per-byte table indexing.
+
+Preconditions:
+
+- Caller must prove NEON is available on the current CPU.
+- `indices` contains only byte values in `0..=63`.
+- The alphabet must be Standard-family as checked by the caller.
+
+Unsafe operation:
+
+- NEON byte comparisons, arithmetic, and bit-select operations compute the
+  ASCII output byte for each index.
+
+Safety argument:
+
+- The helper does not dereference raw pointers or access memory.
+- The target-feature contract enables the required NEON instructions.
+- The caller constructs `indices` with masks that constrain every byte to a
+  six-bit Base64 value.
+- The helper is private to the test-only prototype path.
+
+### `clear_neon_registers_for_test_prototype`
+
+Location: `src/simd/mod.rs`
+
+Status: private helper for inactive AArch64 NEON test-only prototypes, not
+dispatchable and not reachable from runtime backend selection.
+
+Purpose:
+
+- Clear AArch64 NEON registers used by the prototype before returning from the
+  path that processes caller bytes in vector registers.
+
+Preconditions:
+
+- Called only after the prototype has stored its output and no later NEON value
+  is needed by the function.
+
+Unsafe operation:
+
+- Inline assembly zeros `v0` through `v7` and declares those registers as
+  clobbered outputs.
+
+Safety argument:
+
+- The helper does not read or write memory.
+- The helper runs at the end of the inactive prototype path.
+- Clobbered registers are declared to the compiler with explicit `out("vN")`
+  operands.
+- This is best-effort register-retention reduction for test evidence, not a
+  guarantee that historical register, stack, cache, or microarchitectural
+  copies do not exist.
 
 ## Admission Rule
 

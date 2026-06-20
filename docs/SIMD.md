@@ -88,12 +88,12 @@ runtime behavior for that line.
   byte blending for fixed 24-byte input blocks, then clears XMM/YMM state
   before returning. It is tested against scalar output only when AVX2 is
   available and is not reachable from runtime backend selection.
-- An inactive NEON fixed-block encode prototype exists behind the same boundary
-  as test-only scaffolding and is tested against scalar output only on
-  NEON-capable ARM targets. It currently zeroes the destination with SIMD and
-  then overwrites the block with scalar encoding; this is scaffolding, not
-  vectorized Base64 correctness evidence, and it is not reachable from runtime
-  backend selection.
+- An inactive AArch64 NEON fixed-block encode prototype exists behind the same
+  boundary as real non-dispatchable vector encode evidence for Standard and
+  URL-safe alphabets. It uses NEON table lookup, vector shifts/masks, and
+  byte-select alphabet mapping for fixed 12-byte input blocks, then clears used
+  NEON registers before returning. Custom alphabets and 32-bit `arm+neon`
+  remain scalar scaffold paths. Runtime backend selection remains scalar-only.
 - wasm `simd128` detection is reporting-only when `wasm32` is compiled with
   `target-feature=+simd128`; no wasm accelerated backend is active.
 - `runtime::backend_report()` reports the active backend, detected candidate,
@@ -173,8 +173,9 @@ This prints the runtime backend-report test and runs the gated SIMD prototype
 scalar-equivalence tests with `--nocapture`, so local CPU evidence is easy to
 copy into release notes or issue discussion. On x86/x86_64 hosts with the
 required feature bundles, the x86 tests exercise the inactive fixed-block
-vector encode prototypes against scalar output. NEON remains scaffold evidence.
-The script also writes
+vector encode prototypes against scalar output. On AArch64 NEON-capable hosts,
+the NEON test exercises the inactive fixed-block vector prototype for Standard
+and URL-safe alphabets; 32-bit ARM remains scaffold evidence. The script also writes
 `target/release-evidence/backend/MANIFEST.txt` with toolchain metadata,
 commands, status values, and artifact checksums.
 

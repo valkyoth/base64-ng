@@ -278,8 +278,9 @@ runtime CPU probing from compile-time target-feature reporting used by
 SSSE3/SSE4.1, AVX2, or the AVX-512 candidate bundle, those prototype tests
 execute the inactive prototype body and compare it against scalar output. The
 x86 prototypes exercise real fixed-block vector encode logic when the required
-CPU feature bundles are available; NEON remains scaffold evidence. The script
-writes
+CPU feature bundles are available. On AArch64 NEON-capable hosts, the NEON test
+exercises the inactive fixed-block vector prototype for Standard and URL-safe
+alphabets; 32-bit ARM remains scaffold evidence. The script writes
 `target/release-evidence/backend/MANIFEST.txt`, `runtime-backend-report.txt`,
 and `simd-prototype-equivalence.txt` so local CPU evidence can be archived.
 

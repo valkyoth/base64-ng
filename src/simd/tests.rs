@@ -1,12 +1,12 @@
 use super::*;
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+#[cfg(any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64"))]
 use crate::{Alphabet, decode_alphabet_byte};
 use crate::{Engine, Standard, UrlSafe};
 
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+#[cfg(any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64"))]
 struct AnchorMatchingCustom;
 
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+#[cfg(any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64"))]
 impl Alphabet for AnchorMatchingCustom {
     const ENCODE: [u8; 64] = *b"ACBDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
@@ -22,7 +22,7 @@ fn fill_pattern(output: &mut [u8], seed: usize) {
     }
 }
 
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+#[cfg(any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64"))]
 fn fill_indices_pattern(output: &mut [u8; 12], seed: u8) {
     let mut write = 0;
     for group in 0..4 {
@@ -367,4 +367,48 @@ fn neon_encode_prototype_matches_scalar_when_available() {
         assert_eq!(scalar_len, neon_url_safe.len());
         assert_eq!(neon_url_safe, scalar_url_safe);
     }
+
+    for seed in 0..64 {
+        fill_indices_pattern(&mut input, seed);
+
+        let mut neon_standard = [0x55; 16];
+        let mut scalar_standard = [0xaa; 16];
+        // SAFETY: The candidate check above proves NEON availability for
+        // this test invocation.
+        unsafe {
+            encode_12_bytes_neon::<Standard>(&input, &mut neon_standard);
+        }
+        let scalar_len = Engine::<Standard, true>::new()
+            .encode_slice(&input, &mut scalar_standard)
+            .unwrap();
+        assert_eq!(scalar_len, neon_standard.len());
+        assert_eq!(neon_standard, scalar_standard);
+
+        let mut neon_url_safe = [0x55; 16];
+        let mut scalar_url_safe = [0xaa; 16];
+        // SAFETY: The candidate check above proves NEON availability for
+        // this test invocation.
+        unsafe {
+            encode_12_bytes_neon::<UrlSafe>(&input, &mut neon_url_safe);
+        }
+        let scalar_len = Engine::<UrlSafe, true>::new()
+            .encode_slice(&input, &mut scalar_url_safe)
+            .unwrap();
+        assert_eq!(scalar_len, neon_url_safe.len());
+        assert_eq!(neon_url_safe, scalar_url_safe);
+    }
+
+    fill_indices_pattern(&mut input, 0);
+    let mut neon_custom = [0x55; 16];
+    let mut scalar_custom = [0xaa; 16];
+    // SAFETY: The candidate check above proves NEON availability for this
+    // test invocation.
+    unsafe {
+        encode_12_bytes_neon::<AnchorMatchingCustom>(&input, &mut neon_custom);
+    }
+    let scalar_len = Engine::<AnchorMatchingCustom, true>::new()
+        .encode_slice(&input, &mut scalar_custom)
+        .unwrap();
+    assert_eq!(scalar_len, neon_custom.len());
+    assert_eq!(neon_custom, scalar_custom);
 }

@@ -10,14 +10,19 @@
 - Added `scripts/generate_simd_asm_evidence.sh` to capture release
   test-harness assembly for inactive SSSE3/SSE4.1, AVX2, and AVX-512 VBMI
   encode prototypes.
+- Added a real non-dispatchable AArch64 NEON fixed-block encode prototype for
+  Standard and URL-safe alphabets. Custom alphabets and 32-bit `arm+neon`
+  remain on scalar scaffold paths.
+- Added NEON equivalence coverage for patterned blocks, all 64 emitted six-bit
+  Base64 values, and custom alphabet fallback.
 - Added a real non-dispatchable AVX2 fixed-block encode prototype for Standard
   and URL-safe alphabets. The prototype remains test-only and active runtime
   backend selection remains scalar-only.
 - Added AVX2 SIMD equivalence coverage for patterned blocks, all 64 emitted
   six-bit Base64 values, and custom alphabets that must fall back to scalar
   encoding.
-- Updated the SIMD unsafe inventory for the AVX-512 and AVX2 prototypes,
-  including staged stack-copy wiping and vector-register cleanup.
+- Updated the SIMD unsafe inventory for the AVX-512, AVX2, and AArch64 NEON
+  prototypes, including staged stack-copy wiping and vector-register cleanup.
 
 ## 1.1.0 - 2026-06-20
 
