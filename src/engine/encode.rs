@@ -114,9 +114,9 @@ where
     /// the unwrapped encoded form in the tail of `output` before copying the
     /// wrapped representation to the front and wiping the staging range. For
     /// secret-bearing payloads where a same-process observer must not see
-    /// transient encoded material in caller-owned output, prefer
-    /// [`Self::encode_wrapped_secret`] or manage a private staging buffer at
-    /// the application boundary.
+    /// transient encoded material in caller-owned output, prefer the
+    /// alloc-gated `encode_wrapped_secret` helper or manage a private staging
+    /// buffer at the application boundary.
     ///
     /// # Examples
     ///

@@ -41,7 +41,11 @@ case "$cargo_version" in
     *)
         require_text README.md "The current public release is \`$cargo_version\`."
         require_text README.md "base64-ng = \"$cargo_version\""
-        require_text docs/SIMD_ADMISSION.md "Release status: \`$cargo_version\`"
+        if [ "$cargo_version" = "1.1.0" ]; then
+            require_text docs/SIMD_ADMISSION.md "Release status: \`1.1.x\`"
+        else
+            require_text docs/SIMD_ADMISSION.md "Release status: \`$cargo_version\`"
+        fi
         reject_text README.md "-alpha"
         reject_text docs/SIMD.md "-alpha"
         reject_text docs/SIMD_ADMISSION.md "-alpha"
