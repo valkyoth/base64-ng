@@ -17,22 +17,29 @@ weakening the scalar trust base.
 
 The SIMD roadmap separates implementation evidence from active acceleration:
 
-- `1.1.x` is the SIMD foundation series. It may contain real fixed-block x86
-  encode prototypes, scalar-equivalence tests, generated assembly evidence,
-  register-cleanup review, fuzz expansion, and admission-tooling updates.
-  These releases must remain non-dispatchable: `active_backend()` stays scalar,
-  and release notes must not claim user-visible acceleration.
-- `1.2.0` is the first release that may activate acceleration. It may admit
-  std-only runtime dispatch for encode paths only if the SSSE3/SSE4.1 and AVX2
-  evidence packages are complete in the same release.
-- Later releases may evaluate AVX-512 VBMI, NEON, wasm `simd128`, and SIMD
-  decode. Decode remains later because invalid-input handling, canonicality,
-  padding, output retention, and timing behavior make it higher risk than
-  encode.
+- `1.1.x` is the SIMD encode foundation series. It may contain real
+  fixed-block encode prototypes for SSSE3/SSE4.1, AVX2, AVX-512 VBMI, NEON,
+  and wasm `simd128`, plus scalar-equivalence tests, generated assembly
+  evidence, register-cleanup review, fuzz expansion, and admission-tooling
+  updates. These releases must remain non-dispatchable: `active_backend()`
+  stays scalar, and release notes must not claim user-visible acceleration.
+- `1.2.0` is the first release that may activate encode acceleration. It may
+  admit std-only runtime dispatch for the encode backends whose evidence is
+  complete in that release. Backends without complete evidence remain
+  candidate-only.
+- After `1.2.0`, pause feature work for a short soak period so users can report
+  platform-specific encode regressions before decode acceleration work starts.
+- `1.2.x` is the SIMD decode foundation series. Decode prototypes remain
+  non-dispatchable while invalid-input handling, canonicality, padding, output
+  retention, error behavior, fuzz coverage, and timing-oriented evidence are
+  proven against scalar behavior.
+- `1.3.0` is the first release that may activate SIMD decode acceleration if
+  the `1.2.x` decode evidence line is complete and the encode acceleration line
+  has remained stable.
 
-Patch releases in the `1.1.x` series may be small by design. Each patch should
-move one evidence boundary forward without changing the active scalar runtime
-behavior.
+Patch releases in the `1.1.x` and `1.2.x` series may be small by design. Each
+patch should move one evidence boundary forward without changing the active
+runtime behavior for that line.
 
 ## Current Status
 

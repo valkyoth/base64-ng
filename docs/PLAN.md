@@ -633,9 +633,14 @@ Recommended `1.0.x` source-layout sequence:
   stable API and report issues before any `1.1` SIMD-admission work starts.
 
 The recommended post-`1.0` SIMD path is incremental. Minor versions should
-mean something visible to users: `1.1.x` is the non-accelerated SIMD evidence
-series, and `1.2.0` is the first release that may activate acceleration if the
-evidence is complete.
+mean something visible to users: `1.1.x` is the non-accelerated SIMD encode
+evidence series, `1.2.0` is the first release that may activate encode
+acceleration if the evidence is complete, `1.2.x` is the non-accelerated SIMD
+decode evidence series, and `1.3.0` is the first release that may activate both
+encode and decode acceleration if the decode evidence is complete. After each
+active-acceleration minor release, pause feature work for a short soak period
+so users can report platform-specific regressions before the next acceleration
+line begins.
 
 - Remaining `1.0.x`: maintenance-only fixes if users report real issues during
   the pause window. Keep the current Kani proof gate running, refresh
@@ -667,32 +672,55 @@ evidence is complete.
   against scalar output where the host supports the required CPU features, and
   the release evidence should record skipped-backend reasons on unsupported
   hardware.
-- `1.1.5`: harden the SIMD admission tooling. Teach
+- `1.1.5`: add an inactive AVX-512 VBMI fixed-block encode prototype if the
+  x86 baseline evidence remains clean. AVX-512 may use direct 64-byte alphabet
+  lookup where it is safer and clearer than SSSE3/AVX2 range arithmetic, but it
+  must include explicit ZMM/YMM/XMM register-retention cleanup evidence and
+  generated-code review before any future dispatch is considered.
+- `1.1.6`: add AVX-512 evidence expansion: scalar differential tests,
+  generated assembly capture, benchmark harness output labeled as inactive
+  prototype evidence, and CPU-feature skip reporting on machines without the
+  full `avx512f`, `avx512bw`, `avx512vl`, and `avx512vbmi` bundle.
+- `1.1.7`: add inactive NEON fixed-block encode logic for Standard and
+  URL-safe alphabets. Keep it non-dispatchable and platform-evidence gated.
+  AArch64 and ARM differ in availability assumptions, so the release evidence
+  must record target triples, CPU details, and whether NEON availability is
+  architectural or target-feature asserted.
+- `1.1.8`: add inactive wasm `simd128` encode logic only if the wasm wipe and
+  JIT caveats remain clearly documented. Wasm evidence must include generated
+  wasm/codegen review and must not make runtime/JIT timing or register-cleanup
+  claims the crate cannot prove.
+- `1.1.9`: harden the SIMD admission tooling. Teach
   `scripts/validate-simd-admission.sh` and backend evidence scripts the
   difference between "real but non-dispatchable prototype" and "admitted active
   backend" so the gate still forbids acceleration while accepting the richer
   evidence package.
-- `1.1.6`: prepare the active-dispatch admission package without enabling it.
+- `1.1.10`: prepare the encode active-dispatch admission package without
+  enabling it.
   Update draft docs, benchmark templates, runtime-report expectations, and
   release-note wording. `active_backend()` must still return scalar at the end
   of this release.
 - `1.2.0`: consider std-only runtime dispatch for admitted encode paths if and
-  only if SSSE3/SSE4.1 and AVX2 evidence is complete. `active_backend()` may
-  gain admitted x86 encode backends only when the admission manifest, release
+  only if the relevant encode evidence is complete. It is acceptable to admit a
+  subset of encode backends, but the release notes must name exactly which
+  backends are active and which remain candidate-only. `active_backend()` may
+  gain admitted encode backends only when the admission manifest, release
   notes, benchmark evidence, unsafe inventory, generated assembly evidence,
   fallback tests, and backend policy tests are updated in the same release.
   `no_std` builds remain scalar unless a later unsafe caller-contract API is
-  designed and reviewed.
-- Later: evaluate AVX-512 VBMI encode, where direct 64-byte alphabet lookup may
-  support generic alphabets more naturally than SSSE3/AVX2 arithmetic mapping.
-  Do not admit AVX-512 dispatch without explicit ZMM/YMM/XMM register cleanup
-  evidence and generated-code review.
-- Later: evaluate NEON and wasm `simd128` encode only with platform-specific
-  evidence. Wasm remains especially sensitive because runtime/JIT behavior is
-  outside Rust's normal optimizer boundary.
-- Later: evaluate SIMD decode only after encode is admitted and stable. Decode
-  has higher security risk because it combines invalid-input handling,
-  canonicality, padding, output retention, and timing behavior.
+  designed and reviewed. After `1.2.0`, pause feature work for roughly two
+  weeks before starting SIMD decode work.
+- `1.2.x`: build SIMD decode prototypes as a separate non-accelerated line.
+  Start with strict Standard and URL-safe decode only. Keep prototypes
+  non-dispatchable while proving invalid-byte handling, canonical trailing-bit
+  rejection, padding behavior, output-retention cleanup, error-shape
+  compatibility where promised, scalar differential tests, fuzz coverage, and
+  timing-oriented evidence.
+- `1.3.0`: consider active SIMD decode dispatch only if the `1.2.x` decode
+  evidence line is complete and the `1.2.0` encode acceleration line has had a
+  clean soak period. If admitted, release notes must distinguish encode
+  backends from decode backends and keep `HighAssuranceScalarOnly` available
+  for deployments that prefer scalar execution.
 
 SIMD admission rules for all post-`1.0` work:
 
