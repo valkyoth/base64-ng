@@ -63,6 +63,10 @@ def base_packages() -> dict[str, dict]:
         {"name": "base64-ng"},
         {"name": "bytes"},
     ]
+    packages["base64-ng-subtle"]["dependencies"] = [
+        {"name": "base64-ng"},
+        {"name": "subtle"},
+    ]
     packages["base64-ng-tokio"]["dependencies"] = [
         {"name": "base64-ng"},
         {"name": "tokio"},

@@ -14,6 +14,7 @@ sets.
 | `base64-ng-derive` | `1.0.9` | no | <https://crates.io/crates/base64-ng-derive> |
 | `base64-ng-serde` | `1.0.10` | no | <https://crates.io/crates/base64-ng-serde> |
 | `base64-ng-bytes` | `1.0.9` | no | <https://crates.io/crates/base64-ng-bytes> |
+| `base64-ng-subtle` | `1.1.0` | yes | <https://crates.io/crates/base64-ng-subtle> |
 | `base64-ng-tokio` | `1.0.9` | no | <https://crates.io/crates/base64-ng-tokio> |
 
 ## Release Policy

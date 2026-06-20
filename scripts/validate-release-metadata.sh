@@ -245,8 +245,9 @@ for required_dependency_review_text in \
     "base64-ng-derive\` is admitted as a companion crate" \
     "base64-ng-serde\` is admitted as a companion crate" \
     "base64-ng-bytes\` is admitted as a companion crate" \
+    "base64-ng-subtle\` is admitted as a companion crate" \
     "base64-ng-tokio\` is admitted as a companion crate" \
-    "zeroize\` and \`subtle\` remain deferred"
+    "\`subtle\` is admitted only through \`base64-ng-subtle\`"
 do
     if ! grep -F -q "$required_dependency_review_text" docs/DEPENDENCIES.md; then
         echo "release metadata: dependency policy is missing required review text: $required_dependency_review_text" >&2

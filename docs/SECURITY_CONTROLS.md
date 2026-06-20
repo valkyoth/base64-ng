@@ -98,8 +98,11 @@ certification claim.
   drop-time cleanup by default.
 - Keep dependency review split by package. The core `base64-ng` crate has zero
   runtime dependencies; optional companion crates such as `base64-ng-serde`,
-  `base64-ng-bytes`, and `base64-ng-tokio` intentionally admit ecosystem
-  dependencies and should be reviewed at the integration layer.
+  `base64-ng-bytes`, `base64-ng-subtle`, and `base64-ng-tokio` intentionally
+  admit ecosystem dependencies and should be reviewed at the integration layer.
+- Use the optional `base64-ng-subtle` companion crate when protocol boundaries
+  require a reviewed `subtle::ConstantTimeEq` comparison primitive instead of
+  the dependency-free best-effort comparison helpers in the core crate.
 - Set protocol-level maximum input sizes before allocation helpers or CT decode
   are reachable from untrusted traffic. Prefer caller-owned buffers, fixed-size
   `decode_buffer::<MAX>()` patterns, or streaming adapters for bounded services.

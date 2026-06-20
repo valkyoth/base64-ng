@@ -5,6 +5,7 @@ manifest="crates/base64-ng-sanitization/Cargo.toml"
 derive_manifest="crates/base64-ng-derive/Cargo.toml"
 serde_manifest="crates/base64-ng-serde/Cargo.toml"
 bytes_manifest="crates/base64-ng-bytes/Cargo.toml"
+subtle_manifest="crates/base64-ng-subtle/Cargo.toml"
 tokio_manifest="crates/base64-ng-tokio/Cargo.toml"
 
 echo "companion crates: base64-ng-sanitization no-default-features"
@@ -60,6 +61,21 @@ cargo doc --manifest-path "$bytes_manifest" --no-deps --all-features
 
 echo "companion crates: base64-ng-bytes dependency policy"
 cargo deny --manifest-path "$bytes_manifest" check --config deny.toml
+
+echo "companion crates: base64-ng-subtle no-default-features"
+cargo test --manifest-path "$subtle_manifest" --no-default-features
+
+echo "companion crates: base64-ng-subtle all-features"
+cargo test --manifest-path "$subtle_manifest" --all-features
+
+echo "companion crates: base64-ng-subtle clippy"
+cargo clippy --manifest-path "$subtle_manifest" --all-targets --all-features -- -D warnings
+
+echo "companion crates: base64-ng-subtle docs"
+cargo doc --manifest-path "$subtle_manifest" --no-deps --all-features
+
+echo "companion crates: base64-ng-subtle dependency policy"
+cargo deny --manifest-path "$subtle_manifest" check --config deny.toml
 
 echo "companion crates: base64-ng-tokio test"
 cargo test --manifest-path "$tokio_manifest" --all-features

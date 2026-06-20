@@ -74,4 +74,6 @@ Those features remain admission-gated until their evidence is strong enough for
 security-sensitive users.
 
 Optional companion crates may integrate with approved ecosystem dependencies,
-but they do not change the core `base64-ng` package dependency contract.
+but they do not change the core `base64-ng` package dependency contract. Use
+`base64-ng-subtle` when an application wants `subtle::ConstantTimeEq` at the
+protocol comparison boundary without adding `subtle` to the core crate.

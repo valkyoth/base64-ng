@@ -240,7 +240,7 @@ matches the `v<version>` tag, runs the standard local gate and
 `cargo publish --dry-run` for each selected crate, publishes `base64-ng` first,
 waits for crates.io visibility, and then publishes dependent companion crates
 such as `base64-ng-sanitization` and `base64-ng-derive`, `base64-ng-serde`,
-`base64-ng-bytes`, and `base64-ng-tokio`.
+`base64-ng-bytes`, `base64-ng-subtle`, and `base64-ng-tokio`.
 
 The publish helper intentionally does not rerun Kani by default. Kani belongs
 to the pre-tag stable release gate so a verifier failure does not happen after
@@ -269,6 +269,9 @@ cargo publish -p base64-ng-serde
 cargo package -p base64-ng-bytes
 cargo publish -p base64-ng-bytes --dry-run
 cargo publish -p base64-ng-bytes
+cargo package -p base64-ng-subtle
+cargo publish -p base64-ng-subtle --dry-run
+cargo publish -p base64-ng-subtle
 cargo package -p base64-ng-tokio
 cargo publish -p base64-ng-tokio --dry-run
 cargo publish -p base64-ng-tokio

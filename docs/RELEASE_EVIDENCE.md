@@ -464,6 +464,9 @@ cargo publish -p base64-ng-serde
 cargo package -p base64-ng-bytes
 cargo publish -p base64-ng-bytes --dry-run
 cargo publish -p base64-ng-bytes
+cargo package -p base64-ng-subtle
+cargo publish -p base64-ng-subtle --dry-run
+cargo publish -p base64-ng-subtle
 cargo package -p base64-ng-tokio
 cargo publish -p base64-ng-tokio --dry-run
 cargo publish -p base64-ng-tokio

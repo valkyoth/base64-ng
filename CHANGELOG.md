@@ -31,6 +31,9 @@
 - Wiped the small unpadded in-place decode tail buffer before return, expanded
   test-only AArch64 NEON prototype cleanup to all vector registers, and
   documented the wrapped slice encoder's temporary in-buffer staging behavior.
+- Added `base64-ng-subtle` as an optional companion crate for projects that
+  already admit `subtle` and want reviewed `ConstantTimeEq` comparisons for
+  `base64-ng` buffers.
 - Added a real non-dispatchable AVX2 fixed-block encode prototype for Standard
   and URL-safe alphabets. The prototype remains test-only and active runtime
   backend selection remains scalar-only.

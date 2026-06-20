@@ -37,6 +37,13 @@ change = "unchanged"
 publish = false
 reason = "No code changes for the 1.1.0 core SIMD foundation release."
 
+[crates."base64-ng-subtle"]
+previous_version = "0.0.0"
+version = "1.1.0"
+change = "code"
+publish = true
+reason = "Adds an optional subtle::ConstantTimeEq companion crate for projects that admit subtle."
+
 [crates."base64-ng-tokio"]
 previous_version = "1.0.9"
 version = "1.0.9"

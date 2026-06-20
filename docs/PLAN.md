@@ -624,6 +624,10 @@ Recommended `1.0.x` source-layout sequence:
   wipe path without emitting unsafe code into downstream crates. Add
   `base64-ng-serde`, `base64-ng-bytes`, and `base64-ng-tokio` as explicit
   opt-in ecosystem companion crates. Keep the core crate dependency-free.
+- `1.1.x`: add `base64-ng-subtle` as an explicit companion crate for
+  applications that already admit `subtle` and want reviewed
+  `ConstantTimeEq` comparison helpers without adding `subtle` to the core
+  crate.
 - `1.0.10`: source-layout maintenance release. Split oversized production
   modules into focused internal files, move Kani proofs and unit tests out of
   the root module, and add a 500-line production-source budget guard to the

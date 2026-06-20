@@ -32,9 +32,10 @@ new dependency expands the audit, license, advisory, and supply-chain surface.
 - `base64-ng-derive` is an optional companion package for fixed-size byte
   newtypes. It is dependency-free and does not add proc-macro machinery to the
   core `base64-ng` package.
-- `base64-ng-serde`, `base64-ng-bytes`, and `base64-ng-tokio` are optional
-  companion packages for applications that already admit `serde`, `bytes`, or
-  `tokio`; they are not dependencies of the core `base64-ng` package.
+- `base64-ng-serde`, `base64-ng-bytes`, `base64-ng-subtle`, and
+  `base64-ng-tokio` are optional companion packages for applications that
+  already admit `serde`, `bytes`, `subtle`, or `tokio`; they are not
+  dependencies of the core `base64-ng` package.
 - Fuzz, performance, and dudect-style timing harness dependencies are isolated
   under `fuzz/`, `perf/`, and `dudect/`; the standard local gate checks them
   separately from the published crate dependency graph.
@@ -64,15 +65,21 @@ Current decisions:
 - `base64-ng-bytes` is admitted as a companion crate because services that
   already use `bytes` can opt into `Bytes`, `Buf`, and `BufMut` helpers without
   adding `bytes` to the core package.
+- `base64-ng-subtle` is admitted as a companion crate because authentication,
+  MAC, password-hash, and token verification boundaries can opt into a reviewed
+  `subtle::ConstantTimeEq` primitive without adding `subtle` to the core
+  package.
 - `base64-ng-tokio` is admitted as a companion crate for bounded async
   read-all/write-all helpers. Full streaming state machines remain deferred
   until cancellation-safety and drop-cleanup evidence is complete.
 - The core `tokio` feature remains reserved and inert until async
   cancellation, drop cleanup, chunk-boundary, dependency, and release-evidence
   requirements are satisfied.
-- `zeroize` and `subtle` remain deferred; applications can combine their own
-  approved dependencies with caller-owned buffers while `base64-ng` keeps its
-  audited local best-effort helpers dependency-free.
+- `zeroize` remains deferred for the core crate; applications can combine their
+  own approved dependencies with caller-owned buffers while `base64-ng` keeps
+  its audited local best-effort helpers dependency-free.
+- `subtle` is admitted only through `base64-ng-subtle`, not through the core
+  crate.
 - Property-testing and benchmark frameworks remain isolated or deferred; fuzz,
   dudect-style timing, and performance harnesses stay outside the published
   crate package.
@@ -131,9 +138,11 @@ core crate today:
   needed. The core crate does not admit `serde`.
 - `bytes`: use `base64-ng-bytes` when `Bytes`, `Buf`, or `BufMut` integration
   is needed. The core crate does not admit `bytes`.
-- `zeroize` or `subtle`: deferred unless a review proves that the dependency
-  materially improves the documented best-effort cleanup or
-  constant-time-oriented posture beyond the current audited local helpers.
+- `zeroize`: deferred unless a review proves that the dependency materially
+  improves the documented best-effort cleanup posture beyond the current
+  audited local helpers.
+- `subtle`: use `base64-ng-subtle` when protocol code needs a reviewed
+  constant-time equality primitive for decoded or encoded buffers.
 - Criterion or other benchmark frameworks: keep benchmark evidence isolated
   unless the added dependency graph clearly improves release evidence quality.
 
@@ -160,10 +169,10 @@ workspaces only when they are not packaged with the published crate:
 - `perf/` dependencies are reviewed by `scripts/check_perf.sh`.
 - `dudect/` dependencies are reviewed by `scripts/check_dudect.sh`.
 - `crates/base64-ng-sanitization/`, `crates/base64-ng-derive/`,
-  `crates/base64-ng-serde/`, `crates/base64-ng-bytes/`, and
-  `crates/base64-ng-tokio/` are optional companion crates, not dependencies of
-  the core `base64-ng` package. They are reviewed separately by
-  `scripts/check_companion_crates.sh` so the root package keeps its
+  `crates/base64-ng-serde/`, `crates/base64-ng-bytes/`,
+  `crates/base64-ng-subtle/`, and `crates/base64-ng-tokio/` are optional
+  companion crates, not dependencies of the core `base64-ng` package. They are
+  reviewed separately by `scripts/check_companion_crates.sh` so the root package keeps its
   zero-runtime-dependency guarantee.
 
 `scripts/checks.sh` runs those isolated harness checks so ordinary local

@@ -74,9 +74,9 @@ Implemented now:
   clear-on-drop secret containers.
 - Optional `base64-ng-derive` companion crate for fixed-size byte newtypes that
   need narrow Base64 parsing and encoding helpers.
-- Optional `base64-ng-serde`, `base64-ng-bytes`, and `base64-ng-tokio`
-  companion crates for projects that explicitly admit those ecosystem
-  dependencies.
+- Optional `base64-ng-serde`, `base64-ng-bytes`, `base64-ng-subtle`, and
+  `base64-ng-tokio` companion crates for projects that explicitly admit those
+  ecosystem dependencies.
 - Local check scripts, release gate, dependency policy, audit config, CI, SBOM script, reproducible build check, and a 500-line production-source budget guard.
 
 Planned behind admission evidence:
@@ -162,9 +162,10 @@ The core `base64-ng` crate keeps its zero-runtime-dependency policy. Optional
 ecosystem integrations live as separate crates so applications can opt into
 their own approved dependency set without changing the base package.
 
-The `1.1.0` release changes only the core crate. Optional companion crates
-remain on their previous published versions, and Cargo's normal compatible
-dependency ranges allow those companions to resolve with `base64-ng` `1.1.0`.
+The `1.1.0` release changes the core crate and adds the optional
+`base64-ng-subtle` companion crate. Other optional companion crates remain on
+their previous published versions, and Cargo's normal compatible dependency
+ranges allow those companions to resolve with `base64-ng` `1.1.0`.
 
 | Crate | Purpose |
 | --- | --- |
@@ -173,6 +174,7 @@ dependency ranges allow those companions to resolve with `base64-ng` `1.1.0`.
 | `base64-ng-derive` | Dependency-free `Base64Secret` derive for fixed-size secret newtypes. |
 | `base64-ng-serde` | Optional `serde` wrappers for projects that already admit `serde`. |
 | `base64-ng-bytes` | Optional `bytes` helpers for `Bytes`, `Buf`, and `BufMut` users. |
+| `base64-ng-subtle` | Optional `subtle::ConstantTimeEq` helpers for token/MAC comparison boundaries. |
 | `base64-ng-tokio` | Optional bounded Tokio async helpers for services that already admit Tokio. |
 
 Subcrates are documented so crate pages are readable, but they belong to the
@@ -255,6 +257,23 @@ use base64_ng_bytes::EngineBytesExt;
 
 let encoded = STANDARD.encode_bytes(b"hello").unwrap();
 assert_eq!(&encoded[..], b"aGVsbG8=");
+```
+
+`base64-ng-subtle` provides explicit `subtle::ConstantTimeEq` integration for
+projects that already admit `subtle`:
+
+```toml
+[dependencies]
+base64-ng = "1.1.0"
+base64-ng-subtle = "1.1.0"
+```
+
+```rust
+use base64_ng::ct;
+use base64_ng_subtle::SubtleEqExt;
+
+let decoded = ct::STANDARD.decode_secret(b"aGVsbG8=").unwrap();
+assert!(decoded.subtle_verify(b"hello"));
 ```
 
 `base64-ng-tokio` provides bounded async helpers for applications that already

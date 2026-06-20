@@ -27,6 +27,7 @@ PUBLISH_ORDER = (
     "base64-ng-derive",
     "base64-ng-serde",
     "base64-ng-bytes",
+    "base64-ng-subtle",
     "base64-ng-tokio",
 )
 
@@ -446,6 +447,7 @@ def main() -> int:
     print(f"  cargo info base64-ng-derive@{args.version}")
     print(f"  cargo info base64-ng-serde@{args.version}")
     print(f"  cargo info base64-ng-bytes@{args.version}")
+    print(f"  cargo info base64-ng-subtle@{args.version}")
     print(f"  cargo info base64-ng-tokio@{args.version}")
     return 0
 
