@@ -75,7 +75,7 @@ where
         return;
     }
 
-    let staged = [
+    let mut staged = [
         input[0], input[1], input[2], input[3], input[4], input[5], input[6], input[7], input[8],
         input[9], input[10], input[11], 0, 0, 0, 0,
     ];
@@ -99,20 +99,26 @@ where
         _mm_storeu_si128(output.as_mut_ptr().cast::<__m128i>(), encoded);
         clear_xmm_registers_for_test_prototype();
     }
+    crate::wipe_bytes(&mut staged);
 }
 
 fn is_standard_or_url_safe_family<A>() -> bool
 where
     A: Alphabet,
 {
-    A::ENCODE[0] == b'A'
-        && A::ENCODE[25] == b'Z'
-        && A::ENCODE[26] == b'a'
-        && A::ENCODE[51] == b'z'
-        && A::ENCODE[52] == b'0'
-        && A::ENCODE[61] == b'9'
-        && ((A::ENCODE[62] == b'+' && A::ENCODE[63] == b'/')
-            || (A::ENCODE[62] == b'-' && A::ENCODE[63] == b'_'))
+    const STANDARD_PREFIX: [u8; 62] =
+        *b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+    let mut index = 0;
+    while index < STANDARD_PREFIX.len() {
+        if A::ENCODE[index] != STANDARD_PREFIX[index] {
+            return false;
+        }
+        index += 1;
+    }
+
+    (A::ENCODE[62] == b'+' && A::ENCODE[63] == b'/')
+        || (A::ENCODE[62] == b'-' && A::ENCODE[63] == b'_')
 }
 
 fn scalar_encode_block<A, const IN: usize, const OUT: usize>(

@@ -12,6 +12,9 @@
   blocks and all 64 emitted six-bit Base64 values against the scalar encoder.
 - Added explicit test-prototype XMM register cleanup and updated the unsafe
   inventory for the new vectorized SSSE3/SSE4.1 encode path.
+- Hardened the SSSE3/SSE4.1 prototype by wiping its staged stack copy before
+  return and requiring a complete Standard-family alphabet match before the
+  vectorized Standard/URL-safe mapper is used.
 
 ## 1.0.10 - 2026-06-20
 

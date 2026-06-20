@@ -1,5 +1,15 @@
 use super::*;
-use crate::{Engine, Standard, UrlSafe};
+use crate::{Alphabet, Engine, Standard, UrlSafe, decode_alphabet_byte};
+
+struct AnchorMatchingCustom;
+
+impl Alphabet for AnchorMatchingCustom {
+    const ENCODE: [u8; 64] = *b"ACBDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+    fn decode(byte: u8) -> Option<u8> {
+        decode_alphabet_byte(byte, &Self::ENCODE)
+    }
+}
 
 fn fill_pattern(output: &mut [u8], seed: usize) {
     for (index, byte) in output.iter_mut().enumerate() {
@@ -175,6 +185,20 @@ fn ssse3_sse41_encode_prototype_matches_scalar_when_available() {
         assert_eq!(scalar_len, ssse3_url_safe.len());
         assert_eq!(ssse3_url_safe, scalar_url_safe);
     }
+
+    fill_indices_pattern(&mut input, 0);
+    let mut ssse3_custom = [0x55; 16];
+    let mut scalar_custom = [0xaa; 16];
+    // SAFETY: The feature check above proves SSSE3/SSE4.1 availability for
+    // this test invocation.
+    unsafe {
+        encode_12_bytes_ssse3_sse41::<AnchorMatchingCustom>(&input, &mut ssse3_custom);
+    }
+    let scalar_len = Engine::<AnchorMatchingCustom, true>::new()
+        .encode_slice(&input, &mut scalar_custom)
+        .unwrap();
+    assert_eq!(scalar_len, ssse3_custom.len());
+    assert_eq!(ssse3_custom, scalar_custom);
 }
 
 #[cfg(any(

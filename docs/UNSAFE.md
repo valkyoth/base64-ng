@@ -478,12 +478,17 @@ Unsafe operation:
 - `_mm_storeu_si128` stores the 16 encoded bytes into the output buffer.
 - `clear_xmm_registers_for_test_prototype` clears XMM registers before return
   to reduce register retention in this non-dispatchable test prototype.
+- The local staging array is wiped with the crate cleanup primitive before the
+  function returns.
 
 Safety argument:
 
 - The input and output array types provide fixed readable and writable bounds.
 - The SIMD load reads only from a local 16-byte staging array, so the prototype
   does not over-read the 12-byte caller input.
+- The staging array is mutable and wiped after the SIMD store and XMM cleanup,
+  reducing stack retention of the copied caller bytes in this inactive
+  prototype.
 - The load and store intrinsics are unaligned variants, so no stronger
   alignment is required.
 - The function is guarded by an SSSE3/SSE4.1 target-feature contract.
@@ -511,7 +516,9 @@ Preconditions:
 
 - Caller must prove SSE4.1 is available on the current CPU.
 - `indices` contains only byte values in `0..=63`.
-- The alphabet must be Standard-family as checked by the caller.
+- The alphabet must be Standard-family as checked by the caller with a complete
+  comparison of positions `0..62` and an explicit check of the two terminal
+  symbols.
 
 Unsafe operation:
 
