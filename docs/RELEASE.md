@@ -208,7 +208,25 @@ equivalence output.
 
 ## Publish
 
-After the release gate passes:
+Run the full stable release gate before creating the tag:
+
+```sh
+scripts/stable_release_gate.sh release
+```
+
+This is the expensive pre-tag gate. It includes Miri, Kani, generated assembly
+evidence, SBOM generation, reproducibility checks, and the standard local gate.
+If this fails, fix the release candidate before tagging.
+
+After the full release gate passes, push the commit, wait for GitHub to become
+green, then create and push the immutable release tag:
+
+```sh
+git tag -s v1.0.10 -m "base64-ng 1.0.10"
+git push origin v1.0.10
+```
+
+Publish only from the tagged commit:
 
 ```sh
 scripts/release_crates.py --check
@@ -217,11 +235,21 @@ scripts/release_crates.py
 ```
 
 `scripts/release_crates.py` reads `release-crates.toml`, validates workspace
-crate versions and dependency order, runs the local release gate, publishes
-`base64-ng` first, waits for crates.io visibility, and then publishes
-dependent companion crates such as `base64-ng-sanitization` and
-`base64-ng-derive`, `base64-ng-serde`, `base64-ng-bytes`, and
-`base64-ng-tokio`.
+crate versions and dependency order, refuses real publishing unless `HEAD`
+matches the `v<version>` tag, runs the standard local gate and
+`cargo publish --dry-run` for each selected crate, publishes `base64-ng` first,
+waits for crates.io visibility, and then publishes dependent companion crates
+such as `base64-ng-sanitization` and `base64-ng-derive`, `base64-ng-serde`,
+`base64-ng-bytes`, and `base64-ng-tokio`.
+
+The publish helper intentionally does not rerun Kani by default. Kani belongs
+to the pre-tag stable release gate so a verifier failure does not happen after
+an immutable GitHub tag has already been created. If a release manager wants to
+rerun the expensive gate immediately before publishing, use:
+
+```sh
+scripts/release_crates.py --full-gate
+```
 
 For manual fallback, publish the core package first, wait until crates.io serves
 the new `base64-ng` version, then verify and publish the companion package:
@@ -252,9 +280,10 @@ repository development.
 
 The publish sequence is intentionally kept out of
 `scripts/stable_release_gate.sh`, because publishing updates the crates.io index
-and requires release credentials.
-
-Create and push the git tag only after the published crate is verified.
+and requires release credentials. If publishing fails because of a crates.io or
+credential issue after the tag exists, keep the tag and rerun the publish
+helper. If publishing fails because the tagged source is wrong, do not move the
+tag; cut a new patch release.
 
 ## Notes
 

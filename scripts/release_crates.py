@@ -236,13 +236,26 @@ def confirm_no_verify(args: argparse.Namespace) -> int:
     return 0
 
 
-def run_preflight(args: argparse.Namespace) -> None:
+def publish_dry_run(package: str, args: argparse.Namespace) -> None:
+    command = ["cargo", "publish", "-p", package, "--dry-run"]
+    if args.allow_dirty:
+        command.append("--allow-dirty")
+    run(command, dry_run=args.dry_run)
+
+
+def run_preflight(args: argparse.Namespace, steps: tuple[str, ...]) -> None:
     if args.skip_checks:
         print("Skipping preflight checks by request.")
         return
 
     parse_version(args.version)
-    run(["scripts/stable_release_gate.sh", "release"], dry_run=args.dry_run)
+    if args.full_gate:
+        run(["scripts/stable_release_gate.sh", "release"], dry_run=args.dry_run)
+        return
+
+    run(["scripts/checks.sh"], dry_run=args.dry_run)
+    for package in steps:
+        publish_dry_run(package, args)
 
 
 def publish_plan(plan: dict) -> tuple[str, ...]:
@@ -322,7 +335,16 @@ def main() -> int:
     parser.add_argument(
         "--skip-checks",
         action="store_true",
-        help="Skip local checks before publishing.",
+        help="Skip local checks and cargo publish dry-runs before publishing.",
+    )
+    parser.add_argument(
+        "--full-gate",
+        action="store_true",
+        help=(
+            "Run scripts/stable_release_gate.sh release before publishing. "
+            "By default, the publish helper assumes the full gate, including "
+            "Kani, already passed before tagging."
+        ),
     )
     parser.add_argument(
         "--no-verify",
@@ -332,7 +354,15 @@ def main() -> int:
     parser.add_argument(
         "--require-tag",
         action="store_true",
-        help="Refuse to publish unless HEAD matches the v<version> release tag.",
+        help="Refuse to continue unless HEAD matches the v<version> release tag.",
+    )
+    parser.add_argument(
+        "--allow-untagged",
+        action="store_true",
+        help=(
+            "Allow publishing from an untagged HEAD. Use only for a documented "
+            "crates.io recovery incident."
+        ),
     )
     parser.add_argument(
         "--yes",
@@ -367,7 +397,8 @@ def main() -> int:
         return 0
 
     require_clean_tree(allow_dirty=args.allow_dirty or args.dry_run)
-    check_release_tag(args.version, require_tag=args.require_tag)
+    require_tag = args.require_tag or (not args.dry_run and not args.allow_untagged)
+    check_release_tag(args.version, require_tag=require_tag)
 
     planned_publish = publish_plan(plan)
     start_at = args.start_at or (planned_publish[0] if planned_publish else "")
@@ -395,7 +426,7 @@ def main() -> int:
     if no_verify_result != 0:
         return no_verify_result
 
-    run_preflight(args)
+    run_preflight(args, steps)
 
     for index, package in enumerate(steps):
         publish(package, args)

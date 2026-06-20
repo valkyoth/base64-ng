@@ -383,10 +383,20 @@ include-list, or generated-file drift before release.
 
 ## Publishing
 
-Before publishing:
+Before tagging:
 
 ```sh
 scripts/stable_release_gate.sh release
+```
+
+The stable release gate is the expensive pre-tag gate and includes Kani,
+generated assembly evidence, SBOM generation, and reproducibility checks. Run
+it before creating the immutable GitHub tag.
+
+After the gate passes, push the release commit, wait for GitHub CI, then create
+and push the `v<version>` tag. Publish only from that tagged commit:
+
+```sh
 scripts/release_crates.py --check
 scripts/release_crates.py --dry-run
 ```
@@ -397,9 +407,15 @@ Publish with:
 scripts/release_crates.py
 ```
 
-The helper reads `release-crates.toml`, publishes `base64-ng` first, waits for
-crates.io visibility, and then publishes dependent companion crates. Manual
-fallback for companion releases:
+The helper reads `release-crates.toml`, refuses real publishing unless `HEAD`
+matches the release tag, runs the standard local gate and `cargo publish
+--dry-run` for selected crates, publishes `base64-ng` first, waits for crates.io
+visibility, and then publishes dependent companion crates. The default publish
+preflight does not rerun Kani because Kani is already part of the pre-tag stable
+gate. Use `scripts/release_crates.py --full-gate` only when the release manager
+deliberately wants to rerun the expensive gate immediately before upload.
+
+Manual fallback for companion releases:
 
 ```sh
 cargo publish -p base64-ng
@@ -426,4 +442,5 @@ After `cargo publish`, verify crates.io metadata with:
 cargo info base64-ng
 ```
 
-Only tag and push once the published crate version is visible and correct.
+Do not move an existing release tag. If the tagged source is wrong, cut a new
+patch release.
