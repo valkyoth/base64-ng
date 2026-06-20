@@ -97,7 +97,7 @@ Any dependency addition must answer:
    - `no_std` builds remain scalar-only unless a future API adds an explicit
      unsafe caller-side CPU contract. Compile-time target-feature reporting is
      not enough to dispatch safely on unknown hardware.
-   - Unsafe isolated in `src/simd.rs` and documented.
+   - Unsafe isolated in `src/simd/` and documented.
 
 4. `stream`
    - `std::io::{Read, Write}` wrappers.
@@ -326,7 +326,7 @@ cryptographic behavior until that stronger evidence exists.
   reference for canonical, malformed, and undersized-buffer cases.
 - Unsafe admission boundary in code and checks: crate-level `deny(unsafe_code)`
   with `allow(unsafe_code)` confined to the volatile wipe helpers and
-  `src/simd.rs`.
+  `src/simd/`.
 - SIMD dispatch scaffold that detects AVX2/NEON candidates while keeping
   scalar as the only active backend.
 - Inactive AVX2 fixed-block encode prototype with scalar-equivalence tests.
@@ -585,16 +585,16 @@ Rules for every source-layout release:
 Recommended `1.0.x` source-layout sequence:
 
 - `1.0.2`: split `std::io` streaming adapters and stream tests into
-  `src/stream.rs`, preserving `base64_ng::stream::*`.
+  `src/stream/`, preserving `base64_ng::stream::*`.
 - `1.0.3`: split runtime backend reporting and backend-policy types into
-  `src/runtime.rs`; split alphabets, custom alphabet validation, the alphabet
+  `src/runtime/`; split alphabets, custom alphabet validation, the alphabet
   macro, and alphabet errors into `src/alphabet.rs`; split profile wrappers
   into `src/profiles.rs`; split best-effort cleanup helpers into
   `src/cleanup.rs`.
-- `1.0.4`: split stack/owned buffer wrappers into `src/buffers.rs`.
+- `1.0.4`: split stack/owned buffer wrappers into `src/buffers/`.
 - `1.0.5`: combined final source-layout cleanup before the pause window. Split
   constant-time-oriented decode, validation, masks, and CT barriers into
-  `src/ct.rs`; split length helpers into `src/length.rs`; split wrapping and
+  `src/ct/`; split length helpers into `src/length.rs`; split wrapping and
   legacy transport handling into `src/wrap.rs`; split scalar core
   encode/decode helpers into `src/scalar.rs`; and split public error types into
   `src/errors.rs`.
@@ -624,7 +624,12 @@ Recommended `1.0.x` source-layout sequence:
   wipe path without emitting unsafe code into downstream crates. Add
   `base64-ng-serde`, `base64-ng-bytes`, and `base64-ng-tokio` as explicit
   opt-in ecosystem companion crates. Keep the core crate dependency-free.
-- After `1.0.9`: park core feature work for a few weeks so users can test the
+- `1.0.10`: source-layout maintenance release. Split oversized production
+  modules into focused internal files, move Kani proofs and unit tests out of
+  the root module, and add a 500-line production-source budget guard to the
+  normal check pipeline. Keep the public API, scalar-only runtime behavior, and
+  companion crate versions unchanged.
+- After `1.0.10`: park core feature work for a few weeks so users can test the
   stable API and report issues before any `1.1` SIMD-admission work starts.
 
 The recommended post-`1.0` SIMD path is incremental:
@@ -634,7 +639,7 @@ The recommended post-`1.0` SIMD path is incremental:
   Miri/fuzz/dudect/generated-assembly evidence, and avoid broad API expansion.
   Optional sister crates may grow only when they keep the core package
   dependency-free and have their own supply-chain gates.
-- Optional post-`1.0.9` sister crates: consider additional profile-specific
+- Optional post-`1.0.10` sister crates: consider additional profile-specific
   serde modules and full Tokio streaming adapters only after their dependency,
   audit, cancellation-safety, and misuse-resistance evidence is complete.
 - `1.1`: replace the SSSE3/SSE4.1 fixed-block encode scaffold with real

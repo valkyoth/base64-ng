@@ -20,6 +20,9 @@ scripts/validate-doc-versions.sh
 echo "checks: public API audit"
 scripts/validate-api-audit.sh
 
+echo "checks: file line budget"
+scripts/validate-file-line-budget.sh
+
 echo "checks: minimal dependency graph"
 scripts/validate-dependencies.sh
 

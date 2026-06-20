@@ -34,11 +34,11 @@ def package(name: str, version: str, deps: tuple[str, ...] = ()) -> dict:
 
 def base_plan() -> dict:
     return {
-        "version": "1.0.9",
+        "version": "1.0.10",
         "crates": {
             name: {
-                "previous_version": "1.0.8",
-                "version": "1.0.8",
+                "previous_version": "1.0.9",
+                "version": "1.0.9",
                 "change": "unchanged",
                 "publish": False,
                 "reason": "test",
@@ -50,7 +50,7 @@ def base_plan() -> dict:
 
 def base_packages() -> dict[str, dict]:
     packages = {
-        name: package(name, "1.0.8") for name in release_crates.PUBLISH_ORDER
+        name: package(name, "1.0.9") for name in release_crates.PUBLISH_ORDER
     }
     packages["base64-ng-sanitization"]["dependencies"] = [{"name": "base64-ng"}]
     packages["base64-ng-derive"]["dependencies"] = [{"name": "base64-ng"}]
@@ -88,17 +88,17 @@ def test_code_changes_must_use_milestone_version() -> None:
     plan["crates"]["base64-ng"]["change"] = "code"
     plan["crates"]["base64-ng"]["publish"] = True
     assert_fails(
-        "version must be 1.0.9",
+        "version must be 1.0.10",
         release_crates.validate_plan_entry,
         "base64-ng",
         plan["crates"]["base64-ng"],
-        "1.0.9",
+        "1.0.10",
     )
 
 
 def test_dependency_only_changes_must_patch_bump() -> None:
     entry = {
-        "previous_version": "1.0.8",
+        "previous_version": "1.0.9",
         "version": "1.1.0",
         "change": "dependency",
         "publish": True,
@@ -115,8 +115,8 @@ def test_dependency_only_changes_must_patch_bump() -> None:
 
 def test_unchanged_crates_are_not_published() -> None:
     entry = {
-        "previous_version": "1.0.8",
-        "version": "1.0.8",
+        "previous_version": "1.0.9",
+        "version": "1.0.9",
         "change": "unchanged",
         "publish": True,
         "reason": "test",
@@ -126,15 +126,15 @@ def test_unchanged_crates_are_not_published() -> None:
         release_crates.validate_plan_entry,
         "base64-ng",
         entry,
-        "1.0.9",
+        "1.0.10",
     )
 
 
 def test_publish_plan_skips_unchanged_crates() -> None:
     plan = base_plan()
     plan["crates"]["base64-ng"] = {
-        "previous_version": "1.0.8",
-        "version": "1.0.9",
+        "previous_version": "1.0.9",
+        "version": "1.0.10",
         "change": "code",
         "publish": True,
         "reason": "test",

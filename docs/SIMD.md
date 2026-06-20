@@ -1,11 +1,11 @@
 # SIMD Admission Policy
 
-`base64-ng` is intentionally scalar-only in the `1.0.9` release. Future SIMD
+`base64-ng` is intentionally scalar-only in the `1.0.10` release. Future SIMD
 dispatch remains gated unless a complete SIMD admission evidence package lands
 in a later release series. The crate uses `#![deny(unsafe_code)]` and permits
 reviewed `allow(unsafe_code)` exceptions only for audited cleanup in
-`src/cleanup.rs`, CT comparison, byte accumulation, CT scan, and CT result-gate helpers in
-`src/ct.rs`, and the private `src/simd.rs` boundary. The `simd` feature
+`src/cleanup.rs`, CT comparison, byte accumulation, CT scan, and CT result-gate
+helpers in `src/ct/`, and the private `src/simd/` boundary. The `simd` feature
 remains reserved until architecture-specific code has enough evidence to
 justify enabling it.
 
@@ -157,7 +157,7 @@ must include:
 - Completion of
   [SIMD_ACTIVATION_CHECKLIST.md](SIMD_ACTIVATION_CHECKLIST.md) before the
   backend is wired into dispatch.
-- The dedicated `src/simd.rs` boundary for all architecture-specific code.
+- The dedicated `src/simd/` boundary for all architecture-specific code.
 - Crate-level `deny(unsafe_code)` must continue to reject unsafe outside the
   volatile wipe helpers and SIMD module.
 - A local safety comment for every unsafe block.

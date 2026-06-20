@@ -6,15 +6,16 @@ if ! grep -q '^#!\[deny(unsafe_code)\]' src/lib.rs; then
     exit 1
 fi
 
-simd_allowed='src/simd.rs'
+simd_allowed='src/simd/mod.rs'
+simd_tests_allowed='src/simd/tests.rs'
 root_allowed='src/lib.rs'
 cleanup_allowed='src/cleanup.rs'
-ct_allowed='src/ct.rs'
+ct_allowed_files='src/ct/decode.rs src/ct/equality.rs'
 matches="$(grep -RIl 'allow(unsafe_code)' src | sort || true)"
-allowed="$(printf '%s\n%s\n%s' "$cleanup_allowed" "$ct_allowed" "$simd_allowed" | sort)"
+allowed="$(printf '%s\n' "$cleanup_allowed" src/ct/decode.rs src/ct/equality.rs "$simd_allowed" | sort)"
 
 if [ "$matches" != "$allowed" ]; then
-    echo "unsafe boundary: allow(unsafe_code) may appear only in $cleanup_allowed, $ct_allowed, and $simd_allowed"
+    echo "unsafe boundary: allow(unsafe_code) may appear only in $cleanup_allowed, src/ct/decode.rs, src/ct/equality.rs, and $simd_allowed"
     if [ -n "$matches" ]; then
         echo "$matches"
     fi
@@ -33,9 +34,9 @@ if [ "$cleanup_allow_count" -ne 3 ]; then
     exit 1
 fi
 
-ct_allow_count="$(grep -c '^#\[allow(unsafe_code)\]$' "$ct_allowed" || true)"
+ct_allow_count="$(grep -h -c '^#\[allow(unsafe_code)\]$' $ct_allowed_files | awk '{ total += $1 } END { print total + 0 }')"
 if [ "$ct_allow_count" -ne 4 ]; then
-    echo "unsafe boundary: src/ct.rs must have exactly four reviewed allow(unsafe_code) helpers"
+    echo "unsafe boundary: src/ct/ must have exactly four reviewed allow(unsafe_code) helpers"
     exit 1
 fi
 
@@ -43,23 +44,23 @@ if ! awk '
     /^#\[allow\(unsafe_code\)\]$/ {
         allow_line = NR
     }
-    /^(pub\(crate\) )?fn wipe_bytes\(/ || /^fn wipe_barrier\(/ || /^(pub\(crate\) )?fn wipe_vec_spare_capacity\(/ || /^fn ct_error_gate_barrier\(/ || /^fn constant_time_eq_same_len\(/ || /^fn ct_accumulate_u8\(/ || /^fn ct_decode_alphabet_byte/ {
+    /^(pub\((crate|super)\) )?fn wipe_bytes\(/ || /^fn wipe_barrier\(/ || /^(pub\((crate|super)\) )?fn wipe_vec_spare_capacity\(/ || /^(pub\((crate|super)\) )?fn ct_error_gate_barrier\(/ || /^fn constant_time_eq_same_len\(/ || /^(pub\((crate|super)\) )?fn ct_accumulate_u8\(/ || /^(pub\((crate|super)\) )?fn ct_decode_alphabet_byte/ {
         if (allow_line != NR - 1) {
             failed = 1
         }
         seen += 1
     }
     END { exit failed || seen != 7 }
-' "$cleanup_allowed" "$ct_allowed"; then
+' "$cleanup_allowed" $ct_allowed_files; then
     echo "unsafe boundary: allow(unsafe_code) must apply only to reviewed cleanup, comparison, CT accumulator, CT scan, and CT gate helpers"
     exit 1
 fi
 
 arch_matches="$(grep -RIl -e 'core::arch' -e 'std::arch' -e 'is_x86_feature_detected!' -e 'target_feature' src | sort || true)"
-arch_allowed="$(printf '%s\n%s\n%s' "$ct_allowed" "$cleanup_allowed" "$simd_allowed" | sort)"
+arch_allowed="$(printf '%s\n' src/ct/equality.rs "$cleanup_allowed" "$simd_allowed" "$simd_tests_allowed" | sort)"
 
 if [ "$arch_matches" != "$arch_allowed" ]; then
-    echo "unsafe boundary: architecture intrinsics may appear only in $ct_allowed CT barriers, $cleanup_allowed cleanup barriers, and $simd_allowed"
+    echo "unsafe boundary: architecture intrinsics may appear only in src/ct/equality.rs CT barriers, $cleanup_allowed cleanup barriers, and src/simd/"
     if [ -n "$arch_matches" ]; then
         echo "$arch_matches"
     fi
@@ -79,7 +80,7 @@ fi
 unsafe_functions="$(sed -n 's/^[[:space:]]*unsafe[[:space:]]*fn[[:space:]]*\([A-Za-z0-9_][A-Za-z0-9_]*\).*/\1/p' "$simd_allowed")"
 
 if [ -z "$unsafe_functions" ]; then
-    echo "unsafe boundary: expected documented prototype unsafe functions in $allowed"
+    echo "unsafe boundary: expected documented prototype unsafe functions in $simd_allowed"
     exit 1
 fi
 
@@ -104,7 +105,7 @@ if ! awk '
         prev1 = $0
     }
     END { exit failed }
-' "$ct_allowed" "$cleanup_allowed" "$simd_allowed"; then
+' $ct_allowed_files "$cleanup_allowed" "$simd_allowed"; then
     echo "unsafe boundary: every unsafe block must have a nearby SAFETY explanation"
     exit 1
 fi

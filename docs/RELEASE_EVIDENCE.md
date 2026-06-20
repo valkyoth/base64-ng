@@ -76,7 +76,7 @@ The release gate runs:
 - moved-code review for the `src/cleanup.rs` extraction, preserving internal
   cleanup call paths and updating the unsafe-boundary gate for the new audited
   unsafe location
-- moved-code review for the `src/buffers.rs` extraction, preserving root
+- moved-code review for the `src/buffers/` extraction, preserving root
   public exports for stack-backed buffers, exposed ownership wrappers, and
   `SecretBuffer`
 - all-features and no-default-features doctests plus documentation builds
@@ -118,10 +118,10 @@ The release gate runs:
   backend admission evidence package lands
 - unsafe-boundary validation that confines `allow(unsafe_code)` to the audited
   cleanup helpers in `src/cleanup.rs`, CT barrier/comparison helpers in
-  `src/ct.rs`, and the SIMD boundary in `src/simd.rs`
+  `src/ct/`, and the SIMD boundary in `src/simd/`
 - unsafe-boundary validation that confines inline assembly to the cleanup and CT
   barriers and confines CPU feature detection and `target_feature` gates to
-  `src/simd.rs`
+  `src/simd/`
 - unsafe-boundary validation that requires inventory documentation for every
   SIMD-boundary unsafe function and a nearby `SAFETY:` explanation for every
   unsafe block

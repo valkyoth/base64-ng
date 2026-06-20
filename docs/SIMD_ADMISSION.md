@@ -10,7 +10,7 @@ the admitted implementation.
 - Admitted backends: none.
 - Active backend: scalar only.
 - Public performance claims: none.
-- Release status: `1.0.9` remains scalar-only. Future releases may admit an
+- Release status: `1.0.10` remains scalar-only. Future releases may admit an
   accelerated backend only when this manifest is updated with a complete
   backend admission evidence package in the same release series.
 

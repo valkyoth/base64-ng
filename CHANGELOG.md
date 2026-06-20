@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.10 - 2026-06-20
+
+- Split oversized production modules into focused internal source files for the
+  engine, buffers, constant-time helpers, streaming adapters, runtime reporting,
+  SIMD scaffolding, Kani proofs, and unit tests. This is a source-layout
+  maintenance release with no intended public API or behavior changes.
+- Added `scripts/validate-file-line-budget.sh` and wired it into the normal
+  checks so production Rust source under `src/` and companion crate sources stay
+  within the 500-line maintainability budget.
+- Kept the optional companion crates at `1.0.9`; only the core `base64-ng`
+  package is planned for publication in this release.
+
 ## 1.0.9 - 2026-06-20
 
 - Added `base64-ng-sanitization` as an optional companion crate for projects

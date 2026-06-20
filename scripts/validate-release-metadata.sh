@@ -118,6 +118,7 @@ for required_script in \
     "scripts/stable_release_gate.sh" \
     "scripts/validate-constant-time-policy.sh" \
     "scripts/validate-dependencies.sh" \
+    "scripts/validate-file-line-budget.sh" \
     "scripts/validate-doc-versions.sh" \
     "scripts/validate-msrv-policy.sh" \
     "scripts/validate-panic-policy.sh" \
@@ -366,17 +367,42 @@ for required_package_file in \
     "scripts/validate-simd-admission.sh" \
     "scripts/validate-unsafe-boundary.sh" \
     "src/alphabet.rs" \
-    "src/buffers.rs" \
+    "src/buffers/mod.rs" \
+    "src/buffers/decoded.rs" \
+    "src/buffers/encoded.rs" \
+    "src/buffers/secret.rs" \
+    "src/buffers/secret_conversions.rs" \
     "src/cleanup.rs" \
-    "src/ct.rs" \
+    "src/ct/mod.rs" \
+    "src/ct/decode.rs" \
+    "src/ct/equality.rs" \
+    "src/ct/padded.rs" \
+    "src/ct/unpadded.rs" \
+    "src/engine/mod.rs" \
+    "src/engine/decode.rs" \
+    "src/engine/decode_in_place.rs" \
+    "src/engine/encode.rs" \
+    "src/engine/encode_in_place.rs" \
+    "src/engine/stream.rs" \
+    "src/engine/validate.rs" \
     "src/errors.rs" \
+    "src/kani_proofs.rs" \
     "src/length.rs" \
     "src/lib.rs" \
     "src/profiles.rs" \
-    "src/runtime.rs" \
+    "src/runtime/mod.rs" \
+    "src/runtime/report.rs" \
     "src/scalar.rs" \
-    "src/simd.rs" \
-    "src/stream.rs" \
+    "src/simd/mod.rs" \
+    "src/simd/tests.rs" \
+    "src/stream/mod.rs" \
+    "src/stream/common.rs" \
+    "src/stream/decoder.rs" \
+    "src/stream/decoder_reader.rs" \
+    "src/stream/encoder.rs" \
+    "src/stream/encoder_reader.rs" \
+    "src/stream/queue.rs" \
+    "src/tests.rs" \
     "src/wrap.rs" \
     "tests/rfc4648.rs"
 do

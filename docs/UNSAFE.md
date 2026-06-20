@@ -4,7 +4,7 @@
 `#![deny(unsafe_code)]`, and reviewed `allow(unsafe_code)` exceptions are
 limited to volatile wipe helpers in `src/cleanup.rs`, the constant-time
 comparison accumulator barrier and constant-time error gate barrier in
-`src/ct.rs`, and the SIMD boundary in `src/simd.rs`.
+`src/ct/`, and the SIMD boundary in `src/simd/`.
 
 This inventory is intentionally small and release-gate enforced. Any new unsafe
 block must be added here before an accelerated backend can be admitted.
@@ -14,10 +14,10 @@ block must be added here before an accelerated backend can be admitted.
 - Default builds compile audited unsafe volatile wipe helpers, the
   constant-time comparison accumulator barrier, and the constant-time error
   gate barrier.
-- Optional SIMD prototypes live only in `src/simd.rs` and are compiled only
+- Optional SIMD prototypes live only in `src/simd/` and are compiled only
   for tests until a real backend is admitted.
 - `scripts/validate-unsafe-boundary.sh` fails if `allow(unsafe_code)` appears
-  outside `src/cleanup.rs`, `src/ct.rs`, or `src/simd.rs`.
+  outside `src/cleanup.rs`, `src/ct/`, or `src/simd/`.
 - `scripts/validate-unsafe-boundary.sh` fails if architecture intrinsics, CPU
   feature detection, or `target_feature` gates appear outside the reviewed
   cleanup, constant-time gate, and SIMD boundaries.
@@ -149,7 +149,7 @@ Limitations:
 
 ### `constant_time_eq_same_len`
 
-Location: `src/ct.rs`
+Location: `src/ct/`
 
 Status: active constant-time-oriented comparison primitive.
 
@@ -187,7 +187,7 @@ Limitations:
 
 ### `ct_accumulate_u8`
 
-Location: `src/ct.rs`
+Location: `src/ct/`
 
 Status: active constant-time-oriented accumulator hardening primitive.
 
@@ -221,7 +221,7 @@ Limitations:
 
 ### `ct_error_gate_barrier`
 
-Location: `src/ct.rs`
+Location: `src/ct/`
 
 Status: active constant-time error-gate hardening primitive.
 
@@ -274,7 +274,7 @@ Limitations:
 
 ### `ct_decode_alphabet_byte`
 
-Location: `src/ct.rs`
+Location: `src/ct/`
 
 Status: active constant-time-oriented alphabet scanner.
 
@@ -365,7 +365,7 @@ Limitations:
 
 ### `encode_48_bytes_avx512`
 
-Location: `src/simd.rs`
+Location: `src/simd/`
 
 Status: inactive test-only prototype, not compiled into release library builds
 and not dispatchable.
@@ -406,7 +406,7 @@ Safety argument:
 
 ### `encode_24_bytes_avx2`
 
-Location: `src/simd.rs`
+Location: `src/simd/`
 
 Status: inactive test-only prototype, not compiled into release library builds
 and not dispatchable.
@@ -445,7 +445,7 @@ Safety argument:
 
 ### `encode_12_bytes_ssse3_sse41`
 
-Location: `src/simd.rs`
+Location: `src/simd/`
 
 Status: inactive test-only prototype, not compiled into release library builds
 and not dispatchable.
@@ -484,7 +484,7 @@ Safety argument:
 
 ### `encode_12_bytes_neon`
 
-Location: `src/simd.rs`
+Location: `src/simd/`
 
 Status: inactive test-only prototype, not compiled into release library builds
 and not dispatchable.

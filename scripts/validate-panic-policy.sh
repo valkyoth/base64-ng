@@ -40,7 +40,12 @@ check_file() {
 
 test -s docs/PANIC_POLICY.md
 
-for source_file in src/*.rs; do
+find src -name '*.rs' | sort | while IFS= read -r source_file; do
+    case "$source_file" in
+        src/kani_proofs.rs|src/tests.rs|src/simd/tests.rs)
+            continue
+            ;;
+    esac
     check_file "$source_file"
 done
 

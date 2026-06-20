@@ -24,7 +24,7 @@ active_variants="$(
                 print line
             }
         }
-    ' src/simd.rs
+    ' src/simd/mod.rs
 )"
 
 if [ "$active_variants" != "Scalar" ]; then
@@ -60,7 +60,7 @@ if ! awk '
             exit 1
         }
     }
-' src/simd.rs; then
+' src/simd/mod.rs; then
     echo "simd admission: active_backend must explicitly return ActiveBackend::Scalar" >&2
     exit 1
 fi

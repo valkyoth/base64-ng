@@ -1,45 +1,45 @@
 [release]
-version = "1.0.9"
+version = "1.0.10"
 policy = "core-first-companion"
 
 [crates."base64-ng"]
-previous_version = "1.0.8"
-version = "1.0.9"
+previous_version = "1.0.9"
+version = "1.0.10"
 change = "code"
 publish = true
-reason = "Adds the public clear_bytes cleanup helper used by derive-generated fixed byte newtypes."
+reason = "Splits oversized internal source modules and adds the production-source 500-line budget guard."
 
 [crates."base64-ng-sanitization"]
-previous_version = "0.0.0"
+previous_version = "1.0.9"
 version = "1.0.9"
-change = "code"
-publish = true
-reason = "Initial optional sanitization companion crate for CT decode into clear-on-drop secret containers."
+change = "unchanged"
+publish = false
+reason = "No code changes for the 1.0.10 core maintenance release."
 
 [crates."base64-ng-derive"]
-previous_version = "0.0.0"
+previous_version = "1.0.9"
 version = "1.0.9"
-change = "code"
-publish = true
-reason = "Initial optional derive companion crate for fixed-size Base64 byte newtypes."
+change = "unchanged"
+publish = false
+reason = "No code changes for the 1.0.10 core maintenance release."
 
 [crates."base64-ng-serde"]
-previous_version = "0.0.0"
+previous_version = "1.0.9"
 version = "1.0.9"
-change = "code"
-publish = true
-reason = "Initial optional serde companion crate for explicit Base64 serialization wrappers."
+change = "unchanged"
+publish = false
+reason = "No code changes for the 1.0.10 core maintenance release."
 
 [crates."base64-ng-bytes"]
-previous_version = "0.0.0"
+previous_version = "1.0.9"
 version = "1.0.9"
-change = "code"
-publish = true
-reason = "Initial optional bytes companion crate for Bytes, Buf, and BufMut helpers."
+change = "unchanged"
+publish = false
+reason = "No code changes for the 1.0.10 core maintenance release."
 
 [crates."base64-ng-tokio"]
-previous_version = "0.0.0"
+previous_version = "1.0.9"
 version = "1.0.9"
-change = "code"
-publish = true
-reason = "Initial optional Tokio companion crate for bounded async read/write helpers."
+change = "unchanged"
+publish = false
+reason = "No code changes for the 1.0.10 core maintenance release."

@@ -29,7 +29,7 @@ The crate starts conservative: a small scalar implementation, strict RFC 4648 be
 
 ## Current Status
 
-The current public release is `1.0.9`.
+The current public release is `1.0.10`.
 
 Implemented now:
 
@@ -75,12 +75,12 @@ Implemented now:
 - Optional `base64-ng-serde`, `base64-ng-bytes`, and `base64-ng-tokio`
   companion crates for projects that explicitly admit those ecosystem
   dependencies.
-- Local check scripts, release gate, dependency policy, audit config, CI, SBOM script, and reproducible build check.
+- Local check scripts, release gate, dependency policy, audit config, CI, SBOM script, reproducible build check, and a 500-line production-source budget guard.
 
 Planned behind admission evidence:
 
 - Admitted AVX2, AVX-512, SSSE3/SSE4.1, ARM NEON, and wasm `simd128`
-  fast paths after the SIMD admission evidence is complete. The `1.0.9`
+  fast paths after the SIMD admission evidence is complete. The `1.0.10`
   release remains scalar-only.
 - Full async streaming wrappers only after the `tokio` feature passes the
   cancellation-safety admission bar in [docs/ASYNC.md](docs/ASYNC.md). The
@@ -115,7 +115,7 @@ and CWE mapping lives in [docs/SECURITY_CONTROLS.md](docs/SECURITY_CONTROLS.md).
 The minimum supported Rust version is Rust `1.90.0`. New deployments should
 prefer the latest stable Rust; as of May 29, 2026, that is Rust `1.96.0`.
 
-Compatibility evidence for `1.0.9`:
+Compatibility evidence for `1.0.10`:
 
 | Rust | Local Evidence |
 | --- | --- |
@@ -131,7 +131,7 @@ Compatibility evidence for `1.0.9`:
 
 ```toml
 [dependencies]
-base64-ng = "1.0.9"
+base64-ng = "1.0.10"
 ```
 
 The crate is dual-licensed:
@@ -160,6 +160,10 @@ The core `base64-ng` crate keeps its zero-runtime-dependency policy. Optional
 ecosystem integrations live as separate crates so applications can opt into
 their own approved dependency set without changing the base package.
 
+The `1.0.10` release changes only the core crate internals and keeps the
+optional companion crates at `1.0.9`; Cargo's normal `^1.0.9` dependency range
+allows them to resolve with `base64-ng` `1.0.10`.
+
 `base64-ng-sanitization` provides extension helpers for
 `base64_ng::ct::CtEngine` that decode directly into
 `sanitization::SecretBytes<N>` in `no_std`, with `SecretVec` helpers behind its
@@ -167,7 +171,7 @@ own `alloc` feature:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.0.9", default-features = false }
+base64-ng = { version = "1.0.10", default-features = false }
 base64-ng-sanitization = { version = "1.0.9", default-features = false }
 ```
 
@@ -187,7 +191,7 @@ newtypes around fixed byte arrays:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.0.9", default-features = false }
+base64-ng = { version = "1.0.10", default-features = false }
 base64-ng-derive = "1.0.9"
 ```
 
@@ -223,7 +227,7 @@ struct Message {
 
 ```toml
 [dependencies]
-base64-ng = "1.0.9"
+base64-ng = "1.0.10"
 base64-ng-bytes = "1.0.9"
 bytes = "1.12.0"
 ```
@@ -241,7 +245,7 @@ use Tokio:
 
 ```toml
 [dependencies]
-base64-ng = "1.0.9"
+base64-ng = "1.0.10"
 base64-ng-tokio = "1.0.9"
 tokio = { version = "1.52.3", features = ["io-util"] }
 ```
@@ -271,7 +275,7 @@ Disable defaults for embedded or freestanding use:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.0.9", default-features = false }
+base64-ng = { version = "1.0.10", default-features = false }
 ```
 
 ## Convenience API
@@ -902,8 +906,8 @@ Security commitments:
   fences where stable Rust supports them, so cleanup writes resist common
   dead-store elimination and are ordered before the cleanup boundary on
   supported native architectures. Constant-time comparison, byte accumulation,
-  CT scan, and CT result-gate hardening remain audited in `src/ct.rs`.
-- Future unsafe SIMD remains isolated under `src/simd.rs`.
+  CT scan, and CT result-gate hardening remain audited in `src/ct/`.
+- Future unsafe SIMD remains isolated under `src/simd/`.
 - Local checks verify that `allow(unsafe_code)` is confined to the volatile
   wipe helpers and SIMD boundary, every unsafe function is inventoried, and
   every unsafe block has a nearby `SAFETY:` explanation. Architecture intrinsics,
