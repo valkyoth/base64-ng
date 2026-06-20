@@ -618,7 +618,11 @@ Recommended `1.0.x` source-layout sequence:
 - `1.0.9`: optional companion-crate release. Add
   `base64-ng-sanitization` as a separate workspace member for applications that
   already admit the `sanitization` crate and want CT decode helpers into
-  clear-on-drop secret containers. Keep the core crate dependency-free.
+  clear-on-drop secret containers. Add `base64-ng-derive` as a dependency-free
+  proc-macro companion for fixed-size `[u8; N]` tuple newtypes, and expose
+  `clear_bytes` from the core crate so generated cleanup can reuse the reviewed
+  wipe path without emitting unsafe code into downstream crates. Keep the core
+  crate dependency-free.
 - After `1.0.9`: park core feature work for a few weeks so users can test the
   stable API and report issues before any `1.1` SIMD-admission work starts.
 
@@ -629,11 +633,10 @@ The recommended post-`1.0` SIMD path is incremental:
   Miri/fuzz/dudect/generated-assembly evidence, and avoid broad API expansion.
   Optional sister crates may grow only when they keep the core package
   dependency-free and have their own supply-chain gates.
-- Optional post-`1.0.9` sister crates: consider `base64-ng-derive` for
-  fixed-size Base64 newtype helpers, `base64-ng-serde` for explicit serde
-  wrappers, `base64-ng-bytes` for `bytes::Buf`/`BufMut` integration, and
-  `base64-ng-tokio` for async wrappers. These should stay separate from the
-  core package and must clear their own dependency, audit, and misuse-resistance
+- Optional post-`1.0.9` sister crates: consider `base64-ng-serde` for explicit
+  serde wrappers, `base64-ng-bytes` for `bytes::Buf`/`BufMut` integration, and
+  `base64-ng-tokio` for async wrappers. These should stay separate from the core
+  package and must clear their own dependency, audit, and misuse-resistance
   review before publication.
 - `1.1`: replace the SSSE3/SSE4.1 fixed-block encode scaffold with real
   vectorized encode logic for Standard and URL-safe alphabets only, still

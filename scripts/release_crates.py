@@ -21,7 +21,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_PLAN = ROOT / "release-crates.toml"
 CHANGE_KINDS = ("code", "dependency", "unchanged")
 
-PUBLISH_ORDER = ("base64-ng", "base64-ng-sanitization")
+PUBLISH_ORDER = ("base64-ng", "base64-ng-sanitization", "base64-ng-derive")
 
 
 def run(command: list[str], *, dry_run: bool) -> None:
@@ -399,10 +399,9 @@ def main() -> int:
     print()
     print("Release publish sequence completed.")
     print(f"Recommended follow-up: cargo info base64-ng@{args.version}")
-    print(
-        "If base64-ng-sanitization was published, also run: "
-        f"cargo info base64-ng-sanitization@{args.version}"
-    )
+    print("If companion crates were published, also run:")
+    print(f"  cargo info base64-ng-sanitization@{args.version}")
+    print(f"  cargo info base64-ng-derive@{args.version}")
     return 0
 
 

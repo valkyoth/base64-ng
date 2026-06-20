@@ -1,0 +1,38 @@
+[package]
+name = "base64-ng-derive"
+version = "1.0.9"
+edition = "2024"
+rust-version = "1.90"
+license = "MIT OR Apache-2.0"
+description = "dependency-free derive helpers for fixed-size base64-ng byte newtypes"
+repository = "https://github.com/valkyoth/base64-ng"
+homepage = "https://github.com/valkyoth/base64-ng"
+documentation = "https://docs.rs/base64-ng-derive"
+readme = "README.md"
+keywords = ["base64", "encoding", "derive", "no-std"]
+categories = ["encoding", "no-std"]
+include = [
+    "src/**",
+    "tests/**",
+    "Cargo.toml",
+    "README.md",
+]
+
+[lib]
+proc-macro = true
+
+[features]
+default = []
+
+[dependencies]
+
+[dev-dependencies]
+base64-ng = { version = "1.0.9", path = "../..", default-features = false }
+
+[lints.rust]
+unsafe_code = "deny"
+missing_docs = "deny"
+
+[lints.clippy]
+all = "deny"
+pedantic = "deny"

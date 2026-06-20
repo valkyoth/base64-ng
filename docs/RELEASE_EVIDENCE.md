@@ -406,6 +406,9 @@ cargo publish -p base64-ng
 cargo package -p base64-ng-sanitization
 cargo publish -p base64-ng-sanitization --dry-run
 cargo publish -p base64-ng-sanitization
+cargo package -p base64-ng-derive
+cargo publish -p base64-ng-derive --dry-run
+cargo publish -p base64-ng-derive
 ```
 
 After `cargo publish`, verify crates.io metadata with:

@@ -29,6 +29,9 @@ new dependency expands the audit, license, advisory, and supply-chain surface.
 - `base64-ng-sanitization` is an optional companion package for applications
   that already admit `sanitization`; it is not a dependency of the core
   `base64-ng` package.
+- `base64-ng-derive` is an optional companion package for fixed-size byte
+  newtypes. It is dependency-free and does not add proc-macro machinery to the
+  core `base64-ng` package.
 - Fuzz, performance, and dudect-style timing harness dependencies are isolated
   under `fuzz/`, `perf/`, and `dudect/`; the standard local gate checks them
   separately from the published crate dependency graph.
@@ -48,6 +51,10 @@ Current decisions:
 - `base64-ng-sanitization` is admitted as a companion crate because it keeps the
   core package dependency-free while giving applications that already use
   `sanitization` a direct CT decode path into clear-on-drop secret containers.
+- `base64-ng-derive` is admitted as a companion crate because it keeps
+  proc-macro code and generated newtype ergonomics outside the core package.
+  The derive surface is intentionally limited to tuple structs with one
+  `[u8; N]` field.
 - `tokio` remains a reserved, inert feature until async cancellation, drop
   cleanup, chunk-boundary, dependency, and release-evidence requirements are
   satisfied.
@@ -145,9 +152,9 @@ workspaces only when they are not packaged with the published crate:
 - `fuzz/` dependencies are reviewed by `scripts/check_fuzz.sh`.
 - `perf/` dependencies are reviewed by `scripts/check_perf.sh`.
 - `dudect/` dependencies are reviewed by `scripts/check_dudect.sh`.
-- `crates/base64-ng-sanitization/` is an optional companion crate, not a
-  dependency of the core `base64-ng` package. It is reviewed separately by
-  `scripts/check_companion_crates.sh` so the root package keeps its
+- `crates/base64-ng-sanitization/` and `crates/base64-ng-derive/` are optional
+  companion crates, not dependencies of the core `base64-ng` package. They are
+  reviewed separately by `scripts/check_companion_crates.sh` so the root package keeps its
   zero-runtime-dependency guarantee.
 
 `scripts/checks.sh` runs those isolated harness checks so ordinary local

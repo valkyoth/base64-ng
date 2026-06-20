@@ -53,6 +53,7 @@ def base_packages() -> dict[str, dict]:
         name: package(name, "1.0.8") for name in release_crates.PUBLISH_ORDER
     }
     packages["base64-ng-sanitization"]["dependencies"] = [{"name": "base64-ng"}]
+    packages["base64-ng-derive"]["dependencies"] = [{"name": "base64-ng"}]
     return packages
 
 

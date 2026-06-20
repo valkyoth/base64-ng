@@ -70,6 +70,8 @@ Implemented now:
 - Optional `base64-ng-sanitization` companion crate for applications that
   already admit `sanitization` and want direct CT decode helpers into
   clear-on-drop secret containers.
+- Optional `base64-ng-derive` companion crate for fixed-size byte newtypes that
+  need narrow Base64 parsing and encoding helpers.
 - Local check scripts, release gate, dependency policy, audit config, CI, SBOM script, and reproducible build check.
 
 Planned behind admission evidence:
@@ -177,11 +179,29 @@ let secret = ct::STANDARD
 secret.expose_secret(|bytes| assert_eq!(bytes, b"hello"));
 ```
 
+`base64-ng-derive` provides a dependency-free `Base64Secret` derive for tuple
+newtypes around fixed byte arrays:
+
+```toml
+[dependencies]
+base64-ng = { version = "1.0.9", default-features = false }
+base64-ng-derive = "1.0.9"
+```
+
+```rust
+use base64_ng_derive::Base64Secret;
+
+#[derive(Base64Secret)]
+struct ApiKey([u8; 5]);
+
+let key = ApiKey::from_base64(b"aGVsbG8=").unwrap();
+assert_eq!(key.as_bytes(), b"hello");
+assert_eq!(key.encode_base64::<8>().unwrap().as_str(), "aGVsbG8=");
+```
+
 Future optional crates that may be useful, but are intentionally not part of
 the core package yet:
 
-- `base64-ng-derive` for narrow, reviewed newtype derive helpers around fixed
-  Base64-encoded secrets.
 - `base64-ng-serde` for explicit serialization/deserialization wrappers
   without admitting `serde` into the core crate.
 - `base64-ng-bytes` for `bytes::Buf`/`BufMut` integration in network services.

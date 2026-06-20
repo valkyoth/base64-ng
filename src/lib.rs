@@ -334,6 +334,25 @@ pub fn constant_time_eq(left: &[u8], right: &[u8]) -> bool {
     constant_time_eq_public_len(left, right)
 }
 
+/// Clears caller-owned bytes with this crate's best-effort cleanup primitive.
+///
+/// This helper exposes the same dependency-free cleanup path used by
+/// `base64-ng` stack-backed buffers: byte-wise volatile zero writes followed by
+/// the target-specific wipe barrier documented in the crate-level
+/// zeroization caveat. It is intended for companion crates and applications
+/// that need a small reviewed cleanup primitive without pulling cleanup logic
+/// into generated code.
+///
+/// # Security
+///
+/// This is data-retention reduction, not a formal zeroization guarantee. It
+/// cannot clear historical copies, registers, cache lines, swap, hibernation
+/// images, core dumps, or platform snapshots. High-assurance deployments
+/// should pair it with their approved platform memory controls.
+pub fn clear_bytes(bytes: &mut [u8]) {
+    wipe_bytes(bytes);
+}
+
 /// A zero-sized Base64 engine parameterized by alphabet and padding policy.
 pub struct Engine<A, const PAD: bool> {
     alphabet: core::marker::PhantomData<A>,

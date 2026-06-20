@@ -7,7 +7,7 @@ previous_version = "1.0.8"
 version = "1.0.9"
 change = "code"
 publish = true
-reason = "Adds the workspace publish plan and the companion-crate release boundary."
+reason = "Adds the public clear_bytes cleanup helper used by derive-generated fixed byte newtypes."
 
 [crates."base64-ng-sanitization"]
 previous_version = "0.0.0"
@@ -15,3 +15,10 @@ version = "1.0.9"
 change = "code"
 publish = true
 reason = "Initial optional sanitization companion crate for CT decode into clear-on-drop secret containers."
+
+[crates."base64-ng-derive"]
+previous_version = "0.0.0"
+version = "1.0.9"
+change = "code"
+publish = true
+reason = "Initial optional derive companion crate for fixed-size Base64 byte newtypes."

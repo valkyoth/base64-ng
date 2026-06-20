@@ -9,8 +9,18 @@
   integration a separate workspace member instead of a default feature.
 - Added constant-time-oriented `CtDecodeSanitizationExt` helpers for
   stack-backed `SecretBytes<N>` and alloc-gated `SecretVec` outputs.
-- Documented the companion-crate policy and future optional subcrate
-  candidates while keeping SIMD work reserved for the `1.1` line.
+- Added `base64-ng-derive` as an optional dependency-free proc-macro companion
+  crate for fixed-size `[u8; N]` tuple newtypes.
+- Added `Base64Secret`, a narrow derive that generates CT staged strict
+  standard Base64 parsing, strict encoding helpers, redacted `Debug`, fixed
+  width comparison, and drop-time cleanup through the core wipe path.
+- Exposed `base64_ng::clear_bytes` so companion crates and downstream
+  applications can reuse the reviewed best-effort cleanup primitive without
+  emitting unsafe cleanup code.
+- Refreshed the companion-crate publish plan so `base64-ng`,
+  `base64-ng-sanitization`, and `base64-ng-derive` publish in dependency order.
+- Documented the companion-crate policy and future optional subcrate candidates
+  while keeping SIMD work reserved for the `1.1` line.
 
 ## 1.0.8 - 2026-06-09
 

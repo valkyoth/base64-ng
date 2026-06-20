@@ -239,6 +239,7 @@ for required_dependency_review_text in \
     "v1.0 Final Admission Review" \
     "Optional ecosystem integrations may be admitted only as separate companion" \
     "base64-ng-sanitization\` is admitted as a companion crate" \
+    "base64-ng-derive\` is admitted as a companion crate" \
     "zeroize\` and \`subtle\` remain deferred"
 do
     if ! grep -F -q "$required_dependency_review_text" docs/DEPENDENCIES.md; then

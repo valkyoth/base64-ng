@@ -7,6 +7,13 @@ name = "base64-ng"
 version = "1.0.9"
 
 [[package]]
+name = "base64-ng-derive"
+version = "1.0.9"
+dependencies = [
+ "base64-ng",
+]
+
+[[package]]
 name = "base64-ng-sanitization"
 version = "1.0.9"
 dependencies = [

@@ -18,7 +18,8 @@ include = [
     "docs/**",
     "portability/no_alloc_smoke/src/**",
     "portability/migration_smoke/src/**",
-    "scripts/**",
+    "scripts/*.py",
+    "scripts/*.sh",
     "Cargo.toml",
     "release-crates.toml",
     "rust-toolchain.toml",
@@ -33,6 +34,7 @@ include = [
 [workspace]
 members = [
     ".",
+    "crates/base64-ng-derive",
     "crates/base64-ng-sanitization",
 ]
 default-members = ["."]
