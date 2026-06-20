@@ -1,6 +1,6 @@
 # SIMD Admission Policy
 
-`base64-ng` is intentionally scalar-only in the `1.1.0` release. Future SIMD
+`base64-ng` is intentionally scalar-only throughout the `1.1.x` line. Future SIMD
 dispatch remains gated unless a complete SIMD admission evidence package lands
 in a later release series. The crate uses `#![deny(unsafe_code)]` and permits
 reviewed `allow(unsafe_code)` exceptions only for audited cleanup in
@@ -23,6 +23,9 @@ The SIMD roadmap separates implementation evidence from active acceleration:
   evidence, register-cleanup review, fuzz expansion, and admission-tooling
   updates. These releases must remain non-dispatchable: `active_backend()`
   stays scalar, and release notes must not claim user-visible acceleration.
+  GitHub checkpoint tags in this line may move evidence forward without a
+  matching crates.io publish; the next planned crates.io family sync is
+  `1.2.0`.
 - `1.2.0` is the first release that may activate encode acceleration. It may
   admit std-only runtime dispatch for the encode backends whose evidence is
   complete in that release. Backends without complete evidence remain

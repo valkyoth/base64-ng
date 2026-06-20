@@ -50,9 +50,11 @@ The release gate runs:
 - packaged release script presence, executable-bit, and shebang validation
 - zero-dependency policy check for the published crate
 - packaged dependency admission policy for future external-crate review
-- final `v1.0` dependency admission review keeping `tokio`, `serde`, `bytes`,
-  `zeroize`, `subtle`, property-testing, and benchmark frameworks out of the
-  published crate contract unless separately admitted
+- dependency admission review keeping the core crate dependency-free while
+  treating `base64-ng-serde`, `base64-ng-bytes`, `base64-ng-subtle`, and
+  `base64-ng-tokio` as separately reviewed optional companion crates; `zeroize`,
+  property-testing, and benchmark frameworks remain out of the core package
+  unless separately admitted
 - reserved feature placeholder checks for `tokio`, `kani`, and `fuzzing`,
   including inert-feature and per-feature dependency graph validation
 - fail-closed wasm wipe policy check proving default `wasm32` builds reject

@@ -44,6 +44,10 @@
   encoding.
 - Updated the SIMD unsafe inventory for the AVX-512, AVX2, and AArch64 NEON
   prototypes, including staged stack-copy wiping and vector-register cleanup.
+- Refreshed the SIMD roadmap, admission manifest, and backend evidence output
+  so `1.1.x` checkpoint tags consistently describe the current state as real
+  non-dispatchable prototype evidence while active runtime dispatch remains
+  scalar-only until a future `1.2.0` admission package.
 
 ## 1.1.0 - 2026-06-20
 

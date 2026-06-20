@@ -646,81 +646,56 @@ active-acceleration minor release, pause feature work for a short soak period
 so users can report platform-specific regressions before the next acceleration
 line begins.
 
-- Remaining `1.0.x`: maintenance-only fixes if users report real issues during
-  the pause window. Keep the current Kani proof gate running, refresh
-  Miri/fuzz/dudect/generated-assembly evidence, and avoid broad API expansion.
-  Optional sister crates may grow only when they keep the core package
-  dependency-free and have their own supply-chain gates.
-- Optional post-`1.0.10` sister crates: consider additional profile-specific
-  serde modules and full Tokio streaming adapters only after their dependency,
-  audit, cancellation-safety, and misuse-resistance evidence is complete.
-- `1.1.0`: replace the SSSE3/SSE4.1 fixed-block encode scaffold with real
-  vectorized encode logic for Standard and URL-safe alphabets only. Keep it
-  non-dispatchable. The goal is meaningful scalar-equivalence tests, not active
-  acceleration. The implementation must avoid over-reading fixed input blocks;
-  any SIMD load must be backed by a proven readable region, masked load, or
-  safe staging strategy.
-- `1.1.1`: add deterministic SSSE3/SSE4.1 evidence expansion. Cover block
-  boundaries, randomized fixed-block vectors, URL-safe output, all 64 six-bit
-  values, undersized output behavior at the API boundary, and generated
-  assembly capture for the exact target-feature bundle.
-- `1.1.2`: add a real AVX2 fixed-block encode prototype using the same
-  Standard/URL-safe semantics and evidence bar. Keep it inactive. Do not add
-  `ActiveBackend::Avx2`, and do not allow runtime dispatch yet.
-- `1.1.3`: add AVX2 evidence expansion: scalar differential tests, generated
-  assembly capture, register-retention cleanup review, x86 runtime feature
-  gating tests where possible, and benchmark harness output that is explicitly
-  labeled non-dispatchable prototype evidence.
-- `1.1.4`: expand fuzz and release-evidence coverage for the inactive x86
-  encode prototypes. The fuzz harness should compare prototype block encoders
-  against scalar output where the host supports the required CPU features, and
-  the release evidence should record skipped-backend reasons on unsupported
-  hardware.
-- `1.1.5`: add an inactive AVX-512 VBMI fixed-block encode prototype if the
-  x86 baseline evidence remains clean. AVX-512 may use direct 64-byte alphabet
-  lookup where it is safer and clearer than SSSE3/AVX2 range arithmetic, but it
-  must include explicit ZMM/YMM/XMM register-retention cleanup evidence and
-  generated-code review before any future dispatch is considered.
-- `1.1.6`: add AVX-512 evidence expansion: scalar differential tests,
-  generated assembly capture, benchmark harness output labeled as inactive
-  prototype evidence, and CPU-feature skip reporting on machines without the
-  full `avx512f`, `avx512bw`, `avx512vl`, and `avx512vbmi` bundle.
-- `1.1.7`: add inactive NEON fixed-block encode logic for Standard and
-  URL-safe alphabets. Keep it non-dispatchable and platform-evidence gated.
-  AArch64 and ARM differ in availability assumptions, so the release evidence
-  must record target triples, CPU details, and whether NEON availability is
-  architectural or target-feature asserted.
-- `1.1.8`: add inactive wasm `simd128` encode logic only if the wasm wipe and
-  JIT caveats remain clearly documented. Wasm evidence must include generated
-  wasm/codegen review and must not make runtime/JIT timing or register-cleanup
-  claims the crate cannot prove.
-- `1.1.9`: harden the SIMD admission tooling. Teach
-  `scripts/validate-simd-admission.sh` and backend evidence scripts the
-  difference between "real but non-dispatchable prototype" and "admitted active
-  backend" so the gate still forbids acceleration while accepting the richer
-  evidence package.
-- `1.1.10`: prepare the encode active-dispatch admission package without
-  enabling it.
-  Update draft docs, benchmark templates, runtime-report expectations, and
-  release-note wording. `active_backend()` must still return scalar at the end
-  of this release.
-- `1.2.0`: consider std-only runtime dispatch for admitted encode paths if and
-  only if the relevant encode evidence is complete. It is acceptable to admit a
-  subset of encode backends, but the release notes must name exactly which
-  backends are active and which remain candidate-only. `active_backend()` may
-  gain admitted encode backends only when the admission manifest, release
-  notes, benchmark evidence, unsafe inventory, generated assembly evidence,
-  fallback tests, and backend policy tests are updated in the same release.
-  `no_std` builds remain scalar unless a later unsafe caller-contract API is
-  designed and reviewed. After `1.2.0`, pause feature work for roughly two
-  weeks before starting SIMD decode work.
-- `1.2.x`: build SIMD decode prototypes as a separate non-accelerated line.
+Current `1.1.x` checkpoint state:
+
+- `1.1.0`: started the SIMD encode foundation line with real non-dispatchable
+  SSSE3/SSE4.1 fixed-block encode logic for Standard and URL-safe alphabets.
+- `1.1.1`: hardened the SIMD encode prototype evidence line with AVX-512,
+  AVX2, NEON, wasm `simd128`, generated assembly evidence, backend evidence,
+  and the future encode-admission draft while keeping runtime dispatch
+  scalar-only.
+- `1.1.2`: added the optional `base64-ng-subtle` companion crate and tightened
+  SIMD prototype cleanup evidence, including inline AArch64 NEON register
+  cleanup for the test-only prototype path.
+- Next `1.1.x` checkpoints: refresh documentation and machine gates so
+  release evidence consistently distinguishes real non-dispatchable prototypes
+  from admitted active backends, then run pentest/CI/Kani on the candidate
+  before tagging the next GitHub checkpoint. Do not publish additional
+  crates.io versions for this line unless a user-impacting fix requires it.
+
+Remaining before `1.2.0` active encode dispatch can be considered:
+
+- Keep `active_backend()` returning scalar and keep `ActiveBackend` without
+  accelerated variants until the admission manifest is updated in the same
+  commit as the admitted dispatch code.
+- Run the complete scalar differential, fuzz, Miri, Kani, dudect-style,
+  generated assembly, backend evidence, unsafe-boundary, panic-policy,
+  dependency, package, and release metadata gates on the exact release
+  candidate.
+- Produce per-backend hardware evidence for any backend considered for active
+  dispatch. A backend may stay real-but-non-dispatchable in `1.2.0` if its
+  hardware evidence is incomplete.
+- Produce benchmark evidence with hardware, OS, Rust version, feature flags,
+  command, raw output, scalar baseline, and exact admitted backend names.
+- Update `docs/SIMD_ADMISSION.md`, runtime report expectations, release notes,
+  unsafe inventory, benchmark docs, and the release script in the same change
+  that admits any backend.
+- Keep `no_std` acceleration disabled unless a future unsafe caller-contract
+  API is designed, reviewed, and separately admitted.
+- Publish the next crates.io family sync as `1.2.0` only after the `1.1.x`
+  checkpoint tags and user testing remain clean.
+
+After `1.2.0`:
+
+- Pause encode feature work for roughly two weeks before starting SIMD decode
+  work.
+- Build SIMD decode prototypes as a separate non-accelerated `1.2.x` line.
   Start with strict Standard and URL-safe decode only. Keep prototypes
   non-dispatchable while proving invalid-byte handling, canonical trailing-bit
   rejection, padding behavior, output-retention cleanup, error-shape
   compatibility where promised, scalar differential tests, fuzz coverage, and
   timing-oriented evidence.
-- `1.3.0`: consider active SIMD decode dispatch only if the `1.2.x` decode
+- Consider active SIMD decode dispatch in `1.3.0` only if the `1.2.x` decode
   evidence line is complete and the `1.2.0` encode acceleration line has had a
   clean soak period. If admitted, release notes must distinguish encode
   backends from decode backends and keep `HighAssuranceScalarOnly` available

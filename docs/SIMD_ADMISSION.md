@@ -10,7 +10,7 @@ the admitted implementation.
 - Admitted backends: none.
 - Active backend: scalar only.
 - Public performance claims: none.
-- Release status: `1.1.0` remains scalar-only. Future releases may admit an
+- Release status: `1.1.x` remains scalar-only. Future releases may admit an
   accelerated backend only when this manifest is updated with a complete
   backend admission evidence package in the same release series.
 
@@ -54,11 +54,11 @@ State labels are intentionally strict:
 
 | Backend | State | Required CPU features | Evidence |
 | --- | --- | --- | --- |
-| AVX-512 VBMI | candidate only | `avx512f`, `avx512bw`, `avx512vl`, `avx512vbmi` | real fixed-block encode prototype for all alphabets; non-dispatchable |
-| AVX2 | candidate only | `avx2` | real fixed-block encode prototype for Standard and URL-safe alphabets; non-dispatchable |
-| SSSE3/SSE4.1 | candidate only | `ssse3`, `sse4.1` | real fixed-block encode prototype for Standard and URL-safe alphabets; non-dispatchable |
-| NEON | candidate only | `neon` | real AArch64 fixed-block encode prototype for Standard and URL-safe alphabets; 32-bit ARM scaffold; non-dispatchable |
-| wasm `simd128` | candidate only | `simd128` | real fixed-block encode prototype for Standard and URL-safe alphabets; test-binary compile evidence only; non-dispatchable |
+| AVX-512 VBMI | real non-dispatchable prototype | `avx512f`, `avx512bw`, `avx512vl`, `avx512vbmi` | real fixed-block encode prototype for all alphabets; non-dispatchable |
+| AVX2 | real non-dispatchable prototype | `avx2` | real fixed-block encode prototype for Standard and URL-safe alphabets; non-dispatchable |
+| SSSE3/SSE4.1 | real non-dispatchable prototype | `ssse3`, `sse4.1` | real fixed-block encode prototype for Standard and URL-safe alphabets; non-dispatchable |
+| NEON | real non-dispatchable prototype | `neon` | real AArch64 fixed-block encode prototype for Standard and URL-safe alphabets; 32-bit ARM scaffold; non-dispatchable |
+| wasm `simd128` | real non-dispatchable prototype | `simd128` | real fixed-block encode prototype for Standard and URL-safe alphabets; test-binary compile evidence only; non-dispatchable |
 
 ## Release Rule
 

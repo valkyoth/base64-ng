@@ -103,8 +103,8 @@ if [ "$backend_row_count" -ne 5 ]; then
     exit 1
 fi
 
-if printf '%s\n' "$backend_rows" | grep -v '| candidate only |' >/dev/null 2>&1; then
-    echo "simd admission: every backend row must remain candidate-only until admission" >&2
+if printf '%s\n' "$backend_rows" | grep -v '| real non-dispatchable prototype |' >/dev/null 2>&1; then
+    echo "simd admission: every backend row must remain a real non-dispatchable prototype until admission" >&2
     printf '%s\n' "$backend_rows" >&2
     exit 1
 fi
