@@ -271,8 +271,8 @@ where
     A: Alphabet,
 {
     let mut staged = [
-        input[0], input[1], input[2], 0, input[3], input[4], input[5], 0, input[6], input[7],
-        input[8], 0, input[9], input[10], input[11], 0,
+        input[0], input[1], input[2], input[3], input[4], input[5], input[6], input[7], input[8],
+        input[9], input[10], input[11], 0, 0, 0, 0,
     ];
     let shuffle_mask = [2, 1, 0, 255, 5, 4, 3, 255, 8, 7, 6, 255, 11, 10, 9, 255];
 
