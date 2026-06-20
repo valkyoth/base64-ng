@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- Added a real non-dispatchable AVX2 fixed-block encode prototype for Standard
+  and URL-safe alphabets. The prototype remains test-only and active runtime
+  backend selection remains scalar-only.
+- Added AVX2 SIMD equivalence coverage for patterned blocks, all 64 emitted
+  six-bit Base64 values, and custom alphabets that must fall back to scalar
+  encoding.
+- Updated the SIMD unsafe inventory for the AVX2 prototype, including staged
+  stack-copy wiping and AVX/SSE cleanup with `vzeroupper`.
+
 ## 1.1.0 - 2026-06-20
 
 - Started the SIMD encode foundation line with a real SSSE3/SSE4.1 fixed-block

@@ -38,6 +38,22 @@ fn fill_indices_pattern(output: &mut [u8; 12], seed: u8) {
     }
 }
 
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+fn fill_indices_pattern_wide(output: &mut [u8; 24], seed: u8) {
+    let mut write = 0;
+    for group in 0..8 {
+        let i0 = seed.wrapping_add(group * 4) & 0x3f;
+        let i1 = seed.wrapping_add(group * 4 + 1) & 0x3f;
+        let i2 = seed.wrapping_add(group * 4 + 2) & 0x3f;
+        let i3 = seed.wrapping_add(group * 4 + 3) & 0x3f;
+
+        output[write] = (i0 << 2) | (i1 >> 4);
+        output[write + 1] = (i1 << 4) | (i2 >> 2);
+        output[write + 2] = (i2 << 6) | i3;
+        write += 3;
+    }
+}
+
 #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
 #[test]
 fn avx512_encode_prototype_matches_scalar_when_available() {
@@ -119,6 +135,50 @@ fn avx2_encode_prototype_matches_scalar_when_available() {
         assert_eq!(scalar_len, avx2_url_safe.len());
         assert_eq!(avx2_url_safe, scalar_url_safe);
     }
+
+    for seed in 0..64 {
+        fill_indices_pattern_wide(&mut input, seed);
+
+        let mut avx2_standard = [0x55; 32];
+        let mut scalar_standard = [0xaa; 32];
+        // SAFETY: The feature check above proves AVX2 availability for this
+        // test invocation.
+        unsafe {
+            encode_24_bytes_avx2::<Standard>(&input, &mut avx2_standard);
+        }
+        let scalar_len = Engine::<Standard, true>::new()
+            .encode_slice(&input, &mut scalar_standard)
+            .unwrap();
+        assert_eq!(scalar_len, avx2_standard.len());
+        assert_eq!(avx2_standard, scalar_standard);
+
+        let mut avx2_url_safe = [0x55; 32];
+        let mut scalar_url_safe = [0xaa; 32];
+        // SAFETY: The feature check above proves AVX2 availability for this
+        // test invocation.
+        unsafe {
+            encode_24_bytes_avx2::<UrlSafe>(&input, &mut avx2_url_safe);
+        }
+        let scalar_len = Engine::<UrlSafe, true>::new()
+            .encode_slice(&input, &mut scalar_url_safe)
+            .unwrap();
+        assert_eq!(scalar_len, avx2_url_safe.len());
+        assert_eq!(avx2_url_safe, scalar_url_safe);
+    }
+
+    fill_indices_pattern_wide(&mut input, 0);
+    let mut avx2_custom = [0x55; 32];
+    let mut scalar_custom = [0xaa; 32];
+    // SAFETY: The feature check above proves AVX2 availability for this test
+    // invocation.
+    unsafe {
+        encode_24_bytes_avx2::<AnchorMatchingCustom>(&input, &mut avx2_custom);
+    }
+    let scalar_len = Engine::<AnchorMatchingCustom, true>::new()
+        .encode_slice(&input, &mut scalar_custom)
+        .unwrap();
+    assert_eq!(scalar_len, avx2_custom.len());
+    assert_eq!(avx2_custom, scalar_custom);
 }
 
 #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]

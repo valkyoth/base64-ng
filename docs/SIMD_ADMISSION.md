@@ -45,7 +45,7 @@ added to `ActiveBackend` or used by runtime dispatch:
 | Backend | State | Required CPU features | Evidence |
 | --- | --- | --- | --- |
 | AVX-512 VBMI | candidate only | `avx512f`, `avx512bw`, `avx512vl`, `avx512vbmi` | inactive prototype equivalence only |
-| AVX2 | candidate only | `avx2` | inactive prototype equivalence only |
+| AVX2 | candidate only | `avx2` | real fixed-block encode prototype for Standard and URL-safe alphabets; non-dispatchable |
 | SSSE3/SSE4.1 | candidate only | `ssse3`, `sse4.1` | real fixed-block encode prototype for Standard and URL-safe alphabets; non-dispatchable |
 | NEON | candidate only | `neon` | inactive prototype equivalence only |
 | wasm `simd128` | candidate only | `simd128` | compile-time candidate detection only |

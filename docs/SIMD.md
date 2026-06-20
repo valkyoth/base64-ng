@@ -82,11 +82,11 @@ runtime behavior for that line.
   registers before returning. It is tested against scalar output only when
   SSSE3/SSE4.1 is available and is not compiled into release library builds.
 - An inactive AVX2 fixed-block encode prototype exists behind the SIMD boundary
-  as test-only scaffolding and is tested against scalar output only when AVX2
-  is available. It currently zeroes the destination with SIMD and then
-  overwrites the block with scalar encoding; this is scaffolding, not vectorized
-  Base64 correctness evidence, and it is not compiled into release library
-  builds.
+  as real non-dispatchable vector encode evidence for Standard and URL-safe
+  alphabets. It uses AVX2 lane-local byte shuffling, vector shifts/masks, and
+  byte blending for fixed 24-byte input blocks, then clears XMM/YMM state
+  before returning. It is tested against scalar output only when AVX2 is
+  available and is not compiled into release library builds.
 - An inactive NEON fixed-block encode prototype exists behind the same boundary
   as test-only scaffolding and is tested against scalar output only on
   NEON-capable ARM targets. It currently zeroes the destination with SIMD and

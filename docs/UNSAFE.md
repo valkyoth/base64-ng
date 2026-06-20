@@ -415,33 +415,117 @@ Purpose:
 
 - Exercise AVX2 target-feature plumbing.
 - Validate the unsafe boundary.
-- Provide scalar-equivalence scaffolding before any real vector path is
-  admitted. Current tests do not prove vectorized Base64 correctness.
+- Provide real fixed-block vector encode evidence for Standard and URL-safe
+  alphabets before any runtime dispatch is admitted.
 
 Preconditions:
 
 - Caller must prove AVX2 is available on the current CPU.
 - Input is exactly 24 bytes.
 - Output is exactly 32 bytes.
+- The vectorized path is used only for Standard-family alphabets (`A-Z`,
+  `a-z`, `0-9`, and either `+/` or `-_`). Other alphabets fall back to the
+  scalar prototype loop.
 
 Unsafe operation:
 
-- `_mm256_storeu_si256` stores one 256-bit zero vector into the output buffer.
+- `_mm256_loadu_si256` loads from a local 32-byte staging array that contains
+  two 12-byte input lanes plus four zero bytes per lane.
+- `_mm256_shuffle_epi8` reshapes each staged 128-bit lane into four 24-bit
+  groups without reading from caller memory beyond the fixed input array.
+- AVX2 shifts, masks, and OR operations produce thirty-two 6-bit indices.
+- `encode_standard_family_indices_avx2` maps those indices to Standard or
+  URL-safe alphabet bytes with AVX2 byte blends.
+- `_mm256_storeu_si256` stores the 32 encoded bytes into the output buffer.
+- `clear_ymm_registers_for_test_prototype` clears XMM lower halves and uses
+  `vzeroupper` before return to reduce register retention and AVX/SSE
+  transition state in this non-dispatchable test prototype.
+- The local staging array is wiped with the crate cleanup primitive before the
+  function returns.
 
 Safety argument:
 
-- The output type is `&mut [u8; 32]`, so the store has enough initialized,
-  writable memory.
-- The intrinsic is the unaligned store variant, so no stronger alignment is
-  required.
+- The input and output array types provide fixed readable and writable bounds.
+- The SIMD load reads only from a local 32-byte staging array, so the prototype
+  does not over-read the 24-byte caller input.
+- The staging array is mutable and wiped after the SIMD store and register
+  cleanup, reducing stack retention of the copied caller bytes in this inactive
+  prototype.
+- The load and store intrinsics are unaligned variants, so no stronger
+  alignment is required.
 - The function is guarded by an AVX2 target-feature contract.
-- The prototype then overwrites the block with scalar-equivalent Base64 output.
-  The SIMD zeroing is semantically overwritten and is not an implementation of
-  vectorized Base64.
-- Register-retention note: this prototype does not load caller bytes into SIMD
-  registers. Any future AVX2 implementation that does so must document and
-  implement explicit cleanup for every secret-bearing YMM/XMM register before
-  return, plus AVX transition cleanup such as `vzeroupper` where applicable.
+- The output length is fixed by the output array type.
+- The prototype remains test-only and non-dispatchable. Runtime acceleration is
+  still blocked by the SIMD admission manifest.
+- Register-retention note: the prototype now loads caller bytes into YMM/XMM
+  state. It calls `clear_ymm_registers_for_test_prototype` before return. This
+  is retention reduction for the inactive prototype, not a formal
+  microarchitectural side-channel proof.
+
+### `encode_standard_family_indices_avx2`
+
+Location: `src/simd/x86.rs`
+
+Status: private helper for the inactive AVX2 test-only prototype, not compiled
+into release library builds and not dispatchable.
+
+Purpose:
+
+- Map thirty-two 6-bit indices to Standard or URL-safe alphabet bytes with AVX2
+  blends instead of scalar per-byte table indexing.
+
+Preconditions:
+
+- Caller must prove AVX2 is available on the current CPU.
+- `indices` contains only byte values in `0..=63`.
+- The alphabet must be Standard-family as checked by the caller with a complete
+  comparison of positions `0..62` and an explicit check of the two terminal
+  symbols.
+
+Unsafe operation:
+
+- AVX2 byte comparisons and blends compute the ASCII offset for each index.
+
+Safety argument:
+
+- The helper does not dereference raw pointers or access memory.
+- The target-feature contract enables the required AVX2 instructions.
+- The caller constructs `indices` with masks that constrain every byte to a
+  six-bit Base64 value.
+- The helper is private to the test-only prototype path.
+
+### `clear_ymm_registers_for_test_prototype`
+
+Location: `src/simd/x86.rs`
+
+Status: private helper for inactive AVX2 test-only prototypes, not compiled
+into release library builds and not dispatchable.
+
+Purpose:
+
+- Clear lower XMM state and upper YMM state before returning from the AVX2
+  prototype path that processes caller bytes in vector registers.
+
+Preconditions:
+
+- Called only after the prototype has stored its output and no later AVX/SSE
+  value is needed by the function.
+
+Unsafe operation:
+
+- Calls `clear_xmm_registers_for_test_prototype` for lower XMM register state.
+- Inline assembly emits `vzeroupper` to clear upper YMM state and avoid
+  carrying AVX upper halves back to scalar/SSE code.
+
+Safety argument:
+
+- The helper does not read or write memory.
+- The helper runs at the end of the inactive prototype path.
+- `vzeroupper` is valid under the AVX2 target-feature precondition inherited
+  from the caller.
+- This is best-effort register-retention reduction for test evidence, not a
+  guarantee that historical register, stack, cache, or microarchitectural
+  copies do not exist.
 
 ### `encode_12_bytes_ssse3_sse41`
 
