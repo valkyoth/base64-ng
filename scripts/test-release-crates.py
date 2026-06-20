@@ -6,6 +6,7 @@ from __future__ import annotations
 import copy
 import importlib.util
 from pathlib import Path
+from types import SimpleNamespace
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -142,6 +143,45 @@ def test_publish_plan_skips_unchanged_crates() -> None:
     assert release_crates.publish_plan(plan) == ("base64-ng",)
 
 
+def test_publish_sequence_dry_runs_dependents_after_index_wait() -> None:
+    plan = base_plan()
+    plan["crates"]["base64-ng"]["version"] = "1.0.10"
+    plan["crates"]["base64-ng-serde"]["version"] = "1.0.10"
+    events: list[str] = []
+
+    original_publish_dry_run = release_crates.publish_dry_run
+    original_publish = release_crates.publish
+    original_wait_for_index = release_crates.wait_for_index
+    try:
+        release_crates.publish_dry_run = lambda package, args: events.append(
+            f"dry-run {package}"
+        )
+        release_crates.publish = lambda package, args: events.append(
+            f"publish {package}"
+        )
+        release_crates.wait_for_index = lambda package, version, dry_run: events.append(
+            f"wait {package} {version}"
+        )
+
+        release_crates.publish_sequence(
+            SimpleNamespace(skip_checks=False, dry_run=False),
+            ("base64-ng", "base64-ng-serde"),
+            plan,
+        )
+    finally:
+        release_crates.publish_dry_run = original_publish_dry_run
+        release_crates.publish = original_publish
+        release_crates.wait_for_index = original_wait_for_index
+
+    assert events == [
+        "dry-run base64-ng",
+        "publish base64-ng",
+        "wait base64-ng 1.0.10",
+        "dry-run base64-ng-serde",
+        "publish base64-ng-serde",
+    ]
+
+
 def run_tests() -> None:
     tests = (
         test_current_plan_accepts_unchanged_crates,
@@ -149,6 +189,7 @@ def run_tests() -> None:
         test_dependency_only_changes_must_patch_bump,
         test_unchanged_crates_are_not_published,
         test_publish_plan_skips_unchanged_crates,
+        test_publish_sequence_dry_runs_dependents_after_index_wait,
     )
     for test in tests:
         test()

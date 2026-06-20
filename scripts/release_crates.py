@@ -254,8 +254,6 @@ def run_preflight(args: argparse.Namespace, steps: tuple[str, ...]) -> None:
         return
 
     run(["scripts/checks.sh"], dry_run=args.dry_run)
-    for package in steps:
-        publish_dry_run(package, args)
 
 
 def publish_plan(plan: dict) -> tuple[str, ...]:
@@ -295,6 +293,16 @@ def publish(package: str, args: argparse.Namespace) -> None:
     if args.no_verify:
         command.append("--no-verify")
     run(command, dry_run=args.dry_run)
+
+
+def publish_sequence(args: argparse.Namespace, steps: tuple[str, ...], plan: dict) -> None:
+    for index, package in enumerate(steps):
+        if not args.skip_checks:
+            publish_dry_run(package, args)
+        publish(package, args)
+        version = plan["crates"][package]["version"]
+        if index != len(steps) - 1:
+            wait_for_index(package, version, dry_run=args.dry_run)
 
 
 def main() -> int:
@@ -428,11 +436,7 @@ def main() -> int:
 
     run_preflight(args, steps)
 
-    for index, package in enumerate(steps):
-        publish(package, args)
-        version = plan["crates"][package]["version"]
-        if index != len(steps) - 1:
-            wait_for_index(package, version, dry_run=args.dry_run)
+    publish_sequence(args, steps, plan)
 
     print()
     print("Release publish sequence completed.")
