@@ -41,6 +41,9 @@ scripts/check_wasm_wipe_policy.sh
 echo "checks: SIMD admission policy"
 scripts/validate-simd-admission.sh
 
+echo "checks: SIMD encode admission draft"
+scripts/validate-simd-encode-admission-draft.sh
+
 echo "checks: SIMD feature bundles"
 scripts/check_simd_feature_bundles.sh
 

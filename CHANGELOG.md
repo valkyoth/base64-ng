@@ -25,6 +25,9 @@
 - Added a draft SIMD encode admission package for future `1.2.0` activation,
   including runtime-report expectations, benchmark record shape, and release
   note wording rules while keeping `1.1.x` scalar-only.
+- Added `scripts/validate-simd-encode-admission-draft.sh` and wired it into the
+  standard checks so the future encode-dispatch admission contract remains
+  packaged and machine-checked.
 - Added a real non-dispatchable AVX2 fixed-block encode prototype for Standard
   and URL-safe alphabets. The prototype remains test-only and active runtime
   backend selection remains scalar-only.

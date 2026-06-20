@@ -296,6 +296,7 @@ The release gate also runs:
 
 ```sh
 scripts/validate-simd-admission.sh
+scripts/validate-simd-encode-admission-draft.sh
 ```
 
 That validator keeps active SIMD dispatch scalar-only until the release includes
@@ -308,6 +309,9 @@ For a future encode-dispatch release, use
 working package. It defines the runtime-report expectations, benchmark record,
 release-note wording, and decision checklist required before any encode backend
 can move from real non-dispatchable prototype evidence to active dispatch.
+`scripts/validate-simd-encode-admission-draft.sh` keeps that draft packaged and
+checks that the future admission contract still names the required runtime,
+fallback, benchmark, release-note, and architecture-specific evidence.
 
 ## Miri Evidence
 

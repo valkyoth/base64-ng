@@ -75,6 +75,7 @@ test -s docs/RELEASE_EVIDENCE.md
 test -s docs/SECURITY_CONTROLS.md
 test -s docs/SIMD.md
 test -s docs/SIMD_ADMISSION.md
+test -s docs/SIMD_ENCODE_ADMISSION_DRAFT.md
 test -s docs/TRUST.md
 test -s docs/UNSAFE.md
 test -x scripts/release_crates.py
@@ -123,6 +124,7 @@ for required_script in \
     "scripts/validate-msrv-policy.sh" \
     "scripts/validate-panic-policy.sh" \
     "scripts/validate-release-metadata.sh" \
+    "scripts/validate-simd-encode-admission-draft.sh" \
     "scripts/validate-simd-admission.sh" \
     "scripts/validate-unsafe-boundary.sh"
 do
@@ -277,6 +279,7 @@ done
 for required_checks_command in \
     "scripts/validate-api-audit.sh" \
     "scripts/validate-msrv-policy.sh" \
+    "scripts/validate-simd-encode-admission-draft.sh" \
     "scripts/release_crates.py --check" \
     "python3 scripts/test-release-crates.py" \
     "scripts/check_migration_smoke.sh" \
@@ -332,6 +335,7 @@ for required_package_file in \
     "docs/RELEASE_EVIDENCE.md" \
     "docs/SECURITY_CONTROLS.md" \
     "docs/SIMD_ADMISSION.md" \
+    "docs/SIMD_ENCODE_ADMISSION_DRAFT.md" \
     "docs/SIMD.md" \
     "docs/TRUST.md" \
     "docs/UNSAFE.md" \
@@ -364,6 +368,7 @@ for required_package_file in \
     "scripts/validate-msrv-policy.sh" \
     "scripts/validate-panic-policy.sh" \
     "scripts/validate-release-metadata.sh" \
+    "scripts/validate-simd-encode-admission-draft.sh" \
     "scripts/validate-simd-admission.sh" \
     "scripts/validate-unsafe-boundary.sh" \
     "src/alphabet.rs" \

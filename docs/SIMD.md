@@ -237,12 +237,18 @@ admission evidence is deliberately updated. The gate currently requires:
 - `docs/SIMD_ADMISSION.md` to record that no accelerated backend is admitted.
 - Documentation for benchmark evidence, release-note restrictions, and
   vector-register retention cleanup strategy to remain packaged.
+- The encode admission draft to remain packaged and validated before any
+  `1.2.0` dispatch work starts.
 
 When an accelerated backend is ready for admission, update this gate in the
 same commit as the scalar differential tests, fuzz evidence, unsafe inventory,
 benchmark evidence, and release notes. For encode acceleration, start from
 [SIMD_ENCODE_ADMISSION_DRAFT.md](SIMD_ENCODE_ADMISSION_DRAFT.md) and keep any
 backend not fully proven in the candidate-only state.
+The draft is guarded by `scripts/validate-simd-encode-admission-draft.sh` so
+runtime report expectations, benchmark template fields, release-note precision,
+and architecture-specific blockers do not drift while `1.1.x` remains
+scalar-only.
 
 ## Dispatch Rules
 
