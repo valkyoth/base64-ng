@@ -72,6 +72,9 @@ Implemented now:
   clear-on-drop secret containers.
 - Optional `base64-ng-derive` companion crate for fixed-size byte newtypes that
   need narrow Base64 parsing and encoding helpers.
+- Optional `base64-ng-serde`, `base64-ng-bytes`, and `base64-ng-tokio`
+  companion crates for projects that explicitly admit those ecosystem
+  dependencies.
 - Local check scripts, release gate, dependency policy, audit config, CI, SBOM script, and reproducible build check.
 
 Planned behind admission evidence:
@@ -79,10 +82,10 @@ Planned behind admission evidence:
 - Admitted AVX2, AVX-512, SSSE3/SSE4.1, ARM NEON, and wasm `simd128`
   fast paths after the SIMD admission evidence is complete. The `1.0.9`
   release remains scalar-only.
-- Async streaming wrappers only after the `tokio` feature passes the
-  dependency and cancellation-safety admission bar in [docs/ASYNC.md](docs/ASYNC.md).
-- Optional `serde` or `bytes` integration only if a concrete use case clears
-  the dependency admission policy in [docs/DEPENDENCIES.md](docs/DEPENDENCIES.md).
+- Full async streaming wrappers only after the `tokio` feature passes the
+  cancellation-safety admission bar in [docs/ASYNC.md](docs/ASYNC.md). The
+  `base64-ng-tokio` companion crate currently provides bounded async
+  read-all/write-all helpers, not streaming state machines.
 - Additional Kani harnesses beyond the current bounded no-default-features
   proof set. A clean Kani run proves only the scoped harness properties, not a
   whole-crate or cryptographic constant-time guarantee.
@@ -199,14 +202,70 @@ assert_eq!(key.as_bytes(), b"hello");
 assert_eq!(key.encode_base64::<8>().unwrap().as_str(), "aGVsbG8=");
 ```
 
+`base64-ng-serde` provides explicit serialization wrappers without admitting
+`serde` into the core package:
+
+```toml
+[dependencies]
+base64-ng-serde = "1.0.9"
+serde = { version = "1.0.228", features = ["derive"] }
+```
+
+```rust
+#[derive(serde::Serialize, serde::Deserialize)]
+struct Message {
+    #[serde(with = "base64_ng_serde::standard")]
+    payload: Vec<u8>,
+}
+```
+
+`base64-ng-bytes` provides `Bytes`, `Buf`, and `BufMut` helpers:
+
+```toml
+[dependencies]
+base64-ng = "1.0.9"
+base64-ng-bytes = "1.0.9"
+bytes = "1.12.0"
+```
+
+```rust
+use base64_ng::STANDARD;
+use base64_ng_bytes::EngineBytesExt;
+
+let encoded = STANDARD.encode_bytes(b"hello").unwrap();
+assert_eq!(&encoded[..], b"aGVsbG8=");
+```
+
+`base64-ng-tokio` provides bounded async helpers for applications that already
+use Tokio:
+
+```toml
+[dependencies]
+base64-ng = "1.0.9"
+base64-ng-tokio = "1.0.9"
+tokio = { version = "1.52.3", features = ["io-util"] }
+```
+
+```rust
+use base64_ng::STANDARD;
+use base64_ng_tokio::encode_reader_to_writer;
+
+# async fn example() -> std::io::Result<()> {
+let mut input = &b"hello"[..];
+let mut output = Vec::new();
+encode_reader_to_writer(&STANDARD, &mut input, &mut output).await?;
+assert_eq!(output, b"aGVsbG8=");
+# Ok(())
+# }
+```
+
 Future optional crates that may be useful, but are intentionally not part of
 the core package yet:
 
-- `base64-ng-serde` for explicit serialization/deserialization wrappers
-  without admitting `serde` into the core crate.
-- `base64-ng-bytes` for `bytes::Buf`/`BufMut` integration in network services.
-- `base64-ng-tokio` for async I/O wrappers once cancellation-safety evidence
-  clears the async admission policy.
+- Additional profile-specific serde wrappers if users need non-default
+  alphabets beyond the initial standard and URL-safe no-padding modules.
+- Full Tokio streaming adapters once cancellation-safety evidence clears the
+  async admission policy.
 
 Disable defaults for embedded or freestanding use:
 

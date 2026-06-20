@@ -21,7 +21,14 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_PLAN = ROOT / "release-crates.toml"
 CHANGE_KINDS = ("code", "dependency", "unchanged")
 
-PUBLISH_ORDER = ("base64-ng", "base64-ng-sanitization", "base64-ng-derive")
+PUBLISH_ORDER = (
+    "base64-ng",
+    "base64-ng-sanitization",
+    "base64-ng-derive",
+    "base64-ng-serde",
+    "base64-ng-bytes",
+    "base64-ng-tokio",
+)
 
 
 def run(command: list[str], *, dry_run: bool) -> None:
@@ -402,6 +409,9 @@ def main() -> int:
     print("If companion crates were published, also run:")
     print(f"  cargo info base64-ng-sanitization@{args.version}")
     print(f"  cargo info base64-ng-derive@{args.version}")
+    print(f"  cargo info base64-ng-serde@{args.version}")
+    print(f"  cargo info base64-ng-bytes@{args.version}")
+    print(f"  cargo info base64-ng-tokio@{args.version}")
     return 0
 
 

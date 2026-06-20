@@ -220,7 +220,8 @@ scripts/release_crates.py
 crate versions and dependency order, runs the local release gate, publishes
 `base64-ng` first, waits for crates.io visibility, and then publishes
 dependent companion crates such as `base64-ng-sanitization` and
-`base64-ng-derive`.
+`base64-ng-derive`, `base64-ng-serde`, `base64-ng-bytes`, and
+`base64-ng-tokio`.
 
 For manual fallback, publish the core package first, wait until crates.io serves
 the new `base64-ng` version, then verify and publish the companion package:
@@ -234,6 +235,15 @@ cargo publish -p base64-ng-sanitization
 cargo package -p base64-ng-derive
 cargo publish -p base64-ng-derive --dry-run
 cargo publish -p base64-ng-derive
+cargo package -p base64-ng-serde
+cargo publish -p base64-ng-serde --dry-run
+cargo publish -p base64-ng-serde
+cargo package -p base64-ng-bytes
+cargo publish -p base64-ng-bytes --dry-run
+cargo publish -p base64-ng-bytes
+cargo package -p base64-ng-tokio
+cargo publish -p base64-ng-tokio --dry-run
+cargo publish -p base64-ng-tokio
 ```
 
 This order is required because companion crates depend on the same released

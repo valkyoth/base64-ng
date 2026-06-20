@@ -409,6 +409,15 @@ cargo publish -p base64-ng-sanitization
 cargo package -p base64-ng-derive
 cargo publish -p base64-ng-derive --dry-run
 cargo publish -p base64-ng-derive
+cargo package -p base64-ng-serde
+cargo publish -p base64-ng-serde --dry-run
+cargo publish -p base64-ng-serde
+cargo package -p base64-ng-bytes
+cargo publish -p base64-ng-bytes --dry-run
+cargo publish -p base64-ng-bytes
+cargo package -p base64-ng-tokio
+cargo publish -p base64-ng-tokio --dry-run
+cargo publish -p base64-ng-tokio
 ```
 
 After `cargo publish`, verify crates.io metadata with:

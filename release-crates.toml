@@ -22,3 +22,24 @@ version = "1.0.9"
 change = "code"
 publish = true
 reason = "Initial optional derive companion crate for fixed-size Base64 byte newtypes."
+
+[crates."base64-ng-serde"]
+previous_version = "0.0.0"
+version = "1.0.9"
+change = "code"
+publish = true
+reason = "Initial optional serde companion crate for explicit Base64 serialization wrappers."
+
+[crates."base64-ng-bytes"]
+previous_version = "0.0.0"
+version = "1.0.9"
+change = "code"
+publish = true
+reason = "Initial optional bytes companion crate for Bytes, Buf, and BufMut helpers."
+
+[crates."base64-ng-tokio"]
+previous_version = "0.0.0"
+version = "1.0.9"
+change = "code"
+publish = true
+reason = "Initial optional Tokio companion crate for bounded async read/write helpers."

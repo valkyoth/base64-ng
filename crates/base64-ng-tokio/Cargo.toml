@@ -1,0 +1,40 @@
+[package]
+name = "base64-ng-tokio"
+version = "1.0.9"
+edition = "2024"
+rust-version = "1.90"
+license = "MIT OR Apache-2.0"
+description = "Optional Tokio async helpers for base64-ng"
+repository = "https://github.com/valkyoth/base64-ng"
+homepage = "https://github.com/valkyoth/base64-ng"
+documentation = "https://docs.rs/base64-ng-tokio"
+readme = "README.md"
+keywords = ["base64", "tokio", "async", "encoding"]
+categories = ["encoding", "asynchronous"]
+include = [
+    "src/**",
+    "tests/**",
+    "Cargo.toml",
+    "README.md",
+]
+
+[features]
+default = []
+
+[dependencies]
+base64-ng = { version = "1.0.9", path = "../..", default-features = false, features = ["alloc", "std"] }
+tokio = { version = "1.52.3", default-features = false, features = ["io-util"] }
+
+[dev-dependencies]
+tokio = { version = "1.52.3", default-features = false, features = ["io-util", "macros", "rt"] }
+
+[lints.rust]
+unsafe_code = "deny"
+missing_docs = "deny"
+
+[lints.clippy]
+all = "deny"
+pedantic = "deny"
+
+[package.metadata.docs.rs]
+all-features = true

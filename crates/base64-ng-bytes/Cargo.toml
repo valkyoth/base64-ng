@@ -1,0 +1,38 @@
+[package]
+name = "base64-ng-bytes"
+version = "1.0.9"
+edition = "2024"
+rust-version = "1.90"
+license = "MIT OR Apache-2.0"
+description = "Optional bytes::Buf and Bytes helpers for base64-ng"
+repository = "https://github.com/valkyoth/base64-ng"
+homepage = "https://github.com/valkyoth/base64-ng"
+documentation = "https://docs.rs/base64-ng-bytes"
+readme = "README.md"
+keywords = ["base64", "bytes", "encoding", "networking"]
+categories = ["encoding"]
+include = [
+    "src/**",
+    "tests/**",
+    "Cargo.toml",
+    "README.md",
+]
+
+[features]
+default = ["std"]
+std = ["base64-ng/std", "bytes/std"]
+
+[dependencies]
+base64-ng = { version = "1.0.9", path = "../..", default-features = false, features = ["alloc"] }
+bytes = { version = "1.12.0", default-features = false }
+
+[lints.rust]
+unsafe_code = "deny"
+missing_docs = "deny"
+
+[lints.clippy]
+all = "deny"
+pedantic = "deny"
+
+[package.metadata.docs.rs]
+all-features = true

@@ -3,6 +3,9 @@ set -eu
 
 manifest="crates/base64-ng-sanitization/Cargo.toml"
 derive_manifest="crates/base64-ng-derive/Cargo.toml"
+serde_manifest="crates/base64-ng-serde/Cargo.toml"
+bytes_manifest="crates/base64-ng-bytes/Cargo.toml"
+tokio_manifest="crates/base64-ng-tokio/Cargo.toml"
 
 echo "companion crates: base64-ng-sanitization no-default-features"
 cargo test --manifest-path "$manifest" --no-default-features
@@ -33,5 +36,41 @@ cargo doc --manifest-path "$derive_manifest" --no-deps --all-features
 
 echo "companion crates: base64-ng-derive dependency policy"
 cargo deny --manifest-path "$derive_manifest" check --config deny.toml
+
+echo "companion crates: base64-ng-serde test"
+cargo test --manifest-path "$serde_manifest" --all-features
+
+echo "companion crates: base64-ng-serde clippy"
+cargo clippy --manifest-path "$serde_manifest" --all-targets --all-features -- -D warnings
+
+echo "companion crates: base64-ng-serde docs"
+cargo doc --manifest-path "$serde_manifest" --no-deps --all-features
+
+echo "companion crates: base64-ng-serde dependency policy"
+cargo deny --manifest-path "$serde_manifest" check --config deny.toml
+
+echo "companion crates: base64-ng-bytes test"
+cargo test --manifest-path "$bytes_manifest" --all-features
+
+echo "companion crates: base64-ng-bytes clippy"
+cargo clippy --manifest-path "$bytes_manifest" --all-targets --all-features -- -D warnings
+
+echo "companion crates: base64-ng-bytes docs"
+cargo doc --manifest-path "$bytes_manifest" --no-deps --all-features
+
+echo "companion crates: base64-ng-bytes dependency policy"
+cargo deny --manifest-path "$bytes_manifest" check --config deny.toml
+
+echo "companion crates: base64-ng-tokio test"
+cargo test --manifest-path "$tokio_manifest" --all-features
+
+echo "companion crates: base64-ng-tokio clippy"
+cargo clippy --manifest-path "$tokio_manifest" --all-targets --all-features -- -D warnings
+
+echo "companion crates: base64-ng-tokio docs"
+cargo doc --manifest-path "$tokio_manifest" --no-deps --all-features
+
+echo "companion crates: base64-ng-tokio dependency policy"
+cargo deny --manifest-path "$tokio_manifest" check --config deny.toml
 
 echo "companion crates: ok"
