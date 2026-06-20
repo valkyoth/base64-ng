@@ -265,85 +265,14 @@ where
 }
 
 #[cfg(all(test, target_arch = "aarch64"))]
-#[target_feature(enable = "neon")]
-unsafe fn encode_12_bytes_neon_aarch64_standard_family<A>(input: &[u8; 12], output: &mut [u8; 16])
-where
-    A: Alphabet,
-{
-    let mut staged = [
-        input[0], input[1], input[2], input[3], input[4], input[5], input[6], input[7], input[8],
-        input[9], input[10], input[11], 0, 0, 0, 0,
-    ];
-    let shuffle_mask = [2, 1, 0, 255, 5, 4, 3, 255, 8, 7, 6, 255, 11, 10, 9, 255];
-
-    // SAFETY: Fixed arrays back every unaligned 128-bit load/store, the
-    // target-feature contract enables NEON, shuffle zero lanes read only
-    // staged zeros, and indices are masked to `0..=63`.
-    unsafe {
-        let input_vec = vld1q_u8(staged.as_ptr());
-        let shuffle = vld1q_u8(shuffle_mask.as_ptr());
-        let lanes = vqtbl1q_u8(input_vec, shuffle);
-        let lane_words: uint32x4_t = vreinterpretq_u32_u8(lanes);
-
-        let index0 = vandq_u32(vshrq_n_u32(lane_words, 18), vdupq_n_u32(0x0000_003f));
-        let index1 = vandq_u32(vshrq_n_u32(lane_words, 4), vdupq_n_u32(0x0000_3f00));
-        let index2 = vandq_u32(vshlq_n_u32(lane_words, 10), vdupq_n_u32(0x003f_0000));
-        let index3 = vandq_u32(vshlq_n_u32(lane_words, 24), vdupq_n_u32(0x3f00_0000));
-        let indices = vreinterpretq_u8_u32(vorrq_u32(
-            vorrq_u32(index0, index1),
-            vorrq_u32(index2, index3),
-        ));
-
-        let encoded = encode_standard_family_indices_neon::<A>(indices);
-        vst1q_u8(output.as_mut_ptr(), encoded);
-        clear_neon_registers_for_test_prototype();
-    }
-    crate::wipe_bytes(&mut staged);
-}
-
-#[cfg(all(test, target_arch = "aarch64"))]
-#[target_feature(enable = "neon")]
-unsafe fn encode_standard_family_indices_neon<A>(indices: uint8x16_t) -> uint8x16_t
-where
-    A: Alphabet,
-{
-    let upper = vcltq_u8(indices, vdupq_n_u8(26));
-    let lower = vandq_u8(
-        vcgeq_u8(indices, vdupq_n_u8(26)),
-        vcltq_u8(indices, vdupq_n_u8(52)),
-    );
-    let digit = vandq_u8(
-        vcgeq_u8(indices, vdupq_n_u8(52)),
-        vcltq_u8(indices, vdupq_n_u8(62)),
-    );
-    let plus = vceqq_u8(indices, vdupq_n_u8(62));
-    let slash = vceqq_u8(indices, vdupq_n_u8(63));
-    let plus_char = A::ENCODE[62];
-    let slash_char = A::ENCODE[63];
-
-    let mut encoded = vdupq_n_u8(0);
-    encoded = vbslq_u8(upper, vaddq_u8(indices, vdupq_n_u8(b'A')), encoded);
-    encoded = vbslq_u8(
-        lower,
-        vaddq_u8(vsubq_u8(indices, vdupq_n_u8(26)), vdupq_n_u8(b'a')),
-        encoded,
-    );
-    encoded = vbslq_u8(
-        digit,
-        vaddq_u8(vsubq_u8(indices, vdupq_n_u8(52)), vdupq_n_u8(b'0')),
-        encoded,
-    );
-    encoded = vbslq_u8(plus, vdupq_n_u8(plus_char), encoded);
-    vbslq_u8(slash, vdupq_n_u8(slash_char), encoded)
-}
-
-#[cfg(all(test, target_arch = "aarch64"))]
-unsafe fn clear_neon_registers_for_test_prototype() {
-    // SAFETY: This test-only cleanup runs after the prototype stores its
-    // output. The explicit outputs tell the compiler every AArch64 vector
-    // register is clobbered while the assembly clears it. This is retention
-    // reduction for prototype evidence, not a formal microarchitectural proof.
-    unsafe {
+macro_rules! clear_neon_registers_for_test_prototype {
+    () => {{
+        // SAFETY: This test-only cleanup is expanded directly inside the
+        // prototype function after it stores its output. There is no separate
+        // helper frame whose ABI save/restore can undo `v8..v15` clearing. The
+        // explicit outputs tell the compiler every AArch64 vector register is
+        // clobbered while the assembly clears it. This is retention reduction
+        // for prototype evidence, not a formal microarchitectural proof.
         core::arch::asm!(
             "eor v0.16b, v0.16b, v0.16b",
             "eor v1.16b, v1.16b, v1.16b",
@@ -411,7 +340,80 @@ unsafe fn clear_neon_registers_for_test_prototype() {
             out("v31") _,
             options(nostack, preserves_flags)
         );
+    }};
+}
+
+#[cfg(all(test, target_arch = "aarch64"))]
+#[target_feature(enable = "neon")]
+unsafe fn encode_12_bytes_neon_aarch64_standard_family<A>(input: &[u8; 12], output: &mut [u8; 16])
+where
+    A: Alphabet,
+{
+    let mut staged = [
+        input[0], input[1], input[2], input[3], input[4], input[5], input[6], input[7], input[8],
+        input[9], input[10], input[11], 0, 0, 0, 0,
+    ];
+    let shuffle_mask = [2, 1, 0, 255, 5, 4, 3, 255, 8, 7, 6, 255, 11, 10, 9, 255];
+
+    // SAFETY: Fixed arrays back every unaligned 128-bit load/store, the
+    // target-feature contract enables NEON, shuffle zero lanes read only
+    // staged zeros, and indices are masked to `0..=63`.
+    unsafe {
+        let input_vec = vld1q_u8(staged.as_ptr());
+        let shuffle = vld1q_u8(shuffle_mask.as_ptr());
+        let lanes = vqtbl1q_u8(input_vec, shuffle);
+        let lane_words: uint32x4_t = vreinterpretq_u32_u8(lanes);
+
+        let index0 = vandq_u32(vshrq_n_u32(lane_words, 18), vdupq_n_u32(0x0000_003f));
+        let index1 = vandq_u32(vshrq_n_u32(lane_words, 4), vdupq_n_u32(0x0000_3f00));
+        let index2 = vandq_u32(vshlq_n_u32(lane_words, 10), vdupq_n_u32(0x003f_0000));
+        let index3 = vandq_u32(vshlq_n_u32(lane_words, 24), vdupq_n_u32(0x3f00_0000));
+        let indices = vreinterpretq_u8_u32(vorrq_u32(
+            vorrq_u32(index0, index1),
+            vorrq_u32(index2, index3),
+        ));
+
+        let encoded = encode_standard_family_indices_neon::<A>(indices);
+        vst1q_u8(output.as_mut_ptr(), encoded);
+        clear_neon_registers_for_test_prototype!();
     }
+    crate::wipe_bytes(&mut staged);
+}
+
+#[cfg(all(test, target_arch = "aarch64"))]
+#[target_feature(enable = "neon")]
+unsafe fn encode_standard_family_indices_neon<A>(indices: uint8x16_t) -> uint8x16_t
+where
+    A: Alphabet,
+{
+    let upper = vcltq_u8(indices, vdupq_n_u8(26));
+    let lower = vandq_u8(
+        vcgeq_u8(indices, vdupq_n_u8(26)),
+        vcltq_u8(indices, vdupq_n_u8(52)),
+    );
+    let digit = vandq_u8(
+        vcgeq_u8(indices, vdupq_n_u8(52)),
+        vcltq_u8(indices, vdupq_n_u8(62)),
+    );
+    let plus = vceqq_u8(indices, vdupq_n_u8(62));
+    let slash = vceqq_u8(indices, vdupq_n_u8(63));
+    let plus_char = A::ENCODE[62];
+    let slash_char = A::ENCODE[63];
+
+    let mut encoded = vdupq_n_u8(0);
+    encoded = vbslq_u8(upper, vaddq_u8(indices, vdupq_n_u8(b'A')), encoded);
+    encoded = vbslq_u8(
+        lower,
+        vaddq_u8(vsubq_u8(indices, vdupq_n_u8(26)), vdupq_n_u8(b'a')),
+        encoded,
+    );
+    encoded = vbslq_u8(
+        digit,
+        vaddq_u8(vsubq_u8(indices, vdupq_n_u8(52)), vdupq_n_u8(b'0')),
+        encoded,
+    );
+    encoded = vbslq_u8(plus, vdupq_n_u8(plus_char), encoded);
+    vbslq_u8(slash, vdupq_n_u8(slash_char), encoded)
 }
 
 #[cfg(all(test, not(target_arch = "wasm32")))]

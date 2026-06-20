@@ -34,6 +34,8 @@
 - Added `base64-ng-subtle` as an optional companion crate for projects that
   already admit `subtle` and want reviewed `ConstantTimeEq` comparisons for
   `base64-ng` buffers.
+- Inlined the test-only AArch64 NEON register cleanup macro into the prototype
+  path so callee-saved `v8..v15` are not restored by a separate helper frame.
 - Added a real non-dispatchable AVX2 fixed-block encode prototype for Standard
   and URL-safe alphabets. The prototype remains test-only and active runtime
   backend selection remains scalar-only.

@@ -745,9 +745,9 @@ Safety argument:
 - The AArch64 vector path remains test-only and non-dispatchable. Runtime
   acceleration is still blocked by the SIMD admission manifest.
 - Register-retention note: the AArch64 vector path loads caller bytes into NEON
-  state and calls `clear_neon_registers_for_test_prototype` before return. This
-  is retention reduction for the inactive prototype, not a formal
-  microarchitectural side-channel proof.
+  state and expands `clear_neon_registers_for_test_prototype!` directly inside
+  the prototype function before return. This is retention reduction for the
+  inactive prototype, not a formal microarchitectural side-channel proof.
 
 ### `encode_12_bytes_neon_aarch64_standard_family`
 
@@ -779,8 +779,8 @@ Unsafe operation:
 - `encode_standard_family_indices_neon` maps those indices to Standard or
   URL-safe alphabet bytes with NEON comparisons and bit selects.
 - `vst1q_u8` stores the 16 encoded bytes into the output buffer.
-- `clear_neon_registers_for_test_prototype` clears `v0` through `v31` before
-  return.
+- `clear_neon_registers_for_test_prototype!` clears `v0` through `v31` inside
+  the prototype function before return.
 - The local staging array is wiped with the crate cleanup primitive before the
   function returns.
 
@@ -828,11 +828,11 @@ Safety argument:
   six-bit Base64 value.
 - The helper is private to the test-only prototype path.
 
-### `clear_neon_registers_for_test_prototype`
+### `clear_neon_registers_for_test_prototype!`
 
 Location: `src/simd/mod.rs`
 
-Status: private helper for inactive AArch64 NEON test-only prototypes, not
+Status: private macro for inactive AArch64 NEON test-only prototypes, not
 dispatchable and not reachable from runtime backend selection.
 
 Purpose:
@@ -844,6 +844,9 @@ Preconditions:
 
 - Called only after the prototype has stored its output and no later NEON value
   is needed by the function.
+- Expanded directly inside the prototype function. It must not be moved to a
+  separate function because an AArch64 helper can save and restore callee-saved
+  `v8` through `v15`, undoing register clearing in the helper frame.
 
 Unsafe operation:
 
@@ -852,14 +855,14 @@ Unsafe operation:
 
 Safety argument:
 
-- The helper does not read or write memory.
-- The helper runs at the end of the inactive prototype path.
+- The macro does not read or write memory.
+- The macro expands at the end of the inactive prototype path.
 - Clobbered registers are declared to the compiler with explicit `out("vN")`
   operands.
 - This is best-effort register-retention reduction for test evidence, not a
   guarantee that historical register, stack, cache, or microarchitectural
   copies do not exist.
-- This helper clears all AArch64 vector registers for the reviewed prototype
+- This macro clears all AArch64 vector registers for the reviewed prototype
   sequence. It is not an admission claim for arbitrary future NEON code. Before
   NEON dispatch can become active, generated assembly must prove which vector
   registers carry caller-derived data and whether any callee-saved vector
