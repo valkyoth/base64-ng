@@ -256,8 +256,10 @@ where
         }
         let mut tail = [0u8; 3];
         tail[..rem].copy_from_slice(&buffer[read..input_len]);
-        decode_tail_unpadded::<A>(&tail[..rem], &mut buffer[write..])
+        let result = decode_tail_unpadded::<A>(&tail[..rem], &mut buffer[write..])
             .map_err(|err| err.with_index_offset(read))
-            .map(|n| write + n)
+            .map(|n| write + n);
+        wipe_bytes(&mut tail);
+        result
     }
 }

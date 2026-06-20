@@ -108,6 +108,16 @@ where
     /// The wrapping policy inserts line endings between encoded lines and does
     /// not append a trailing line ending after the final line.
     ///
+    /// # Security
+    ///
+    /// When `output` has enough spare room, this method may temporarily stage
+    /// the unwrapped encoded form in the tail of `output` before copying the
+    /// wrapped representation to the front and wiping the staging range. For
+    /// secret-bearing payloads where a same-process observer must not see
+    /// transient encoded material in caller-owned output, prefer
+    /// [`Self::encode_wrapped_secret`] or manage a private staging buffer at
+    /// the application boundary.
+    ///
     /// # Examples
     ///
     /// ```

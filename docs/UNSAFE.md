@@ -779,8 +779,8 @@ Unsafe operation:
 - `encode_standard_family_indices_neon` maps those indices to Standard or
   URL-safe alphabet bytes with NEON comparisons and bit selects.
 - `vst1q_u8` stores the 16 encoded bytes into the output buffer.
-- `clear_neon_registers_for_test_prototype` clears used AArch64 NEON registers
-  before return.
+- `clear_neon_registers_for_test_prototype` clears `v0` through `v31` before
+  return.
 - The local staging array is wiped with the crate cleanup primitive before the
   function returns.
 
@@ -847,7 +847,7 @@ Preconditions:
 
 Unsafe operation:
 
-- Inline assembly zeros `v0` through `v7` and declares those registers as
+- Inline assembly zeros `v0` through `v31` and declares those registers as
   clobbered outputs.
 
 Safety argument:
@@ -859,7 +859,7 @@ Safety argument:
 - This is best-effort register-retention reduction for test evidence, not a
   guarantee that historical register, stack, cache, or microarchitectural
   copies do not exist.
-- This helper currently clears the registers used by the reviewed prototype
+- This helper clears all AArch64 vector registers for the reviewed prototype
   sequence. It is not an admission claim for arbitrary future NEON code. Before
   NEON dispatch can become active, generated assembly must prove which vector
   registers carry caller-derived data and whether any callee-saved vector

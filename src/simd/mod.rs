@@ -340,8 +340,9 @@ where
 #[cfg(all(test, target_arch = "aarch64"))]
 unsafe fn clear_neon_registers_for_test_prototype() {
     // SAFETY: This test-only cleanup runs after the prototype stores its
-    // output. The explicit outputs tell the compiler these vector registers are
-    // clobbered while the assembly clears them.
+    // output. The explicit outputs tell the compiler every AArch64 vector
+    // register is clobbered while the assembly clears it. This is retention
+    // reduction for prototype evidence, not a formal microarchitectural proof.
     unsafe {
         core::arch::asm!(
             "eor v0.16b, v0.16b, v0.16b",
@@ -352,6 +353,30 @@ unsafe fn clear_neon_registers_for_test_prototype() {
             "eor v5.16b, v5.16b, v5.16b",
             "eor v6.16b, v6.16b, v6.16b",
             "eor v7.16b, v7.16b, v7.16b",
+            "eor v8.16b, v8.16b, v8.16b",
+            "eor v9.16b, v9.16b, v9.16b",
+            "eor v10.16b, v10.16b, v10.16b",
+            "eor v11.16b, v11.16b, v11.16b",
+            "eor v12.16b, v12.16b, v12.16b",
+            "eor v13.16b, v13.16b, v13.16b",
+            "eor v14.16b, v14.16b, v14.16b",
+            "eor v15.16b, v15.16b, v15.16b",
+            "eor v16.16b, v16.16b, v16.16b",
+            "eor v17.16b, v17.16b, v17.16b",
+            "eor v18.16b, v18.16b, v18.16b",
+            "eor v19.16b, v19.16b, v19.16b",
+            "eor v20.16b, v20.16b, v20.16b",
+            "eor v21.16b, v21.16b, v21.16b",
+            "eor v22.16b, v22.16b, v22.16b",
+            "eor v23.16b, v23.16b, v23.16b",
+            "eor v24.16b, v24.16b, v24.16b",
+            "eor v25.16b, v25.16b, v25.16b",
+            "eor v26.16b, v26.16b, v26.16b",
+            "eor v27.16b, v27.16b, v27.16b",
+            "eor v28.16b, v28.16b, v28.16b",
+            "eor v29.16b, v29.16b, v29.16b",
+            "eor v30.16b, v30.16b, v30.16b",
+            "eor v31.16b, v31.16b, v31.16b",
             out("v0") _,
             out("v1") _,
             out("v2") _,
@@ -360,6 +385,30 @@ unsafe fn clear_neon_registers_for_test_prototype() {
             out("v5") _,
             out("v6") _,
             out("v7") _,
+            out("v8") _,
+            out("v9") _,
+            out("v10") _,
+            out("v11") _,
+            out("v12") _,
+            out("v13") _,
+            out("v14") _,
+            out("v15") _,
+            out("v16") _,
+            out("v17") _,
+            out("v18") _,
+            out("v19") _,
+            out("v20") _,
+            out("v21") _,
+            out("v22") _,
+            out("v23") _,
+            out("v24") _,
+            out("v25") _,
+            out("v26") _,
+            out("v27") _,
+            out("v28") _,
+            out("v29") _,
+            out("v30") _,
+            out("v31") _,
             options(nostack, preserves_flags)
         );
     }
