@@ -48,6 +48,9 @@
   so `1.1.x` checkpoint tags consistently describe the current state as real
   non-dispatchable prototype evidence while active runtime dispatch remains
   scalar-only until a future `1.2.0` admission package.
+- Hardened the workspace publish helper so real crates.io publishing requires
+  `HEAD` to match a verified signed `v<version>` tag, and documented the
+  `git tag -v` release check.
 
 ## 1.1.0 - 2026-06-20
 

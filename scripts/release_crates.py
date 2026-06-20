@@ -217,7 +217,26 @@ def check_release_tag(version: str, *, require_tag: bool) -> None:
         print(f"Warning: {message}.", file=sys.stderr)
         return
 
-    print(f"Release tag {tag} points at HEAD.")
+    tag_signature = subprocess.run(
+        ["git", "tag", "-v", tag],
+        cwd=ROOT,
+        check=False,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    if tag_signature.returncode != 0:
+        detail = (tag_signature.stderr or tag_signature.stdout).strip()
+        message = f"release tag {tag!r} is not signed or could not be verified"
+        if detail:
+            message = f"{message}: {detail}"
+        if require_tag:
+            print(f"Refusing to publish: {message}.", file=sys.stderr)
+            sys.exit(1)
+        print(f"Warning: {message}.", file=sys.stderr)
+        return
+
+    print(f"Release tag {tag} points at HEAD and has a valid signature.")
 
 
 def confirm_no_verify(args: argparse.Namespace) -> int:

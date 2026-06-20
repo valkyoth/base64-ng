@@ -4,7 +4,9 @@
 from __future__ import annotations
 
 import copy
+import contextlib
 import importlib.util
+import io
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -186,6 +188,57 @@ def test_publish_sequence_dry_runs_dependents_after_index_wait() -> None:
     ]
 
 
+def test_release_tag_check_requires_valid_signature() -> None:
+    calls: list[tuple[str, ...]] = []
+
+    original_try_capture = release_crates.try_capture
+    original_run = release_crates.subprocess.run
+    try:
+        release_crates.try_capture = lambda command: {
+            ("git", "rev-parse", "HEAD"): "abc",
+            ("git", "rev-list", "-n", "1", "v1.0.10"): "abc",
+        }.get(tuple(command))
+
+        def fake_run(command, **kwargs):
+            calls.append(tuple(command))
+            return SimpleNamespace(returncode=0, stdout="Good signature", stderr="")
+
+        release_crates.subprocess.run = fake_run
+        with contextlib.redirect_stdout(io.StringIO()):
+            release_crates.check_release_tag("1.0.10", require_tag=True)
+    finally:
+        release_crates.try_capture = original_try_capture
+        release_crates.subprocess.run = original_run
+
+    assert ("git", "tag", "-v", "v1.0.10") in calls
+
+
+def test_release_tag_check_rejects_unverified_required_tag() -> None:
+    original_try_capture = release_crates.try_capture
+    original_run = release_crates.subprocess.run
+    try:
+        release_crates.try_capture = lambda command: {
+            ("git", "rev-parse", "HEAD"): "abc",
+            ("git", "rev-list", "-n", "1", "v1.0.10"): "abc",
+        }.get(tuple(command))
+
+        def fake_run(command, **kwargs):
+            return SimpleNamespace(returncode=1, stdout="", stderr="no signature")
+
+        release_crates.subprocess.run = fake_run
+        try:
+            with contextlib.redirect_stderr(io.StringIO()):
+                release_crates.check_release_tag("1.0.10", require_tag=True)
+        except SystemExit as exc:
+            assert exc.code == 1
+            return
+    finally:
+        release_crates.try_capture = original_try_capture
+        release_crates.subprocess.run = original_run
+
+    raise AssertionError("expected release tag check to exit")
+
+
 def run_tests() -> None:
     tests = (
         test_current_plan_accepts_unchanged_crates,
@@ -194,6 +247,8 @@ def run_tests() -> None:
         test_unchanged_crates_are_not_published,
         test_publish_plan_skips_unchanged_crates,
         test_publish_sequence_dry_runs_dependents_after_index_wait,
+        test_release_tag_check_requires_valid_signature,
+        test_release_tag_check_rejects_unverified_required_tag,
     )
     for test in tests:
         test()

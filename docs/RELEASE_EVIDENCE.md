@@ -443,12 +443,13 @@ scripts/release_crates.py
 ```
 
 The helper reads `release-crates.toml`, refuses real publishing unless `HEAD`
-matches the release tag, runs the standard local gate and `cargo publish
---dry-run` for selected crates, publishes `base64-ng` first, waits for crates.io
-visibility, and then publishes dependent companion crates. The default publish
-preflight does not rerun Kani because Kani is already part of the pre-tag stable
-gate. Use `scripts/release_crates.py --full-gate` only when the release manager
-deliberately wants to rerun the expensive gate immediately before upload.
+matches a verified signed release tag, runs the standard local gate and
+`cargo publish --dry-run` for selected crates, publishes `base64-ng` first,
+waits for crates.io visibility, and then publishes dependent companion crates.
+The default publish preflight does not rerun Kani because Kani is already part
+of the pre-tag stable gate. Use `scripts/release_crates.py --full-gate` only
+when the release manager deliberately wants to rerun the expensive gate
+immediately before upload.
 
 Manual fallback for companion releases:
 

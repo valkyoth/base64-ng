@@ -219,10 +219,11 @@ evidence, SBOM generation, reproducibility checks, and the standard local gate.
 If this fails, fix the release candidate before tagging.
 
 After the full release gate passes, push the commit, wait for GitHub to become
-green, then create and push the immutable release tag:
+green, then create and push the immutable signed release tag:
 
 ```sh
 git tag -s v1.0.10 -m "base64-ng 1.0.10"
+git tag -v v1.0.10
 git push origin v1.0.10
 ```
 
@@ -236,7 +237,7 @@ scripts/release_crates.py
 
 `scripts/release_crates.py` reads `release-crates.toml`, validates workspace
 crate versions and dependency order, refuses real publishing unless `HEAD`
-matches the `v<version>` tag, runs the standard local gate and
+matches a verified signed `v<version>` tag, runs the standard local gate and
 `cargo publish --dry-run` for each selected crate, publishes `base64-ng` first,
 waits for crates.io visibility, and then publishes dependent companion crates
 such as `base64-ng-sanitization` and `base64-ng-derive`, `base64-ng-serde`,
