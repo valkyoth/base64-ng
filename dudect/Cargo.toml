@@ -4,5 +4,7 @@ version = "0.0.0"
 edition = "2024"
 publish = false
 
+[workspace]
+
 [dependencies]
-base64-ng = { path = "..", version = "1.0.8", default-features = false }
+base64-ng = { path = "..", version = "1.0.9", default-features = false }

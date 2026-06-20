@@ -4,12 +4,14 @@ version = "0.0.0"
 edition = "2024"
 publish = false
 
+[workspace]
+
 [package.metadata]
 cargo-fuzz = true
 
 [dependencies]
 base64 = "0.22.1"
-base64-ng = { path = "..", version = "1.0.8", features = ["alloc", "std", "stream"] }
+base64-ng = { path = "..", version = "1.0.9", features = ["alloc", "std", "stream"] }
 libfuzzer-sys = "0.4"
 
 [[bin]]

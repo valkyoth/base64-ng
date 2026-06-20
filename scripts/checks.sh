@@ -19,6 +19,9 @@ scripts/validate-api-audit.sh
 echo "checks: minimal dependency graph"
 scripts/validate-dependencies.sh
 
+echo "checks: companion crates"
+scripts/check_companion_crates.sh
+
 echo "checks: reserved feature placeholders"
 scripts/check_reserved_features.sh
 

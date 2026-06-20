@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.9 - 2026-06-20
+
+- Added `base64-ng-sanitization` as an optional companion crate for projects
+  that already admit the `sanitization` crate and want direct decode helpers
+  into clear-on-drop secret containers.
+- Kept the core `base64-ng` package dependency-free by making the new
+  integration a separate workspace member instead of a default feature.
+- Added constant-time-oriented `CtDecodeSanitizationExt` helpers for
+  stack-backed `SecretBytes<N>` and alloc-gated `SecretVec` outputs.
+- Documented the companion-crate policy and future optional subcrate
+  candidates while keeping SIMD work reserved for the `1.1` line.
+
 ## 1.0.8 - 2026-06-09
 
 - Made stream decoder queue-overflow paths latch their failed state, matching

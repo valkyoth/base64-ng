@@ -14,6 +14,8 @@ version = "0.0.0"
 edition = "2024"
 publish = false
 
+[workspace]
+
 [dependencies]
 base64-ng = { path = "../..", features = ["alloc", "std", "stream"] }
 MANIFEST

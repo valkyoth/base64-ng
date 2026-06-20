@@ -1,0 +1,39 @@
+[package]
+name = "base64-ng-sanitization"
+version = "1.0.9"
+edition = "2024"
+rust-version = "1.90"
+license = "MIT OR Apache-2.0"
+description = "Optional sanitization integration helpers for base64-ng"
+repository = "https://github.com/valkyoth/base64-ng"
+homepage = "https://github.com/valkyoth/base64-ng"
+documentation = "https://docs.rs/base64-ng-sanitization"
+readme = "README.md"
+keywords = ["base64", "secrets", "zeroize", "no-std"]
+categories = ["encoding", "no-std", "cryptography"]
+include = [
+    "Cargo.toml",
+    "README.md",
+    "src/**",
+    "tests/**",
+]
+
+[features]
+default = []
+alloc = ["base64-ng/alloc", "sanitization/alloc"]
+std = ["alloc", "base64-ng/std", "sanitization/std"]
+
+[dependencies]
+base64-ng = { version = "1.0.9", path = "../..", default-features = false }
+sanitization = { version = "1.1.0", default-features = false }
+
+[lints.rust]
+unsafe_code = "deny"
+missing_docs = "deny"
+
+[lints.clippy]
+all = "deny"
+pedantic = "deny"
+
+[package.metadata.docs.rs]
+all-features = true

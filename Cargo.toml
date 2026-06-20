@@ -1,6 +1,6 @@
 [package]
 name = "base64-ng"
-version = "1.0.8"
+version = "1.0.9"
 edition = "2024"
 rust-version = "1.90"
 license = "MIT OR Apache-2.0"
@@ -28,6 +28,19 @@ include = [
     "SECURITY.md",
     "LICENSE-*",
 ]
+
+[workspace]
+members = [
+    ".",
+    "crates/base64-ng-sanitization",
+]
+default-members = ["."]
+exclude = [
+    "dudect",
+    "fuzz",
+    "perf",
+]
+resolver = "2"
 
 [features]
 default = ["alloc", "std"]

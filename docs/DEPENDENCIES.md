@@ -26,6 +26,9 @@ new dependency expands the audit, license, advisory, and supply-chain surface.
   core treats CSDB as an effective speculation barrier for the CT result gate.
   Builds that set it report `hardware-speculation-barrier-build-asserted` so
   audit logs preserve the operator-attestation boundary.
+- `base64-ng-sanitization` is an optional companion package for applications
+  that already admit `sanitization`; it is not a dependency of the core
+  `base64-ng` package.
 - Fuzz, performance, and dudect-style timing harness dependencies are isolated
   under `fuzz/`, `perf/`, and `dudect/`; the standard local gate checks them
   separately from the published crate dependency graph.
@@ -36,12 +39,15 @@ new dependency expands the audit, license, advisory, and supply-chain surface.
 
 ## v1.0 Final Admission Review
 
-The `v1.0` release candidate keeps the published crate dependency-free.
-No optional ecosystem integration has a strong enough security and maintenance
-case to enter the stable `v1.0` contract yet.
+The `v1.0` release keeps the core `base64-ng` package dependency-free.
+Optional ecosystem integrations may be admitted only as separate companion
+crates with their own dependency review and release checks.
 
 Current decisions:
 
+- `base64-ng-sanitization` is admitted as a companion crate because it keeps the
+  core package dependency-free while giving applications that already use
+  `sanitization` a direct CT decode path into clear-on-drop secret containers.
 - `tokio` remains a reserved, inert feature until async cancellation, drop
   cleanup, chunk-boundary, dependency, and release-evidence requirements are
   satisfied.
@@ -99,10 +105,10 @@ The following are rejected unless a specific review proves they are necessary:
 - Dependencies with unclear licensing, unmaintained status, active security
   advisories, yanked releases, or unnecessary transitive graphs.
 
-## Deferred Integrations
+## Deferred Core Integrations
 
 The following integrations are intentionally not admitted in the published
-crate today:
+core crate today:
 
 - `tokio`: reserved for async streaming only after the policy in
   [`ASYNC.md`](ASYNC.md) is satisfied.
@@ -139,10 +145,14 @@ workspaces only when they are not packaged with the published crate:
 - `fuzz/` dependencies are reviewed by `scripts/check_fuzz.sh`.
 - `perf/` dependencies are reviewed by `scripts/check_perf.sh`.
 - `dudect/` dependencies are reviewed by `scripts/check_dudect.sh`.
+- `crates/base64-ng-sanitization/` is an optional companion crate, not a
+  dependency of the core `base64-ng` package. It is reviewed separately by
+  `scripts/check_companion_crates.sh` so the root package keeps its
+  zero-runtime-dependency guarantee.
 
 `scripts/checks.sh` runs those isolated harness checks so ordinary local
 verification catches harness dependency drift before release-only evidence
 steps.
 
 Those isolated dependencies do not weaken the zero-dependency guarantee for the
-published crate.
+published core crate.

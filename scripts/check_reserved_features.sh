@@ -9,7 +9,7 @@ check_reserved_feature() {
     cargo check --no-default-features --features "$features" --lib
 
     tree_output="$(
-        cargo tree --no-default-features --features "$features" --edges normal,build,dev --prefix none --no-dedupe
+        cargo tree -p base64-ng --no-default-features --features "$features" --edges normal,build,dev --prefix none --no-dedupe
     )"
     line_count="$(
         printf '%s\n' "$tree_output" | sed '/^[[:space:]]*$/d' | wc -l | tr -d '[:space:]'

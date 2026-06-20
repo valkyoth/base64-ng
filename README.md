@@ -29,7 +29,7 @@ The crate starts conservative: a small scalar implementation, strict RFC 4648 be
 
 ## Current Status
 
-The current public release is `1.0.8`.
+The current public release is `1.0.9`.
 
 Implemented now:
 
@@ -67,12 +67,15 @@ Implemented now:
 - Bounded Kani proof harnesses that run on Rust `1.90.0` with
   `cargo-kani 0.67.0`.
 - Constant-time assembly evidence generation for reviewer inspection.
+- Optional `base64-ng-sanitization` companion crate for applications that
+  already admit `sanitization` and want direct CT decode helpers into
+  clear-on-drop secret containers.
 - Local check scripts, release gate, dependency policy, audit config, CI, SBOM script, and reproducible build check.
 
 Planned behind admission evidence:
 
 - Admitted AVX2, AVX-512, SSSE3/SSE4.1, ARM NEON, and wasm `simd128`
-  fast paths after the SIMD admission evidence is complete. The `1.0.8`
+  fast paths after the SIMD admission evidence is complete. The `1.0.9`
   release remains scalar-only.
 - Async streaming wrappers only after the `tokio` feature passes the
   dependency and cancellation-safety admission bar in [docs/ASYNC.md](docs/ASYNC.md).
@@ -107,7 +110,7 @@ and CWE mapping lives in [docs/SECURITY_CONTROLS.md](docs/SECURITY_CONTROLS.md).
 The minimum supported Rust version is Rust `1.90.0`. New deployments should
 prefer the latest stable Rust; as of May 29, 2026, that is Rust `1.96.0`.
 
-Compatibility evidence for `1.0.8`:
+Compatibility evidence for `1.0.9`:
 
 | Rust | Local Evidence |
 | --- | --- |
@@ -123,7 +126,7 @@ Compatibility evidence for `1.0.8`:
 
 ```toml
 [dependencies]
-base64-ng = "1.0.8"
+base64-ng = "1.0.9"
 ```
 
 The crate is dual-licensed:
@@ -146,11 +149,50 @@ license = "MIT OR Apache-2.0"
 | `kani` | no | Reserved for verifier harnesses; normal builds do not require Kani. |
 | `fuzzing` | no | Reserved for verifier and fuzz harness integration; published crate stays dependency-free. |
 
+## Companion Crates
+
+The core `base64-ng` crate keeps its zero-runtime-dependency policy. Optional
+ecosystem integrations live as separate crates so applications can opt into
+their own approved dependency set without changing the base package.
+
+`base64-ng-sanitization` provides extension helpers for
+`base64_ng::ct::CtEngine` that decode directly into
+`sanitization::SecretBytes<N>` in `no_std`, with `SecretVec` helpers behind its
+own `alloc` feature:
+
+```toml
+[dependencies]
+base64-ng = { version = "1.0.9", default-features = false }
+base64-ng-sanitization = { version = "1.0.9", default-features = false }
+```
+
+```rust
+use base64_ng::ct;
+use base64_ng_sanitization::CtDecodeSanitizationExt;
+
+let secret = ct::STANDARD
+    .decode_secret_bytes::<5>(b"aGVsbG8=")
+    .unwrap();
+
+secret.expose_secret(|bytes| assert_eq!(bytes, b"hello"));
+```
+
+Future optional crates that may be useful, but are intentionally not part of
+the core package yet:
+
+- `base64-ng-derive` for narrow, reviewed newtype derive helpers around fixed
+  Base64-encoded secrets.
+- `base64-ng-serde` for explicit serialization/deserialization wrappers
+  without admitting `serde` into the core crate.
+- `base64-ng-bytes` for `bytes::Buf`/`BufMut` integration in network services.
+- `base64-ng-tokio` for async I/O wrappers once cancellation-safety evidence
+  clears the async admission policy.
+
 Disable defaults for embedded or freestanding use:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.0.8", default-features = false }
+base64-ng = { version = "1.0.9", default-features = false }
 ```
 
 ## Convenience API

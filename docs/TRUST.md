@@ -8,7 +8,7 @@ stable release.
 | --- | --- | --- |
 | License | `MIT OR Apache-2.0` | `Cargo.toml`, `LICENSE-MIT`, `LICENSE-APACHE` |
 | MSRV | Rust `1.90.0` | `Cargo.toml`, `rust-toolchain.toml` |
-| Runtime dependencies | Zero external crates | `scripts/validate-dependencies.sh` |
+| Runtime dependencies | Zero external crates in the core package; optional companion crates are separate opt-in packages | `scripts/validate-dependencies.sh`, `scripts/check_companion_crates.sh` |
 | Default dev dependencies | Zero external crates | `Cargo.toml` |
 | Optional runtime features | `alloc`, `std`, `stream`; `allow-wasm32-best-effort-wipe` explicit wasm cleanup-limit acceptance; `allow-compiler-fence-only-wipe` explicit unsupported-native cleanup-limit acceptance; reserved `simd`, `tokio`, `kani`, `fuzzing`. AArch64 CSDB attestation uses custom cfg `base64_ng_aarch64_csdb_attested`, not a feature. | `Cargo.toml`, `scripts/check_reserved_features.sh`, `scripts/check_wasm_wipe_policy.sh` |
 | Unsafe policy | Scalar encode/decode remains safe Rust; audited unsafe is limited to volatile wiping, constant-time comparison, CT alphabet scan and result-gate barriers, and test-only SIMD prototypes; runtime unsafe-boundary reports are conservative and mark SIMD-enabled builds as not high-assurance-boundary-enforced | `src/cleanup.rs`, `src/ct.rs`, `src/simd.rs`, `docs/UNSAFE.md` |
@@ -72,3 +72,6 @@ without `std`-equivalent runtime probing.
 
 Those features remain admission-gated until their evidence is strong enough for
 security-sensitive users.
+
+Optional companion crates may integrate with approved ecosystem dependencies,
+but they do not change the core `base64-ng` package dependency contract.

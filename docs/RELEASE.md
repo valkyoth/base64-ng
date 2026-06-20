@@ -215,6 +215,20 @@ cargo publish --dry-run
 cargo publish
 ```
 
+For releases that include optional companion crates, publish the core package
+first, wait until crates.io serves the new `base64-ng` version, then verify and
+publish the companion package:
+
+```sh
+cargo package -p base64-ng-sanitization
+cargo publish -p base64-ng-sanitization --dry-run
+cargo publish -p base64-ng-sanitization
+```
+
+This order is required because companion crates depend on the same released
+`base64-ng` version from crates.io while using a local path only during
+repository development.
+
 The dry run is intentionally kept as a manual publish preflight rather than
 part of `scripts/stable_release_gate.sh`, because it updates the crates.io index
 and may require network access.

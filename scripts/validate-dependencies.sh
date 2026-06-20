@@ -3,7 +3,7 @@ set -eu
 
 expected_root="base64-ng v"
 tree_output="$(
-    cargo tree --all-features --edges normal,build,dev --prefix none --no-dedupe
+    cargo tree -p base64-ng --all-features --edges normal,build,dev --prefix none --no-dedupe
 )"
 line_count="$(
     printf '%s\n' "$tree_output" | sed '/^[[:space:]]*$/d' | wc -l | tr -d '[:space:]'
