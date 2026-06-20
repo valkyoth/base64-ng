@@ -859,6 +859,11 @@ Safety argument:
 - This is best-effort register-retention reduction for test evidence, not a
   guarantee that historical register, stack, cache, or microarchitectural
   copies do not exist.
+- This helper currently clears the registers used by the reviewed prototype
+  sequence. It is not an admission claim for arbitrary future NEON code. Before
+  NEON dispatch can become active, generated assembly must prove which vector
+  registers carry caller-derived data and whether any callee-saved vector
+  register spill/restore slots contain such data.
 
 ### `encode_12_bytes_wasm_simd128`
 
@@ -894,6 +899,8 @@ Limitations:
 - This is compile and codegen evidence only. Wasm engines include a runtime/JIT
   optimization layer outside Rust's compiler boundary, so this prototype does
   not claim runtime timing, register-retention, or JIT zeroization guarantees.
+  wasm `simd128` admission requires runtime/JIT-specific evidence or an
+  explicit release scope that makes no register-retention claim.
 
 ### `encode_12_bytes_wasm_standard_family`
 

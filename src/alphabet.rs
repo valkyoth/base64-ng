@@ -302,6 +302,15 @@ impl Alphabet for UrlSafe {
 /// This alphabet is commonly used by bcrypt hash strings. It is provided as an
 /// alphabet/profile building block; `base64-ng` does not parse or verify full
 /// bcrypt password-hash records.
+///
+/// # Security
+///
+/// The strict [`Alphabet::decode`] implementation delegates to
+/// [`decode_alphabet_byte`]. That helper scans the full alphabet, but it is a
+/// `const fn` and does not use the additional optimizer barriers used by the
+/// [`ct`](crate::ct) module. Do not use strict `Engine<Bcrypt, _>` decode as a
+/// token, key, or password-hash verifier. Use [`crate::ct::CtEngine`] with this
+/// alphabet for secret-bearing comparison workflows.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Bcrypt;
 
@@ -318,6 +327,15 @@ impl Alphabet for Bcrypt {
 ///
 /// This alphabet is provided as an explicit legacy interoperability profile.
 /// `base64-ng` does not parse or verify complete password-hash records.
+///
+/// # Security
+///
+/// The strict [`Alphabet::decode`] implementation delegates to
+/// [`decode_alphabet_byte`]. That helper scans the full alphabet, but it is a
+/// `const fn` and does not use the additional optimizer barriers used by the
+/// [`ct`](crate::ct) module. Do not use strict `Engine<Crypt, _>` decode as a
+/// token, key, or password-hash verifier. Use [`crate::ct::CtEngine`] with this
+/// alphabet for secret-bearing comparison workflows.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Crypt;
 

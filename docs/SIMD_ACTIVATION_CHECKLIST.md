@@ -42,9 +42,24 @@ Architecture-specific baseline requirements:
 - wasm `simd128`: document the runtime's register-retention limitations and
   provide generated-code evidence for the selected wasm toolchain/runtime.
 
-Current prototypes are exempt only because they construct zero vectors and do
-not load caller bytes into SIMD registers. That exemption ends the moment a
-prototype starts processing caller input with vector registers.
+For NEON specifically, "used registers" cannot be guessed from source-level
+local variable count. Admission evidence must include optimized generated
+assembly for the exact target and feature bundle. If the compiler allocates
+caller-derived values to callee-saved vector registers, the admission package
+must also account for any compiler-generated spill/restore slots and prove that
+those slots are wiped or never contain caller-derived data.
+
+For wasm `simd128`, source-level register cleanup is not sufficient evidence.
+The wasm runtime/JIT owns final register allocation and may rewrite the
+generated code. A wasm backend cannot be admitted until the selected runtime
+and deployment profile have generated-code/JIT evidence, or the release notes
+scope wasm SIMD out of any register-retention claim.
+
+Current prototypes are exempt from admission only because they are test-only and
+non-dispatchable. The x86 and AArch64 prototypes already load caller bytes into
+vector registers and therefore carry best-effort cleanup plus unsafe-inventory
+documentation as evidence. That evidence is not enough for active dispatch
+until the full admission package is complete.
 
 ## Source Changes
 

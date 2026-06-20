@@ -40,6 +40,15 @@ Each encode backend considered for admission must provide:
 - hardware evidence from a CPU that actually supports the backend
 - benchmark output with scalar baseline on the same machine
 
+Architecture-specific admission blockers:
+
+- AArch64 NEON must include generated assembly that identifies every
+  caller-derived vector register and any callee-saved vector spill/restore slot
+  that may carry caller data.
+- wasm `simd128` must include generated-code/JIT evidence for the selected wasm
+  runtime, or the release must explicitly keep wasm SIMD candidate-only and make
+  no runtime register-retention claim.
+
 ## Runtime Report Expectations
 
 Before active encode dispatch can ship, runtime reporting must make the
