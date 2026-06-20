@@ -8,6 +8,21 @@ fn fill_pattern(output: &mut [u8], seed: usize) {
     }
 }
 
+fn fill_indices_pattern(output: &mut [u8; 12], seed: u8) {
+    let mut write = 0;
+    for group in 0..4 {
+        let i0 = seed.wrapping_add(group * 4) & 0x3f;
+        let i1 = seed.wrapping_add(group * 4 + 1) & 0x3f;
+        let i2 = seed.wrapping_add(group * 4 + 2) & 0x3f;
+        let i3 = seed.wrapping_add(group * 4 + 3) & 0x3f;
+
+        output[write] = (i0 << 2) | (i1 >> 4);
+        output[write + 1] = (i1 << 4) | (i2 >> 2);
+        output[write + 2] = (i2 << 6) | i3;
+        write += 3;
+    }
+}
+
 #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
 #[test]
 fn avx512_encode_prototype_matches_scalar_when_available() {
@@ -121,6 +136,36 @@ fn ssse3_sse41_encode_prototype_matches_scalar_when_available() {
         let mut scalar_url_safe = [0xaa; 16];
         // SAFETY: The feature check above proves SSSE3/SSE4.1
         // availability for this test invocation.
+        unsafe {
+            encode_12_bytes_ssse3_sse41::<UrlSafe>(&input, &mut ssse3_url_safe);
+        }
+        let scalar_len = Engine::<UrlSafe, true>::new()
+            .encode_slice(&input, &mut scalar_url_safe)
+            .unwrap();
+        assert_eq!(scalar_len, ssse3_url_safe.len());
+        assert_eq!(ssse3_url_safe, scalar_url_safe);
+    }
+
+    for seed in 0..64 {
+        fill_indices_pattern(&mut input, seed);
+
+        let mut ssse3_standard = [0x55; 16];
+        let mut scalar_standard = [0xaa; 16];
+        // SAFETY: The feature check above proves SSSE3/SSE4.1 availability
+        // for this test invocation.
+        unsafe {
+            encode_12_bytes_ssse3_sse41::<Standard>(&input, &mut ssse3_standard);
+        }
+        let scalar_len = Engine::<Standard, true>::new()
+            .encode_slice(&input, &mut scalar_standard)
+            .unwrap();
+        assert_eq!(scalar_len, ssse3_standard.len());
+        assert_eq!(ssse3_standard, scalar_standard);
+
+        let mut ssse3_url_safe = [0x55; 16];
+        let mut scalar_url_safe = [0xaa; 16];
+        // SAFETY: The feature check above proves SSSE3/SSE4.1 availability
+        // for this test invocation.
         unsafe {
             encode_12_bytes_ssse3_sse41::<UrlSafe>(&input, &mut ssse3_url_safe);
         }

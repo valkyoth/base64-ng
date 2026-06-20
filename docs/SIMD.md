@@ -1,6 +1,6 @@
 # SIMD Admission Policy
 
-`base64-ng` is intentionally scalar-only in the `1.0.10` release. Future SIMD
+`base64-ng` is intentionally scalar-only in the `1.1.0` release. Future SIMD
 dispatch remains gated unless a complete SIMD admission evidence package lands
 in a later release series. The crate uses `#![deny(unsafe_code)]` and permits
 reviewed `allow(unsafe_code)` exceptions only for audited cleanup in
@@ -76,11 +76,11 @@ runtime behavior for that line.
 - SSSE3/SSE4.1 detection is reporting-only until an implementation has scalar
   differential tests, fuzz coverage, and benchmark evidence.
 - An inactive SSSE3/SSE4.1 fixed-block encode prototype exists behind the SIMD
-  boundary as test-only scaffolding and is tested against scalar output only
-  when SSSE3/SSE4.1 is available. It currently zeroes the destination with SIMD
-  and then overwrites the block with scalar encoding; this is scaffolding, not
-  vectorized Base64 correctness evidence, and it is not compiled into release
-  library builds.
+  boundary as real non-dispatchable vector encode evidence for Standard and
+  URL-safe alphabets. It uses SSSE3 byte shuffling, SSE lane shifts/masks, and
+  SSE4.1 byte blending for fixed 12-byte input blocks, then clears XMM
+  registers before returning. It is tested against scalar output only when
+  SSSE3/SSE4.1 is available and is not compiled into release library builds.
 - An inactive AVX2 fixed-block encode prototype exists behind the SIMD boundary
   as test-only scaffolding and is tested against scalar output only when AVX2
   is available. It currently zeroes the destination with SIMD and then

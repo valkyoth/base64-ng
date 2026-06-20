@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.1.0 - 2026-06-20
+
+- Started the SIMD encode foundation line with a real SSSE3/SSE4.1 fixed-block
+  encode prototype for Standard and URL-safe alphabets. The prototype remains
+  non-dispatchable; active runtime backend selection is still scalar-only.
+- Replaced the previous SSSE3/SSE4.1 zero-output scaffold with SSSE3 byte
+  shuffling, SSE lane shifts/masks, and SSE4.1 byte blending for 12-byte input
+  blocks encoded to 16 Base64 bytes.
+- Added deterministic SIMD equivalence coverage that exercises patterned input
+  blocks and all 64 emitted six-bit Base64 values against the scalar encoder.
+- Added explicit test-prototype XMM register cleanup and updated the unsafe
+  inventory for the new vectorized SSSE3/SSE4.1 encode path.
+
 ## 1.0.10 - 2026-06-20
 
 - Split oversized production modules into focused internal source files for the

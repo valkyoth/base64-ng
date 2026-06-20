@@ -10,7 +10,7 @@ the admitted implementation.
 - Admitted backends: none.
 - Active backend: scalar only.
 - Public performance claims: none.
-- Release status: `1.0.10` remains scalar-only. Future releases may admit an
+- Release status: `1.1.0` remains scalar-only. Future releases may admit an
   accelerated backend only when this manifest is updated with a complete
   backend admission evidence package in the same release series.
 
@@ -46,7 +46,7 @@ added to `ActiveBackend` or used by runtime dispatch:
 | --- | --- | --- | --- |
 | AVX-512 VBMI | candidate only | `avx512f`, `avx512bw`, `avx512vl`, `avx512vbmi` | inactive prototype equivalence only |
 | AVX2 | candidate only | `avx2` | inactive prototype equivalence only |
-| SSSE3/SSE4.1 | candidate only | `ssse3`, `sse4.1` | inactive prototype equivalence only |
+| SSSE3/SSE4.1 | candidate only | `ssse3`, `sse4.1` | real fixed-block encode prototype for Standard and URL-safe alphabets; non-dispatchable |
 | NEON | candidate only | `neon` | inactive prototype equivalence only |
 | wasm `simd128` | candidate only | `simd128` | compile-time candidate detection only |
 

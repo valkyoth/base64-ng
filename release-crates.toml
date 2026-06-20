@@ -1,45 +1,45 @@
 [release]
-version = "1.0.10"
+version = "1.1.0"
 policy = "core-first-companion"
 
 [crates."base64-ng"]
-previous_version = "1.0.9"
-version = "1.0.10"
+previous_version = "1.0.10"
+version = "1.1.0"
 change = "code"
 publish = true
-reason = "Splits oversized internal source modules and adds the production-source 500-line budget guard."
+reason = "Adds the first real non-dispatchable SSSE3/SSE4.1 fixed-block encode prototype and evidence scaffolding."
 
 [crates."base64-ng-sanitization"]
 previous_version = "1.0.9"
 version = "1.0.9"
 change = "unchanged"
 publish = false
-reason = "No code changes for the 1.0.10 core maintenance release."
+reason = "No code changes for the 1.1.0 core SIMD foundation release."
 
 [crates."base64-ng-derive"]
 previous_version = "1.0.9"
 version = "1.0.9"
 change = "unchanged"
 publish = false
-reason = "No code changes for the 1.0.10 core maintenance release."
+reason = "No code changes for the 1.1.0 core SIMD foundation release."
 
 [crates."base64-ng-serde"]
-previous_version = "1.0.9"
+previous_version = "1.0.10"
 version = "1.0.10"
-change = "code"
-publish = true
-reason = "Adds drop-time cleanup and explicit comparison behavior for serde wrapper types."
+change = "unchanged"
+publish = false
+reason = "No code changes for the 1.1.0 core SIMD foundation release."
 
 [crates."base64-ng-bytes"]
 previous_version = "1.0.9"
 version = "1.0.9"
 change = "unchanged"
 publish = false
-reason = "No code changes for the 1.0.10 core maintenance release."
+reason = "No code changes for the 1.1.0 core SIMD foundation release."
 
 [crates."base64-ng-tokio"]
 previous_version = "1.0.9"
 version = "1.0.9"
 change = "unchanged"
 publish = false
-reason = "No code changes for the 1.0.10 core maintenance release."
+reason = "No code changes for the 1.1.0 core SIMD foundation release."

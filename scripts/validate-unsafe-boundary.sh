@@ -6,16 +6,16 @@ if ! grep -q '^#!\[deny(unsafe_code)\]' src/lib.rs; then
     exit 1
 fi
 
-simd_allowed='src/simd/mod.rs'
+simd_allowed_files='src/simd/mod.rs src/simd/x86.rs'
 simd_tests_allowed='src/simd/tests.rs'
 root_allowed='src/lib.rs'
 cleanup_allowed='src/cleanup.rs'
 ct_allowed_files='src/ct/decode.rs src/ct/equality.rs'
 matches="$(grep -RIl 'allow(unsafe_code)' src | sort || true)"
-allowed="$(printf '%s\n' "$cleanup_allowed" src/ct/decode.rs src/ct/equality.rs "$simd_allowed" | sort)"
+allowed="$(printf '%s\n' "$cleanup_allowed" src/ct/decode.rs src/ct/equality.rs $simd_allowed_files | sort)"
 
 if [ "$matches" != "$allowed" ]; then
-    echo "unsafe boundary: allow(unsafe_code) may appear only in $cleanup_allowed, src/ct/decode.rs, src/ct/equality.rs, and $simd_allowed"
+    echo "unsafe boundary: allow(unsafe_code) may appear only in $cleanup_allowed, src/ct/decode.rs, src/ct/equality.rs, and src/simd/"
     if [ -n "$matches" ]; then
         echo "$matches"
     fi
@@ -57,7 +57,7 @@ if ! awk '
 fi
 
 arch_matches="$(grep -RIl -e 'core::arch' -e 'std::arch' -e 'is_x86_feature_detected!' -e 'target_feature' src | sort || true)"
-arch_allowed="$(printf '%s\n' src/ct/equality.rs "$cleanup_allowed" "$simd_allowed" "$simd_tests_allowed" | sort)"
+arch_allowed="$(printf '%s\n' src/ct/equality.rs "$cleanup_allowed" $simd_allowed_files "$simd_tests_allowed" | sort)"
 
 if [ "$arch_matches" != "$arch_allowed" ]; then
     echo "unsafe boundary: architecture intrinsics may appear only in src/ct/equality.rs CT barriers, $cleanup_allowed cleanup barriers, and src/simd/"
@@ -77,10 +77,10 @@ if [ ! -s docs/UNSAFE.md ]; then
     exit 1
 fi
 
-unsafe_functions="$(sed -n 's/^[[:space:]]*unsafe[[:space:]]*fn[[:space:]]*\([A-Za-z0-9_][A-Za-z0-9_]*\).*/\1/p' "$simd_allowed")"
+unsafe_functions="$(sed -n 's/^[[:space:]]*\(\(pub(\(crate\|super\))[[:space:]]*\)\?\)unsafe[[:space:]]*fn[[:space:]]*\([A-Za-z0-9_][A-Za-z0-9_]*\).*/\4/p' $simd_allowed_files)"
 
 if [ -z "$unsafe_functions" ]; then
-    echo "unsafe boundary: expected documented prototype unsafe functions in $simd_allowed"
+    echo "unsafe boundary: expected documented prototype unsafe functions in src/simd/"
     exit 1
 fi
 
@@ -105,7 +105,7 @@ if ! awk '
         prev1 = $0
     }
     END { exit failed }
-' $ct_allowed_files "$cleanup_allowed" "$simd_allowed"; then
+' $ct_allowed_files "$cleanup_allowed" $simd_allowed_files; then
     echo "unsafe boundary: every unsafe block must have a nearby SAFETY explanation"
     exit 1
 fi

@@ -365,7 +365,7 @@ Limitations:
 
 ### `encode_48_bytes_avx512`
 
-Location: `src/simd/`
+Location: `src/simd/x86.rs`
 
 Status: inactive test-only prototype, not compiled into release library builds
 and not dispatchable.
@@ -406,7 +406,7 @@ Safety argument:
 
 ### `encode_24_bytes_avx2`
 
-Location: `src/simd/`
+Location: `src/simd/x86.rs`
 
 Status: inactive test-only prototype, not compiled into release library builds
 and not dispatchable.
@@ -445,7 +445,7 @@ Safety argument:
 
 ### `encode_12_bytes_ssse3_sse41`
 
-Location: `src/simd/`
+Location: `src/simd/x86.rs`
 
 Status: inactive test-only prototype, not compiled into release library builds
 and not dispatchable.
@@ -454,33 +454,109 @@ Purpose:
 
 - Exercise lower-tier x86 target-feature plumbing.
 - Validate the unsafe boundary.
-- Provide scalar-equivalence scaffolding before any real vector path is
-  admitted. Current tests do not prove vectorized Base64 correctness.
+- Provide the first real fixed-block vector encode prototype for Standard and
+  URL-safe alphabets before any runtime dispatch is admitted.
 
 Preconditions:
 
 - Caller must prove SSSE3 and SSE4.1 are available on the current CPU.
 - Input is exactly 12 bytes.
 - Output is exactly 16 bytes.
+- The vectorized path is used only for Standard-family alphabets (`A-Z`,
+  `a-z`, `0-9`, and either `+/` or `-_`). Other alphabets fall back to the
+  scalar prototype loop.
 
 Unsafe operation:
 
-- `_mm_storeu_si128` stores one 128-bit zero vector into the output buffer.
+- `_mm_loadu_si128` loads from a local 16-byte staging array that contains the
+  12-byte input plus four zero bytes.
+- `_mm_shuffle_epi8` reshapes the staged bytes into four 24-bit lanes without
+  reading from caller memory beyond the fixed input array.
+- SSE2 shifts, masks, and OR operations produce sixteen 6-bit indices.
+- `encode_standard_family_indices_ssse3_sse41` maps those indices to Standard
+  or URL-safe alphabet bytes with SSE4.1 byte blends.
+- `_mm_storeu_si128` stores the 16 encoded bytes into the output buffer.
+- `clear_xmm_registers_for_test_prototype` clears XMM registers before return
+  to reduce register retention in this non-dispatchable test prototype.
 
 Safety argument:
 
-- The output type is `&mut [u8; 16]`, so the store has enough initialized,
-  writable memory.
-- The intrinsic is the unaligned store variant, so no stronger alignment is
-  required.
+- The input and output array types provide fixed readable and writable bounds.
+- The SIMD load reads only from a local 16-byte staging array, so the prototype
+  does not over-read the 12-byte caller input.
+- The load and store intrinsics are unaligned variants, so no stronger
+  alignment is required.
 - The function is guarded by an SSSE3/SSE4.1 target-feature contract.
-- The prototype then overwrites the block with scalar-equivalent Base64 output.
-  The SIMD zeroing is semantically overwritten and is not an implementation of
-  vectorized Base64.
-- Register-retention note: this prototype does not load caller bytes into SIMD
-  registers. Any future SSSE3/SSE4.1 implementation that does so must document
-  and implement explicit cleanup for every secret-bearing XMM register before
-  return.
+- The output length is fixed by the output array type.
+- The prototype remains test-only and non-dispatchable. Runtime acceleration is
+  still blocked by the SIMD admission manifest.
+- Register-retention note: the prototype now loads caller bytes into XMM
+  registers. It calls `clear_xmm_registers_for_test_prototype` before return.
+  This is retention reduction for the inactive prototype, not a formal
+  microarchitectural side-channel proof.
+
+### `encode_standard_family_indices_ssse3_sse41`
+
+Location: `src/simd/x86.rs`
+
+Status: private helper for the inactive SSSE3/SSE4.1 test-only prototype, not
+compiled into release library builds and not dispatchable.
+
+Purpose:
+
+- Map sixteen 6-bit indices to Standard or URL-safe alphabet bytes with SSE4.1
+  blends instead of scalar per-byte table indexing.
+
+Preconditions:
+
+- Caller must prove SSE4.1 is available on the current CPU.
+- `indices` contains only byte values in `0..=63`.
+- The alphabet must be Standard-family as checked by the caller.
+
+Unsafe operation:
+
+- SSE4.1 byte comparisons and blends compute the ASCII offset for each index.
+
+Safety argument:
+
+- The helper does not dereference raw pointers or access memory.
+- The target-feature contract enables the required SSE4.1 instructions.
+- The caller constructs `indices` with masks that constrain every byte to a
+  six-bit Base64 value.
+- The helper is private to the test-only prototype path.
+
+### `clear_xmm_registers_for_test_prototype`
+
+Location: `src/simd/x86.rs`
+
+Status: private helper for inactive x86 test-only prototypes, not compiled into
+release library builds and not dispatchable.
+
+Purpose:
+
+- Clear XMM registers before returning from the SSSE3/SSE4.1 prototype path
+  that processes caller bytes in vector registers.
+
+Preconditions:
+
+- Called only after the prototype has stored its output and no later SIMD value
+  is needed by the function.
+
+Unsafe operation:
+
+- Inline assembly zeros the XMM register set available to the target (`xmm0`
+  through `xmm7` on `x86`, `xmm0` through `xmm15` on `x86_64`) and declares
+  those registers as clobbered outputs.
+
+Safety argument:
+
+- The helper does not read or write memory.
+- The helper runs at the end of the inactive prototype path.
+- Clobbered registers are declared to the compiler with explicit `out("xmmN")`
+  operands.
+- This is best-effort register-retention reduction for test evidence, not a
+  guarantee that historical register, stack, cache, or microarchitectural
+  copies do not exist.
 
 ### `encode_12_bytes_neon`
 

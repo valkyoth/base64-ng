@@ -11,18 +11,16 @@
 //! SSSE3/SSE4.1, NEON, and wasm `simd128` paths have scalar differential
 //! tests, fuzz coverage, and benchmark evidence.
 //!
-//! The fixed-block prototypes below are test-only scaffolding. Their SIMD
-//! operations currently zero the destination block, then a scalar loop
-//! overwrites the entire output. The prototype tests therefore validate
-//! target-feature gating, unsafe isolation, and fixed-size plumbing, not
-//! vectorized Base64 correctness. They are not compiled into release library
-//! builds.
+//! The fixed-block prototypes below are test-only and non-dispatchable. The
+//! SSSE3/SSE4.1 prototype contains real fixed-block encode logic for Standard
+//! and URL-safe alphabets. The AVX-512, AVX2, and NEON prototypes remain
+//! scalar-equivalence scaffolding that zero the destination block before a
+//! scalar loop overwrites the output. None of these prototypes are compiled
+//! into release library builds.
 
 #[cfg(all(
     test,
     any(
-        target_arch = "x86",
-        target_arch = "x86_64",
         target_arch = "aarch64",
         all(target_arch = "arm", target_feature = "neon")
     )
@@ -32,20 +30,11 @@ use super::{Alphabet, encode_base64_value};
 use core::arch::aarch64::{uint8x16_t, vdupq_n_u8, vst1q_u8};
 #[cfg(all(test, target_arch = "arm", target_feature = "neon"))]
 use core::arch::arm::{uint8x16_t, vdupq_n_u8, vst1q_u8};
-// Keep intrinsic imports limited to operations used by the current scaffolding.
-// Adding shuffle, table-lookup, permutation, compare, or arithmetic intrinsics
-// is SIMD admission work and must update docs/SIMD_ACTIVATION_CHECKLIST.md,
-// unsafe inventory, differential tests, fuzz evidence, and benchmark evidence.
-#[cfg(all(test, target_arch = "x86"))]
-use core::arch::x86::{
-    __m128i, __m256i, __m512i, _mm_setzero_si128, _mm_storeu_si128, _mm256_setzero_si256,
-    _mm256_storeu_si256, _mm512_setzero_si512, _mm512_storeu_si512,
-};
-#[cfg(all(test, target_arch = "x86_64"))]
-use core::arch::x86_64::{
-    __m128i, __m256i, __m512i, _mm_setzero_si128, _mm_storeu_si128, _mm256_setzero_si256,
-    _mm256_storeu_si256, _mm512_setzero_si512, _mm512_storeu_si512,
-};
+
+#[cfg(all(test, any(target_arch = "x86", target_arch = "x86_64")))]
+mod x86;
+#[cfg(all(test, any(target_arch = "x86", target_arch = "x86_64")))]
+pub(super) use x86::{encode_12_bytes_ssse3_sse41, encode_24_bytes_avx2, encode_48_bytes_avx512};
 
 /// Backend currently allowed to execute.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -166,183 +155,6 @@ fn neon_available() -> bool {
 #[cfg(target_arch = "wasm32")]
 fn wasm_simd128_available() -> bool {
     cfg!(target_feature = "simd128")
-}
-
-/// Encodes one 48-byte block into 64 bytes through the inactive AVX-512 prototype.
-///
-/// This is not an admitted fast path. It exists to exercise AVX-512 target
-/// feature plumbing, unsafe isolation, and scalar equivalence tests before a
-/// real vector encoder is allowed to participate in dispatch. The current
-/// SIMD operation only zeroes the output before a scalar fallback loop
-/// overwrites every byte.
-///
-/// Admission note: a real AVX-512 implementation must explicitly clear every
-/// ZMM/YMM/XMM register that carries caller data before returning, document the
-/// exact cleanup sequence in `docs/UNSAFE.md`, and include generated-assembly
-/// evidence. This scaffold does not load caller bytes into SIMD registers.
-///
-/// # Safety
-///
-/// The caller must execute this function only when the full AVX-512 Base64
-/// candidate bundle is available on the current CPU: `avx512f`, `avx512bw`,
-/// `avx512vl`, and `avx512vbmi`. The input and output sizes are fixed by their
-/// array types.
-#[cfg(all(test, any(target_arch = "x86", target_arch = "x86_64")))]
-#[allow(dead_code, reason = "inactive prototype is not dispatchable yet")]
-#[expect(
-    clippy::cast_ptr_alignment,
-    reason = "_mm512_storeu_si512 accepts unaligned pointers"
-)]
-#[target_feature(enable = "avx512f,avx512bw,avx512vl,avx512vbmi")]
-unsafe fn encode_48_bytes_avx512<A>(input: &[u8; 48], output: &mut [u8; 64])
-where
-    A: Alphabet,
-{
-    let zeros = _mm512_setzero_si512();
-    // SAFETY: `output` is a valid 64-byte mutable array. The full AVX-512
-    // candidate bundle is guaranteed by this function's target-feature
-    // precondition, and the unaligned store does not require stronger pointer
-    // alignment.
-    unsafe {
-        _mm512_storeu_si512(output.as_mut_ptr().cast::<__m512i>(), zeros);
-    }
-
-    // Temporary scaffolding: the AVX-512 store above only clears the sentinel
-    // output bytes. This scalar loop performs the actual encoding and
-    // overwrites the whole block, so the current equivalence test does not
-    // prove vectorized Base64 correctness.
-    let mut read = 0;
-    let mut write = 0;
-    while read < input.len() {
-        let b0 = input[read];
-        let b1 = input[read + 1];
-        let b2 = input[read + 2];
-
-        output[write] = encode_base64_value::<A>(b0 >> 2);
-        output[write + 1] = encode_base64_value::<A>(((b0 & 0b0000_0011) << 4) | (b1 >> 4));
-        output[write + 2] = encode_base64_value::<A>(((b1 & 0b0000_1111) << 2) | (b2 >> 6));
-        output[write + 3] = encode_base64_value::<A>(b2 & 0b0011_1111);
-
-        read += 3;
-        write += 4;
-    }
-}
-
-/// Encodes one 24-byte block into 32 bytes through the inactive AVX2 prototype.
-///
-/// This is not an admitted fast path. It exists to exercise target-feature
-/// gating, unsafe isolation, and scalar equivalence tests before a real vector
-/// encoder is allowed to participate in dispatch. The current SIMD operation
-/// only zeroes the output before a scalar fallback loop overwrites every byte.
-///
-/// Admission note: a real AVX2 implementation must explicitly clear every
-/// YMM/XMM register that carries caller data before returning, include the
-/// required AVX/SSE transition cleanup such as `vzeroupper` where applicable,
-/// document the exact sequence in `docs/UNSAFE.md`, and include
-/// generated-assembly evidence. This scaffold does not load caller bytes into
-/// SIMD registers.
-///
-/// # Safety
-///
-/// The caller must execute this function only when AVX2 is available on the
-/// current CPU. The input and output sizes are fixed by their array types.
-#[cfg(all(test, any(target_arch = "x86", target_arch = "x86_64")))]
-#[allow(dead_code, reason = "inactive prototype is not dispatchable yet")]
-#[expect(
-    clippy::cast_ptr_alignment,
-    reason = "_mm256_storeu_si256 accepts unaligned pointers"
-)]
-#[target_feature(enable = "avx2")]
-unsafe fn encode_24_bytes_avx2<A>(input: &[u8; 24], output: &mut [u8; 32])
-where
-    A: Alphabet,
-{
-    let zeros = _mm256_setzero_si256();
-    // SAFETY: `output` is a valid 32-byte mutable array. AVX2 is guaranteed by
-    // this function's target feature precondition, and the unaligned store does
-    // not require any stronger pointer alignment.
-    unsafe {
-        _mm256_storeu_si256(output.as_mut_ptr().cast::<__m256i>(), zeros);
-    }
-
-    // Temporary scaffolding: the AVX2 store above only clears the sentinel
-    // output bytes. This scalar loop performs the actual encoding and
-    // overwrites the whole block, so the current equivalence test does not
-    // prove vectorized Base64 correctness.
-    let mut read = 0;
-    let mut write = 0;
-    while read < input.len() {
-        let b0 = input[read];
-        let b1 = input[read + 1];
-        let b2 = input[read + 2];
-
-        output[write] = encode_base64_value::<A>(b0 >> 2);
-        output[write + 1] = encode_base64_value::<A>(((b0 & 0b0000_0011) << 4) | (b1 >> 4));
-        output[write + 2] = encode_base64_value::<A>(((b1 & 0b0000_1111) << 2) | (b2 >> 6));
-        output[write + 3] = encode_base64_value::<A>(b2 & 0b0011_1111);
-
-        read += 3;
-        write += 4;
-    }
-}
-
-/// Encodes one 12-byte block into 16 bytes through the inactive SSSE3/SSE4.1 prototype.
-///
-/// This is not an admitted fast path. It exists to exercise lower-tier x86
-/// target-feature plumbing, unsafe isolation, and scalar equivalence before a
-/// real vector encoder is allowed to participate in dispatch. The current
-/// SIMD operation only zeroes the output before a scalar fallback loop
-/// overwrites every byte.
-///
-/// Admission note: a real SSSE3/SSE4.1 implementation must explicitly clear
-/// every XMM register that carries caller data before returning, document the
-/// exact cleanup sequence in `docs/UNSAFE.md`, and include generated-assembly
-/// evidence. This scaffold does not load caller bytes into SIMD registers.
-///
-/// # Safety
-///
-/// The caller must execute this function only when SSSE3 and SSE4.1 are
-/// available on the current CPU. The input and output sizes are fixed by their
-/// array types.
-#[cfg(all(test, any(target_arch = "x86", target_arch = "x86_64")))]
-#[allow(dead_code, reason = "inactive prototype is not dispatchable yet")]
-#[expect(
-    clippy::cast_ptr_alignment,
-    reason = "_mm_storeu_si128 accepts unaligned pointers"
-)]
-#[target_feature(enable = "ssse3,sse4.1")]
-unsafe fn encode_12_bytes_ssse3_sse41<A>(input: &[u8; 12], output: &mut [u8; 16])
-where
-    A: Alphabet,
-{
-    let zeros = _mm_setzero_si128();
-    // SAFETY: `output` is a valid 16-byte mutable array. SSSE3/SSE4.1
-    // availability is guaranteed by this function's target-feature
-    // precondition, and the unaligned store does not require stronger pointer
-    // alignment.
-    unsafe {
-        _mm_storeu_si128(output.as_mut_ptr().cast::<__m128i>(), zeros);
-    }
-
-    // Temporary scaffolding: the SSSE3/SSE4.1 store above only clears the
-    // sentinel output bytes. This scalar loop performs the actual encoding and
-    // overwrites the whole block, so the current equivalence test does not
-    // prove vectorized Base64 correctness.
-    let mut read = 0;
-    let mut write = 0;
-    while read < input.len() {
-        let b0 = input[read];
-        let b1 = input[read + 1];
-        let b2 = input[read + 2];
-
-        output[write] = encode_base64_value::<A>(b0 >> 2);
-        output[write + 1] = encode_base64_value::<A>(((b0 & 0b0000_0011) << 4) | (b1 >> 4));
-        output[write + 2] = encode_base64_value::<A>(((b1 & 0b0000_1111) << 2) | (b2 >> 6));
-        output[write + 3] = encode_base64_value::<A>(b2 & 0b0011_1111);
-
-        read += 3;
-        write += 4;
-    }
 }
 
 /// Encodes one 12-byte block into 16 bytes through the inactive NEON prototype.

@@ -29,7 +29,7 @@ The crate starts conservative: a small scalar implementation, strict RFC 4648 be
 
 ## Current Status
 
-The current public release is `1.0.10`.
+The current public release is `1.1.0`.
 
 Implemented now:
 
@@ -67,6 +67,8 @@ Implemented now:
 - Bounded Kani proof harnesses that run on Rust `1.90.0` with
   `cargo-kani 0.67.0`.
 - Constant-time assembly evidence generation for reviewer inspection.
+- Real non-dispatchable SSSE3/SSE4.1 fixed-block encode prototype for Standard
+  and URL-safe alphabets behind the SIMD admission boundary.
 - Optional `base64-ng-sanitization` companion crate for applications that
   already admit `sanitization` and want direct CT decode helpers into
   clear-on-drop secret containers.
@@ -80,8 +82,8 @@ Implemented now:
 Planned behind admission evidence:
 
 - Admitted AVX2, AVX-512, SSSE3/SSE4.1, ARM NEON, and wasm `simd128`
-  fast paths after the SIMD admission evidence is complete. The `1.0.10`
-  release remains scalar-only.
+  fast paths after the SIMD admission evidence is complete. The `1.1.0`
+  release remains scalar-only for active runtime dispatch.
 - Full async streaming wrappers only after the `tokio` feature passes the
   cancellation-safety admission bar in [docs/ASYNC.md](docs/ASYNC.md). The
   `base64-ng-tokio` companion crate currently provides bounded async
@@ -115,7 +117,7 @@ and CWE mapping lives in [docs/SECURITY_CONTROLS.md](docs/SECURITY_CONTROLS.md).
 The minimum supported Rust version is Rust `1.90.0`. New deployments should
 prefer the latest stable Rust; as of May 29, 2026, that is Rust `1.96.0`.
 
-Compatibility evidence for `1.0.10`:
+Compatibility evidence for `1.1.0`:
 
 | Rust | Local Evidence |
 | --- | --- |
@@ -131,7 +133,7 @@ Compatibility evidence for `1.0.10`:
 
 ```toml
 [dependencies]
-base64-ng = "1.0.10"
+base64-ng = "1.1.0"
 ```
 
 The crate is dual-licensed:
@@ -160,10 +162,9 @@ The core `base64-ng` crate keeps its zero-runtime-dependency policy. Optional
 ecosystem integrations live as separate crates so applications can opt into
 their own approved dependency set without changing the base package.
 
-The `1.0.10` release changes the core crate internals and refreshes
-`base64-ng-serde`; the other optional companion crates remain at `1.0.9`.
-Cargo's normal `^1.0.9` dependency range allows those companions to resolve
-with `base64-ng` `1.0.10`.
+The `1.1.0` release changes only the core crate. Optional companion crates
+remain on their previous published versions, and Cargo's normal compatible
+dependency ranges allow those companions to resolve with `base64-ng` `1.1.0`.
 
 | Crate | Purpose |
 | --- | --- |
@@ -187,7 +188,7 @@ own `alloc` feature:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.0.10", default-features = false }
+base64-ng = { version = "1.1.0", default-features = false }
 base64-ng-sanitization = { version = "1.0.9", default-features = false }
 ```
 
@@ -207,7 +208,7 @@ newtypes around fixed byte arrays:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.0.10", default-features = false }
+base64-ng = { version = "1.1.0", default-features = false }
 base64-ng-derive = "1.0.9"
 ```
 
@@ -243,7 +244,7 @@ struct Message {
 
 ```toml
 [dependencies]
-base64-ng = "1.0.10"
+base64-ng = "1.1.0"
 base64-ng-bytes = "1.0.9"
 bytes = "1.12.0"
 ```
@@ -261,7 +262,7 @@ use Tokio:
 
 ```toml
 [dependencies]
-base64-ng = "1.0.10"
+base64-ng = "1.1.0"
 base64-ng-tokio = "1.0.9"
 tokio = { version = "1.52.3", features = ["io-util"] }
 ```
@@ -291,7 +292,7 @@ Disable defaults for embedded or freestanding use:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.0.10", default-features = false }
+base64-ng = { version = "1.1.0", default-features = false }
 ```
 
 ## Convenience API
