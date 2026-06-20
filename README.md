@@ -165,13 +165,20 @@ The `1.0.10` release changes the core crate internals and refreshes
 Cargo's normal `^1.0.9` dependency range allows those companions to resolve
 with `base64-ng` `1.0.10`.
 
-| Crate | Cargo |
+| Crate | Purpose |
 | --- | --- |
-| `base64-ng-sanitization` | <https://crates.io/crates/base64-ng-sanitization> |
-| `base64-ng-derive` | <https://crates.io/crates/base64-ng-derive> |
-| `base64-ng-serde` | <https://crates.io/crates/base64-ng-serde> |
-| `base64-ng-bytes` | <https://crates.io/crates/base64-ng-bytes> |
-| `base64-ng-tokio` | <https://crates.io/crates/base64-ng-tokio> |
+| `base64-ng` | Stable zero-runtime-dependency facade crate and primary user entry point. |
+| `base64-ng-sanitization` | Optional `sanitization` integration for staged CT secret decoding. |
+| `base64-ng-derive` | Dependency-free `Base64Secret` derive for fixed-size secret newtypes. |
+| `base64-ng-serde` | Optional `serde` wrappers for projects that already admit `serde`. |
+| `base64-ng-bytes` | Optional `bytes` helpers for `Bytes`, `Buf`, and `BufMut` users. |
+| `base64-ng-tokio` | Optional bounded Tokio async helpers for services that already admit Tokio. |
+
+Subcrates are documented so crate pages are readable, but they belong to the
+main `base64-ng` crate family and are not intended as independent protocol
+products. Package versions and crates.io links are tracked in
+[Crate Version Matrix](docs/CRATE_VERSION_MATRIX.md) so releases can publish
+only the crates that changed instead of republishing the whole ecosystem.
 
 `base64-ng-sanitization` provides extension helpers for
 `base64_ng::ct::CtEngine` that decode directly into
