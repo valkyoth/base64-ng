@@ -303,6 +303,12 @@ the required scalar differential tests, fuzz evidence, unsafe inventory updates,
 architecture evidence, benchmark evidence, release-note wording, and an updated
 `docs/SIMD_ADMISSION.md` manifest.
 
+For a future encode-dispatch release, use
+[`SIMD_ENCODE_ADMISSION_DRAFT.md`](SIMD_ENCODE_ADMISSION_DRAFT.md) as the
+working package. It defines the runtime-report expectations, benchmark record,
+release-note wording, and decision checklist required before any encode backend
+can move from real non-dispatchable prototype evidence to active dispatch.
+
 ## Miri Evidence
 
 Run Miri coverage with:

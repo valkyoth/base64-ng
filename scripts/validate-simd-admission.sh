@@ -6,6 +6,7 @@ test -s docs/SIMD_ADMISSION.md
 test -s docs/UNSAFE.md
 test -s docs/BENCHMARKS.md
 test -s docs/RELEASE_EVIDENCE.md
+test -s docs/SIMD_ENCODE_ADMISSION_DRAFT.md
 
 active_variants="$(
     awk '
@@ -73,12 +74,15 @@ for required_text in \
     "real non-dispatchable prototype" \
     "candidate only" \
     "admitted backend" \
+    "x86/x86_64 runtime dispatch only" \
+    "Decode acceleration" \
+    "Required precision" \
     "Performance numbers are release notes evidence only" \
     "Admitted backends: none" \
     "Active backend: scalar only" \
     "Do not advertise SIMD acceleration until this manifest names an admitted"
 do
-    if ! grep -R -q "$required_text" docs/SIMD.md docs/SIMD_ADMISSION.md docs/UNSAFE.md docs/RELEASE_EVIDENCE.md; then
+    if ! grep -R -q "$required_text" docs/SIMD.md docs/SIMD_ADMISSION.md docs/UNSAFE.md docs/RELEASE_EVIDENCE.md docs/SIMD_ENCODE_ADMISSION_DRAFT.md; then
         echo "simd admission: missing required SIMD admission text: $required_text" >&2
         exit 1
     fi

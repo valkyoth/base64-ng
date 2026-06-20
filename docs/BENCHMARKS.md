@@ -41,6 +41,11 @@ Benchmark numbers are machine-local evidence, not portable guarantees. Release
 notes should cite hardware, OS, Rust version, CPU governor, and command output
 when publishing performance claims.
 
+For a future SIMD encode admission release, use the benchmark record template in
+[`SIMD_ENCODE_ADMISSION_DRAFT.md`](SIMD_ENCODE_ADMISSION_DRAFT.md). A speed
+claim is not complete unless it names the active backend, target triple, CPU
+model, command, scalar baseline, SIMD throughput, and raw artifact.
+
 ## Interpreting Results
 
 The current scalar decoder uses arithmetic alphabet mapping instead of a large

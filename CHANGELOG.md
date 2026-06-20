@@ -22,6 +22,9 @@
   check while keeping wasm cleanup/JIT caveats and scalar-only runtime dispatch.
 - Hardened SIMD admission tooling and backend evidence manifests to distinguish
   real non-dispatchable prototypes from admitted active backends.
+- Added a draft SIMD encode admission package for future `1.2.0` activation,
+  including runtime-report expectations, benchmark record shape, and release
+  note wording rules while keeping `1.1.x` scalar-only.
 - Added a real non-dispatchable AVX2 fixed-block encode prototype for Standard
   and URL-safe alphabets. The prototype remains test-only and active runtime
   backend selection remains scalar-only.

@@ -26,7 +26,8 @@ The SIMD roadmap separates implementation evidence from active acceleration:
 - `1.2.0` is the first release that may activate encode acceleration. It may
   admit std-only runtime dispatch for the encode backends whose evidence is
   complete in that release. Backends without complete evidence remain
-  candidate-only.
+  candidate-only. The draft package for that decision lives in
+  [SIMD_ENCODE_ADMISSION_DRAFT.md](SIMD_ENCODE_ADMISSION_DRAFT.md).
 - After `1.2.0`, pause feature work for a short soak period so users can report
   platform-specific encode regressions before decode acceleration work starts.
 - `1.2.x` is the SIMD decode foundation series. Decode prototypes remain
@@ -239,7 +240,9 @@ admission evidence is deliberately updated. The gate currently requires:
 
 When an accelerated backend is ready for admission, update this gate in the
 same commit as the scalar differential tests, fuzz evidence, unsafe inventory,
-benchmark evidence, and release notes.
+benchmark evidence, and release notes. For encode acceleration, start from
+[SIMD_ENCODE_ADMISSION_DRAFT.md](SIMD_ENCODE_ADMISSION_DRAFT.md) and keep any
+backend not fully proven in the candidate-only state.
 
 ## Dispatch Rules
 
