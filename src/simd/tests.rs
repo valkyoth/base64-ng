@@ -1,8 +1,12 @@
 use super::*;
-use crate::{Alphabet, Engine, Standard, UrlSafe, decode_alphabet_byte};
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+use crate::{Alphabet, decode_alphabet_byte};
+use crate::{Engine, Standard, UrlSafe};
 
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 struct AnchorMatchingCustom;
 
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 impl Alphabet for AnchorMatchingCustom {
     const ENCODE: [u8; 64] = *b"ACBDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
@@ -18,6 +22,7 @@ fn fill_pattern(output: &mut [u8], seed: usize) {
     }
 }
 
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 fn fill_indices_pattern(output: &mut [u8; 12], seed: u8) {
     let mut write = 0;
     for group in 0..4 {
