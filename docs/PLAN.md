@@ -632,7 +632,10 @@ Recommended `1.0.x` source-layout sequence:
 - After `1.0.10`: park core feature work for a few weeks so users can test the
   stable API and report issues before any `1.1` SIMD-admission work starts.
 
-The recommended post-`1.0` SIMD path is incremental:
+The recommended post-`1.0` SIMD path is incremental. Minor versions should
+mean something visible to users: `1.1.x` is the non-accelerated SIMD evidence
+series, and `1.2.0` is the first release that may activate acceleration if the
+evidence is complete.
 
 - Remaining `1.0.x`: maintenance-only fixes if users report real issues during
   the pause window. Keep the current Kani proof gate running, refresh
@@ -642,20 +645,44 @@ The recommended post-`1.0` SIMD path is incremental:
 - Optional post-`1.0.10` sister crates: consider additional profile-specific
   serde modules and full Tokio streaming adapters only after their dependency,
   audit, cancellation-safety, and misuse-resistance evidence is complete.
-- `1.1`: replace the SSSE3/SSE4.1 fixed-block encode scaffold with real
-  vectorized encode logic for Standard and URL-safe alphabets only, still
+- `1.1.0`: replace the SSSE3/SSE4.1 fixed-block encode scaffold with real
+  vectorized encode logic for Standard and URL-safe alphabets only. Keep it
   non-dispatchable. The goal is meaningful scalar-equivalence tests, not active
   acceleration. The implementation must avoid over-reading fixed input blocks;
   any SIMD load must be backed by a proven readable region, masked load, or
   safe staging strategy.
-- `1.2`: add a real AVX2 fixed-block encode prototype using the same
-  Standard/URL-safe semantics and evidence bar. Keep it inactive until fuzz,
-  differential, generated-code, unsafe-inventory, and register-cleanup evidence
-  is complete.
-- `1.3`: consider std-only runtime dispatch for admitted encode paths if and
-  only if SSSE3/SSE4.1 and AVX2 evidence is complete. `active_backend()` must
-  stay scalar until the admission manifest, release notes, benchmark evidence,
-  unsafe inventory, and backend policy tests are updated in the same series.
+- `1.1.1`: add deterministic SSSE3/SSE4.1 evidence expansion. Cover block
+  boundaries, randomized fixed-block vectors, URL-safe output, all 64 six-bit
+  values, undersized output behavior at the API boundary, and generated
+  assembly capture for the exact target-feature bundle.
+- `1.1.2`: add a real AVX2 fixed-block encode prototype using the same
+  Standard/URL-safe semantics and evidence bar. Keep it inactive. Do not add
+  `ActiveBackend::Avx2`, and do not allow runtime dispatch yet.
+- `1.1.3`: add AVX2 evidence expansion: scalar differential tests, generated
+  assembly capture, register-retention cleanup review, x86 runtime feature
+  gating tests where possible, and benchmark harness output that is explicitly
+  labeled non-dispatchable prototype evidence.
+- `1.1.4`: expand fuzz and release-evidence coverage for the inactive x86
+  encode prototypes. The fuzz harness should compare prototype block encoders
+  against scalar output where the host supports the required CPU features, and
+  the release evidence should record skipped-backend reasons on unsupported
+  hardware.
+- `1.1.5`: harden the SIMD admission tooling. Teach
+  `scripts/validate-simd-admission.sh` and backend evidence scripts the
+  difference between "real but non-dispatchable prototype" and "admitted active
+  backend" so the gate still forbids acceleration while accepting the richer
+  evidence package.
+- `1.1.6`: prepare the active-dispatch admission package without enabling it.
+  Update draft docs, benchmark templates, runtime-report expectations, and
+  release-note wording. `active_backend()` must still return scalar at the end
+  of this release.
+- `1.2.0`: consider std-only runtime dispatch for admitted encode paths if and
+  only if SSSE3/SSE4.1 and AVX2 evidence is complete. `active_backend()` may
+  gain admitted x86 encode backends only when the admission manifest, release
+  notes, benchmark evidence, unsafe inventory, generated assembly evidence,
+  fallback tests, and backend policy tests are updated in the same release.
+  `no_std` builds remain scalar unless a later unsafe caller-contract API is
+  designed and reviewed.
 - Later: evaluate AVX-512 VBMI encode, where direct 64-byte alphabet lookup may
   support generic alphabets more naturally than SSSE3/AVX2 arithmetic mapping.
   Do not admit AVX-512 dispatch without explicit ZMM/YMM/XMM register cleanup

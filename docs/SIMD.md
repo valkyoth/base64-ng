@@ -13,6 +13,27 @@ This is a security decision, not a rejection of hardware acceleration. SIMD
 must be added only when it can be isolated, tested, and reviewed without
 weakening the scalar trust base.
 
+## Version Roadmap
+
+The SIMD roadmap separates implementation evidence from active acceleration:
+
+- `1.1.x` is the SIMD foundation series. It may contain real fixed-block x86
+  encode prototypes, scalar-equivalence tests, generated assembly evidence,
+  register-cleanup review, fuzz expansion, and admission-tooling updates.
+  These releases must remain non-dispatchable: `active_backend()` stays scalar,
+  and release notes must not claim user-visible acceleration.
+- `1.2.0` is the first release that may activate acceleration. It may admit
+  std-only runtime dispatch for encode paths only if the SSSE3/SSE4.1 and AVX2
+  evidence packages are complete in the same release.
+- Later releases may evaluate AVX-512 VBMI, NEON, wasm `simd128`, and SIMD
+  decode. Decode remains later because invalid-input handling, canonicality,
+  padding, output retention, and timing behavior make it higher risk than
+  encode.
+
+Patch releases in the `1.1.x` series may be small by design. Each patch should
+move one evidence boundary forward without changing the active scalar runtime
+behavior.
+
 ## Current Status
 
 - Default builds compile audited unsafe cleanup, CT barrier, and comparison
