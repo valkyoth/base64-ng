@@ -276,11 +276,10 @@ records `candidate_detection_mode`, which distinguishes x86/x86_64 `std`
 runtime CPU probing from compile-time target-feature reporting used by
 `no_std` and other compile-time-only targets. On CPUs with
 SSSE3/SSE4.1, AVX2, or the AVX-512 candidate bundle, those prototype tests
-execute the inactive prototype body and compare it against scalar output. These
-tests currently validate target-feature gating, unsafe isolation, and
-fixed-block plumbing only; they do not prove vectorized Base64 correctness
-because the prototypes zero the destination with SIMD and then overwrite it
-with scalar encoding. The script writes
+execute the inactive prototype body and compare it against scalar output. The
+x86 prototypes exercise real fixed-block vector encode logic when the required
+CPU feature bundles are available; NEON remains scaffold evidence. The script
+writes
 `target/release-evidence/backend/MANIFEST.txt`, `runtime-backend-report.txt`,
 and `simd-prototype-equivalence.txt` so local CPU evidence can be archived.
 
@@ -346,6 +345,21 @@ The script writes `target/release-evidence/asm/base64_ng-no-default-features.s`,
 review focus, and artifact checksums. The LTO artifact exists so reviewers can
 check that cleanup primitives such as `wipe_bytes` and `wipe_barrier` remain
 visible call boundaries under aggressive optimization.
+
+Capture generated assembly evidence for the inactive x86 SIMD encode
+prototypes with:
+
+```sh
+scripts/generate_simd_asm_evidence.sh
+```
+
+On x86/x86_64 hosts, the script emits release test-harness assembly for the
+SSSE3/SSE4.1, AVX2, and AVX-512 VBMI feature bundles and checks for the
+expected byte-shuffle, byte-permute, vector-register, and cleanup instructions.
+On non-x86 hosts it records a skip manifest. The generated files are written to
+`target/release-evidence/simd-asm/` and are inactive prototype evidence only;
+runtime dispatch remains scalar-only until the SIMD admission manifest is
+updated in a future release.
 
 ## Performance Evidence
 

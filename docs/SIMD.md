@@ -170,13 +170,24 @@ scripts/check_backend_evidence.sh
 ```
 
 This prints the runtime backend-report test and runs the gated SIMD prototype
-scalar-equivalence scaffolding tests with `--nocapture`, so local CPU evidence
-is easy to copy into release notes or issue discussion. These prototype tests
-do not prove vectorized Base64 correctness; they only exercise target-feature
-gating, unsafe isolation, and fixed-block plumbing until real vector logic is
-admitted. The script also writes
+scalar-equivalence tests with `--nocapture`, so local CPU evidence is easy to
+copy into release notes or issue discussion. On x86/x86_64 hosts with the
+required feature bundles, the x86 tests exercise the inactive fixed-block
+vector encode prototypes against scalar output. NEON remains scaffold evidence.
+The script also writes
 `target/release-evidence/backend/MANIFEST.txt` with toolchain metadata,
 commands, status values, and artifact checksums.
+
+Capture generated assembly evidence for the inactive x86 encode prototypes:
+
+```sh
+scripts/generate_simd_asm_evidence.sh
+```
+
+The script emits release test-harness assembly for SSSE3/SSE4.1, AVX2, and
+AVX-512 VBMI feature bundles and checks for expected vector and cleanup
+instructions. This is review evidence only; it does not activate runtime
+dispatch.
 
 ## Required Before SIMD Code Lands
 

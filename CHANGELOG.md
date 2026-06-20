@@ -7,6 +7,9 @@
   test-only and active runtime backend selection remains scalar-only.
 - Added AVX-512 SIMD equivalence coverage for patterned blocks, all 64 emitted
   six-bit Base64 values, and a non-standard custom alphabet.
+- Added `scripts/generate_simd_asm_evidence.sh` to capture release
+  test-harness assembly for inactive SSSE3/SSE4.1, AVX2, and AVX-512 VBMI
+  encode prototypes.
 - Added a real non-dispatchable AVX2 fixed-block encode prototype for Standard
   and URL-safe alphabets. The prototype remains test-only and active runtime
   backend selection remains scalar-only.
