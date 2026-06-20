@@ -49,11 +49,14 @@ The caller still owns:
   caller code, panic machinery, crash handlers, or operating system capture
 - treating `ExposedSecretVec::into_exposed_unprotected_vec_caller_must_zeroize`
   as a boundary where redacted formatting and crate-owned drop-time cleanup
-  intentionally stop
+  intentionally stop. High-assurance reviews should grep for every
+  `into_exposed_unprotected_*_caller_must_zeroize` call site and verify the
+  returned value is cleared by the caller's approved cleanup mechanism.
 - treating
   `ExposedSecretString::into_exposed_unprotected_string_caller_must_zeroize` as
   a boundary where redacted formatting and crate-owned drop-time cleanup
-  intentionally stop
+  intentionally stop. These methods are intentionally verbose because they
+  transfer cleanup responsibility out of `base64-ng`.
 - process-wide memory hygiene such as core-dump policy, swap policy, crash
   handling, allocator behavior, and log retention
 - deciding whether the constant-time-oriented API is sufficient for the local
@@ -144,10 +147,14 @@ The runtime report classifies this as
 `runtime::BackendPolicy::HighAssuranceScalarOnly` does not pass on AArch64
 solely because the instruction sequence was emitted. Deployments that rely on
 CSDB must attest that the deployed core treats it as an effective speculation
-barrier; older ARM cores may treat the hint as a no-op. If that platform
-evidence exists, build with `--cfg base64_ng_aarch64_csdb_attested` to make the
-runtime posture reflect the deployment attestation as
-`CtGatePosture::HardwareSpeculationBarrierBuildAsserted`
+barrier; older ARM cores may treat the hint as a no-op. Military and
+high-assurance deployments should call
+`runtime::require_backend_policy(runtime::BackendPolicy::HighAssuranceScalarOnly)`
+during startup and treat failure on unattested AArch64 as expected. If platform
+evidence from processor documentation, BSP notes, or certification material
+exists, build with `--cfg base64_ng_aarch64_csdb_attested` to make the runtime
+posture reflect the deployment attestation as
+`CtGatePosture::HardwareSpeculationBarrierBuildAsserted`.
 (`hardware-speculation-barrier-build-asserted`). This is intentionally not a
 Cargo feature, and the distinct posture string keeps audit logs from confusing
 operator attestation with a native target guarantee. On RISC-V, the crate

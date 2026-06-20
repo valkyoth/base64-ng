@@ -1,6 +1,6 @@
 [package]
 name = "base64-ng-serde"
-version = "1.0.9"
+version = "1.0.10"
 edition = "2024"
 rust-version = "1.90"
 license = "MIT OR Apache-2.0"
@@ -24,7 +24,7 @@ alloc = ["base64-ng/alloc", "serde/alloc"]
 std = ["alloc", "base64-ng/std", "serde/std"]
 
 [dependencies]
-base64-ng = { version = "1.0.9", path = "../..", default-features = false }
+base64-ng = { version = "1.0.10", path = "../..", default-features = false }
 serde = { version = "1.0.228", default-features = false }
 
 [dev-dependencies]

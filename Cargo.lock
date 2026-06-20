@@ -31,7 +31,7 @@ dependencies = [
 
 [[package]]
 name = "base64-ng-serde"
-version = "1.0.9"
+version = "1.0.10"
 dependencies = [
  "base64-ng",
  "serde",

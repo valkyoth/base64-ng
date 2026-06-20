@@ -93,7 +93,8 @@ fn wipe_barrier(ptr: *mut u8, len: usize) {
 }
 
 pub(crate) fn wipe_tail(bytes: &mut [u8], start: usize) {
-    assert!(start <= bytes.len(), "wipe_tail start exceeds slice length");
+    debug_assert!(start <= bytes.len(), "wipe_tail start exceeds slice length");
+    let start = start.min(bytes.len());
     if start < bytes.len() {
         wipe_bytes(&mut bytes[start..]);
     }

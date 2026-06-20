@@ -160,9 +160,10 @@ The core `base64-ng` crate keeps its zero-runtime-dependency policy. Optional
 ecosystem integrations live as separate crates so applications can opt into
 their own approved dependency set without changing the base package.
 
-The `1.0.10` release changes only the core crate internals and keeps the
-optional companion crates at `1.0.9`; Cargo's normal `^1.0.9` dependency range
-allows them to resolve with `base64-ng` `1.0.10`.
+The `1.0.10` release changes the core crate internals and refreshes
+`base64-ng-serde`; the other optional companion crates remain at `1.0.9`.
+Cargo's normal `^1.0.9` dependency range allows those companions to resolve
+with `base64-ng` `1.0.10`.
 
 `base64-ng-sanitization` provides extension helpers for
 `base64_ng::ct::CtEngine` that decode directly into
@@ -211,7 +212,7 @@ assert_eq!(key.encode_base64::<8>().unwrap().as_str(), "aGVsbG8=");
 
 ```toml
 [dependencies]
-base64-ng-serde = "1.0.9"
+base64-ng-serde = "1.0.10"
 serde = { version = "1.0.228", features = ["derive"] }
 ```
 

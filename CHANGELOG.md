@@ -9,8 +9,13 @@
 - Added `scripts/validate-file-line-budget.sh` and wired it into the normal
   checks so production Rust source under `src/` and companion crate sources stay
   within the 500-line maintainability budget.
-- Kept the optional companion crates at `1.0.9`; only the core `base64-ng`
-  package is planned for publication in this release.
+- Added post-pentest hardening before tagging: `wipe_tail` now clamps after a
+  debug-only invariant check instead of panicking in cleanup code, `DecodeError`
+  `Debug` output is redacted to the error kind, and custom alphabet timing
+  documentation now distinguishes the strict path from the `ct` scanner.
+- Refreshed `base64-ng-serde` to `1.0.10` with drop-time cleanup for wrapper
+  bytes and explicit comparison behavior; the other optional companion crates
+  remain at `1.0.9`.
 
 ## 1.0.9 - 2026-06-20
 

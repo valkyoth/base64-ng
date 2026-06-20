@@ -25,10 +25,10 @@ reason = "No code changes for the 1.0.10 core maintenance release."
 
 [crates."base64-ng-serde"]
 previous_version = "1.0.9"
-version = "1.0.9"
-change = "unchanged"
-publish = false
-reason = "No code changes for the 1.0.10 core maintenance release."
+version = "1.0.10"
+change = "code"
+publish = true
+reason = "Adds drop-time cleanup and explicit comparison behavior for serde wrapper types."
 
 [crates."base64-ng-bytes"]
 previous_version = "1.0.9"

@@ -61,3 +61,18 @@ fn wrapper_types_round_trip() {
     let decoded: Base64UrlSafeNoPad = serde_json::from_str(&encoded).unwrap();
     assert_eq!(decoded.as_bytes(), &[0xfb, 0xff]);
 }
+
+#[test]
+fn wrapper_equality_uses_explicit_impls() {
+    let left = Base64Standard::new(b"hello".to_vec());
+    let right = Base64Standard::new(b"hello".to_vec());
+    let different = Base64Standard::new(b"world".to_vec());
+    assert_eq!(left, right);
+    assert_ne!(left, different);
+
+    let left = Base64UrlSafeNoPad::new(vec![0xfb, 0xff]);
+    let right = Base64UrlSafeNoPad::new(vec![0xfb, 0xff]);
+    let different = Base64UrlSafeNoPad::new(vec![0xfa, 0xff]);
+    assert_eq!(left, right);
+    assert_ne!(left, different);
+}

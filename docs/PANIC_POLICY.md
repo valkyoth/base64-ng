@@ -12,8 +12,10 @@ scripts/validate-panic-policy.sh
 ```
 
 The validator scans non-test source before Kani/test-only modules and fails on
-new `panic!`, `unreachable!`, `.unwrap()`, or `.expect()` sites unless they
-match an allowlisted pattern documented here.
+new `panic!`, `unreachable!`, `assert!`, `.unwrap()`, or `.expect()` sites
+unless they match an allowlisted pattern documented here. `debug_assert!` is
+allowed for internal invariant documentation because it is not a release-mode
+panic surface.
 Remaining bounded indexing invariants are documented in
 [INVARIANTS.md](INVARIANTS.md).
 
@@ -34,6 +36,10 @@ The current reviewed exceptions are:
   zero values can unwind. Use `LineWrap::checked_new` when a line length comes
   from runtime configuration, file metadata, network input, a database row, or
   another untrusted source.
+- `ExposedEncodedArray::from_array` and `ExposedDecodedArray::from_array` may
+  panic when a caller supplies `len > CAP`. These constructors are explicit
+  escape-hatch wrappers around caller-provided arrays; callers must pass the
+  actual visible initialized length.
 - Internal remainder matches use `_ => unreachable!()` after matching
   `len % 3` or equivalent remainder values. The preceding arithmetic bounds
   make those arms unreachable.

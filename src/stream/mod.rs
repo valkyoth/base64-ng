@@ -23,6 +23,11 @@
 //! output until `finish()` succeeds, and can inspect [`Decoder::is_failed`] for
 //! diagnostics after each write.
 //!
+//! The streaming adapters use fixed stack buffers up to 1024 bytes for bounded
+//! I/O staging. This keeps heap behavior predictable, but callers embedding
+//! these adapters in constrained `std` environments should account for that
+//! stack footprint in deeply nested writer/reader chains.
+//!
 //! ```no_run
 //! use std::io::Read;
 //! use base64_ng::ct;

@@ -131,7 +131,9 @@ impl WipeVecGuard {
         Self { bytes }
     }
 
-    fn into_validated_secret_string(mut self) -> alloc::string::String {
+    fn into_validated_secret_string(
+        mut self,
+    ) -> Result<alloc::string::String, alloc::vec::Vec<u8>> {
         wipe_vec_spare_capacity(&mut self.bytes);
         let bytes = core::mem::take(&mut self.bytes);
         string_from_validated_secret_bytes(bytes)
@@ -178,7 +180,13 @@ impl ExposedSecretString {
     pub fn from_string(text: alloc::string::String) -> Self {
         let mut bytes = text.into_bytes();
         wipe_vec_spare_capacity(&mut bytes);
-        let text = string_from_validated_secret_bytes(bytes);
+        let text = match string_from_validated_secret_bytes(bytes) {
+            Ok(text) => text,
+            Err(mut bytes) => {
+                wipe_vec_all(&mut bytes);
+                alloc::string::String::new()
+            }
+        };
         Self { text }
     }
 
@@ -339,9 +347,10 @@ impl SecretBuffer {
         let mut exposed = self.into_exposed_vec();
         let guard = WipeVecGuard::from_vec(core::mem::take(&mut exposed.bytes));
         drop(exposed);
-        Ok(ExposedSecretString::from_string(
-            guard.into_validated_secret_string(),
-        ))
+        match guard.into_validated_secret_string() {
+            Ok(text) => Ok(ExposedSecretString::from_string(text)),
+            Err(bytes) => Err(SecretBuffer::from_vec(bytes)),
+        }
     }
 
     /// Compares this secret to `other` without short-circuiting on the first
@@ -401,13 +410,6 @@ impl Drop for SecretBuffer {
 }
 
 #[cfg(feature = "alloc")]
-fn string_from_validated_secret_bytes(bytes: Vec<u8>) -> String {
-    match String::from_utf8(bytes) {
-        Ok(string) => string,
-        Err(error) => {
-            let mut bytes = error.into_bytes();
-            wipe_vec_all(&mut bytes);
-            String::new()
-        }
-    }
+fn string_from_validated_secret_bytes(bytes: Vec<u8>) -> Result<String, Vec<u8>> {
+    String::from_utf8(bytes).map_err(alloc::string::FromUtf8Error::into_bytes)
 }

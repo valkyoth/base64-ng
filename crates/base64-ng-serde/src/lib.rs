@@ -27,18 +27,28 @@ extern crate alloc;
 use alloc::{string::String, vec::Vec};
 
 #[cfg(feature = "alloc")]
-use base64_ng::{DecodeError, Engine, STANDARD, URL_SAFE_NO_PAD};
+use base64_ng::{DecodeError, Engine, STANDARD, URL_SAFE_NO_PAD, clear_bytes, constant_time_eq};
 #[cfg(feature = "alloc")]
 use serde::{Deserialize, Deserializer, Serialize, Serializer, de::Error as _};
 
 /// Owned bytes serialized as strict standard padded Base64.
+///
+/// This wrapper is still an interoperability type, not a secret container.
+/// It clears its initialized bytes on drop as a retention-reduction measure,
+/// but clones are independent copies and serialization intentionally exposes
+/// the Base64 text to the serializer.
 #[cfg(feature = "alloc")]
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone)]
 pub struct Base64Standard(Vec<u8>);
 
 /// Owned bytes serialized as URL-safe unpadded Base64.
+///
+/// This wrapper is still an interoperability type, not a secret container.
+/// It clears its initialized bytes on drop as a retention-reduction measure,
+/// but clones are independent copies and serialization intentionally exposes
+/// the Base64 text to the serializer.
 #[cfg(feature = "alloc")]
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone)]
 pub struct Base64UrlSafeNoPad(Vec<u8>);
 
 #[cfg(feature = "alloc")]
@@ -56,9 +66,12 @@ impl Base64Standard {
     }
 
     /// Consumes the wrapper and returns the owned bytes.
+    ///
+    /// The returned vector is no longer cleared by this wrapper on drop.
+    /// Callers handling sensitive values must apply their own cleanup policy.
     #[must_use]
-    pub fn into_inner(self) -> Vec<u8> {
-        self.0
+    pub fn into_inner(mut self) -> Vec<u8> {
+        core::mem::take(&mut self.0)
     }
 }
 
@@ -77,11 +90,48 @@ impl Base64UrlSafeNoPad {
     }
 
     /// Consumes the wrapper and returns the owned bytes.
+    ///
+    /// The returned vector is no longer cleared by this wrapper on drop.
+    /// Callers handling sensitive values must apply their own cleanup policy.
     #[must_use]
-    pub fn into_inner(self) -> Vec<u8> {
-        self.0
+    pub fn into_inner(mut self) -> Vec<u8> {
+        core::mem::take(&mut self.0)
     }
 }
+
+#[cfg(feature = "alloc")]
+impl Drop for Base64Standard {
+    fn drop(&mut self) {
+        clear_bytes(&mut self.0);
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl Drop for Base64UrlSafeNoPad {
+    fn drop(&mut self) {
+        clear_bytes(&mut self.0);
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl PartialEq for Base64Standard {
+    fn eq(&self, other: &Self) -> bool {
+        constant_time_eq(self.as_bytes(), other.as_bytes())
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl Eq for Base64Standard {}
+
+#[cfg(feature = "alloc")]
+impl PartialEq for Base64UrlSafeNoPad {
+    fn eq(&self, other: &Self) -> bool {
+        constant_time_eq(self.as_bytes(), other.as_bytes())
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl Eq for Base64UrlSafeNoPad {}
 
 #[cfg(feature = "alloc")]
 impl core::fmt::Debug for Base64Standard {

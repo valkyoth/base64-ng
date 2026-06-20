@@ -19,7 +19,9 @@ where
     ///
     /// This method compacts line endings in place before decoding. If
     /// validation or decoding fails, the buffer contents are unspecified and
-    /// may contain a compacted encoded prefix. On success, bytes after the
+    /// may contain the whitespace-stripped encoded form of the input. This is
+    /// still encoded material, not decoded plaintext, but it remains a modified
+    /// representation of the original payload. On success, bytes after the
     /// returned decoded prefix may retain the compacted encoded representation.
     /// Use
     /// [`Self::decode_in_place_wrapped_clear_tail`] when the buffer may be

@@ -63,7 +63,7 @@ impl std::error::Error for EncodeError {}
 /// intentionally prints those diagnostics for developer-facing debugging. Do
 /// not log or return full [`DecodeError`] values for secret-bearing input; log
 /// [`Self::kind`] instead.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Eq, PartialEq)]
 pub enum DecodeError {
     /// The encoded input is malformed, but the decoder intentionally does not
     /// disclose a more specific error class.
@@ -101,6 +101,14 @@ pub enum DecodeError {
         /// Available staging bytes.
         available: usize,
     },
+}
+
+impl core::fmt::Debug for DecodeError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("DecodeError")
+            .field("kind", &self.kind())
+            .finish_non_exhaustive()
+    }
 }
 
 /// Redacted decoding error class.
@@ -247,5 +255,18 @@ mod tests {
             DecodeError::InvalidLineWrap { index: 7 }.with_index_offset(usize::MAX),
             DecodeError::InvalidLineWrap { index: usize::MAX }
         );
+    }
+
+    #[cfg(feature = "alloc")]
+    #[test]
+    fn debug_redacts_input_derived_details() {
+        let error = DecodeError::InvalidByte {
+            index: 42,
+            byte: b'$',
+        };
+        let rendered = alloc::format!("{error:?}");
+        assert!(rendered.contains("InvalidByte"));
+        assert!(!rendered.contains("42"));
+        assert!(!rendered.contains("24"));
     }
 }

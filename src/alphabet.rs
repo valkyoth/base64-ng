@@ -163,7 +163,19 @@ pub const fn validate_alphabet(encode: &[u8; 64]) -> Result<(), AlphabetError> {
 /// the table with [`validate_alphabet`] before trusting the alphabet in a
 /// protocol or public API. The scan always visits all 64 entries before
 /// returning so the match position does not create an early-return timing
-/// signal in custom alphabet decoders.
+/// signal in the source-level implementation.
+///
+/// # Security
+///
+/// This helper is part of the normal strict decoder path, not the
+/// constant-time-oriented [`ct`](crate::ct) module. It is a `const fn` so it
+/// does not use the optimizer barriers, volatile accumulator reads, or
+/// generated-code evidence hooks used by the private `ct` scanner. Do not rely
+/// on this helper for military or cryptographic constant-time guarantees under
+/// LTO or future compiler rewrites. For secret-bearing custom alphabets, use
+/// [`Engine::ct_decoder`](crate::Engine::ct_decoder) or the [`ct`](crate::ct)
+/// module, which scans [`Alphabet::ENCODE`] directly and does not call
+/// [`Alphabet::decode`].
 ///
 /// # Examples
 ///
