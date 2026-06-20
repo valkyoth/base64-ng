@@ -174,7 +174,7 @@ fn wasm_simd128_available() -> bool {
 /// Admission note: a real NEON implementation must explicitly clear every
 /// vector register that carries caller data before returning, document the
 /// exact cleanup sequence in `docs/UNSAFE.md`, and include generated-assembly
-/// evidence. The AArch64 prototype clears its used NEON registers before
+/// evidence. The `AArch64` prototype clears its used NEON registers before
 /// return as best-effort register-retention reduction.
 ///
 /// # Safety
