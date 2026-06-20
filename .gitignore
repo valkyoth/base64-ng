@@ -4,3 +4,7 @@
 *.swp
 *.swo
 *~
+
+# Python helper script caches
+__pycache__/
+*.py[cod]
