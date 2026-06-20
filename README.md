@@ -165,6 +165,14 @@ The `1.0.10` release changes the core crate internals and refreshes
 Cargo's normal `^1.0.9` dependency range allows those companions to resolve
 with `base64-ng` `1.0.10`.
 
+| Crate | Cargo |
+| --- | --- |
+| `base64-ng-sanitization` | <https://crates.io/crates/base64-ng-sanitization> |
+| `base64-ng-derive` | <https://crates.io/crates/base64-ng-derive> |
+| `base64-ng-serde` | <https://crates.io/crates/base64-ng-serde> |
+| `base64-ng-bytes` | <https://crates.io/crates/base64-ng-bytes> |
+| `base64-ng-tokio` | <https://crates.io/crates/base64-ng-tokio> |
+
 `base64-ng-sanitization` provides extension helpers for
 `base64_ng::ct::CtEngine` that decode directly into
 `sanitization::SecretBytes<N>` in `no_std`, with `SecretVec` helpers behind its
