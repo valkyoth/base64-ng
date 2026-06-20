@@ -155,10 +155,11 @@ impl Alphabet for AnchorMatchingCustom {
     }
 }
 
-fn fill_pattern(output: &mut [u8], seed: usize) {
-    for (index, byte) in output.iter_mut().enumerate() {
-        let value = (index * 73 + seed * 19) % 256;
-        *byte = u8::try_from(value).unwrap();
+fn fill_pattern(output: &mut [u8], seed: u8) {
+    let mut value = seed.wrapping_mul(19);
+    for byte in output {
+        *byte = value;
+        value = value.wrapping_add(73);
     }
 }
 
@@ -185,7 +186,7 @@ fn wasm_simd128_encode_prototype_matches_scalar_when_available() {
     }
 
     let mut input = [0; 12];
-    for seed in 0..64 {
+    for seed in 0..64u8 {
         fill_pattern(&mut input, seed);
 
         let mut wasm_standard = [0x55; 16];
@@ -195,10 +196,9 @@ fn wasm_simd128_encode_prototype_matches_scalar_when_available() {
         unsafe {
             encode_12_bytes_wasm_simd128::<Standard>(&input, &mut wasm_standard);
         }
-        let scalar_len = Engine::<Standard, true>::new()
-            .encode_slice(&input, &mut scalar_standard)
-            .unwrap();
-        assert_eq!(scalar_len, wasm_standard.len());
+        let scalar_result =
+            Engine::<Standard, true>::new().encode_slice(&input, &mut scalar_standard);
+        assert_eq!(scalar_result, Ok(wasm_standard.len()));
         assert_eq!(wasm_standard, scalar_standard);
 
         let mut wasm_url_safe = [0x55; 16];
@@ -208,14 +208,13 @@ fn wasm_simd128_encode_prototype_matches_scalar_when_available() {
         unsafe {
             encode_12_bytes_wasm_simd128::<UrlSafe>(&input, &mut wasm_url_safe);
         }
-        let scalar_len = Engine::<UrlSafe, true>::new()
-            .encode_slice(&input, &mut scalar_url_safe)
-            .unwrap();
-        assert_eq!(scalar_len, wasm_url_safe.len());
+        let scalar_result =
+            Engine::<UrlSafe, true>::new().encode_slice(&input, &mut scalar_url_safe);
+        assert_eq!(scalar_result, Ok(wasm_url_safe.len()));
         assert_eq!(wasm_url_safe, scalar_url_safe);
     }
 
-    for seed in 0..64 {
+    for seed in 0..64u8 {
         fill_indices_pattern(&mut input, seed);
 
         let mut wasm_standard = [0x55; 16];
@@ -225,10 +224,9 @@ fn wasm_simd128_encode_prototype_matches_scalar_when_available() {
         unsafe {
             encode_12_bytes_wasm_simd128::<Standard>(&input, &mut wasm_standard);
         }
-        let scalar_len = Engine::<Standard, true>::new()
-            .encode_slice(&input, &mut scalar_standard)
-            .unwrap();
-        assert_eq!(scalar_len, wasm_standard.len());
+        let scalar_result =
+            Engine::<Standard, true>::new().encode_slice(&input, &mut scalar_standard);
+        assert_eq!(scalar_result, Ok(wasm_standard.len()));
         assert_eq!(wasm_standard, scalar_standard);
 
         let mut wasm_url_safe = [0x55; 16];
@@ -238,10 +236,9 @@ fn wasm_simd128_encode_prototype_matches_scalar_when_available() {
         unsafe {
             encode_12_bytes_wasm_simd128::<UrlSafe>(&input, &mut wasm_url_safe);
         }
-        let scalar_len = Engine::<UrlSafe, true>::new()
-            .encode_slice(&input, &mut scalar_url_safe)
-            .unwrap();
-        assert_eq!(scalar_len, wasm_url_safe.len());
+        let scalar_result =
+            Engine::<UrlSafe, true>::new().encode_slice(&input, &mut scalar_url_safe);
+        assert_eq!(scalar_result, Ok(wasm_url_safe.len()));
         assert_eq!(wasm_url_safe, scalar_url_safe);
     }
 
@@ -254,9 +251,8 @@ fn wasm_simd128_encode_prototype_matches_scalar_when_available() {
     unsafe {
         encode_12_bytes_wasm_simd128::<AnchorMatchingCustom>(&input, &mut wasm_custom);
     }
-    let scalar_len = Engine::<AnchorMatchingCustom, true>::new()
-        .encode_slice(&input, &mut scalar_custom)
-        .unwrap();
-    assert_eq!(scalar_len, wasm_custom.len());
+    let scalar_result =
+        Engine::<AnchorMatchingCustom, true>::new().encode_slice(&input, &mut scalar_custom);
+    assert_eq!(scalar_result, Ok(wasm_custom.len()));
     assert_eq!(wasm_custom, scalar_custom);
 }
