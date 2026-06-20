@@ -2,14 +2,19 @@
 
 ## Unreleased
 
+- Added a real non-dispatchable AVX-512 VBMI fixed-block encode prototype that
+  uses the provided alphabet table for all alphabets. The prototype remains
+  test-only and active runtime backend selection remains scalar-only.
+- Added AVX-512 SIMD equivalence coverage for patterned blocks, all 64 emitted
+  six-bit Base64 values, and a non-standard custom alphabet.
 - Added a real non-dispatchable AVX2 fixed-block encode prototype for Standard
   and URL-safe alphabets. The prototype remains test-only and active runtime
   backend selection remains scalar-only.
 - Added AVX2 SIMD equivalence coverage for patterned blocks, all 64 emitted
   six-bit Base64 values, and custom alphabets that must fall back to scalar
   encoding.
-- Updated the SIMD unsafe inventory for the AVX2 prototype, including staged
-  stack-copy wiping and AVX/SSE cleanup with `vzeroupper`.
+- Updated the SIMD unsafe inventory for the AVX-512 and AVX2 prototypes,
+  including staged stack-copy wiping and vector-register cleanup.
 
 ## 1.1.0 - 2026-06-20
 

@@ -54,16 +54,16 @@ runtime behavior for that line.
 - With the `simd` feature enabled, the private dispatch scaffold detects
   AVX-512 VBMI, AVX2, SSSE3/SSE4.1, NEON, and wasm `simd128` candidates but
   still activates only the scalar backend.
-- AVX-512 VBMI detection is reporting-only until an implementation has scalar
-  differential tests, fuzz coverage, and benchmark evidence. Detection requires
-  the full planned feature bundle: `avx512f`, `avx512bw`, `avx512vl`, and
-  `avx512vbmi`.
-- An inactive AVX-512 fixed-block encode prototype exists behind the SIMD
-  boundary as test-only scaffolding and is tested against scalar output only
-  when the full AVX-512 Base64 feature bundle is available. It currently zeroes
-  the destination with SIMD and then overwrites the block with scalar encoding;
-  this is scaffolding, not vectorized Base64 correctness evidence, and it is
-  not compiled into release library builds.
+- AVX-512 VBMI detection is reporting-only until the implementation has full
+  admission evidence. Detection requires the planned feature bundle:
+  `avx512f`, `avx512bw`, `avx512vl`, and `avx512vbmi`.
+- An inactive AVX-512 VBMI fixed-block encode prototype exists behind the SIMD
+  boundary as real non-dispatchable vector encode evidence for all alphabets.
+  It uses AVX-512 lane-local byte shuffling, vector shifts/masks, and VBMI
+  byte permutes over the alphabet table for fixed 48-byte input blocks, then
+  clears ZMM/YMM state before returning. It is tested against scalar output
+  only when the full AVX-512 Base64 feature bundle is available and is not
+  reachable from runtime backend selection.
 - Runtime backend identifiers expose their required CPU feature bundles through
   `runtime::Backend::required_cpu_features()`.
 - Runtime backend reports include `candidate_required_cpu_features=[...]` in
@@ -80,19 +80,20 @@ runtime behavior for that line.
   URL-safe alphabets. It uses SSSE3 byte shuffling, SSE lane shifts/masks, and
   SSE4.1 byte blending for fixed 12-byte input blocks, then clears XMM
   registers before returning. It is tested against scalar output only when
-  SSSE3/SSE4.1 is available and is not compiled into release library builds.
+  SSSE3/SSE4.1 is available and is not reachable from runtime backend
+  selection.
 - An inactive AVX2 fixed-block encode prototype exists behind the SIMD boundary
   as real non-dispatchable vector encode evidence for Standard and URL-safe
   alphabets. It uses AVX2 lane-local byte shuffling, vector shifts/masks, and
   byte blending for fixed 24-byte input blocks, then clears XMM/YMM state
   before returning. It is tested against scalar output only when AVX2 is
-  available and is not compiled into release library builds.
+  available and is not reachable from runtime backend selection.
 - An inactive NEON fixed-block encode prototype exists behind the same boundary
   as test-only scaffolding and is tested against scalar output only on
   NEON-capable ARM targets. It currently zeroes the destination with SIMD and
   then overwrites the block with scalar encoding; this is scaffolding, not
-  vectorized Base64 correctness evidence, and it is not compiled into release
-  library builds.
+  vectorized Base64 correctness evidence, and it is not reachable from runtime
+  backend selection.
 - wasm `simd128` detection is reporting-only when `wasm32` is compiled with
   `target-feature=+simd128`; no wasm accelerated backend is active.
 - `runtime::backend_report()` reports the active backend, detected candidate,

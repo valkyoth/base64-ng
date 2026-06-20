@@ -367,15 +367,15 @@ Limitations:
 
 Location: `src/simd/x86.rs`
 
-Status: inactive test-only prototype, not compiled into release library builds
-and not dispatchable.
+Status: inactive test-only prototype, not dispatchable and not reachable from
+runtime backend selection.
 
 Purpose:
 
 - Exercise AVX-512 target-feature plumbing.
 - Validate the unsafe boundary before an admitted AVX-512 path exists.
-- Provide scalar-equivalence scaffolding before any real vector path is
-  admitted. Current tests do not prove vectorized Base64 correctness.
+- Provide real fixed-block vector encode evidence for all alphabets before any
+  runtime dispatch is admitted.
 
 Preconditions:
 
@@ -386,30 +386,83 @@ Preconditions:
 
 Unsafe operation:
 
-- `_mm512_storeu_si512` stores one 512-bit zero vector into the output buffer.
+- `_mm512_loadu_si512` loads from a local 64-byte staging array that contains
+  four 12-byte input lanes plus four zero bytes per lane.
+- `_mm512_loadu_si512` loads a fixed shuffle mask and the 64-byte alphabet
+  table.
+- `_mm512_shuffle_epi8` reshapes each staged 128-bit lane into four 24-bit
+  groups without reading from caller memory beyond the fixed input array.
+- AVX-512 shifts, masks, and OR operations produce sixty-four 6-bit indices.
+- `_mm512_permutexvar_epi8` uses the VBMI byte-permute instruction to map those
+  indices through the loaded alphabet table.
+- `_mm512_storeu_si512` stores the 64 encoded bytes into the output buffer.
+- `clear_zmm_registers_for_test_prototype` clears ZMM state and uses
+  `vzeroupper` before return to reduce register retention and AVX/SSE
+  transition state in this non-dispatchable test prototype.
+- The local staging array is wiped with the crate cleanup primitive before the
+  function returns.
 
 Safety argument:
 
-- The output type is `&mut [u8; 64]`, so the store has enough initialized,
-  writable memory.
-- The intrinsic is the unaligned store variant, so no stronger alignment is
-  required.
+- The input and output array types provide fixed readable and writable bounds.
+- The SIMD load reads only from a local 64-byte staging array, so the prototype
+  does not over-read the 48-byte caller input.
+- The staging array is mutable and wiped after the SIMD store and register
+  cleanup, reducing stack retention of the copied caller bytes in this inactive
+  prototype.
+- The load and store intrinsics are unaligned variants, so no stronger
+  alignment is required.
 - The function is guarded by the full AVX-512 Base64 target-feature contract.
-- The prototype then overwrites the block with scalar-equivalent Base64 output.
-  The SIMD zeroing is semantically overwritten and is not an implementation of
-  vectorized Base64.
-- Register-retention note: this prototype does not load caller bytes into SIMD
-  registers. Any future AVX-512 implementation that does so must document and
-  implement explicit cleanup for every secret-bearing ZMM/YMM/XMM register
-  before return, plus AVX transition cleanup such as `vzeroupper` where
-  applicable.
+- The index vector is masked to `0..=63` before the VBMI table lookup.
+- The output length is fixed by the output array type.
+- The prototype remains test-only and non-dispatchable. Runtime acceleration is
+  still blocked by the SIMD admission manifest.
+- Register-retention note: the prototype now loads caller bytes into ZMM state.
+  It calls `clear_zmm_registers_for_test_prototype` before return. This is
+  retention reduction for the inactive prototype, not a formal
+  microarchitectural side-channel proof.
+
+### `clear_zmm_registers_for_test_prototype`
+
+Location: `src/simd/x86.rs`
+
+Status: private helper for inactive AVX-512 test-only prototypes, not
+dispatchable and not reachable from runtime backend selection.
+
+Purpose:
+
+- Clear ZMM state before returning from the AVX-512 prototype path that
+  processes caller bytes in vector registers.
+
+Preconditions:
+
+- Called only after the prototype has stored its output and no later AVX-512
+  value is needed by the function.
+
+Unsafe operation:
+
+- Inline assembly zeros the ZMM register set available to the target (`zmm0`
+  through `zmm7` on `x86`, `zmm0` through `zmm31` on `x86_64`) and declares
+  those registers as clobbered outputs.
+- Inline assembly emits `vzeroupper` to clear upper vector state before
+  returning to scalar/SSE code.
+
+Safety argument:
+
+- The helper does not read or write memory.
+- The helper runs at the end of the inactive prototype path.
+- Clobbered registers are declared to the compiler with explicit `out("zmmN")`
+  operands.
+- This is best-effort register-retention reduction for test evidence, not a
+  guarantee that historical register, stack, cache, or microarchitectural
+  copies do not exist.
 
 ### `encode_24_bytes_avx2`
 
 Location: `src/simd/x86.rs`
 
-Status: inactive test-only prototype, not compiled into release library builds
-and not dispatchable.
+Status: inactive test-only prototype, not dispatchable and not reachable from
+runtime backend selection.
 
 Purpose:
 
@@ -466,8 +519,8 @@ Safety argument:
 
 Location: `src/simd/x86.rs`
 
-Status: private helper for the inactive AVX2 test-only prototype, not compiled
-into release library builds and not dispatchable.
+Status: private helper for the inactive AVX2 test-only prototype, not
+dispatchable and not reachable from runtime backend selection.
 
 Purpose:
 
@@ -498,8 +551,8 @@ Safety argument:
 
 Location: `src/simd/x86.rs`
 
-Status: private helper for inactive AVX2 test-only prototypes, not compiled
-into release library builds and not dispatchable.
+Status: private helper for inactive AVX2 test-only prototypes, not
+dispatchable and not reachable from runtime backend selection.
 
 Purpose:
 
@@ -531,8 +584,8 @@ Safety argument:
 
 Location: `src/simd/x86.rs`
 
-Status: inactive test-only prototype, not compiled into release library builds
-and not dispatchable.
+Status: inactive test-only prototype, not dispatchable and not reachable from
+runtime backend selection.
 
 Purpose:
 
@@ -589,7 +642,7 @@ Safety argument:
 Location: `src/simd/x86.rs`
 
 Status: private helper for the inactive SSSE3/SSE4.1 test-only prototype, not
-compiled into release library builds and not dispatchable.
+dispatchable and not reachable from runtime backend selection.
 
 Purpose:
 
@@ -620,8 +673,8 @@ Safety argument:
 
 Location: `src/simd/x86.rs`
 
-Status: private helper for inactive x86 test-only prototypes, not compiled into
-release library builds and not dispatchable.
+Status: private helper for inactive x86 test-only prototypes, not dispatchable
+and not reachable from runtime backend selection.
 
 Purpose:
 
@@ -653,8 +706,8 @@ Safety argument:
 
 Location: `src/simd/`
 
-Status: inactive test-only prototype, not compiled into release library builds
-and not dispatchable.
+Status: inactive test-only prototype, not dispatchable and not reachable from
+runtime backend selection.
 
 Purpose:
 
@@ -706,6 +759,6 @@ Any admitted SIMD path that processes caller data must also document its
 register-retention cleanup strategy and include the matching explicit register
 cleanup implementation, generated-assembly evidence, and tests in the admission
 evidence. This is a hard release blocker before dispatch, not an optional
-follow-up. The current prototypes only construct and store zero vectors before
-scalar-equivalent writes; the exemption ends as soon as a prototype loads
-caller bytes into vector registers.
+follow-up. Current x86 encode prototypes already load caller bytes into vector
+registers and include best-effort register cleanup as test evidence; runtime
+dispatch remains blocked until the full admission evidence is complete.

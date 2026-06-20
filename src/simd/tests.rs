@@ -54,6 +54,22 @@ fn fill_indices_pattern_wide(output: &mut [u8; 24], seed: u8) {
     }
 }
 
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+fn fill_indices_pattern_zmm(output: &mut [u8; 48], seed: u8) {
+    let mut write = 0;
+    for group in 0..16 {
+        let i0 = seed.wrapping_add(group * 4) & 0x3f;
+        let i1 = seed.wrapping_add(group * 4 + 1) & 0x3f;
+        let i2 = seed.wrapping_add(group * 4 + 2) & 0x3f;
+        let i3 = seed.wrapping_add(group * 4 + 3) & 0x3f;
+
+        output[write] = (i0 << 2) | (i1 >> 4);
+        output[write + 1] = (i1 << 4) | (i2 >> 2);
+        output[write + 2] = (i2 << 6) | i3;
+        write += 3;
+    }
+}
+
 #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
 #[test]
 fn avx512_encode_prototype_matches_scalar_when_available() {
@@ -95,6 +111,50 @@ fn avx512_encode_prototype_matches_scalar_when_available() {
         assert_eq!(scalar_len, avx512_url_safe.len());
         assert_eq!(avx512_url_safe, scalar_url_safe);
     }
+
+    for seed in 0..64 {
+        fill_indices_pattern_zmm(&mut input, seed);
+
+        let mut avx512_standard = [0x55; 64];
+        let mut scalar_standard = [0xaa; 64];
+        // SAFETY: The candidate check above proves the AVX-512 feature
+        // bundle is available for this test invocation.
+        unsafe {
+            encode_48_bytes_avx512::<Standard>(&input, &mut avx512_standard);
+        }
+        let scalar_len = Engine::<Standard, true>::new()
+            .encode_slice(&input, &mut scalar_standard)
+            .unwrap();
+        assert_eq!(scalar_len, avx512_standard.len());
+        assert_eq!(avx512_standard, scalar_standard);
+
+        let mut avx512_url_safe = [0x55; 64];
+        let mut scalar_url_safe = [0xaa; 64];
+        // SAFETY: The candidate check above proves the AVX-512 feature
+        // bundle is available for this test invocation.
+        unsafe {
+            encode_48_bytes_avx512::<UrlSafe>(&input, &mut avx512_url_safe);
+        }
+        let scalar_len = Engine::<UrlSafe, true>::new()
+            .encode_slice(&input, &mut scalar_url_safe)
+            .unwrap();
+        assert_eq!(scalar_len, avx512_url_safe.len());
+        assert_eq!(avx512_url_safe, scalar_url_safe);
+    }
+
+    fill_indices_pattern_zmm(&mut input, 0);
+    let mut avx512_custom = [0x55; 64];
+    let mut scalar_custom = [0xaa; 64];
+    // SAFETY: The candidate check above proves the AVX-512 feature bundle is
+    // available for this test invocation.
+    unsafe {
+        encode_48_bytes_avx512::<AnchorMatchingCustom>(&input, &mut avx512_custom);
+    }
+    let scalar_len = Engine::<AnchorMatchingCustom, true>::new()
+        .encode_slice(&input, &mut scalar_custom)
+        .unwrap();
+    assert_eq!(scalar_len, avx512_custom.len());
+    assert_eq!(avx512_custom, scalar_custom);
 }
 
 #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
