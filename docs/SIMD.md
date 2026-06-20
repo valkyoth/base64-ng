@@ -131,7 +131,7 @@ runtime behavior for that line.
 - Unit tests compare dispatch behavior against the scalar reference for
   canonical inputs, malformed inputs, and undersized output buffers.
 - The `simd` feature does not enable accelerated code yet.
-- Current `1.0` development remains scalar-only unless the SIMD admission
+- Current `1.1` development remains scalar-only unless the SIMD admission
   manifest, scalar differential tests, fuzz evidence, unsafe inventory,
   architecture evidence, benchmark evidence, and release wording are updated
   together.
