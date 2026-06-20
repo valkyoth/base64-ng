@@ -262,7 +262,9 @@ scripts/check_simd_feature_bundles.sh
 This currently proves `no_std` reserved builds for AVX2, SSSE3/SSE4.1, the
 AVX-512 Base64 candidate bundle (`avx512f`, `avx512bw`, `avx512vl`, and
 `avx512vbmi`), NEON, and wasm `simd128` when the corresponding Rust targets
-are installed.
+are installed. For wasm `simd128`, the script also builds the wasm test
+binaries with `target-feature=+simd128` so the inactive fixed-block prototype
+body remains typechecked and codegen-ready without requiring a wasm runtime.
 
 Capture local runtime backend and prototype evidence with:
 
@@ -280,7 +282,10 @@ execute the inactive prototype body and compare it against scalar output. The
 x86 prototypes exercise real fixed-block vector encode logic when the required
 CPU feature bundles are available. On AArch64 NEON-capable hosts, the NEON test
 exercises the inactive fixed-block vector prototype for Standard and URL-safe
-alphabets; 32-bit ARM remains scaffold evidence. The script writes
+alphabets; 32-bit ARM remains scaffold evidence. Wasm `simd128` evidence is
+kept in `scripts/check_simd_feature_bundles.sh` as compile/test-binary evidence
+only because runtime JIT behavior is outside the crate's release gate. The
+script writes
 `target/release-evidence/backend/MANIFEST.txt`, `runtime-backend-report.txt`,
 and `simd-prototype-equivalence.txt` so local CPU evidence can be archived.
 

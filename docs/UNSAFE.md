@@ -860,6 +860,112 @@ Safety argument:
   guarantee that historical register, stack, cache, or microarchitectural
   copies do not exist.
 
+### `encode_12_bytes_wasm_simd128`
+
+Location: `src/simd/wasm.rs`
+
+Status: private helper for an inactive wasm `simd128` test-only prototype, not
+dispatchable and not reachable from runtime backend selection.
+
+Purpose:
+
+- Select the real wasm `simd128` fixed-block encode helper for Standard-family
+  alphabets.
+- Keep custom alphabets on scalar scaffold logic because portable wasm SIMD
+  does not provide a direct 64-byte alphabet lookup instruction.
+
+Preconditions:
+
+- Caller must prove `simd128` is available for the current wasm runtime.
+- Input and output lengths are fixed by `[u8; 12]` and `[u8; 16]` arrays.
+
+Unsafe operation:
+
+- Calls the target-feature-gated wasm `simd128` helper.
+
+Safety argument:
+
+- Fixed array types enforce the required block sizes.
+- The target-feature contract is explicit on the function.
+- The helper is test-only and cannot be reached by runtime dispatch.
+
+Limitations:
+
+- This is compile and codegen evidence only. Wasm engines include a runtime/JIT
+  optimization layer outside Rust's compiler boundary, so this prototype does
+  not claim runtime timing, register-retention, or JIT zeroization guarantees.
+
+### `encode_12_bytes_wasm_standard_family`
+
+Location: `src/simd/wasm.rs`
+
+Status: private helper for the inactive wasm `simd128` test-only prototype, not
+dispatchable and not reachable from runtime backend selection.
+
+Purpose:
+
+- Encode one 12-byte block into 16 Base64 bytes with wasm `simd128` byte
+  shuffling, vector shifts/masks, and Standard-family alphabet mapping.
+- Wipe the staged stack copy before returning.
+
+Preconditions:
+
+- Caller must prove `simd128` is available for the current wasm runtime.
+- Input and output lengths are fixed by array types.
+- The alphabet must be Standard-family as checked by the caller.
+
+Unsafe operation:
+
+- `v128_load` loads the staged 16-byte array.
+- `u8x16_shuffle`, `u32x4_shr`, `u32x4_shl`, masks, ORs, and byte-select
+  operations compute the fixed-block output.
+- `v128_store` writes exactly 16 output bytes.
+
+Safety argument:
+
+- The staged array is exactly 16 bytes and backs the 128-bit load.
+- The output array is exactly 16 bytes and backs the 128-bit store.
+- Shuffle lanes that refer to the second input vector read from a zero vector.
+- The shifts and masks constrain every encoded index byte to `0..=63`.
+- The target-feature contract enables the required wasm SIMD instructions.
+
+Limitations:
+
+- This helper does not provide a wasm runtime/JIT timing or register-retention
+  guarantee. wasm32 cleanup remains governed by the separate fail-closed
+  best-effort wipe policy and `allow-wasm32-best-effort-wipe` opt-in.
+
+### `encode_standard_family_indices_wasm`
+
+Location: `src/simd/wasm.rs`
+
+Status: private helper for the inactive wasm `simd128` test-only prototype, not
+dispatchable and not reachable from runtime backend selection.
+
+Purpose:
+
+- Map sixteen 6-bit indices to Standard or URL-safe alphabet bytes with wasm
+  SIMD comparisons and `v128_bitselect` operations.
+
+Preconditions:
+
+- Caller must prove `simd128` is available for the current wasm runtime.
+- `indices` contains only byte values in `0..=63`.
+- The alphabet must be Standard-family as checked by the caller.
+
+Unsafe operation:
+
+- wasm SIMD byte comparisons, arithmetic, and bit-select operations compute the
+  ASCII output byte for each index.
+
+Safety argument:
+
+- The helper does not dereference raw pointers or access memory.
+- The target-feature contract enables the required wasm SIMD instructions.
+- The caller constructs `indices` with masks that constrain every byte to a
+  six-bit Base64 value.
+- The helper is private to the test-only prototype path.
+
 ## Admission Rule
 
 Unsafe SIMD can become an active backend only after scalar differential tests,

@@ -94,8 +94,15 @@ runtime behavior for that line.
   byte-select alphabet mapping for fixed 12-byte input blocks, then clears used
   NEON registers before returning. Custom alphabets and 32-bit `arm+neon`
   remain scalar scaffold paths. Runtime backend selection remains scalar-only.
-- wasm `simd128` detection is reporting-only when `wasm32` is compiled with
-  `target-feature=+simd128`; no wasm accelerated backend is active.
+- An inactive wasm `simd128` fixed-block encode prototype exists behind the
+  same boundary as real non-dispatchable vector encode evidence for Standard
+  and URL-safe alphabets. It uses wasm byte shuffling, vector shifts/masks, and
+  branchless Standard-family alphabet mapping for fixed 12-byte input blocks.
+  Custom alphabets remain scalar scaffold paths because portable wasm SIMD does
+  not provide a direct 64-byte alphabet lookup. The wasm feature-bundle check
+  builds wasm test binaries with `target-feature=+simd128`; this is compile and
+  codegen evidence only, not a runtime/JIT timing or register-retention claim.
+  Runtime backend selection remains scalar-only.
 - `runtime::backend_report()` reports the active backend, detected candidate,
   detection mode, SIMD feature status, scalar-only security posture, and a
   conservative unsafe-boundary posture flag. The flag is true only when the
@@ -161,7 +168,9 @@ scripts/check_simd_feature_bundles.sh
 
 This does not execute accelerated code. It proves the reserved AVX2,
 AVX-512, SSSE3/SSE4.1, NEON, and wasm `simd128` feature-gated code still
-compiles under `no_std` when the corresponding Rust targets are installed.
+compiles under `no_std` when the corresponding Rust targets are installed. For
+wasm `simd128`, it also builds the wasm test binaries with `simd128` enabled so
+the inactive prototype body is checked without requiring a wasm runtime.
 
 Capture local backend and prototype evidence:
 

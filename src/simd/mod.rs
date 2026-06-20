@@ -12,10 +12,12 @@
 //! tests, fuzz coverage, and benchmark evidence.
 //!
 //! The fixed-block prototypes below are test-only and non-dispatchable. The
-//! x86 prototypes contain real fixed-block encode logic, and the `AArch64` NEON
+//! x86 prototypes contain real fixed-block encode logic, the `AArch64` NEON
 //! prototype contains real fixed-block encode logic for Standard and URL-safe
-//! alphabets. The 32-bit ARM NEON path remains scalar-equivalence scaffolding.
-//! None of these prototypes are reachable from runtime backend selection.
+//! alphabets, and the wasm `simd128` prototype contains real fixed-block encode
+//! logic for Standard and URL-safe alphabets. The 32-bit ARM NEON path remains
+//! scalar-equivalence scaffolding. None of these prototypes are reachable from
+//! runtime backend selection.
 
 #[cfg(all(
     test,
@@ -33,11 +35,12 @@ use core::arch::aarch64::{
 };
 #[cfg(all(test, target_arch = "arm", target_feature = "neon"))]
 use core::arch::arm::{uint8x16_t, vdupq_n_u8, vst1q_u8};
-
 #[cfg(all(test, any(target_arch = "x86", target_arch = "x86_64")))]
 mod x86;
 #[cfg(all(test, any(target_arch = "x86", target_arch = "x86_64")))]
 pub(super) use x86::{encode_12_bytes_ssse3_sse41, encode_24_bytes_avx2, encode_48_bytes_avx512};
+#[cfg(all(test, target_arch = "wasm32"))]
+mod wasm;
 
 /// Backend currently allowed to execute.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -362,5 +365,5 @@ unsafe fn clear_neon_registers_for_test_prototype() {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, not(target_arch = "wasm32")))]
 mod tests;

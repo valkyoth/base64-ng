@@ -15,6 +15,11 @@
   remain on scalar scaffold paths.
 - Added NEON equivalence coverage for patterned blocks, all 64 emitted six-bit
   Base64 values, and custom alphabet fallback.
+- Added a real non-dispatchable wasm `simd128` fixed-block encode prototype for
+  Standard and URL-safe alphabets. Custom alphabets remain on the scalar
+  scaffold path because portable wasm SIMD has no direct 64-byte lookup.
+- Added wasm `simd128` test-binary compile evidence to the SIMD feature-bundle
+  check while keeping wasm cleanup/JIT caveats and scalar-only runtime dispatch.
 - Added a real non-dispatchable AVX2 fixed-block encode prototype for Standard
   and URL-safe alphabets. The prototype remains test-only and active runtime
   backend selection remains scalar-only.
