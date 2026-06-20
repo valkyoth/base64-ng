@@ -584,6 +584,12 @@ fn encode_error_to_io(err: EncodeError) -> io::Error {
 /// preserves strict error diagnostics. Do not use it for secret-bearing
 /// payloads when malformed-input timing matters; decode a complete frame
 /// with the matching `ct` engine instead.
+///
+/// Decoded bytes are written to the wrapped writer as valid quads are
+/// accepted. If a later quad in the same logical frame is malformed, already
+/// written bytes cannot be recalled from sockets, pipes, files, or other
+/// external sinks. For atomic frame semantics, decode into an in-memory buffer
+/// first and transfer to the final writer only after [`Self::finish`] succeeds.
 pub struct Decoder<W, A, const PAD: bool>
 where
     A: Alphabet,

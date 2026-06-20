@@ -9,6 +9,16 @@
 //! This crate keeps serialization support out of the core package. It provides
 //! explicit wrappers and `#[serde(with = "...")]` modules so applications must
 //! choose the alphabet and padding policy at the field boundary.
+//!
+//! # Security
+//!
+//! Deserialization helpers in this crate use `base64_ng::Engine::decode_vec`,
+//! the strict timing-variable decoder. They map decode failures to redacted
+//! error classes, but they are not constant-time-oriented secret decoders. Do
+//! not use these serde modules for API keys, bearer tokens, private keys, or
+//! other secret-bearing fields when malformed-input timing matters. Decode
+//! those values explicitly with `base64_ng::ct` or with
+//! `base64_ng_sanitization::CtDecodeSanitizationExt` instead.
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
@@ -136,6 +146,12 @@ impl<'de> Deserialize<'de> for Base64UrlSafeNoPad {
 }
 
 /// Serde helpers for strict standard padded Base64 fields.
+///
+/// # Security
+///
+/// Deserialization uses the strict timing-variable decoder. Use this module
+/// for interoperability-oriented fields, not secret-bearing fields where
+/// malformed-input timing matters.
 #[cfg(feature = "alloc")]
 pub mod standard {
     use super::{STANDARD, Vec, deserialize_with_engine, serialize_with_engine};
@@ -169,6 +185,12 @@ pub mod standard {
 }
 
 /// Serde helpers for URL-safe unpadded Base64 fields.
+///
+/// # Security
+///
+/// Deserialization uses the strict timing-variable decoder. Use this module
+/// for interoperability-oriented fields, not secret-bearing fields where
+/// malformed-input timing matters.
 #[cfg(feature = "alloc")]
 pub mod url_safe_no_pad {
     use super::{URL_SAFE_NO_PAD, Vec, deserialize_with_engine, serialize_with_engine};

@@ -55,6 +55,14 @@ impl core::fmt::Display for EncodeError {
 impl std::error::Error for EncodeError {}
 
 /// Decoding error.
+///
+/// # Security
+///
+/// Strict decoding errors are diagnostic values. Some variants carry
+/// input-derived bytes or exact input indexes, and [`core::fmt::Display`]
+/// intentionally prints those diagnostics for developer-facing debugging. Do
+/// not log or return full [`DecodeError`] values for secret-bearing input; log
+/// [`Self::kind`] instead.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum DecodeError {
     /// The encoded input is malformed, but the decoder intentionally does not
@@ -194,14 +202,14 @@ impl DecodeError {
     pub(crate) fn with_index_offset(self, offset: usize) -> Self {
         match self {
             Self::InvalidByte { index, byte } => Self::InvalidByte {
-                index: index + offset,
+                index: index.saturating_add(offset),
                 byte,
             },
             Self::InvalidPadding { index } => Self::InvalidPadding {
-                index: index + offset,
+                index: index.saturating_add(offset),
             },
             Self::InvalidLineWrap { index } => Self::InvalidLineWrap {
-                index: index + offset,
+                index: index.saturating_add(offset),
             },
             Self::InvalidInput
             | Self::InvalidLength
@@ -213,3 +221,31 @@ impl DecodeError {
 
 #[cfg(feature = "std")]
 impl std::error::Error for DecodeError {}
+
+#[cfg(test)]
+mod tests {
+    use super::DecodeError;
+
+    #[test]
+    fn index_offsets_saturate_on_overflow() {
+        assert_eq!(
+            DecodeError::InvalidByte {
+                index: 7,
+                byte: b'$'
+            }
+            .with_index_offset(usize::MAX),
+            DecodeError::InvalidByte {
+                index: usize::MAX,
+                byte: b'$'
+            }
+        );
+        assert_eq!(
+            DecodeError::InvalidPadding { index: 7 }.with_index_offset(usize::MAX),
+            DecodeError::InvalidPadding { index: usize::MAX }
+        );
+        assert_eq!(
+            DecodeError::InvalidLineWrap { index: 7 }.with_index_offset(usize::MAX),
+            DecodeError::InvalidLineWrap { index: usize::MAX }
+        );
+    }
+}

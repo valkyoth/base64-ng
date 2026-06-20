@@ -332,6 +332,12 @@ where
     /// final heap allocation must not contain transient partial plaintext from
     /// rejected input.
     ///
+    /// # Errors
+    ///
+    /// Returns [`DecodeError::StagingTooSmall`] if `STAGE` is smaller than the
+    /// decoded length of `input`. `STAGE` is checked at runtime because the
+    /// encoded input length is not a compile-time value.
+    ///
     /// # Examples
     ///
     /// ```
