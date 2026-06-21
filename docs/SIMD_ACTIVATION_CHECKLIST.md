@@ -50,6 +50,12 @@ caller-derived values to callee-saved vector registers, the admission package
 must also account for any compiler-generated spill/restore slots and prove that
 those slots are wiped or never contain caller-derived data.
 
+For Windows x64 specifically, XMM6 through XMM15 are callee-saved. AVX2 or
+AVX-512 admission on MSVC targets must prove that compiler-generated
+callee-saved XMM spill/restore slots do not retain caller-derived vector
+values, or use an ABI boundary that prevents those spills from carrying
+secret-bearing intermediates.
+
 For wasm `simd128`, source-level register cleanup is not sufficient evidence.
 The wasm runtime/JIT owns final register allocation and may rewrite the
 generated code. A wasm backend cannot be admitted until the selected runtime

@@ -188,16 +188,16 @@ where
         scalar_encode_block::<A, 12, 16>(input, output);
         return;
     }
+    debug_assert!(is_standard_or_url_safe_family::<A>());
 
     let mut staged = [
         input[0], input[1], input[2], input[3], input[4], input[5], input[6], input[7], input[8],
         input[9], input[10], input[11], 0, 0, 0, 0,
     ];
 
-    // SAFETY: `staged` and `output` are valid 16-byte arrays. The function's
-    // target-feature contract enables SSSE3/SSE4.1. The loads and stores are
-    // unaligned variants, and the shuffle mask uses `0x80` lanes only for
-    // zero-filled bytes. The SIMD path is non-dispatchable test evidence.
+    // SAFETY: fixed arrays bound the unaligned load/store, the target-feature
+    // contract enables SSSE3/SSE4.1, and the Standard-family guard above runs
+    // before the SIMD-only arithmetic mapper.
     unsafe {
         let input_vec = _mm_loadu_si128(staged.as_ptr().cast::<__m128i>());
         let shuffle = _mm_setr_epi8(2, 1, 0, -128, 5, 4, 3, -128, 8, 7, 6, -128, 11, 10, 9, -128);

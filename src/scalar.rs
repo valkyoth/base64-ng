@@ -265,7 +265,7 @@ fn first_padding_index_unchecked(input: [u8; 4]) -> usize {
             false,
             "first_padding_index_unchecked called with no padding"
         );
-        4
+        0
     }
 }
 
