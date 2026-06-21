@@ -30,9 +30,9 @@ impl std::error::Error for BackendPolicyError {}
 pub struct BackendReport {
     /// Backend currently used for admitted runtime dispatch.
     ///
-    /// In `1.1.x`, AVX2 and SSSE3/SSE4.1 admission covers encode dispatch
-    /// only. Decode remains scalar until a separate decode admission package is
-    /// complete.
+    /// In the staged `1.2.0` line, AVX-512 VBMI, AVX2, and SSSE3/SSE4.1
+    /// admission covers encode dispatch only. Decode remains scalar until a
+    /// separate decode admission package is complete.
     pub active: Backend,
     /// Strongest backend candidate visible to the current build.
     pub candidate: Backend,
@@ -63,8 +63,8 @@ pub struct BackendReport {
 pub struct BackendSnapshot {
     /// Stable active backend identifier.
     ///
-    /// In `1.1.x`, non-scalar active values describe admitted encode dispatch;
-    /// decode remains scalar.
+    /// In the staged `1.2.0` line, non-scalar active values describe admitted
+    /// encode dispatch; decode remains scalar.
     pub active: &'static str,
     /// Stable detected candidate identifier.
     pub candidate: &'static str,
@@ -314,6 +314,8 @@ fn write_feature_list(
 fn active_backend() -> Backend {
     match crate::simd::active_backend() {
         crate::simd::ActiveBackend::Scalar => Backend::Scalar,
+        #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
+        crate::simd::ActiveBackend::Avx512Vbmi => Backend::Avx512Vbmi,
         #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
         crate::simd::ActiveBackend::Avx2 => Backend::Avx2,
         #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]

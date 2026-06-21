@@ -6,14 +6,14 @@
 //! `unsafe_code` lint. Keep all future architecture-specific intrinsics behind
 //! this boundary, with a local safety explanation for every unsafe block.
 //!
-//! The module admits only std `x86`/`x86_64` AVX2 and SSSE3/SSE4.1 encode
-//! backends for Standard and URL-safe alphabet families. All decode paths,
-//! custom alphabets, `no_std` builds, and every other SIMD candidate still
-//! execute through the scalar implementation.
+//! The module admits only std `x86`/`x86_64` AVX-512 VBMI, AVX2, and
+//! SSSE3/SSE4.1 encode backends for Standard and URL-safe alphabet families.
+//! All decode paths, custom alphabets, `no_std` builds, and every other SIMD
+//! candidate still execute through the scalar implementation.
 //!
-//! The x86 AVX2 and SSSE3/SSE4.1 fixed-block encoders are reachable from
-//! runtime encode dispatch on std builds after runtime CPU probing. The
-//! AVX-512, NEON, and wasm `simd128` fixed-block implementations remain
+//! The x86 AVX-512 VBMI, AVX2, and SSSE3/SSE4.1 fixed-block encoders are
+//! reachable from runtime encode dispatch on std builds after runtime CPU
+//! probing. The NEON and wasm `simd128` fixed-block implementations remain
 //! prototype evidence and are not reachable from runtime backend selection.
 
 #[cfg(all(
@@ -51,6 +51,9 @@ mod wasm;
 pub(crate) enum ActiveBackend {
     /// The audited scalar implementation.
     Scalar,
+    /// std `x86`/`x86_64` AVX-512 VBMI encode backend.
+    #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
+    Avx512Vbmi,
     /// std `x86`/`x86_64` AVX2 encode backend.
     #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
     Avx2,
@@ -86,6 +89,10 @@ pub(crate) enum Candidate {
 pub(crate) fn active_backend() -> ActiveBackend {
     #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
     {
+        if avx512_vbmi_base64_available() {
+            return ActiveBackend::Avx512Vbmi;
+        }
+
         if avx2_available() {
             return ActiveBackend::Avx2;
         }
@@ -145,8 +152,8 @@ pub(crate) fn detected_candidate() -> Candidate {
     any(target_arch = "x86", target_arch = "x86_64")
 ))]
 pub(crate) use x86::{
-    avx2_supports_alphabet, encode_slice_avx2, encode_slice_ssse3_sse41,
-    ssse3_sse41_supports_alphabet,
+    avx2_supports_alphabet, avx512_supports_alphabet, encode_slice_avx2, encode_slice_avx512,
+    encode_slice_ssse3_sse41, ssse3_sse41_supports_alphabet,
 };
 
 #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]

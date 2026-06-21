@@ -1,10 +1,10 @@
 # SIMD Activation Checklist
 
 This checklist is mandatory before any additional SIMD code becomes
-dispatchable. AVX2 and SSSE3/SSE4.1 encode are admitted only for std
-x86/x86_64 Standard and URL-safe alphabet families. AVX-512, NEON, wasm,
-custom-alphabet, in-place, and decode SIMD paths remain prototype-only or
-scalar until their own checklist evidence is complete.
+dispatchable. AVX-512 VBMI, AVX2, and SSSE3/SSE4.1 encode are admitted only for
+std x86/x86_64 Standard and URL-safe alphabet families. NEON, wasm,
+custom-alphabet, in-place, and decode SIMD paths remain prototype-only or scalar
+until their own checklist evidence is complete.
 
 ## Non-Negotiable Rule
 
@@ -62,11 +62,12 @@ generated code. A wasm backend cannot be admitted until the selected runtime
 and deployment profile have generated-code/JIT evidence, or the release notes
 scope wasm SIMD out of any register-retention claim.
 
-Current prototypes are exempt from admission only because they are test-only and
-non-dispatchable. The x86 and AArch64 prototypes already load caller bytes into
-vector registers and therefore carry best-effort cleanup plus unsafe-inventory
-documentation as evidence. That evidence is not enough for active dispatch
-until the full admission package is complete.
+Current non-dispatchable prototypes are exempt from admission only because they
+are test-only and non-dispatchable. The AArch64 and wasm prototypes already
+load caller bytes into vector registers and therefore carry best-effort cleanup
+or generated-code notes plus unsafe-inventory documentation as evidence. That
+evidence is not enough for active dispatch until the full admission package is
+complete.
 
 ## Source Changes
 

@@ -646,7 +646,7 @@ evidence is complete. After each active-acceleration minor release, pause
 feature work for a short soak period so users can report platform-specific
 regressions before the next acceleration line begins.
 
-Current `1.1.x` checkpoint state:
+Historical `1.1.x` checkpoint state:
 
 - `1.1.0`: started the SIMD encode foundation line with real non-dispatchable
   SSSE3/SSE4.1 fixed-block encode logic for Standard and URL-safe alphabets.
@@ -686,35 +686,34 @@ Current `1.1.x` checkpoint state:
   cleanup, and scalar fallback for unsupported CPUs, `no_std`, custom
   alphabets, tails, padding, in-place encode, and decode.
 
-Planned checkpoints to reach `1.2.0` fully working encode acceleration:
+Current staged `1.2.0` work packages:
 
-- `1.1.8`: update the optional `base64-ng-sanitization` companion to
-  `sanitization` `1.2.0`, expose native `sanitization::ct::Choice` comparison
-  helpers for `SecretBytes` and `SecretVec`, and keep the core crate
+- Companion-crate sync: update the optional `base64-ng-sanitization` companion
+  to `sanitization` `1.2.0`, expose native `sanitization::ct::Choice`
+  comparison helpers for `SecretBytes` and `SecretVec`, and keep the core crate
   dependency-free.
-- `1.1.9`: admit AVX-512 VBMI encode dispatch only if hardware evidence,
-  generated assembly, register cleanup, fallback behavior, and benchmark data
-  are complete. If AVX-512 evidence is incomplete, keep AVX-512 as a real
-  non-dispatchable prototype rather than blocking `1.2.0`.
-- `1.1.10`: admit AArch64 NEON encode dispatch for Standard and URL-safe
+- x86 encode completion: admit std-only x86/x86_64 AVX-512 VBMI encode
+  dispatch above AVX2 and SSSE3/SSE4.1 for Standard and URL-safe alphabet
+  families, with runtime CPU probing, fixed 48-byte vector blocks, ZMM cleanup,
+  scalar fallback behavior, generated assembly evidence, and benchmark evidence.
+- AArch64 encode decision: admit NEON encode dispatch for Standard and URL-safe
   alphabets only if hardware evidence from real AArch64 machines, generated
   assembly review, register cleanup review, and platform fallback behavior are
-  complete. Otherwise keep NEON non-dispatchable and ship `1.2.0` with x86
-  encode acceleration only.
-- `1.1.11`: decide the wasm `simd128` encode posture. Because wasm runtime/JIT
-  behavior is outside the crate's control, wasm may remain compile-evidence
-  only unless a specific runtime and deployment profile is admitted. Do not
-  let wasm block `1.2.0` unless the project explicitly decides that wasm encode
-  acceleration is part of the `1.2.0` scope.
-- `1.1.12`: full encode release-candidate hardening. Run fuzz/dudect/perf,
-  generated assembly, backend evidence, Miri, Kani, unsafe-boundary,
-  panic-policy, no-alloc, target-matrix, macOS, and package checks against the
-  exact candidate. Update benchmarks and release notes with only the backends
+  complete. Otherwise keep NEON non-dispatchable and document the exact reason.
+- wasm encode decision: because wasm runtime/JIT behavior is outside the
+  crate's control, wasm may remain compile-evidence only unless a specific
+  runtime and deployment profile is admitted. Do not let wasm block `1.2.0`
+  unless the project explicitly decides that wasm encode acceleration is part of
+  the `1.2.0` scope.
+- Full encode release-candidate hardening: run fuzz/dudect/perf, generated
+  assembly, backend evidence, Miri, Kani, unsafe-boundary, panic-policy,
+  no-alloc, target-matrix, macOS, and package checks against the exact
+  candidate. Update benchmarks and release notes with only the backends
   actually admitted.
-- `1.1.13`: version-sync and publish rehearsal. Set all workspace crates to
-  `1.2.0`, update `release-crates.toml`, verify signed-tag publish gating,
-  run `scripts/stable_release_gate.sh release`, run pentest, wait for GitHub
-  green, then tag the release candidate.
+- Version-sync and publish rehearsal: keep all workspace crates staged at
+  `1.2.0`, verify signed-tag publish gating, run
+  `scripts/stable_release_gate.sh release`, run pentest, wait for GitHub green,
+  then tag the final release candidate when the user explicitly asks.
 
 `1.2.0` acceptance criteria:
 

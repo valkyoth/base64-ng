@@ -11,8 +11,8 @@ pub(super) unsafe fn clear_ymm_registers_after_encode_block() {
 }
 
 #[cfg(target_arch = "x86")]
-pub(super) unsafe fn clear_zmm_registers_for_test_prototype() {
-    // SAFETY: This test-only cleanup runs after the prototype stores its
+pub(super) unsafe fn clear_zmm_registers_after_encode_block() {
+    // SAFETY: This cleanup runs after the AVX-512 block encoder stores its
     // output. The explicit outputs tell the compiler these ZMM registers are
     // clobbered while the assembly clears them; `vzeroupper` clears upper
     // vector state before returning to scalar code.
@@ -41,8 +41,8 @@ pub(super) unsafe fn clear_zmm_registers_for_test_prototype() {
 }
 
 #[cfg(target_arch = "x86_64")]
-pub(super) unsafe fn clear_zmm_registers_for_test_prototype() {
-    // SAFETY: This test-only cleanup runs after the prototype stores its
+pub(super) unsafe fn clear_zmm_registers_after_encode_block() {
+    // SAFETY: This cleanup runs after the AVX-512 block encoder stores its
     // output. The explicit outputs tell the compiler these ZMM registers are
     // clobbered while the assembly clears them; `vzeroupper` clears upper
     // vector state before returning to scalar code.

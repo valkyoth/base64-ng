@@ -367,15 +367,16 @@ Limitations:
 
 Location: `src/simd/x86/mod.rs`
 
-Status: inactive AVX-512 test-only prototype, not dispatchable and not
-reachable from runtime backend selection.
+Status: admitted std x86/x86_64 AVX-512 VBMI encode block for Standard and
+URL-safe alphabet families. It is reachable through runtime-probed AVX-512 VBMI
+encode dispatch for fixed 48-byte blocks. Unsupported alphabets, tails,
+padding, `no_std`, in-place encode, and decode use scalar fallback.
 
 Purpose:
 
 - Exercise AVX-512 target-feature plumbing.
-- Validate the unsafe boundary before an admitted AVX-512 path exists.
-- Provide real fixed-block vector encode evidence for all alphabets before any
-  runtime dispatch is admitted.
+- Provide the fixed-block vector encode primitive for the admitted AVX-512 VBMI
+  encode backend.
 
 Preconditions:
 
@@ -396,47 +397,46 @@ Unsafe operation:
 - `_mm512_permutexvar_epi8` uses the VBMI byte-permute instruction to map those
   indices through the loaded alphabet table.
 - `_mm512_storeu_si512` stores the 64 encoded bytes into the output buffer.
-- `clear_zmm_registers_for_test_prototype` clears ZMM state and uses
+- `clear_zmm_registers_after_encode_block` clears ZMM state and uses
   `vzeroupper` before return to reduce register retention and AVX/SSE
-  transition state in this non-dispatchable test prototype.
+  transition state in this encode block.
 - The local staging array is wiped with the crate cleanup primitive before the
   function returns.
 
 Safety argument:
 
 - The input and output array types provide fixed readable and writable bounds.
-- The SIMD load reads only from a local 64-byte staging array, so the prototype
+- The SIMD load reads only from a local 64-byte staging array, so the encoder
   does not over-read the 48-byte caller input.
 - The staging array is mutable and wiped after the SIMD store and register
-  cleanup, reducing stack retention of the copied caller bytes in this inactive
-  prototype.
+  cleanup, reducing stack retention of the copied caller bytes.
 - The load and store intrinsics are unaligned variants, so no stronger
   alignment is required.
 - The function is guarded by the full AVX-512 Base64 target-feature contract.
 - The index vector is masked to `0..=63` before the VBMI table lookup.
 - The output length is fixed by the output array type.
-- The prototype remains test-only and non-dispatchable. Runtime acceleration is
-  still blocked by the SIMD admission manifest.
-- Register-retention note: the prototype now loads caller bytes into ZMM state.
-  It calls `clear_zmm_registers_for_test_prototype` before return. This is
-  retention reduction for the inactive prototype, not a formal
+- Runtime dispatch reaches this block only after `std` runtime CPU probing
+  proves the full AVX-512 VBMI feature bundle. Direct tests call it only after
+  the same feature check.
+- Register-retention note: the encoder loads caller bytes into ZMM state. It
+  calls `clear_zmm_registers_after_encode_block` before return. This is
+  retention reduction for the admitted encode block, not a formal
   microarchitectural side-channel proof.
 
-### `clear_zmm_registers_for_test_prototype`
+### `clear_zmm_registers_after_encode_block`
 
 Location: `src/simd/x86/cleanup.rs`
 
-Status: private helper for inactive AVX-512 test-only prototypes, not
-dispatchable and not reachable from runtime backend selection.
+Status: private helper for the admitted AVX-512 VBMI encode block and its tests.
 
 Purpose:
 
-- Clear ZMM state before returning from the AVX-512 prototype path that
-  processes caller bytes in vector registers.
+- Clear ZMM state before returning from the AVX-512 encode block that processes
+  caller bytes in vector registers.
 
 Preconditions:
 
-- Called only after the prototype has stored its output and no later AVX-512
+- Called only after the encode block has stored its output and no later AVX-512
   value is needed by the function.
 
 Unsafe operation:
@@ -450,10 +450,10 @@ Unsafe operation:
 Safety argument:
 
 - The helper does not read or write memory.
-- The helper runs at the end of the inactive prototype path.
+- The helper runs at the end of the AVX-512 encode block path.
 - Clobbered registers are declared to the compiler with explicit `out("zmmN")`
   operands.
-- This is best-effort register-retention reduction for test evidence, not a
+- This is best-effort register-retention reduction for encode evidence, not a
   guarantee that historical register, stack, cache, or microarchitectural
   copies do not exist.
 

@@ -6,8 +6,15 @@ use crate::{Alphabet, EncodeError, checked_encoded_len, encode_base64_value, sca
 
 use cleanup::{
     clear_xmm_registers_after_encode_block, clear_ymm_registers_after_encode_block,
-    clear_zmm_registers_for_test_prototype,
+    clear_zmm_registers_after_encode_block,
 };
+
+pub(crate) fn avx512_supports_alphabet<A>() -> bool
+where
+    A: Alphabet,
+{
+    is_standard_or_url_safe_family::<A>()
+}
 
 pub(crate) fn avx2_supports_alphabet<A>() -> bool
 where
@@ -21,6 +28,48 @@ where
     A: Alphabet,
 {
     is_standard_or_url_safe_family::<A>()
+}
+
+pub(crate) fn encode_slice_avx512<A, const PAD: bool>(
+    input: &[u8],
+    output: &mut [u8],
+) -> Result<usize, EncodeError>
+where
+    A: Alphabet,
+{
+    if !avx512_supports_alphabet::<A>() {
+        return scalar::encode_slice::<A, PAD>(input, output);
+    }
+
+    let required = checked_encoded_len(input.len(), PAD).ok_or(EncodeError::LengthOverflow)?;
+    if output.len() < required {
+        return Err(EncodeError::OutputTooSmall {
+            required,
+            available: output.len(),
+        });
+    }
+
+    let mut read = 0;
+    let mut write = 0;
+    while read + 48 <= input.len() {
+        let mut block = [0u8; 48];
+        block.copy_from_slice(&input[read..read + 48]);
+        let mut encoded = [0u8; 64];
+        // SAFETY: Runtime dispatch reaches this function only after std CPU
+        // feature detection proves AVX-512 VBMI availability. The fixed arrays
+        // satisfy the block encoder's size preconditions.
+        unsafe {
+            encode_48_bytes_avx512::<A>(&block, &mut encoded);
+        }
+        output[write..write + 64].copy_from_slice(&encoded);
+        crate::wipe_bytes(&mut block);
+        crate::wipe_bytes(&mut encoded);
+        read += 48;
+        write += 64;
+    }
+
+    let tail_written = scalar::encode_slice::<A, PAD>(&input[read..], &mut output[write..])?;
+    Ok(write + tail_written)
 }
 
 pub(crate) fn encode_slice_avx2<A, const PAD: bool>(
@@ -130,7 +179,6 @@ use core::arch::x86_64::{
     _mm512_shuffle_epi8, _mm512_slli_epi32, _mm512_srli_epi32, _mm512_storeu_si512,
 };
 
-#[allow(dead_code, reason = "inactive prototype is not dispatchable yet")]
 #[expect(
     clippy::cast_ptr_alignment,
     reason = "_mm512_storeu_si512 accepts unaligned pointers"
@@ -140,6 +188,11 @@ pub(crate) unsafe fn encode_48_bytes_avx512<A>(input: &[u8; 48], output: &mut [u
 where
     A: Alphabet,
 {
+    if !is_standard_or_url_safe_family::<A>() {
+        scalar_encode_block::<A, 48, 64>(input, output);
+        return;
+    }
+
     let mut staged = [
         input[0], input[1], input[2], input[3], input[4], input[5], input[6], input[7], input[8],
         input[9], input[10], input[11], 0, 0, 0, 0, input[12], input[13], input[14], input[15],
@@ -176,7 +229,7 @@ where
         let table_vec = _mm512_loadu_si512(table.as_ptr().cast::<__m512i>());
         let encoded = _mm512_permutexvar_epi8(indices, table_vec);
         _mm512_storeu_si512(output.as_mut_ptr().cast::<__m512i>(), encoded);
-        clear_zmm_registers_for_test_prototype();
+        clear_zmm_registers_after_encode_block();
     }
     crate::wipe_bytes(&mut staged);
 }

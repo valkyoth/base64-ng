@@ -113,13 +113,13 @@ The release gate runs:
 - reserved SIMD feature-bundle compile checks for AVX2, AVX-512 VBMI,
   SSSE3/SSE4.1, NEON, and wasm `simd128` under `no_std` when the corresponding
   Rust targets are installed
-- backend evidence capture for runtime backend reporting, admitted AVX2 or
-  SSSE3/SSE4.1 encode dispatch when supported, and inactive SIMD prototype
-  scalar-equivalence output for remaining candidates
-- SIMD admission policy for the current release series, with AVX2 and
-  SSSE3/SSE4.1 encode admitted only for std x86/x86_64 Standard and URL-safe
-  alphabets, no decode acceleration, and no SIMD performance claims without
-  complete local benchmark evidence
+- backend evidence capture for runtime backend reporting, admitted AVX-512
+  VBMI, AVX2, or SSSE3/SSE4.1 encode dispatch when supported, and inactive SIMD
+  prototype scalar-equivalence output for remaining candidates
+- SIMD admission policy for the current release series, with AVX-512 VBMI,
+  AVX2, and SSSE3/SSE4.1 encode admitted only for std x86/x86_64 Standard and
+  URL-safe alphabets, no decode acceleration, and no SIMD performance claims
+  without complete local benchmark evidence
 - unsafe-boundary validation that confines `allow(unsafe_code)` to the audited
   cleanup helpers in `src/cleanup.rs`, CT barrier/comparison helpers in
   `src/ct/`, and the SIMD boundary in `src/simd/`
@@ -280,9 +280,8 @@ The script runs the runtime backend-report test and the gated SIMD
 scalar-equivalence tests with `--nocapture`. The runtime report records
 `candidate_detection_mode`, which distinguishes x86/x86_64 `std` runtime CPU
 probing from compile-time target-feature reporting used by `no_std` and other
-compile-time-only targets. On CPUs with AVX2 or SSSE3/SSE4.1, an admitted
-encode path may be active for Standard and URL-safe alphabets. AVX-512 tests
-still execute inactive prototype bodies and compare them against scalar output. On
+compile-time-only targets. On CPUs with AVX-512 VBMI, AVX2, or SSSE3/SSE4.1,
+an admitted encode path may be active for Standard and URL-safe alphabets. On
 AArch64 NEON-capable hosts, the NEON test exercises the inactive fixed-block
 vector prototype for Standard and URL-safe alphabets; 32-bit ARM remains
 scaffold evidence. Wasm `simd128` evidence is kept in
@@ -292,9 +291,10 @@ script writes
 `target/release-evidence/backend/MANIFEST.txt`, `runtime-backend-report.txt`,
 and `simd-prototype-equivalence.txt` so local CPU evidence can be archived. The
 manifest labels prototype-only evidence as `real-non-dispatchable` and
-separately records `active_backend_admitted=avx2-or-ssse3-sse4.1-encode`, so audit logs
-do not confuse remaining fixed-block prototype execution with active dispatch
-admission.
+separately records
+`active_backend_admitted=avx512-vbmi-or-avx2-or-ssse3-sse4.1-encode`, so audit
+logs do not confuse remaining fixed-block prototype execution with active
+dispatch admission.
 
 The release gate also runs:
 
@@ -376,12 +376,10 @@ scripts/generate_simd_asm_evidence.sh
 ```
 
 On x86/x86_64 hosts, the script emits release test-harness assembly for the
-admitted AVX2 and SSSE3/SSE4.1 encode paths and the AVX-512 VBMI prototype
-feature bundle, then checks for the expected byte-shuffle, byte-permute,
-vector-register, and cleanup instructions. On non-x86 hosts it records a skip
-manifest. The generated files are written to
-`target/release-evidence/simd-asm/`. AVX-512 remains inactive prototype
-evidence until the SIMD admission manifest names it as an admitted backend.
+admitted AVX-512 VBMI, AVX2, and SSSE3/SSE4.1 encode paths, then checks for the
+expected byte-shuffle, byte-permute, vector-register, and cleanup instructions.
+On non-x86 hosts it records a skip manifest. The generated files are written to
+`target/release-evidence/simd-asm/`.
 
 ## Performance Evidence
 

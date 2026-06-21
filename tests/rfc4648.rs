@@ -415,7 +415,7 @@ fn runtime_backend_report_matches_admission_state() {
     if report.accelerated_backend_active {
         assert!(matches!(
             report.active,
-            runtime::Backend::Avx2 | runtime::Backend::Ssse3Sse41
+            runtime::Backend::Avx512Vbmi | runtime::Backend::Avx2 | runtime::Backend::Ssse3Sse41
         ));
         assert!(cfg!(all(
             feature = "simd",

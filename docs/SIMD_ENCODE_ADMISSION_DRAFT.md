@@ -1,10 +1,7 @@
 # SIMD Encode Admission Draft
 
 This draft is the working package for remaining encode acceleration work toward
-`1.2.0`. It is not an admission record. AVX2 and SSSE3/SSE4.1 encode are already admitted for std x86/x86_64 Standard and URL-safe alphabet families; every additional backend or broader API surface remains pending until `docs/SIMD_ADMISSION.md`, release evidence, tests, benchmarks, unsafe inventory, and release notes are updated in the same commit as the active backend change.
-
-every additional backend or broader API surface remains pending until its own
-admission evidence is complete.
+`1.2.0`. It is not an admission record. AVX-512 VBMI, AVX2, and SSSE3/SSE4.1 encode are already admitted for std x86/x86_64 Standard and URL-safe alphabet families; every additional backend or broader API surface remains pending until `docs/SIMD_ADMISSION.md`, release evidence, tests, benchmarks, unsafe inventory, and release notes are updated in the same commit as the active backend change.
 
 ## Scope
 
@@ -107,9 +104,10 @@ BASE64_NG_RUN_PERF=1 scripts/check_perf.sh
 Allowed wording:
 
 ```text
-This release admits std-only x86_64 AVX2 encode dispatch for Standard and
-URL-safe Base64 on CPUs that pass runtime feature detection. Unsupported CPUs
-continue to use the scalar backend. Decode remains scalar-only.
+This release admits std-only x86_64 AVX-512 VBMI, AVX2, and SSSE3/SSE4.1 encode
+dispatch for Standard and URL-safe Base64 on CPUs that pass runtime feature
+detection. Unsupported CPUs continue to use the scalar backend. Decode remains
+scalar-only.
 ```
 
 Required precision:

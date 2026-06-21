@@ -72,10 +72,10 @@ fn fill_indices_pattern_zmm(output: &mut [u8; 48], seed: u8) {
 
 #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
 #[test]
-fn avx512_encode_prototype_matches_scalar_when_available() {
+fn avx512_encode_block_matches_scalar_when_available() {
     if !avx512_vbmi_base64_available() {
         println!(
-            "skipped: AVX-512 VBMI prototype test requires avx512f,avx512bw,avx512vl,avx512vbmi"
+            "skipped: AVX-512 VBMI encode block test requires avx512f,avx512bw,avx512vl,avx512vbmi"
         );
         return;
     }
@@ -159,9 +159,9 @@ fn avx512_encode_prototype_matches_scalar_when_available() {
 
 #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
 #[test]
-fn avx2_encode_prototype_matches_scalar_when_available() {
+fn avx2_encode_block_matches_scalar_when_available() {
     if !avx2_available() {
-        println!("skipped: AVX2 prototype test requires avx2");
+        println!("skipped: AVX2 encode block test requires avx2");
         return;
     }
 
@@ -243,9 +243,9 @@ fn avx2_encode_prototype_matches_scalar_when_available() {
 
 #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
 #[test]
-fn ssse3_sse41_encode_prototype_matches_scalar_when_available() {
+fn ssse3_sse41_encode_block_matches_scalar_when_available() {
     if !ssse3_sse41_available() {
-        println!("skipped: SSSE3/SSE4.1 prototype test requires ssse3 and sse4.1");
+        println!("skipped: SSSE3/SSE4.1 encode block test requires ssse3 and sse4.1");
         return;
     }
 
