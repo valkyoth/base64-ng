@@ -4,12 +4,16 @@ use std::time::{Duration, Instant};
 use base64::Engine as _;
 use base64::engine::general_purpose;
 use base64_ng::{STANDARD, checked_encoded_len, decoded_capacity};
+use base64_ng::runtime::{BackendSnapshot, backend_report};
 
 const CASES: &[usize] = &[1, 2, 3, 32, 1024, 64 * 1024, 1024 * 1024];
 const TARGET_BYTES: usize = 64 * 1024 * 1024;
 
 fn main() {
-    println!("engine,operation,input_len,iterations,elapsed_ms,throughput_mib_s");
+    let backend = backend_report().snapshot();
+    println!(
+        "engine,operation,input_len,iterations,elapsed_ms,throughput_mib_s,active_backend,candidate_backend,detection_mode,target_arch,target_os"
+    );
     for &len in CASES {
         let input = make_input(len);
         let encoded_len = checked_encoded_len(input.len(), true).expect("encoded length fits");
@@ -75,16 +79,32 @@ fn main() {
             Ok::<(), ()>(())
         });
 
-        print_result("base64-ng", "encode", len, iterations, base64_ng_encode);
         print_result(
+            &backend,
+            "base64-ng",
+            "encode",
+            len,
+            iterations,
+            base64_ng_encode,
+        );
+        print_result(
+            &backend,
             "base64",
             "encode",
             len,
             iterations,
             base64_encode.expect("base64 encode benchmark succeeds"),
         );
-        print_result("base64-ng", "decode", len, iterations, base64_ng_decode);
         print_result(
+            &backend,
+            "base64-ng",
+            "decode",
+            len,
+            iterations,
+            base64_ng_decode,
+        );
+        print_result(
+            &backend,
             "base64",
             "decode",
             len,
@@ -116,7 +136,14 @@ fn measure<E>(
     Ok(elapsed)
 }
 
-fn print_result(engine: &str, operation: &str, len: usize, iterations: usize, elapsed: Duration) {
+fn print_result(
+    backend: &BackendSnapshot,
+    engine: &str,
+    operation: &str,
+    len: usize,
+    iterations: usize,
+    elapsed: Duration,
+) {
     let mib = len as f64 * iterations as f64 / 1024.0 / 1024.0;
     let seconds = elapsed.as_secs_f64();
     let throughput = if seconds == 0.0 {
@@ -125,7 +152,12 @@ fn print_result(engine: &str, operation: &str, len: usize, iterations: usize, el
         mib / seconds
     };
     println!(
-        "{engine},{operation},{len},{iterations},{:.3},{throughput:.2}",
-        elapsed.as_secs_f64() * 1000.0
+        "{engine},{operation},{len},{iterations},{:.3},{throughput:.2},{},{},{},{},{}",
+        elapsed.as_secs_f64() * 1000.0,
+        backend.active,
+        backend.candidate,
+        backend.candidate_detection_mode,
+        std::env::consts::ARCH,
+        std::env::consts::OS,
     );
 }

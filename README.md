@@ -1153,10 +1153,17 @@ Compile and audit the isolated performance harness directly:
 scripts/check_perf.sh
 ```
 
-Run the scalar comparison benchmark:
+Run the default benchmark. The perf crate enables `base64-ng` SIMD by default
+and records the active backend in each CSV row:
 
 ```sh
 cargo run --release --manifest-path perf/Cargo.toml
+```
+
+Run the base64-ng scalar baseline explicitly:
+
+```sh
+cargo run --release --manifest-path perf/Cargo.toml --no-default-features
 ```
 
 Run a target with `cargo-fuzz`:

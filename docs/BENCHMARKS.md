@@ -3,9 +3,9 @@
 `base64-ng` keeps benchmark tooling isolated from the published crate so the
 runtime crate remains zero-dependency.
 
-The lightweight benchmark harness lives in `perf/` and compares scalar
-`base64-ng` standard padded encode/decode against the established `base64`
-crate using deterministic input buffers. It deliberately uses `std::time` and
+The lightweight benchmark harness lives in `perf/` and compares `base64-ng`
+standard padded encode/decode against the established `base64` crate using
+deterministic input buffers. It deliberately uses `std::time` and
 `std::hint::black_box` instead of a benchmark framework to keep the comparison
 dependency graph small.
 
@@ -21,20 +21,33 @@ Run the benchmark locally:
 cargo run --release --manifest-path perf/Cargo.toml
 ```
 
+The default perf build enables `base64-ng`'s `simd` feature. To force the
+base64-ng scalar baseline, run:
+
+```sh
+cargo run --release --manifest-path perf/Cargo.toml --no-default-features
+```
+
 Capture benchmark output and a release-evidence manifest:
 
 ```sh
 BASE64_NG_RUN_PERF=1 scripts/check_perf.sh
 ```
 
-This writes `target/release-evidence/perf/perf-output.csv` and
-`target/release-evidence/perf/MANIFEST.txt` with toolchain metadata, command
-status, and artifact checksums.
+This writes:
+
+- `target/release-evidence/perf/perf-output.csv` from the default perf build,
+  which enables `simd` and records the active backend in every row.
+- `target/release-evidence/perf/perf-scalar-output.csv` from
+  `--no-default-features`, which disables `simd` for the base64-ng scalar
+  baseline.
+- `target/release-evidence/perf/MANIFEST.txt` with toolchain metadata, command
+  status, and artifact checksums.
 
 Output is CSV:
 
 ```text
-engine,operation,input_len,iterations,elapsed_ms,throughput_mib_s
+engine,operation,input_len,iterations,elapsed_ms,throughput_mib_s,active_backend,candidate_backend,detection_mode,target_arch,target_os
 ```
 
 Benchmark numbers are machine-local evidence, not portable guarantees. Release

@@ -6,6 +6,10 @@ publish = false
 
 [workspace]
 
+[features]
+default = ["simd"]
+simd = ["base64-ng/simd"]
+
 [dependencies]
 base64 = "0.22.1"
-base64-ng = { path = "..", version = "1.0.9", features = ["alloc", "std"] }
+base64-ng = { path = "..", version = "1.2.0", default-features = false, features = ["alloc", "std"] }

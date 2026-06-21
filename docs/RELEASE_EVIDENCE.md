@@ -392,10 +392,17 @@ check directly while iterating on benchmark code with:
 scripts/check_perf.sh
 ```
 
-Run local scalar comparison measurements with:
+Run local default measurements with:
 
 ```sh
 cargo run --release --manifest-path perf/Cargo.toml
+```
+
+The default perf build enables the `base64-ng` `simd` feature. Run the scalar
+baseline explicitly with:
+
+```sh
+cargo run --release --manifest-path perf/Cargo.toml --no-default-features
 ```
 
 Capture benchmark output and a manifest with:
@@ -405,7 +412,12 @@ BASE64_NG_RUN_PERF=1 scripts/check_perf.sh
 ```
 
 This writes `target/release-evidence/perf/perf-output.csv` and
+`target/release-evidence/perf/perf-scalar-output.csv`, plus
 `target/release-evidence/perf/MANIFEST.txt`.
+
+Every CSV row records `active_backend`, `candidate_backend`, `detection_mode`,
+`target_arch`, and `target_os` so release notes can tie throughput numbers to
+the exact selected backend.
 
 Performance numbers are release notes evidence only when paired with hardware,
 OS, Rust version, CPU governor, and the exact command output.
