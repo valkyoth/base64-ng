@@ -12,11 +12,6 @@ pub(crate) fn encode_slice<A, const PAD: bool>(
 where
     A: Alphabet,
 {
-    #[cfg(feature = "simd")]
-    match crate::simd::active_backend() {
-        crate::simd::ActiveBackend::Scalar => {}
-    }
-
     scalar_encode_slice::<A, PAD>(input, output)
 }
 

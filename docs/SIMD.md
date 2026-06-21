@@ -26,6 +26,10 @@ The SIMD roadmap separates implementation evidence from active acceleration:
   and release evidence. GitHub checkpoint tags in this line may move evidence
   forward without a matching crates.io publish; the next planned crates.io
   family sync is `1.2.0`.
+- `1.1.5` adds the public encode backend boundary while still forcing scalar
+  execution. This gives future accelerated encode admission one reviewed
+  integration point for `encode_slice`, clear-tail helpers, alloc helpers,
+  wrapped helpers, and in-place encode.
 - `1.2.0` is the release where encode acceleration must be fully working for
   the admitted encode scope. Public encode APIs must dispatch to admitted
   encode backends when runtime policy and CPU features allow it, and must fall

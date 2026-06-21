@@ -666,15 +666,14 @@ Current `1.1.x` checkpoint state:
   before real crates.io publishing, and high-assurance docs now spell out
   wrapped in-place retention, strict-error logging, `DecodedBuffer` cloning,
   public-length `subtle` comparison, and AArch64/RISC-V deployment posture.
+- `1.1.5`: added the public encode-dispatch integration layer while keeping
+  the selected backend forced to scalar. `Engine::encode_slice`,
+  `encode_slice_clear_tail`, alloc encode helpers, wrapped encode helpers, and
+  in-place encode now route through one audited encode backend boundary, with
+  scalar-equivalence tests covering slice and in-place encode behavior.
 
 Planned checkpoints to reach `1.2.0` fully working encode acceleration:
 
-- `1.1.5`: add the public encode-dispatch integration layer while keeping the
-  selected backend forced to scalar. This checkpoint should route
-  `Engine::encode_slice`, `encode_slice_clear_tail`, alloc encode helpers, and
-  in-place encode through one audited encode backend boundary, then prove the
-  boundary is behavior-preserving against scalar for all existing encode
-  profiles.
 - `1.1.6`: admit std-only x86/x86_64 SSSE3/SSE4.1 encode dispatch for Standard
   and URL-safe alphabets if scalar parity, fallback, generated assembly,
   unsafe inventory, and runtime-report evidence are complete. Unsupported CPUs,

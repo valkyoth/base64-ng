@@ -129,11 +129,13 @@ mod alphabet;
 mod buffers;
 mod cleanup;
 pub mod ct;
+mod encode_backend;
 mod engine;
 mod errors;
 mod length;
 mod profiles;
 mod scalar;
+mod scalar_encode_in_place;
 mod wrap;
 
 pub use alphabet::{

@@ -61,6 +61,10 @@
 - Expanded the SIMD roadmap so `1.2.0` explicitly means fully working encode
   acceleration for the admitted encode scope, with planned `1.1.5` through
   `1.1.12` checkpoints leading to that release.
+- Added a scalar-forced encode backend boundary and routed public slice,
+  clear-tail, wrapped, alloc, and in-place encode paths through it, giving
+  future SIMD encode admission one audited integration point while preserving
+  scalar-only runtime behavior.
 
 ## 1.1.0 - 2026-06-20
 

@@ -1,8 +1,8 @@
 #[cfg(feature = "alloc")]
 use crate::SecretBuffer;
 use crate::{
-    Alphabet, EncodeError, EncodedBuffer, Engine, LineWrap, checked_encoded_len,
-    encode_base64_value, scalar, wipe_bytes, wipe_tail, write_wrapped_byte, write_wrapped_bytes,
+    Alphabet, EncodeError, EncodedBuffer, Engine, LineWrap, checked_encoded_len, encode_backend,
+    encode_base64_value, wipe_bytes, wipe_tail, write_wrapped_byte, write_wrapped_bytes,
 };
 
 impl<A, const PAD: bool> Engine<A, PAD>
@@ -100,7 +100,7 @@ where
 
     /// Encodes `input` into `output`, returning the number of bytes written.
     pub fn encode_slice(&self, input: &[u8], output: &mut [u8]) -> Result<usize, EncodeError> {
-        scalar::encode_slice::<A, PAD>(input, output)
+        encode_backend::encode_slice::<A, PAD>(input, output)
     }
 
     /// Encodes `input` into `output` with line wrapping.
