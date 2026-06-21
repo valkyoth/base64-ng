@@ -55,6 +55,9 @@
   conservative tail wiping, `DecodedBuffer` clone duplication, public-length
   `subtle` comparisons, strict decode error logging, AArch64/RISC-V deployment
   policy checks, and wrapped in-place decode retention behavior.
+- Updated the roadmap to record `v1.1.3` and `v1.1.4` checkpoint scope and to
+  spell out the remaining active encode-dispatch admission work before a
+  future `1.2.0` family release.
 
 ## 1.1.0 - 2026-06-20
 

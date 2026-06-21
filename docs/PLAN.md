@@ -657,14 +657,36 @@ Current `1.1.x` checkpoint state:
 - `1.1.2`: added the optional `base64-ng-subtle` companion crate and tightened
   SIMD prototype cleanup evidence, including inline AArch64 NEON register
   cleanup for the test-only prototype path.
-- Next `1.1.x` checkpoints: refresh documentation and machine gates so
-  release evidence consistently distinguishes real non-dispatchable prototypes
-  from admitted active backends, then run pentest/CI/Kani on the candidate
-  before tagging the next GitHub checkpoint. Do not publish additional
-  crates.io versions for this line unless a user-impacting fix requires it.
+- `1.1.3`: refreshed the SIMD roadmap, admission manifest, and backend
+  evidence output so all current encode backends are consistently described as
+  real non-dispatchable prototypes while active runtime dispatch remains
+  scalar-only.
+- `1.1.4`: hardened release and audit posture without changing runtime
+  behavior. The publish helper now requires a verified signed `v<version>` tag
+  before real crates.io publishing, and high-assurance docs now spell out
+  wrapped in-place retention, strict-error logging, `DecodedBuffer` cloning,
+  public-length `subtle` comparison, and AArch64/RISC-V deployment posture.
+- Next `1.1.x` checkpoints, if needed, should be release-candidate hardening
+  only: fix real pentest or CI findings, refresh evidence scripts, or improve
+  documentation. Do not publish additional crates.io versions for this line
+  unless a user-impacting fix requires it.
 
 Remaining before `1.2.0` active encode dispatch can be considered:
 
+- Decide which encode backend, if any, is admitted first. The conservative
+  first admission candidate is std-only x86/x86_64 encode dispatch for
+  Standard and URL-safe alphabets, because runtime CPU feature detection is
+  available through `std::is_x86_feature_detected!`. NEON, wasm `simd128`,
+  AVX-512, custom alphabets, and all decode acceleration may remain
+  real-but-non-dispatchable if their evidence is not complete.
+- Wire the admitted backend into the full public encode path:
+  `Engine::encode_slice`, `encode_slice_clear_tail`, alloc encode helpers, and
+  in-place encode where applicable. Scalar must remain the reference for tails,
+  padding, line wrapping, legacy profiles, and custom alphabets unless a
+  specific accelerated path is separately admitted.
+- Add runtime fallback tests proving unsupported CPUs execute scalar code
+  without illegal instructions and that runtime reports name the active backend
+  only when an admitted backend is actually selected.
 - Keep `active_backend()` returning scalar and keep `ActiveBackend` without
   accelerated variants until the admission manifest is updated in the same
   commit as the admitted dispatch code.
@@ -682,8 +704,9 @@ Remaining before `1.2.0` active encode dispatch can be considered:
   that admits any backend.
 - Keep `no_std` acceleration disabled unless a future unsafe caller-contract
   API is designed, reviewed, and separately admitted.
-- Publish the next crates.io family sync as `1.2.0` only after the `1.1.x`
-  checkpoint tags and user testing remain clean.
+- Sync all workspace crate versions and publish the next crates.io family
+  release as `1.2.0` only after the `1.1.x` checkpoint tags, pentest,
+  GitHub CI, Kani, and release evidence remain clean.
 
 After `1.2.0`:
 
