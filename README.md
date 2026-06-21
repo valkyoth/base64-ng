@@ -30,6 +30,10 @@ The crate starts conservative: a small scalar implementation, strict RFC 4648 be
 ## Current Status
 
 The current public release is `1.1.0`.
+Post-`1.1.0` GitHub checkpoint tags in the `1.1.x` line are evidence and
+integration milestones toward `1.2.0`; they keep active runtime dispatch
+scalar-only and are not intended as crates.io publishes unless a user-impacting
+fix requires it.
 
 Implemented now:
 
