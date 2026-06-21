@@ -17,19 +17,22 @@ weakening the scalar trust base.
 
 The SIMD roadmap separates implementation evidence from active acceleration:
 
-- `1.1.x` is the SIMD encode foundation series. It may contain real
-  fixed-block encode prototypes for SSSE3/SSE4.1, AVX2, AVX-512 VBMI, NEON,
-  and wasm `simd128`, plus scalar-equivalence tests, generated assembly
-  evidence, register-cleanup review, fuzz expansion, and admission-tooling
-  updates. These releases must remain non-dispatchable: `active_backend()`
-  stays scalar, and release notes must not claim user-visible acceleration.
-  GitHub checkpoint tags in this line may move evidence forward without a
-  matching crates.io publish; the next planned crates.io family sync is
-  `1.2.0`.
-- `1.2.0` is the first release that may activate encode acceleration. It may
-  admit std-only runtime dispatch for the encode backends whose evidence is
-  complete in that release. Backends without complete evidence remain
-  candidate-only. The draft package for that decision lives in
+- `1.1.x` is the SIMD encode foundation and admission-candidate series. Early
+  checkpoints contain real fixed-block encode prototypes for SSSE3/SSE4.1,
+  AVX2, AVX-512 VBMI, NEON, and wasm `simd128`, plus scalar-equivalence tests,
+  generated assembly evidence, register-cleanup review, fuzz expansion, and
+  admission-tooling updates. Later checkpoints wire admitted encode backends
+  into public encode APIs while keeping each checkpoint gated by pentest, CI,
+  and release evidence. GitHub checkpoint tags in this line may move evidence
+  forward without a matching crates.io publish; the next planned crates.io
+  family sync is `1.2.0`.
+- `1.2.0` is the release where encode acceleration must be fully working for
+  the admitted encode scope. Public encode APIs must dispatch to admitted
+  encode backends when runtime policy and CPU features allow it, and must fall
+  back to scalar for unsupported CPUs, `no_std`, custom alphabets unless
+  separately admitted, wrapping, legacy profiles, tails, and padding. Backends
+  without complete evidence remain real non-dispatchable prototypes. The draft
+  package for that decision lives in
   [SIMD_ENCODE_ADMISSION_DRAFT.md](SIMD_ENCODE_ADMISSION_DRAFT.md).
 - After `1.2.0`, pause feature work for a short soak period so users can report
   platform-specific encode regressions before decode acceleration work starts.

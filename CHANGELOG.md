@@ -58,6 +58,9 @@
 - Updated the roadmap to record `v1.1.3` and `v1.1.4` checkpoint scope and to
   spell out the remaining active encode-dispatch admission work before a
   future `1.2.0` family release.
+- Expanded the SIMD roadmap so `1.2.0` explicitly means fully working encode
+  acceleration for the admitted encode scope, with planned `1.1.5` through
+  `1.1.12` checkpoints leading to that release.
 
 ## 1.1.0 - 2026-06-20
 

@@ -638,13 +638,13 @@ Recommended `1.0.x` source-layout sequence:
 
 The recommended post-`1.0` SIMD path is incremental. Minor versions should
 mean something visible to users: `1.1.x` is the non-accelerated SIMD encode
-evidence series, `1.2.0` is the first release that may activate encode
-acceleration if the evidence is complete, `1.2.x` is the non-accelerated SIMD
-decode evidence series, and `1.3.0` is the first release that may activate both
-encode and decode acceleration if the decode evidence is complete. After each
-active-acceleration minor release, pause feature work for a short soak period
-so users can report platform-specific regressions before the next acceleration
-line begins.
+evidence and integration series, `1.2.0` is the release where encode
+acceleration must be fully working for the admitted encode scope, `1.2.x` is
+the non-accelerated SIMD decode evidence series, and `1.3.0` is the first
+release that may activate both encode and decode acceleration if the decode
+evidence is complete. After each active-acceleration minor release, pause
+feature work for a short soak period so users can report platform-specific
+regressions before the next acceleration line begins.
 
 Current `1.1.x` checkpoint state:
 
@@ -666,47 +666,64 @@ Current `1.1.x` checkpoint state:
   before real crates.io publishing, and high-assurance docs now spell out
   wrapped in-place retention, strict-error logging, `DecodedBuffer` cloning,
   public-length `subtle` comparison, and AArch64/RISC-V deployment posture.
-- Next `1.1.x` checkpoints, if needed, should be release-candidate hardening
-  only: fix real pentest or CI findings, refresh evidence scripts, or improve
-  documentation. Do not publish additional crates.io versions for this line
-  unless a user-impacting fix requires it.
 
-Remaining before `1.2.0` active encode dispatch can be considered:
+Planned checkpoints to reach `1.2.0` fully working encode acceleration:
 
-- Decide which encode backend, if any, is admitted first. The conservative
-  first admission candidate is std-only x86/x86_64 encode dispatch for
-  Standard and URL-safe alphabets, because runtime CPU feature detection is
-  available through `std::is_x86_feature_detected!`. NEON, wasm `simd128`,
-  AVX-512, custom alphabets, and all decode acceleration may remain
-  real-but-non-dispatchable if their evidence is not complete.
-- Wire the admitted backend into the full public encode path:
+- `1.1.5`: add the public encode-dispatch integration layer while keeping the
+  selected backend forced to scalar. This checkpoint should route
   `Engine::encode_slice`, `encode_slice_clear_tail`, alloc encode helpers, and
-  in-place encode where applicable. Scalar must remain the reference for tails,
-  padding, line wrapping, legacy profiles, and custom alphabets unless a
-  specific accelerated path is separately admitted.
-- Add runtime fallback tests proving unsupported CPUs execute scalar code
-  without illegal instructions and that runtime reports name the active backend
-  only when an admitted backend is actually selected.
-- Keep `active_backend()` returning scalar and keep `ActiveBackend` without
-  accelerated variants until the admission manifest is updated in the same
-  commit as the admitted dispatch code.
-- Run the complete scalar differential, fuzz, Miri, Kani, dudect-style,
-  generated assembly, backend evidence, unsafe-boundary, panic-policy,
-  dependency, package, and release metadata gates on the exact release
-  candidate.
-- Produce per-backend hardware evidence for any backend considered for active
-  dispatch. A backend may stay real-but-non-dispatchable in `1.2.0` if its
-  hardware evidence is incomplete.
-- Produce benchmark evidence with hardware, OS, Rust version, feature flags,
-  command, raw output, scalar baseline, and exact admitted backend names.
-- Update `docs/SIMD_ADMISSION.md`, runtime report expectations, release notes,
-  unsafe inventory, benchmark docs, and the release script in the same change
-  that admits any backend.
-- Keep `no_std` acceleration disabled unless a future unsafe caller-contract
-  API is designed, reviewed, and separately admitted.
-- Sync all workspace crate versions and publish the next crates.io family
-  release as `1.2.0` only after the `1.1.x` checkpoint tags, pentest,
-  GitHub CI, Kani, and release evidence remain clean.
+  in-place encode through one audited encode backend boundary, then prove the
+  boundary is behavior-preserving against scalar for all existing encode
+  profiles.
+- `1.1.6`: admit std-only x86/x86_64 SSSE3/SSE4.1 encode dispatch for Standard
+  and URL-safe alphabets if scalar parity, fallback, generated assembly,
+  unsafe inventory, and runtime-report evidence are complete. Unsupported CPUs,
+  custom alphabets, tails, wrapping, legacy profiles, and `no_std` builds must
+  remain scalar.
+- `1.1.7`: admit std-only x86/x86_64 AVX2 encode dispatch with the same public
+  API coverage and fallback requirements. Runtime priority must be explicit
+  and tested, for example AVX2 above SSSE3/SSE4.1 when both are available.
+- `1.1.8`: admit AVX-512 VBMI encode dispatch only if hardware evidence,
+  generated assembly, register cleanup, fallback behavior, and benchmark data
+  are complete. If AVX-512 evidence is incomplete, keep AVX-512 as a real
+  non-dispatchable prototype rather than blocking `1.2.0`.
+- `1.1.9`: admit AArch64 NEON encode dispatch for Standard and URL-safe
+  alphabets only if hardware evidence from real AArch64 machines, generated
+  assembly review, register cleanup review, and platform fallback behavior are
+  complete. Otherwise keep NEON non-dispatchable and ship `1.2.0` with x86
+  encode acceleration only.
+- `1.1.10`: decide the wasm `simd128` encode posture. Because wasm runtime/JIT
+  behavior is outside the crate's control, wasm may remain compile-evidence
+  only unless a specific runtime and deployment profile is admitted. Do not
+  let wasm block `1.2.0` unless the project explicitly decides that wasm encode
+  acceleration is part of the `1.2.0` scope.
+- `1.1.11`: full encode release-candidate hardening. Run fuzz/dudect/perf,
+  generated assembly, backend evidence, Miri, Kani, unsafe-boundary,
+  panic-policy, no-alloc, target-matrix, macOS, and package checks against the
+  exact candidate. Update benchmarks and release notes with only the backends
+  actually admitted.
+- `1.1.12`: version-sync and publish rehearsal. Set all workspace crates to
+  `1.2.0`, update `release-crates.toml`, verify signed-tag publish gating,
+  run `scripts/stable_release_gate.sh release`, run pentest, wait for GitHub
+  green, then tag the release candidate.
+
+`1.2.0` acceptance criteria:
+
+- Encode acceleration is active for every backend explicitly admitted in
+  `docs/SIMD_ADMISSION.md`.
+- The public encode APIs are fully wired: `encode_slice`,
+  `encode_slice_clear_tail`, alloc helpers, and applicable in-place encode.
+- Scalar fallback remains correct for unsupported CPUs, `no_std`, custom
+  alphabets unless separately admitted, line wrapping, legacy profiles, tails,
+  and padding.
+- Runtime reports identify active accelerated encode backends only when they
+  are actually selected; otherwise they report scalar active execution.
+- Benchmarks, generated assembly, unsafe inventory, release notes, and
+  admission manifest name the exact active encode backends. No release note may
+  imply decode acceleration.
+- All workspace crates are version-synced and published as the `1.2.0` family
+  only after pentest, GitHub CI, Kani, full release gate, and signed-tag checks
+  pass.
 
 After `1.2.0`:
 
