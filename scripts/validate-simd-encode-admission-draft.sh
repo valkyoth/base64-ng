@@ -11,7 +11,8 @@ test -s "$simd_doc"
 
 for required_text in \
     "It is not an admission record" \
-    "remains scalar-only" \
+    "SSSE3/SSE4.1 encode is already admitted" \
+    "every additional backend or broader API surface remains pending" \
     "Decode acceleration" \
     "x86/x86_64 runtime dispatch only" \
     "Unsupported CPUs must execute scalar code without illegal instructions" \
@@ -69,13 +70,13 @@ do
     fi
 done
 
-if ! grep -F -q "Admitted backends: none." "$manifest"; then
-    echo "simd encode admission draft: manifest must still report no admitted backends" >&2
+if ! grep -F -q "Admitted backends: SSSE3/SSE4.1 encode" "$manifest"; then
+    echo "simd encode admission draft: manifest must report the admitted SSSE3/SSE4.1 encode backend" >&2
     exit 1
 fi
 
-if ! grep -F -q "Active backend: scalar only." "$manifest"; then
-    echo "simd encode admission draft: manifest must still report scalar-only active backend" >&2
+if ! grep -F -q "Active backend: SSSE3/SSE4.1 encode" "$manifest"; then
+    echo "simd encode admission draft: manifest must report SSSE3/SSE4.1 encode active-backend scope" >&2
     exit 1
 fi
 

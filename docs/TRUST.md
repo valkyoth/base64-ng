@@ -11,9 +11,9 @@ stable release.
 | Runtime dependencies | Zero external crates in the core package; optional companion crates are separate opt-in packages | `scripts/validate-dependencies.sh`, `scripts/check_companion_crates.sh` |
 | Default dev dependencies | Zero external crates | `Cargo.toml` |
 | Optional runtime features | `alloc`, `std`, `stream`; `allow-wasm32-best-effort-wipe` explicit wasm cleanup-limit acceptance; `allow-compiler-fence-only-wipe` explicit unsupported-native cleanup-limit acceptance; reserved `simd`, `tokio`, `kani`, `fuzzing`. AArch64 CSDB attestation uses custom cfg `base64_ng_aarch64_csdb_attested`, not a feature. | `Cargo.toml`, `scripts/check_reserved_features.sh`, `scripts/check_wasm_wipe_policy.sh` |
-| Unsafe policy | Scalar encode/decode remains safe Rust; audited unsafe is limited to volatile wiping, constant-time comparison, CT alphabet scan and result-gate barriers, and test-only SIMD prototypes; runtime unsafe-boundary reports are conservative and mark SIMD-enabled builds as not high-assurance-boundary-enforced | `src/cleanup.rs`, `src/ct/`, `src/simd/`, `docs/UNSAFE.md` |
-| Active backend | Scalar only | `runtime::backend_report()` tests |
-| SIMD status | Reserved prototypes only; no accelerated backend admitted | `docs/SIMD.md` |
+| Unsafe policy | Scalar encode/decode remains safe Rust; audited unsafe is limited to volatile wiping, constant-time comparison, CT alphabet scan and result-gate barriers, and the reviewed SIMD boundary; runtime unsafe-boundary reports are conservative and mark SIMD-enabled builds as not high-assurance-boundary-enforced | `src/cleanup.rs`, `src/ct/`, `src/simd/`, `docs/UNSAFE.md` |
+| Active backend | Scalar by default; std x86/x86_64 SSSE3/SSE4.1 encode when `simd` is enabled and runtime CPU probing passes | `runtime::backend_report()` tests |
+| SIMD status | SSSE3/SSE4.1 encode admitted for Standard and URL-safe alphabet families; AVX2, AVX-512, NEON, wasm, custom-alphabet, in-place, and decode acceleration remain prototype-only or scalar | `docs/SIMD.md` |
 | Strict decoding | Default behavior rejects whitespace, mixed alphabets, malformed padding, and non-canonical trailing bits | integration tests |
 | Legacy compatibility | Explicit opt-in APIs only | `decode_slice_legacy`, `validate_legacy` |
 | Constant-time API | Constant-time-oriented scalar validation/decode and equal-length redacted-buffer comparison helpers exist with isolated dudect-style timing evidence; no formal cryptographic constant-time guarantee | `docs/CONSTANT_TIME.md`, `docs/DUDECT.md` |
@@ -65,7 +65,7 @@ without `std`-equivalent runtime probing.
 
 - formally verified cryptographic constant-time behavior
 - formal zeroization of all historical memory copies
-- an active hardware-accelerated backend
+- AVX2, AVX-512, NEON, wasm, custom-alphabet, in-place, or decode acceleration
 - async/Tokio support
 - serde or bytes integration
 - Kani-complete whole-crate formal verification

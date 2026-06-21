@@ -6,18 +6,15 @@
 //! `unsafe_code` lint. Keep all future architecture-specific intrinsics behind
 //! this boundary, with a local safety explanation for every unsafe block.
 //!
-//! The module intentionally contains no accelerated backend yet. The `simd`
-//! feature remains a compile-time reservation until AVX-512, AVX2,
-//! SSSE3/SSE4.1, NEON, and wasm `simd128` paths have scalar differential
-//! tests, fuzz coverage, and benchmark evidence.
+//! The module admits only the std `x86`/`x86_64` SSSE3/SSE4.1 encode backend
+//! for Standard and URL-safe alphabet families. All decode paths, custom
+//! alphabets, `no_std` builds, and every other SIMD candidate still execute
+//! through the scalar implementation.
 //!
-//! The fixed-block prototypes below are test-only and non-dispatchable. The
-//! x86 prototypes contain real fixed-block encode logic, the `AArch64` NEON
-//! prototype contains real fixed-block encode logic for Standard and URL-safe
-//! alphabets, and the wasm `simd128` prototype contains real fixed-block encode
-//! logic for Standard and URL-safe alphabets. The 32-bit ARM NEON path remains
-//! scalar-equivalence scaffolding. None of these prototypes are reachable from
-//! runtime backend selection.
+//! The x86 SSSE3/SSE4.1 fixed-block encoder is reachable from runtime encode
+//! dispatch on std builds after runtime CPU probing. The AVX-512, AVX2, NEON,
+//! and wasm `simd128` fixed-block implementations remain prototype evidence
+//! and are not reachable from runtime backend selection.
 
 #[cfg(all(
     test,
@@ -35,7 +32,14 @@ use core::arch::aarch64::{
 };
 #[cfg(all(test, target_arch = "arm", target_feature = "neon"))]
 use core::arch::arm::{uint8x16_t, vdupq_n_u8, vst1q_u8};
-#[cfg(all(test, any(target_arch = "x86", target_arch = "x86_64")))]
+#[cfg(any(
+    all(test, any(target_arch = "x86", target_arch = "x86_64")),
+    all(
+        feature = "std",
+        feature = "simd",
+        any(target_arch = "x86", target_arch = "x86_64")
+    )
+))]
 mod x86;
 #[cfg(all(test, any(target_arch = "x86", target_arch = "x86_64")))]
 pub(super) use x86::{encode_12_bytes_ssse3_sse41, encode_24_bytes_avx2, encode_48_bytes_avx512};
@@ -47,6 +51,9 @@ mod wasm;
 pub(crate) enum ActiveBackend {
     /// The audited scalar implementation.
     Scalar,
+    /// std `x86`/`x86_64` SSSE3/SSE4.1 encode backend.
+    #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
+    Ssse3Sse41,
 }
 
 /// SIMD candidate detected for the current target.
@@ -74,15 +81,23 @@ pub(crate) enum Candidate {
 /// Returns the backend that is allowed to execute for this build.
 #[must_use]
 pub(crate) fn active_backend() -> ActiveBackend {
-    let _candidate = detected_candidate();
+    #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
+    {
+        if ssse3_sse41_available() {
+            return ActiveBackend::Ssse3Sse41;
+        }
+    }
+
+    let _ = detected_candidate();
     ActiveBackend::Scalar
 }
 
 /// Returns the fastest SIMD candidate visible to this build.
 ///
-/// Candidate detection is intentionally separate from activation. Until an
-/// accelerated backend has differential tests and benchmark evidence, detected
-/// SIMD support must still execute through [`ActiveBackend::Scalar`].
+/// Candidate detection is intentionally separate from activation. SSSE3/SSE4.1
+/// encode may be active on std `x86`/`x86_64` builds. Other detected SIMD
+/// support still executes through scalar code until its own admission evidence
+/// is complete.
 #[must_use]
 pub(crate) fn detected_candidate() -> Candidate {
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
@@ -116,6 +131,13 @@ pub(crate) fn detected_candidate() -> Candidate {
 
     Candidate::Scalar
 }
+
+#[cfg(all(
+    feature = "std",
+    feature = "simd",
+    any(target_arch = "x86", target_arch = "x86_64")
+))]
+pub(crate) use x86::{encode_slice_ssse3_sse41, ssse3_sse41_supports_alphabet};
 
 #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
 fn avx512_vbmi_base64_available() -> bool {

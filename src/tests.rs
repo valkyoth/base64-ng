@@ -1,5 +1,15 @@
 use super::*;
 
+struct DispatchFallbackAlphabet;
+
+impl Alphabet for DispatchFallbackAlphabet {
+    const ENCODE: [u8; 64] = *b"./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+    fn decode(byte: u8) -> Option<u8> {
+        decode_alphabet_byte(byte, &Self::ENCODE)
+    }
+}
+
 fn fill_pattern(output: &mut [u8], seed: usize) {
     for (index, byte) in output.iter_mut().enumerate() {
         let value = (index * 73 + seed * 19) % 256;
@@ -125,6 +135,8 @@ fn backend_dispatch_matches_scalar_reference_for_canonical_inputs() {
         assert_backend_round_trip_matches_scalar::<Standard, false>(input);
         assert_backend_round_trip_matches_scalar::<UrlSafe, true>(input);
         assert_backend_round_trip_matches_scalar::<UrlSafe, false>(input);
+        assert_backend_round_trip_matches_scalar::<DispatchFallbackAlphabet, true>(input);
+        assert_backend_round_trip_matches_scalar::<DispatchFallbackAlphabet, false>(input);
     }
 }
 
@@ -211,17 +223,33 @@ fn ct_padded_final_quantum_fails_closed_for_invalid_padding_count() {
 
 #[cfg(feature = "simd")]
 #[test]
-fn simd_dispatch_scaffold_keeps_scalar_active() {
-    assert_eq!(simd::active_backend(), simd::ActiveBackend::Scalar);
-    let _candidate = simd::detected_candidate();
+fn simd_dispatch_uses_only_admitted_backends() {
+    match simd::active_backend() {
+        simd::ActiveBackend::Scalar => {}
+        #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
+        simd::ActiveBackend::Ssse3Sse41 => {
+            assert!(matches!(
+                simd::detected_candidate(),
+                simd::Candidate::Ssse3Sse41 | simd::Candidate::Avx2 | simd::Candidate::Avx512Vbmi
+            ));
+        }
+    }
 }
 
 #[test]
-fn encode_backend_boundary_keeps_scalar_active() {
-    assert_eq!(
-        encode_backend::active_encode_backend(),
-        encode_backend::EncodeBackend::Scalar
-    );
+fn encode_backend_boundary_uses_only_admitted_backends() {
+    match encode_backend::active_encode_backend() {
+        encode_backend::EncodeBackend::Scalar => {}
+        #[cfg(all(
+            feature = "simd",
+            feature = "std",
+            any(target_arch = "x86", target_arch = "x86_64")
+        ))]
+        encode_backend::EncodeBackend::Ssse3Sse41 => {
+            assert!(simd::ssse3_sse41_supports_alphabet::<Standard>());
+            assert!(simd::ssse3_sse41_supports_alphabet::<UrlSafe>());
+        }
+    }
 }
 
 #[test]

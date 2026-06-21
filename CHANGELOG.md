@@ -2,9 +2,19 @@
 
 ## Unreleased
 
+- Admitted std `x86`/`x86_64` SSSE3/SSE4.1 encode dispatch for Standard and
+  URL-safe alphabet families. The admitted path processes fixed 12-byte blocks
+  with vector code after runtime CPU probing and falls back to scalar for
+  unsupported CPUs, `no_std`, custom alphabets, tails, padding, in-place encode,
+  and every decode path.
+- Updated runtime reporting, backend evidence, SIMD admission validation,
+  unsafe inventory, and user documentation so SSSE3/SSE4.1 encode is reported
+  as an admitted backend while AVX2, AVX-512 VBMI, NEON, wasm `simd128`,
+  custom-alphabet, in-place, and decode acceleration remain prototype-only or
+  scalar.
 - Added a real non-dispatchable AVX-512 VBMI fixed-block encode prototype that
   uses the provided alphabet table for all alphabets. The prototype remains
-  test-only and active runtime backend selection remains scalar-only.
+  test-only and is not reachable from runtime backend selection.
 - Added AVX-512 SIMD equivalence coverage for patterned blocks, all 64 emitted
   six-bit Base64 values, and a non-standard custom alphabet.
 - Added `scripts/generate_simd_asm_evidence.sh` to capture release
@@ -19,12 +29,12 @@
   Standard and URL-safe alphabets. Custom alphabets remain on the scalar
   scaffold path because portable wasm SIMD has no direct 64-byte lookup.
 - Added wasm `simd128` test-binary compile evidence to the SIMD feature-bundle
-  check while keeping wasm cleanup/JIT caveats and scalar-only runtime dispatch.
+  check while keeping wasm cleanup/JIT caveats and scalar runtime dispatch.
 - Hardened SIMD admission tooling and backend evidence manifests to distinguish
   real non-dispatchable prototypes from admitted active backends.
 - Added a draft SIMD encode admission package for future `1.2.0` activation,
   including runtime-report expectations, benchmark record shape, and release
-  note wording rules while keeping `1.1.x` scalar-only.
+  note wording rules for the remaining encode backends.
 - Added `scripts/validate-simd-encode-admission-draft.sh` and wired it into the
   standard checks so the future encode-dispatch admission contract remains
   packaged and machine-checked.
@@ -37,8 +47,8 @@
 - Inlined the test-only AArch64 NEON register cleanup macro into the prototype
   path so callee-saved `v8..v15` are not restored by a separate helper frame.
 - Added a real non-dispatchable AVX2 fixed-block encode prototype for Standard
-  and URL-safe alphabets. The prototype remains test-only and active runtime
-  backend selection remains scalar-only.
+  and URL-safe alphabets. The prototype remains test-only and is not reachable
+  from runtime backend selection.
 - Added AVX2 SIMD equivalence coverage for patterned blocks, all 64 emitted
   six-bit Base64 values, and custom alphabets that must fall back to scalar
   encoding.
@@ -46,8 +56,7 @@
   prototypes, including staged stack-copy wiping and vector-register cleanup.
 - Refreshed the SIMD roadmap, admission manifest, and backend evidence output
   so `1.1.x` checkpoint tags consistently describe the current state as real
-  non-dispatchable prototype evidence while active runtime dispatch remains
-  scalar-only until a future `1.2.0` admission package.
+  non-dispatchable prototype evidence for backends that are not yet admitted.
 - Hardened the workspace publish helper so real crates.io publishing requires
   `HEAD` to match a verified signed `v<version>` tag, and documented the
   `git tag -v` release check.
@@ -63,8 +72,7 @@
   `1.1.12` checkpoints leading to that release.
 - Added a scalar-forced encode backend boundary and routed public slice,
   clear-tail, wrapped, alloc, and in-place encode paths through it, giving
-  future SIMD encode admission one audited integration point while preserving
-  scalar-only runtime behavior.
+  future SIMD encode admission one audited integration point.
 - Added the matching scalar-forced decode backend boundary for future decode
   admission symmetry, changed the scalar in-place encode invariant to return an
   error instead of panicking in release builds, tightened panic-policy scanning

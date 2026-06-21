@@ -179,9 +179,9 @@ mod simd;
 
 /// Runtime backend reporting for security-sensitive deployments.
 ///
-/// This module does not enable acceleration. It exposes the backend posture so
-/// callers can log, assert, or audit whether execution is scalar-only or merely
-/// detecting future SIMD candidates.
+/// This module exposes backend posture so callers can log, assert, or audit
+/// whether execution is scalar-only, using an admitted encode backend, or
+/// merely detecting future SIMD candidates.
 pub mod runtime;
 
 #[cfg(feature = "stream")]

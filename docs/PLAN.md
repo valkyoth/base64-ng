@@ -674,14 +674,15 @@ Current `1.1.x` checkpoint state:
   Follow-up review also added the matching scalar-forced decode backend
   boundary so future decode acceleration has a symmetric admission point, and
   tightened panic-policy checks for production `assert_eq!`/`assert_ne!` sites.
+- `1.1.6`: admitted std-only x86/x86_64 SSSE3/SSE4.1 encode dispatch for
+  Standard and URL-safe alphabet families. The active path uses runtime CPU
+  probing, fixed 12-byte vector blocks, XMM cleanup, and scalar fallback for
+  unsupported CPUs, `no_std`, custom alphabets, tails, padding, in-place encode,
+  and decode. Runtime reports and admission evidence now identify
+  SSSE3/SSE4.1 encode as the admitted backend.
 
 Planned checkpoints to reach `1.2.0` fully working encode acceleration:
 
-- `1.1.6`: admit std-only x86/x86_64 SSSE3/SSE4.1 encode dispatch for Standard
-  and URL-safe alphabets if scalar parity, fallback, generated assembly,
-  unsafe inventory, and runtime-report evidence are complete. Unsupported CPUs,
-  custom alphabets, tails, wrapping, legacy profiles, and `no_std` builds must
-  remain scalar.
 - `1.1.7`: admit std-only x86/x86_64 AVX2 encode dispatch with the same public
   API coverage and fallback requirements. Runtime priority must be explicit
   and tested, for example AVX2 above SSSE3/SSE4.1 when both are available.

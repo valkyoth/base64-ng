@@ -187,12 +187,12 @@ do
 done
 
 for required_trust_text in \
-    "Runtime dependencies | Zero external crates" \
-    "Active backend | Scalar only" \
-    "no formal cryptographic constant-time guarantee" \
-    "formally verified cryptographic constant-time behavior" \
-    "an active hardware-accelerated backend" \
-    "async/Tokio support" \
+	"Runtime dependencies | Zero external crates" \
+	"Active backend | Scalar by default; std x86/x86_64 SSSE3/SSE4.1 encode" \
+	"no formal cryptographic constant-time guarantee" \
+	"formally verified cryptographic constant-time behavior" \
+	"AVX2, AVX-512, NEON, wasm, custom-alphabet, in-place, or decode acceleration" \
+	"async/Tokio support" \
     "serde or bytes integration"
 do
     if ! grep -q "$required_trust_text" docs/TRUST.md; then
@@ -257,10 +257,10 @@ done
 
 case "$cargo_version" in
     *-*)
-        required_readme_simd_status="development remains scalar-only unless that full evidence package lands"
+        required_readme_simd_status="Runtime-dispatched std \`x86\`/\`x86_64\` SSSE3/SSE4.1 fixed-block encode"
         ;;
     *)
-        required_readme_simd_status="release remains scalar-only"
+        required_readme_simd_status="Scalar by default; std x86/x86_64 SSSE3/SSE4.1 encode"
         ;;
 esac
 

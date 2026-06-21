@@ -114,10 +114,10 @@ require_pattern "$output_dir/base64_ng-avx512-vbmi-test.s" "vzeroupper" "AVX upp
     checksum_file "$output_dir/base64_ng-avx512-vbmi-test.s"
     echo
     echo "review focus:"
-    echo "- SSSE3/SSE4.1 prototype contains byte shuffle and XMM operations"
+    echo "- SSSE3/SSE4.1 admitted encode path contains byte shuffle, XMM operations, and XMM cleanup"
     echo "- AVX2 prototype contains byte shuffle, YMM operations, and vzeroupper"
     echo "- AVX-512 prototype contains VBMI byte permute, ZMM operations, ZMM cleanup, and vzeroupper"
-    echo "- These artifacts are inactive prototype evidence only; runtime dispatch remains scalar-only"
+    echo "- SSSE3/SSE4.1 encode is admitted for std x86/x86_64 Standard and URL-safe alphabets; AVX2 and AVX-512 artifacts remain inactive prototype evidence only"
 } >"$manifest"
 
 echo "simd asm evidence: wrote $output_dir"

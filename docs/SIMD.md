@@ -1,13 +1,13 @@
 # SIMD Admission Policy
 
-`base64-ng` is intentionally scalar-only throughout the `1.1.x` line. Future SIMD
-dispatch remains gated unless a complete SIMD admission evidence package lands
-in a later release series. The crate uses `#![deny(unsafe_code)]` and permits
+`base64-ng` is scalar by default and admits only one conservative accelerated
+path in the `1.1.x` line: std `x86`/`x86_64` SSSE3/SSE4.1 encode for Standard
+and URL-safe alphabet families. Future SIMD dispatch remains gated unless a
+complete SIMD admission evidence package lands in the same release commit as
+the active backend change. The crate uses `#![deny(unsafe_code)]` and permits
 reviewed `allow(unsafe_code)` exceptions only for audited cleanup in
 `src/cleanup.rs`, CT comparison, byte accumulation, CT scan, and CT result-gate
-helpers in `src/ct/`, and the private `src/simd/` boundary. The `simd` feature
-remains reserved until architecture-specific code has enough evidence to
-justify enabling it.
+helpers in `src/ct/`, and the private `src/simd/` boundary.
 
 This is a security decision, not a rejection of hardware acceleration. SIMD
 must be added only when it can be isolated, tested, and reviewed without
@@ -32,6 +32,11 @@ The SIMD roadmap separates implementation evidence from active acceleration:
   wrapped helpers, and in-place encode. The same checkpoint also adds a
   scalar-forced decode backend boundary for symmetry; decode acceleration
   remains out of scope until the later decode line.
+- `1.1.6` admits std `x86`/`x86_64` SSSE3/SSE4.1 encode dispatch for Standard
+  and URL-safe alphabet families. It processes fixed 12-byte blocks with vector
+  code after runtime CPU probing. Scalar remains the fallback for unsupported
+  CPUs, `no_std`, custom alphabets, tails, padding, in-place encode, wrapped
+  encode paths that select scalar fallback, and every decode path.
 - `1.2.0` is the release where encode acceleration must be fully working for
   the admitted encode scope. Public encode APIs must dispatch to admitted
   encode backends when runtime policy and CPU features allow it, and must fall
@@ -62,11 +67,12 @@ runtime behavior for that line.
   confined to the reviewed cleanup, CT, and SIMD helper files.
 - `docs/UNSAFE.md` inventories every current unsafe site and its invariants.
 - The scalar implementation is the reference behavior.
-- Encode and decode entry points already pass through an internal backend
-  boundary, currently backed only by the scalar implementation.
+- Encode and decode entry points pass through internal backend boundaries.
+  Decode and in-place encode are still backed only by the scalar implementation.
 - With the `simd` feature enabled, the private dispatch scaffold detects
-  AVX-512 VBMI, AVX2, SSSE3/SSE4.1, NEON, and wasm `simd128` candidates but
-  still activates only the scalar backend.
+  AVX-512 VBMI, AVX2, SSSE3/SSE4.1, NEON, and wasm `simd128` candidates.
+  Only std `x86`/`x86_64` SSSE3/SSE4.1 encode can become active; all other
+  candidates still execute scalar code.
 - AVX-512 VBMI detection is reporting-only until the implementation has full
   admission evidence. Detection requires the planned feature bundle:
   `avx512f`, `avx512bw`, `avx512vl`, and `avx512vbmi`.
@@ -86,15 +92,13 @@ runtime behavior for that line.
   compile-time target features.
 - Runtime backend reports expose `snapshot()` for structured audit logging
   without parsing formatted strings.
-- SSSE3/SSE4.1 detection is reporting-only until an implementation has scalar
-  differential tests, fuzz coverage, and benchmark evidence.
-- An inactive SSSE3/SSE4.1 fixed-block encode prototype exists behind the SIMD
-  boundary as real non-dispatchable vector encode evidence for Standard and
-  URL-safe alphabets. It uses SSSE3 byte shuffling, SSE lane shifts/masks, and
-  SSE4.1 byte blending for fixed 12-byte input blocks, then clears XMM
-  registers before returning. It is tested against scalar output only when
-  SSSE3/SSE4.1 is available and is not reachable from runtime backend
-  selection.
+- SSSE3/SSE4.1 encode is admitted for std `x86`/`x86_64` Standard and
+  URL-safe alphabet families. It uses SSSE3 byte shuffling, SSE lane
+  shifts/masks, and SSE4.1 byte blending for fixed 12-byte input blocks, then
+  clears XMM registers before returning. Runtime dispatch uses
+  `std::is_x86_feature_detected!`; unsupported CPUs execute scalar code.
+  Custom alphabets, tails, padding, `no_std`, in-place encode, and decode stay
+  scalar.
 - An inactive AVX2 fixed-block encode prototype exists behind the SIMD boundary
   as real non-dispatchable vector encode evidence for Standard and URL-safe
   alphabets. It uses AVX2 lane-local byte shuffling, vector shifts/masks, and
@@ -106,7 +110,8 @@ runtime behavior for that line.
   URL-safe alphabets. It uses NEON table lookup, vector shifts/masks, and
   byte-select alphabet mapping for fixed 12-byte input blocks, then clears used
   NEON registers before returning. Custom alphabets and 32-bit `arm+neon`
-  remain scalar scaffold paths. Runtime backend selection remains scalar-only.
+  remain scalar scaffold paths. Runtime backend selection remains scalar for
+  NEON.
 - An inactive wasm `simd128` fixed-block encode prototype exists behind the
   same boundary as real non-dispatchable vector encode evidence for Standard
   and URL-safe alphabets. It uses wasm byte shuffling, vector shifts/masks, and
@@ -115,9 +120,9 @@ runtime behavior for that line.
   not provide a direct 64-byte alphabet lookup. The wasm feature-bundle check
   builds wasm test binaries with `target-feature=+simd128`; this is compile and
   codegen evidence only, not a runtime/JIT timing or register-retention claim.
-  Runtime backend selection remains scalar-only.
+  Runtime backend selection remains scalar for wasm.
 - `runtime::backend_report()` reports the active backend, detected candidate,
-  detection mode, SIMD feature status, scalar-only security posture, and a
+  detection mode, SIMD feature status, security posture, and a
   conservative unsafe-boundary posture flag. The flag is true only when the
   reserved `simd` feature is disabled; SIMD-enabled builds include additional
   private prototype boundaries and must use the release evidence scripts for
@@ -127,9 +132,10 @@ runtime behavior for that line.
   current ARM builds, candidate detection is compile-time target-feature
   reporting. A binary compiled with `-C target-feature=+avx2` can therefore
   report an AVX2 candidate even if it is deployed on a CPU that cannot execute
-  AVX2 instructions. No SIMD dispatch is active today; any future `no_std`
-  SIMD activation must require an explicit caller-side CPU contract or remain
-  disabled where runtime probing is unavailable.
+  AVX2 instructions. Active SSSE3/SSE4.1 encode dispatch is std runtime-probed
+  only; any future `no_std` SIMD activation must require an explicit
+  caller-side CPU contract or remain disabled where runtime probing is
+  unavailable.
 - `runtime::require_backend_policy()` allows deployments to enforce scalar
   execution, disabled SIMD features, or no detected SIMD candidate.
 - `BackendPolicy::HighAssuranceScalarOnly` combines scalar execution, disabled
@@ -151,11 +157,12 @@ runtime behavior for that line.
   strings suitable for CI and audit logs.
 - Unit tests compare dispatch behavior against the scalar reference for
   canonical inputs, malformed inputs, and undersized output buffers.
-- The `simd` feature does not enable accelerated code yet.
-- Current `1.1` development remains scalar-only unless the SIMD admission
-  manifest, scalar differential tests, fuzz evidence, unsafe inventory,
-  architecture evidence, benchmark evidence, and release wording are updated
-  together.
+- The `simd` feature enables only the admitted std x86/x86_64 SSSE3/SSE4.1
+  encode path where runtime CPU probing succeeds.
+- Current `1.1` development keeps every non-admitted backend scalar or
+  prototype-only unless the SIMD admission manifest, scalar differential tests,
+  fuzz evidence, unsafe inventory, architecture evidence, benchmark evidence,
+  and release wording are updated together.
 - CI checks the reserved `simd` feature in `no_std` mode for x86_64, aarch64,
   FreeBSD, wasm32, and Cortex-M targets.
 - Performance claims must be backed by local benchmark evidence, not roadmap
@@ -191,32 +198,34 @@ Capture local backend and prototype evidence:
 scripts/check_backend_evidence.sh
 ```
 
-This prints the runtime backend-report test and runs the gated SIMD prototype
+This prints the runtime backend-report test and runs the gated SIMD
 scalar-equivalence tests with `--nocapture`, so local CPU evidence is easy to
-copy into release notes or issue discussion. On x86/x86_64 hosts with the
-required feature bundles, the x86 tests exercise the inactive fixed-block
-vector encode prototypes against scalar output. On AArch64 NEON-capable hosts,
-the NEON test exercises the inactive fixed-block vector prototype for Standard
-and URL-safe alphabets; 32-bit ARM remains scaffold evidence. The script also writes
+copy into release notes or issue discussion. On x86/x86_64 hosts with
+SSSE3/SSE4.1, the runtime report may show admitted encode acceleration as
+active. AVX2 and AVX-512 tests still exercise inactive fixed-block vector
+encode prototypes against scalar output. On AArch64 NEON-capable hosts, the
+NEON test exercises the inactive fixed-block vector prototype for Standard and
+URL-safe alphabets; 32-bit ARM remains scaffold evidence. The script also writes
 `target/release-evidence/backend/MANIFEST.txt` with toolchain metadata,
 commands, status values, artifact checksums, and explicit
-`prototype_state=real-non-dispatchable` /
-`active_backend_admitted=false` labels.
+`prototype_state=real-non-dispatchable` labels for prototype-only backends and
+`active_backend_admitted=ssse3-sse4.1-encode` for the admitted encode backend.
 
-Capture generated assembly evidence for the inactive x86 encode prototypes:
+Capture generated assembly evidence for x86 encode paths:
 
 ```sh
 scripts/generate_simd_asm_evidence.sh
 ```
 
-The script emits release test-harness assembly for SSSE3/SSE4.1, AVX2, and
-AVX-512 VBMI feature bundles and checks for expected vector and cleanup
-instructions. This is review evidence only; it does not activate runtime
-dispatch.
+The script emits release test-harness assembly for the admitted SSSE3/SSE4.1
+encode path plus AVX2 and AVX-512 VBMI prototype feature bundles, then checks
+for expected vector and cleanup instructions. AVX2 and AVX-512 remain review
+evidence only; they do not activate runtime dispatch.
 
 ## Required Before SIMD Code Lands
 
-Any AVX2, NEON, AVX-512, wasm `simd128`, or runtime-dispatch implementation
+Any AVX2, NEON, AVX-512, wasm `simd128`, decode, custom alphabet, in-place, or
+additional runtime-dispatch implementation
 must include:
 
 - Completion of
@@ -238,15 +247,17 @@ must include:
 
 ## Admission Gate
 
-`scripts/validate-simd-admission.sh` keeps SIMD dispatch scalar-only until the
-admission evidence is deliberately updated. The gate currently requires:
+`scripts/validate-simd-admission.sh` keeps SIMD dispatch limited to admitted
+backends. The gate currently requires:
 
-- `ActiveBackend` to expose only the `Scalar` variant.
-- `active_backend()` to return `ActiveBackend::Scalar`.
+- `ActiveBackend` to expose only `Scalar` plus the std x86/x86_64
+  SSSE3/SSE4.1 encode variant.
+- `active_backend()` to return SSSE3/SSE4.1 only after std runtime CPU probing,
+  and scalar otherwise.
 - No accelerated `ActiveBackend::Avx*`, `ActiveBackend::Neon`,
-  `ActiveBackend::Sse*`, `ActiveBackend::Wasm*`, or generic SIMD dispatch
-  variants in source.
-- `docs/SIMD_ADMISSION.md` to record that no accelerated backend is admitted.
+  `ActiveBackend::Wasm*`, or generic SIMD dispatch variants in source.
+- `docs/SIMD_ADMISSION.md` to record the admitted SSSE3/SSE4.1 encode scope
+  and keep all other backends prototype-only.
 - Documentation for benchmark evidence, release-note restrictions, and
   vector-register retention cleanup strategy to remain packaged.
 - The encode admission draft to remain packaged and validated before any
@@ -259,14 +270,16 @@ benchmark evidence, and release notes. For encode acceleration, start from
 backend not fully proven in the candidate-only state.
 The draft is guarded by `scripts/validate-simd-encode-admission-draft.sh` so
 runtime report expectations, benchmark template fields, release-note precision,
-and architecture-specific blockers do not drift while `1.1.x` remains
-scalar-only.
+and architecture-specific blockers do not drift while later encode backends
+remain pending.
 
 ## Dispatch Rules
 
 - Scalar remains the fallback for every build.
 - Candidate detection must not imply activation; a detected candidate may still
   execute scalar until the accelerated backend is admitted.
+- The only active non-scalar backend in `1.1.6` is std x86/x86_64
+  SSSE3/SSE4.1 encode for Standard and URL-safe alphabet families.
 - Prototype functions may exercise target-feature and unsafe plumbing without
   being eligible for dispatch.
 - Runtime CPU detection may be used only behind `std`.

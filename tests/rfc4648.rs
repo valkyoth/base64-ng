@@ -346,13 +346,12 @@ fn custom_alphabet_macro_validates_and_round_trips() {
 }
 
 #[test]
-fn runtime_backend_report_keeps_scalar_active() {
+fn runtime_backend_report_matches_admission_state() {
     let report = runtime::backend_report();
     let display = report.to_string();
     let snapshot = report.snapshot();
 
-    assert_eq!(report.active, runtime::Backend::Scalar);
-    assert_eq!(snapshot.active, "scalar");
+    assert_eq!(snapshot.active, report.active.as_str());
     assert_eq!(snapshot.candidate, report.candidate.as_str());
     assert_eq!(
         snapshot.candidate_detection_mode,
@@ -363,11 +362,13 @@ fn runtime_backend_report_keeps_scalar_active() {
         report.candidate_required_cpu_features()
     );
     assert_eq!(snapshot.simd_feature_enabled, cfg!(feature = "simd"));
-    assert!(!snapshot.accelerated_backend_active);
+    assert_eq!(
+        snapshot.accelerated_backend_active,
+        report.accelerated_backend_active
+    );
     assert_eq!(snapshot.unsafe_boundary_enforced, !cfg!(feature = "simd"));
     assert_eq!(snapshot.security_posture, report.security_posture.as_str());
-    assert_eq!(report.active.as_str(), "scalar");
-    assert_eq!(report.active.to_string(), "scalar");
+    assert_eq!(report.active.to_string(), report.active.as_str());
     assert!(runtime::Backend::Scalar.required_cpu_features().is_empty());
     assert_eq!(
         report.candidate_required_cpu_features(),
@@ -402,13 +403,26 @@ fn runtime_backend_report_keeps_scalar_active() {
         runtime::CandidateDetectionMode::CompileTimeTargetFeatures.as_str(),
         "compile-time-target-features"
     );
-    assert!(display.contains("active=scalar"));
+    if report.accelerated_backend_active {
+        assert!(display.contains("accelerated_backend_active=true"));
+    } else {
+        assert!(display.contains("accelerated_backend_active=false"));
+    }
     assert!(display.contains("candidate_detection_mode="));
     assert!(display.contains("candidate_required_cpu_features="));
-    assert!(display.contains("accelerated_backend_active=false"));
     assert!(display.contains("wipe_posture="));
     assert!(display.contains("ct_gate_posture="));
-    assert!(!report.accelerated_backend_active);
+    if report.accelerated_backend_active {
+        assert_eq!(report.active, runtime::Backend::Ssse3Sse41);
+        assert!(cfg!(all(
+            feature = "simd",
+            feature = "std",
+            any(target_arch = "x86", target_arch = "x86_64")
+        )));
+    } else {
+        assert_eq!(report.active, runtime::Backend::Scalar);
+        assert!(display.contains("active=scalar"));
+    }
     assert_eq!(report.unsafe_boundary_enforced, !cfg!(feature = "simd"));
     assert_eq!(report.simd_feature_enabled, cfg!(feature = "simd"));
     assert_eq!(report.wipe_posture.as_str(), report.snapshot().wipe_posture);
@@ -481,7 +495,13 @@ fn runtime_backend_report_keeps_scalar_active() {
         );
     }
 
-    if report.candidate == runtime::Backend::Scalar {
+    if report.accelerated_backend_active {
+        assert_eq!(
+            report.security_posture,
+            runtime::SecurityPosture::Accelerated
+        );
+        assert_eq!(report.security_posture.as_str(), "accelerated");
+    } else if report.candidate == runtime::Backend::Scalar {
         assert_eq!(
             report.security_posture,
             runtime::SecurityPosture::ScalarOnly
@@ -503,11 +523,18 @@ fn runtime_backend_report_keeps_scalar_active() {
 fn runtime_backend_policy_assertions_are_explicit() {
     let report = runtime::backend_report();
 
-    assert_eq!(
-        runtime::require_backend_policy(runtime::BackendPolicy::ScalarExecutionOnly),
-        Ok(())
-    );
-    assert!(report.satisfies(runtime::BackendPolicy::ScalarExecutionOnly));
+    if report.accelerated_backend_active {
+        assert!(
+            runtime::require_backend_policy(runtime::BackendPolicy::ScalarExecutionOnly).is_err()
+        );
+        assert!(!report.satisfies(runtime::BackendPolicy::ScalarExecutionOnly));
+    } else {
+        assert_eq!(
+            runtime::require_backend_policy(runtime::BackendPolicy::ScalarExecutionOnly),
+            Ok(())
+        );
+        assert!(report.satisfies(runtime::BackendPolicy::ScalarExecutionOnly));
+    }
     assert_eq!(
         runtime::BackendPolicy::ScalarExecutionOnly.as_str(),
         "scalar-execution-only"
@@ -608,7 +635,10 @@ fn runtime_backend_policy_assertions_are_explicit() {
         let err = high_assurance_policy.unwrap_err();
         assert_eq!(err.policy, runtime::BackendPolicy::HighAssuranceScalarOnly);
         assert!(err.to_string().contains("high-assurance-scalar-only"));
-        assert!(err.to_string().contains("active=scalar"));
+        assert!(
+            err.to_string()
+                .contains(&format!("active={}", report.active.as_str()))
+        );
     }
 }
 

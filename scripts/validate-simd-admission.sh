@@ -28,8 +28,10 @@ active_variants="$(
     ' src/simd/mod.rs
 )"
 
-if [ "$active_variants" != "Scalar" ]; then
-    echo "simd admission: ActiveBackend must remain scalar-only until a backend is admitted" >&2
+expected_active_variants="Scalar
+Ssse3Sse41"
+if [ "$active_variants" != "$expected_active_variants" ]; then
+    echo "simd admission: ActiveBackend must contain only Scalar and admitted SSSE3/SSE4.1 encode" >&2
     printf '%s\n' "$active_variants" >&2
     exit 1
 fi
@@ -37,12 +39,11 @@ fi
 if grep -R \
     -e 'ActiveBackend::Avx' \
     -e 'ActiveBackend::Neon' \
-    -e 'ActiveBackend::Sse' \
     -e 'ActiveBackend::Wasm' \
     -e 'ActiveBackend::Simd' \
     src
 then
-    echo "simd admission: accelerated ActiveBackend dispatch was added without admission gate update" >&2
+    echo "simd admission: non-admitted accelerated ActiveBackend dispatch was added without admission gate update" >&2
     exit 1
 fi
 
@@ -50,11 +51,14 @@ if ! awk '
     /pub\(crate\) fn active_backend\(\) -> ActiveBackend/ {
         inside = 1
     }
+    inside && /ActiveBackend::Ssse3Sse41/ {
+        ssse3 = 1
+    }
     inside && /ActiveBackend::Scalar/ {
-        found = 1
+        scalar = 1
     }
     inside && /^}/ {
-        exit found ? 0 : 1
+        exit (scalar && ssse3) ? 0 : 1
     }
     END {
         if (!inside) {
@@ -62,7 +66,7 @@ if ! awk '
         }
     }
 ' src/simd/mod.rs; then
-    echo "simd admission: active_backend must explicitly return ActiveBackend::Scalar" >&2
+    echo "simd admission: active_backend must explicitly return admitted SSSE3/SSE4.1 and scalar fallback" >&2
     exit 1
 fi
 
@@ -78,9 +82,10 @@ for required_text in \
     "Decode acceleration" \
     "Required precision" \
     "Performance numbers are release notes evidence only" \
-    "Admitted backends: none" \
-    "Active backend: scalar only" \
-    "Do not advertise SIMD acceleration until this manifest names an admitted"
+    "Admitted backends: SSSE3/SSE4.1 encode" \
+    "Active backend: SSSE3/SSE4.1 encode" \
+    "The only active non-scalar backend" \
+    "Advertise SIMD acceleration only with the admitted backend name and scope"
 do
     if ! grep -R -q "$required_text" docs/SIMD.md docs/SIMD_ADMISSION.md docs/UNSAFE.md docs/RELEASE_EVIDENCE.md docs/SIMD_ENCODE_ADMISSION_DRAFT.md; then
         echo "simd admission: missing required SIMD admission text: $required_text" >&2
@@ -103,8 +108,16 @@ if [ "$backend_row_count" -ne 5 ]; then
     exit 1
 fi
 
-if printf '%s\n' "$backend_rows" | grep -v '| real non-dispatchable prototype |' >/dev/null 2>&1; then
-    echo "simd admission: every backend row must remain a real non-dispatchable prototype until admission" >&2
+ssse3_row="$(printf '%s\n' "$backend_rows" | grep '^| SSSE3/SSE4\.1 ')"
+if ! printf '%s\n' "$ssse3_row" | grep '| admitted backend |' >/dev/null 2>&1; then
+    echo "simd admission: SSSE3/SSE4.1 row must be the admitted backend" >&2
+    printf '%s\n' "$backend_rows" >&2
+    exit 1
+fi
+
+non_ssse3_rows="$(printf '%s\n' "$backend_rows" | grep -v '^| SSSE3/SSE4\.1 ')"
+if printf '%s\n' "$non_ssse3_rows" | grep -v '| real non-dispatchable prototype |' >/dev/null 2>&1; then
+    echo "simd admission: non-SSSE3 backend rows must remain real non-dispatchable prototypes" >&2
     printf '%s\n' "$backend_rows" >&2
     exit 1
 fi
@@ -115,9 +128,9 @@ if printf '%s\n' "$backend_rows" | grep 'real fixed-block encode prototype' | gr
     exit 1
 fi
 
-if grep -q 'admitted active backend' docs/SIMD_ADMISSION.md docs/SIMD.md; then
-    echo "simd admission: admitted active backend wording requires gate update" >&2
+if grep -q 'AVX2 .*admitted backend\|AVX-512 .*admitted backend\|NEON .*admitted backend\|wasm .*admitted backend' docs/SIMD_ADMISSION.md docs/SIMD.md; then
+    echo "simd admission: non-SSSE3 admitted backend wording requires gate update" >&2
     exit 1
 fi
 
-echo "simd admission: scalar-only dispatch gate ok"
+echo "simd admission: SSSE3/SSE4.1 encode admission gate ok"

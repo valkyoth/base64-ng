@@ -1,15 +1,16 @@
 # SIMD Activation Checklist
 
-This checklist is mandatory before any SIMD code becomes dispatchable. Current
-SIMD prototypes are test-only scaffolding: they zero destination buffers with
-SIMD and then overwrite those buffers with scalar encoding. They are not
-compiled into release library builds.
+This checklist is mandatory before any additional SIMD code becomes
+dispatchable. SSSE3/SSE4.1 encode is admitted only for std x86/x86_64 Standard
+and URL-safe alphabet families. AVX2, AVX-512, NEON, wasm, custom-alphabet,
+in-place, and decode SIMD paths remain prototype-only or scalar until their own
+checklist evidence is complete.
 
 ## Non-Negotiable Rule
 
-Do not add an accelerated backend to `ActiveBackend`, runtime dispatch, public
-performance claims, or release notes until every item below is complete in the
-same release series.
+Do not add another accelerated backend to `ActiveBackend`, runtime dispatch,
+public performance claims, or release notes until every item below is complete
+in the same release series.
 
 ## Register Cleanup Admission Gate
 

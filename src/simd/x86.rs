@@ -1,6 +1,55 @@
 #![allow(unsafe_code)]
 
-use crate::{Alphabet, encode_base64_value};
+use crate::{Alphabet, EncodeError, checked_encoded_len, encode_base64_value, scalar};
+
+pub(crate) fn ssse3_sse41_supports_alphabet<A>() -> bool
+where
+    A: Alphabet,
+{
+    is_standard_or_url_safe_family::<A>()
+}
+
+pub(crate) fn encode_slice_ssse3_sse41<A, const PAD: bool>(
+    input: &[u8],
+    output: &mut [u8],
+) -> Result<usize, EncodeError>
+where
+    A: Alphabet,
+{
+    if !ssse3_sse41_supports_alphabet::<A>() {
+        return scalar::encode_slice::<A, PAD>(input, output);
+    }
+
+    let required = checked_encoded_len(input.len(), PAD).ok_or(EncodeError::LengthOverflow)?;
+    if output.len() < required {
+        return Err(EncodeError::OutputTooSmall {
+            required,
+            available: output.len(),
+        });
+    }
+
+    let mut read = 0;
+    let mut write = 0;
+    while read + 12 <= input.len() {
+        let mut block = [0u8; 12];
+        block.copy_from_slice(&input[read..read + 12]);
+        let mut encoded = [0u8; 16];
+        // SAFETY: Runtime dispatch reaches this function only after std CPU
+        // feature detection proves SSSE3 and SSE4.1 availability. The fixed
+        // arrays satisfy the block encoder's size preconditions.
+        unsafe {
+            encode_12_bytes_ssse3_sse41::<A>(&block, &mut encoded);
+        }
+        output[write..write + 16].copy_from_slice(&encoded);
+        crate::wipe_bytes(&mut block);
+        crate::wipe_bytes(&mut encoded);
+        read += 12;
+        write += 16;
+    }
+
+    let tail_written = scalar::encode_slice::<A, PAD>(&input[read..], &mut output[write..])?;
+    Ok(write + tail_written)
+}
 
 #[cfg(target_arch = "x86")]
 use core::arch::x86::{
@@ -126,7 +175,6 @@ where
     crate::wipe_bytes(&mut staged);
 }
 
-#[allow(dead_code, reason = "inactive prototype is not dispatchable yet")]
 #[expect(
     clippy::cast_ptr_alignment,
     reason = "_mm_storeu_si128 accepts unaligned pointers"
@@ -163,7 +211,7 @@ where
 
         let encoded = encode_standard_family_indices_ssse3_sse41::<A>(indices);
         _mm_storeu_si128(output.as_mut_ptr().cast::<__m128i>(), encoded);
-        clear_xmm_registers_for_test_prototype();
+        clear_xmm_registers_after_encode_block();
     }
     crate::wipe_bytes(&mut staged);
 }
@@ -259,7 +307,7 @@ unsafe fn clear_ymm_registers_for_test_prototype() {
     // XMM cleanup zeroes the lower halves declared to the compiler, and
     // `vzeroupper` clears upper YMM state before returning to scalar code.
     unsafe {
-        clear_xmm_registers_for_test_prototype();
+        clear_xmm_registers_after_encode_block();
         core::arch::asm!("vzeroupper", options(nostack, preserves_flags, nomem));
     }
 }
@@ -373,11 +421,11 @@ unsafe fn clear_zmm_registers_for_test_prototype() {
 }
 
 #[cfg(target_arch = "x86")]
-unsafe fn clear_xmm_registers_for_test_prototype() {
-    // SAFETY: This test-only cleanup runs after the prototype stores its
-    // output and before returning to scalar test code. The explicit outputs
+unsafe fn clear_xmm_registers_after_encode_block() {
+    // SAFETY: This cleanup runs after the SSSE3/SSE4.1 block encoder stores
+    // its output and before returning to scalar code. The explicit outputs
     // tell the compiler these XMM registers are clobbered while the assembly
-    // clears them to reduce register retention from the prototype path.
+    // clears them to reduce register retention from the vector path.
     unsafe {
         core::arch::asm!(
             "pxor xmm0, xmm0",
@@ -402,11 +450,11 @@ unsafe fn clear_xmm_registers_for_test_prototype() {
 }
 
 #[cfg(target_arch = "x86_64")]
-unsafe fn clear_xmm_registers_for_test_prototype() {
-    // SAFETY: This test-only cleanup runs after the prototype stores its
-    // output and before returning to scalar test code. The explicit outputs
+unsafe fn clear_xmm_registers_after_encode_block() {
+    // SAFETY: This cleanup runs after the SSSE3/SSE4.1 block encoder stores
+    // its output and before returning to scalar code. The explicit outputs
     // tell the compiler these XMM registers are clobbered while the assembly
-    // clears them to reduce register retention from the prototype path.
+    // clears them to reduce register retention from the vector path.
     unsafe {
         core::arch::asm!(
             "pxor xmm0, xmm0",

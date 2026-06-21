@@ -1,8 +1,8 @@
 //! Runtime backend reporting for security-sensitive deployments.
 //!
-//! This module does not enable acceleration. It exposes the backend posture so
-//! callers can log, assert, or audit whether execution is scalar-only or merely
-//! detecting future SIMD candidates.
+//! This module exposes backend posture so callers can log, assert, or audit
+//! whether execution is scalar-only, using an admitted encode backend, or
+//! merely detecting future SIMD candidates.
 
 /// A backend that can be reported by `base64-ng`.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -42,9 +42,8 @@ impl Backend {
 
     /// Returns the CPU features required before this backend may be used.
     ///
-    /// The active backend is still scalar-only. This method exists so
-    /// security logs can record exactly which future backend feature bundle
-    /// was detected.
+    /// Security logs can record exactly which CPU feature bundle is required by
+    /// an active backend or visible candidate.
     ///
     /// ```
     /// assert_eq!(

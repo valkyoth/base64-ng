@@ -28,7 +28,10 @@ impl std::error::Error for BackendPolicyError {}
 /// Backend report for the current build and target.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct BackendReport {
-    /// Backend currently used for encode/decode dispatch.
+    /// Backend currently used for admitted runtime dispatch.
+    ///
+    /// In `1.1.x`, SSSE3/SSE4.1 admission covers encode dispatch only. Decode
+    /// remains scalar until a separate decode admission package is complete.
     pub active: Backend,
     /// Strongest backend candidate visible to the current build.
     pub candidate: Backend,
@@ -58,6 +61,9 @@ pub struct BackendReport {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct BackendSnapshot {
     /// Stable active backend identifier.
+    ///
+    /// In `1.1.x`, non-scalar active values describe admitted encode dispatch;
+    /// decode remains scalar.
     pub active: &'static str,
     /// Stable detected candidate identifier.
     pub candidate: &'static str,
@@ -110,9 +116,9 @@ impl BackendReport {
     /// ```
     /// let report = base64_ng::runtime::backend_report();
     ///
-    /// assert!(
-    ///     report.satisfies(base64_ng::runtime::BackendPolicy::ScalarExecutionOnly)
-    /// );
+    /// let scalar_only =
+    ///     report.satisfies(base64_ng::runtime::BackendPolicy::ScalarExecutionOnly);
+    /// assert_eq!(scalar_only, !report.accelerated_backend_active);
     /// ```
     #[must_use]
     pub const fn satisfies(self, policy: BackendPolicy) -> bool {
@@ -170,8 +176,10 @@ impl BackendReport {
     /// ```
     /// let snapshot = base64_ng::runtime::backend_report().snapshot();
     ///
-    /// assert_eq!(snapshot.active, "scalar");
-    /// assert!(!snapshot.accelerated_backend_active);
+    /// assert_eq!(
+    ///     snapshot.accelerated_backend_active,
+    ///     snapshot.active != "scalar",
+    /// );
     /// ```
     #[must_use]
     pub const fn snapshot(self) -> BackendSnapshot {
@@ -195,8 +203,9 @@ impl BackendReport {
 /// ```
 /// let report = base64_ng::runtime::backend_report();
 ///
-/// assert_eq!(report.active, base64_ng::runtime::Backend::Scalar);
-/// assert!(!report.accelerated_backend_active);
+/// if report.accelerated_backend_active {
+///     assert_ne!(report.active, base64_ng::runtime::Backend::Scalar);
+/// }
 /// ```
 #[must_use]
 pub fn backend_report() -> BackendReport {
@@ -265,10 +274,15 @@ const fn ct_gate_posture() -> CtGatePosture {
 /// Requires the current runtime backend report to satisfy `policy`.
 ///
 /// ```
-/// base64_ng::runtime::require_backend_policy(
+/// let result = base64_ng::runtime::require_backend_policy(
 ///     base64_ng::runtime::BackendPolicy::ScalarExecutionOnly,
-/// )
-/// .unwrap();
+/// );
+///
+/// if base64_ng::runtime::backend_report().accelerated_backend_active {
+///     assert!(result.is_err());
+/// } else {
+///     assert!(result.is_ok());
+/// }
 /// ```
 pub fn require_backend_policy(policy: BackendPolicy) -> Result<(), BackendPolicyError> {
     let report = backend_report();
@@ -299,6 +313,8 @@ fn write_feature_list(
 fn active_backend() -> Backend {
     match crate::simd::active_backend() {
         crate::simd::ActiveBackend::Scalar => Backend::Scalar,
+        #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
+        crate::simd::ActiveBackend::Ssse3Sse41 => Backend::Ssse3Sse41,
     }
 }
 

@@ -31,9 +31,9 @@ The crate starts conservative: a small scalar implementation, strict RFC 4648 be
 
 The current public release is `1.1.0`.
 Post-`1.1.0` GitHub checkpoint tags in the `1.1.x` line are evidence and
-integration milestones toward `1.2.0`; they keep active runtime dispatch
-scalar-only and are not intended as crates.io publishes unless a user-impacting
-fix requires it.
+integration milestones toward `1.2.0`; they may admit narrowly scoped encode
+backends after evidence review and are not intended as crates.io publishes
+unless a user-impacting fix requires it.
 
 Implemented now:
 
@@ -71,8 +71,10 @@ Implemented now:
 - Bounded Kani proof harnesses that run on Rust `1.90.0` with
   `cargo-kani 0.67.0`.
 - Constant-time assembly evidence generation for reviewer inspection.
-- Real non-dispatchable SSSE3/SSE4.1 fixed-block encode prototype for Standard
-  and URL-safe alphabets behind the SIMD admission boundary.
+- Runtime-dispatched std `x86`/`x86_64` SSSE3/SSE4.1 fixed-block encode for
+  Standard and URL-safe alphabets behind the SIMD admission boundary, with
+  scalar fallback for unsupported CPUs, `no_std`, custom alphabets, tails,
+  padding, in-place encode, and decode.
 - Optional `base64-ng-sanitization` companion crate for applications that
   already admit `sanitization` and want direct CT decode helpers into
   clear-on-drop secret containers.
@@ -85,9 +87,9 @@ Implemented now:
 
 Planned behind admission evidence:
 
-- Admitted AVX2, AVX-512, SSSE3/SSE4.1, ARM NEON, and wasm `simd128`
-  fast paths after the SIMD admission evidence is complete. The `1.1.0`
-  release remains scalar-only for active runtime dispatch.
+- Additional admitted AVX2, AVX-512, ARM NEON, wasm `simd128`, custom alphabet,
+  in-place, and decode fast paths after the SIMD admission evidence is
+  complete. Default builds and unsupported runtime CPUs remain scalar.
 - Full async streaming wrappers only after the `tokio` feature passes the
   cancellation-safety admission bar in [docs/ASYNC.md](docs/ASYNC.md). The
   `base64-ng-tokio` companion crate currently provides bounded async
@@ -104,8 +106,8 @@ Planned behind admission evidence:
 | License | `MIT OR Apache-2.0` |
 | MSRV | Rust `1.90.0` |
 | Runtime dependencies | Zero external crates |
-| Unsafe policy | Scalar encode/decode remains safe Rust; audited unsafe is limited to volatile wiping, CT comparison/barrier helpers, and test-only SIMD prototypes |
-| Active backend | Scalar only |
+| Unsafe policy | Scalar encode/decode remains safe Rust; audited unsafe is limited to volatile wiping, CT comparison/barrier helpers, and the reviewed SIMD boundary |
+| Active backend | Scalar by default; std x86/x86_64 SSSE3/SSE4.1 encode when `simd` is enabled and runtime CPU probing passes |
 | Strict decoding | Default, canonical, no whitespace |
 | Legacy compatibility | Explicit opt-in APIs |
 | Constant-time posture | Constant-time-oriented scalar validation/decode with isolated dudect-style timing evidence; no formal cryptographic guarantee |
@@ -947,7 +949,9 @@ Security commitments:
   dead-store elimination and are ordered before the cleanup boundary on
   supported native architectures. Constant-time comparison, byte accumulation,
   CT scan, and CT result-gate hardening remain audited in `src/ct/`.
-- Future unsafe SIMD remains isolated under `src/simd/`.
+- Unsafe SIMD remains isolated under `src/simd/`; the admitted SSSE3/SSE4.1
+  encode path is std runtime-probed and all non-admitted backends remain
+  prototype-only.
 - Local checks verify that `allow(unsafe_code)` is confined to the volatile
   wipe helpers and SIMD boundary, every unsafe function is inventoried, and
   every unsafe block has a nearby `SAFETY:` explanation. Architecture intrinsics,
@@ -959,9 +963,11 @@ Security commitments:
   async/Tokio API while the `tokio` feature remains inert.
 - [docs/DEPENDENCIES.md](docs/DEPENDENCIES.md) defines the dependency
   admission bar for any future external crate.
-- `runtime::backend_report()` exposes the active backend, detected candidate,
-  candidate detection mode, SIMD feature status, scalar-only security posture,
-  and a conservative unsafe-boundary posture flag for audit logging. The
+- `runtime::backend_report()` exposes the active admitted backend, detected
+  candidate, candidate detection mode, SIMD feature status, security posture,
+  and a conservative unsafe-boundary posture flag for audit logging. In the
+  `1.1.x` line, non-scalar active values describe admitted encode dispatch;
+  decode remains scalar. The
   unsafe-boundary flag is true only when the reserved `simd` feature is
   disabled; SIMD-enabled builds must rely on the release evidence scripts for
   boundary validation. On `no_std` and non-x86 targets, candidate detection is
