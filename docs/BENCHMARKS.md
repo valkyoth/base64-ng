@@ -37,7 +37,8 @@ BASE64_NG_RUN_PERF=1 scripts/check_perf.sh
 This writes:
 
 - `target/release-evidence/perf/perf-output.csv` from the default perf build,
-  which enables `simd` and records the active backend in every row.
+  which enables `simd` and records both the active runtime backend and the
+  effective backend for each measured operation.
 - `target/release-evidence/perf/perf-scalar-output.csv` from
   `--no-default-features`, which disables `simd` for the base64-ng scalar
   baseline.
@@ -47,8 +48,14 @@ This writes:
 Output is CSV:
 
 ```text
-engine,operation,input_len,iterations,elapsed_ms,throughput_mib_s,active_backend,candidate_backend,detection_mode,target_arch,target_os
+engine,operation,input_len,iterations,elapsed_ms,throughput_mib_s,effective_backend,active_backend,candidate_backend,detection_mode,target_arch,target_os
 ```
+
+`active_backend` records the runtime backend selected by
+`runtime::backend_report()`. `effective_backend` records what the measured row
+actually used: small encode inputs that cannot fill the selected SIMD block and
+all decode rows report `scalar`; rows for the external `base64` crate report
+`external`.
 
 Benchmark numbers are machine-local evidence, not portable guarantees. Release
 notes should cite hardware, OS, Rust version, CPU governor, and command output

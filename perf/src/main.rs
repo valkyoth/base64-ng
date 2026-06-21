@@ -12,7 +12,7 @@ const TARGET_BYTES: usize = 64 * 1024 * 1024;
 fn main() {
     let backend = backend_report().snapshot();
     println!(
-        "engine,operation,input_len,iterations,elapsed_ms,throughput_mib_s,active_backend,candidate_backend,detection_mode,target_arch,target_os"
+        "engine,operation,input_len,iterations,elapsed_ms,throughput_mib_s,effective_backend,active_backend,candidate_backend,detection_mode,target_arch,target_os"
     );
     for &len in CASES {
         let input = make_input(len);
@@ -83,6 +83,7 @@ fn main() {
             &backend,
             "base64-ng",
             "encode",
+            effective_backend(&backend, "base64-ng", "encode", len),
             len,
             iterations,
             base64_ng_encode,
@@ -91,6 +92,7 @@ fn main() {
             &backend,
             "base64",
             "encode",
+            effective_backend(&backend, "base64", "encode", len),
             len,
             iterations,
             base64_encode.expect("base64 encode benchmark succeeds"),
@@ -99,6 +101,7 @@ fn main() {
             &backend,
             "base64-ng",
             "decode",
+            effective_backend(&backend, "base64-ng", "decode", len),
             len,
             iterations,
             base64_ng_decode,
@@ -107,6 +110,7 @@ fn main() {
             &backend,
             "base64",
             "decode",
+            effective_backend(&backend, "base64", "decode", len),
             len,
             iterations,
             base64_decode.expect("base64 decode benchmark succeeds"),
@@ -140,6 +144,7 @@ fn print_result(
     backend: &BackendSnapshot,
     engine: &str,
     operation: &str,
+    effective_backend: &str,
     len: usize,
     iterations: usize,
     elapsed: Duration,
@@ -152,7 +157,7 @@ fn print_result(
         mib / seconds
     };
     println!(
-        "{engine},{operation},{len},{iterations},{:.3},{throughput:.2},{},{},{},{},{}",
+        "{engine},{operation},{len},{iterations},{:.3},{throughput:.2},{effective_backend},{},{},{},{},{}",
         elapsed.as_secs_f64() * 1000.0,
         backend.active,
         backend.candidate,
@@ -160,4 +165,27 @@ fn print_result(
         std::env::consts::ARCH,
         std::env::consts::OS,
     );
+}
+
+fn effective_backend(
+    backend: &BackendSnapshot,
+    engine: &str,
+    operation: &str,
+    input_len: usize,
+) -> &'static str {
+    if engine != "base64-ng" {
+        return "external";
+    }
+
+    if operation != "encode" {
+        return "scalar";
+    }
+
+    match backend.active {
+        "avx512-vbmi" if input_len >= 48 => "avx512-vbmi",
+        "avx2" if input_len >= 24 => "avx2",
+        "ssse3-sse4.1" if input_len >= 12 => "ssse3-sse4.1",
+        "neon" if input_len >= 12 => "neon",
+        _ => "scalar",
+    }
 }
