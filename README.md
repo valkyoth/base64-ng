@@ -29,11 +29,11 @@ The crate starts conservative: a small scalar implementation, strict RFC 4648 be
 
 ## Current Status
 
-The current public release is `1.1.0`.
-Post-`1.1.0` GitHub checkpoint tags in the `1.1.x` line are evidence and
-integration milestones toward `1.2.0`; they may admit narrowly scoped encode
-backends after evidence review and are not intended as crates.io publishes
-unless a user-impacting fix requires it.
+The workspace is staged for `1.2.0`.
+The latest crates.io release remains `1.1.0` until the full encode line is complete.
+The current git branch is accumulating the former `1.1.x` checkpoint work into
+one synced `1.2.0` family release so users are not forced through many small
+crates.io updates.
 
 Implemented now:
 
@@ -123,7 +123,7 @@ and CWE mapping lives in [docs/SECURITY_CONTROLS.md](docs/SECURITY_CONTROLS.md).
 The minimum supported Rust version is Rust `1.90.0`. New deployments should
 prefer the latest stable Rust; as of May 29, 2026, that is Rust `1.96.0`.
 
-Compatibility evidence for `1.1.0`:
+Compatibility evidence for the staged `1.2.0` workspace:
 
 | Rust | Local Evidence |
 | --- | --- |
@@ -139,7 +139,7 @@ Compatibility evidence for `1.1.0`:
 
 ```toml
 [dependencies]
-base64-ng = "1.1.0"
+base64-ng = "1.2.0"
 ```
 
 The crate is dual-licensed:
@@ -168,11 +168,9 @@ The core `base64-ng` crate keeps its zero-runtime-dependency policy. Optional
 ecosystem integrations live as separate crates so applications can opt into
 their own approved dependency set without changing the base package.
 
-The `1.1.0` release changes the core crate and updates the optional
-`base64-ng-subtle` and `base64-ng-sanitization` companion crates. Other
-optional companion crates remain on their previous published versions, and
-Cargo's normal compatible dependency ranges allow those companions to resolve
-with `base64-ng` `1.1.0`.
+The staged `1.2.0` family syncs all companion crates to the same version. The
+family will be published together only after the full encode acceleration line
+passes pentest, GitHub CI, Kani, and the release gate.
 
 | Crate | Purpose |
 | --- | --- |
@@ -193,14 +191,14 @@ only the crates that changed instead of republishing the whole ecosystem.
 `base64-ng-sanitization` provides extension helpers for
 `base64_ng::ct::CtEngine` that decode directly into
 `sanitization::SecretBytes<N>` in `no_std`, with `SecretVec` helpers behind its
-own `alloc` feature. The `1.1.0` companion release uses `sanitization` `1.2.0`
+own `alloc` feature. The staged `1.2.0` companion uses `sanitization` `1.2.0`
 and exposes `sanitization::ct::Choice` comparison helpers through
 `SanitizationCtEqExt`:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.1.0", default-features = false }
-base64-ng-sanitization = { version = "1.1.0", default-features = false }
+base64-ng = { version = "1.2.0", default-features = false }
+base64-ng-sanitization = { version = "1.2.0", default-features = false }
 ```
 
 ```rust
@@ -222,8 +220,8 @@ newtypes around fixed byte arrays:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.1.0", default-features = false }
-base64-ng-derive = "1.0.9"
+base64-ng = { version = "1.2.0", default-features = false }
+base64-ng-derive = "1.2.0"
 ```
 
 ```rust
@@ -242,7 +240,7 @@ assert_eq!(key.encode_base64::<8>().unwrap().as_str(), "aGVsbG8=");
 
 ```toml
 [dependencies]
-base64-ng-serde = "1.0.10"
+base64-ng-serde = "1.2.0"
 serde = { version = "1.0.228", features = ["derive"] }
 ```
 
@@ -258,8 +256,8 @@ struct Message {
 
 ```toml
 [dependencies]
-base64-ng = "1.1.0"
-base64-ng-bytes = "1.0.9"
+base64-ng = "1.2.0"
+base64-ng-bytes = "1.2.0"
 bytes = "1.12.0"
 ```
 
@@ -276,8 +274,8 @@ projects that already admit `subtle`:
 
 ```toml
 [dependencies]
-base64-ng = "1.1.0"
-base64-ng-subtle = "1.1.0"
+base64-ng = "1.2.0"
+base64-ng-subtle = "1.2.0"
 ```
 
 ```rust
@@ -293,8 +291,8 @@ use Tokio:
 
 ```toml
 [dependencies]
-base64-ng = "1.1.0"
-base64-ng-tokio = "1.0.9"
+base64-ng = "1.2.0"
+base64-ng-tokio = "1.2.0"
 tokio = { version = "1.52.3", features = ["io-util"] }
 ```
 
@@ -323,7 +321,7 @@ Disable defaults for embedded or freestanding use:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.1.0", default-features = false }
+base64-ng = { version = "1.2.0", default-features = false }
 ```
 
 ## Convenience API

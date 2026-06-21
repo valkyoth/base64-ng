@@ -1,6 +1,6 @@
 [package]
 name = "base64-ng-sanitization"
-version = "1.1.0"
+version = "1.2.0"
 edition = "2024"
 rust-version = "1.90"
 license = "MIT OR Apache-2.0"
@@ -26,7 +26,7 @@ asm-compare = ["sanitization/asm-compare"]
 strict-ct = ["sanitization/strict-ct"]
 
 [dependencies]
-base64-ng = { version = "1.1.0", path = "../..", default-features = false }
+base64-ng = { version = "1.2.0", path = "../..", default-features = false }
 sanitization = { version = "1.2.0", default-features = false }
 
 [lints.rust]

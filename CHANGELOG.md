@@ -1,7 +1,13 @@
 # Changelog
 
-## Unreleased
+## 1.2.0 - Unreleased
 
+- Staged all workspace crates for a synced `1.2.0` family release to avoid
+  publishing many small intermediate crates.io versions while the encode
+  acceleration line is completed.
+- Updated `base64-ng-sanitization` to `sanitization` `1.2.0` and added native
+  `sanitization::ct::Choice` comparison helpers for decoded `SecretBytes` and
+  `SecretVec` values.
 - Admitted std `x86`/`x86_64` SSSE3/SSE4.1 encode dispatch for Standard and
   URL-safe alphabet families. The admitted path processes fixed 12-byte blocks
   with vector code after runtime CPU probing and falls back to scalar for

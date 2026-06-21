@@ -2,7 +2,7 @@
 
 Optional Tokio helpers for `base64-ng`.
 
-The current `1.0.9` companion crate provides bounded async convenience helpers:
+The current `1.2.0` companion crate provides bounded async convenience helpers:
 it reads the input into memory, validates/encodes or validates/decodes, then
 writes the output. Full cancellation-audited streaming adapters remain a future
 admission item.

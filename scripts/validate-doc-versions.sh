@@ -39,13 +39,19 @@ case "$cargo_version" in
         require_text docs/SIMD_ADMISSION.md "$cargo_version"
         ;;
     *)
-        require_text README.md "The current public release is \`$cargo_version\`."
-        require_text README.md "base64-ng = \"$cargo_version\""
-        if [ "$cargo_version" = "1.1.0" ]; then
-            require_text docs/SIMD_ADMISSION.md "Release status: \`1.1.x\`"
+        if [ "$cargo_version" = "1.2.0" ]; then
+            require_text README.md "The workspace is staged for \`1.2.0\`."
+            require_text README.md "The latest crates.io release remains \`1.1.0\` until the full encode line is complete."
+            require_text docs/SIMD_ADMISSION.md "Release status: \`1.2.0-staged\`"
         else
-            require_text docs/SIMD_ADMISSION.md "Release status: \`$cargo_version\`"
+            require_text README.md "The current public release is \`$cargo_version\`."
+            if [ "$cargo_version" = "1.1.0" ]; then
+                require_text docs/SIMD_ADMISSION.md "Release status: \`1.1.x\`"
+            else
+                require_text docs/SIMD_ADMISSION.md "Release status: \`$cargo_version\`"
+            fi
         fi
+        require_text README.md "base64-ng = \"$cargo_version\""
         reject_text README.md "-alpha"
         reject_text docs/SIMD.md "-alpha"
         reject_text docs/SIMD_ADMISSION.md "-alpha"

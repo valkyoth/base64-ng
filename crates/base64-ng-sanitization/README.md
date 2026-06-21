@@ -8,8 +8,8 @@ constant-time-oriented Base64 decode into clear-on-drop secret containers.
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.1.0", default-features = false }
-base64-ng-sanitization = { version = "1.1.0", default-features = false }
+base64-ng = { version = "1.2.0", default-features = false }
+base64-ng-sanitization = { version = "1.2.0", default-features = false }
 ```
 
 ```rust
@@ -29,7 +29,7 @@ assert!(secret.sanitization_verify(
 Enable `alloc` for heap-backed `sanitization::SecretVec` helpers:
 
 ```toml
-base64-ng-sanitization = { version = "1.1.0", features = ["alloc"] }
+base64-ng-sanitization = { version = "1.2.0", features = ["alloc"] }
 ```
 
 The integration intentionally targets `base64_ng::ct::CtEngine`. Strict
@@ -58,5 +58,5 @@ For deployments that want `sanitization`'s assembly-backed comparison checks,
 enable the passthrough features:
 
 ```toml
-base64-ng-sanitization = { version = "1.1.0", features = ["strict-ct"] }
+base64-ng-sanitization = { version = "1.2.0", features = ["strict-ct"] }
 ```

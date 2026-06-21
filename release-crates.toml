@@ -1,52 +1,52 @@
 [release]
-version = "1.1.0"
-policy = "core-first-companion"
+version = "1.2.0"
+policy = "synced-family"
 
 [crates."base64-ng"]
 previous_version = "1.0.10"
-version = "1.1.0"
+version = "1.2.0"
 change = "code"
 publish = true
-reason = "Adds the first real non-dispatchable SSSE3/SSE4.1 fixed-block encode prototype and evidence scaffolding."
+reason = "Syncs the core crate for the full encode acceleration family release."
 
 [crates."base64-ng-sanitization"]
 previous_version = "1.0.9"
-version = "1.1.0"
+version = "1.2.0"
 change = "code"
 publish = true
 reason = "Updates to sanitization 1.2.0 and adds native sanitization::ct Choice comparison helpers."
 
 [crates."base64-ng-derive"]
 previous_version = "1.0.9"
-version = "1.0.9"
-change = "unchanged"
-publish = false
-reason = "No code changes for the 1.1.0 core SIMD foundation release."
+version = "1.2.0"
+change = "code"
+publish = true
+reason = "Syncs the companion crate version with the 1.2.0 family release."
 
 [crates."base64-ng-serde"]
 previous_version = "1.0.10"
-version = "1.0.10"
-change = "unchanged"
-publish = false
-reason = "No code changes for the 1.1.0 core SIMD foundation release."
+version = "1.2.0"
+change = "code"
+publish = true
+reason = "Syncs the companion crate version with the 1.2.0 family release."
 
 [crates."base64-ng-bytes"]
 previous_version = "1.0.9"
-version = "1.0.9"
-change = "unchanged"
-publish = false
-reason = "No code changes for the 1.1.0 core SIMD foundation release."
-
-[crates."base64-ng-subtle"]
-previous_version = "0.0.0"
-version = "1.1.0"
+version = "1.2.0"
 change = "code"
 publish = true
-reason = "Adds an optional subtle::ConstantTimeEq companion crate for projects that admit subtle."
+reason = "Syncs the companion crate version with the 1.2.0 family release."
+
+[crates."base64-ng-subtle"]
+previous_version = "1.1.0"
+version = "1.2.0"
+change = "code"
+publish = true
+reason = "Syncs the companion crate version with the 1.2.0 family release."
 
 [crates."base64-ng-tokio"]
 previous_version = "1.0.9"
-version = "1.0.9"
-change = "unchanged"
-publish = false
-reason = "No code changes for the 1.1.0 core SIMD foundation release."
+version = "1.2.0"
+change = "code"
+publish = true
+reason = "Syncs the companion crate version with the 1.2.0 family release."

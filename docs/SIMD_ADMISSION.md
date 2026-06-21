@@ -11,10 +11,11 @@ only for backends named in this file and the release gate.
 - Active backend priority: AVX2, then SSSE3/SSE4.1, when runtime CPU probing
   proves the required CPU features; scalar otherwise.
 - Public performance claims: none without local benchmark evidence.
-- Release status: `1.1.x`; latest checkpoint `1.1.7` admits the conservative
-  AVX2 encode path above the existing SSSE3/SSE4.1 encode path for Standard
-  and URL-safe alphabet families. Decode, custom alphabets, in-place encode,
-  `no_std`, AVX-512 VBMI, NEON, and wasm `simd128` remain scalar or
+- Release status: `1.2.0-staged`; the workspace is collecting the former
+  `1.1.x` checkpoint work into one synced `1.2.0` family release. Current
+  active encode dispatch admits conservative AVX2 above SSSE3/SSE4.1 for
+  Standard and URL-safe alphabet families. Decode, custom alphabets, in-place
+  encode, `no_std`, AVX-512 VBMI, NEON, and wasm `simd128` remain scalar or
   prototype-only.
 
 ## Required For Every Admitted Backend
