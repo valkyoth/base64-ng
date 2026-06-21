@@ -23,6 +23,12 @@
 //! [`crate::ct::CtEngine::decode_slice_clear_tail`] is appropriate only when
 //! the output buffer is not observable during the call.
 //!
+//! Applications that already admit the optional `base64-ng-sanitization`
+//! companion can use its `CtDecodeSanitizationExt` helpers to decode into
+//! `sanitization` secret containers. With that companion's `high-assurance`
+//! feature enabled, supported native targets can decode directly into
+//! `sanitization::LockedSecretBytes` or `sanitization::LockedSecretVec`.
+//!
 //! # Platform Posture
 //!
 //! The CT result gate uses architecture-specific best-effort barriers where

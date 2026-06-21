@@ -32,13 +32,45 @@ Enable `alloc` for heap-backed `sanitization::SecretVec` helpers:
 base64-ng-sanitization = { version = "1.2.0", features = ["alloc"] }
 ```
 
+For high-assurance native deployments, enable locked storage helpers. This
+uses `sanitization` 1.2.1's `memory-lock`, `canary-check`, and
+`random-canary` features and decodes directly into locked memory:
+
+```toml
+base64-ng-sanitization = { version = "1.2.0", features = ["high-assurance"] }
+```
+
+```rust
+use base64_ng::ct;
+use base64_ng_sanitization::CtDecodeSanitizationExt;
+
+let key = ct::STANDARD
+    .decode_locked_secret_bytes::<5>(b"aGVsbG8=")
+    .unwrap();
+
+key.with_secret(|bytes| assert_eq!(bytes, b"hello"));
+```
+
+For dynamic output on supported native targets:
+
+```rust
+use base64_ng::ct;
+use base64_ng_sanitization::CtDecodeSanitizationExt;
+
+let key = ct::STANDARD
+    .decode_locked_secret_vec(b"aGVsbG8=")
+    .unwrap();
+
+key.with_secret(|bytes| assert_eq!(bytes, b"hello"));
+```
+
 The integration intentionally targets `base64_ng::ct::CtEngine`. Strict
 non-CT decoders remain available in `base64-ng`, but this crate keeps the
 secret-container API pointed at the constant-time-oriented decode path.
 
 `base64-ng-sanitization` also re-exports `sanitization::ct` and adds
 `SanitizationCtEqExt` for comparing decoded `SecretBytes` and `SecretVec`
-values through `sanitization` 1.2's native `Choice` API. This gives projects
+values through `sanitization` 1.2.1's native `Choice` API. This gives projects
 that already admit `sanitization` a dependency-free alternative to external
 `subtle` integration:
 

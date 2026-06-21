@@ -14,8 +14,11 @@
 //! The extension trait targets [`base64_ng::ct::CtEngine`] rather than the
 //! ordinary strict decoder. That keeps secret-container ergonomics aligned with
 //! the constant-time-oriented decode path.
-//! `sanitization` 1.2's native [`ct`] primitives are re-exported for callers
+//! `sanitization` 1.2.1's native [`ct`] primitives are re-exported for callers
 //! that want dependency-free `Choice`-based verification after decoding.
+//! Enable this crate's `memory-lock` or `high-assurance` feature to decode
+//! directly into `sanitization::LockedSecretBytes` or
+//! `sanitization::LockedSecretVec` on supported native targets.
 //!
 //! ```
 //! use base64_ng::ct;
@@ -42,6 +45,46 @@ use sanitization::{
 
 #[cfg(feature = "alloc")]
 use sanitization::SecretVec;
+
+#[cfg(all(
+    feature = "memory-lock",
+    any(
+        all(
+            target_os = "linux",
+            any(target_arch = "x86_64", target_arch = "aarch64")
+        ),
+        target_os = "macos",
+        target_os = "ios",
+        target_os = "android",
+        target_os = "windows",
+        target_os = "freebsd",
+        target_os = "openbsd",
+        target_os = "netbsd",
+        target_os = "dragonfly",
+        all(target_arch = "wasm32", feature = "wasm-compat"),
+    )
+))]
+use sanitization::{LockedSecretBytes, LockedSecretBytesGenerateError};
+
+#[cfg(all(
+    feature = "memory-lock",
+    any(
+        all(
+            target_os = "linux",
+            any(target_arch = "x86_64", target_arch = "aarch64")
+        ),
+        target_os = "macos",
+        target_os = "ios",
+        target_os = "android",
+        target_os = "windows",
+        target_os = "freebsd",
+        target_os = "openbsd",
+        target_os = "netbsd",
+        target_os = "dragonfly",
+    ),
+    not(miri)
+))]
+use sanitization::{LockedSecretVec, LockedSecretVecFillError};
 
 pub use sanitization::ct;
 
@@ -115,6 +158,54 @@ impl SanitizationCtEqExt for SecretVec {
     }
 }
 
+#[cfg(all(
+    feature = "memory-lock",
+    any(
+        all(
+            target_os = "linux",
+            any(target_arch = "x86_64", target_arch = "aarch64")
+        ),
+        target_os = "macos",
+        target_os = "ios",
+        target_os = "android",
+        target_os = "windows",
+        target_os = "freebsd",
+        target_os = "openbsd",
+        target_os = "netbsd",
+        target_os = "dragonfly",
+        all(target_arch = "wasm32", feature = "wasm-compat"),
+    )
+))]
+impl<const N: usize> SanitizationCtEqExt for LockedSecretBytes<N> {
+    fn sanitization_ct_eq(&self, expected: &[u8]) -> Choice {
+        <LockedSecretBytes<N> as ConstantTimeEq<[u8]>>::ct_eq(self, expected)
+    }
+}
+
+#[cfg(all(
+    feature = "memory-lock",
+    any(
+        all(
+            target_os = "linux",
+            any(target_arch = "x86_64", target_arch = "aarch64")
+        ),
+        target_os = "macos",
+        target_os = "ios",
+        target_os = "android",
+        target_os = "windows",
+        target_os = "freebsd",
+        target_os = "openbsd",
+        target_os = "netbsd",
+        target_os = "dragonfly",
+    ),
+    not(miri)
+))]
+impl SanitizationCtEqExt for LockedSecretVec {
+    fn sanitization_ct_eq(&self, expected: &[u8]) -> Choice {
+        <LockedSecretVec as ConstantTimeEq<[u8]>>::ct_eq(self, expected)
+    }
+}
+
 /// Compare two byte slices through `sanitization::ct` with public length.
 ///
 /// This is useful when callers want the same native [`Choice`] type without
@@ -150,6 +241,47 @@ pub trait CtDecodeSanitizationExt {
         input: &[u8],
     ) -> Result<SecretBytes<N>, SanitizationDecodeError>;
 
+    /// Decode `input` directly into fixed-size locked secret storage.
+    ///
+    /// Enable the `memory-lock` feature, or `high-assurance` for
+    /// `memory-lock` plus `canary-check` and `random-canary`, to use this
+    /// helper on supported native targets. The locked mapping is created before
+    /// decoding starts, and decoded bytes are written directly into that locked
+    /// mapping through `sanitization::LockedSecretBytes::try_from_fill`.
+    ///
+    /// The decoded length must exactly match `N`. A length mismatch returns
+    /// [`SanitizationDecodeError::LengthMismatch`] inside the
+    /// `sanitization` generation error.
+    ///
+    /// # Errors
+    ///
+    /// Returns a `sanitization` memory error if locked storage cannot be
+    /// created. Returns [`SanitizationDecodeError::Decode`] if Base64 decoding
+    /// fails, or [`SanitizationDecodeError::LengthMismatch`] if the decoded
+    /// length does not exactly equal `N`.
+    #[cfg(all(
+        feature = "memory-lock",
+        any(
+            all(
+                target_os = "linux",
+                any(target_arch = "x86_64", target_arch = "aarch64")
+            ),
+            target_os = "macos",
+            target_os = "ios",
+            target_os = "android",
+            target_os = "windows",
+            target_os = "freebsd",
+            target_os = "openbsd",
+            target_os = "netbsd",
+            target_os = "dragonfly",
+            all(target_arch = "wasm32", feature = "wasm-compat"),
+        )
+    ))]
+    fn decode_locked_secret_bytes<const N: usize>(
+        &self,
+        input: &[u8],
+    ) -> Result<LockedSecretBytes<N>, LockedSecretBytesGenerateError<SanitizationDecodeError>>;
+
     /// Decode `input` into a heap-backed clear-on-drop secret vector.
     ///
     /// Enable the `alloc` feature to use this helper. For shared-memory or
@@ -179,6 +311,42 @@ pub trait CtDecodeSanitizationExt {
         &self,
         input: &[u8],
     ) -> Result<SecretVec, DecodeError>;
+
+    /// Decode `input` directly into heap-backed locked secret storage.
+    ///
+    /// Enable the `memory-lock` feature, or `high-assurance` for
+    /// `memory-lock` plus `canary-check` and `random-canary`, to use this
+    /// helper on supported native targets. The locked mapping is created at the
+    /// exact decoded capacity and bytes are written directly into that mapping
+    /// through `sanitization::LockedSecretVec::try_from_capacity`.
+    ///
+    /// # Errors
+    ///
+    /// Returns a `sanitization` memory error if locked storage cannot be
+    /// created. Returns [`DecodeError`] from the fill branch if Base64 decoding
+    /// fails.
+    #[cfg(all(
+        feature = "memory-lock",
+        any(
+            all(
+                target_os = "linux",
+                any(target_arch = "x86_64", target_arch = "aarch64")
+            ),
+            target_os = "macos",
+            target_os = "ios",
+            target_os = "android",
+            target_os = "windows",
+            target_os = "freebsd",
+            target_os = "openbsd",
+            target_os = "netbsd",
+            target_os = "dragonfly",
+        ),
+        not(miri)
+    ))]
+    fn decode_locked_secret_vec(
+        &self,
+        input: &[u8],
+    ) -> Result<LockedSecretVec, LockedSecretVecFillError<DecodeError>>;
 }
 
 impl<A, const PAD: bool> CtDecodeSanitizationExt for CtEngine<A, PAD>
@@ -215,6 +383,56 @@ where
         Ok(secret)
     }
 
+    #[cfg(all(
+        feature = "memory-lock",
+        any(
+            all(
+                target_os = "linux",
+                any(target_arch = "x86_64", target_arch = "aarch64")
+            ),
+            target_os = "macos",
+            target_os = "ios",
+            target_os = "android",
+            target_os = "windows",
+            target_os = "freebsd",
+            target_os = "openbsd",
+            target_os = "netbsd",
+            target_os = "dragonfly",
+            all(target_arch = "wasm32", feature = "wasm-compat"),
+        )
+    ))]
+    fn decode_locked_secret_bytes<const N: usize>(
+        &self,
+        input: &[u8],
+    ) -> Result<LockedSecretBytes<N>, LockedSecretBytesGenerateError<SanitizationDecodeError>> {
+        let required = self
+            .decoded_len(input)
+            .map_err(|error| LockedSecretBytesGenerateError::Generate(error.into()))?;
+        if required != N {
+            return Err(LockedSecretBytesGenerateError::Generate(
+                SanitizationDecodeError::LengthMismatch {
+                    expected: N,
+                    actual: required,
+                },
+            ));
+        }
+
+        LockedSecretBytes::try_from_fill(|output| {
+            self.decode_slice_clear_tail(input, output)
+                .map_err(SanitizationDecodeError::Decode)
+                .and_then(|written| {
+                    if written == N {
+                        Ok(())
+                    } else {
+                        Err(SanitizationDecodeError::LengthMismatch {
+                            expected: N,
+                            actual: written,
+                        })
+                    }
+                })
+        })
+    }
+
     #[cfg(feature = "alloc")]
     fn decode_secret_vec(&self, input: &[u8]) -> Result<SecretVec, DecodeError> {
         let required = self.decoded_len(input)?;
@@ -244,98 +462,37 @@ where
         staging.secure_sanitize();
         Ok(SecretVec::from_vec(output))
     }
+
+    #[cfg(all(
+        feature = "memory-lock",
+        any(
+            all(
+                target_os = "linux",
+                any(target_arch = "x86_64", target_arch = "aarch64")
+            ),
+            target_os = "macos",
+            target_os = "ios",
+            target_os = "android",
+            target_os = "windows",
+            target_os = "freebsd",
+            target_os = "openbsd",
+            target_os = "netbsd",
+            target_os = "dragonfly",
+        ),
+        not(miri)
+    ))]
+    fn decode_locked_secret_vec(
+        &self,
+        input: &[u8],
+    ) -> Result<LockedSecretVec, LockedSecretVecFillError<DecodeError>> {
+        let required = self
+            .decoded_len(input)
+            .map_err(LockedSecretVecFillError::Fill)?;
+        LockedSecretVec::try_from_capacity(required, |output| {
+            self.decode_slice_clear_tail(input, output)
+        })
+    }
 }
 
 #[cfg(test)]
-mod tests {
-    use super::{
-        CtDecodeSanitizationExt, SanitizationCtEqExt, SanitizationDecodeError,
-        sanitization_ct_eq_public_len,
-    };
-    use base64_ng::{DecodeError, ct};
-
-    #[test]
-    fn decodes_fixed_secret_bytes() {
-        let secret = ct::STANDARD.decode_secret_bytes::<5>(b"aGVsbG8=").unwrap();
-        secret.expose_secret(|bytes| assert_eq!(bytes, b"hello"));
-    }
-
-    #[test]
-    fn compares_fixed_secret_bytes_with_native_ct_choice() {
-        let secret = ct::STANDARD.decode_secret_bytes::<5>(b"aGVsbG8=").unwrap();
-        assert!(secret.sanitization_verify(b"hello", "test declassifies equality result"));
-        assert!(
-            !secret
-                .sanitization_ct_eq(b"world")
-                .declassify("test declassifies inequality result")
-        );
-        assert!(
-            !secret
-                .sanitization_ct_eq(b"hello!")
-                .declassify("test declassifies length mismatch")
-        );
-    }
-
-    #[test]
-    fn compares_raw_slices_with_native_ct_choice() {
-        assert!(
-            sanitization_ct_eq_public_len(b"hello", b"hello")
-                .declassify("test declassifies public-length equality")
-        );
-        assert!(
-            !sanitization_ct_eq_public_len(b"hello", b"world")
-                .declassify("test declassifies public-length inequality")
-        );
-    }
-
-    #[test]
-    fn fixed_secret_bytes_reject_length_mismatch() {
-        assert_eq!(
-            ct::STANDARD
-                .decode_secret_bytes::<4>(b"aGVsbG8=")
-                .unwrap_err(),
-            SanitizationDecodeError::LengthMismatch {
-                expected: 4,
-                actual: 5
-            }
-        );
-    }
-
-    #[test]
-    fn fixed_secret_bytes_reports_decode_error() {
-        assert_eq!(
-            ct::STANDARD
-                .decode_secret_bytes::<5>(b"aGVsbG8!")
-                .unwrap_err(),
-            SanitizationDecodeError::Decode(DecodeError::InvalidInput)
-        );
-    }
-
-    #[cfg(feature = "alloc")]
-    #[test]
-    fn decodes_secret_vec() {
-        let secret = ct::STANDARD.decode_secret_vec(b"aGVsbG8=").unwrap();
-        secret.with_secret(|bytes| assert_eq!(bytes, b"hello"));
-    }
-
-    #[cfg(feature = "alloc")]
-    #[test]
-    fn compares_secret_vec_with_native_ct_choice() {
-        let secret = ct::STANDARD.decode_secret_vec(b"aGVsbG8=").unwrap();
-        assert!(secret.sanitization_verify(b"hello", "test declassifies SecretVec equality"));
-        assert!(
-            !secret
-                .sanitization_ct_eq(b"world")
-                .declassify("test declassifies SecretVec inequality")
-        );
-    }
-
-    #[cfg(feature = "alloc")]
-    #[test]
-    fn decodes_secret_vec_staged() {
-        let secret = ct::STANDARD
-            .decode_secret_vec_staged::<5>(b"aGVsbG8=")
-            .unwrap();
-        secret.with_secret(|bytes| assert_eq!(bytes, b"hello"));
-    }
-}
+mod tests;

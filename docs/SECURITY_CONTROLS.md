@@ -106,6 +106,11 @@ certification claim.
   `#[derive(Base64Secret)]` companion crate when protocol key sizes are known.
   The generated decode path uses staged CT decode, redacted `Debug`, and
   drop-time cleanup by default.
+- For long-lived decoded key material on supported native targets, consider
+  `base64-ng-sanitization` with its `high-assurance` feature. That path uses
+  `sanitization` `memory-lock`, `canary-check`, and `random-canary` features
+  and exposes helpers that decode directly into `LockedSecretBytes` or
+  `LockedSecretVec` without first landing in a normal `Vec`.
 - Keep dependency review split by package. The core `base64-ng` crate has zero
   runtime dependencies; optional companion crates such as `base64-ng-serde`,
   `base64-ng-bytes`, `base64-ng-subtle`, and `base64-ng-tokio` intentionally

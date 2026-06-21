@@ -98,9 +98,9 @@ dependencies = [
 
 [[package]]
 name = "sanitization"
-version = "1.2.0"
+version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "133acc816fcf0664d38213dd281dfdd29d6e0a6f717ae55e831c2570c6ce1b77"
+checksum = "51992628809c9dcb8fa6c55d868ff724ae724c4641a29b24867fda6d15665ff6"
 
 [[package]]
 name = "serde"

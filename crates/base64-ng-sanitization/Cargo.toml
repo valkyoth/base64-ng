@@ -23,15 +23,23 @@ default = []
 alloc = ["base64-ng/alloc", "sanitization/alloc"]
 std = ["alloc", "base64-ng/std", "sanitization/std"]
 asm-compare = ["sanitization/asm-compare"]
+memory-lock = ["sanitization/memory-lock"]
+canary-check = ["memory-lock", "sanitization/canary-check"]
+random-canary = ["canary-check", "sanitization/random-canary"]
+high-assurance = ["memory-lock", "canary-check", "random-canary"]
 strict-ct = ["sanitization/strict-ct"]
+wasm-compat = ["sanitization/wasm-compat"]
 
 [dependencies]
 base64-ng = { version = "1.2.0", path = "../..", default-features = false }
-sanitization = { version = "1.2.0", default-features = false }
+sanitization = { version = "1.2.1", default-features = false }
 
 [lints.rust]
 unsafe_code = "deny"
 missing_docs = "deny"
+unexpected_cfgs = { level = "warn", check-cfg = [
+    "cfg(miri)",
+] }
 
 [lints.clippy]
 all = "deny"

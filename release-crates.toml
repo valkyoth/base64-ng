@@ -14,7 +14,7 @@ previous_version = "1.0.9"
 version = "1.2.0"
 change = "code"
 publish = true
-reason = "Updates to sanitization 1.2.0 and adds native sanitization::ct Choice comparison helpers."
+reason = "Updates to sanitization 1.2.1, adds native sanitization::ct Choice comparison helpers, and exposes opt-in locked-secret decode helpers."
 
 [crates."base64-ng-derive"]
 previous_version = "1.0.9"

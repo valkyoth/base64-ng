@@ -28,10 +28,10 @@ new dependency expands the audit, license, advisory, and supply-chain surface.
   audit logs preserve the operator-attestation boundary.
 - `base64-ng-sanitization` is an optional companion package for applications
   that already admit `sanitization`; it is not a dependency of the core
-  `base64-ng` package. Its staged `1.2.0` line requires `sanitization` `1.2.0`
-  so callers can use `sanitization::ct::Choice` and native
-  constant-time-oriented equality helpers without adding the external `subtle`
-  crate.
+  `base64-ng` package. Its staged `1.2.0` line requires `sanitization` `1.2.1`
+  so callers can use `sanitization::ct::Choice`, native
+  constant-time-oriented equality helpers, and opt-in locked-secret fill APIs
+  without adding dependencies to the core crate.
 - `base64-ng-derive` is an optional companion package for fixed-size byte
   newtypes. It is dependency-free and does not add proc-macro machinery to the
   core `base64-ng` package.
@@ -58,6 +58,10 @@ Current decisions:
 - `base64-ng-sanitization` is admitted as a companion crate because it keeps the
   core package dependency-free while giving applications that already use
   `sanitization` a direct CT decode path into clear-on-drop secret containers.
+  Its optional `high-assurance` feature admits `sanitization` memory-locking,
+  canary-check, and random-canary features so supported native deployments can
+  decode directly into locked mappings through `LockedSecretBytes` or
+  `LockedSecretVec`.
 - `base64-ng-derive` is admitted as a companion crate because it keeps
   proc-macro code and generated newtype ergonomics outside the core package.
   The derive surface is intentionally limited to tuple structs with one

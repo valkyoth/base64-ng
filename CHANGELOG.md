@@ -5,9 +5,11 @@
 - Staged all workspace crates for a synced `1.2.0` family release to avoid
   publishing many small intermediate crates.io versions while the encode
   acceleration line is completed.
-- Updated `base64-ng-sanitization` to `sanitization` `1.2.0` and added native
+- Updated `base64-ng-sanitization` to `sanitization` `1.2.1`, added native
   `sanitization::ct::Choice` comparison helpers for decoded `SecretBytes` and
-  `SecretVec` values.
+  `SecretVec` values, and added opt-in locked-secret decode helpers that write
+  directly into `LockedSecretBytes` or `LockedSecretVec` under the companion's
+  `memory-lock`/`high-assurance` feature set.
 - Cached std SIMD backend detection after the first runtime probe, gated
   admitted encode dispatch by each backend's fixed block size, and avoided
   runtime SIMD wrapper calls for inputs that cannot fill a vector block.

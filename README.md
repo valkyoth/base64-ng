@@ -178,7 +178,7 @@ passes pentest, GitHub CI, Kani, and the release gate.
 | Crate | Purpose |
 | --- | --- |
 | `base64-ng` | Stable zero-runtime-dependency facade crate and primary user entry point. |
-| `base64-ng-sanitization` | Optional `sanitization` integration with native `Choice` comparison helpers. |
+| `base64-ng-sanitization` | Optional `sanitization` integration with native `Choice` comparison helpers and opt-in locked secret decode helpers. |
 | `base64-ng-derive` | Dependency-free `Base64Secret` derive for fixed-size secret newtypes. |
 | `base64-ng-serde` | Optional `serde` wrappers for projects that already admit `serde`. |
 | `base64-ng-bytes` | Optional `bytes` helpers for `Bytes`, `Buf`, and `BufMut` users. |
@@ -194,9 +194,12 @@ only the crates that changed instead of republishing the whole ecosystem.
 `base64-ng-sanitization` provides extension helpers for
 `base64_ng::ct::CtEngine` that decode directly into
 `sanitization::SecretBytes<N>` in `no_std`, with `SecretVec` helpers behind its
-own `alloc` feature. The staged `1.2.0` companion uses `sanitization` `1.2.0`
+own `alloc` feature. The staged `1.2.0` companion uses `sanitization` `1.2.1`
 and exposes `sanitization::ct::Choice` comparison helpers through
-`SanitizationCtEqExt`:
+`SanitizationCtEqExt`. Enable the companion's `high-assurance` feature to
+decode directly into `sanitization::LockedSecretBytes` or
+`sanitization::LockedSecretVec` on supported native targets, using
+`sanitization` memory locking plus canary checking and random canaries:
 
 ```toml
 [dependencies]
@@ -216,6 +219,22 @@ assert!(secret.sanitization_verify(
     b"hello",
     "example compares public expected bytes"
 ));
+```
+
+```toml
+[dependencies]
+base64-ng-sanitization = { version = "1.2.0", features = ["high-assurance"] }
+```
+
+```rust
+use base64_ng::ct;
+use base64_ng_sanitization::CtDecodeSanitizationExt;
+
+let locked = ct::STANDARD
+    .decode_locked_secret_bytes::<5>(b"aGVsbG8=")
+    .unwrap();
+
+locked.with_secret(|bytes| assert_eq!(bytes, b"hello"));
 ```
 
 `base64-ng-derive` provides a dependency-free `Base64Secret` derive for tuple
