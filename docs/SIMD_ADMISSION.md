@@ -6,17 +6,20 @@ only for backends named in this file and the release gate.
 
 ## Current Admission State
 
-- Admitted backends: AVX-512 VBMI encode, AVX2 encode, and SSSE3/SSE4.1 encode
-  for std `x86`/`x86_64`.
-- Active backend priority: AVX-512 VBMI, then AVX2, then SSSE3/SSE4.1, when
-  runtime CPU probing proves the required CPU features; scalar otherwise.
+- Admitted backends: AVX-512 VBMI encode, AVX2 encode, SSSE3/SSE4.1 encode, and
+  NEON encode for std `x86`/`x86_64` and std `aarch64`.
+- Active backend priority: AVX-512 VBMI, then AVX2, then SSSE3/SSE4.1 on
+  x86/x86_64; NEON on aarch64; scalar otherwise.
+- Runtime activation scope: std x86/x86_64 and std aarch64 dispatch only.
+- Gate summary: Admitted backends: AVX-512 VBMI encode, AVX2 encode, SSSE3/SSE4.1 encode, and NEON encode.
+- Gate priority: Active backend priority: AVX-512 VBMI, then AVX2, then SSSE3/SSE4.1 on x86/x86_64; NEON on aarch64.
 - Public performance claims: none without local benchmark evidence.
 - Release status: `1.2.0-staged`; the workspace is collecting the former
   `1.1.x` checkpoint work into one synced `1.2.0` family release. Current
   active encode dispatch admits conservative AVX-512 VBMI above AVX2 above
-  SSSE3/SSE4.1 for Standard and URL-safe alphabet families. Decode, custom
-  alphabets, in-place encode, `no_std`, NEON, and wasm `simd128` remain scalar
-  or prototype-only.
+  SSSE3/SSE4.1 on x86/x86_64 and NEON on aarch64 for Standard and URL-safe
+  alphabet families. Decode, custom alphabets, in-place encode, `no_std`, and
+  wasm `simd128` remain scalar or prototype-only.
 
 ## Required For Every Admitted Backend
 
@@ -61,12 +64,12 @@ State labels are intentionally strict:
 | AVX-512 VBMI | admitted backend | `avx512f`, `avx512bw`, `avx512vl`, `avx512vbmi` | std x86/x86_64 runtime-dispatched encode for Standard and URL-safe alphabet families; fixed 48-byte blocks use vector code; tails, unsupported alphabets, in-place encode, `no_std`, and decode use scalar fallback |
 | AVX2 | admitted backend | `avx2` | std x86/x86_64 runtime-dispatched encode for Standard and URL-safe alphabet families; fixed 24-byte blocks use vector code; tails, unsupported alphabets, in-place encode, `no_std`, and decode use scalar fallback |
 | SSSE3/SSE4.1 | admitted backend | `ssse3`, `sse4.1` | std x86/x86_64 runtime-dispatched encode for Standard and URL-safe alphabet families; fixed 12-byte blocks use vector code; tails, unsupported alphabets, in-place encode, `no_std`, and decode use scalar fallback |
-| NEON | real non-dispatchable prototype | `neon` | real AArch64 fixed-block encode prototype for Standard and URL-safe alphabets; 32-bit ARM scaffold; non-dispatchable |
+| NEON | admitted backend | `neon` | std aarch64 runtime-dispatched encode for Standard and URL-safe alphabet families; fixed 12-byte blocks use vector code; tails, unsupported alphabets, 32-bit ARM, in-place encode, `no_std`, and decode use scalar fallback |
 | wasm `simd128` | real non-dispatchable prototype | `simd128` | real fixed-block encode prototype for Standard and URL-safe alphabets; test-binary compile evidence only; non-dispatchable |
 
 ## Release Rule
 
 Advertise SIMD acceleration only with the admitted backend name and scope. Do
-not claim NEON, wasm `simd128`, custom alphabet, in-place, or decode
+not claim wasm `simd128`, custom alphabet, in-place, or decode
 acceleration until this manifest names those backends or API surfaces and links to the matching
 differential, fuzz, unsafe, benchmark, and release-note evidence.

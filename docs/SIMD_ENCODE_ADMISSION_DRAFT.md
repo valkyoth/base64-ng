@@ -1,7 +1,7 @@
 # SIMD Encode Admission Draft
 
 This draft is the working package for remaining encode acceleration work toward
-`1.2.0`. It is not an admission record. AVX-512 VBMI, AVX2, and SSSE3/SSE4.1 encode are already admitted for std x86/x86_64 Standard and URL-safe alphabet families; every additional backend or broader API surface remains pending until `docs/SIMD_ADMISSION.md`, release evidence, tests, benchmarks, unsafe inventory, and release notes are updated in the same commit as the active backend change.
+`1.2.0`. It is not an admission record. AVX-512 VBMI, AVX2, SSSE3/SSE4.1, and NEON encode are already admitted for std x86/x86_64 or std aarch64 Standard and URL-safe alphabet families; every additional backend or broader API surface remains pending until `docs/SIMD_ADMISSION.md`, release evidence, tests, benchmarks, unsafe inventory, and release notes are updated in the same commit as the active backend change.
 
 ## Scope
 
@@ -11,8 +11,10 @@ and timing behavior make decode higher risk than encode.
 
 The conservative initial activation shape is:
 
-- `std` x86/x86_64 runtime dispatch only, because
-  `std::is_x86_feature_detected!` provides runtime CPU feature probing.
+- `std` x86/x86_64 and std aarch64 dispatch only. x86/x86_64 uses
+  `std::is_x86_feature_detected!` runtime CPU feature probing, while aarch64
+  NEON relies on the mandatory target contract.
+- Release gate phrase: std x86/x86_64 and std aarch64 dispatch only.
 - `no_std` builds remain scalar-only unless a later unsafe caller-contract API
   is designed and reviewed.
 - Unsupported CPUs must execute scalar code without illegal instructions.
@@ -104,10 +106,10 @@ BASE64_NG_RUN_PERF=1 scripts/check_perf.sh
 Allowed wording:
 
 ```text
-This release admits std-only x86_64 AVX-512 VBMI, AVX2, and SSSE3/SSE4.1 encode
-dispatch for Standard and URL-safe Base64 on CPUs that pass runtime feature
-detection. Unsupported CPUs continue to use the scalar backend. Decode remains
-scalar-only.
+This release admits std-only x86_64 AVX-512 VBMI, AVX2, SSSE3/SSE4.1, and
+std-only aarch64 NEON encode dispatch for Standard and URL-safe Base64 on
+platforms that pass the admission checks. Unsupported CPUs continue to use the
+scalar backend. Decode remains scalar-only.
 ```
 
 Required precision:

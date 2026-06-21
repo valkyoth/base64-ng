@@ -696,10 +696,10 @@ Current staged `1.2.0` work packages:
   dispatch above AVX2 and SSSE3/SSE4.1 for Standard and URL-safe alphabet
   families, with runtime CPU probing, fixed 48-byte vector blocks, ZMM cleanup,
   scalar fallback behavior, generated assembly evidence, and benchmark evidence.
-- AArch64 encode decision: admit NEON encode dispatch for Standard and URL-safe
-  alphabets only if hardware evidence from real AArch64 machines, generated
-  assembly review, register cleanup review, and platform fallback behavior are
-  complete. Otherwise keep NEON non-dispatchable and document the exact reason.
+- AArch64 encode completion: admit std-only aarch64 NEON encode dispatch for
+  Standard and URL-safe alphabets, with fixed 12-byte vector blocks, register
+  cleanup review, scalar fallback behavior, generated assembly evidence, and
+  real AArch64 hardware evidence.
 - wasm encode decision: because wasm runtime/JIT behavior is outside the
   crate's control, wasm may remain compile-evidence only unless a specific
   runtime and deployment profile is admitted. Do not let wasm block `1.2.0`

@@ -30,7 +30,7 @@ impl std::error::Error for BackendPolicyError {}
 pub struct BackendReport {
     /// Backend currently used for admitted runtime dispatch.
     ///
-    /// In the staged `1.2.0` line, AVX-512 VBMI, AVX2, and SSSE3/SSE4.1
+    /// In the staged `1.2.0` line, AVX-512 VBMI, AVX2, SSSE3/SSE4.1, and NEON
     /// admission covers encode dispatch only. Decode remains scalar until a
     /// separate decode admission package is complete.
     pub active: Backend,
@@ -320,6 +320,8 @@ fn active_backend() -> Backend {
         crate::simd::ActiveBackend::Avx2 => Backend::Avx2,
         #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
         crate::simd::ActiveBackend::Ssse3Sse41 => Backend::Ssse3Sse41,
+        #[cfg(all(feature = "std", target_arch = "aarch64"))]
+        crate::simd::ActiveBackend::Neon => Backend::Neon,
     }
 }
 

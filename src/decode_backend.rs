@@ -26,6 +26,8 @@ pub(crate) fn active_decode_backend() -> DecodeBackend {
         crate::simd::ActiveBackend::Avx2 => {}
         #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
         crate::simd::ActiveBackend::Ssse3Sse41 => {}
+        #[cfg(all(feature = "std", target_arch = "aarch64"))]
+        crate::simd::ActiveBackend::Neon => {}
     }
 
     DecodeBackend::Scalar

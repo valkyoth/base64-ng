@@ -415,12 +415,19 @@ fn runtime_backend_report_matches_admission_state() {
     if report.accelerated_backend_active {
         assert!(matches!(
             report.active,
-            runtime::Backend::Avx512Vbmi | runtime::Backend::Avx2 | runtime::Backend::Ssse3Sse41
+            runtime::Backend::Avx512Vbmi
+                | runtime::Backend::Avx2
+                | runtime::Backend::Ssse3Sse41
+                | runtime::Backend::Neon
         ));
         assert!(cfg!(all(
             feature = "simd",
             feature = "std",
-            any(target_arch = "x86", target_arch = "x86_64")
+            any(
+                target_arch = "x86",
+                target_arch = "x86_64",
+                target_arch = "aarch64"
+            )
         )));
     } else {
         assert_eq!(report.active, runtime::Backend::Scalar);

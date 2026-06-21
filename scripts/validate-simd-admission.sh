@@ -31,15 +31,15 @@ active_variants="$(
 expected_active_variants="Scalar
 Avx512Vbmi
 Avx2
-Ssse3Sse41"
+Ssse3Sse41
+Neon"
 if [ "$active_variants" != "$expected_active_variants" ]; then
-    echo "simd admission: ActiveBackend must contain only Scalar and admitted AVX-512/AVX2/SSSE3 encode" >&2
+    echo "simd admission: ActiveBackend must contain only Scalar and admitted AVX-512/AVX2/SSSE3/NEON encode" >&2
     printf '%s\n' "$active_variants" >&2
     exit 1
 fi
 
 if grep -R \
-    -e 'ActiveBackend::Neon' \
     -e 'ActiveBackend::Wasm' \
     -e 'ActiveBackend::Simd' \
     src
@@ -61,11 +61,14 @@ if ! awk '
     inside && /ActiveBackend::Ssse3Sse41/ {
         ssse3 = 1
     }
+    inside && /ActiveBackend::Neon/ {
+        neon = 1
+    }
     inside && /ActiveBackend::Scalar/ {
         scalar = 1
     }
     inside && /^}/ {
-        exit (scalar && avx512 && avx2 && ssse3) ? 0 : 1
+        exit (scalar && avx512 && avx2 && ssse3 && neon) ? 0 : 1
     }
     END {
         if (!inside) {
@@ -73,7 +76,7 @@ if ! awk '
         }
     }
 ' src/simd/mod.rs; then
-    echo "simd admission: active_backend must explicitly return admitted AVX-512, AVX2, SSSE3/SSE4.1, and scalar fallback" >&2
+    echo "simd admission: active_backend must explicitly return admitted AVX-512, AVX2, SSSE3/SSE4.1, NEON, and scalar fallback" >&2
     exit 1
 fi
 
@@ -85,12 +88,12 @@ for required_text in \
     "real non-dispatchable prototype" \
     "candidate only" \
     "admitted backend" \
-    "x86/x86_64 runtime dispatch only" \
+    "std x86/x86_64 and std aarch64 dispatch only" \
     "Decode acceleration" \
     "Required precision" \
     "Performance numbers are release notes evidence only" \
-    "Admitted backends: AVX-512 VBMI encode, AVX2 encode, and SSSE3/SSE4.1 encode" \
-    "Active backend priority: AVX-512 VBMI, then AVX2, then SSSE3/SSE4.1" \
+    "Admitted backends: AVX-512 VBMI encode, AVX2 encode, SSSE3/SSE4.1 encode, and NEON encode" \
+    "Active backend priority: AVX-512 VBMI, then AVX2, then SSSE3/SSE4.1 on x86/x86_64; NEON on aarch64" \
     "The active non-scalar backends" \
     "Advertise SIMD acceleration only with the admitted backend name and scope"
 do
@@ -136,7 +139,14 @@ if ! printf '%s\n' "$ssse3_row" | grep '| admitted backend |' >/dev/null 2>&1; t
     exit 1
 fi
 
-non_admitted_rows="$(printf '%s\n' "$backend_rows" | grep -v '^| AVX-512 VBMI ' | grep -v '^| AVX2 ' | grep -v '^| SSSE3/SSE4\.1 ')"
+neon_row="$(printf '%s\n' "$backend_rows" | grep '^| NEON ')"
+if ! printf '%s\n' "$neon_row" | grep '| admitted backend |' >/dev/null 2>&1; then
+    echo "simd admission: NEON row must be an admitted backend" >&2
+    printf '%s\n' "$backend_rows" >&2
+    exit 1
+fi
+
+non_admitted_rows="$(printf '%s\n' "$backend_rows" | grep -v '^| AVX-512 VBMI ' | grep -v '^| AVX2 ' | grep -v '^| SSSE3/SSE4\.1 ' | grep -v '^| NEON ')"
 if printf '%s\n' "$non_admitted_rows" | grep -v '| real non-dispatchable prototype |' >/dev/null 2>&1; then
     echo "simd admission: non-admitted backend rows must remain real non-dispatchable prototypes" >&2
     printf '%s\n' "$backend_rows" >&2
@@ -149,9 +159,9 @@ if printf '%s\n' "$backend_rows" | grep 'real fixed-block encode prototype' | gr
     exit 1
 fi
 
-if grep -q 'NEON .*admitted backend\|wasm .*admitted backend' docs/SIMD_ADMISSION.md docs/SIMD.md; then
-    echo "simd admission: non-x86 admitted backend wording requires gate update" >&2
+if grep -q 'wasm .*admitted backend' docs/SIMD_ADMISSION.md docs/SIMD.md; then
+    echo "simd admission: non-admitted backend wording requires gate update" >&2
     exit 1
 fi
 
-echo "simd admission: AVX-512 VBMI, AVX2, and SSSE3/SSE4.1 encode admission gate ok"
+echo "simd admission: AVX-512 VBMI, AVX2, SSSE3/SSE4.1, and NEON encode admission gate ok"

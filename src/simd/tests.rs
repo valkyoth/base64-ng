@@ -331,9 +331,9 @@ fn ssse3_sse41_encode_block_matches_scalar_when_available() {
     all(target_arch = "arm", target_feature = "neon")
 ))]
 #[test]
-fn neon_encode_prototype_matches_scalar_when_available() {
+fn neon_encode_block_matches_scalar_when_available() {
     if !neon_available() {
-        println!("skipped: NEON prototype test requires aarch64 or arm+neon");
+        println!("skipped: NEON encode block test requires aarch64 or arm+neon");
         return;
     }
 

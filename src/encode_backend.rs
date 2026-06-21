@@ -1,8 +1,8 @@
 //! Encode backend dispatch boundary.
 //!
 //! This module is the single integration point between public encode APIs and
-//! the implementation that performs encoding. AVX-512 VBMI, AVX2, and
-//! SSSE3/SSE4.1 encode dispatch is admitted only for std `x86`/`x86_64`
+//! the implementation that performs encoding. AVX-512 VBMI, AVX2,
+//! SSSE3/SSE4.1, and `AArch64` NEON encode dispatch is admitted only for std
 //! builds and Standard/URL-safe alphabet families; unsupported alphabets,
 //! targets, and in-place encode still fall back to scalar.
 
@@ -34,6 +34,9 @@ pub(crate) enum EncodeBackend {
         any(target_arch = "x86", target_arch = "x86_64")
     ))]
     Ssse3Sse41,
+    /// std `aarch64` NEON fixed-block encode.
+    #[cfg(all(feature = "simd", feature = "std", target_arch = "aarch64"))]
+    Neon,
 }
 
 /// Returns the encode backend selected for this build and target.
@@ -48,6 +51,8 @@ pub(crate) fn active_encode_backend() -> EncodeBackend {
         crate::simd::ActiveBackend::Avx2 => return EncodeBackend::Avx2,
         #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
         crate::simd::ActiveBackend::Ssse3Sse41 => return EncodeBackend::Ssse3Sse41,
+        #[cfg(all(feature = "std", target_arch = "aarch64"))]
+        crate::simd::ActiveBackend::Neon => return EncodeBackend::Neon,
     }
 
     EncodeBackend::Scalar
@@ -99,6 +104,14 @@ where
                 scalar::encode_slice::<A, PAD>(input, output)
             }
         }
+        #[cfg(all(feature = "simd", feature = "std", target_arch = "aarch64"))]
+        EncodeBackend::Neon => {
+            if crate::simd::neon_supports_alphabet::<A>() {
+                crate::simd::encode_slice_neon::<A, PAD>(input, output)
+            } else {
+                scalar::encode_slice::<A, PAD>(input, output)
+            }
+        }
     }
 }
 
@@ -136,5 +149,7 @@ where
         EncodeBackend::Ssse3Sse41 => {
             scalar_encode_in_place::encode_in_place::<A, PAD>(buffer, input_len)
         }
+        #[cfg(all(feature = "simd", feature = "std", target_arch = "aarch64"))]
+        EncodeBackend::Neon => scalar_encode_in_place::encode_in_place::<A, PAD>(buffer, input_len),
     }
 }

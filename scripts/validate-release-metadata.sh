@@ -188,10 +188,10 @@ done
 
 for required_trust_text in \
 	"Runtime dependencies | Zero external crates" \
-	"Active backend | Scalar by default; std x86/x86_64 AVX-512 VBMI encode preferred, then AVX2, then SSSE3/SSE4.1 encode" \
+	"Active backend | Scalar by default; std x86/x86_64 AVX-512 VBMI encode preferred, then AVX2, then SSSE3/SSE4.1 encode, plus std aarch64 NEON encode" \
 	"no formal cryptographic constant-time guarantee" \
 	"formally verified cryptographic constant-time behavior" \
-	"NEON, wasm, custom-alphabet, in-place, or decode acceleration" \
+	"wasm, custom-alphabet, in-place, or decode acceleration" \
 	"async/Tokio support" \
     "serde or bytes integration"
 do
@@ -260,7 +260,7 @@ case "$cargo_version" in
         required_readme_simd_status="Runtime-dispatched std \`x86\`/\`x86_64\` AVX-512 VBMI fixed-block encode"
         ;;
     *)
-        required_readme_simd_status="Scalar by default; std x86/x86_64 AVX-512 VBMI encode preferred, then AVX2, then SSSE3/SSE4.1 encode"
+        required_readme_simd_status="Scalar by default; std x86/x86_64 AVX-512 VBMI encode preferred, then AVX2, then SSSE3/SSE4.1 encode, plus std aarch64 NEON encode"
         ;;
 esac
 

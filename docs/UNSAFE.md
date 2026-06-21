@@ -705,15 +705,17 @@ Safety argument:
 
 Location: `src/simd/`
 
-Status: inactive test-only prototype, not dispatchable and not reachable from
-runtime backend selection.
+Status: admitted std AArch64 NEON encode wrapper for Standard and URL-safe
+alphabet families. It is reachable through AArch64 encode dispatch for fixed
+12-byte blocks. 32-bit ARM, unsupported alphabets, tails, padding, `no_std`,
+in-place encode, and decode use scalar fallback.
 
 Purpose:
 
 - Exercise ARM NEON intrinsic plumbing.
 - Validate the unsafe boundary on ARM targets.
-- Provide real AArch64 fixed-block vector encode evidence for Standard and
-  URL-safe alphabets before any runtime dispatch is admitted.
+- Provide the fixed-block vector encode primitive for the admitted AArch64 NEON
+  encode backend.
 - Keep 32-bit `arm+neon` and custom alphabets on scalar-equivalence scaffold
   paths until their architecture-specific evidence is complete.
 
@@ -741,19 +743,19 @@ Safety argument:
 - The function is compiled only for `aarch64` or `arm` builds with the `neon`
   target feature.
 - The function's safety contract requires runtime NEON availability.
-- The AArch64 vector path remains test-only and non-dispatchable. Runtime
-  acceleration is still blocked by the SIMD admission manifest.
+- Runtime dispatch reaches the AArch64 vector path only on std AArch64, where
+  NEON is part of the target contract. Direct tests use the same availability
+  precondition.
 - Register-retention note: the AArch64 vector path loads caller bytes into NEON
   state and expands `clear_neon_registers_for_test_prototype!` directly inside
-  the prototype function before return. This is retention reduction for the
-  inactive prototype, not a formal microarchitectural side-channel proof.
+  the block function before return. This is retention reduction for the
+  admitted encode block, not a formal microarchitectural side-channel proof.
 
 ### `encode_12_bytes_neon_aarch64_standard_family`
 
 Location: `src/simd/mod.rs`
 
-Status: private helper for the inactive AArch64 NEON test-only prototype, not
-dispatchable and not reachable from runtime backend selection.
+Status: private helper for the admitted AArch64 NEON encode block and its tests.
 
 Purpose:
 
@@ -779,29 +781,28 @@ Unsafe operation:
   URL-safe alphabet bytes with NEON comparisons and bit selects.
 - `vst1q_u8` stores the 16 encoded bytes into the output buffer.
 - `clear_neon_registers_for_test_prototype!` clears `v0` through `v31` inside
-  the prototype function before return.
+  the block function before return.
 - The local staging array is wiped with the crate cleanup primitive before the
   function returns.
 
 Safety argument:
 
 - The input and output array types provide fixed readable and writable bounds.
-- The SIMD load reads only from a local 16-byte staging array, so the prototype
+- The SIMD load reads only from a local 16-byte staging array, so the helper
   does not over-read the 12-byte caller input.
 - The staging array is mutable and wiped after the SIMD store and register
-  cleanup, reducing stack retention of the copied caller bytes in this inactive
-  prototype.
+  cleanup, reducing stack retention of the copied caller bytes.
 - The function is guarded by a NEON target-feature contract.
 - The index vector is masked to `0..=63` before alphabet mapping.
 - The output length is fixed by the output array type.
-- The prototype remains test-only and non-dispatchable.
+- Runtime dispatch reaches this helper only through the admitted AArch64 NEON
+  encode wrapper.
 
 ### `encode_standard_family_indices_neon`
 
 Location: `src/simd/mod.rs`
 
-Status: private helper for the inactive AArch64 NEON test-only prototype, not
-dispatchable and not reachable from runtime backend selection.
+Status: private helper for the admitted AArch64 NEON encode block and its tests.
 
 Purpose:
 
@@ -825,18 +826,17 @@ Safety argument:
 - The target-feature contract enables the required NEON instructions.
 - The caller constructs `indices` with masks that constrain every byte to a
   six-bit Base64 value.
-- The helper is private to the test-only prototype path.
+- The helper is private to the Standard-family NEON encode path.
 
 ### `clear_neon_registers_for_test_prototype!`
 
 Location: `src/simd/mod.rs`
 
-Status: private macro for inactive AArch64 NEON test-only prototypes, not
-dispatchable and not reachable from runtime backend selection.
+Status: private macro for the admitted AArch64 NEON encode block and its tests.
 
 Purpose:
 
-- Clear AArch64 NEON registers used by the prototype before returning from the
+- Clear AArch64 NEON registers used by the encode block before returning from the
   path that processes caller bytes in vector registers.
 
 Preconditions:
@@ -855,17 +855,14 @@ Unsafe operation:
 Safety argument:
 
 - The macro does not read or write memory.
-- The macro expands at the end of the inactive prototype path.
+- The macro expands at the end of the NEON encode block path.
 - Clobbered registers are declared to the compiler with explicit `out("vN")`
   operands.
-- This is best-effort register-retention reduction for test evidence, not a
+- This is best-effort register-retention reduction for encode evidence, not a
   guarantee that historical register, stack, cache, or microarchitectural
   copies do not exist.
-- This macro clears all AArch64 vector registers for the reviewed prototype
-  sequence. It is not an admission claim for arbitrary future NEON code. Before
-  NEON dispatch can become active, generated assembly must prove which vector
-  registers carry caller-derived data and whether any callee-saved vector
-  register spill/restore slots contain such data.
+- This macro clears all AArch64 vector registers for the reviewed encode
+  sequence. It is not an admission claim for arbitrary future NEON code.
 
 ### `encode_12_bytes_wasm_simd128`
 
