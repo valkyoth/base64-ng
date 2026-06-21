@@ -46,6 +46,10 @@ pub(crate) fn encode_slice_neon<A, const PAD: bool>(
 where
     A: Alphabet,
 {
+    if input.len() < 12 {
+        return scalar::encode_slice::<A, PAD>(input, output);
+    }
+
     if !neon_supports_alphabet::<A>() {
         return scalar::encode_slice::<A, PAD>(input, output);
     }

@@ -8,6 +8,8 @@
 
 use crate::{Alphabet, EncodeError, scalar, scalar_encode_in_place};
 
+const MIN_SIMD_ENCODE_BLOCK: usize = 12;
+
 /// Encode backend currently allowed to execute.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum EncodeBackend {
@@ -66,6 +68,10 @@ pub(crate) fn encode_slice<A, const PAD: bool>(
 where
     A: Alphabet,
 {
+    if input.len() < MIN_SIMD_ENCODE_BLOCK {
+        return scalar::encode_slice::<A, PAD>(input, output);
+    }
+
     match active_encode_backend() {
         EncodeBackend::Scalar => scalar::encode_slice::<A, PAD>(input, output),
         #[cfg(all(
@@ -74,7 +80,7 @@ where
             any(target_arch = "x86", target_arch = "x86_64")
         ))]
         EncodeBackend::Avx512Vbmi => {
-            if crate::simd::avx512_supports_alphabet::<A>() {
+            if input.len() >= 48 && crate::simd::avx512_supports_alphabet::<A>() {
                 crate::simd::encode_slice_avx512::<A, PAD>(input, output)
             } else {
                 scalar::encode_slice::<A, PAD>(input, output)
@@ -86,7 +92,7 @@ where
             any(target_arch = "x86", target_arch = "x86_64")
         ))]
         EncodeBackend::Avx2 => {
-            if crate::simd::avx2_supports_alphabet::<A>() {
+            if input.len() >= 24 && crate::simd::avx2_supports_alphabet::<A>() {
                 crate::simd::encode_slice_avx2::<A, PAD>(input, output)
             } else {
                 scalar::encode_slice::<A, PAD>(input, output)
@@ -98,7 +104,7 @@ where
             any(target_arch = "x86", target_arch = "x86_64")
         ))]
         EncodeBackend::Ssse3Sse41 => {
-            if crate::simd::ssse3_sse41_supports_alphabet::<A>() {
+            if input.len() >= 12 && crate::simd::ssse3_sse41_supports_alphabet::<A>() {
                 crate::simd::encode_slice_ssse3_sse41::<A, PAD>(input, output)
             } else {
                 scalar::encode_slice::<A, PAD>(input, output)
@@ -106,7 +112,7 @@ where
         }
         #[cfg(all(feature = "simd", feature = "std", target_arch = "aarch64"))]
         EncodeBackend::Neon => {
-            if crate::simd::neon_supports_alphabet::<A>() {
+            if input.len() >= 12 && crate::simd::neon_supports_alphabet::<A>() {
                 crate::simd::encode_slice_neon::<A, PAD>(input, output)
             } else {
                 scalar::encode_slice::<A, PAD>(input, output)

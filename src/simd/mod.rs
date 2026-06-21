@@ -91,6 +91,19 @@ pub(crate) enum Candidate {
 /// Returns the backend that is allowed to execute for this build.
 #[must_use]
 pub(crate) fn active_backend() -> ActiveBackend {
+    #[cfg(feature = "std")]
+    {
+        static ACTIVE_BACKEND: std::sync::OnceLock<ActiveBackend> = std::sync::OnceLock::new();
+        *ACTIVE_BACKEND.get_or_init(detect_active_backend)
+    }
+
+    #[cfg(not(feature = "std"))]
+    {
+        detect_active_backend()
+    }
+}
+
+fn detect_active_backend() -> ActiveBackend {
     #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
     {
         if avx512_vbmi_base64_available() {

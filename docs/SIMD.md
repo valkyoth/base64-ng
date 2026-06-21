@@ -81,6 +81,10 @@ runtime behavior for that line.
   Only std `x86`/`x86_64` AVX-512 VBMI, AVX2, SSSE3/SSE4.1, and std
   `aarch64` NEON encode can become active; all other candidates still execute
   scalar code.
+- Admitted SIMD encode paths run only when the current input can fill at least
+  one block for the selected backend: 48 bytes for AVX-512 VBMI, 24 bytes for
+  AVX2, and 12 bytes for SSSE3/SSE4.1 or NEON. Shorter inputs use scalar encode
+  before SIMD dispatch, and non-block tails remain scalar.
 - AVX-512 VBMI encode is admitted for std `x86`/`x86_64` Standard and URL-safe
   alphabet families. It uses AVX-512 lane-local byte shuffling, vector
   shifts/masks, and VBMI byte permutes over the alphabet table for fixed

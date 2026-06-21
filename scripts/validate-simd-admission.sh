@@ -49,7 +49,7 @@ then
 fi
 
 if ! awk '
-    /pub\(crate\) fn active_backend\(\) -> ActiveBackend/ {
+    /fn detect_active_backend\(\) -> ActiveBackend/ {
         inside = 1
     }
     inside && /ActiveBackend::Avx512Vbmi/ {
@@ -76,7 +76,7 @@ if ! awk '
         }
     }
 ' src/simd/mod.rs; then
-    echo "simd admission: active_backend must explicitly return admitted AVX-512, AVX2, SSSE3/SSE4.1, NEON, and scalar fallback" >&2
+    echo "simd admission: detect_active_backend must explicitly return admitted AVX-512, AVX2, SSSE3/SSE4.1, NEON, and scalar fallback" >&2
     exit 1
 fi
 

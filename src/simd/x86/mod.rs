@@ -37,6 +37,10 @@ pub(crate) fn encode_slice_avx512<A, const PAD: bool>(
 where
     A: Alphabet,
 {
+    if input.len() < 48 {
+        return scalar::encode_slice::<A, PAD>(input, output);
+    }
+
     if !avx512_supports_alphabet::<A>() {
         return scalar::encode_slice::<A, PAD>(input, output);
     }
@@ -79,6 +83,10 @@ pub(crate) fn encode_slice_avx2<A, const PAD: bool>(
 where
     A: Alphabet,
 {
+    if input.len() < 24 {
+        return scalar::encode_slice::<A, PAD>(input, output);
+    }
+
     if !avx2_supports_alphabet::<A>() {
         return scalar::encode_slice::<A, PAD>(input, output);
     }
@@ -121,6 +129,10 @@ pub(crate) fn encode_slice_ssse3_sse41<A, const PAD: bool>(
 where
     A: Alphabet,
 {
+    if input.len() < 12 {
+        return scalar::encode_slice::<A, PAD>(input, output);
+    }
+
     if !ssse3_sse41_supports_alphabet::<A>() {
         return scalar::encode_slice::<A, PAD>(input, output);
     }
