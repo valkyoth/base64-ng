@@ -1,7 +1,7 @@
 # SIMD Admission Policy
 
 `base64-ng` is scalar by default and admits conservative accelerated encode
-paths in the staged `1.2.0` line: std `x86`/`x86_64` AVX-512 VBMI first, then
+paths in the `1.2.x` line: std `x86`/`x86_64` AVX-512 VBMI first, then
 AVX2, then SSSE3/SSE4.1, plus std `aarch64` NEON, for Standard and URL-safe
 alphabet families. Future SIMD dispatch remains gated
 unless a complete SIMD admission evidence package lands in the same release
@@ -24,9 +24,8 @@ The SIMD roadmap separates implementation evidence from active acceleration:
   generated assembly evidence, register-cleanup review, fuzz expansion, and
   admission-tooling updates. Later checkpoints wire admitted encode backends
   into public encode APIs while keeping each checkpoint gated by pentest, CI,
-  and release evidence. GitHub checkpoint tags in this line may move evidence
-  forward without a matching crates.io publish; the next planned crates.io
-  family sync is `1.2.0`.
+  and release evidence. GitHub checkpoint tags in this line moved evidence
+  forward without a matching crates.io publish until the `1.2.0` family sync.
 - `1.1.5` adds the public encode backend boundary while still forcing scalar
   execution. This gives future accelerated encode admission one reviewed
   integration point for `encode_slice`, clear-tail helpers, alloc helpers,
@@ -47,18 +46,20 @@ The SIMD roadmap separates implementation evidence from active acceleration:
   encode, line-ending insertion, and every decode path remain scalar. Wrapped
   encode helpers may use admitted fixed-block encode for their unwrapped staging
   step.
-- `1.2.0` is the release where encode acceleration must be fully working for
-  the admitted encode scope. Public encode APIs must dispatch to admitted
+- `1.2.0` is the release where encode acceleration became fully working for
+  the admitted encode scope. Public encode APIs dispatch to admitted
   AVX-512 VBMI, AVX2, SSSE3/SSE4.1, or NEON encode backends when runtime policy
-  and CPU features allow it, and must fall back to scalar for unsupported CPUs,
+  and CPU features allow it, and fall back to scalar for unsupported CPUs,
   `no_std`, custom alphabets unless separately admitted, in-place encode,
   line-ending insertion, legacy profiles, tails, and padding. Wrapped encode
-  helpers can use admitted SIMD for the unwrapped staging step when they route
+  helpers may use admitted SIMD for the unwrapped staging step when they route
   through `encode_slice`. Backends without complete evidence remain real
-  non-dispatchable prototypes. The draft package for that decision lives in
-  [SIMD_ENCODE_ADMISSION_DRAFT.md](SIMD_ENCODE_ADMISSION_DRAFT.md).
-- After `1.2.0`, pause feature work for a short soak period so users can report
-  platform-specific encode regressions before decode acceleration work starts.
+  non-dispatchable prototypes.
+- `1.2.1` is a documentation/package patch for the released `1.2.0` encode
+  acceleration scope. It does not admit additional backends.
+- After the `1.2.x` encode release, pause feature work for a short soak period
+  so users can report platform-specific encode regressions before decode
+  acceleration work starts.
 - `1.2.x` is the SIMD decode foundation series. Decode prototypes remain
   non-dispatchable while invalid-input handling, canonicality, padding, output
   retention, error behavior, fuzz coverage, and timing-oriented evidence are
@@ -179,7 +180,7 @@ runtime behavior for that line.
 - The `simd` feature enables only the admitted std x86/x86_64 AVX-512 VBMI,
   AVX2, SSSE3/SSE4.1, and std aarch64 NEON encode paths where the platform
   requirements are met.
-- Current staged `1.2.0` development keeps every non-admitted backend scalar or
+- Current `1.2.x` development keeps every non-admitted backend scalar or
   prototype-only unless the SIMD admission manifest, scalar differential tests,
   fuzz evidence, unsafe inventory, architecture evidence, benchmark evidence,
   and release wording are updated together.
@@ -281,8 +282,8 @@ backends. The gate currently requires:
   prototype-only.
 - Documentation for benchmark evidence, release-note restrictions, and
   vector-register retention cleanup strategy to remain packaged.
-- The encode admission draft to remain packaged and validated before any
-  `1.2.0` dispatch work starts.
+- The encode admission draft to remain packaged and validated before any future
+  encode dispatch scope expands beyond the currently admitted `1.2.x` backends.
 
 When an accelerated backend is ready for admission, update this gate in the
 same commit as the scalar differential tests, fuzz evidence, unsafe inventory,
@@ -299,7 +300,7 @@ remain pending.
 - Scalar remains the fallback for every build.
 - Candidate detection must not imply activation; a detected candidate may still
   execute scalar until the accelerated backend is admitted.
-- The active non-scalar backends in the staged `1.2.0` line are std x86/x86_64
+- The active non-scalar backends in the `1.2.x` line are std x86/x86_64
   AVX-512 VBMI encode, AVX2 encode, SSSE3/SSE4.1 encode, and std aarch64 NEON
   encode for Standard and URL-safe alphabet families.
 - Prototype functions may exercise target-feature and unsafe plumbing without

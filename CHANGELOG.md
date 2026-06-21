@@ -1,10 +1,21 @@
 # Changelog
 
-## 1.2.0 - Unreleased
+## 1.2.1 - Unreleased
 
-- Staged all workspace crates for a synced `1.2.0` family release to avoid
-  publishing many small intermediate crates.io versions while the encode
-  acceleration line is completed.
+- Bumped the workspace family to `1.2.1` so crates.io and docs.rs show the
+  corrected `1.2.x` README, companion-crate examples, and release matrix.
+- Updated README guidance for the completed `1.2.0` encode-acceleration
+  release, including an explicit `simd` feature install snippet and an example
+  showing that public encode APIs remain unchanged while runtime dispatch
+  selects an admitted backend only when the platform and input shape qualify.
+- Refreshed SIMD admission, roadmap, dependency, migration, and companion-crate
+  documentation so `1.2.0` is no longer described as staged.
+
+## 1.2.0 - 2026-06-21
+
+- Synced all workspace crates for the `1.2.0` family release after collecting
+  the former `1.1.x` checkpoint work without publishing many small intermediate
+  crates.io versions.
 - Updated `base64-ng-sanitization` to `sanitization` `1.2.1`, added native
   `sanitization::ct::Choice` comparison helpers for decoded `SecretBytes` and
   `SecretVec` values, and added opt-in locked-secret decode helpers that write
@@ -54,12 +65,12 @@
   checks, and SIMD admission validators.
 - Hardened SIMD admission tooling and backend evidence manifests to distinguish
   real non-dispatchable prototypes from admitted active backends.
-- Added a draft SIMD encode admission package for future `1.2.0` activation,
-  including runtime-report expectations, benchmark record shape, and release
-  note wording rules for the remaining encode backends.
+- Added a draft SIMD encode admission package, including runtime-report
+  expectations, benchmark record shape, and release-note wording rules for
+  encode backend activation decisions.
 - Added `scripts/validate-simd-encode-admission-draft.sh` and wired it into the
-  standard checks so the future encode-dispatch admission contract remains
-  packaged and machine-checked.
+  standard checks so the encode-dispatch admission contract remains packaged
+  and machine-checked.
 - Wiped the small unpadded in-place decode tail buffer before return, expanded
   AArch64 NEON encode cleanup to all vector registers, and
   documented the wrapped slice encoder's temporary in-buffer staging behavior.

@@ -689,36 +689,32 @@ Historical `1.1.x` checkpoint state:
   decode. Wrapped encode can use admitted fixed-block encode for its unwrapped
   staging step.
 
-Current staged `1.2.0` work packages:
+Completed `1.2.0` work packages:
 
-- Companion-crate sync: update the optional `base64-ng-sanitization` companion
-  to `sanitization` `1.2.0`, expose native `sanitization::ct::Choice`
-  comparison helpers for `SecretBytes` and `SecretVec`, and keep the core crate
+- Companion-crate sync: updated the optional `base64-ng-sanitization`
+  companion to `sanitization` `1.2.1`, exposed native
+  `sanitization::ct::Choice` comparison helpers for `SecretBytes` and
+  `SecretVec`, added locked-secret decode helpers, and kept the core crate
   dependency-free.
-- x86 encode completion: admit std-only x86/x86_64 AVX-512 VBMI encode
+- x86 encode completion: admitted std-only x86/x86_64 AVX-512 VBMI encode
   dispatch above AVX2 and SSSE3/SSE4.1 for Standard and URL-safe alphabet
   families, with runtime CPU probing, fixed 48-byte vector blocks, ZMM cleanup,
   scalar fallback behavior, generated assembly evidence, and benchmark evidence.
-- AArch64 encode completion: admit std-only aarch64 NEON encode dispatch for
+- AArch64 encode completion: admitted std-only aarch64 NEON encode dispatch for
   Standard and URL-safe alphabets, with fixed 12-byte vector blocks, register
   cleanup review, scalar fallback behavior, generated assembly evidence, and
   real AArch64 hardware evidence.
-- wasm encode decision: because wasm runtime/JIT behavior is outside the
-  crate's control, wasm may remain compile-evidence only unless a specific
-  runtime and deployment profile is admitted. Do not let wasm block `1.2.0`
-  unless the project explicitly decides that wasm encode acceleration is part of
-  the `1.2.0` scope.
-- Full encode release-candidate hardening: run fuzz/dudect/perf, generated
+- wasm encode decision: wasm `simd128` remains compile-evidence only because
+  wasm runtime/JIT behavior is outside the crate's control. It does not
+  participate in runtime dispatch.
+- Full encode release-candidate hardening: ran fuzz/dudect/perf, generated
   assembly, backend evidence, Miri, Kani, unsafe-boundary, panic-policy,
-  no-alloc, target-matrix, macOS, and package checks against the exact
-  candidate. Update benchmarks and release notes with only the backends
-  actually admitted.
-- Version-sync and publish rehearsal: keep all workspace crates staged at
-  `1.2.0`, verify signed-tag publish gating, run
-  `scripts/stable_release_gate.sh release`, run pentest, wait for GitHub green,
-  then tag the final release candidate when the user explicitly asks.
+  no-alloc, target-matrix, macOS, package, pentest, and GitHub CI checks
+  against the release candidate.
+- Version-sync and publish rehearsal: synced all workspace crates as the
+  `1.2.0` family and kept signed-tag publish gating in the release flow.
 
-`1.2.0` acceptance criteria:
+`1.2.0` acceptance criteria, now satisfied:
 
 - Encode acceleration is active for every backend explicitly admitted in
   `docs/SIMD_ADMISSION.md`.
@@ -737,6 +733,13 @@ Current staged `1.2.0` work packages:
 - All workspace crates are version-synced and published as the `1.2.0` family
   only after pentest, GitHub CI, Kani, full release gate, and signed-tag checks
   pass.
+
+`1.2.1` patch scope:
+
+- Correct crates.io and docs.rs documentation for the completed `1.2.0` encode
+  acceleration line.
+- Keep runtime behavior and admission scope unchanged.
+- Sync companion crate package docs and dependency snippets to `1.2.1`.
 
 After `1.2.0`:
 

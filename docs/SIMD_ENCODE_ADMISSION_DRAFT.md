@@ -1,7 +1,7 @@
 # SIMD Encode Admission Draft
 
-This draft is the working package for remaining encode acceleration work toward
-`1.2.0`. It is not an admission record. AVX-512 VBMI, AVX2, SSSE3/SSE4.1, and NEON encode are already admitted for std x86/x86_64 or std aarch64 Standard and URL-safe alphabet families; every additional backend or broader API surface remains pending until `docs/SIMD_ADMISSION.md`, release evidence, tests, benchmarks, unsafe inventory, and release notes are updated in the same commit as the active backend change.
+This draft is the reusable working package for any future encode acceleration
+scope beyond the `1.2.0` release. It is not an admission record. AVX-512 VBMI, AVX2, SSSE3/SSE4.1, and NEON encode are already admitted for std x86/x86_64 or std aarch64 Standard and URL-safe alphabet families; every additional backend or broader API surface remains pending until `docs/SIMD_ADMISSION.md`, release evidence, tests, benchmarks, unsafe inventory, and release notes are updated in the same commit as the active backend change.
 
 ## Scope
 

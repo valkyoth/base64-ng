@@ -25,15 +25,18 @@
 
 `base64-ng` is a `no_std`-first Base64 crate focused on correctness, strict decoding, caller-owned buffers, and a security-heavy release process. The long-term goal is to provide modern hardware acceleration without making unsafe SIMD the foundation of trust.
 
-The crate starts conservative: a small scalar implementation, strict RFC 4648 behavior, and a test/release system modeled after hardened Rust service projects. Streaming is available behind an explicit feature, fuzz harnesses are isolated from the published crate, and future SIMD and broader Kani work remain gated until they have evidence.
+The crate starts conservative: a small scalar implementation, strict RFC 4648 behavior, and a test/release system modeled after hardened Rust service projects. Streaming is available behind an explicit feature, fuzz harnesses are isolated from the published crate, and SIMD and broader Kani work remain gated until they have evidence.
 
 ## Current Status
 
-The workspace is staged for `1.2.0`.
-The latest crates.io release remains `1.1.0` until the full encode line is complete.
-The current git branch is accumulating the former `1.1.x` checkpoint work into
-one synced `1.2.0` family release so users are not forced through many small
-crates.io updates.
+The current public release is `1.2.1`.
+
+`1.2.1` is a documentation and package-metadata patch on top of the `1.2.0`
+encode-acceleration family release. The `1.2.x` line admits conservative std
+runtime-dispatched encode acceleration for Standard and URL-safe alphabets on
+`x86`/`x86_64` AVX-512 VBMI, AVX2, SSSE3/SSE4.1, and `aarch64` NEON. Decode,
+custom alphabets, `no_std`, wasm `simd128`, in-place encode, line-ending
+insertion, tails, and padding remain scalar unless separately admitted.
 
 Implemented now:
 
@@ -126,7 +129,7 @@ and CWE mapping lives in [docs/SECURITY_CONTROLS.md](docs/SECURITY_CONTROLS.md).
 The minimum supported Rust version is Rust `1.90.0`. New deployments should
 prefer the latest stable Rust; as of May 29, 2026, that is Rust `1.96.0`.
 
-Compatibility evidence for the staged `1.2.0` workspace:
+Compatibility evidence for the `1.2.1` workspace:
 
 | Rust | Local Evidence |
 | --- | --- |
@@ -142,7 +145,7 @@ Compatibility evidence for the staged `1.2.0` workspace:
 
 ```toml
 [dependencies]
-base64-ng = "1.2.0"
+base64-ng = "1.2.1"
 ```
 
 The crate is dual-licensed:
@@ -157,7 +160,7 @@ license = "MIT OR Apache-2.0"
 | --- | --- | --- |
 | `alloc` | yes | `Vec` and encoded `String` convenience APIs. |
 | `std` | yes | `std::error::Error` support and feature base for I/O. |
-| `simd` | no | Future hardware acceleration. |
+| `simd` | no | Admitted std runtime-dispatched encode acceleration for Standard and URL-safe alphabets, with scalar fallback for unsupported surfaces. |
 | `stream` | no | `std::io` streaming wrappers. |
 | `allow-wasm32-best-effort-wipe` | no | Explicitly allow `wasm32` builds with compiler-fence-only cleanup. |
 | `allow-compiler-fence-only-wipe` | no | Explicitly allow unsupported native architectures to build with compiler-fence-only cleanup after platform review. |
@@ -171,9 +174,8 @@ The core `base64-ng` crate keeps its zero-runtime-dependency policy. Optional
 ecosystem integrations live as separate crates so applications can opt into
 their own approved dependency set without changing the base package.
 
-The staged `1.2.0` family syncs all companion crates to the same version. The
-family will be published together only after the full encode acceleration line
-passes pentest, GitHub CI, Kani, and the release gate.
+The `1.2.1` family syncs all companion crates to the same version so docs.rs
+and crates.io examples resolve consistently across the workspace.
 
 | Crate | Purpose |
 | --- | --- |
@@ -194,7 +196,7 @@ only the crates that changed instead of republishing the whole ecosystem.
 `base64-ng-sanitization` provides extension helpers for
 `base64_ng::ct::CtEngine` that decode directly into
 `sanitization::SecretBytes<N>` in `no_std`, with `SecretVec` helpers behind its
-own `alloc` feature. The staged `1.2.0` companion uses `sanitization` `1.2.1`
+own `alloc` feature. The `1.2.1` companion uses `sanitization` `1.2.1`
 and exposes `sanitization::ct::Choice` comparison helpers through
 `SanitizationCtEqExt`. Enable the companion's `high-assurance` feature to
 decode directly into `sanitization::LockedSecretBytes` or
@@ -203,8 +205,8 @@ decode directly into `sanitization::LockedSecretBytes` or
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.2.0", default-features = false }
-base64-ng-sanitization = { version = "1.2.0", default-features = false }
+base64-ng = { version = "1.2.1", default-features = false }
+base64-ng-sanitization = { version = "1.2.1", default-features = false }
 ```
 
 ```rust
@@ -223,7 +225,7 @@ assert!(secret.sanitization_verify(
 
 ```toml
 [dependencies]
-base64-ng-sanitization = { version = "1.2.0", features = ["high-assurance"] }
+base64-ng-sanitization = { version = "1.2.1", features = ["high-assurance"] }
 ```
 
 ```rust
@@ -242,8 +244,8 @@ newtypes around fixed byte arrays:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.2.0", default-features = false }
-base64-ng-derive = "1.2.0"
+base64-ng = { version = "1.2.1", default-features = false }
+base64-ng-derive = "1.2.1"
 ```
 
 ```rust
@@ -262,7 +264,7 @@ assert_eq!(key.encode_base64::<8>().unwrap().as_str(), "aGVsbG8=");
 
 ```toml
 [dependencies]
-base64-ng-serde = "1.2.0"
+base64-ng-serde = "1.2.1"
 serde = { version = "1.0.228", features = ["derive"] }
 ```
 
@@ -278,8 +280,8 @@ struct Message {
 
 ```toml
 [dependencies]
-base64-ng = "1.2.0"
-base64-ng-bytes = "1.2.0"
+base64-ng = "1.2.1"
+base64-ng-bytes = "1.2.1"
 bytes = "1.12.0"
 ```
 
@@ -296,8 +298,8 @@ projects that already admit `subtle`:
 
 ```toml
 [dependencies]
-base64-ng = "1.2.0"
-base64-ng-subtle = "1.2.0"
+base64-ng = "1.2.1"
+base64-ng-subtle = "1.2.1"
 ```
 
 ```rust
@@ -313,8 +315,8 @@ use Tokio:
 
 ```toml
 [dependencies]
-base64-ng = "1.2.0"
-base64-ng-tokio = "1.2.0"
+base64-ng = "1.2.1"
+base64-ng-tokio = "1.2.1"
 tokio = { version = "1.52.3", features = ["io-util"] }
 ```
 
@@ -343,7 +345,29 @@ Disable defaults for embedded or freestanding use:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.2.0", default-features = false }
+base64-ng = { version = "1.2.1", default-features = false }
+```
+
+Enable admitted encode acceleration on supported `std` targets with the
+`simd` feature. The public encode APIs do not change; runtime dispatch selects
+an admitted backend only when the CPU and input shape match the admission
+scope, otherwise scalar encode is used:
+
+```toml
+[dependencies]
+base64-ng = { version = "1.2.1", features = ["simd"] }
+```
+
+```rust
+use base64_ng::{runtime, STANDARD};
+
+let encoded = STANDARD.encode_string(b"hello").unwrap();
+assert_eq!(encoded, "aGVsbG8=");
+
+let report = runtime::backend_report();
+// With `simd` enabled this reports the active admitted encode backend, or
+// scalar when the current platform/input is outside the admitted scope.
+println!("{}", report);
 ```
 
 ## Convenience API
@@ -992,7 +1016,7 @@ Security commitments:
 - `runtime::backend_report()` exposes the active admitted backend, detected
   candidate, candidate detection mode, SIMD feature status, security posture,
   and a conservative unsafe-boundary posture flag for audit logging. In the
-  staged `1.2.0` line, non-scalar active values describe admitted encode dispatch;
+  `1.2.x` line, non-scalar active values describe admitted encode dispatch;
   decode remains scalar. The
   unsafe-boundary flag is true only when the reserved `simd` feature is
   disabled; SIMD-enabled builds must rely on the release evidence scripts for
