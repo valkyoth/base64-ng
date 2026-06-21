@@ -47,6 +47,9 @@
   scaffold path because portable wasm SIMD has no direct 64-byte lookup.
 - Added wasm `simd128` test-binary compile evidence to the SIMD feature-bundle
   check while keeping wasm cleanup/JIT caveats and scalar runtime dispatch.
+- Added `scripts/check_aarch64_linux.sh` for real ARM Linux host verification,
+  including NEON encode block evidence, backend evidence, SIMD feature-bundle
+  checks, and SIMD admission validators.
 - Hardened SIMD admission tooling and backend evidence manifests to distinguish
   real non-dispatchable prototypes from admitted active backends.
 - Added a draft SIMD encode admission package for future `1.2.0` activation,
