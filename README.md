@@ -1110,6 +1110,17 @@ On an M2 MacBook Pro this runs the real host tests on
 `aarch64-apple-darwin`, then compile-checks both `aarch64-apple-darwin` and
 `x86_64-apple-darwin`.
 
+Run the AArch64 Linux host verification on an ARM Linux machine, such as an
+Amazon Graviton instance:
+
+```sh
+scripts/check_aarch64_linux.sh
+```
+
+This runs the host tests, all-feature tests, clippy, NEON encode block
+evidence, backend evidence, SIMD feature-bundle checks, and SIMD admission
+validators on the real AArch64 host.
+
 Required security tools:
 
 CI and local release scripts use `scripts/ci_install_rust.sh`; that script uses rust-toolchain.toml as the single source of truth for the pinned stable Rust toolchain.
