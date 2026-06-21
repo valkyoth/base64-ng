@@ -56,18 +56,15 @@ where
     let mut read = 0;
     let mut write = 0;
     while read + 48 <= input.len() {
-        let mut block = [0u8; 48];
-        block.copy_from_slice(&input[read..read + 48]);
-        let mut encoded = [0u8; 64];
         // SAFETY: Runtime dispatch reaches this function only after std CPU
-        // feature detection proves AVX-512 VBMI availability. The fixed arrays
-        // satisfy the block encoder's size preconditions.
+        // feature detection proves AVX-512 VBMI availability. The loop guard
+        // and prevalidated output length prove the fixed-size input and output
+        // views are in bounds for the block encoder.
         unsafe {
-            encode_48_bytes_avx512::<A>(&block, &mut encoded);
+            let block = &*(input.as_ptr().add(read).cast::<[u8; 48]>());
+            let encoded = &mut *(output.as_mut_ptr().add(write).cast::<[u8; 64]>());
+            encode_48_bytes_avx512::<A>(block, encoded);
         }
-        output[write..write + 64].copy_from_slice(&encoded);
-        crate::wipe_bytes(&mut block);
-        crate::wipe_bytes(&mut encoded);
         read += 48;
         write += 64;
     }
@@ -102,18 +99,15 @@ where
     let mut read = 0;
     let mut write = 0;
     while read + 24 <= input.len() {
-        let mut block = [0u8; 24];
-        block.copy_from_slice(&input[read..read + 24]);
-        let mut encoded = [0u8; 32];
         // SAFETY: Runtime dispatch reaches this function only after std CPU
-        // feature detection proves AVX2 availability. The fixed arrays satisfy
-        // the block encoder's size preconditions.
+        // feature detection proves AVX2 availability. The loop guard and
+        // prevalidated output length prove the fixed-size input and output
+        // views are in bounds for the block encoder.
         unsafe {
-            encode_24_bytes_avx2::<A>(&block, &mut encoded);
+            let block = &*(input.as_ptr().add(read).cast::<[u8; 24]>());
+            let encoded = &mut *(output.as_mut_ptr().add(write).cast::<[u8; 32]>());
+            encode_24_bytes_avx2::<A>(block, encoded);
         }
-        output[write..write + 32].copy_from_slice(&encoded);
-        crate::wipe_bytes(&mut block);
-        crate::wipe_bytes(&mut encoded);
         read += 24;
         write += 32;
     }
@@ -148,18 +142,15 @@ where
     let mut read = 0;
     let mut write = 0;
     while read + 12 <= input.len() {
-        let mut block = [0u8; 12];
-        block.copy_from_slice(&input[read..read + 12]);
-        let mut encoded = [0u8; 16];
         // SAFETY: Runtime dispatch reaches this function only after std CPU
         // feature detection proves SSSE3 and SSE4.1 availability. The fixed
-        // arrays satisfy the block encoder's size preconditions.
+        // input and output views are in bounds because of the loop guard and
+        // prevalidated output length.
         unsafe {
-            encode_12_bytes_ssse3_sse41::<A>(&block, &mut encoded);
+            let block = &*(input.as_ptr().add(read).cast::<[u8; 12]>());
+            let encoded = &mut *(output.as_mut_ptr().add(write).cast::<[u8; 16]>());
+            encode_12_bytes_ssse3_sse41::<A>(block, encoded);
         }
-        output[write..write + 16].copy_from_slice(&encoded);
-        crate::wipe_bytes(&mut block);
-        crate::wipe_bytes(&mut encoded);
         read += 12;
         write += 16;
     }

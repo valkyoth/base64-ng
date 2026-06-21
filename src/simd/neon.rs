@@ -65,18 +65,14 @@ where
     let mut read = 0;
     let mut write = 0;
     while read + 12 <= input.len() {
-        let mut block = [0u8; 12];
-        block.copy_from_slice(&input[read..read + 12]);
-        let mut encoded = [0u8; 16];
         // SAFETY: Runtime dispatch reaches this function only on std AArch64
         // where NEON is part of the target contract. The fixed arrays satisfy
         // the block encoder's size preconditions.
         unsafe {
-            encode_12_bytes_neon::<A>(&block, &mut encoded);
+            let block = &*(input.as_ptr().add(read).cast::<[u8; 12]>());
+            let encoded = &mut *(output.as_mut_ptr().add(write).cast::<[u8; 16]>());
+            encode_12_bytes_neon::<A>(block, encoded);
         }
-        output[write..write + 16].copy_from_slice(&encoded);
-        crate::wipe_bytes(&mut block);
-        crate::wipe_bytes(&mut encoded);
         read += 12;
         write += 16;
     }
