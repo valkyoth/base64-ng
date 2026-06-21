@@ -95,6 +95,9 @@ fn wipe_barrier(ptr: *mut u8, len: usize) {
 pub(crate) fn wipe_tail(bytes: &mut [u8], start: usize) {
     debug_assert!(start <= bytes.len(), "wipe_tail start exceeds slice length");
     if start > bytes.len() {
+        // A caller that asks to wipe past the end has violated the helper's
+        // invariant. In release builds, fail closed by wiping everything
+        // instead of silently retaining bytes because of a bad offset.
         wipe_bytes(bytes);
         return;
     }

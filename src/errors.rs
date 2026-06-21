@@ -63,6 +63,14 @@ impl std::error::Error for EncodeError {}
 /// intentionally prints those diagnostics for developer-facing debugging. Do
 /// not log or return full [`DecodeError`] values for secret-bearing input; log
 /// [`Self::kind`] instead.
+///
+/// ```
+/// use base64_ng::STANDARD;
+///
+/// let err = STANDARD.decode_buffer::<8>(b"!!!!").unwrap_err();
+/// // Production logs should use the redacted class, not `{err}`.
+/// assert_eq!(err.kind().as_str(), "invalid-byte");
+/// ```
 #[derive(Clone, Copy, Eq, PartialEq)]
 pub enum DecodeError {
     /// The encoded input is malformed, but the decoder intentionally does not

@@ -87,6 +87,12 @@ certification claim.
   On AArch64, failure is expected unless the operator has attested CSDB
   effectiveness with `--cfg base64_ng_aarch64_csdb_attested`; do not use that
   cfg without processor, BSP, or certification evidence.
+  Deployment CI for a certified AArch64 target should run the application or
+  integration test suite with the same `RUSTFLAGS` and assert that this startup
+  policy passes. Generic project CI must not set that cfg because it would turn
+  an operator attestation into an unreviewed build default. RISC-V and 32-bit
+  ARM targets should expect this policy to fail unless the platform provides
+  external Spectre-v1 mitigation evidence.
 - Decode tokens, wrapped keys, MAC-adjacent payloads, and equivalent
   secret-bearing Base64 through `base64_ng::ct`. Use
   `ct::CtEngine::decode_slice_staged_clear_tail` when the caller-owned output
@@ -129,6 +135,13 @@ log full strict errors verbatim when the input may contain secrets,
 secret-adjacent tokens, or attacker-probed fragments of those values. Use
 `DecodeError::kind()` for redacted logging, or use the `ct` module for opaque
 malformed-content errors.
+
+```rust
+let err = base64_ng::STANDARD
+    .decode_buffer::<32>(input)
+    .unwrap_err();
+tracing::warn!(error_kind = %err.kind(), "base64 decode failed");
+```
 
 Legacy whitespace handling is opt-in through explicitly named APIs. Wrapped
 profiles are strict about the configured line ending and non-final line width.

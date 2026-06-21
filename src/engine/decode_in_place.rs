@@ -26,7 +26,10 @@ where
     /// Use
     /// [`Self::decode_in_place_wrapped_clear_tail`] when the buffer may be
     /// reused or freed without a caller-managed wipe; treat that clear-tail
-    /// variant as the default for secret-bearing wrapped payloads.
+    /// variant as the default for secret-bearing wrapped payloads. If the
+    /// original encoded input must be preserved for audit logging or retry,
+    /// copy it before calling any in-place decode method or use a slice-output
+    /// decode API instead.
     ///
     /// # Examples
     ///

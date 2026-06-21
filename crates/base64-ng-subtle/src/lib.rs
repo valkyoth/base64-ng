@@ -12,7 +12,9 @@
 //!
 //! Length is treated as public. Mismatched lengths return
 //! [`subtle::Choice::from(0)`] immediately. Use fixed-size protocol tokens when
-//! length must not vary.
+//! length must not vary. When the length itself is secret, compare fixed-size
+//! arrays or fixed-width protocol buffers directly with
+//! [`subtle::ConstantTimeEq`] instead of this public-length helper.
 
 use base64_ng::{DecodedBuffer, EncodedBuffer};
 use subtle::{Choice, ConstantTimeEq};
@@ -77,6 +79,9 @@ impl SubtleEqExt for SecretBuffer {
 ///
 /// Equal-length comparisons are delegated to [`subtle::ConstantTimeEq`].
 /// Mismatched lengths return `Choice::from(0)` immediately.
+///
+/// Use [`subtle::ConstantTimeEq`] directly on fixed-size arrays or fixed-width
+/// protocol buffers when token length must not be observable.
 #[must_use = "use Choice or convert it deliberately with bool::from(choice)"]
 pub fn subtle_ct_eq_public_len(left: &[u8], right: &[u8]) -> Choice {
     if left.len() == right.len() {

@@ -10,6 +10,14 @@ use crate::{DecodeError, STANDARD, constant_time_eq_public_len, wipe_bytes, wipe
 /// The backing array is cleared when the value is dropped. This is best-effort
 /// data-retention reduction and is not a formal zeroization guarantee.
 ///
+/// # Security: cloning
+///
+/// This type implements [`Clone`] for no-alloc ergonomics, but cloning
+/// duplicates decoded bytes. The compiler may also create temporary
+/// intermediates during the copy that are outside this crate's cleanup
+/// boundary. For heap-owned key material, prefer the alloc-gated
+/// `SecretBuffer`, which does not implement `Clone`.
+///
 /// On `wasm32` targets, the wipe barrier uses only a compiler fence. The wasm
 /// runtime JIT may still optimize or retain cleared bytes in ways this crate
 /// cannot control. `wasm32` builds fail closed by default; enable

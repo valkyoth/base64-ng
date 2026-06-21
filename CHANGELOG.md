@@ -51,6 +51,10 @@
 - Hardened the workspace publish helper so real crates.io publishing requires
   `HEAD` to match a verified signed `v<version>` tag, and documented the
   `git tag -v` release check.
+- Tightened high-assurance documentation after follow-up audit review: clarified
+  conservative tail wiping, `DecodedBuffer` clone duplication, public-length
+  `subtle` comparisons, strict decode error logging, AArch64/RISC-V deployment
+  policy checks, and wrapped in-place decode retention behavior.
 
 ## 1.1.0 - 2026-06-20
 
