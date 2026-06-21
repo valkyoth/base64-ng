@@ -22,11 +22,6 @@ pub(crate) fn decode_slice<A, const PAD: bool>(
 where
     A: Alphabet,
 {
-    #[cfg(feature = "simd")]
-    match crate::simd::active_backend() {
-        crate::simd::ActiveBackend::Scalar => {}
-    }
-
     scalar_decode_slice::<A, PAD>(input, output)
 }
 

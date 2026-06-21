@@ -225,6 +225,14 @@ fn encode_backend_boundary_keeps_scalar_active() {
 }
 
 #[test]
+fn decode_backend_boundary_keeps_scalar_active() {
+    assert_eq!(
+        decode_backend::active_decode_backend(),
+        decode_backend::DecodeBackend::Scalar
+    );
+}
+
+#[test]
 fn encodes_standard_vectors() {
     let vectors = [
         (&b""[..], &b""[..]),

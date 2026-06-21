@@ -183,6 +183,10 @@ impl ExposedSecretString {
         let text = match string_from_validated_secret_bytes(bytes) {
             Ok(text) => text,
             Err(mut bytes) => {
+                // This branch is unreachable for bytes produced from a valid
+                // `String`. If unsafe upstream code violates that invariant,
+                // wipe the bytes and fail closed without introducing a
+                // release-mode panic in secret cleanup code.
                 wipe_vec_all(&mut bytes);
                 alloc::string::String::new()
             }

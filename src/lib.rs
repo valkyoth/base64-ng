@@ -129,6 +129,7 @@ mod alphabet;
 mod buffers;
 mod cleanup;
 pub mod ct;
+mod decode_backend;
 mod encode_backend;
 mod engine;
 mod errors;

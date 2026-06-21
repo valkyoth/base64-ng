@@ -90,6 +90,10 @@ write buffers, allocator behavior, core dumps, swap, hibernation images,
 cold-boot remanence, hardware observation, or other process memory disclosure
 bugs. Callers that require a platform-specific formal zeroization policy should
 apply that policy to their own buffers in addition to using crate cleanup APIs.
+For in-place clear-tail methods, "whole buffer on error" includes any original
+plaintext or encoded input already present in the caller's buffer. Preserve a
+separate audit/retry copy before calling an in-place clear-tail API if recovery
+of the original input is required after a validation or sizing failure.
 
 High-assurance deployments handling classified or long-lived key material
 should pair `base64-ng` with OS and platform memory controls: locked memory

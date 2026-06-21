@@ -671,6 +671,9 @@ Current `1.1.x` checkpoint state:
   `encode_slice_clear_tail`, alloc encode helpers, wrapped encode helpers, and
   in-place encode now route through one audited encode backend boundary, with
   scalar-equivalence tests covering slice and in-place encode behavior.
+  Follow-up review also added the matching scalar-forced decode backend
+  boundary so future decode acceleration has a symmetric admission point, and
+  tightened panic-policy checks for production `assert_eq!`/`assert_ne!` sites.
 
 Planned checkpoints to reach `1.2.0` fully working encode acceleration:
 

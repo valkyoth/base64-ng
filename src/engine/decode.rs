@@ -3,8 +3,8 @@ use crate::SecretBuffer;
 #[cfg(feature = "alloc")]
 use crate::validate_decode;
 use crate::{
-    Alphabet, DecodeError, DecodedBuffer, Engine, LineWrap, decode_legacy_to_slice,
-    decode_wrapped_to_slice, scalar, validate_legacy_decode, validate_wrapped_decode, wipe_bytes,
+    Alphabet, DecodeError, DecodedBuffer, Engine, LineWrap, decode_backend, decode_legacy_to_slice,
+    decode_wrapped_to_slice, validate_legacy_decode, validate_wrapped_decode, wipe_bytes,
     wipe_tail,
 };
 
@@ -33,7 +33,7 @@ where
     /// constant-time-oriented secret decoding.
     #[must_use = "handle decode errors; use crate::ct for secret-bearing payloads"]
     pub fn decode_slice(&self, input: &[u8], output: &mut [u8]) -> Result<usize, DecodeError> {
-        scalar::decode_slice::<A, PAD>(input, output)
+        decode_backend::decode_slice::<A, PAD>(input, output)
     }
 
     /// Decodes `input` into `output` and clears all bytes after the decoded

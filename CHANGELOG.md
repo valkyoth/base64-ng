@@ -65,6 +65,11 @@
   clear-tail, wrapped, alloc, and in-place encode paths through it, giving
   future SIMD encode admission one audited integration point while preserving
   scalar-only runtime behavior.
+- Added the matching scalar-forced decode backend boundary for future decode
+  admission symmetry, changed the scalar in-place encode invariant to return an
+  error instead of panicking in release builds, tightened panic-policy scanning
+  for production equality assertions, and clarified that in-place clear-tail
+  errors intentionally clear original caller input.
 
 ## 1.1.0 - 2026-06-20
 

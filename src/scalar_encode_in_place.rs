@@ -81,10 +81,15 @@ where
 
     // The right-to-left loop consumes exactly three input bytes for every four
     // output bytes. If this invariant changes, returning a shifted slice would
-    // silently corrupt the in-place output.
-    assert_eq!(
+    // silently corrupt the in-place output. Debug builds assert loudly; release
+    // builds return a conservative error instead of panicking.
+    debug_assert_eq!(
         write, 0,
         "encode_in_place invariant violated: right-to-left loop did not complete"
     );
+    if write != 0 {
+        return Err(EncodeError::LengthOverflow);
+    }
+
     Ok(required)
 }

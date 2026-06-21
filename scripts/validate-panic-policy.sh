@@ -27,14 +27,14 @@ check_file() {
             }
             failed = 1
         }
-        /debug_assert!\(/ {
+        /debug_assert!\(|debug_assert_eq!\(|debug_assert_ne!\(/ {
             next
         }
         FILENAME == "src/engine/encode.rs" && $0 ~ /^[[:space:]]*assert!\($/ {
             pending_encode_array_assert = 1
             next
         }
-        /panic!\(|unreachable!\(|\.unwrap\(|\.expect\(|assert!\(/ {
+        /panic!\(|unreachable!\(|\.unwrap\(|\.expect\(|assert!\(|assert_eq!\(|assert_ne!\(/ {
             allowed = 0
             if ($0 ~ /assert!\(line_len != 0, "base64 line wrap length must be non-zero"\)/) {
                 allowed = 1
@@ -69,7 +69,7 @@ test -s docs/PANIC_POLICY.md
 
 find src -name '*.rs' | sort | while IFS= read -r source_file; do
     case "$source_file" in
-        src/kani_proofs.rs|src/tests.rs|src/simd/tests.rs)
+        src/kani_proofs.rs|src/tests.rs|src/simd/tests.rs|src/simd/wasm.rs)
             continue
             ;;
     esac

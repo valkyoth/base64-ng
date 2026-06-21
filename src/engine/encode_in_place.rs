@@ -40,7 +40,10 @@ where
     ///
     /// If encoding fails because `input_len` is too large, the output buffer is
     /// too small, or the encoded length overflows `usize`, the entire buffer is
-    /// cleared before the error is returned.
+    /// cleared before the error is returned. This includes the original
+    /// plaintext in `buffer[..input_len]`; keep another copy before calling
+    /// this method if recovery of the original input is required after an
+    /// error.
     ///
     /// # Examples
     ///
