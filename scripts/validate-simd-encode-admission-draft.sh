@@ -11,7 +11,7 @@ test -s "$simd_doc"
 
 for required_text in \
     "It is not an admission record" \
-    "SSSE3/SSE4.1 encode is already admitted" \
+    "AVX2 and SSSE3/SSE4.1 encode are already admitted" \
     "every additional backend or broader API surface remains pending" \
     "Decode acceleration" \
     "x86/x86_64 runtime dispatch only" \
@@ -70,17 +70,17 @@ do
     fi
 done
 
-if ! grep -F -q "Admitted backends: SSSE3/SSE4.1 encode" "$manifest"; then
-    echo "simd encode admission draft: manifest must report the admitted SSSE3/SSE4.1 encode backend" >&2
+if ! grep -F -q "Admitted backends: AVX2 encode and SSSE3/SSE4.1 encode" "$manifest"; then
+    echo "simd encode admission draft: manifest must report the admitted AVX2 and SSSE3/SSE4.1 encode backends" >&2
     exit 1
 fi
 
-if ! grep -F -q "Active backend: SSSE3/SSE4.1 encode" "$manifest"; then
-    echo "simd encode admission draft: manifest must report SSSE3/SSE4.1 encode active-backend scope" >&2
+if ! grep -F -q "Active backend priority: AVX2, then SSSE3/SSE4.1" "$manifest"; then
+    echo "simd encode admission draft: manifest must report AVX2 and SSSE3/SSE4.1 encode priority" >&2
     exit 1
 fi
 
-if grep -R -q "ActiveBackend::Avx\|ActiveBackend::Neon\|ActiveBackend::Wasm\|ActiveBackend::Simd" src; then
+if grep -R -q "ActiveBackend::Avx512\|ActiveBackend::Neon\|ActiveBackend::Wasm\|ActiveBackend::Simd" src; then
     echo "simd encode admission draft: accelerated ActiveBackend variant exists before admission" >&2
     exit 1
 fi

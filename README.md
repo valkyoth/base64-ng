@@ -71,10 +71,10 @@ Implemented now:
 - Bounded Kani proof harnesses that run on Rust `1.90.0` with
   `cargo-kani 0.67.0`.
 - Constant-time assembly evidence generation for reviewer inspection.
-- Runtime-dispatched std `x86`/`x86_64` SSSE3/SSE4.1 fixed-block encode for
-  Standard and URL-safe alphabets behind the SIMD admission boundary, with
-  scalar fallback for unsupported CPUs, `no_std`, custom alphabets, tails,
-  padding, in-place encode, and decode.
+- Runtime-dispatched std `x86`/`x86_64` AVX2 fixed-block encode, falling back
+  to SSSE3/SSE4.1 and then scalar, for Standard and URL-safe alphabets behind
+  the SIMD admission boundary. Unsupported CPUs, `no_std`, custom alphabets,
+  tails, padding, in-place encode, and decode stay scalar.
 - Optional `base64-ng-sanitization` companion crate for applications that
   already admit `sanitization` and want direct CT decode helpers into
   clear-on-drop secret containers.
@@ -87,7 +87,7 @@ Implemented now:
 
 Planned behind admission evidence:
 
-- Additional admitted AVX2, AVX-512, ARM NEON, wasm `simd128`, custom alphabet,
+- Additional admitted AVX-512, ARM NEON, wasm `simd128`, custom alphabet,
   in-place, and decode fast paths after the SIMD admission evidence is
   complete. Default builds and unsupported runtime CPUs remain scalar.
 - Full async streaming wrappers only after the `tokio` feature passes the
@@ -107,7 +107,7 @@ Planned behind admission evidence:
 | MSRV | Rust `1.90.0` |
 | Runtime dependencies | Zero external crates |
 | Unsafe policy | Scalar encode/decode remains safe Rust; audited unsafe is limited to volatile wiping, CT comparison/barrier helpers, and the reviewed SIMD boundary |
-| Active backend | Scalar by default; std x86/x86_64 SSSE3/SSE4.1 encode when `simd` is enabled and runtime CPU probing passes |
+| Active backend | Scalar by default; std x86/x86_64 AVX2 encode preferred, then SSSE3/SSE4.1 encode, when `simd` is enabled and runtime CPU probing passes |
 | Strict decoding | Default, canonical, no whitespace |
 | Legacy compatibility | Explicit opt-in APIs |
 | Constant-time posture | Constant-time-oriented scalar validation/decode with isolated dudect-style timing evidence; no formal cryptographic guarantee |
@@ -949,9 +949,9 @@ Security commitments:
   dead-store elimination and are ordered before the cleanup boundary on
   supported native architectures. Constant-time comparison, byte accumulation,
   CT scan, and CT result-gate hardening remain audited in `src/ct/`.
-- Unsafe SIMD remains isolated under `src/simd/`; the admitted SSSE3/SSE4.1
-  encode path is std runtime-probed and all non-admitted backends remain
-  prototype-only.
+- Unsafe SIMD remains isolated under `src/simd/`; the admitted AVX2 and
+  SSSE3/SSE4.1 encode paths are std runtime-probed and all non-admitted
+  backends remain prototype-only.
 - Local checks verify that `allow(unsafe_code)` is confined to the volatile
   wipe helpers and SIMD boundary, every unsafe function is inventoried, and
   every unsafe block has a nearby `SAFETY:` explanation. Architecture intrinsics,

@@ -680,12 +680,14 @@ Current `1.1.x` checkpoint state:
   unsupported CPUs, `no_std`, custom alphabets, tails, padding, in-place encode,
   and decode. Runtime reports and admission evidence now identify
   SSSE3/SSE4.1 encode as the admitted backend.
+- `1.1.7`: admitted std-only x86/x86_64 AVX2 encode dispatch above the existing
+  SSSE3/SSE4.1 encode path for Standard and URL-safe alphabet families. The
+  active path uses runtime CPU probing, fixed 24-byte vector blocks, YMM/XMM
+  cleanup, and scalar fallback for unsupported CPUs, `no_std`, custom
+  alphabets, tails, padding, in-place encode, and decode.
 
 Planned checkpoints to reach `1.2.0` fully working encode acceleration:
 
-- `1.1.7`: admit std-only x86/x86_64 AVX2 encode dispatch with the same public
-  API coverage and fallback requirements. Runtime priority must be explicit
-  and tested, for example AVX2 above SSSE3/SSE4.1 when both are available.
 - `1.1.8`: admit AVX-512 VBMI encode dispatch only if hardware evidence,
   generated assembly, register cleanup, fallback behavior, and benchmark data
   are complete. If AVX-512 evidence is incomplete, keep AVX-512 as a real

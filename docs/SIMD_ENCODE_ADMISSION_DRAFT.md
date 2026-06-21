@@ -1,11 +1,7 @@
 # SIMD Encode Admission Draft
 
 This draft is the working package for remaining encode acceleration work toward
-`1.2.0`. It is not an admission record. SSSE3/SSE4.1 encode is already admitted
-for std x86/x86_64 Standard and URL-safe alphabet families; every additional
-backend or broader API surface remains pending until `docs/SIMD_ADMISSION.md`,
-release evidence, tests, benchmarks, unsafe inventory, and release notes are
-updated in the same commit as the active backend change.
+`1.2.0`. It is not an admission record. AVX2 and SSSE3/SSE4.1 encode are already admitted for std x86/x86_64 Standard and URL-safe alphabet families; every additional backend or broader API surface remains pending until `docs/SIMD_ADMISSION.md`, release evidence, tests, benchmarks, unsafe inventory, and release notes are updated in the same commit as the active backend change.
 
 every additional backend or broader API surface remains pending until its own
 admission evidence is complete.

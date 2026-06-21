@@ -1,10 +1,10 @@
 # SIMD Activation Checklist
 
 This checklist is mandatory before any additional SIMD code becomes
-dispatchable. SSSE3/SSE4.1 encode is admitted only for std x86/x86_64 Standard
-and URL-safe alphabet families. AVX2, AVX-512, NEON, wasm, custom-alphabet,
-in-place, and decode SIMD paths remain prototype-only or scalar until their own
-checklist evidence is complete.
+dispatchable. AVX2 and SSSE3/SSE4.1 encode are admitted only for std
+x86/x86_64 Standard and URL-safe alphabet families. AVX-512, NEON, wasm,
+custom-alphabet, in-place, and decode SIMD paths remain prototype-only or
+scalar until their own checklist evidence is complete.
 
 ## Non-Negotiable Rule
 

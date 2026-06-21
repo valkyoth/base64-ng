@@ -227,6 +227,13 @@ fn simd_dispatch_uses_only_admitted_backends() {
     match simd::active_backend() {
         simd::ActiveBackend::Scalar => {}
         #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
+        simd::ActiveBackend::Avx2 => {
+            assert!(matches!(
+                simd::detected_candidate(),
+                simd::Candidate::Avx2 | simd::Candidate::Avx512Vbmi
+            ));
+        }
+        #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
         simd::ActiveBackend::Ssse3Sse41 => {
             assert!(matches!(
                 simd::detected_candidate(),
@@ -240,6 +247,15 @@ fn simd_dispatch_uses_only_admitted_backends() {
 fn encode_backend_boundary_uses_only_admitted_backends() {
     match encode_backend::active_encode_backend() {
         encode_backend::EncodeBackend::Scalar => {}
+        #[cfg(all(
+            feature = "simd",
+            feature = "std",
+            any(target_arch = "x86", target_arch = "x86_64")
+        ))]
+        encode_backend::EncodeBackend::Avx2 => {
+            assert!(simd::avx2_supports_alphabet::<Standard>());
+            assert!(simd::avx2_supports_alphabet::<UrlSafe>());
+        }
         #[cfg(all(
             feature = "simd",
             feature = "std",

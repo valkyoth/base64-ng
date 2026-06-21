@@ -365,11 +365,10 @@ Limitations:
 
 ### `encode_48_bytes_avx512`
 
-Location: `src/simd/x86.rs`
+Location: `src/simd/x86/mod.rs`
 
-Status: admitted std x86/x86_64 encode block for Standard and URL-safe alphabet
-families. It is reachable only through runtime-probed SSSE3/SSE4.1 encode
-dispatch and test evidence.
+Status: inactive AVX-512 test-only prototype, not dispatchable and not
+reachable from runtime backend selection.
 
 Purpose:
 
@@ -425,7 +424,7 @@ Safety argument:
 
 ### `clear_zmm_registers_for_test_prototype`
 
-Location: `src/simd/x86.rs`
+Location: `src/simd/x86/cleanup.rs`
 
 Status: private helper for inactive AVX-512 test-only prototypes, not
 dispatchable and not reachable from runtime backend selection.
@@ -460,17 +459,18 @@ Safety argument:
 
 ### `encode_24_bytes_avx2`
 
-Location: `src/simd/x86.rs`
+Location: `src/simd/x86/mod.rs`
 
-Status: inactive test-only prototype, not dispatchable and not reachable from
-runtime backend selection.
+Status: admitted std x86/x86_64 AVX2 encode block for Standard and URL-safe
+alphabet families. It is reachable through runtime-probed AVX2 encode dispatch
+and test evidence.
 
 Purpose:
 
 - Exercise AVX2 target-feature plumbing.
 - Validate the unsafe boundary.
-- Provide real fixed-block vector encode evidence for Standard and URL-safe
-  alphabets before any runtime dispatch is admitted.
+- Provide the fixed-block vector encode primitive for the admitted AVX2 encode
+  backend.
 
 Preconditions:
 
@@ -491,9 +491,9 @@ Unsafe operation:
 - `encode_standard_family_indices_avx2` maps those indices to Standard or
   URL-safe alphabet bytes with AVX2 byte blends.
 - `_mm256_storeu_si256` stores the 32 encoded bytes into the output buffer.
-- `clear_ymm_registers_for_test_prototype` clears XMM lower halves and uses
+- `clear_ymm_registers_after_encode_block` clears XMM lower halves and uses
   `vzeroupper` before return to reduce register retention and AVX/SSE
-  transition state in this non-dispatchable test prototype.
+  transition state in this vector encode path.
 - The local staging array is wiped with the crate cleanup primitive before the
   function returns.
 
@@ -509,19 +509,18 @@ Safety argument:
   alignment is required.
 - The function is guarded by an AVX2 target-feature contract.
 - The output length is fixed by the output array type.
-- The prototype remains test-only and non-dispatchable. Runtime acceleration is
-  still blocked by the SIMD admission manifest.
-- Register-retention note: the prototype now loads caller bytes into YMM/XMM
-  state. It calls `clear_ymm_registers_for_test_prototype` before return. This
-  is retention reduction for the inactive prototype, not a formal
-  microarchitectural side-channel proof.
+- Runtime dispatch is gated by `std::is_x86_feature_detected!` and the
+  Standard-family alphabet check; unsupported CPUs, custom alphabets, `no_std`,
+  tails, padding, in-place encode, and decode use scalar fallback.
+- Register-retention note: the path loads caller bytes into YMM/XMM state. It
+  calls `clear_ymm_registers_after_encode_block` before return. This is
+  retention reduction, not a formal microarchitectural side-channel proof.
 
 ### `encode_standard_family_indices_avx2`
 
-Location: `src/simd/x86.rs`
+Location: `src/simd/x86/mod.rs`
 
-Status: private helper for the inactive AVX2 test-only prototype, not
-dispatchable and not reachable from runtime backend selection.
+Status: private helper for the admitted AVX2 encode block and its tests.
 
 Purpose:
 
@@ -546,19 +545,19 @@ Safety argument:
 - The target-feature contract enables the required AVX2 instructions.
 - The caller constructs `indices` with masks that constrain every byte to a
   six-bit Base64 value.
-- The helper is private to the test-only prototype path.
+- The helper is private to the Standard-family AVX2 encode path.
 
-### `clear_ymm_registers_for_test_prototype`
+### `clear_ymm_registers_after_encode_block`
 
-Location: `src/simd/x86.rs`
+Location: `src/simd/x86/cleanup.rs`
 
-Status: private helper for inactive AVX2 test-only prototypes, not
-dispatchable and not reachable from runtime backend selection.
+Status: private helper for admitted AVX2 encode and inactive x86 prototype
+tests.
 
 Purpose:
 
 - Clear lower XMM state and upper YMM state before returning from the AVX2
-  prototype path that processes caller bytes in vector registers.
+  encode path that processes caller bytes in vector registers.
 
 Preconditions:
 
@@ -574,7 +573,7 @@ Unsafe operation:
 Safety argument:
 
 - The helper does not read or write memory.
-- The helper runs at the end of the inactive prototype path.
+- The helper runs at the end of the AVX2 encode block path.
 - `vzeroupper` is valid under the AVX2 target-feature precondition inherited
   from the caller.
 - This is best-effort register-retention reduction for test evidence, not a
@@ -583,10 +582,11 @@ Safety argument:
 
 ### `encode_12_bytes_ssse3_sse41`
 
-Location: `src/simd/x86.rs`
+Location: `src/simd/x86/mod.rs`
 
-Status: inactive test-only prototype, not dispatchable and not reachable from
-runtime backend selection.
+Status: admitted std x86/x86_64 SSSE3/SSE4.1 encode block for Standard and
+URL-safe alphabet families. It is reachable through runtime-probed SSSE3/SSE4.1
+encode dispatch and test evidence.
 
 Purpose:
 
@@ -639,7 +639,7 @@ Safety argument:
 
 ### `encode_standard_family_indices_ssse3_sse41`
 
-Location: `src/simd/x86.rs`
+Location: `src/simd/x86/mod.rs`
 
 Status: private helper for the admitted SSSE3/SSE4.1 encode block and its
 tests.
@@ -671,15 +671,15 @@ Safety argument:
 
 ### `clear_xmm_registers_after_encode_block`
 
-Location: `src/simd/x86.rs`
+Location: `src/simd/x86/cleanup.rs`
 
-Status: private helper for admitted SSSE3/SSE4.1 encode and inactive x86
-prototype tests.
+Status: private helper for admitted AVX2 and SSSE3/SSE4.1 encode and inactive
+x86 prototype tests.
 
 Purpose:
 
-- Clear XMM registers before returning from the SSSE3/SSE4.1 encode path that
-  processes caller bytes in vector registers.
+- Clear XMM registers before returning from x86 encode paths that process
+  caller bytes in vector registers.
 
 Preconditions:
 
@@ -695,7 +695,7 @@ Unsafe operation:
 Safety argument:
 
 - The helper does not read or write memory.
-- The helper runs at the end of the SSSE3/SSE4.1 encode block path.
+- The helper runs at the end of x86 encode block paths.
 - Clobbered registers are declared to the compiler with explicit `out("xmmN")`
   operands.
 - This is best-effort register-retention reduction, not a guarantee that

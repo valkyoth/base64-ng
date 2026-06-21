@@ -6,8 +6,8 @@ if ! grep -q '^#!\[deny(unsafe_code)\]' src/lib.rs; then
     exit 1
 fi
 
-simd_allow_files='src/simd/mod.rs src/simd/x86.rs'
-simd_boundary_files='src/simd/mod.rs src/simd/wasm.rs src/simd/x86.rs'
+simd_allow_files='src/simd/mod.rs src/simd/x86/cleanup.rs src/simd/x86/mod.rs'
+simd_boundary_files='src/simd/mod.rs src/simd/wasm.rs src/simd/x86/cleanup.rs src/simd/x86/mod.rs'
 simd_tests_allowed='src/simd/tests.rs'
 root_allowed='src/lib.rs'
 cleanup_allowed='src/cleanup.rs'

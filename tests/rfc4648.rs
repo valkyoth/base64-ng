@@ -413,7 +413,10 @@ fn runtime_backend_report_matches_admission_state() {
     assert!(display.contains("wipe_posture="));
     assert!(display.contains("ct_gate_posture="));
     if report.accelerated_backend_active {
-        assert_eq!(report.active, runtime::Backend::Ssse3Sse41);
+        assert!(matches!(
+            report.active,
+            runtime::Backend::Avx2 | runtime::Backend::Ssse3Sse41
+        ));
         assert!(cfg!(all(
             feature = "simd",
             feature = "std",

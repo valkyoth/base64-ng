@@ -188,10 +188,10 @@ done
 
 for required_trust_text in \
 	"Runtime dependencies | Zero external crates" \
-	"Active backend | Scalar by default; std x86/x86_64 SSSE3/SSE4.1 encode" \
+	"Active backend | Scalar by default; std x86/x86_64 AVX2 encode preferred, then SSSE3/SSE4.1 encode" \
 	"no formal cryptographic constant-time guarantee" \
 	"formally verified cryptographic constant-time behavior" \
-	"AVX2, AVX-512, NEON, wasm, custom-alphabet, in-place, or decode acceleration" \
+	"AVX-512, NEON, wasm, custom-alphabet, in-place, or decode acceleration" \
 	"async/Tokio support" \
     "serde or bytes integration"
 do
@@ -257,10 +257,10 @@ done
 
 case "$cargo_version" in
     *-*)
-        required_readme_simd_status="Runtime-dispatched std \`x86\`/\`x86_64\` SSSE3/SSE4.1 fixed-block encode"
+        required_readme_simd_status="Runtime-dispatched std \`x86\`/\`x86_64\` AVX2 fixed-block encode"
         ;;
     *)
-        required_readme_simd_status="Scalar by default; std x86/x86_64 SSSE3/SSE4.1 encode"
+        required_readme_simd_status="Scalar by default; std x86/x86_64 AVX2 encode preferred, then SSSE3/SSE4.1 encode"
         ;;
 esac
 

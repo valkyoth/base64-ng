@@ -1,10 +1,10 @@
 //! Encode backend dispatch boundary.
 //!
 //! This module is the single integration point between public encode APIs and
-//! the implementation that performs encoding. SSSE3/SSE4.1 encode dispatch is
-//! admitted only for std `x86`/`x86_64` builds and Standard/URL-safe alphabet
-//! families; unsupported alphabets, targets, and in-place encode still fall
-//! back to scalar.
+//! the implementation that performs encoding. AVX2 and SSSE3/SSE4.1 encode
+//! dispatch is admitted only for std `x86`/`x86_64` builds and Standard/
+//! URL-safe alphabet families; unsupported alphabets, targets, and in-place
+//! encode still fall back to scalar.
 
 use crate::{Alphabet, EncodeError, scalar, scalar_encode_in_place};
 
@@ -13,6 +13,13 @@ use crate::{Alphabet, EncodeError, scalar, scalar_encode_in_place};
 pub(crate) enum EncodeBackend {
     /// The audited scalar implementation.
     Scalar,
+    /// std `x86`/`x86_64` AVX2 fixed-block encode.
+    #[cfg(all(
+        feature = "simd",
+        feature = "std",
+        any(target_arch = "x86", target_arch = "x86_64")
+    ))]
+    Avx2,
     /// std `x86`/`x86_64` SSSE3/SSE4.1 fixed-block encode.
     #[cfg(all(
         feature = "simd",
@@ -28,6 +35,8 @@ pub(crate) fn active_encode_backend() -> EncodeBackend {
     #[cfg(feature = "simd")]
     match crate::simd::active_backend() {
         crate::simd::ActiveBackend::Scalar => {}
+        #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
+        crate::simd::ActiveBackend::Avx2 => return EncodeBackend::Avx2,
         #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
         crate::simd::ActiveBackend::Ssse3Sse41 => return EncodeBackend::Ssse3Sse41,
     }
@@ -45,6 +54,18 @@ where
 {
     match active_encode_backend() {
         EncodeBackend::Scalar => scalar::encode_slice::<A, PAD>(input, output),
+        #[cfg(all(
+            feature = "simd",
+            feature = "std",
+            any(target_arch = "x86", target_arch = "x86_64")
+        ))]
+        EncodeBackend::Avx2 => {
+            if crate::simd::avx2_supports_alphabet::<A>() {
+                crate::simd::encode_slice_avx2::<A, PAD>(input, output)
+            } else {
+                scalar::encode_slice::<A, PAD>(input, output)
+            }
+        }
         #[cfg(all(
             feature = "simd",
             feature = "std",
@@ -72,6 +93,12 @@ where
         EncodeBackend::Scalar => {
             scalar_encode_in_place::encode_in_place::<A, PAD>(buffer, input_len)
         }
+        #[cfg(all(
+            feature = "simd",
+            feature = "std",
+            any(target_arch = "x86", target_arch = "x86_64")
+        ))]
+        EncodeBackend::Avx2 => scalar_encode_in_place::encode_in_place::<A, PAD>(buffer, input_len),
         #[cfg(all(
             feature = "simd",
             feature = "std",

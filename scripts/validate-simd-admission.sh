@@ -29,15 +29,16 @@ active_variants="$(
 )"
 
 expected_active_variants="Scalar
+Avx2
 Ssse3Sse41"
 if [ "$active_variants" != "$expected_active_variants" ]; then
-    echo "simd admission: ActiveBackend must contain only Scalar and admitted SSSE3/SSE4.1 encode" >&2
+    echo "simd admission: ActiveBackend must contain only Scalar and admitted AVX2/SSSE3 encode" >&2
     printf '%s\n' "$active_variants" >&2
     exit 1
 fi
 
 if grep -R \
-    -e 'ActiveBackend::Avx' \
+    -e 'ActiveBackend::Avx512' \
     -e 'ActiveBackend::Neon' \
     -e 'ActiveBackend::Wasm' \
     -e 'ActiveBackend::Simd' \
@@ -51,6 +52,9 @@ if ! awk '
     /pub\(crate\) fn active_backend\(\) -> ActiveBackend/ {
         inside = 1
     }
+    inside && /ActiveBackend::Avx2/ {
+        avx2 = 1
+    }
     inside && /ActiveBackend::Ssse3Sse41/ {
         ssse3 = 1
     }
@@ -58,7 +62,7 @@ if ! awk '
         scalar = 1
     }
     inside && /^}/ {
-        exit (scalar && ssse3) ? 0 : 1
+        exit (scalar && avx2 && ssse3) ? 0 : 1
     }
     END {
         if (!inside) {
@@ -66,7 +70,7 @@ if ! awk '
         }
     }
 ' src/simd/mod.rs; then
-    echo "simd admission: active_backend must explicitly return admitted SSSE3/SSE4.1 and scalar fallback" >&2
+    echo "simd admission: active_backend must explicitly return admitted AVX2, SSSE3/SSE4.1, and scalar fallback" >&2
     exit 1
 fi
 
@@ -82,9 +86,9 @@ for required_text in \
     "Decode acceleration" \
     "Required precision" \
     "Performance numbers are release notes evidence only" \
-    "Admitted backends: SSSE3/SSE4.1 encode" \
-    "Active backend: SSSE3/SSE4.1 encode" \
-    "The only active non-scalar backend" \
+    "Admitted backends: AVX2 encode and SSSE3/SSE4.1 encode" \
+    "Active backend priority: AVX2, then SSSE3/SSE4.1" \
+    "The active non-scalar backends" \
     "Advertise SIMD acceleration only with the admitted backend name and scope"
 do
     if ! grep -R -q "$required_text" docs/SIMD.md docs/SIMD_ADMISSION.md docs/UNSAFE.md docs/RELEASE_EVIDENCE.md docs/SIMD_ENCODE_ADMISSION_DRAFT.md; then
@@ -108,16 +112,23 @@ if [ "$backend_row_count" -ne 5 ]; then
     exit 1
 fi
 
-ssse3_row="$(printf '%s\n' "$backend_rows" | grep '^| SSSE3/SSE4\.1 ')"
-if ! printf '%s\n' "$ssse3_row" | grep '| admitted backend |' >/dev/null 2>&1; then
-    echo "simd admission: SSSE3/SSE4.1 row must be the admitted backend" >&2
+avx2_row="$(printf '%s\n' "$backend_rows" | grep '^| AVX2 ')"
+if ! printf '%s\n' "$avx2_row" | grep '| admitted backend |' >/dev/null 2>&1; then
+    echo "simd admission: AVX2 row must be an admitted backend" >&2
     printf '%s\n' "$backend_rows" >&2
     exit 1
 fi
 
-non_ssse3_rows="$(printf '%s\n' "$backend_rows" | grep -v '^| SSSE3/SSE4\.1 ')"
-if printf '%s\n' "$non_ssse3_rows" | grep -v '| real non-dispatchable prototype |' >/dev/null 2>&1; then
-    echo "simd admission: non-SSSE3 backend rows must remain real non-dispatchable prototypes" >&2
+ssse3_row="$(printf '%s\n' "$backend_rows" | grep '^| SSSE3/SSE4\.1 ')"
+if ! printf '%s\n' "$ssse3_row" | grep '| admitted backend |' >/dev/null 2>&1; then
+    echo "simd admission: SSSE3/SSE4.1 row must be an admitted backend" >&2
+    printf '%s\n' "$backend_rows" >&2
+    exit 1
+fi
+
+non_admitted_rows="$(printf '%s\n' "$backend_rows" | grep -v '^| AVX2 ' | grep -v '^| SSSE3/SSE4\.1 ')"
+if printf '%s\n' "$non_admitted_rows" | grep -v '| real non-dispatchable prototype |' >/dev/null 2>&1; then
+    echo "simd admission: non-admitted backend rows must remain real non-dispatchable prototypes" >&2
     printf '%s\n' "$backend_rows" >&2
     exit 1
 fi
@@ -128,9 +139,9 @@ if printf '%s\n' "$backend_rows" | grep 'real fixed-block encode prototype' | gr
     exit 1
 fi
 
-if grep -q 'AVX2 .*admitted backend\|AVX-512 .*admitted backend\|NEON .*admitted backend\|wasm .*admitted backend' docs/SIMD_ADMISSION.md docs/SIMD.md; then
-    echo "simd admission: non-SSSE3 admitted backend wording requires gate update" >&2
+if grep -q 'AVX-512 .*admitted backend\|NEON .*admitted backend\|wasm .*admitted backend' docs/SIMD_ADMISSION.md docs/SIMD.md; then
+    echo "simd admission: non-AVX2/SSSE3 admitted backend wording requires gate update" >&2
     exit 1
 fi
 
-echo "simd admission: SSSE3/SSE4.1 encode admission gate ok"
+echo "simd admission: AVX2 and SSSE3/SSE4.1 encode admission gate ok"
