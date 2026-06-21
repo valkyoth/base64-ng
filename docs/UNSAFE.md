@@ -749,7 +749,7 @@ Safety argument:
   NEON is part of the target contract. Direct tests use the same availability
   precondition.
 - Register-retention note: the AArch64 vector path loads caller bytes into NEON
-  state and expands `clear_neon_registers_for_test_prototype!` directly inside
+  state and expands `clear_neon_registers_after_encode_block!` directly inside
   the block function before return. This is retention reduction for the
   admitted encode block, not a formal microarchitectural side-channel proof.
 
@@ -782,7 +782,7 @@ Unsafe operation:
 - `encode_standard_family_indices_neon` maps those indices to Standard or
   URL-safe alphabet bytes with NEON comparisons and bit selects.
 - `vst1q_u8` stores the 16 encoded bytes into the output buffer.
-- `clear_neon_registers_for_test_prototype!` clears `v0` through `v31` inside
+- `clear_neon_registers_after_encode_block!` clears `v0` through `v31` inside
   the block function before return.
 - The local staging array is wiped with the crate cleanup primitive before the
   function returns.
@@ -830,7 +830,7 @@ Safety argument:
   six-bit Base64 value.
 - The helper is private to the Standard-family NEON encode path.
 
-### `clear_neon_registers_for_test_prototype!`
+### `clear_neon_registers_after_encode_block!`
 
 Location: `src/simd/mod.rs`
 
@@ -843,9 +843,9 @@ Purpose:
 
 Preconditions:
 
-- Called only after the prototype has stored its output and no later NEON value
+- Called only after the encode block has stored its output and no later NEON value
   is needed by the function.
-- Expanded directly inside the prototype function. It must not be moved to a
+- Expanded directly inside the encode block function. It must not be moved to a
   separate function because an AArch64 helper can save and restore callee-saved
   `v8` through `v15`, undoing register clearing in the helper frame.
 

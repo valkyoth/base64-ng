@@ -237,7 +237,6 @@ where
     crate::wipe_bytes(&mut staged);
 }
 
-#[allow(dead_code, reason = "inactive prototype is not dispatchable yet")]
 #[expect(
     clippy::cast_ptr_alignment,
     reason = "_mm256_storeu_si256 accepts unaligned pointers"

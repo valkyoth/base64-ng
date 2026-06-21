@@ -59,13 +59,13 @@
   standard checks so the future encode-dispatch admission contract remains
   packaged and machine-checked.
 - Wiped the small unpadded in-place decode tail buffer before return, expanded
-  test-only AArch64 NEON prototype cleanup to all vector registers, and
+  AArch64 NEON encode cleanup to all vector registers, and
   documented the wrapped slice encoder's temporary in-buffer staging behavior.
 - Added `base64-ng-subtle` as an optional companion crate for projects that
   already admit `subtle` and want reviewed `ConstantTimeEq` comparisons for
   `base64-ng` buffers.
-- Inlined the test-only AArch64 NEON register cleanup macro into the prototype
-  path so callee-saved `v8..v15` are not restored by a separate helper frame.
+- Inlined the AArch64 NEON register cleanup macro into the encode block path so
+  callee-saved `v8..v15` are not restored by a separate helper frame.
 - Added a real non-dispatchable AVX2 fixed-block encode prototype for Standard
   and URL-safe alphabets. The prototype remains test-only and is not reachable
   from runtime backend selection.

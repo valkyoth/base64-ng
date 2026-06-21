@@ -191,7 +191,7 @@ where
     target_arch = "aarch64",
     any(test, all(feature = "std", feature = "simd"))
 ))]
-macro_rules! clear_neon_registers_for_test_prototype {
+macro_rules! clear_neon_registers_after_encode_block {
     () => {{
         // SAFETY: This cleanup is expanded directly inside the block encoder
         // after it stores its output. There is no separate helper frame whose
@@ -304,7 +304,7 @@ where
 
         let encoded = encode_standard_family_indices_neon::<A>(indices);
         vst1q_u8(output.as_mut_ptr(), encoded);
-        clear_neon_registers_for_test_prototype!();
+        clear_neon_registers_after_encode_block!();
     }
     crate::wipe_bytes(&mut staged);
 }
