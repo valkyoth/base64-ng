@@ -8,11 +8,22 @@
 - Updated `base64-ng-sanitization` to `sanitization` `1.2.0` and added native
   `sanitization::ct::Choice` comparison helpers for decoded `SecretBytes` and
   `SecretVec` values.
+- Cached std SIMD backend detection after the first runtime probe, gated
+  admitted encode dispatch by each backend's fixed block size, and avoided
+  runtime SIMD wrapper calls for inputs that cannot fill a vector block.
+- Removed extra per-block input/output stack copies from admitted runtime SIMD
+  slice encode loops by passing bounds-proven fixed-size views directly into
+  the reviewed block encoders.
+- Clarified the `1.2.0` encode scope: slice, clear-tail, alloc, and wrapped
+  encode helpers route through the encode backend boundary; wrapped encode may
+  use SIMD for the unwrapped staging step, while line-ending insertion,
+  in-place encode, tails, padding, custom alphabets, `no_std`, and decode stay
+  scalar unless separately admitted.
 - Admitted std `x86`/`x86_64` SSSE3/SSE4.1 encode dispatch for Standard and
   URL-safe alphabet families. The admitted path processes fixed 12-byte blocks
   with vector code after runtime CPU probing and falls back to scalar for
   unsupported CPUs, `no_std`, custom alphabets, tails, padding, in-place encode,
-  and every decode path.
+  line-ending insertion, and every decode path.
 - Updated runtime reporting, backend evidence, SIMD admission validation,
   unsafe inventory, and user documentation so SSSE3/SSE4.1 encode is reported
   as an admitted backend while AVX2, AVX-512 VBMI, NEON, wasm `simd128`,

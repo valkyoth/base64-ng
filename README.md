@@ -74,8 +74,10 @@ Implemented now:
 - Runtime-dispatched std `x86`/`x86_64` AVX-512 VBMI fixed-block encode,
   falling back to AVX2, then SSSE3/SSE4.1, and then scalar, plus std
   `aarch64` NEON fixed-block encode, for Standard and URL-safe alphabets behind
-  the SIMD admission boundary. Unsupported CPUs, `no_std`, custom alphabets,
-  tails, padding, in-place encode, and decode stay scalar.
+  the SIMD admission boundary. Public slice, clear-tail, alloc, and wrapped
+  encode helpers can use admitted fixed-block encode for their unwrapped
+  encoding step; unsupported CPUs, `no_std`, custom alphabets, tails, padding,
+  in-place encode, line-ending insertion, and decode stay scalar.
 - Optional `base64-ng-sanitization` companion crate for applications that
   already admit `sanitization` and want direct CT decode helpers into
   clear-on-drop secret containers.

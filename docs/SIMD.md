@@ -36,20 +36,25 @@ The SIMD roadmap separates implementation evidence from active acceleration:
 - `1.1.6` admits std `x86`/`x86_64` SSSE3/SSE4.1 encode dispatch for Standard
   and URL-safe alphabet families. It processes fixed 12-byte blocks with vector
   code after runtime CPU probing. Scalar remains the fallback for unsupported
-  CPUs, `no_std`, custom alphabets, tails, padding, in-place encode, wrapped
-  encode paths that select scalar fallback, and every decode path.
+  CPUs, `no_std`, custom alphabets, tails, padding, in-place encode,
+  line-ending insertion, and every decode path. Wrapped encode helpers may use
+  the admitted backend for their unwrapped staging step when the normal
+  `encode_slice` admission conditions are met.
 - `1.1.7` admits std `x86`/`x86_64` AVX2 encode dispatch for Standard and
   URL-safe alphabet families. AVX2 is selected before SSSE3/SSE4.1 when runtime
   CPU probing proves `avx2`; otherwise the existing SSSE3/SSE4.1 or scalar
   fallback path is used. Tails, padding, custom alphabets, `no_std`, in-place
-  encode, wrapped encode paths that select scalar fallback, and every decode
-  path remain scalar.
+  encode, line-ending insertion, and every decode path remain scalar. Wrapped
+  encode helpers may use admitted fixed-block encode for their unwrapped staging
+  step.
 - `1.2.0` is the release where encode acceleration must be fully working for
   the admitted encode scope. Public encode APIs must dispatch to admitted
   AVX-512 VBMI, AVX2, SSSE3/SSE4.1, or NEON encode backends when runtime policy
   and CPU features allow it, and must fall back to scalar for unsupported CPUs,
-  `no_std`, custom alphabets unless separately admitted, wrapping, legacy
-  profiles, tails, and padding. Backends without complete evidence remain real
+  `no_std`, custom alphabets unless separately admitted, in-place encode,
+  line-ending insertion, legacy profiles, tails, and padding. Wrapped encode
+  helpers can use admitted SIMD for the unwrapped staging step when they route
+  through `encode_slice`. Backends without complete evidence remain real
   non-dispatchable prototypes. The draft package for that decision lives in
   [SIMD_ENCODE_ADMISSION_DRAFT.md](SIMD_ENCODE_ADMISSION_DRAFT.md).
 - After `1.2.0`, pause feature work for a short soak period so users can report
@@ -85,6 +90,9 @@ runtime behavior for that line.
   one block for the selected backend: 48 bytes for AVX-512 VBMI, 24 bytes for
   AVX2, and 12 bytes for SSSE3/SSE4.1 or NEON. Shorter inputs use scalar encode
   before SIMD dispatch, and non-block tails remain scalar.
+- Public slice, clear-tail, alloc, and wrapped encode helpers route through the
+  admitted encode boundary. For wrapped encode, SIMD applies only to the
+  unwrapped Base64 staging step; line-ending insertion remains scalar.
 - AVX-512 VBMI encode is admitted for std `x86`/`x86_64` Standard and URL-safe
   alphabet families. It uses AVX-512 lane-local byte shuffling, vector
   shifts/masks, and VBMI byte permutes over the alphabet table for fixed
@@ -92,7 +100,7 @@ runtime behavior for that line.
   dispatch uses `std::is_x86_feature_detected!` and requires `avx512f`,
   `avx512bw`, `avx512vl`, and `avx512vbmi`; unsupported CPUs fall back to
   AVX2, SSSE3/SSE4.1, or scalar. Custom alphabets, tails, padding, `no_std`,
-  in-place encode, and decode stay scalar.
+  in-place encode, line-ending insertion, and decode stay scalar.
 - Runtime backend identifiers expose their required CPU feature bundles through
   `runtime::Backend::required_cpu_features()`.
 - Runtime backend reports include `candidate_required_cpu_features=[...]` in
@@ -107,20 +115,21 @@ runtime behavior for that line.
   shifts/masks, and SSE4.1 byte blending for fixed 12-byte input blocks, then
   clears XMM registers before returning. Runtime dispatch uses
   `std::is_x86_feature_detected!`; unsupported CPUs execute scalar code.
-  Custom alphabets, tails, padding, `no_std`, in-place encode, and decode stay
-  scalar.
+  Custom alphabets, tails, padding, `no_std`, in-place encode, line-ending
+  insertion, and decode stay scalar.
 - AVX2 encode is admitted for std `x86`/`x86_64` Standard and URL-safe alphabet
   families. It uses AVX2 lane-local byte shuffling, vector shifts/masks, and
   byte blending for fixed 24-byte input blocks, then clears XMM/YMM state
   before returning. Runtime dispatch uses `std::is_x86_feature_detected!`;
   unsupported CPUs fall back to SSSE3/SSE4.1 or scalar. Custom alphabets, tails,
-  padding, `no_std`, in-place encode, and decode stay scalar.
+  padding, `no_std`, in-place encode, line-ending insertion, and decode stay
+  scalar.
 - AArch64 NEON encode is admitted for std `aarch64` Standard and URL-safe
   alphabet families. It uses NEON table lookup, vector shifts/masks, and
   byte-select alphabet mapping for fixed 12-byte input blocks, then clears used
   NEON registers before returning. NEON is mandatory for the admitted AArch64
   target. Custom alphabets, tails, padding, 32-bit `arm+neon`, `no_std`,
-  in-place encode, and decode stay scalar.
+  in-place encode, line-ending insertion, and decode stay scalar.
 - An inactive wasm `simd128` fixed-block encode prototype exists behind the
   same boundary as real non-dispatchable vector encode evidence for Standard
   and URL-safe alphabets. It uses wasm byte shuffling, vector shifts/masks, and

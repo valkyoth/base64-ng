@@ -678,13 +678,16 @@ Historical `1.1.x` checkpoint state:
   Standard and URL-safe alphabet families. The active path uses runtime CPU
   probing, fixed 12-byte vector blocks, XMM cleanup, and scalar fallback for
   unsupported CPUs, `no_std`, custom alphabets, tails, padding, in-place encode,
-  and decode. Runtime reports and admission evidence now identify
-  SSSE3/SSE4.1 encode as the admitted backend.
+  line-ending insertion, and decode. Wrapped encode can use admitted fixed-block
+  encode for its unwrapped staging step. Runtime reports and admission evidence
+  now identify SSSE3/SSE4.1 encode as the admitted backend.
 - `1.1.7`: admitted std-only x86/x86_64 AVX2 encode dispatch above the existing
   SSSE3/SSE4.1 encode path for Standard and URL-safe alphabet families. The
   active path uses runtime CPU probing, fixed 24-byte vector blocks, YMM/XMM
   cleanup, and scalar fallback for unsupported CPUs, `no_std`, custom
-  alphabets, tails, padding, in-place encode, and decode.
+  alphabets, tails, padding, in-place encode, line-ending insertion, and
+  decode. Wrapped encode can use admitted fixed-block encode for its unwrapped
+  staging step.
 
 Current staged `1.2.0` work packages:
 
@@ -720,10 +723,12 @@ Current staged `1.2.0` work packages:
 - Encode acceleration is active for every backend explicitly admitted in
   `docs/SIMD_ADMISSION.md`.
 - The public encode APIs are fully wired: `encode_slice`,
-  `encode_slice_clear_tail`, alloc helpers, and applicable in-place encode.
+  `encode_slice_clear_tail`, alloc helpers, and wrapped helpers route through
+  the encode backend boundary. In-place encode remains scalar until a separate
+  non-overlapping raw-pointer admission package is reviewed.
 - Scalar fallback remains correct for unsupported CPUs, `no_std`, custom
-  alphabets unless separately admitted, line wrapping, legacy profiles, tails,
-  and padding.
+  alphabets unless separately admitted, line-ending insertion, legacy profiles,
+  tails, and padding.
 - Runtime reports identify active accelerated encode backends only when they
   are actually selected; otherwise they report scalar active execution.
 - Benchmarks, generated assembly, unsafe inventory, release notes, and

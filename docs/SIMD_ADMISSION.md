@@ -19,7 +19,9 @@ only for backends named in this file and the release gate.
   active encode dispatch admits conservative AVX-512 VBMI above AVX2 above
   SSSE3/SSE4.1 on x86/x86_64 and NEON on aarch64 for Standard and URL-safe
   alphabet families. Decode, custom alphabets, in-place encode, `no_std`, and
-  wasm `simd128` remain scalar or prototype-only.
+  wasm `simd128` remain scalar or prototype-only. Wrapped encode may use
+  admitted fixed-block encode for its unwrapped staging step; line-ending
+  insertion remains scalar.
 
 ## Required For Every Admitted Backend
 
@@ -61,10 +63,10 @@ State labels are intentionally strict:
 
 | Backend | State | Required CPU features | Evidence |
 | --- | --- | --- | --- |
-| AVX-512 VBMI | admitted backend | `avx512f`, `avx512bw`, `avx512vl`, `avx512vbmi` | std x86/x86_64 runtime-dispatched encode for Standard and URL-safe alphabet families; fixed 48-byte blocks use vector code only when at least one full block is present; shorter inputs, tails, unsupported alphabets, in-place encode, `no_std`, and decode use scalar fallback |
-| AVX2 | admitted backend | `avx2` | std x86/x86_64 runtime-dispatched encode for Standard and URL-safe alphabet families; fixed 24-byte blocks use vector code only when at least one full block is present; shorter inputs, tails, unsupported alphabets, in-place encode, `no_std`, and decode use scalar fallback |
-| SSSE3/SSE4.1 | admitted backend | `ssse3`, `sse4.1` | std x86/x86_64 runtime-dispatched encode for Standard and URL-safe alphabet families; fixed 12-byte blocks use vector code only when at least one full block is present; shorter inputs, tails, unsupported alphabets, in-place encode, `no_std`, and decode use scalar fallback |
-| NEON | admitted backend | `neon` | std aarch64 runtime-dispatched encode for Standard and URL-safe alphabet families; fixed 12-byte blocks use vector code only when at least one full block is present; shorter inputs, tails, unsupported alphabets, 32-bit ARM, in-place encode, `no_std`, and decode use scalar fallback |
+| AVX-512 VBMI | admitted backend | `avx512f`, `avx512bw`, `avx512vl`, `avx512vbmi` | std x86/x86_64 runtime-dispatched encode for Standard and URL-safe alphabet families; fixed 48-byte blocks use vector code only when at least one full block is present; shorter inputs, tails, unsupported alphabets, in-place encode, line-ending insertion, `no_std`, and decode use scalar fallback |
+| AVX2 | admitted backend | `avx2` | std x86/x86_64 runtime-dispatched encode for Standard and URL-safe alphabet families; fixed 24-byte blocks use vector code only when at least one full block is present; shorter inputs, tails, unsupported alphabets, in-place encode, line-ending insertion, `no_std`, and decode use scalar fallback |
+| SSSE3/SSE4.1 | admitted backend | `ssse3`, `sse4.1` | std x86/x86_64 runtime-dispatched encode for Standard and URL-safe alphabet families; fixed 12-byte blocks use vector code only when at least one full block is present; shorter inputs, tails, unsupported alphabets, in-place encode, line-ending insertion, `no_std`, and decode use scalar fallback |
+| NEON | admitted backend | `neon` | std aarch64 runtime-dispatched encode for Standard and URL-safe alphabet families; fixed 12-byte blocks use vector code only when at least one full block is present; shorter inputs, tails, unsupported alphabets, 32-bit ARM, in-place encode, line-ending insertion, `no_std`, and decode use scalar fallback |
 | wasm `simd128` | real non-dispatchable prototype | `simd128` | real fixed-block encode prototype for Standard and URL-safe alphabets; test-binary compile evidence only; non-dispatchable |
 
 ## Release Rule

@@ -511,7 +511,8 @@ Safety argument:
 - The output length is fixed by the output array type.
 - Runtime dispatch is gated by `std::is_x86_feature_detected!` and the
   Standard-family alphabet check; unsupported CPUs, custom alphabets, `no_std`,
-  tails, padding, in-place encode, and decode use scalar fallback.
+  tails, padding, in-place encode, line-ending insertion, and decode use scalar
+  fallback.
 - Register-retention note: the path loads caller bytes into YMM/XMM state. It
   calls `clear_ymm_registers_after_encode_block` before return. This is
   retention reduction, not a formal microarchitectural side-channel proof.
@@ -632,7 +633,8 @@ Safety argument:
 - The output length is fixed by the output array type.
 - Runtime dispatch is gated by `std::is_x86_feature_detected!` and the
   Standard-family alphabet check; unsupported CPUs, custom alphabets, `no_std`,
-  tails, padding, in-place encode, and decode use scalar fallback.
+  tails, padding, in-place encode, line-ending insertion, and decode use scalar
+  fallback.
 - Register-retention note: the path loads caller bytes into XMM registers. It
   calls `clear_xmm_registers_after_encode_block` before return. This is
   retention reduction, not a formal microarchitectural side-channel proof.
