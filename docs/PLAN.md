@@ -688,26 +688,30 @@ Current `1.1.x` checkpoint state:
 
 Planned checkpoints to reach `1.2.0` fully working encode acceleration:
 
-- `1.1.8`: admit AVX-512 VBMI encode dispatch only if hardware evidence,
+- `1.1.8`: update the optional `base64-ng-sanitization` companion to
+  `sanitization` `1.2.0`, expose native `sanitization::ct::Choice` comparison
+  helpers for `SecretBytes` and `SecretVec`, and keep the core crate
+  dependency-free.
+- `1.1.9`: admit AVX-512 VBMI encode dispatch only if hardware evidence,
   generated assembly, register cleanup, fallback behavior, and benchmark data
   are complete. If AVX-512 evidence is incomplete, keep AVX-512 as a real
   non-dispatchable prototype rather than blocking `1.2.0`.
-- `1.1.9`: admit AArch64 NEON encode dispatch for Standard and URL-safe
+- `1.1.10`: admit AArch64 NEON encode dispatch for Standard and URL-safe
   alphabets only if hardware evidence from real AArch64 machines, generated
   assembly review, register cleanup review, and platform fallback behavior are
   complete. Otherwise keep NEON non-dispatchable and ship `1.2.0` with x86
   encode acceleration only.
-- `1.1.10`: decide the wasm `simd128` encode posture. Because wasm runtime/JIT
+- `1.1.11`: decide the wasm `simd128` encode posture. Because wasm runtime/JIT
   behavior is outside the crate's control, wasm may remain compile-evidence
   only unless a specific runtime and deployment profile is admitted. Do not
   let wasm block `1.2.0` unless the project explicitly decides that wasm encode
   acceleration is part of the `1.2.0` scope.
-- `1.1.11`: full encode release-candidate hardening. Run fuzz/dudect/perf,
+- `1.1.12`: full encode release-candidate hardening. Run fuzz/dudect/perf,
   generated assembly, backend evidence, Miri, Kani, unsafe-boundary,
   panic-policy, no-alloc, target-matrix, macOS, and package checks against the
   exact candidate. Update benchmarks and release notes with only the backends
   actually admitted.
-- `1.1.12`: version-sync and publish rehearsal. Set all workspace crates to
+- `1.1.13`: version-sync and publish rehearsal. Set all workspace crates to
   `1.2.0`, update `release-crates.toml`, verify signed-tag publish gating,
   run `scripts/stable_release_gate.sh release`, run pentest, wait for GitHub
   green, then tag the release candidate.

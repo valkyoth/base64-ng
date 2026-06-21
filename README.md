@@ -168,15 +168,16 @@ The core `base64-ng` crate keeps its zero-runtime-dependency policy. Optional
 ecosystem integrations live as separate crates so applications can opt into
 their own approved dependency set without changing the base package.
 
-The `1.1.0` release changes the core crate and adds the optional
-`base64-ng-subtle` companion crate. Other optional companion crates remain on
-their previous published versions, and Cargo's normal compatible dependency
-ranges allow those companions to resolve with `base64-ng` `1.1.0`.
+The `1.1.0` release changes the core crate and updates the optional
+`base64-ng-subtle` and `base64-ng-sanitization` companion crates. Other
+optional companion crates remain on their previous published versions, and
+Cargo's normal compatible dependency ranges allow those companions to resolve
+with `base64-ng` `1.1.0`.
 
 | Crate | Purpose |
 | --- | --- |
 | `base64-ng` | Stable zero-runtime-dependency facade crate and primary user entry point. |
-| `base64-ng-sanitization` | Optional `sanitization` integration for staged CT secret decoding. |
+| `base64-ng-sanitization` | Optional `sanitization` integration with native `Choice` comparison helpers. |
 | `base64-ng-derive` | Dependency-free `Base64Secret` derive for fixed-size secret newtypes. |
 | `base64-ng-serde` | Optional `serde` wrappers for projects that already admit `serde`. |
 | `base64-ng-bytes` | Optional `bytes` helpers for `Bytes`, `Buf`, and `BufMut` users. |
@@ -192,23 +193,28 @@ only the crates that changed instead of republishing the whole ecosystem.
 `base64-ng-sanitization` provides extension helpers for
 `base64_ng::ct::CtEngine` that decode directly into
 `sanitization::SecretBytes<N>` in `no_std`, with `SecretVec` helpers behind its
-own `alloc` feature:
+own `alloc` feature. The `1.1.0` companion release uses `sanitization` `1.2.0`
+and exposes `sanitization::ct::Choice` comparison helpers through
+`SanitizationCtEqExt`:
 
 ```toml
 [dependencies]
 base64-ng = { version = "1.1.0", default-features = false }
-base64-ng-sanitization = { version = "1.0.9", default-features = false }
+base64-ng-sanitization = { version = "1.1.0", default-features = false }
 ```
 
 ```rust
 use base64_ng::ct;
-use base64_ng_sanitization::CtDecodeSanitizationExt;
+use base64_ng_sanitization::{CtDecodeSanitizationExt, SanitizationCtEqExt};
 
 let secret = ct::STANDARD
     .decode_secret_bytes::<5>(b"aGVsbG8=")
     .unwrap();
 
-secret.expose_secret(|bytes| assert_eq!(bytes, b"hello"));
+assert!(secret.sanitization_verify(
+    b"hello",
+    "example compares public expected bytes"
+));
 ```
 
 `base64-ng-derive` provides a dependency-free `Base64Secret` derive for tuple

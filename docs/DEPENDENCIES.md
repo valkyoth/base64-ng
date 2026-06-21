@@ -28,7 +28,9 @@ new dependency expands the audit, license, advisory, and supply-chain surface.
   audit logs preserve the operator-attestation boundary.
 - `base64-ng-sanitization` is an optional companion package for applications
   that already admit `sanitization`; it is not a dependency of the core
-  `base64-ng` package.
+  `base64-ng` package. Its `1.1.0` line requires `sanitization` `1.2.0` so
+  callers can use `sanitization::ct::Choice` and native constant-time-oriented
+  equality helpers without adding the external `subtle` crate.
 - `base64-ng-derive` is an optional companion package for fixed-size byte
   newtypes. It is dependency-free and does not add proc-macro machinery to the
   core `base64-ng` package.

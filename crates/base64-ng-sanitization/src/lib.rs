@@ -14,26 +14,36 @@
 //! The extension trait targets [`base64_ng::ct::CtEngine`] rather than the
 //! ordinary strict decoder. That keeps secret-container ergonomics aligned with
 //! the constant-time-oriented decode path.
+//! `sanitization` 1.2's native [`ct`] primitives are re-exported for callers
+//! that want dependency-free `Choice`-based verification after decoding.
 //!
 //! ```
 //! use base64_ng::ct;
-//! use base64_ng_sanitization::CtDecodeSanitizationExt;
+//! use base64_ng_sanitization::{CtDecodeSanitizationExt, SanitizationCtEqExt};
 //!
 //! let secret = ct::STANDARD
 //!     .decode_secret_bytes::<5>(b"aGVsbG8=")
 //!     .unwrap();
 //!
-//! secret.expose_secret(|bytes| assert_eq!(bytes, b"hello"));
+//! assert!(secret.sanitization_verify(
+//!     b"hello",
+//!     "example compares public expected bytes"
+//! ));
 //! ```
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
 use base64_ng::{Alphabet, DecodeError, ct::CtEngine};
-use sanitization::{SecretBytes, SecureSanitize};
+use sanitization::{
+    SecretBytes, SecureSanitize,
+    ct::{Choice, ConstantTimeEq},
+};
 
 #[cfg(feature = "alloc")]
 use sanitization::SecretVec;
+
+pub use sanitization::ct;
 
 /// Error returned by fixed-size sanitization decode helpers.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -69,6 +79,49 @@ impl From<DecodeError> for SanitizationDecodeError {
     fn from(error: DecodeError) -> Self {
         Self::Decode(error)
     }
+}
+
+/// Native `sanitization::ct` comparison helpers for decoded secret containers.
+///
+/// Length is public: mismatched lengths return [`Choice::FALSE`] immediately.
+/// Use fixed-size protocol tokens when length must not vary. Converting
+/// [`Choice`] to `bool` is declassification and requires an explicit reason.
+pub trait SanitizationCtEqExt {
+    /// Compare this secret container with `expected` using
+    /// `sanitization`'s native constant-time-oriented equality primitive.
+    #[must_use = "compose Choice values or declassify explicitly with a reason"]
+    fn sanitization_ct_eq(&self, expected: &[u8]) -> Choice;
+
+    /// Convenience boolean wrapper around [`Self::sanitization_ct_eq`].
+    ///
+    /// `reason` is passed through to [`Choice::declassify`] so reviews can
+    /// audit every branch point where a secret-derived decision becomes public.
+    #[must_use]
+    fn sanitization_verify(&self, expected: &[u8], reason: &'static str) -> bool {
+        self.sanitization_ct_eq(expected).declassify(reason)
+    }
+}
+
+impl<const N: usize> SanitizationCtEqExt for SecretBytes<N> {
+    fn sanitization_ct_eq(&self, expected: &[u8]) -> Choice {
+        <SecretBytes<N> as ConstantTimeEq<[u8]>>::ct_eq(self, expected)
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl SanitizationCtEqExt for SecretVec {
+    fn sanitization_ct_eq(&self, expected: &[u8]) -> Choice {
+        <SecretVec as ConstantTimeEq<[u8]>>::ct_eq(self, expected)
+    }
+}
+
+/// Compare two byte slices through `sanitization::ct` with public length.
+///
+/// This is useful when callers want the same native [`Choice`] type without
+/// first wrapping bytes in a `sanitization` secret container.
+#[must_use = "compose Choice values or declassify explicitly with a reason"]
+pub fn sanitization_ct_eq_public_len(left: &[u8], right: &[u8]) -> Choice {
+    ct::eq_public_len(left, right)
 }
 
 /// Extension helpers for decoding with [`base64_ng::ct::CtEngine`] into
@@ -195,13 +248,44 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::{CtDecodeSanitizationExt, SanitizationDecodeError};
+    use super::{
+        CtDecodeSanitizationExt, SanitizationCtEqExt, SanitizationDecodeError,
+        sanitization_ct_eq_public_len,
+    };
     use base64_ng::{DecodeError, ct};
 
     #[test]
     fn decodes_fixed_secret_bytes() {
         let secret = ct::STANDARD.decode_secret_bytes::<5>(b"aGVsbG8=").unwrap();
         secret.expose_secret(|bytes| assert_eq!(bytes, b"hello"));
+    }
+
+    #[test]
+    fn compares_fixed_secret_bytes_with_native_ct_choice() {
+        let secret = ct::STANDARD.decode_secret_bytes::<5>(b"aGVsbG8=").unwrap();
+        assert!(secret.sanitization_verify(b"hello", "test declassifies equality result"));
+        assert!(
+            !secret
+                .sanitization_ct_eq(b"world")
+                .declassify("test declassifies inequality result")
+        );
+        assert!(
+            !secret
+                .sanitization_ct_eq(b"hello!")
+                .declassify("test declassifies length mismatch")
+        );
+    }
+
+    #[test]
+    fn compares_raw_slices_with_native_ct_choice() {
+        assert!(
+            sanitization_ct_eq_public_len(b"hello", b"hello")
+                .declassify("test declassifies public-length equality")
+        );
+        assert!(
+            !sanitization_ct_eq_public_len(b"hello", b"world")
+                .declassify("test declassifies public-length inequality")
+        );
     }
 
     #[test]
@@ -232,6 +316,18 @@ mod tests {
     fn decodes_secret_vec() {
         let secret = ct::STANDARD.decode_secret_vec(b"aGVsbG8=").unwrap();
         secret.with_secret(|bytes| assert_eq!(bytes, b"hello"));
+    }
+
+    #[cfg(feature = "alloc")]
+    #[test]
+    fn compares_secret_vec_with_native_ct_choice() {
+        let secret = ct::STANDARD.decode_secret_vec(b"aGVsbG8=").unwrap();
+        assert!(secret.sanitization_verify(b"hello", "test declassifies SecretVec equality"));
+        assert!(
+            !secret
+                .sanitization_ct_eq(b"world")
+                .declassify("test declassifies SecretVec inequality")
+        );
     }
 
     #[cfg(feature = "alloc")]

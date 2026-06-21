@@ -10,7 +10,7 @@ sets.
 | Crate | Version | Publish In 1.1.0 | Cargo |
 | --- | --- | --- | --- |
 | `base64-ng` | `1.1.0` | yes | <https://crates.io/crates/base64-ng> |
-| `base64-ng-sanitization` | `1.0.9` | no | <https://crates.io/crates/base64-ng-sanitization> |
+| `base64-ng-sanitization` | `1.1.0` | yes | <https://crates.io/crates/base64-ng-sanitization> |
 | `base64-ng-derive` | `1.0.9` | no | <https://crates.io/crates/base64-ng-derive> |
 | `base64-ng-serde` | `1.0.10` | no | <https://crates.io/crates/base64-ng-serde> |
 | `base64-ng-bytes` | `1.0.9` | no | <https://crates.io/crates/base64-ng-bytes> |
