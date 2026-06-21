@@ -26,7 +26,7 @@ mod neon;
         all(target_arch = "arm", target_feature = "neon")
     )
 ))]
-pub(super) use neon::encode_12_bytes_neon;
+pub(in crate::simd) use neon::encode_12_bytes_neon;
 #[cfg(all(feature = "std", feature = "simd", target_arch = "aarch64"))]
 pub(crate) use neon::encode_slice_neon;
 #[cfg(any(target_arch = "aarch64", target_arch = "arm"))]
