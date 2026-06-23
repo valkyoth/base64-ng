@@ -31,10 +31,12 @@ The crate starts conservative: a small scalar implementation, strict RFC 4648 be
 
 The current public release is `1.2.2`.
 
-`1.2.2` is a small ergonomics patch on top of the `1.2.0`
+`1.2.2` is a small ergonomics and hardening patch on top of the `1.2.0`
 encode-acceleration family release. It adds explicit infallible encode
-convenience helpers for ordinary byte-to-Base64 paths while keeping the
-fallible APIs as the recommended choice for untrusted length metadata,
+convenience helpers for ordinary byte-to-Base64 paths, documents their overflow
+panic boundary, and tightens the `base64-ng-sanitization` locked fixed-size
+decode path so staged plaintext is wiped even when locked allocation fails. The
+fallible APIs remain the recommended choice for untrusted length metadata,
 constrained allocation environments, and recoverable-error code paths. The
 `1.2.x` line admits conservative std runtime-dispatched encode acceleration for
 Standard and URL-safe alphabets on `x86`/`x86_64` AVX-512 VBMI, AVX2,

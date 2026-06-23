@@ -5,7 +5,7 @@ crate remains the stable user entry point; companion crates are optional
 integration packages for applications that explicitly admit their dependency
 sets.
 
-## 1.2.2 Ergonomics Patch Release Plan
+## 1.2.2 Ergonomics And Hardening Patch Release Plan
 
 | Crate | Version | Publish In 1.2.2 | Cargo |
 | --- | --- | --- | --- |

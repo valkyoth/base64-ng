@@ -57,8 +57,9 @@ The SIMD roadmap separates implementation evidence from active acceleration:
   non-dispatchable prototypes.
 - `1.2.1` is a documentation/package patch for the released `1.2.0` encode
   acceleration scope. It does not admit additional backends.
-- `1.2.2` is an encode ergonomics patch that adds explicit infallible encode
-  convenience helpers. It does not admit additional backends.
+- `1.2.2` is an encode ergonomics and sanitization hardening patch that adds
+  explicit infallible encode convenience helpers and tightens fixed-size locked
+  secret decode cleanup. It does not admit additional backends.
 - After the `1.2.x` encode release, pause feature work for a short soak period
   so users can report platform-specific encode regressions before decode
   acceleration work starts.

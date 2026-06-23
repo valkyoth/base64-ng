@@ -745,6 +745,10 @@ Completed `1.2.0` work packages:
 
 - Add explicit infallible encode convenience helpers for ordinary
   byte-to-Base64 paths where invalid input is not possible.
+- Document the infallible helpers' encoded-length overflow panic boundary,
+  including the practical 32-bit large-input case.
+- Harden `base64-ng-sanitization` fixed-size locked secret decode so staged
+  plaintext is wiped even if locked allocation fails before the fill closure.
 - Keep the existing fallible encode helpers as the recommended API for
   untrusted length metadata, constrained allocation environments, and
   recoverable-error code paths.

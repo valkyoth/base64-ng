@@ -15,13 +15,13 @@ only for backends named in this file and the release gate.
 - Gate priority: Active backend priority: AVX-512 VBMI, then AVX2, then SSSE3/SSE4.1 on x86/x86_64; NEON on aarch64.
 - Public performance claims: none without local benchmark evidence.
 - Release status: `1.2.2`; `1.2.0` admitted conservative active encode
-  dispatch, and `1.2.2` is an ergonomics patch for that released
-  family. Active encode dispatch admits AVX-512 VBMI above AVX2 above
-  SSSE3/SSE4.1 on x86/x86_64 and NEON on aarch64 for Standard and URL-safe
-  alphabet families. Decode, custom alphabets, in-place encode, `no_std`, and
-  wasm `simd128` remain scalar or prototype-only. Wrapped encode may use
-  admitted fixed-block encode for its unwrapped staging step; line-ending
-  insertion remains scalar.
+  dispatch, and `1.2.2` is an ergonomics and sanitization hardening patch for
+  that released family. Active encode dispatch admits AVX-512 VBMI above AVX2
+  above SSSE3/SSE4.1 on x86/x86_64 and NEON on aarch64 for Standard and
+  URL-safe alphabet families. Decode, custom alphabets, in-place encode,
+  `no_std`, and wasm `simd128` remain scalar or prototype-only. Wrapped encode
+  may use admitted fixed-block encode for its unwrapped staging step;
+  line-ending insertion remains scalar.
 
 ## Required For Every Admitted Backend
 

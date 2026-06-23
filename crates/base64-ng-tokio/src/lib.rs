@@ -8,7 +8,7 @@
 //! These helpers are bounded convenience functions, not streaming state
 //! machines. They read the async input to completion before writing output,
 //! which avoids partial decoded writes on malformed input and keeps
-//! cancellation semantics simple for the `1.0.9` companion release.
+//! cancellation semantics simple for the companion crate.
 
 use base64_ng::{Alphabet, Engine};
 use tokio::io::{self, AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
