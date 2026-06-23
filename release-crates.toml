@@ -1,52 +1,52 @@
 [release]
-version = "1.2.1"
+version = "1.2.2"
 policy = "synced-family"
 
 [crates."base64-ng"]
-previous_version = "1.2.0"
-version = "1.2.1"
+previous_version = "1.2.1"
+version = "1.2.2"
 change = "code"
 publish = true
-reason = "Publishes corrected 1.2.x README and crate documentation for the admitted encode acceleration family release."
+reason = "Adds explicit infallible encode convenience helpers and publishes matching 1.2.2 documentation."
 
 [crates."base64-ng-sanitization"]
-previous_version = "1.2.0"
-version = "1.2.1"
+previous_version = "1.2.1"
+version = "1.2.2"
 change = "code"
 publish = true
-reason = "Syncs companion crate package documentation and dependency examples with the 1.2.1 family patch."
+reason = "Syncs companion crate package metadata and dependency examples with the 1.2.2 family patch."
 
 [crates."base64-ng-derive"]
-previous_version = "1.2.0"
-version = "1.2.1"
+previous_version = "1.2.1"
+version = "1.2.2"
 change = "code"
 publish = true
-reason = "Syncs companion crate package documentation and dependency examples with the 1.2.1 family patch."
+reason = "Syncs companion crate package metadata and dependency examples with the 1.2.2 family patch."
 
 [crates."base64-ng-serde"]
-previous_version = "1.2.0"
-version = "1.2.1"
+previous_version = "1.2.1"
+version = "1.2.2"
 change = "code"
 publish = true
-reason = "Syncs companion crate package documentation and dependency examples with the 1.2.1 family patch."
+reason = "Syncs companion crate package metadata and dependency examples with the 1.2.2 family patch."
 
 [crates."base64-ng-bytes"]
-previous_version = "1.2.0"
-version = "1.2.1"
+previous_version = "1.2.1"
+version = "1.2.2"
 change = "code"
 publish = true
-reason = "Syncs companion crate package documentation and dependency examples with the 1.2.1 family patch."
+reason = "Syncs companion crate package metadata and dependency examples with the 1.2.2 family patch."
 
 [crates."base64-ng-subtle"]
-previous_version = "1.2.0"
-version = "1.2.1"
+previous_version = "1.2.1"
+version = "1.2.2"
 change = "code"
 publish = true
-reason = "Syncs companion crate package documentation and dependency examples with the 1.2.1 family patch."
+reason = "Syncs companion crate package metadata and dependency examples with the 1.2.2 family patch."
 
 [crates."base64-ng-tokio"]
-previous_version = "1.2.0"
-version = "1.2.1"
+previous_version = "1.2.1"
+version = "1.2.2"
 change = "code"
 publish = true
-reason = "Syncs companion crate package documentation and dependency examples with the 1.2.1 family patch."
+reason = "Syncs companion crate package metadata and dependency examples with the 1.2.2 family patch."

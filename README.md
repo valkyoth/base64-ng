@@ -29,14 +29,18 @@ The crate starts conservative: a small scalar implementation, strict RFC 4648 be
 
 ## Current Status
 
-The current public release is `1.2.1`.
+The current public release is `1.2.2`.
 
-`1.2.1` is a documentation and package-metadata patch on top of the `1.2.0`
-encode-acceleration family release. The `1.2.x` line admits conservative std
-runtime-dispatched encode acceleration for Standard and URL-safe alphabets on
-`x86`/`x86_64` AVX-512 VBMI, AVX2, SSSE3/SSE4.1, and `aarch64` NEON. Decode,
-custom alphabets, `no_std`, wasm `simd128`, in-place encode, line-ending
-insertion, tails, and padding remain scalar unless separately admitted.
+`1.2.2` is a small ergonomics patch on top of the `1.2.0`
+encode-acceleration family release. It adds explicit infallible encode
+convenience helpers for ordinary byte-to-Base64 paths while keeping the
+fallible APIs as the recommended choice for untrusted length metadata,
+constrained allocation environments, and recoverable-error code paths. The
+`1.2.x` line admits conservative std runtime-dispatched encode acceleration for
+Standard and URL-safe alphabets on `x86`/`x86_64` AVX-512 VBMI, AVX2,
+SSSE3/SSE4.1, and `aarch64` NEON. Decode, custom alphabets, `no_std`, wasm
+`simd128`, in-place encode, line-ending insertion, tails, and padding remain
+scalar unless separately admitted.
 
 Implemented now:
 
@@ -129,7 +133,7 @@ and CWE mapping lives in [docs/SECURITY_CONTROLS.md](docs/SECURITY_CONTROLS.md).
 The minimum supported Rust version is Rust `1.90.0`. New deployments should
 prefer the latest stable Rust; as of May 29, 2026, that is Rust `1.96.0`.
 
-Compatibility evidence for the `1.2.1` workspace:
+Compatibility evidence for the `1.2.2` workspace:
 
 | Rust | Local Evidence |
 | --- | --- |
@@ -145,7 +149,7 @@ Compatibility evidence for the `1.2.1` workspace:
 
 ```toml
 [dependencies]
-base64-ng = "1.2.1"
+base64-ng = "1.2.2"
 ```
 
 The crate is dual-licensed:
@@ -174,7 +178,7 @@ The core `base64-ng` crate keeps its zero-runtime-dependency policy. Optional
 ecosystem integrations live as separate crates so applications can opt into
 their own approved dependency set without changing the base package.
 
-The `1.2.1` family syncs all companion crates to the same version so docs.rs
+The `1.2.2` family syncs all companion crates to the same version so docs.rs
 and crates.io examples resolve consistently across the workspace.
 
 | Crate | Purpose |
@@ -196,7 +200,7 @@ only the crates that changed instead of republishing the whole ecosystem.
 `base64-ng-sanitization` provides extension helpers for
 `base64_ng::ct::CtEngine` that decode directly into
 `sanitization::SecretBytes<N>` in `no_std`, with `SecretVec` helpers behind its
-own `alloc` feature. The `1.2.1` companion uses `sanitization` `1.2.1`
+own `alloc` feature. The `1.2.2` companion uses `sanitization` `1.2.1`
 and exposes `sanitization::ct::Choice` comparison helpers through
 `SanitizationCtEqExt`. Enable the companion's `high-assurance` feature to
 decode directly into `sanitization::LockedSecretBytes` or
@@ -205,8 +209,8 @@ decode directly into `sanitization::LockedSecretBytes` or
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.2.1", default-features = false }
-base64-ng-sanitization = { version = "1.2.1", default-features = false }
+base64-ng = { version = "1.2.2", default-features = false }
+base64-ng-sanitization = { version = "1.2.2", default-features = false }
 ```
 
 ```rust
@@ -225,7 +229,7 @@ assert!(secret.sanitization_verify(
 
 ```toml
 [dependencies]
-base64-ng-sanitization = { version = "1.2.1", features = ["high-assurance"] }
+base64-ng-sanitization = { version = "1.2.2", features = ["high-assurance"] }
 ```
 
 ```rust
@@ -244,8 +248,8 @@ newtypes around fixed byte arrays:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.2.1", default-features = false }
-base64-ng-derive = "1.2.1"
+base64-ng = { version = "1.2.2", default-features = false }
+base64-ng-derive = "1.2.2"
 ```
 
 ```rust
@@ -264,7 +268,7 @@ assert_eq!(key.encode_base64::<8>().unwrap().as_str(), "aGVsbG8=");
 
 ```toml
 [dependencies]
-base64-ng-serde = "1.2.1"
+base64-ng-serde = "1.2.2"
 serde = { version = "1.0.228", features = ["derive"] }
 ```
 
@@ -280,8 +284,8 @@ struct Message {
 
 ```toml
 [dependencies]
-base64-ng = "1.2.1"
-base64-ng-bytes = "1.2.1"
+base64-ng = "1.2.2"
+base64-ng-bytes = "1.2.2"
 bytes = "1.12.0"
 ```
 
@@ -298,8 +302,8 @@ projects that already admit `subtle`:
 
 ```toml
 [dependencies]
-base64-ng = "1.2.1"
-base64-ng-subtle = "1.2.1"
+base64-ng = "1.2.2"
+base64-ng-subtle = "1.2.2"
 ```
 
 ```rust
@@ -315,8 +319,8 @@ use Tokio:
 
 ```toml
 [dependencies]
-base64-ng = "1.2.1"
-base64-ng-tokio = "1.2.1"
+base64-ng = "1.2.2"
+base64-ng-tokio = "1.2.2"
 tokio = { version = "1.52.3", features = ["io-util"] }
 ```
 
@@ -345,7 +349,7 @@ Disable defaults for embedded or freestanding use:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.2.1", default-features = false }
+base64-ng = { version = "1.2.2", default-features = false }
 ```
 
 Enable admitted encode acceleration on supported `std` targets with the
@@ -355,7 +359,7 @@ scope, otherwise scalar encode is used:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.2.1", features = ["simd"] }
+base64-ng = { version = "1.2.2", features = ["simd"] }
 ```
 
 ```rust
@@ -891,9 +895,18 @@ assert_eq!(encoded, b"aGVsbG8=");
 let encoded_string = STANDARD.encode_string(b"hello").unwrap();
 assert_eq!(encoded_string, "aGVsbG8=");
 
+let infallible = STANDARD.encode_string_infallible(b"hello");
+assert_eq!(infallible, "aGVsbG8=");
+
 let decoded = STANDARD.decode_vec(&encoded).unwrap();
 assert_eq!(decoded, b"hello");
 ```
+
+The infallible encode helpers are for ordinary trusted byte buffers where
+failure would indicate an internal length/allocation invariant break rather
+than invalid input. Use the fallible helpers when input length comes from
+untrusted metadata, allocation pressure must be reported, or the caller needs a
+recoverable error.
 
 With the `stream` feature, `std::io` encoders are available:
 

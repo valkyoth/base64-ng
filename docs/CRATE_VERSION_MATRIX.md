@@ -5,17 +5,17 @@ crate remains the stable user entry point; companion crates are optional
 integration packages for applications that explicitly admit their dependency
 sets.
 
-## 1.2.1 Documentation Patch Release Plan
+## 1.2.2 Ergonomics Patch Release Plan
 
-| Crate | Version | Publish In 1.2.1 | Cargo |
+| Crate | Version | Publish In 1.2.2 | Cargo |
 | --- | --- | --- | --- |
-| `base64-ng` | `1.2.1` | yes | <https://crates.io/crates/base64-ng> |
-| `base64-ng-sanitization` | `1.2.1` | yes | <https://crates.io/crates/base64-ng-sanitization> |
-| `base64-ng-derive` | `1.2.1` | yes | <https://crates.io/crates/base64-ng-derive> |
-| `base64-ng-serde` | `1.2.1` | yes | <https://crates.io/crates/base64-ng-serde> |
-| `base64-ng-bytes` | `1.2.1` | yes | <https://crates.io/crates/base64-ng-bytes> |
-| `base64-ng-subtle` | `1.2.1` | yes | <https://crates.io/crates/base64-ng-subtle> |
-| `base64-ng-tokio` | `1.2.1` | yes | <https://crates.io/crates/base64-ng-tokio> |
+| `base64-ng` | `1.2.2` | yes | <https://crates.io/crates/base64-ng> |
+| `base64-ng-sanitization` | `1.2.2` | yes | <https://crates.io/crates/base64-ng-sanitization> |
+| `base64-ng-derive` | `1.2.2` | yes | <https://crates.io/crates/base64-ng-derive> |
+| `base64-ng-serde` | `1.2.2` | yes | <https://crates.io/crates/base64-ng-serde> |
+| `base64-ng-bytes` | `1.2.2` | yes | <https://crates.io/crates/base64-ng-bytes> |
+| `base64-ng-subtle` | `1.2.2` | yes | <https://crates.io/crates/base64-ng-subtle> |
+| `base64-ng-tokio` | `1.2.2` | yes | <https://crates.io/crates/base64-ng-tokio> |
 
 ## Release Policy
 

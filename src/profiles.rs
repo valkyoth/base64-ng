@@ -311,6 +311,26 @@ where
         }
     }
 
+    /// Encodes `input` into a newly allocated byte vector.
+    ///
+    /// This is a convenience wrapper around [`Self::encode_vec`] for ordinary
+    /// byte-to-Base64 paths where encoding failure would indicate an internal
+    /// length/allocation invariant failure rather than invalid input.
+    ///
+    /// Prefer [`Self::encode_vec`] when handling untrusted length metadata,
+    /// constrained allocation environments, or code paths that must return a
+    /// recoverable error instead of panicking.
+    ///
+    /// # Panics
+    ///
+    /// Panics if [`Self::encode_vec`] returns an error.
+    #[cfg(feature = "alloc")]
+    #[must_use]
+    pub fn encode_vec_infallible(&self, input: &[u8]) -> alloc::vec::Vec<u8> {
+        self.encode_vec(input)
+            .expect("base64-ng profile encode_vec failed for byte input")
+    }
+
     /// Encodes `input` into a redacted owned secret buffer.
     #[cfg(feature = "alloc")]
     pub fn encode_secret(&self, input: &[u8]) -> Result<SecretBuffer, EncodeError> {
@@ -324,6 +344,26 @@ where
             Some(wrap) => self.engine.encode_wrapped_string(input, wrap),
             None => self.engine.encode_string(input),
         }
+    }
+
+    /// Encodes `input` into a newly allocated UTF-8 string.
+    ///
+    /// This is a convenience wrapper around [`Self::encode_string`] for
+    /// ordinary byte-to-Base64 paths where encoding failure would indicate an
+    /// internal length/allocation invariant failure rather than invalid input.
+    ///
+    /// Prefer [`Self::encode_string`] when handling untrusted length metadata,
+    /// constrained allocation environments, or code paths that must return a
+    /// recoverable error instead of panicking.
+    ///
+    /// # Panics
+    ///
+    /// Panics if [`Self::encode_string`] returns an error.
+    #[cfg(feature = "alloc")]
+    #[must_use]
+    pub fn encode_string_infallible(&self, input: &[u8]) -> alloc::string::String {
+        self.encode_string(input)
+            .expect("base64-ng profile encode_string failed for byte input")
     }
 
     /// Decodes `input` into a newly allocated byte vector.

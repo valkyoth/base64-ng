@@ -1,6 +1,16 @@
 # Changelog
 
-## 1.2.1 - Unreleased
+## 1.2.2 - Unreleased
+
+- Added explicit infallible encode convenience helpers for ordinary
+  byte-to-Base64 paths: `Engine::encode_vec_infallible`,
+  `Engine::encode_string_infallible`, matching `Profile` helpers, and the
+  top-level strict standard `base64_ng::encode_infallible`.
+- Documented the panic contract for infallible encode helpers and kept the
+  existing fallible APIs as the recommended path for untrusted length metadata,
+  constrained allocation environments, and recoverable-error code paths.
+
+## 1.2.1 - 2026-06-21
 
 - Bumped the workspace family to `1.2.1` so crates.io and docs.rs show the
   corrected `1.2.x` README, companion-crate examples, and release matrix.

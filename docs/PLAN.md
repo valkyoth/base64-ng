@@ -741,6 +741,15 @@ Completed `1.2.0` work packages:
 - Keep runtime behavior and admission scope unchanged.
 - Sync companion crate package docs and dependency snippets to `1.2.1`.
 
+`1.2.2` patch scope:
+
+- Add explicit infallible encode convenience helpers for ordinary
+  byte-to-Base64 paths where invalid input is not possible.
+- Keep the existing fallible encode helpers as the recommended API for
+  untrusted length metadata, constrained allocation environments, and
+  recoverable-error code paths.
+- Keep SIMD admission scope and decode behavior unchanged.
+
 After `1.2.0`:
 
 - Pause encode feature work for roughly two weeks before starting SIMD decode

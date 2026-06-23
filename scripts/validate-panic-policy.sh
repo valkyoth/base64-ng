@@ -54,6 +54,18 @@ check_file() {
             if ($0 ~ /panic!\("encoded base64 length overflows usize"\)/) {
                 allowed = 1
             }
+            if ($0 ~ /\.expect\("base64-ng encode_vec failed for byte input"\)/) {
+                allowed = 1
+            }
+            if ($0 ~ /\.expect\("base64-ng encode_string failed for byte input"\)/) {
+                allowed = 1
+            }
+            if ($0 ~ /\.expect\("base64-ng profile encode_vec failed for byte input"\)/) {
+                allowed = 1
+            }
+            if ($0 ~ /\.expect\("base64-ng profile encode_string failed for byte input"\)/) {
+                allowed = 1
+            }
             if (!allowed) {
                 printf "panic policy: unreviewed panic-like site in %s:%d: %s\n", FILENAME, FNR, $0 > "/dev/stderr"
                 failed = 1

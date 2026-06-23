@@ -269,6 +269,32 @@ pub fn encode(input: &[u8]) -> Result<alloc::string::String, EncodeError> {
     STANDARD.encode_string(input)
 }
 
+/// Encodes `input` as strict standard padded Base64.
+///
+/// This is a convenience wrapper around [`Engine::encode_string_infallible`] on
+/// [`STANDARD`] for ordinary byte-to-Base64 paths where encoding failure would
+/// indicate an internal length/allocation invariant failure rather than invalid
+/// input.
+///
+/// Prefer [`encode`] when handling untrusted length metadata, constrained
+/// allocation environments, or code paths that must return a recoverable error
+/// instead of panicking.
+///
+/// # Panics
+///
+/// Panics if [`encode`] returns an error.
+///
+/// # Examples
+///
+/// ```
+/// assert_eq!(base64_ng::encode_infallible(b"hello"), "aGVsbG8=");
+/// ```
+#[cfg(feature = "alloc")]
+#[must_use]
+pub fn encode_infallible(input: &[u8]) -> alloc::string::String {
+    STANDARD.encode_string_infallible(input)
+}
+
 /// Decodes strict standard padded Base64 into an owned byte vector.
 ///
 /// This is a convenience wrapper around [`Engine::decode_vec`] on

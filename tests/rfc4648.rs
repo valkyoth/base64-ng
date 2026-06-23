@@ -2736,12 +2736,19 @@ fn decoded_buffer_from_str_uses_strict_standard_base64() {
 fn alloc_helpers_round_trip() {
     let encoded = STANDARD.encode_vec(b"hello").unwrap();
     assert_eq!(encoded, b"aGVsbG8=");
+    assert_eq!(STANDARD.encode_vec_infallible(b"hello"), b"aGVsbG8=");
 
     let encoded_string = STANDARD.encode_string(b"hello").unwrap();
     assert_eq!(encoded_string, "aGVsbG8=");
+    assert_eq!(STANDARD.encode_string_infallible(b"hello"), "aGVsbG8=");
+    assert_eq!(base64_ng::encode_infallible(b"hello"), "aGVsbG8=");
 
     let url_safe_string = URL_SAFE_NO_PAD.encode_string(b"\xfb\xff").unwrap();
     assert_eq!(url_safe_string, "-_8");
+    assert_eq!(URL_SAFE_NO_PAD.encode_string_infallible(b"\xfb\xff"), "-_8");
+
+    let mime_string = MIME.encode_string_infallible(&[0x5a; 58]);
+    assert_eq!(mime_string.len(), 82);
 
     let decoded = STANDARD.decode_vec(&encoded).unwrap();
     assert_eq!(decoded, b"hello");

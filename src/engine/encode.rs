@@ -377,6 +377,34 @@ where
         Ok(output)
     }
 
+    /// Encodes `input` into a newly allocated byte vector.
+    ///
+    /// This is a convenience wrapper around [`Self::encode_vec`] for ordinary
+    /// byte-to-Base64 paths where encoding failure would indicate an internal
+    /// length/allocation invariant failure rather than invalid input.
+    ///
+    /// Prefer [`Self::encode_vec`] when handling untrusted length metadata,
+    /// constrained allocation environments, or code paths that must return a
+    /// recoverable error instead of panicking.
+    ///
+    /// # Panics
+    ///
+    /// Panics if [`Self::encode_vec`] returns an error.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use base64_ng::STANDARD;
+    ///
+    /// assert_eq!(STANDARD.encode_vec_infallible(b"hello"), b"aGVsbG8=");
+    /// ```
+    #[cfg(feature = "alloc")]
+    #[must_use]
+    pub fn encode_vec_infallible(&self, input: &[u8]) -> alloc::vec::Vec<u8> {
+        self.encode_vec(input)
+            .expect("base64-ng encode_vec failed for byte input")
+    }
+
     /// Encodes `input` into a redacted owned secret buffer.
     ///
     /// This is useful when the encoded representation itself is sensitive and
@@ -407,5 +435,34 @@ where
             Ok(output) => Ok(output),
             Err(_) => unreachable!("base64 encoder produced non-UTF-8 output"),
         }
+    }
+
+    /// Encodes `input` into a newly allocated UTF-8 string.
+    ///
+    /// This is a convenience wrapper around [`Self::encode_string`] for
+    /// ordinary byte-to-Base64 paths where encoding failure would indicate an
+    /// internal length/allocation invariant failure rather than invalid input.
+    ///
+    /// Prefer [`Self::encode_string`] when handling untrusted length metadata,
+    /// constrained allocation environments, or code paths that must return a
+    /// recoverable error instead of panicking.
+    ///
+    /// # Panics
+    ///
+    /// Panics if [`Self::encode_string`] returns an error.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use base64_ng::{STANDARD, URL_SAFE_NO_PAD};
+    ///
+    /// assert_eq!(STANDARD.encode_string_infallible(b"hello"), "aGVsbG8=");
+    /// assert_eq!(URL_SAFE_NO_PAD.encode_string_infallible(b"\xfb\xff"), "-_8");
+    /// ```
+    #[cfg(feature = "alloc")]
+    #[must_use]
+    pub fn encode_string_infallible(&self, input: &[u8]) -> alloc::string::String {
+        self.encode_string(input)
+            .expect("base64-ng encode_string failed for byte input")
     }
 }

@@ -48,6 +48,14 @@ The current reviewed exceptions are:
   Secret string conversions do not use this exception; if an already validated
   secret byte vector somehow fails UTF-8 conversion, the helper wipes the bytes
   and returns an empty string rather than panicking or using unchecked UTF-8.
+- `encode_vec_infallible`, `encode_string_infallible`, profile variants, and
+  the top-level `encode_infallible` may panic if the underlying fallible encode
+  API returns an error. These helpers are explicit convenience APIs for
+  ordinary byte-to-Base64 paths where every byte sequence is encodable and a
+  failure indicates an internal length/allocation invariant break. Do not use
+  them for untrusted length metadata, constrained allocation environments, or
+  code paths that require recoverable errors; use the fallible encode helpers
+  instead.
 - Stream `get_ref`, `get_mut`, and `into_inner` internal helpers use
   `unreachable!` if a wrapper has already consumed its inner value. The public
   API consumes `self` for `into_inner`/`finish`, so this state is not reachable
