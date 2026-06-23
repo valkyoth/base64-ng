@@ -7,10 +7,11 @@
 
 //! `base64-ng` is a `no_std`-first Base64 encoder and decoder.
 //!
-//! This initial release provides strict scalar RFC 4648-style behavior and
-//! caller-owned output buffers. Future SIMD fast paths, including AVX, NEON,
-//! and wasm `simd128` candidates, will be required to match this scalar module
-//! byte-for-byte.
+//! The core API provides strict RFC 4648-style behavior, caller-owned output
+//! buffers, and an audited scalar fallback. The `1.2.x` line admits selected
+//! SIMD encode acceleration while keeping decode on the scalar foundation.
+//! Any accelerated backend must match the scalar module byte-for-byte and pass
+//! the documented admission evidence before dispatch can select it.
 //!
 //! # Examples
 //!
@@ -73,6 +74,11 @@
 //! deployments where even transient writes into caller-owned output are
 //! unacceptable, use [`ct::CtEngine::decode_slice_staged_clear_tail`] with a
 //! private staging buffer.
+//! CT behavior is best-effort and build-profile specific. Link-Time
+//! Optimization can change generated code shape across crate boundaries, so
+//! high-assurance deployments must rerun the dudect and generated-assembly
+//! evidence scripts for their exact compiler, target, feature set, and release
+//! profile before treating CT decode as acceptable.
 //!
 //! # Zeroization Caveat
 //!
@@ -282,7 +288,11 @@ pub fn encode(input: &[u8]) -> Result<alloc::string::String, EncodeError> {
 ///
 /// # Panics
 ///
-/// Panics if [`encode`] returns an error.
+/// Panics if [`encode`] returns an error. This includes encoded length
+/// overflow; on 32-bit targets, inputs larger than roughly 1.5 GiB can
+/// overflow the encoded length. For attacker-controlled or externally sized
+/// buffers, use [`encode`], which returns a recoverable
+/// [`EncodeError::LengthOverflow`].
 ///
 /// # Examples
 ///

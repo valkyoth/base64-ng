@@ -323,7 +323,11 @@ where
     ///
     /// # Panics
     ///
-    /// Panics if [`Self::encode_vec`] returns an error.
+    /// Panics if [`Self::encode_vec`] returns an error. This includes encoded
+    /// length overflow; on 32-bit targets, inputs larger than roughly 1.5 GiB
+    /// can overflow the encoded length. For attacker-controlled or externally
+    /// sized buffers, use [`Self::encode_vec`], which returns a recoverable
+    /// [`EncodeError::LengthOverflow`].
     #[cfg(feature = "alloc")]
     #[must_use]
     pub fn encode_vec_infallible(&self, input: &[u8]) -> alloc::vec::Vec<u8> {
@@ -358,7 +362,11 @@ where
     ///
     /// # Panics
     ///
-    /// Panics if [`Self::encode_string`] returns an error.
+    /// Panics if [`Self::encode_string`] returns an error. This includes
+    /// encoded length overflow; on 32-bit targets, inputs larger than roughly
+    /// 1.5 GiB can overflow the encoded length. For attacker-controlled or
+    /// externally sized buffers, use [`Self::encode_string`], which returns a
+    /// recoverable [`EncodeError::LengthOverflow`].
     #[cfg(feature = "alloc")]
     #[must_use]
     pub fn encode_string_infallible(&self, input: &[u8]) -> alloc::string::String {

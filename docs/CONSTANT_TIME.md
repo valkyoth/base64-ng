@@ -52,6 +52,16 @@ keeps execution on the audited scalar backend and avoids future SIMD-induced
 timing variation unless an accelerated backend has been admitted with its own
 side-channel evidence.
 
+For sensitive deployments, make that check a startup gate rather than an audit
+log hint:
+
+```rust
+use base64_ng::runtime::{require_backend_policy, BackendPolicy};
+
+require_backend_policy(BackendPolicy::HighAssuranceScalarOnly)
+    .expect("base64-ng posture check failed: CT gate not attested on this core");
+```
+
 `HighAssuranceScalarOnly` is still a build and target posture assertion. On
 AArch64, the crate emits `isb sy` plus the CSDB hint for the CT result gate.
 By default this reports `CtGatePosture::HardwareSpeculationBarrierUnattested`
@@ -199,6 +209,17 @@ Before documenting the guarantee as formally supported:
 Until this evidence exists, README and SECURITY must continue to say that the
 `ct` module is constant-time-oriented and does not claim a formally verified
 cryptographic constant-time API.
+
+## LTO Caveat
+
+The CT decoder's `#[inline(never)]`, `core::hint::black_box`, volatile reads,
+and speculation barriers are best-effort source and generated-code controls.
+Link-Time Optimization (`lto = true` or `lto = "thin"`) can change code shape
+across crate boundaries and may weaken assumptions made by per-crate review.
+High-assurance deployments must treat dudect and generated-assembly evidence as
+toolchain-, target-, and profile-specific. Re-run the evidence scripts for the
+exact release profile, and disable cross-crate LTO for code containing CT decode
+unless the generated artifacts for that exact build have been reviewed.
 
 ## Generated-Code Review
 

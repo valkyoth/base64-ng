@@ -710,6 +710,10 @@ after the fixed-shape decode pass.
 For shared-memory, HSM-adjacent, sandboxed, or other multi-principal threat
 models where even transient writes to caller-owned output are unacceptable, use
 `ct::CtEngine::decode_slice_staged_clear_tail` with a private staging buffer.
+This staged API should be the default for enclave-adjacent code, shared memory,
+or any service where another principal could observe the public output buffer
+during the decode call. `decode_slice_clear_tail` wipes on error before it
+returns, but the CT loop still writes decoded bytes before the final error gate.
 
 For short values, `encode_buffer` returns a stack-backed `EncodedBuffer`
 and `decode_buffer` returns a stack-backed `DecodedBuffer` without requiring
@@ -906,7 +910,9 @@ The infallible encode helpers are for ordinary trusted byte buffers where
 failure would indicate an internal length/allocation invariant break rather
 than invalid input. Use the fallible helpers when input length comes from
 untrusted metadata, allocation pressure must be reported, or the caller needs a
-recoverable error.
+recoverable error. On 32-bit targets, very large inputs can overflow the
+encoded length calculation, so services should keep externally sized buffers on
+the fallible `encode_*` APIs.
 
 With the `stream` feature, `std::io` encoders are available:
 

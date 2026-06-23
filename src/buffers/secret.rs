@@ -176,6 +176,12 @@ pub struct ExposedSecretString {
 #[cfg(feature = "alloc")]
 impl ExposedSecretString {
     /// Wraps an owned UTF-8 string as exposed secret text.
+    ///
+    /// Safe Rust guarantees that `String` contains valid UTF-8. If unsafe
+    /// upstream code has violated that invariant before calling this function,
+    /// this helper wipes the invalid bytes and returns an empty fail-closed
+    /// wrapper. Do not treat unsafe-created invalid `String` values as
+    /// protocol data.
     #[must_use]
     pub fn from_string(text: alloc::string::String) -> Self {
         let mut bytes = text.into_bytes();

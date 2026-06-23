@@ -162,6 +162,34 @@ fn locked_fixed_secret_bytes_reject_length_mismatch() {
     ));
 }
 
+#[cfg(all(
+    feature = "memory-lock",
+    any(
+        all(
+            target_os = "linux",
+            any(target_arch = "x86_64", target_arch = "aarch64")
+        ),
+        target_os = "macos",
+        target_os = "ios",
+        target_os = "android",
+        target_os = "windows",
+        target_os = "freebsd",
+        target_os = "openbsd",
+        target_os = "netbsd",
+        target_os = "dragonfly",
+        all(target_arch = "wasm32", feature = "wasm-compat"),
+    )
+))]
+#[test]
+fn locked_fixed_secret_bytes_reports_decode_error() {
+    assert!(matches!(
+        ct::STANDARD.decode_locked_secret_bytes::<5>(b"aGVsbG8!"),
+        Err(LockedSecretBytesGenerateError::Generate(
+            SanitizationDecodeError::Decode(DecodeError::InvalidInput)
+        ))
+    ));
+}
+
 #[cfg(feature = "alloc")]
 #[test]
 fn decodes_secret_vec() {

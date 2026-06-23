@@ -26,6 +26,13 @@ use std::io::{self, Write};
 /// written bytes cannot be recalled from sockets, pipes, files, or other
 /// external sinks. For atomic frame semantics, decode into an in-memory buffer
 /// first and transfer to the final writer only after [`Self::finish`] succeeds.
+///
+/// If malformed input is detected after earlier quads in the same
+/// [`Write::write`] call were accepted, the adapter may return `Ok(consumed)`
+/// for the accepted prefix while latching itself as failed. The next write,
+/// flush, or finish call then returns the stored failure state. Callers must
+/// follow normal `Write` partial-progress rules and continue checking for the
+/// terminal error.
 pub struct Decoder<W, A, const PAD: bool>
 where
     A: Alphabet,
@@ -447,6 +454,9 @@ where
                     crate::wipe_bytes(&mut decoded);
                     self.failed = true;
                     if consumed > 0 {
+                        // Report accepted prefix progress per `io::Write`.
+                        // The adapter is now failed; the next write/flush/
+                        // finish call returns an error for the malformed quad.
                         return Ok(consumed);
                     }
 

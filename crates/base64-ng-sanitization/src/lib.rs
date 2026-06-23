@@ -12,13 +12,10 @@
 //! secret-bearing Base64 directly into `sanitization` secret containers.
 //!
 //! The extension trait targets [`base64_ng::ct::CtEngine`] rather than the
-//! ordinary strict decoder. That keeps secret-container ergonomics aligned with
-//! the constant-time-oriented decode path.
-//! `sanitization` 1.2.1's native [`ct`] primitives are re-exported for callers
-//! that want dependency-free `Choice`-based verification after decoding.
-//! Enable this crate's `memory-lock` or `high-assurance` feature to decode
-//! directly into `sanitization::LockedSecretBytes` or
-//! `sanitization::LockedSecretVec` on supported native targets.
+//! ordinary strict decoder. `sanitization` 1.2.1's native [`ct`] primitives are
+//! re-exported for callers that want `Choice`-based verification after decode.
+//! Enable `memory-lock` or `high-assurance` for locked secret containers on
+//! supported native targets.
 //!
 //! ```
 //! use base64_ng::ct;
@@ -27,16 +24,11 @@
 //! let secret = ct::STANDARD
 //!     .decode_secret_bytes::<5>(b"aGVsbG8=")
 //!     .unwrap();
-//!
-//! assert!(secret.sanitization_verify(
-//!     b"hello",
-//!     "example compares public expected bytes"
-//! ));
+//! assert!(secret.sanitization_verify(b"hello", "example declassifies equality"));
 //! ```
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
-
 use base64_ng::{Alphabet, DecodeError, ct::CtEngine};
 use sanitization::{
     SecretBytes, SecureSanitize,
@@ -245,9 +237,8 @@ pub trait CtDecodeSanitizationExt {
     ///
     /// Enable the `memory-lock` feature, or `high-assurance` for
     /// `memory-lock` plus `canary-check` and `random-canary`, to use this
-    /// helper on supported native targets. The locked mapping is created before
-    /// decoding starts, and decoded bytes are written directly into that locked
-    /// mapping through `sanitization::LockedSecretBytes::try_from_fill`.
+    /// helper on supported native targets. Decode uses private stack staging,
+    /// then copies into locked storage only after the full decode succeeds.
     ///
     /// The decoded length must exactly match `N`. A length mismatch returns
     /// [`SanitizationDecodeError::LengthMismatch`] inside the
@@ -417,19 +408,30 @@ where
             ));
         }
 
-        LockedSecretBytes::try_from_fill(|output| {
-            self.decode_slice_clear_tail(input, output)
-                .map_err(SanitizationDecodeError::Decode)
-                .and_then(|written| {
-                    if written == N {
-                        Ok(())
-                    } else {
-                        Err(SanitizationDecodeError::LengthMismatch {
-                            expected: N,
-                            actual: written,
-                        })
-                    }
-                })
+        let mut output = [0u8; N];
+        let mut staging = [0u8; N];
+        let written = match self.decode_slice_staged_clear_tail(input, &mut output, &mut staging) {
+            Ok(written) => written,
+            Err(error) => {
+                output.secure_sanitize();
+                staging.secure_sanitize();
+                return Err(LockedSecretBytesGenerateError::Generate(error.into()));
+            }
+        };
+        staging.secure_sanitize();
+
+        LockedSecretBytes::try_from_fill(|locked| {
+            if written != N {
+                output.secure_sanitize();
+                return Err(SanitizationDecodeError::LengthMismatch {
+                    expected: N,
+                    actual: written,
+                });
+            }
+
+            locked.copy_from_slice(&output);
+            output.secure_sanitize();
+            Ok(())
         })
     }
 
