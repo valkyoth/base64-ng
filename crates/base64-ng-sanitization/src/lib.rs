@@ -420,9 +420,8 @@ where
         };
         staging.secure_sanitize();
 
-        LockedSecretBytes::try_from_fill(|locked| {
+        let result = LockedSecretBytes::try_from_fill(|locked| {
             if written != N {
-                output.secure_sanitize();
                 return Err(SanitizationDecodeError::LengthMismatch {
                     expected: N,
                     actual: written,
@@ -430,9 +429,10 @@ where
             }
 
             locked.copy_from_slice(&output);
-            output.secure_sanitize();
             Ok(())
-        })
+        });
+        output.secure_sanitize();
+        result
     }
 
     #[cfg(feature = "alloc")]
