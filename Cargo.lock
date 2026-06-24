@@ -4,11 +4,11 @@ version = 4
 
 [[package]]
 name = "base64-ng"
-version = "1.2.2"
+version = "1.2.3"
 
 [[package]]
 name = "base64-ng-bytes"
-version = "1.2.2"
+version = "1.2.3"
 dependencies = [
  "base64-ng",
  "bytes",
@@ -16,14 +16,14 @@ dependencies = [
 
 [[package]]
 name = "base64-ng-derive"
-version = "1.2.2"
+version = "1.2.3"
 dependencies = [
  "base64-ng",
 ]
 
 [[package]]
 name = "base64-ng-sanitization"
-version = "1.2.2"
+version = "1.2.3"
 dependencies = [
  "base64-ng",
  "sanitization",
@@ -31,7 +31,7 @@ dependencies = [
 
 [[package]]
 name = "base64-ng-serde"
-version = "1.2.2"
+version = "1.2.3"
 dependencies = [
  "base64-ng",
  "serde",
@@ -40,7 +40,7 @@ dependencies = [
 
 [[package]]
 name = "base64-ng-subtle"
-version = "1.2.2"
+version = "1.2.3"
 dependencies = [
  "base64-ng",
  "subtle",
@@ -48,7 +48,7 @@ dependencies = [
 
 [[package]]
 name = "base64-ng-tokio"
-version = "1.2.2"
+version = "1.2.3"
 dependencies = [
  "base64-ng",
  "tokio",
@@ -98,9 +98,9 @@ dependencies = [
 
 [[package]]
 name = "sanitization"
-version = "1.2.1"
+version = "1.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "51992628809c9dcb8fa6c55d868ff724ae724c4641a29b24867fda6d15665ff6"
+checksum = "e917ba6e3d60c9756acda8f7e4b5958984b2fb1d7eb501c71e07f04da8c20413"
 
 [[package]]
 name = "serde"

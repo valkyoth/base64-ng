@@ -1,52 +1,52 @@
 [release]
-version = "1.2.2"
+version = "1.2.3"
 policy = "synced-family"
 
 [crates."base64-ng"]
-previous_version = "1.2.1"
-version = "1.2.2"
+previous_version = "1.2.2"
+version = "1.2.3"
 change = "code"
 publish = true
-reason = "Adds explicit infallible encode convenience helpers, documents overflow panic boundaries, and publishes matching 1.2.2 documentation."
+reason = "Syncs the workspace crate family to 1.2.3 and publishes documentation for the sanitization dependency update."
 
 [crates."base64-ng-sanitization"]
-previous_version = "1.2.1"
-version = "1.2.2"
+previous_version = "1.2.2"
+version = "1.2.3"
 change = "code"
 publish = true
-reason = "Hardens fixed-size locked secret decode staging cleanup and syncs package metadata with the 1.2.2 family patch."
+reason = "Updates the optional sanitization integration to sanitization 1.2.2 and syncs package metadata with the 1.2.3 family patch."
 
 [crates."base64-ng-derive"]
-previous_version = "1.2.1"
-version = "1.2.2"
+previous_version = "1.2.2"
+version = "1.2.3"
 change = "code"
 publish = true
-reason = "Syncs companion crate package metadata and dependency examples with the 1.2.2 family patch."
+reason = "Syncs companion crate package metadata and dependency examples with the 1.2.3 family patch."
 
 [crates."base64-ng-serde"]
-previous_version = "1.2.1"
-version = "1.2.2"
+previous_version = "1.2.2"
+version = "1.2.3"
 change = "code"
 publish = true
-reason = "Syncs companion crate package metadata and dependency examples with the 1.2.2 family patch."
+reason = "Syncs companion crate package metadata and dependency examples with the 1.2.3 family patch."
 
 [crates."base64-ng-bytes"]
-previous_version = "1.2.1"
-version = "1.2.2"
+previous_version = "1.2.2"
+version = "1.2.3"
 change = "code"
 publish = true
-reason = "Syncs companion crate package metadata and dependency examples with the 1.2.2 family patch."
+reason = "Syncs companion crate package metadata and dependency examples with the 1.2.3 family patch."
 
 [crates."base64-ng-subtle"]
-previous_version = "1.2.1"
-version = "1.2.2"
+previous_version = "1.2.2"
+version = "1.2.3"
 change = "code"
 publish = true
-reason = "Syncs companion crate package metadata and dependency examples with the 1.2.2 family patch."
+reason = "Syncs companion crate package metadata and dependency examples with the 1.2.3 family patch."
 
 [crates."base64-ng-tokio"]
-previous_version = "1.2.1"
-version = "1.2.2"
+previous_version = "1.2.2"
+version = "1.2.3"
 change = "code"
 publish = true
-reason = "Syncs companion crate package metadata and dependency examples with the 1.2.2 family patch."
+reason = "Syncs companion crate package metadata and dependency examples with the 1.2.3 family patch."

@@ -12,7 +12,7 @@
 //! secret-bearing Base64 directly into `sanitization` secret containers.
 //!
 //! The extension trait targets [`base64_ng::ct::CtEngine`] rather than the
-//! ordinary strict decoder. `sanitization` 1.2.1's native [`ct`] primitives are
+//! ordinary strict decoder. `sanitization` 1.2.2's native [`ct`] primitives are
 //! re-exported for callers that want `Choice`-based verification after decode.
 //! Enable `memory-lock` or `high-assurance` for locked secret containers on
 //! supported native targets.

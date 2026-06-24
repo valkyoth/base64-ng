@@ -1,6 +1,13 @@
 # Changelog
 
-## 1.2.2 - Unreleased
+## 1.2.3 - Unreleased
+
+- Updated the optional `base64-ng-sanitization` companion dependency to
+  `sanitization` `1.2.2`.
+- Synced all workspace crate versions, dependency snippets, release metadata,
+  and package docs to the `1.2.3` family.
+
+## 1.2.2 - 2026-06-23
 
 - Added explicit infallible encode convenience helpers for ordinary
   byte-to-Base64 paths: `Engine::encode_vec_infallible`,

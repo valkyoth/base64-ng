@@ -60,6 +60,9 @@ The SIMD roadmap separates implementation evidence from active acceleration:
 - `1.2.2` is an encode ergonomics and sanitization hardening patch that adds
   explicit infallible encode convenience helpers and tightens fixed-size locked
   secret decode cleanup. It does not admit additional backends.
+- `1.2.3` updates the optional `base64-ng-sanitization` companion dependency to
+  `sanitization` `1.2.2` and syncs workspace package metadata. It does not
+  admit additional backends.
 - After the `1.2.x` encode release, pause feature work for a short soak period
   so users can report platform-specific encode regressions before decode
   acceleration work starts.

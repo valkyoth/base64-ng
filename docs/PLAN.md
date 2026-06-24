@@ -754,6 +754,14 @@ Completed `1.2.0` work packages:
   recoverable-error code paths.
 - Keep SIMD admission scope and decode behavior unchanged.
 
+`1.2.3` patch scope:
+
+- Update the optional `base64-ng-sanitization` companion dependency to
+  `sanitization` `1.2.2`.
+- Sync all workspace package versions, dependency snippets, and release-plan
+  metadata to the `1.2.3` family.
+- Keep runtime behavior, SIMD admission scope, and decode behavior unchanged.
+
 After `1.2.0`:
 
 - Pause encode feature work for roughly two weeks before starting SIMD decode
