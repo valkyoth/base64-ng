@@ -3,6 +3,9 @@ use super::{
     decode_tail_unpadded, decoded_capacity, scalar, validate_tail_unpadded,
 };
 
+#[cfg(base64_ng_kani_advanced)]
+use super::{LineEnding, LineWrap, Profile, STANDARD_NO_PAD};
+
 #[kani::proof]
 fn checked_encoded_len_is_bounded_for_small_inputs() {
     let len = usize::from(kani::any::<u8>());
@@ -182,6 +185,52 @@ fn standard_clear_tail_decode_clears_buffer_on_error() {
     if result.is_err() {
         assert!(buffer.iter().all(|byte| *byte == 0));
     }
+}
+
+#[cfg(base64_ng_kani_advanced)]
+#[kani::proof]
+#[kani::unwind(70)]
+fn advanced_wrapped_standard_decode_slice_returns_written_within_output() {
+    let input = kani::any::<[u8; 8]>();
+    let mut output = kani::any::<[u8; 6]>();
+    let profile = Profile::new(STANDARD, Some(LineWrap::new(4, LineEnding::Lf)));
+    let result = profile.decode_slice(&input, &mut output);
+
+    if let Ok(written) = result {
+        assert!(written <= output.len());
+    }
+}
+
+#[cfg(base64_ng_kani_advanced)]
+#[kani::proof]
+#[kani::unwind(70)]
+fn advanced_wrapped_standard_decode_clear_tail_clears_output_on_error() {
+    let input = kani::any::<[u8; 8]>();
+    let mut output = kani::any::<[u8; 6]>();
+    let profile = Profile::new(STANDARD, Some(LineWrap::new(4, LineEnding::Lf)));
+    let result = profile.decode_slice_clear_tail(&input, &mut output);
+
+    if result.is_err() {
+        assert!(output.iter().all(|byte| *byte == 0));
+    }
+}
+
+#[cfg(base64_ng_kani_advanced)]
+#[kani::proof]
+#[kani::unwind(70)]
+fn advanced_public_strict_decode_surfaces_do_not_panic_for_bounded_inputs() {
+    let input = kani::any::<[u8; 8]>();
+    let mut output = kani::any::<[u8; 6]>();
+    let mut in_place = input;
+
+    let _ = STANDARD.decode_slice(&input, &mut output);
+    let _ = STANDARD.decode_slice_clear_tail(&input, &mut output);
+    let _ = STANDARD.validate_result(&input);
+    let _ = STANDARD.decoded_len(&input);
+    let _ = STANDARD.decode_in_place(&mut in_place);
+    let _ = STANDARD_NO_PAD.decode_slice(&input, &mut output);
+    let _ = STANDARD_NO_PAD.validate_result(&input);
+    let _ = STANDARD_NO_PAD.decoded_len(&input);
 }
 
 #[kani::proof]

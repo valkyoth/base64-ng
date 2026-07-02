@@ -17,9 +17,9 @@ trap 'rm -f "$log"' EXIT
 if cargo kani --no-default-features >"$log" 2>&1; then
     cat "$log"
     exit 0
+else
+    status="$?"
 fi
-
-status="$?"
 
 if grep -q "Kani Rust Verifier" "$log" && grep -q "requires rustc" "$log"; then
     echo "Kani checks: skipping; installed Kani compiler is older than this crate's rust-version"

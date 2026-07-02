@@ -798,9 +798,11 @@ available as a `Result`-based API for fixed static literals.
 URL-safe, URL-safe no-pad, MIME, and PEM. Bounded Kani coverage now includes
 strict decode backend/scalar agreement for one padded quantum. Wrapped decode
 remains covered by deterministic tests and release-gate checks rather than a
-Kani proof, because the wrapped symbolic path is currently too expensive for a
-practical release gate. The remaining completion work is therefore focused on
-final evidence refresh, wasm posture, and release-candidate hardening.
+mandatory Kani proof, because the wrapped symbolic path is currently too
+expensive for a practical release gate. An opt-in advanced Kani script carries
+those expensive wrapped/public-surface harnesses for background runs. The
+remaining completion work is therefore focused on final evidence refresh, wasm
+posture, and release-candidate hardening.
 
 1. Commit: decode SIMD design and API freeze.
    - Freeze the decode acceleration scope: strict Standard and URL-safe

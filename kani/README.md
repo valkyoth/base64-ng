@@ -9,6 +9,15 @@ Run them with:
 scripts/check_kani.sh
 ```
 
+The optional expensive harness set is gated behind
+`cfg(base64_ng_kani_advanced)` and can be run separately:
+
+```sh
+scripts/check_kani_advanced.sh
+```
+
+That script may run much longer than the normal release-gate proof suite.
+
 The release gate runs Kani automatically when `cargo kani` is installed and
 this directory exists. If Kani's bundled Rust compiler is older than the
 crate's pinned `rust-version`, the script records an explicit skip until a
@@ -30,6 +39,9 @@ Current proof harnesses cover:
 - constant-time-oriented clear-tail slice and in-place decode clearing caller
   buffers on error
 - constant-time-oriented validate/decode agreement for one padded quantum
+
+The advanced opt-in harnesses add symbolic wrapped-decode bounds, wrapped
+clear-tail cleanup, and a broad selected-public-surface no-panic exercise.
 
 These are intentionally small bounded proofs. They complement Miri, fuzzing,
 and deterministic integration tests; they are not a substitute for the future

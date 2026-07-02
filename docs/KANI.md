@@ -40,6 +40,18 @@ crate declares, the script prints a skip and exits successfully. The stable
 release gate treats that as an explicit policy skip, not as completed formal
 verification.
 
+For opt-in expensive exploration, run:
+
+```sh
+scripts/check_kani_advanced.sh
+```
+
+The advanced script enables `--cfg base64_ng_kani_advanced` and includes
+symbolic wrapped-decode and broad public strict-decode harnesses that may take
+substantially longer than the normal release-gate suite. These harnesses are
+not part of the mandatory release gate unless a future release explicitly
+promotes them after runtime evidence shows they are practical for CI.
+
 ## Harness Scope
 
 Current harnesses cover:
@@ -54,6 +66,13 @@ Current harnesses cover:
 - in-place decode prefix bounds
 - clear-tail cleanup behavior on decode failures
 - constant-time-oriented validate/decode agreement for one quantum
+
+Advanced opt-in harnesses additionally attempt:
+
+- strict wrapped decode output-prefix bounds for an 8-byte symbolic input
+- strict wrapped clear-tail cleanup for an 8-byte symbolic input
+- broad no-panic exercise of selected public strict decode surfaces for an
+  8-byte symbolic input
 
 ## Historical v1.0.0 Verifier Exception
 
