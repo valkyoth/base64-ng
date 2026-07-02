@@ -21,19 +21,19 @@ if [ "${BASE64_NG_RUN_PERF:-0}" = "1" ]; then
     output_file="$evidence_dir/perf-output.csv"
     scalar_output_file="$evidence_dir/perf-scalar-output.csv"
     manifest="$evidence_dir/MANIFEST.txt"
-    command_line="cargo run --release --manifest-path perf/Cargo.toml"
-    scalar_command_line="cargo run --release --manifest-path perf/Cargo.toml --no-default-features"
+    command_line="cargo run --quiet --release --manifest-path perf/Cargo.toml"
+    scalar_command_line="cargo run --quiet --release --manifest-path perf/Cargo.toml --no-default-features"
 
     echo "perf checks: run scalar benchmark harness"
     mkdir -p "$evidence_dir"
 
     scalar_status=0
-    cargo run --release --manifest-path perf/Cargo.toml --no-default-features >"$scalar_output_file" 2>&1 || scalar_status="$?"
+    cargo run --quiet --release --manifest-path perf/Cargo.toml --no-default-features >"$scalar_output_file" || scalar_status="$?"
     cat "$scalar_output_file"
 
     echo "perf checks: run default benchmark harness"
     status=0
-    cargo run --release --manifest-path perf/Cargo.toml >"$output_file" 2>&1 || status="$?"
+    cargo run --quiet --release --manifest-path perf/Cargo.toml >"$output_file" || status="$?"
     cat "$output_file"
 
     {
@@ -73,7 +73,7 @@ if [ "${BASE64_NG_RUN_PERF:-0}" = "1" ]; then
         echo "interpretation:"
         echo "This is local benchmark evidence for this machine and command only."
         echo "perf-scalar-output.csv is built with perf --no-default-features, which disables base64-ng SIMD."
-        echo "perf-output.csv is built with perf default features, which enables base64-ng SIMD and records the active backend in each row."
+        echo "perf-output.csv is built with perf default features, which enables base64-ng SIMD and records active encode/decode backend fields in each row."
         echo "Performance numbers are release notes evidence only when paired with hardware, OS, Rust version, CPU governor, and exact command output."
     } >"$manifest"
 

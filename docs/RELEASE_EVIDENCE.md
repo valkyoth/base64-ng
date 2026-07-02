@@ -424,11 +424,15 @@ This writes `target/release-evidence/perf/perf-output.csv` and
 `target/release-evidence/perf/MANIFEST.txt`.
 
 Every CSV row records `effective_backend`, `active_backend`,
-`candidate_backend`, `detection_mode`, `target_arch`, and `target_os` so
-release notes can tie throughput numbers to the exact selected backend and the
-backend that actually executed for that row. `effective_backend` is `scalar`
-for decode rows and for encode inputs too small to fill the selected SIMD
-block; rows from the comparison `base64` crate use `external`.
+`active_decode_backend`, `candidate_backend`, `detection_mode`, `target_arch`,
+and `target_os` so release notes can tie throughput numbers to the exact
+selected backend and the backend that actually executed for that row.
+`active_backend` is the primary encode backend reported by
+`runtime::backend_report()`. `active_decode_backend` is the normal strict
+decode backend reported by `BackendReport::active_decode_backend()`.
+`effective_backend` is `scalar` or a smaller fallback backend for encode or
+decode inputs too small to fill the selected SIMD block; rows from the
+comparison `base64` crate use `external`.
 
 Performance numbers are release notes evidence only when paired with hardware,
 OS, Rust version, CPU governor, and the exact command output.
