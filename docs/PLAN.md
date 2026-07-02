@@ -782,8 +782,10 @@ Each commit must follow these rules:
 
 Recommended commit sequence:
 
-Current progress in the `1.3.0` working line: commits 1 through 17 have
-landed. The active strict decode boundary now
+Current status: the `1.3.0` implementation-completion line is ready for the
+final GitHub CI pass after the local release gate, Kani, macOS, AArch64, and
+external pentest reviews completed cleanly. Commits 1 through 19 have landed.
+The active strict decode boundary now
 admits std x86/x86_64 SSSE3/SSE4.1, AVX2, AVX-512 VBMI, and little-endian std
 aarch64 NEON for Standard and URL-safe alphabet families only. Encode surface
 review is complete for the current `1.3.0` scope: in-place encode, custom
@@ -800,9 +802,7 @@ strict decode backend/scalar agreement for one padded quantum. Wrapped decode
 remains covered by deterministic tests and release-gate checks rather than a
 mandatory Kani proof, because the wrapped symbolic path is currently too
 expensive for a practical release gate. An opt-in advanced Kani script carries
-those expensive wrapped/public-surface harnesses for background runs. The
-remaining completion work is therefore focused on final release-candidate
-documentation and release-gate rehearsal.
+those expensive wrapped/public-surface harnesses for background runs.
 
 1. Commit: decode SIMD design and API freeze.
    - Freeze the decode acceleration scope: strict Standard and URL-safe
@@ -953,7 +953,7 @@ documentation and release-gate rehearsal.
     - Pentest focus: wasm JIT caveats, no overclaimed zeroization, and no
       runtime dispatch ambiguity.
 
-18. Commit: final `1.3.0` release-candidate documentation.
+18. Commit: final `1.3.0` release documentation.
     - Sync README, `docs/SIMD.md`, `docs/SIMD_ADMISSION.md`,
       `docs/UNSAFE.md`, `docs/CONSTANT_TIME.md`, `docs/BENCHMARKS.md`,
       companion crate docs, release metadata, and publish plan.

@@ -81,7 +81,7 @@ development cycle, not as a release claim. Any future fast scalar or SIMD path
 must preserve strict error indexes, canonical padding rejection, Miri
 cleanliness, and scalar/SIMD differential test evidence.
 
-The current `1.3.0` working line admits normal strict decode SIMD only for
+The `1.3.0` release admits normal strict decode SIMD only for
 Standard and URL-safe alphabet families. Wrapped, legacy, in-place,
 custom-alphabet, and `ct` secret decode surfaces remain scalar and must not be
 described by benchmark rows for the strict decode boundary.

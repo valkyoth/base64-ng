@@ -60,9 +60,8 @@ The SIMD roadmap separates implementation evidence from active acceleration:
 - `1.2.2` is an encode ergonomics and sanitization hardening patch that adds
   explicit infallible encode convenience helpers and tightens fixed-size locked
   secret decode cleanup. It does not admit additional backends.
-- `1.2.3` updates the optional `base64-ng-sanitization` companion dependency to
-  `sanitization` `1.2.2` and syncs workspace package metadata. It does not
-  admit additional backends.
+- `1.2.3` updated the optional `base64-ng-sanitization` companion dependency
+  to `sanitization` `1.2.2` and synced workspace package metadata.
 - After the `1.2.x` encode release, pause feature work for a short soak period
   so users can report platform-specific encode regressions before decode
   acceleration work starts.
@@ -70,9 +69,9 @@ The SIMD roadmap separates implementation evidence from active acceleration:
   non-dispatchable while invalid-input handling, canonicality, padding, output
   retention, error behavior, fuzz coverage, and timing-oriented evidence are
   proven against scalar behavior.
-- `1.3.0` is the first release that may activate SIMD decode acceleration if
-  the `1.2.x` decode evidence line is complete and the encode acceleration line
-  has remained stable.
+- `1.3.0` is the first release that activates SIMD decode acceleration after
+  the decode evidence line completed and the encode acceleration line remained
+  stable.
 - The admitted `1.3.0` decode backends are std `x86`/`x86_64` AVX-512 VBMI
   first, then AVX2, then SSSE3/SSE4.1 strict decode, plus little-endian std
   `aarch64` NEON strict decode for Standard and URL-safe alphabet families.
@@ -82,7 +81,7 @@ The SIMD roadmap separates implementation evidence from active acceleration:
   16-byte NEON encoded blocks where possible. Tails and every unsupported
   decode surface remain scalar.
 
-The `1.3.0` decode scope is frozen before implementation starts: strict
+The `1.3.0` decode scope is frozen to strict
 Standard and URL-safe decode only, padded and unpadded, through the normal
 strict decode backend boundary. Wrapped decode, legacy whitespace decode,
 custom alphabets, bcrypt-style and `crypt(3)` profiles, in-place decode,
@@ -90,11 +89,11 @@ custom alphabets, bcrypt-style and `crypt(3)` profiles, in-place decode,
 constant-time-oriented secret decode path remain scalar unless separately
 admitted with their own evidence package.
 
-The detailed `1.2.3` to `1.3.0` workflow is commit-based rather than
-tag-based. Each planned commit is followed by pentest and CI review before the
-next implementation commit starts. See
+The detailed `1.2.3` to `1.3.0` workflow was commit-based rather than
+tag-based. Each planned commit was followed by pentest and CI review before the
+next implementation commit started. See
 [`docs/PLAN.md`](PLAN.md#commit-based-123-to-130-completion-plan) for the
-complete sequence and `1.3.0` acceptance criteria.
+completed sequence and `1.3.0` acceptance criteria.
 
 Patch releases in the `1.1.x` and `1.2.x` series may be small by design. Each
 patch should move one evidence boundary forward without changing the active

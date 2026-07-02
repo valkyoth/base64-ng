@@ -29,25 +29,19 @@ The crate starts conservative: a small scalar implementation, strict RFC 4648 be
 
 ## Current Status
 
-The current public release is `1.2.3`.
+The current public release is `1.3.0`.
 
-`1.2.3` is a small dependency-sync patch on top of the `1.2.0`
-encode-acceleration family release. It updates the optional
-`base64-ng-sanitization` companion to exact-pinned `sanitization` `=1.2.2`
-and syncs workspace package metadata and examples to the `1.2.3` crate family. The
-`1.2.x` line admits conservative std runtime-dispatched encode acceleration for
-Standard and URL-safe alphabets on `x86`/`x86_64` AVX-512 VBMI, AVX2,
-SSSE3/SSE4.1, and `aarch64` NEON. Decode, custom alphabets, `no_std`, wasm
-`simd128`, in-place encode, line-ending insertion, tails, and padding remain
-scalar unless separately admitted.
-
-The development branch is preparing the `1.3.0` release candidate. That
-candidate admits normal strict SIMD decode for Standard and URL-safe alphabet
+`1.3.0` is the implementation-completion release for the original full
+Base64 scope. It keeps the conservative `1.2.x` encode acceleration posture and
+adds admitted normal strict SIMD decode for Standard and URL-safe alphabet
 families on std `x86`/`x86_64` AVX-512 VBMI, AVX2, SSSE3/SSE4.1, and
-little-endian std `aarch64` NEON after whole-input scalar validation. Wrapped
-decode, legacy whitespace decode, custom alphabets, bcrypt-style and
-`crypt(3)` profiles, in-place decode, `no_std`, wasm runtime dispatch, and
-constant-time-oriented secret decode remain scalar.
+little-endian std `aarch64` NEON after whole-input scalar validation.
+
+Encode acceleration remains active only for admitted Standard and URL-safe
+fixed-block surfaces. Decode acceleration remains limited to normal strict
+decode. Wrapped decode, legacy whitespace decode, custom alphabets,
+bcrypt-style and `crypt(3)` profiles, in-place decode, `no_std`, wasm runtime
+dispatch, and constant-time-oriented secret decode remain scalar.
 
 Implemented on this branch now:
 
@@ -94,7 +88,7 @@ Implemented on this branch now:
   alphabets, tails, padding, in-place encode, and line-ending insertion stay
   scalar.
 - Runtime-dispatched std `x86`/`x86_64` AVX-512 VBMI fixed-block strict decode
-  in the `1.3.0` release-candidate line, falling back to AVX2, then
+  in the `1.3.0` line, falling back to AVX2, then
   SSSE3/SSE4.1, and then scalar, plus little-endian std `aarch64` NEON
   fixed-block strict decode, limited to Standard and URL-safe alphabets after
   whole-input scalar validation. Unsupported CPUs, big-endian AArch64,
@@ -112,7 +106,7 @@ Implemented on this branch now:
 
 Planned behind admission evidence:
 
-- Additional SIMD decode acceleration beyond the `1.3.0` release-candidate
+- Additional SIMD decode acceleration beyond the `1.3.0`
   strict Standard and URL-safe decode scope only after separate admission
   evidence is complete. The frozen first scope remains padded and unpadded
   strict decode only: no line wrapping, no legacy whitespace, no custom
@@ -156,7 +150,7 @@ The minimum supported Rust version is Rust `1.90.0`. New deployments should
 prefer the latest tested stable Rust; as of July 2, 2026, this project tests
 through Rust `1.96.1`.
 
-Compatibility evidence for the `1.2.3` workspace:
+Compatibility evidence for the `1.3.0` workspace:
 
 | Rust | Local Evidence |
 | --- | --- |
@@ -173,7 +167,7 @@ Compatibility evidence for the `1.2.3` workspace:
 
 ```toml
 [dependencies]
-base64-ng = "1.2.3"
+base64-ng = "1.3.0"
 ```
 
 The crate is dual-licensed:
@@ -188,7 +182,7 @@ license = "MIT OR Apache-2.0"
 | --- | --- | --- |
 | `alloc` | yes | `Vec` and encoded `String` convenience APIs. |
 | `std` | yes | `std::error::Error` support and feature base for I/O. |
-| `simd` | no | Admitted std runtime-dispatched encode acceleration and `1.3.0` release-candidate strict decode acceleration for Standard and URL-safe alphabets, with scalar fallback for unsupported surfaces. |
+| `simd` | no | Admitted std runtime-dispatched encode and normal strict decode acceleration for Standard and URL-safe alphabets, with scalar fallback for unsupported surfaces. |
 | `stream` | no | `std::io` streaming wrappers. |
 | `allow-wasm32-best-effort-wipe` | no | Explicitly allow `wasm32` builds with compiler-fence-only cleanup. |
 | `allow-compiler-fence-only-wipe` | no | Explicitly allow unsupported native architectures to build with compiler-fence-only cleanup after platform review. |
@@ -202,7 +196,7 @@ The core `base64-ng` crate keeps its zero-runtime-dependency policy. Optional
 ecosystem integrations live as separate crates so applications can opt into
 their own approved dependency set without changing the base package.
 
-The `1.2.3` family syncs all companion crates to the same version so docs.rs
+The `1.3.0` family syncs all companion crates to the same version so docs.rs
 and crates.io examples resolve consistently across the workspace.
 
 | Crate | Purpose |
@@ -224,7 +218,7 @@ only the crates that changed instead of republishing the whole ecosystem.
 `base64-ng-sanitization` provides extension helpers for
 `base64_ng::ct::CtEngine` that decode directly into
 `sanitization::SecretBytes<N>` in `no_std`, with `SecretVec` helpers behind its
-own `alloc` feature. The `1.2.3` companion uses exact-pinned
+own `alloc` feature. The `1.3.0` companion uses exact-pinned
 `sanitization` `=1.2.2` and exposes `sanitization::ct::Choice` comparison
 helpers through `SanitizationCtEqExt`. Enable the companion's
 `high-assurance` feature to
@@ -234,8 +228,8 @@ decode directly into `sanitization::LockedSecretBytes` or
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.2.3", default-features = false }
-base64-ng-sanitization = { version = "1.2.3", default-features = false }
+base64-ng = { version = "1.3.0", default-features = false }
+base64-ng-sanitization = { version = "1.3.0", default-features = false }
 ```
 
 ```rust
@@ -254,7 +248,7 @@ assert!(secret.sanitization_verify(
 
 ```toml
 [dependencies]
-base64-ng-sanitization = { version = "1.2.3", features = ["high-assurance"] }
+base64-ng-sanitization = { version = "1.3.0", features = ["high-assurance"] }
 ```
 
 ```rust
@@ -273,8 +267,8 @@ newtypes around fixed byte arrays:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.2.3", default-features = false }
-base64-ng-derive = "1.2.3"
+base64-ng = { version = "1.3.0", default-features = false }
+base64-ng-derive = "1.3.0"
 ```
 
 ```rust
@@ -293,7 +287,7 @@ assert_eq!(key.encode_base64::<8>().unwrap().as_str(), "aGVsbG8=");
 
 ```toml
 [dependencies]
-base64-ng-serde = "1.2.3"
+base64-ng-serde = "1.3.0"
 serde = { version = "1.0.228", features = ["derive"] }
 ```
 
@@ -312,8 +306,8 @@ Field-level modules are available for `standard`, `standard_no_pad`,
 
 ```toml
 [dependencies]
-base64-ng = "1.2.3"
-base64-ng-bytes = "1.2.3"
+base64-ng = "1.3.0"
+base64-ng-bytes = "1.3.0"
 bytes = "1.12.0"
 ```
 
@@ -330,8 +324,8 @@ projects that already admit `subtle`:
 
 ```toml
 [dependencies]
-base64-ng = "1.2.3"
-base64-ng-subtle = "1.2.3"
+base64-ng = "1.3.0"
+base64-ng-subtle = "1.3.0"
 ```
 
 ```rust
@@ -349,8 +343,8 @@ peer:
 
 ```toml
 [dependencies]
-base64-ng = "1.2.3"
-base64-ng-tokio = "1.2.3"
+base64-ng = "1.3.0"
+base64-ng-tokio = "1.3.0"
 tokio = { version = "1.52.3", features = ["io-util"] }
 ```
 
@@ -383,19 +377,19 @@ Disable defaults for embedded or freestanding use:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.2.3", default-features = false }
+base64-ng = { version = "1.3.0", default-features = false }
 ```
 
 Enable admitted encode acceleration on supported `std` targets with the
 `simd` feature. The public encode APIs do not change; runtime dispatch selects
 an admitted backend only when the CPU and input shape match the admission
-scope, otherwise scalar encode is used. In the `1.3.0` release-candidate line,
+scope, otherwise scalar encode is used. In the `1.3.0` line,
 the same feature also enables admitted strict decode acceleration for Standard
 and URL-safe alphabets after whole-input scalar validation:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.2.3", features = ["simd"] }
+base64-ng = { version = "1.3.0", features = ["simd"] }
 ```
 
 ```rust
@@ -1105,7 +1099,7 @@ Security commitments:
   candidate, candidate detection mode, SIMD feature status, security posture,
   and a conservative unsafe-boundary posture flag for audit logging. In the
   `1.2.x` line, non-scalar active values describe admitted encode dispatch.
-  The `1.3.0` working line exposes strict decode dispatch separately through
+  The `1.3.0` line exposes strict decode dispatch separately through
   `BackendReport::active_decode_backend()`. The
   unsafe-boundary flag is true only when the reserved `simd` feature is
   disabled; SIMD-enabled builds must rely on the release evidence scripts for

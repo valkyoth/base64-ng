@@ -2,7 +2,7 @@
 
 Optional Tokio helpers for `base64-ng`.
 
-The current `1.2.3` companion crate provides async convenience helpers and
+The current `1.3.0` companion crate provides async convenience helpers and
 manual `AsyncRead` streaming adapters. Use the `*_limited` helper variants when
 input size is controlled by a peer or request boundary. Async writer adapters
 remain a future admission item because `poll_write` accepted-byte and

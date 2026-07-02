@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.3.0 - Unreleased
+## 1.3.0 - 2026-07-02
 
 - Admitted normal strict SIMD decode for Standard and URL-safe alphabet
   families on std `x86`/`x86_64` AVX-512 VBMI, AVX2, SSSE3/SSE4.1, and
@@ -27,7 +27,7 @@
   documentation. Wasm `simd128` remains compile/codegen evidence only and is
   not admitted for runtime dispatch.
 
-## 1.2.3 - Unreleased
+## 1.2.3 - 2026-07-02
 
 - Updated the optional `base64-ng-sanitization` companion dependency to
   `sanitization` `1.2.2`.
