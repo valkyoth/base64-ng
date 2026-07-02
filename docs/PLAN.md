@@ -762,6 +762,211 @@ Completed `1.2.0` work packages:
   metadata to the `1.2.3` family.
 - Keep runtime behavior, SIMD admission scope, and decode behavior unchanged.
 
+### Commit-Based `1.2.3` to `1.3.0` Completion Plan
+
+The `1.3.0` line should be treated as the final implementation-completion
+line before the crate moves into maintenance-first development. Do not use
+patch tags as planning units in this line. Instead, land one reviewed commit at
+a time, run pentest after each commit, and advance only when the previous
+commit has clean local evidence, clean GitHub CI, and clean external review.
+
+Each commit must follow these rules:
+
+- Keep the change narrowly scoped and reviewable.
+- Update the relevant docs in the same commit.
+- Run the normal local checks before pentest.
+- Run pentest after the commit and fix findings before starting the next
+  commit.
+- Do not publish crates.io packages or make release claims until the final
+  `1.3.0` release candidate passes the full gate.
+
+Recommended commit sequence:
+
+1. Commit: decode SIMD design and API freeze.
+   - Freeze the decode acceleration scope: strict Standard and URL-safe
+     alphabets first, padded and unpadded, no line wrapping, no legacy
+     whitespace, no custom alphabets, and no secret-decoding claim beyond the
+     existing constant-time-oriented scalar API.
+   - Add or refresh docs explaining why decode is harder than encode:
+     invalid-input handling, canonical trailing bits, padding, output
+     retention, and timing behavior.
+   - Pentest focus: API wording, no accidental decode acceleration claim, and
+     no weakened secret-handling guidance.
+
+2. Commit: decode backend boundary hardening.
+   - Ensure every public strict decode entry point routes through one internal
+     decode backend boundary while still forcing scalar behavior.
+   - Add scalar-equivalence tests around the boundary for canonical,
+     malformed, undersized-output, padded, and unpadded inputs.
+   - Pentest focus: no behavior change, no error-shape regression, no
+     retained-output regression.
+
+3. Commit: SSSE3/SSE4.1 decode prototype.
+   - Add a non-dispatchable x86/x86_64 fixed-block decode prototype for
+     Standard and URL-safe alphabets.
+   - Keep malformed-input validation conservative: prototype output must not
+     be observable through public APIs until scalar-equivalence and error
+     agreement are complete.
+   - Include register cleanup, generated assembly evidence hooks, and
+     scalar-differential tests.
+   - Pentest focus: invalid-byte handling, padding, canonical trailing bits,
+     and cleanup on rejected inputs.
+
+4. Commit: AVX2 decode prototype.
+   - Add a non-dispatchable AVX2 fixed-block decode prototype with the same
+     Standard and URL-safe scope.
+   - Reuse the decode evidence harness rather than adding a second policy
+     path.
+   - Pentest focus: lane-boundary handling, fallback behavior, and no
+     out-of-bounds reads near tails.
+
+5. Commit: AVX-512 VBMI decode prototype.
+   - Add a non-dispatchable AVX-512 VBMI fixed-block decode prototype only if
+     the alphabet classification, invalid-byte detection, and register cleanup
+     story are complete.
+   - If evidence is incomplete, keep AVX-512 decode explicitly deferred and do
+     not block `1.3.0`.
+   - Pentest focus: table lookup semantics, invalid-byte masks, register
+     cleanup, and generated assembly review.
+
+6. Commit: AArch64 NEON decode prototype.
+   - Add a non-dispatchable NEON fixed-block decode prototype for Standard and
+     URL-safe alphabets.
+   - Require real AArch64 Linux and macOS hardware evidence before any later
+     dispatch admission.
+   - Pentest focus: lane-boundary handling, canonicality, cleanup, and
+     platform-specific feature assumptions.
+
+7. Commit: decode fuzz, differential, and malformed-input evidence.
+   - Expand fuzz and deterministic tests across scalar, prototype decode, and
+     backend-boundary behavior.
+   - Include malformed padding, non-canonical trailing bits, every invalid byte
+     position, short outputs, tails, and mixed alphabet inputs.
+   - Pentest focus: denial-of-service behavior, panic-free malformed inputs,
+     and error/index consistency where public strict errors promise it.
+
+8. Commit: admit SSSE3/SSE4.1 decode dispatch.
+   - Activate runtime-dispatched SSSE3/SSE4.1 decode only if commits 2, 3, and
+     7 are clean and evidence is complete.
+   - Keep scalar fallback for unsupported CPUs, `no_std`, custom alphabets,
+     wrapped/legacy decode, short inputs, tails, and every CT secret decode
+     path.
+   - Pentest focus: active backend selection, fallback behavior, cleanup, and
+     runtime report accuracy.
+
+9. Commit: admit AVX2 decode dispatch.
+   - Activate AVX2 decode above SSSE3/SSE4.1 when runtime CPU probing proves
+     support and evidence is complete.
+   - Keep every unsupported surface scalar.
+   - Pentest focus: backend priority, scalar fallback, and no AVX2 illegal
+     instruction risk.
+
+10. Commit: admit AVX-512 VBMI and/or NEON decode dispatch.
+    - Activate AVX-512 VBMI and NEON decode only for backends with complete
+      hardware, assembly, fuzz, benchmark, and cleanup evidence.
+    - If one backend lacks evidence, leave that backend prototype-only and
+      document it as deferred rather than weakening the release.
+    - Pentest focus: active-backend honesty, register cleanup, and hardware
+      evidence traceability.
+
+11. Commit: remaining encode surface review.
+    - Review in-place encode, custom alphabets, bcrypt/crypt, line-wrapped
+      encode, and no_std/wasm encode acceleration candidates.
+    - Admit only low-risk surfaces with complete evidence. Otherwise document
+      them as intentionally scalar.
+    - Pentest focus: no accidental acceleration of custom/secret-indexed
+      alphabet paths and no output-overlap mistakes in in-place encode.
+
+12. Commit: full Tokio async streaming adapters.
+    - Upgrade `base64-ng-tokio` from bounded helper APIs to reviewed
+      `AsyncRead`/`AsyncWrite` streaming state machines if cancellation,
+      buffering, backpressure, drop cleanup, and dependency admission evidence
+      are complete.
+    - Keep bounded helper APIs as the simple path.
+    - Pentest focus: cancellation safety, partial writes, buffered plaintext
+      cleanup, framed-payload boundaries, and denial-of-service bounds.
+
+13. Commit: const decode API.
+    - Add strict const decode only if the API can stay explicit about output
+      length, padding policy, and compile-time/runtime panic boundaries.
+    - Prefer checked const helpers where stable Rust permits; avoid hiding
+      malformed-input errors behind confusing panics.
+    - Pentest focus: panic policy, runtime-callable const functions, and
+      untrusted-length guidance.
+
+14. Commit: companion-crate completion pass.
+    - Expand `base64-ng-serde`, `base64-ng-bytes`, `base64-ng-subtle`,
+      `base64-ng-sanitization`, `base64-ng-derive`, and `base64-ng-tokio`
+      only where the addition removes real caller footguns.
+    - Candidate work: profile-specific serde modules, bytes decode-to-buffer
+      helpers, subtle comparison examples, locked-memory direct-fill examples,
+      derive examples for URL-safe no-pad keys, and Tokio streaming docs.
+    - Pentest focus: dependency admission, feature isolation, secret logging,
+      and no new core dependencies.
+
+15. Commit: formal verification expansion.
+    - Add Kani harnesses for decode backend boundary invariants, wrapped
+      decode bounds, stream state-machine failure latching, SIMD/scalar decode
+      equivalence for bounded blocks where feasible, and no-panic public scalar
+      malformed-input paths.
+    - Keep claims precise: bounded Kani evidence, not whole-crate formal
+      verification.
+    - Pentest focus: proof scope wording and no unsupported formal-security
+      claims.
+
+16. Commit: benchmark and evidence refresh.
+    - Add or refresh benchmark evidence against the established `base64` crate
+      for scalar, encode SIMD, and any admitted decode SIMD backends.
+    - Record CPU, OS, Rust version, command, feature flags, and raw output.
+    - Pentest focus: performance claims match admitted backends only.
+
+17. Commit: wasm posture decision.
+    - Decide whether wasm `simd128` remains compile-evidence only or admits a
+      specific runtime/deployment profile.
+    - Keep wasm wipe behavior fail-closed unless the explicit
+      `allow-wasm32-best-effort-wipe` feature is enabled.
+    - Pentest focus: wasm JIT caveats, no overclaimed zeroization, and no
+      runtime dispatch ambiguity.
+
+18. Commit: final `1.3.0` release-candidate documentation.
+    - Sync README, `docs/SIMD.md`, `docs/SIMD_ADMISSION.md`,
+      `docs/UNSAFE.md`, `docs/CONSTANT_TIME.md`, `docs/BENCHMARKS.md`,
+      companion crate docs, release metadata, and publish plan.
+    - Explicitly name every active encode and decode backend.
+    - Explicitly name every scalar-only surface that remains intentionally
+      scalar.
+    - Pentest focus: release claims, missing caveats, and documentation drift.
+
+19. Commit: final release-gate rehearsal.
+    - Run the full release gate, Kani, Miri where available, fuzz/dudect/perf
+      evidence scripts, target matrix, macOS and AArch64 hardware checks,
+      package listing checks, signed-tag checks, and publish dry runs.
+    - Fix only release blockers after this commit. Any new feature discovered
+      at this point moves out of `1.3.0`.
+    - Pentest focus: final release candidate only.
+
+`1.3.0` acceptance criteria:
+
+- SIMD decode is active only for backends explicitly admitted in
+  `docs/SIMD_ADMISSION.md`.
+- Decode acceleration covers strict Standard and URL-safe surfaces that have
+  complete evidence; every other decode surface remains scalar and documented.
+- Encode acceleration remains correct and unchanged for all admitted `1.2.0`
+  backends unless a later commit deliberately expands the admitted encode
+  scope with equal evidence.
+- CT-oriented secret decode remains scalar unless a separate formal
+  side-channel evidence package proves otherwise. Do not route CT decode
+  through normal SIMD decode.
+- Full Tokio streaming exists only if the cancellation/drop/buffering evidence
+  is complete; otherwise it remains explicitly deferred and does not block
+  `1.3.0`.
+- Const decode exists only if the panic and error contract is clear; otherwise
+  it remains deferred and does not block SIMD decode release.
+- Kani, fuzz, Miri, dudect, generated assembly, benchmark, unsafe-boundary,
+  panic-policy, dependency, package, macOS, AArch64, and GitHub CI evidence are
+  clean for the exact release candidate.
+- Release notes make no claim that is broader than the admitted evidence.
+
 After `1.2.0`:
 
 - Pause encode feature work for roughly two weeks before starting SIMD decode

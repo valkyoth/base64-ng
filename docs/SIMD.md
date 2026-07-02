@@ -74,6 +74,12 @@ The SIMD roadmap separates implementation evidence from active acceleration:
   the `1.2.x` decode evidence line is complete and the encode acceleration line
   has remained stable.
 
+The detailed `1.2.3` to `1.3.0` workflow is commit-based rather than
+tag-based. Each planned commit is followed by pentest and CI review before the
+next implementation commit starts. See
+[`docs/PLAN.md`](PLAN.md#commit-based-123-to-130-completion-plan) for the
+complete sequence and `1.3.0` acceptance criteria.
+
 Patch releases in the `1.1.x` and `1.2.x` series may be small by design. Each
 patch should move one evidence boundary forward without changing the active
 runtime behavior for that line.
