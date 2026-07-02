@@ -11,7 +11,9 @@ use cleanup::{
     clear_zmm_registers_after_encode_block,
 };
 #[cfg(test)]
-pub(crate) use decode::{decode_16_bytes_ssse3_sse41, decode_32_bytes_avx2};
+pub(crate) use decode::{
+    decode_16_bytes_ssse3_sse41, decode_32_bytes_avx2, decode_64_bytes_avx512,
+};
 
 pub(crate) fn avx512_supports_alphabet<A>() -> bool
 where

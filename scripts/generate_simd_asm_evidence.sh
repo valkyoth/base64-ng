@@ -139,6 +139,7 @@ fi
     echo "- AVX2 admitted encode path contains byte shuffle, YMM operations, and vzeroupper"
     echo "- AVX2 non-dispatchable decode prototype contains byte shuffle, multiply-add packing, YMM operations, and vzeroupper"
     echo "- AVX-512 admitted encode path contains VBMI byte permute, ZMM operations, ZMM cleanup, and vzeroupper"
+    echo "- AVX-512 VBMI non-dispatchable decode prototype contains byte shuffle, multiply-add packing, VBMI lane compaction, ZMM operations, ZMM cleanup, and vzeroupper"
     if [ "$neon_status" = "generated" ]; then
         echo "- NEON admitted encode path contains AArch64 table lookup, bit-select mapping, and NEON cleanup"
     else

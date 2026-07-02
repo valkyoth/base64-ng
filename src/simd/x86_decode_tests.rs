@@ -99,6 +99,58 @@ fn avx2_decode_block_matches_scalar_when_available() {
     assert_avx2_decode_error_matches_scalar::<UrlSafe, true>(non_canonical);
 }
 
+#[test]
+fn avx512_decode_block_matches_scalar_when_available() {
+    if !avx512_vbmi_base64_available() {
+        println!(
+            "skipped: AVX-512 VBMI decode block test requires avx512f,avx512bw,avx512vl,avx512vbmi"
+        );
+        return;
+    }
+
+    let mut raw = [0; 48];
+    for seed in 0..64 {
+        fill_pattern(&mut raw, seed);
+        assert_avx512_decode_case::<Standard, true>(&encoded_zmm_block::<Standard, true>(&raw));
+        assert_avx512_decode_case::<UrlSafe, true>(&encoded_zmm_block::<UrlSafe, true>(&raw));
+        assert_avx512_decode_case::<Standard, false>(&encoded_zmm_block::<Standard, false>(&raw));
+        assert_avx512_decode_case::<UrlSafe, false>(&encoded_zmm_block::<UrlSafe, false>(&raw));
+    }
+
+    for len in [46, 47] {
+        fill_pattern(&mut raw, len);
+        assert_avx512_decode_case::<Standard, true>(&encoded_zmm_block::<Standard, true>(
+            &raw[..len],
+        ));
+        assert_avx512_decode_case::<UrlSafe, true>(&encoded_zmm_block::<UrlSafe, true>(
+            &raw[..len],
+        ));
+    }
+
+    assert_avx512_decode_error_matches_scalar::<Standard, true>(mutated_zmm_block(
+        encoded_zmm_block::<Standard, true>(&raw),
+        33,
+        b'!',
+    ));
+    assert_avx512_decode_error_matches_scalar::<Standard, true>(mutated_zmm_block(
+        encoded_zmm_block::<Standard, true>(&raw),
+        27,
+        b'=',
+    ));
+    assert_avx512_decode_error_matches_scalar::<UrlSafe, true>(mutated_zmm_block(
+        encoded_zmm_block::<UrlSafe, true>(&raw),
+        24,
+        b'/',
+    ));
+
+    let mut non_canonical = [b'A'; 64];
+    non_canonical[61] = b'B';
+    non_canonical[62] = b'=';
+    non_canonical[63] = b'=';
+    assert_avx512_decode_error_matches_scalar::<Standard, true>(non_canonical);
+    assert_avx512_decode_error_matches_scalar::<UrlSafe, true>(non_canonical);
+}
+
 fn encoded_block<A, const PAD: bool>(input: &[u8]) -> [u8; 16]
 where
     A: Alphabet,
@@ -123,7 +175,24 @@ where
     encoded
 }
 
+fn encoded_zmm_block<A, const PAD: bool>(input: &[u8]) -> [u8; 64]
+where
+    A: Alphabet,
+{
+    let mut encoded = [0; 64];
+    let written = Engine::<A, PAD>::new()
+        .encode_slice(input, &mut encoded)
+        .unwrap();
+    assert_eq!(written, encoded.len());
+    encoded
+}
+
 fn mutated_block(mut input: [u8; 16], index: usize, byte: u8) -> [u8; 16] {
+    input[index] = byte;
+    input
+}
+
+fn mutated_zmm_block(mut input: [u8; 64], index: usize, byte: u8) -> [u8; 64] {
     input[index] = byte;
     input
 }
@@ -166,6 +235,45 @@ where
     assert_eq!(ssse3, [0x55; 12]);
     assert!(matches!(
         ssse3_error,
+        DecodeError::InvalidByte { .. }
+            | DecodeError::InvalidPadding { .. }
+            | DecodeError::InvalidLength
+    ));
+}
+
+fn assert_avx512_decode_case<A, const PAD: bool>(input: &[u8; 64])
+where
+    A: Alphabet,
+{
+    let mut avx512 = [0x55; 48];
+    let mut scalar = [0xaa; 48];
+    // SAFETY: The caller checked AVX-512 VBMI availability before invoking
+    // this helper.
+    let avx512_len = unsafe { decode_64_bytes_avx512::<A, PAD>(input, &mut avx512) }.unwrap();
+    let scalar_len = Engine::<A, PAD>::new()
+        .decode_slice(input, &mut scalar)
+        .unwrap();
+    assert_eq!(avx512_len, scalar_len);
+    assert_eq!(&avx512[..avx512_len], &scalar[..scalar_len]);
+}
+
+fn assert_avx512_decode_error_matches_scalar<A, const PAD: bool>(input: [u8; 64])
+where
+    A: Alphabet,
+{
+    let mut avx512 = [0x55; 48];
+    let mut scalar = [0xaa; 48];
+    // SAFETY: The caller checked AVX-512 VBMI availability before invoking
+    // this helper.
+    let avx512_error = unsafe { decode_64_bytes_avx512::<A, PAD>(&input, &mut avx512) }
+        .expect_err("malformed block must be rejected by AVX-512 VBMI prototype");
+    let scalar_error = Engine::<A, PAD>::new()
+        .decode_slice(&input, &mut scalar)
+        .expect_err("malformed block must be rejected by scalar decoder");
+    assert_eq!(avx512_error, scalar_error);
+    assert_eq!(avx512, [0x55; 48]);
+    assert!(matches!(
+        avx512_error,
         DecodeError::InvalidByte { .. }
             | DecodeError::InvalidPadding { .. }
             | DecodeError::InvalidLength

@@ -254,8 +254,8 @@ scaffold evidence. The script also writes
 `target/release-evidence/backend/MANIFEST.txt` with toolchain metadata,
 commands, status values, artifact checksums, and explicit
 `prototype_state=real-non-dispatchable` labels for prototype-only backends,
-including the non-dispatchable AVX2 and SSSE3/SSE4.1 fixed-block decode
-prototypes, and
+including the non-dispatchable AVX-512 VBMI, AVX2, and SSSE3/SSE4.1
+fixed-block decode prototypes, and
 `active_backend_admitted=avx512-vbmi-or-avx2-or-ssse3-sse4.1-or-neon-encode` for admitted encode
 backends.
 

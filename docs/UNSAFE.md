@@ -728,6 +728,70 @@ Safety argument:
   benchmarks, and release notes in the same commit that makes any decode SIMD
   path reachable.
 
+### `decode_64_bytes_avx512`
+
+Location: `src/simd/x86/decode.rs`
+
+Status: non-dispatchable std x86/x86_64 AVX-512 VBMI decode prototype for
+Standard and URL-safe alphabet families. It is reachable only from SIMD tests
+and backend evidence capture. Runtime decode dispatch remains scalar.
+
+Purpose:
+
+- Extend fixed-block SIMD decode evidence to the AVX-512 VBMI backend shape
+  without changing public decode behavior.
+- Exercise AVX-512 6-bit-value packing for a 64-byte encoded block that
+  decodes to at most 48 bytes.
+- Verify VBMI lane compaction, error agreement, padding behavior, canonical
+  trailing-bit rejection, and rejected-input output retention before any later
+  dispatch admission.
+
+Preconditions:
+
+- Caller must prove AVX-512 F, BW, VL, and VBMI are available on the current
+  CPU.
+- Input is exactly 64 encoded bytes.
+- Output is exactly 48 bytes.
+- The vectorized packing path is used only for Standard-family alphabets
+  (`A-Z`, `a-z`, `0-9`, and either `+/` or `-_`). Other alphabets use the
+  staged scalar fallback inside the prototype.
+
+Unsafe operation:
+
+- `_mm512_loadu_si512` loads sixty-four 6-bit values from a local staging
+  array.
+- `_mm512_maddubs_epi16` and `_mm512_madd_epi16` pack groups of four 6-bit
+  values into 24-bit decoded quanta within each 128-bit lane.
+- `_mm512_shuffle_epi8` compacts the packed quanta into byte order within
+  each lane.
+- `_mm512_permutexvar_epi8` uses VBMI byte permutation to compact the four
+  lane-local 12-byte decoded chunks into a contiguous 48-byte prefix.
+- `_mm512_storeu_si512` stores the packed prototype output into a local
+  64-byte staging array.
+- `clear_zmm_registers_after_encode_block` clears ZMM state and emits
+  `vzeroupper` before return to reduce register retention in the vector decode
+  prototype.
+
+Safety argument:
+
+- Scalar strict decode validation runs into a private 48-byte staging buffer
+  before any byte is copied to the caller output. If validation fails, the
+  caller output is left untouched and the staging buffer is wiped.
+- The input and output array types provide fixed readable and writable bounds.
+- The SIMD loads and store operate only on local 64-byte arrays and use
+  unaligned intrinsics, so no alignment precondition is required.
+- The AVX-512/VBMI target-feature contract enables every intrinsic used by the
+  prototype.
+- VBMI compaction indices are constants in `0..=59`, so the permute reads only
+  bytes produced by the lane-local decode shuffle.
+- The prototype copies only the validated decoded length to caller output and
+  wipes local value, packed, and scalar-validation staging buffers before
+  returning.
+- Runtime decode dispatch does not call this function. Future admission must
+  update this inventory, generated-code evidence, fuzzing, backend reporting,
+  benchmarks, and release notes in the same commit that makes any decode SIMD
+  path reachable.
+
 ### `decode_32_bytes_avx2`
 
 Location: `src/simd/x86/decode.rs`

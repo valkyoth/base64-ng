@@ -120,7 +120,8 @@ The release gate runs:
 - backend evidence capture for runtime backend reporting, admitted AVX-512
   VBMI, AVX2, SSSE3/SSE4.1, or NEON encode dispatch when supported, and
   inactive SIMD prototype scalar-equivalence output for remaining candidates,
-  including the AVX2 and SSSE3/SSE4.1 fixed-block decode prototypes
+  including the AVX-512 VBMI, AVX2, and SSSE3/SSE4.1 fixed-block decode
+  prototypes
 - SIMD admission policy for the current release series, with AVX-512 VBMI,
   AVX2, SSSE3/SSE4.1, and NEON encode admitted only for std x86/x86_64 or std
   aarch64 Standard and URL-safe alphabets, no decode acceleration, and no SIMD
