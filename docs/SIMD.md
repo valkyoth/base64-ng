@@ -254,7 +254,7 @@ scaffold evidence. The script also writes
 `target/release-evidence/backend/MANIFEST.txt` with toolchain metadata,
 commands, status values, artifact checksums, and explicit
 `prototype_state=real-non-dispatchable` labels for prototype-only backends,
-including the non-dispatchable AVX-512 VBMI, AVX2, and SSSE3/SSE4.1
+including the non-dispatchable AVX-512 VBMI, AVX2, SSSE3/SSE4.1, and NEON
 fixed-block decode prototypes, and
 `active_backend_admitted=avx512-vbmi-or-avx2-or-ssse3-sse4.1-or-neon-encode` for admitted encode
 backends.
@@ -269,7 +269,9 @@ The script emits release test-harness assembly for the admitted AVX-512 VBMI,
 AVX2, and SSSE3/SSE4.1 encode paths, then checks for expected vector and
 cleanup instructions. When the `aarch64-unknown-linux-gnu` target is installed,
 it also emits AArch64 NEON assembly evidence and checks table lookup,
-bit-select, and cleanup instructions.
+bit-select, and cleanup instructions. On cross-host runs this covers admitted
+NEON encode library assembly; NEON decode test-harness assembly evidence is
+generated on real AArch64 hosts.
 
 ## Required Before SIMD Code Lands
 

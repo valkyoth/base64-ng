@@ -120,7 +120,7 @@ The release gate runs:
 - backend evidence capture for runtime backend reporting, admitted AVX-512
   VBMI, AVX2, SSSE3/SSE4.1, or NEON encode dispatch when supported, and
   inactive SIMD prototype scalar-equivalence output for remaining candidates,
-  including the AVX-512 VBMI, AVX2, and SSSE3/SSE4.1 fixed-block decode
+  including the AVX-512 VBMI, AVX2, SSSE3/SSE4.1, and NEON fixed-block decode
   prototypes
 - SIMD admission policy for the current release series, with AVX-512 VBMI,
   AVX2, SSSE3/SSE4.1, and NEON encode admitted only for std x86/x86_64 or std
@@ -384,9 +384,12 @@ On x86/x86_64 hosts, the script emits release test-harness assembly for the
 admitted AVX-512 VBMI, AVX2, and SSSE3/SSE4.1 encode paths, then checks for the
 expected byte-shuffle, byte-permute, vector-register, and cleanup instructions.
 When the `aarch64-unknown-linux-gnu` target is installed, it also emits AArch64
-NEON release test-harness assembly and checks for table lookup, bit-select, and
-register-cleanup instructions. On non-x86 hosts it records a skip manifest. The
-generated files are written to `target/release-evidence/simd-asm/`.
+NEON release assembly and checks for table lookup, bit-select, and
+register-cleanup instructions. Cross-host runs record admitted NEON encode
+library assembly; the non-dispatchable NEON decode prototype requires an
+AArch64 host test-harness assembly run because cross-linking the test binary is
+not assumed. On non-x86 hosts it records a skip manifest. The generated files
+are written to `target/release-evidence/simd-asm/`.
 
 ## Performance Evidence
 

@@ -19,6 +19,8 @@
 
 #[cfg(any(target_arch = "aarch64", target_arch = "arm"))]
 mod neon;
+#[cfg(all(test, target_arch = "aarch64"))]
+pub(in crate::simd) use neon::decode_16_bytes_neon;
 #[cfg(all(
     test,
     any(
@@ -47,6 +49,8 @@ pub(super) use x86::{
     decode_16_bytes_ssse3_sse41, decode_32_bytes_avx2, decode_64_bytes_avx512,
     encode_12_bytes_ssse3_sse41, encode_24_bytes_avx2, encode_48_bytes_avx512,
 };
+#[cfg(all(feature = "std", test, target_arch = "aarch64"))]
+mod neon_decode_tests;
 #[cfg(all(test, target_arch = "wasm32"))]
 mod wasm;
 #[cfg(all(

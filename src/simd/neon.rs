@@ -140,65 +140,17 @@ where
 }
 
 #[cfg(all(
-    any(test, all(feature = "std", feature = "simd", target_arch = "aarch64")),
-    any(
-        target_arch = "aarch64",
-        all(target_arch = "arm", target_feature = "neon")
-    )
-))]
-fn scalar_encode_block<A>(input: &[u8; 12], output: &mut [u8; 16])
-where
-    A: Alphabet,
-{
-    let mut read = 0;
-    let mut write = 0;
-    while read < input.len() {
-        let b0 = input[read];
-        let b1 = input[read + 1];
-        let b2 = input[read + 2];
-
-        output[write] = encode_base64_value::<A>(b0 >> 2);
-        output[write + 1] = encode_base64_value::<A>(((b0 & 0b0000_0011) << 4) | (b1 >> 4));
-        output[write + 2] = encode_base64_value::<A>(((b1 & 0b0000_1111) << 2) | (b2 >> 6));
-        output[write + 3] = encode_base64_value::<A>(b2 & 0b0011_1111);
-
-        read += 3;
-        write += 4;
-    }
-}
-
-#[cfg(all(
     target_arch = "aarch64",
     any(test, all(feature = "std", feature = "simd"))
 ))]
-fn is_standard_or_url_safe_family<A>() -> bool
-where
-    A: Alphabet,
-{
-    let encode = A::ENCODE;
-    let mut index = 0;
-    while index < 62 {
-        if encode[index] != Standard::ENCODE[index] {
-            return false;
-        }
-        index += 1;
-    }
-
-    (encode[62] == b'+' && encode[63] == b'/') || (encode[62] == b'-' && encode[63] == b'_')
-}
-
-#[cfg(all(
-    target_arch = "aarch64",
-    any(test, all(feature = "std", feature = "simd"))
-))]
-macro_rules! clear_neon_registers_after_encode_block {
+macro_rules! clear_neon_registers_after_vector_block {
     () => {{
         // SAFETY: This cleanup is expanded directly inside the block encoder
-        // after it stores its output. There is no separate helper frame whose
-        // ABI save/restore can undo `v8..v15` clearing. The explicit outputs
-        // tell the compiler every AArch64 vector register is clobbered while
-        // the assembly clears it. This is retention reduction for encode
-        // evidence, not a formal microarchitectural proof.
+        // or decoder after it stores local output. There is no separate helper
+        // frame whose ABI save/restore can undo `v8..v15` clearing. The
+        // explicit outputs tell the compiler every AArch64 vector register is
+        // clobbered while the assembly clears it. This is retention reduction
+        // for SIMD evidence, not a formal microarchitectural proof.
         core::arch::asm!(
             "eor v0.16b, v0.16b, v0.16b",
             "eor v1.16b, v1.16b, v1.16b",
@@ -269,6 +221,128 @@ macro_rules! clear_neon_registers_after_encode_block {
     }};
 }
 
+/// Decodes one 16-byte Base64 block into at most 12 bytes through the NEON
+/// block decoder.
+///
+/// This is non-dispatchable evidence for the `1.3.0` decode admission line.
+/// It validates with the scalar decoder before copying any bytes into the
+/// caller-visible output, so malformed inputs cannot expose prototype output.
+///
+/// # Safety
+///
+/// The caller must execute this function only when NEON is available on the
+/// current CPU. The input and output sizes are fixed by their array types.
+#[cfg(all(test, target_arch = "aarch64"))]
+pub(super) unsafe fn decode_16_bytes_neon<A, const PAD: bool>(
+    input: &[u8; 16],
+    output: &mut [u8; 12],
+) -> Result<usize, crate::DecodeError>
+where
+    A: Alphabet,
+{
+    let mut scalar_output = [0; 12];
+    let written = match crate::scalar::decode_slice::<A, PAD>(input, &mut scalar_output) {
+        Ok(written) => written,
+        Err(error) => {
+            crate::wipe_bytes(&mut scalar_output);
+            return Err(error);
+        }
+    };
+
+    if !is_standard_or_url_safe_family::<A>() {
+        output[..written].copy_from_slice(&scalar_output[..written]);
+        crate::wipe_bytes(&mut scalar_output);
+        return Ok(written);
+    }
+
+    let mut values = [0; 16];
+    fill_decode_values::<A, 16>(input, &mut values);
+    let mut packed = [0; 16];
+    let compact = [0, 1, 2, 4, 5, 6, 8, 9, 10, 12, 13, 14, 255, 255, 255, 255];
+
+    // SAFETY: Fixed arrays back every load and store, scalar validation above
+    // proves the 16-byte block is canonical for the selected padding policy,
+    // and the NEON target-feature contract enables the vector packing and
+    // cleanup instructions used here.
+    unsafe {
+        let values_vec = vld1q_u8(values.as_ptr());
+        let lanes: uint32x4_t = vreinterpretq_u32_u8(values_vec);
+
+        let byte0 = vorrq_u32(
+            vshlq_n_u32(vandq_u32(lanes, vdupq_n_u32(0x0000_003f)), 2),
+            vshrq_n_u32(vandq_u32(lanes, vdupq_n_u32(0x0000_3000)), 12),
+        );
+        let byte1 = vorrq_u32(
+            vshlq_n_u32(vandq_u32(lanes, vdupq_n_u32(0x0000_0f00)), 4),
+            vshrq_n_u32(vandq_u32(lanes, vdupq_n_u32(0x003c_0000)), 10),
+        );
+        let byte2 = vorrq_u32(
+            vshlq_n_u32(vandq_u32(lanes, vdupq_n_u32(0x0003_0000)), 6),
+            vshrq_n_u32(vandq_u32(lanes, vdupq_n_u32(0x3f00_0000)), 8),
+        );
+        let lane_bytes = vreinterpretq_u8_u32(vorrq_u32(vorrq_u32(byte0, byte1), byte2));
+        let compact_vec = vld1q_u8(compact.as_ptr());
+        let decoded = vqtbl1q_u8(lane_bytes, compact_vec);
+        vst1q_u8(packed.as_mut_ptr(), decoded);
+        clear_neon_registers_after_vector_block!();
+    }
+
+    debug_assert_eq!(&packed[..written], &scalar_output[..written]);
+    output[..written].copy_from_slice(&packed[..written]);
+    crate::wipe_bytes(&mut values);
+    crate::wipe_bytes(&mut packed);
+    crate::wipe_bytes(&mut scalar_output);
+    Ok(written)
+}
+
+#[cfg(all(
+    any(test, all(feature = "std", feature = "simd", target_arch = "aarch64")),
+    any(
+        target_arch = "aarch64",
+        all(target_arch = "arm", target_feature = "neon")
+    )
+))]
+fn scalar_encode_block<A>(input: &[u8; 12], output: &mut [u8; 16])
+where
+    A: Alphabet,
+{
+    let mut read = 0;
+    let mut write = 0;
+    while read < input.len() {
+        let b0 = input[read];
+        let b1 = input[read + 1];
+        let b2 = input[read + 2];
+
+        output[write] = encode_base64_value::<A>(b0 >> 2);
+        output[write + 1] = encode_base64_value::<A>(((b0 & 0b0000_0011) << 4) | (b1 >> 4));
+        output[write + 2] = encode_base64_value::<A>(((b1 & 0b0000_1111) << 2) | (b2 >> 6));
+        output[write + 3] = encode_base64_value::<A>(b2 & 0b0011_1111);
+
+        read += 3;
+        write += 4;
+    }
+}
+
+#[cfg(all(
+    target_arch = "aarch64",
+    any(test, all(feature = "std", feature = "simd"))
+))]
+fn is_standard_or_url_safe_family<A>() -> bool
+where
+    A: Alphabet,
+{
+    let encode = A::ENCODE;
+    let mut index = 0;
+    while index < 62 {
+        if encode[index] != Standard::ENCODE[index] {
+            return false;
+        }
+        index += 1;
+    }
+
+    (encode[62] == b'+' && encode[63] == b'/') || (encode[62] == b'-' && encode[63] == b'_')
+}
+
 #[cfg(all(
     target_arch = "aarch64",
     any(test, all(feature = "std", feature = "simd"))
@@ -304,7 +378,7 @@ where
 
         let encoded = encode_standard_family_indices_neon::<A>(indices);
         vst1q_u8(output.as_mut_ptr(), encoded);
-        clear_neon_registers_after_encode_block!();
+        clear_neon_registers_after_vector_block!();
     }
     crate::wipe_bytes(&mut staged);
 }
@@ -346,4 +420,20 @@ where
     );
     encoded = vbslq_u8(plus, vdupq_n_u8(plus_char), encoded);
     vbslq_u8(slash, vdupq_n_u8(slash_char), encoded)
+}
+
+#[cfg(all(target_arch = "aarch64", test))]
+fn fill_decode_values<A, const N: usize>(input: &[u8; N], values: &mut [u8; N])
+where
+    A: Alphabet,
+{
+    let mut index = 0;
+    while index < input.len() {
+        values[index] = if input[index] == b'=' {
+            0
+        } else {
+            A::decode(input[index]).unwrap_or(0)
+        };
+        index += 1;
+    }
 }

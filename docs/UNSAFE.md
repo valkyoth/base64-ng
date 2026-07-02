@@ -932,13 +932,60 @@ Safety argument:
   NEON is part of the target contract. Direct tests use the same availability
   precondition.
 - Register-retention note: the AArch64 vector path loads caller bytes into NEON
-  state and expands `clear_neon_registers_after_encode_block!` directly inside
+  state and expands `clear_neon_registers_after_vector_block!` directly inside
   the block function before return. This is retention reduction for the
   admitted encode block, not a formal microarchitectural side-channel proof.
 
+### `decode_16_bytes_neon`
+
+Location: `src/simd/neon.rs`
+
+Status: non-dispatchable std AArch64 NEON decode prototype for Standard and
+URL-safe alphabet families. It exists for tests and evidence only. Public
+decode APIs still execute scalar code.
+
+Purpose:
+
+- Extend fixed-block SIMD decode evidence to the AArch64 NEON backend shape
+  before any active decode dispatch is considered.
+- Exercise NEON 6-bit-value packing for a 16-byte encoded block that produces
+  at most 12 decoded bytes.
+- Preserve scalar validation, padding, canonicality, and error behavior as the
+  source of truth.
+
+Preconditions:
+
+- Caller must prove NEON is available on the current CPU.
+- Input is exactly 16 encoded bytes.
+- Output is exactly 12 bytes.
+- The function is test/evidence-only and is not called by public decode APIs.
+
+Unsafe operation:
+
+- `vld1q_u8` loads a local 16-byte sextet-value staging array.
+- NEON shifts, masks, and OR operations pack four 4-symbol quads into decoded
+  bytes in 32-bit lanes.
+- `vqtbl1q_u8` compacts the first three bytes of each lane into a contiguous
+  12-byte prefix using a fixed mask.
+- `vst1q_u8` stores into a local 16-byte packed buffer.
+- `clear_neon_registers_after_vector_block!` clears `v0` through `v31` inside
+  the prototype before return.
+
+Safety argument:
+
+- Scalar decode runs first and returns any malformed-input error before the
+  prototype copies bytes to caller-visible output.
+- The input and output array types provide fixed readable and writable bounds.
+- The vector store writes only to a local 16-byte packed buffer; the caller
+  output receives at most the scalar-validated `written` prefix.
+- The compaction mask contains only valid source indices or zero lanes.
+- Staging, packed, and scalar-output buffers are wiped before successful return
+  or along the error path.
+- The NEON target-feature contract enables the required instructions.
+
 ### `encode_12_bytes_neon_aarch64_standard_family`
 
-Location: `src/simd/mod.rs`
+Location: `src/simd/neon.rs`
 
 Status: private helper for the admitted AArch64 NEON encode block and its tests.
 
@@ -965,7 +1012,7 @@ Unsafe operation:
 - `encode_standard_family_indices_neon` maps those indices to Standard or
   URL-safe alphabet bytes with NEON comparisons and bit selects.
 - `vst1q_u8` stores the 16 encoded bytes into the output buffer.
-- `clear_neon_registers_after_encode_block!` clears `v0` through `v31` inside
+- `clear_neon_registers_after_vector_block!` clears `v0` through `v31` inside
   the block function before return.
 - The local staging array is wiped with the crate cleanup primitive before the
   function returns.
@@ -985,7 +1032,7 @@ Safety argument:
 
 ### `encode_standard_family_indices_neon`
 
-Location: `src/simd/mod.rs`
+Location: `src/simd/neon.rs`
 
 Status: private helper for the admitted AArch64 NEON encode block and its tests.
 
@@ -1013,22 +1060,23 @@ Safety argument:
   six-bit Base64 value.
 - The helper is private to the Standard-family NEON encode path.
 
-### `clear_neon_registers_after_encode_block!`
+### `clear_neon_registers_after_vector_block!`
 
-Location: `src/simd/mod.rs`
+Location: `src/simd/neon.rs`
 
-Status: private macro for the admitted AArch64 NEON encode block and its tests.
+Status: private macro for the admitted AArch64 NEON encode block, the
+non-dispatchable AArch64 NEON decode prototype, and their tests.
 
 Purpose:
 
-- Clear AArch64 NEON registers used by the encode block before returning from the
-  path that processes caller bytes in vector registers.
+- Clear AArch64 NEON registers used by the vector block before returning from
+  paths that process caller bytes in vector registers.
 
 Preconditions:
 
-- Called only after the encode block has stored its output and no later NEON value
-  is needed by the function.
-- Expanded directly inside the encode block function. It must not be moved to a
+- Called only after the vector block has stored its local output and no later
+  NEON value is needed by the function.
+- Expanded directly inside the vector block function. It must not be moved to a
   separate function because an AArch64 helper can save and restore callee-saved
   `v8` through `v15`, undoing register clearing in the helper frame.
 
@@ -1040,10 +1088,10 @@ Unsafe operation:
 Safety argument:
 
 - The macro does not read or write memory.
-- The macro expands at the end of the NEON encode block path.
+- The macro expands at the end of the NEON vector block path.
 - Clobbered registers are declared to the compiler with explicit `out("vN")`
   operands.
-- This is best-effort register-retention reduction for encode evidence, not a
+- This is best-effort register-retention reduction for SIMD evidence, not a
   guarantee that historical register, stack, cache, or microarchitectural
   copies do not exist.
 - This macro clears all AArch64 vector registers for the reviewed encode

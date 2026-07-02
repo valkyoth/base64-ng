@@ -88,10 +88,20 @@ require_pattern "$output_dir/base64_ng-avx512-vbmi-test.s" "vpxord[[:space:]]+%z
 require_pattern "$output_dir/base64_ng-avx512-vbmi-test.s" "vzeroupper" "AVX upper-state cleanup"
 
 neon_status="skipped-target-not-installed"
+neon_decode_status="skipped-target-not-installed"
 if rustup target list --installed 2>/dev/null | grep -F -x -q "aarch64-unknown-linux-gnu"; then
-    echo "simd asm evidence: AArch64 NEON release test assembly"
-    CARGO_TARGET_DIR="target/simd-asm-neon-aarch64" \
-        cargo rustc --target aarch64-unknown-linux-gnu --release --all-features --lib -- --emit=asm
+    host_triple="$(rustc -vV | sed -n 's/^host: //p')"
+    if printf '%s\n' "$host_triple" | grep -q '^aarch64-'; then
+        echo "simd asm evidence: AArch64 NEON release test assembly"
+        CARGO_TARGET_DIR="target/simd-asm-neon-aarch64" \
+            cargo rustc --target aarch64-unknown-linux-gnu --release --all-features --lib -- --emit=asm --test
+        neon_decode_status="generated"
+    else
+        echo "simd asm evidence: AArch64 NEON release library assembly"
+        CARGO_TARGET_DIR="target/simd-asm-neon-aarch64" \
+            cargo rustc --target aarch64-unknown-linux-gnu --release --all-features --lib -- --emit=asm
+        neon_decode_status="skipped-cross-host-test-link"
+    fi
     copy_single_asm "target/simd-asm-neon-aarch64" "$output_dir/base64_ng-neon-aarch64-test.s"
     require_pattern "$output_dir/base64_ng-neon-aarch64-test.s" "tbl" "AArch64 NEON table lookup instruction"
     require_pattern "$output_dir/base64_ng-neon-aarch64-test.s" "bsl" "AArch64 NEON bit-select instruction"
@@ -120,7 +130,11 @@ fi
     echo "CARGO_TARGET_DIR=target/simd-asm-avx2 RUSTFLAGS=\"-C target-feature=+avx2\" cargo rustc --release --all-features --lib -- --emit=asm --test"
     echo "CARGO_TARGET_DIR=target/simd-asm-avx512-vbmi RUSTFLAGS=\"-C target-feature=+avx512f,+avx512bw,+avx512vl,+avx512vbmi\" cargo rustc --release --all-features --lib -- --emit=asm --test"
     if [ "$neon_status" = "generated" ]; then
-        echo "CARGO_TARGET_DIR=target/simd-asm-neon-aarch64 cargo rustc --target aarch64-unknown-linux-gnu --release --all-features --lib -- --emit=asm"
+        if [ "$neon_decode_status" = "generated" ]; then
+            echo "CARGO_TARGET_DIR=target/simd-asm-neon-aarch64 cargo rustc --target aarch64-unknown-linux-gnu --release --all-features --lib -- --emit=asm --test"
+        else
+            echo "CARGO_TARGET_DIR=target/simd-asm-neon-aarch64 cargo rustc --target aarch64-unknown-linux-gnu --release --all-features --lib -- --emit=asm"
+        fi
     else
         echo "AArch64 NEON assembly skipped: aarch64-unknown-linux-gnu target is not installed"
     fi
@@ -142,8 +156,13 @@ fi
     echo "- AVX-512 VBMI non-dispatchable decode prototype contains byte shuffle, multiply-add packing, VBMI lane compaction, ZMM operations, ZMM cleanup, and vzeroupper"
     if [ "$neon_status" = "generated" ]; then
         echo "- NEON admitted encode path contains AArch64 table lookup, bit-select mapping, and NEON cleanup"
+        if [ "$neon_decode_status" = "generated" ]; then
+            echo "- NEON non-dispatchable decode prototype contains AArch64 table compaction, vector shift/mask packing, and NEON cleanup"
+        else
+            echo "- NEON non-dispatchable decode prototype assembly evidence requires an AArch64 host test-harness build; this cross-host run recorded library encode assembly only"
+        fi
     else
-        echo "- NEON admitted encode path assembly evidence was skipped because the AArch64 target is not installed"
+        echo "- NEON admitted encode and non-dispatchable decode assembly evidence was skipped because the AArch64 target is not installed"
     fi
     echo "- AVX-512 VBMI, AVX2, SSSE3/SSE4.1, and NEON encode are admitted for std x86/x86_64 or std aarch64 Standard and URL-safe alphabets"
 } >"$manifest"
