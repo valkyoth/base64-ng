@@ -178,6 +178,14 @@ runtime behavior for that line.
   AArch64, 32-bit `arm+neon`, `no_std`, in-place encode, line-ending
   insertion, and every decode surface outside the separate
   AVX-512/AVX2/SSSE3/SSE4.1/NEON strict decode admission stay scalar.
+- The `1.3.0` encode surface review does not expand the `1.2.x` encode
+  admission. In-place encode remains scalar because overlapping input/output
+  movement needs a separate aliasing admission package. Bcrypt, `crypt(3)`,
+  custom alphabets, and other non-Standard-family alphabets remain scalar
+  because accelerated alphabet mapping has not been separately proven. Wrapped
+  encode may still use the admitted unwrapped staging step, but line-ending
+  insertion is scalar. `no_std` and wasm runtime dispatch remain scalar or
+  compile-evidence-only.
 - An inactive wasm `simd128` fixed-block encode prototype exists behind the
   same boundary as real non-dispatchable vector encode evidence for Standard
   and URL-safe alphabets. It uses wasm byte shuffling, vector shifts/masks, and

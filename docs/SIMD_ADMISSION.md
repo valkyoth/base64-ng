@@ -100,6 +100,16 @@ State labels are intentionally strict:
 | NEON | admitted backend | `neon` | little-endian std aarch64 runtime-dispatched encode and strict decode for Standard and URL-safe alphabet families; encode uses fixed 12-byte input blocks, and decode uses fixed 16-byte encoded blocks only after whole-input scalar validation preserves public error shape; shorter inputs, tails, unsupported alphabets, big-endian AArch64, 32-bit ARM, in-place encode/decode, wrapped decode, legacy decode, CT secret decode, line-ending insertion, and `no_std` use scalar fallback |
 | wasm `simd128` | real non-dispatchable prototype | `simd128` | real fixed-block encode prototype for Standard and URL-safe alphabets; test-binary compile evidence only; non-dispatchable |
 
+## Encode Surface Review
+
+The `1.3.0` encode surface review keeps the active encode admission unchanged:
+std x86/x86_64 AVX-512 VBMI, AVX2, SSSE3/SSE4.1, and little-endian std
+aarch64 NEON fixed-block encode for Standard and URL-safe alphabet families
+only. Bcrypt, `crypt(3)`, custom alphabets, in-place encode, `no_std`
+activation, and wasm runtime dispatch remain scalar or prototype-only. Wrapped
+encode may route its unwrapped Base64 staging step through the admitted encode
+boundary, but line-ending insertion itself remains scalar.
+
 ## Release Rule
 
 Advertise SIMD acceleration only with the admitted backend name and scope. Do

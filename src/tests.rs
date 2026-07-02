@@ -46,28 +46,6 @@ where
     }
 }
 
-fn assert_encode_in_place_backend_matches_scalar<A, const PAD: bool>(input: &[u8])
-where
-    A: Alphabet,
-{
-    let engine = Engine::<A, PAD>::new();
-    let mut dispatched = [0x55; 256];
-    let mut scalar = [0xaa; 256];
-
-    dispatched[..input.len()].copy_from_slice(input);
-    scalar[..input.len()].copy_from_slice(input);
-
-    let dispatched_result = engine
-        .encode_in_place(&mut dispatched, input.len())
-        .map(|encoded| encoded.len());
-    let scalar_result = scalar_encode_in_place::encode_in_place::<A, PAD>(&mut scalar, input.len());
-
-    assert_eq!(dispatched_result, scalar_result);
-    if let Ok(written) = dispatched_result {
-        assert_eq!(&dispatched[..written], &scalar[..written]);
-    }
-}
-
 fn assert_decode_backend_matches_scalar<A, const PAD: bool>(input: &[u8])
 where
     A: Alphabet,
@@ -168,21 +146,6 @@ fn backend_dispatch_matches_scalar_reference_for_canonical_inputs() {
         assert_backend_round_trip_matches_scalar::<UrlSafe, false>(input);
         assert_backend_round_trip_matches_scalar::<DispatchFallbackAlphabet, true>(input);
         assert_backend_round_trip_matches_scalar::<DispatchFallbackAlphabet, false>(input);
-    }
-}
-
-#[test]
-fn encode_in_place_backend_matches_scalar_reference() {
-    let mut input = [0; 128];
-
-    for input_len in 0..=input.len() {
-        fill_pattern(&mut input[..input_len], input_len);
-        let input = &input[..input_len];
-
-        assert_encode_in_place_backend_matches_scalar::<Standard, true>(input);
-        assert_encode_in_place_backend_matches_scalar::<Standard, false>(input);
-        assert_encode_in_place_backend_matches_scalar::<UrlSafe, true>(input);
-        assert_encode_in_place_backend_matches_scalar::<UrlSafe, false>(input);
     }
 }
 

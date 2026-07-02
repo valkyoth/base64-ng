@@ -782,13 +782,16 @@ Each commit must follow these rules:
 
 Recommended commit sequence:
 
-Current progress in the `1.3.0` working line: commits 1 through 10 have
+Current progress in the `1.3.0` working line: commits 1 through 11 have
 landed or are in this reviewed slice. The active strict decode boundary now
-admits std x86/x86_64 SSSE3/SSE4.1, AVX2, AVX-512 VBMI, and little-endian std aarch64 NEON
-for Standard and URL-safe alphabet families only. The remaining completion
-work is therefore focused on surface review, optional companion ergonomics,
-const decode feasibility, final evidence refresh, and release-candidate
-hardening.
+admits std x86/x86_64 SSSE3/SSE4.1, AVX2, AVX-512 VBMI, and little-endian std
+aarch64 NEON for Standard and URL-safe alphabet families only. Encode surface
+review is complete for the current `1.3.0` scope: in-place encode, custom
+alphabets, bcrypt/crypt profiles, `no_std`, wasm runtime dispatch, and
+line-ending insertion remain intentionally scalar unless a later admission
+package proves otherwise. The remaining completion work is therefore focused
+on optional companion ergonomics, const decode feasibility, final evidence
+refresh, and release-candidate hardening.
 
 1. Commit: decode SIMD design and API freeze.
    - Freeze the decode acceleration scope: strict Standard and URL-safe

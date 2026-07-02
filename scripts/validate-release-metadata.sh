@@ -391,6 +391,7 @@ for required_package_file in \
     "src/engine/encode_in_place.rs" \
     "src/engine/stream.rs" \
     "src/engine/validate.rs" \
+    "src/encode_surface_tests.rs" \
     "src/errors.rs" \
     "src/kani_proofs.rs" \
     "src/length.rs" \
