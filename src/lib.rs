@@ -193,6 +193,22 @@ pub mod runtime;
 #[cfg(feature = "stream")]
 pub mod stream;
 
+/// Best-effort dependency-free wipe for caller-owned byte slices.
+///
+/// This is the same hardened cleanup primitive used internally by the core
+/// crate: byte-wise volatile zero writes followed by the crate's
+/// architecture-gated wipe barrier and a compiler fence. It is exposed so
+/// companion crates and integrations can reuse the audited cleanup boundary
+/// without duplicating unsafe code.
+///
+/// This is not a formal zeroization guarantee. It cannot clear historical
+/// copies, registers, caches, swap, hibernation images, core dumps, or
+/// OS-level memory snapshots. High-assurance applications still need their own
+/// platform-approved memory hygiene controls.
+pub fn secure_wipe(bytes: &mut [u8]) {
+    cleanup::wipe_bytes(bytes);
+}
+
 /// Standard Base64 engine with padding.
 ///
 /// This default strict engine is not a constant-time token validator or

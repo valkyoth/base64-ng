@@ -16,6 +16,16 @@
 //! The streaming readers are implemented as explicit state machines. They do
 //! not use `async fn` internally, so cancellation can only leave data in the
 //! adapter's fixed pending/output buffers; those buffers are cleared on drop.
+//!
+//! # Security
+//!
+//! The read-all helpers use temporary `Vec<u8>` allocations and the normal
+//! strict decode path. They wipe those temporary vectors before returning, but
+//! they are not constant-time-oriented token validators or high-assurance
+//! secret decoders. For secret-bearing async frames, collect a bounded frame
+//! under the application's approved memory policy and decode through
+//! `base64_ng::ct`, staged CT decode, `base64-ng-derive`, or
+//! `base64-ng-sanitization`.
 
 mod readers;
 
@@ -42,9 +52,19 @@ where
 {
     let mut input = Vec::new();
     reader.read_to_end(&mut input).await?;
-    let output = engine.encode_vec(&input).map_err(encode_io_error)?;
-    writer.write_all(&output).await?;
-    Ok(output.len() as u64)
+    let mut output = match engine.encode_vec(&input).map_err(encode_io_error) {
+        Ok(output) => output,
+        Err(error) => {
+            wipe_bytes(&mut input);
+            return Err(error);
+        }
+    };
+    let written = output.len() as u64;
+    let result = writer.write_all(&output).await;
+    wipe_bytes(&mut input);
+    wipe_bytes(&mut output);
+    result?;
+    Ok(written)
 }
 
 /// Reads at most `max_input_len` bytes from `reader`, encodes them, and writes
@@ -69,10 +89,20 @@ where
     R: AsyncRead + Unpin + ?Sized,
     W: AsyncWrite + Unpin + ?Sized,
 {
-    let input = read_to_end_limited(reader, max_input_len).await?;
-    let output = engine.encode_vec(&input).map_err(encode_io_error)?;
-    writer.write_all(&output).await?;
-    Ok(output.len() as u64)
+    let mut input = read_to_end_limited(reader, max_input_len).await?;
+    let mut output = match engine.encode_vec(&input).map_err(encode_io_error) {
+        Ok(output) => output,
+        Err(error) => {
+            wipe_bytes(&mut input);
+            return Err(error);
+        }
+    };
+    let written = output.len() as u64;
+    let result = writer.write_all(&output).await;
+    wipe_bytes(&mut input);
+    wipe_bytes(&mut output);
+    result?;
+    Ok(written)
 }
 
 /// Reads all Base64 bytes from `reader`, decodes them, and writes decoded bytes.
@@ -96,9 +126,19 @@ where
 {
     let mut input = Vec::new();
     reader.read_to_end(&mut input).await?;
-    let output = engine.decode_vec(&input).map_err(decode_io_error)?;
-    writer.write_all(&output).await?;
-    Ok(output.len() as u64)
+    let mut output = match engine.decode_vec(&input).map_err(decode_io_error) {
+        Ok(output) => output,
+        Err(error) => {
+            wipe_bytes(&mut input);
+            return Err(error);
+        }
+    };
+    let written = output.len() as u64;
+    let result = writer.write_all(&output).await;
+    wipe_bytes(&mut input);
+    wipe_bytes(&mut output);
+    result?;
+    Ok(written)
 }
 
 /// Reads at most `max_input_len` Base64 bytes from `reader`, decodes them, and
@@ -123,10 +163,20 @@ where
     R: AsyncRead + Unpin + ?Sized,
     W: AsyncWrite + Unpin + ?Sized,
 {
-    let input = read_to_end_limited(reader, max_input_len).await?;
-    let output = engine.decode_vec(&input).map_err(decode_io_error)?;
-    writer.write_all(&output).await?;
-    Ok(output.len() as u64)
+    let mut input = read_to_end_limited(reader, max_input_len).await?;
+    let mut output = match engine.decode_vec(&input).map_err(decode_io_error) {
+        Ok(output) => output,
+        Err(error) => {
+            wipe_bytes(&mut input);
+            return Err(error);
+        }
+    };
+    let written = output.len() as u64;
+    let result = writer.write_all(&output).await;
+    wipe_bytes(&mut input);
+    wipe_bytes(&mut output);
+    result?;
+    Ok(written)
 }
 
 /// Encodes `input` into an owned byte vector.
@@ -168,7 +218,7 @@ fn decode_io_error(error: base64_ng::DecodeError) -> io::Error {
 }
 
 fn wipe_bytes(bytes: &mut [u8]) {
-    bytes.fill(0);
+    base64_ng::secure_wipe(bytes);
 }
 
 async fn read_to_end_limited<R>(reader: &mut R, max_input_len: usize) -> io::Result<Vec<u8>>
@@ -179,12 +229,22 @@ where
     let mut chunk = [0u8; 8192];
 
     loop {
-        let read = reader.read(&mut chunk).await?;
+        let read = match reader.read(&mut chunk).await {
+            Ok(read) => read,
+            Err(error) => {
+                wipe_bytes(&mut chunk);
+                wipe_bytes(&mut input);
+                return Err(error);
+            }
+        };
         if read == 0 {
+            wipe_bytes(&mut chunk);
             return Ok(input);
         }
 
         if read > max_input_len.saturating_sub(input.len()) {
+            wipe_bytes(&mut chunk);
+            wipe_bytes(&mut input);
             return Err(io::Error::new(
                 io::ErrorKind::InvalidData,
                 "base64-ng-tokio input exceeds configured limit",
@@ -192,5 +252,6 @@ where
         }
 
         input.extend_from_slice(&chunk[..read]);
+        wipe_bytes(&mut chunk);
     }
 }

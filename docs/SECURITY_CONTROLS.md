@@ -130,12 +130,15 @@ certification claim.
   For async services using the optional `base64-ng-tokio` companion crate,
   prefer `encode_reader_to_writer_limited` and
   `decode_reader_to_writer_limited` at request or frame boundaries controlled
-  by a peer. Its `EncoderReader` and `DecoderReader` adapters are true
-  read-side streaming state machines with fixed internal buffers and drop
-  cleanup, but decoded output from valid leading quanta can still reach the
-  caller before a later malformed quantum is observed. Buffer full
-  secret-bearing frames first when atomic success/failure semantics are
-  required.
+  by a peer for non-secret payloads. Do not use those Vec-backed helpers as the
+  high-assurance token, wrapped-key, or MAC-adjacent decode boundary. For
+  secret-bearing async frames, collect a bounded frame under the application's
+  approved memory policy and decode through `base64_ng::ct`, staged CT decode,
+  `base64-ng-derive`, or `base64-ng-sanitization`. The Tokio companion's
+  `EncoderReader` and `DecoderReader` adapters are true read-side streaming
+  state machines with fixed internal buffers and drop cleanup, but decoded
+  output from valid leading quanta can still reach the caller before a later
+  malformed quantum is observed.
 - Log redacted error classifications such as `DecodeError::kind()` for
   secret-adjacent inputs. Strict decode errors can carry exact offsets and
   offending input bytes for diagnostics.
