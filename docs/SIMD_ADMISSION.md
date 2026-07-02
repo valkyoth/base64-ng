@@ -23,6 +23,29 @@ only for backends named in this file and the release gate.
   may use admitted fixed-block encode for its unwrapped staging step;
   line-ending insertion remains scalar.
 
+## `1.3.0` Decode Admission Scope Freeze
+
+The first decode acceleration line is intentionally narrower than the full
+decode API. Any `1.3.0` decode backend admission must start with strict
+Standard and URL-safe alphabets only, for padded and unpadded inputs, through
+the normal strict decode backend boundary. The following surfaces remain
+scalar unless a later evidence package separately admits them:
+
+- line-wrapped MIME/PEM decode
+- legacy whitespace-tolerant decode
+- bcrypt-style and `crypt(3)`-style profiles
+- custom alphabets
+- `no_std` SIMD dispatch
+- wasm `simd128` runtime dispatch
+- in-place decode
+- constant-time-oriented `base64_ng::ct` secret decode
+
+This scope is frozen before implementation work starts so security review can
+separate normal strict decode acceleration from the constant-time-oriented
+scalar path. Future normal SIMD decode must not be routed into `ct::CtEngine`
+or advertised as a secret-decoding acceleration path without a separate formal
+side-channel evidence package.
+
 ## Required For Every Admitted Backend
 
 Before a backend is admitted, complete

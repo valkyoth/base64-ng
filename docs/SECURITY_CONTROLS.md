@@ -263,6 +263,11 @@ constant-time behavior is required. Streaming decoders intentionally use the
 normal strict decoder so they can preserve I/O-style behavior and avoid
 buffering unbounded frames. For secrets, collect one complete protocol frame
 under an application size limit and decode it with `ct::CtEngine`.
+Future normal SIMD decode admission is not a secret-decoding claim. The
+`1.3.0` decode acceleration scope is limited to strict Standard and URL-safe
+interoperability decode, and the `base64_ng::ct` constant-time-oriented decode
+path remains scalar unless a separate formal side-channel evidence package
+admits otherwise.
 Deployments that require the most conservative side-channel posture should
 combine `base64_ng::ct` with
 `runtime::BackendPolicy::HighAssuranceScalarOnly` so sensitive decode paths

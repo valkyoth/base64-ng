@@ -96,9 +96,15 @@ Implemented now:
 
 Planned behind admission evidence:
 
-- Additional admitted wasm `simd128`, custom alphabet, in-place, and decode
-  fast paths after the SIMD admission evidence is complete. Default builds and
-  unsupported runtime CPUs remain scalar.
+- SIMD decode acceleration for strict Standard and URL-safe alphabets after
+  the `1.3.0` decode admission evidence is complete. The frozen first scope is
+  padded and unpadded strict decode only: no line wrapping, no legacy
+  whitespace, no custom alphabets, no bcrypt/crypt profiles, and no
+  constant-time-oriented secret decode. Default builds, unsupported runtime
+  CPUs, `no_std`, and all out-of-scope decode surfaces remain scalar.
+- Additional admitted wasm `simd128`, custom alphabet, and in-place encode
+  fast paths only after separate SIMD admission evidence is complete. Default
+  builds and unsupported runtime CPUs remain scalar.
 - Full async streaming wrappers only after the `tokio` feature passes the
   cancellation-safety admission bar in [docs/ASYNC.md](docs/ASYNC.md). The
   `base64-ng-tokio` companion crate currently provides bounded async

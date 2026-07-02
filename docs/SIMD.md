@@ -74,6 +74,14 @@ The SIMD roadmap separates implementation evidence from active acceleration:
   the `1.2.x` decode evidence line is complete and the encode acceleration line
   has remained stable.
 
+The `1.3.0` decode scope is frozen before implementation starts: strict
+Standard and URL-safe decode only, padded and unpadded, through the normal
+strict decode backend boundary. Wrapped decode, legacy whitespace decode,
+custom alphabets, bcrypt-style and `crypt(3)` profiles, in-place decode,
+`no_std` SIMD dispatch, wasm runtime dispatch, and the `base64_ng::ct`
+constant-time-oriented secret decode path remain scalar unless separately
+admitted with their own evidence package.
+
 The detailed `1.2.3` to `1.3.0` workflow is commit-based rather than
 tag-based. Each planned commit is followed by pentest and CI review before the
 next implementation commit starts. See
@@ -196,6 +204,12 @@ runtime behavior for that line.
   prototype-only unless the SIMD admission manifest, scalar differential tests,
   fuzz evidence, unsafe inventory, architecture evidence, benchmark evidence,
   and release wording are updated together.
+- Decode acceleration is higher risk than encode acceleration because the
+  accelerated path must match scalar behavior for invalid bytes, padding
+  placement, non-canonical trailing bits, undersized outputs, partial-output
+  cleanup, and public error behavior. No decode backend may dispatch until
+  those properties are covered by tests, fuzz evidence, generated-code review,
+  unsafe inventory, hardware evidence where applicable, and release wording.
 - CI checks the reserved `simd` feature in `no_std` mode for x86_64, aarch64,
   FreeBSD, wasm32, and Cortex-M targets.
 - Performance claims must be backed by local benchmark evidence, not roadmap
