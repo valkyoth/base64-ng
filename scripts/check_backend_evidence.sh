@@ -15,7 +15,7 @@ cat "$runtime_output"
 
 echo "backend evidence: SIMD prototype scalar-equivalence tests"
 prototype_status=0
-cargo test --all-features simd::tests:: -- --nocapture >"$prototype_output" 2>&1 || prototype_status="$?"
+cargo test --all-features simd:: -- --nocapture >"$prototype_output" 2>&1 || prototype_status="$?"
 cat "$prototype_output"
 
 {
@@ -36,7 +36,7 @@ cat "$prototype_output"
     echo
     echo "commands:"
     echo "cargo test --test rfc4648 --all-features runtime_backend_report_matches_admission_state -- --nocapture"
-    echo "cargo test --all-features simd::tests:: -- --nocapture"
+    echo "cargo test --all-features simd:: -- --nocapture"
     echo
     echo "status:"
     echo "runtime_backend_report=$runtime_status"
@@ -47,6 +47,7 @@ cat "$prototype_output"
     echo "prototype_avx512_vbmi=admitted-encode-backend"
     echo "prototype_avx2=admitted-encode-backend"
     echo "prototype_ssse3_sse41=admitted-encode-backend"
+    echo "prototype_ssse3_sse41_decode=real-non-dispatchable"
     echo "prototype_neon=admitted-encode-backend-aarch64-standard-family"
     echo "prototype_wasm_simd128=real-non-dispatchable-compile-evidence-only"
     echo "wasm_simd128_evidence=compile-test-binary-only"
@@ -62,6 +63,7 @@ cat "$prototype_output"
     echo
     echo "interpretation:"
     echo "This evidence records runtime backend reporting, admitted AVX-512 VBMI, AVX2, SSSE3/SSE4.1, or NEON encode dispatch when supported, and remaining inactive SIMD prototype scalar-equivalence results for this machine."
+    echo "The SSSE3/SSE4.1 decode prototype is fixed-block, non-dispatchable evidence only; public decode APIs still report scalar execution."
     echo "Wasm results are prototype evidence; they are not active backend admission evidence."
     echo "The admitted x86 AVX-512 VBMI, AVX2, and SSSE3/SSE4.1 paths exercise real fixed-block vector encode logic for Standard and URL-safe alphabets when the required CPU feature bundle is available."
     echo "On AArch64 hosts, the admitted NEON path exercises real fixed-block vector encode logic for Standard and URL-safe alphabets; 32-bit ARM remains scaffold evidence."

@@ -2,6 +2,8 @@
 
 mod cleanup;
 
+#[cfg(test)]
+use crate::DecodeError;
 use crate::{Alphabet, EncodeError, checked_encoded_len, encode_base64_value, scalar};
 
 use cleanup::{
@@ -170,6 +172,8 @@ use core::arch::x86::{
     _mm512_loadu_si512, _mm512_or_si512, _mm512_permutexvar_epi8, _mm512_set1_epi32,
     _mm512_shuffle_epi8, _mm512_slli_epi32, _mm512_srli_epi32, _mm512_storeu_si512,
 };
+#[cfg(all(test, target_arch = "x86"))]
+use core::arch::x86::{_mm_madd_epi16, _mm_maddubs_epi16};
 #[cfg(target_arch = "x86_64")]
 use core::arch::x86_64::{
     __m128i, __m256i, __m512i, _mm_add_epi8, _mm_and_si128, _mm_blendv_epi8, _mm_cmpeq_epi8,
@@ -181,6 +185,8 @@ use core::arch::x86_64::{
     _mm512_loadu_si512, _mm512_or_si512, _mm512_permutexvar_epi8, _mm512_set1_epi32,
     _mm512_shuffle_epi8, _mm512_slli_epi32, _mm512_srli_epi32, _mm512_storeu_si512,
 };
+#[cfg(all(test, target_arch = "x86_64"))]
+use core::arch::x86_64::{_mm_madd_epi16, _mm_maddubs_epi16};
 
 #[expect(
     clippy::cast_ptr_alignment,
@@ -324,6 +330,78 @@ where
         clear_xmm_registers_after_encode_block();
     }
     crate::wipe_bytes(&mut staged);
+}
+
+#[expect(
+    clippy::cast_ptr_alignment,
+    reason = "_mm_loadu_si128 and _mm_storeu_si128 accept unaligned pointers"
+)]
+#[cfg(test)]
+#[target_feature(enable = "ssse3,sse4.1")]
+pub(crate) unsafe fn decode_16_bytes_ssse3_sse41<A, const PAD: bool>(
+    input: &[u8; 16],
+    output: &mut [u8; 12],
+) -> Result<usize, DecodeError>
+where
+    A: Alphabet,
+{
+    let mut scalar_output = [0; 12];
+    let written = match scalar::decode_slice::<A, PAD>(input, &mut scalar_output) {
+        Ok(written) => written,
+        Err(error) => {
+            crate::wipe_bytes(&mut scalar_output);
+            return Err(error);
+        }
+    };
+
+    if !is_standard_or_url_safe_family::<A>() {
+        output[..written].copy_from_slice(&scalar_output[..written]);
+        crate::wipe_bytes(&mut scalar_output);
+        return Ok(written);
+    }
+
+    let mut values = [0; 16];
+    fill_decode_values::<A>(input, &mut values);
+    let mut packed = [0; 16];
+
+    // SAFETY: Fixed arrays back the unaligned loads and stores, the
+    // target-feature contract enables SSSE3/SSE4.1, and scalar validation
+    // above proves the 16-byte block is canonical for the selected padding
+    // policy before any bytes are copied to the caller output.
+    unsafe {
+        let values_vec = _mm_loadu_si128(values.as_ptr().cast::<__m128i>());
+        let merged_pairs = _mm_maddubs_epi16(values_vec, _mm_set1_epi32(0x0140_0140));
+        let merged_quads = _mm_madd_epi16(merged_pairs, _mm_set1_epi32(0x0001_1000));
+        let shuffle = _mm_setr_epi8(
+            2, 1, 0, 6, 5, 4, 10, 9, 8, 14, 13, 12, -128, -128, -128, -128,
+        );
+        let decoded = _mm_shuffle_epi8(merged_quads, shuffle);
+        _mm_storeu_si128(packed.as_mut_ptr().cast::<__m128i>(), decoded);
+        clear_xmm_registers_after_encode_block();
+    }
+
+    debug_assert_eq!(&packed[..written], &scalar_output[..written]);
+    output[..written].copy_from_slice(&packed[..written]);
+    crate::wipe_bytes(&mut values);
+    crate::wipe_bytes(&mut packed);
+    crate::wipe_bytes(&mut scalar_output);
+    Ok(written)
+}
+
+#[cfg(test)]
+fn fill_decode_values<A>(input: &[u8; 16], values: &mut [u8; 16])
+where
+    A: Alphabet,
+{
+    let mut index = 0;
+    while index < input.len() {
+        values[index] = if input[index] == b'=' {
+            0
+        } else {
+            A::decode(input[index]).unwrap_or(0)
+        };
+        index += 1;
+    }
 }
 
 fn is_standard_or_url_safe_family<A>() -> bool

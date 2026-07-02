@@ -673,6 +673,61 @@ Safety argument:
   six-bit Base64 value.
 - The helper is private to the Standard-family SSSE3/SSE4.1 encode path.
 
+### `decode_16_bytes_ssse3_sse41`
+
+Location: `src/simd/x86/mod.rs`
+
+Status: non-dispatchable std x86/x86_64 SSSE3/SSE4.1 decode prototype for
+Standard and URL-safe alphabet families. It is reachable only from SIMD tests
+and backend evidence capture. Runtime decode dispatch remains scalar.
+
+Purpose:
+
+- Establish the first fixed-block SIMD decode admission boundary without
+  changing public decode behavior.
+- Exercise SSSE3/SSE4.1 6-bit-value packing for a 16-byte encoded block that
+  decodes to at most 12 bytes.
+- Verify error agreement, padding behavior, canonical trailing-bit rejection,
+  and rejected-input output retention before any later dispatch admission.
+
+Preconditions:
+
+- Caller must prove SSSE3 and SSE4.1 are available on the current CPU.
+- Input is exactly 16 encoded bytes.
+- Output is exactly 12 bytes.
+- The vectorized packing path is used only for Standard-family alphabets
+  (`A-Z`, `a-z`, `0-9`, and either `+/` or `-_`). Other alphabets use the
+  staged scalar fallback inside the prototype.
+
+Unsafe operation:
+
+- `_mm_loadu_si128` loads sixteen 6-bit values from a local staging array.
+- `_mm_maddubs_epi16` and `_mm_madd_epi16` pack groups of four 6-bit values
+  into 24-bit decoded quanta.
+- `_mm_shuffle_epi8` compacts the packed quanta into byte order.
+- `_mm_storeu_si128` stores the packed prototype output into a local 16-byte
+  staging array.
+- `clear_xmm_registers_after_encode_block` clears XMM registers before return
+  to reduce register retention in the vector decode prototype.
+
+Safety argument:
+
+- Scalar strict decode validation runs into a private 12-byte staging buffer
+  before any byte is copied to the caller output. If validation fails, the
+  caller output is left untouched and the staging buffer is wiped.
+- The input and output array types provide fixed readable and writable bounds.
+- The SIMD load and store operate only on local 16-byte arrays and use
+  unaligned intrinsics, so no alignment precondition is required.
+- The SSSE3/SSE4.1 target-feature contract enables every intrinsic used by
+  the prototype.
+- The prototype copies only the validated decoded length to caller output and
+  wipes local value, packed, and scalar-validation staging buffers before
+  returning.
+- Runtime decode dispatch does not call this function. Future admission must
+  update this inventory, generated-code evidence, fuzzing, backend reporting,
+  benchmarks, and release notes in the same commit that makes any decode SIMD
+  path reachable.
+
 ### `clear_xmm_registers_after_encode_block`
 
 Location: `src/simd/x86/cleanup.rs`

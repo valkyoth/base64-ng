@@ -43,9 +43,18 @@ pub(crate) use neon::neon_supports_alphabet;
 ))]
 mod x86;
 #[cfg(all(test, any(target_arch = "x86", target_arch = "x86_64")))]
-pub(super) use x86::{encode_12_bytes_ssse3_sse41, encode_24_bytes_avx2, encode_48_bytes_avx512};
+pub(super) use x86::{
+    decode_16_bytes_ssse3_sse41, encode_12_bytes_ssse3_sse41, encode_24_bytes_avx2,
+    encode_48_bytes_avx512,
+};
 #[cfg(all(test, target_arch = "wasm32"))]
 mod wasm;
+#[cfg(all(
+    feature = "std",
+    test,
+    any(target_arch = "x86", target_arch = "x86_64")
+))]
+mod x86_decode_tests;
 
 /// Backend currently allowed to execute.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

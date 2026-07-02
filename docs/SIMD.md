@@ -253,7 +253,8 @@ may show admitted encode acceleration as active. On 32-bit ARM, NEON remains
 scaffold evidence. The script also writes
 `target/release-evidence/backend/MANIFEST.txt` with toolchain metadata,
 commands, status values, artifact checksums, and explicit
-`prototype_state=real-non-dispatchable` labels for prototype-only backends and
+`prototype_state=real-non-dispatchable` labels for prototype-only backends,
+including the non-dispatchable SSSE3/SSE4.1 fixed-block decode prototype, and
 `active_backend_admitted=avx512-vbmi-or-avx2-or-ssse3-sse4.1-or-neon-encode` for admitted encode
 backends.
 
