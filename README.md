@@ -139,7 +139,7 @@ Planned behind admission evidence:
 | MSRV | Rust `1.90.0` |
 | Runtime dependencies | Zero external crates |
 | Unsafe policy | Scalar encode/decode remains safe Rust; audited unsafe is limited to volatile wiping, CT comparison/barrier helpers, and the reviewed SIMD boundary |
-| Active backend | Scalar by default; std x86/x86_64 AVX-512 VBMI encode preferred, then AVX2, then SSSE3/SSE4.1 encode, plus little-endian std aarch64 NEON encode, when `simd` is enabled and platform checks pass |
+| Active backend | Scalar by default; std x86/x86_64 AVX-512 VBMI preferred, then AVX2, then SSSE3/SSE4.1, plus little-endian std aarch64 NEON, when `simd` is enabled and platform checks pass |
 | Strict decoding | Default, canonical, no whitespace |
 | Legacy compatibility | Explicit opt-in APIs |
 | Constant-time posture | Constant-time-oriented scalar validation/decode with isolated dudect-style timing evidence; no formal cryptographic guarantee |
@@ -188,7 +188,7 @@ license = "MIT OR Apache-2.0"
 | --- | --- | --- |
 | `alloc` | yes | `Vec` and encoded `String` convenience APIs. |
 | `std` | yes | `std::error::Error` support and feature base for I/O. |
-| `simd` | no | Admitted std runtime-dispatched encode acceleration for Standard and URL-safe alphabets, with scalar fallback for unsupported surfaces. |
+| `simd` | no | Admitted std runtime-dispatched encode acceleration and `1.3.0` release-candidate strict decode acceleration for Standard and URL-safe alphabets, with scalar fallback for unsupported surfaces. |
 | `stream` | no | `std::io` streaming wrappers. |
 | `allow-wasm32-best-effort-wipe` | no | Explicitly allow `wasm32` builds with compiler-fence-only cleanup. |
 | `allow-compiler-fence-only-wipe` | no | Explicitly allow unsupported native architectures to build with compiler-fence-only cleanup after platform review. |
@@ -389,7 +389,9 @@ base64-ng = { version = "1.2.3", default-features = false }
 Enable admitted encode acceleration on supported `std` targets with the
 `simd` feature. The public encode APIs do not change; runtime dispatch selects
 an admitted backend only when the CPU and input shape match the admission
-scope, otherwise scalar encode is used:
+scope, otherwise scalar encode is used. In the `1.3.0` release-candidate line,
+the same feature also enables admitted strict decode acceleration for Standard
+and URL-safe alphabets after whole-input scalar validation:
 
 ```toml
 [dependencies]
@@ -402,10 +404,15 @@ use base64_ng::{runtime, STANDARD};
 let encoded = STANDARD.encode_string(b"hello").unwrap();
 assert_eq!(encoded, "aGVsbG8=");
 
+let decoded = STANDARD.decode_vec(encoded.as_bytes()).unwrap();
+assert_eq!(decoded, b"hello");
+
 let report = runtime::backend_report();
 // With `simd` enabled this reports the active admitted encode backend, or
-// scalar when the current platform/input is outside the admitted scope.
+// scalar when the current platform/input is outside the admitted scope. The
+// strict decode backend is reported separately.
 println!("{}", report);
+println!("{}", report.active_decode_backend());
 ```
 
 ## Convenience API
@@ -801,7 +808,6 @@ messages.
 `as_utf8` view for decoded text. Both expose `is_full()` and
 `remaining_capacity()` for no-alloc sizing checks, redact the payload from
 `Debug`, clear their backing arrays when dropped as best-effort data-retention
-reduction, and provide explicit `constant_time_eq` helpers for equal-length
 reduction, and provide explicit equal-length comparison through
 `constant_time_eq_public_len`. They intentionally do not
 implement `PartialEq`/`==`: the helper is a dependency-free best-effort
