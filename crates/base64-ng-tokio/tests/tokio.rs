@@ -14,6 +14,7 @@ use tokio::io::{AsyncRead, AsyncReadExt, ReadBuf};
 
 enum ReadAction {
     Data(Vec<u8>),
+    Error,
     Pending,
 }
 
@@ -49,6 +50,10 @@ impl AsyncRead for ScriptedReader {
                 context.waker().wake_by_ref();
                 Poll::Pending
             }
+            Some(ReadAction::Error) => Poll::Ready(Err(std::io::Error::new(
+                std::io::ErrorKind::BrokenPipe,
+                "scripted read error",
+            ))),
             None => Poll::Ready(Ok(())),
         }
     }
@@ -256,4 +261,66 @@ async fn streaming_decoder_reader_fails_closed_after_malformed_input() {
 
     assert_eq!(error.kind(), std::io::ErrorKind::InvalidData);
     assert!(decoder.is_failed());
+}
+
+#[tokio::test]
+async fn streaming_encoder_reader_clears_and_fails_after_inner_error_with_pending_input() {
+    let reader = ScriptedReader::new([
+        ReadAction::Data(b"h".to_vec()),
+        ReadAction::Pending,
+        ReadAction::Error,
+    ]);
+    let mut encoder = EncoderReader::new(reader, STANDARD);
+    let mut first = [0u8; 16];
+    let mut first_buf = ReadBuf::new(&mut first);
+    let waker = noop_waker();
+    let mut context = Context::from_waker(&waker);
+
+    assert!(
+        Pin::new(&mut encoder)
+            .poll_read(&mut context, &mut first_buf)
+            .is_pending()
+    );
+    assert_eq!(first_buf.filled(), b"");
+
+    let mut output = Vec::new();
+    let error = encoder.read_to_end(&mut output).await.unwrap_err();
+
+    assert_eq!(error.kind(), std::io::ErrorKind::BrokenPipe);
+    assert!(encoder.is_failed());
+    assert_eq!(output, b"");
+
+    let error = encoder.read_to_end(&mut output).await.unwrap_err();
+    assert_eq!(error.kind(), std::io::ErrorKind::Other);
+}
+
+#[tokio::test]
+async fn streaming_decoder_reader_clears_and_fails_after_inner_error_with_pending_input() {
+    let reader = ScriptedReader::new([
+        ReadAction::Data(b"aG".to_vec()),
+        ReadAction::Pending,
+        ReadAction::Error,
+    ]);
+    let mut decoder = DecoderReader::new(reader, STANDARD);
+    let mut first = [0u8; 16];
+    let mut first_buf = ReadBuf::new(&mut first);
+    let waker = noop_waker();
+    let mut context = Context::from_waker(&waker);
+
+    assert!(
+        Pin::new(&mut decoder)
+            .poll_read(&mut context, &mut first_buf)
+            .is_pending()
+    );
+    assert_eq!(first_buf.filled(), b"");
+
+    let mut output = Vec::new();
+    let error = decoder.read_to_end(&mut output).await.unwrap_err();
+
+    assert_eq!(error.kind(), std::io::ErrorKind::BrokenPipe);
+    assert!(decoder.is_failed());
+    assert_eq!(output, b"");
+
+    let error = decoder.read_to_end(&mut output).await.unwrap_err();
+    assert_eq!(error.kind(), std::io::ErrorKind::Other);
 }

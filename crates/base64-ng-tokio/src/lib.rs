@@ -34,6 +34,8 @@ pub use readers::{DecoderReader, EncoderReader};
 use base64_ng::{Alphabet, Engine};
 use tokio::io::{self, AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 
+const READ_ALL_EAGER_CAP: usize = 1024 * 1024;
+
 /// Reads all bytes from `reader`, encodes them, and writes the encoded output.
 ///
 /// # Errors
@@ -225,7 +227,7 @@ async fn read_to_end_limited<R>(reader: &mut R, max_input_len: usize) -> io::Res
 where
     R: AsyncRead + Unpin + ?Sized,
 {
-    let mut input = Vec::new();
+    let mut input = Vec::with_capacity(max_input_len.min(READ_ALL_EAGER_CAP));
     let mut chunk = [0u8; 8192];
 
     loop {

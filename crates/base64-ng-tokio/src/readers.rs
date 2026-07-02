@@ -119,9 +119,10 @@ where
             let mut quantum = [0u8; 3];
             quantum[..self.pending_len].copy_from_slice(&self.pending[..self.pending_len]);
             quantum[self.pending_len..].copy_from_slice(&input[..needed]);
-            self.append_encoded(&quantum)?;
+            let result = self.append_encoded(&quantum);
             wipe_bytes(&mut quantum);
             wipe_bytes(&mut self.pending);
+            result?;
             self.pending_len = 0;
             read += needed;
         }
@@ -146,9 +147,10 @@ where
             let mut tail = [0u8; 2];
             tail[..self.pending_len].copy_from_slice(&self.pending[..self.pending_len]);
             let pending_len = self.pending_len;
-            self.append_encoded(&tail[..pending_len])?;
+            let result = self.append_encoded(&tail[..pending_len]);
             wipe_bytes(&mut tail);
             wipe_bytes(&mut self.pending);
+            result?;
             self.pending_len = 0;
         }
         self.finished = true;
@@ -188,6 +190,7 @@ where
                 Poll::Ready(Err(error)) => {
                     wipe_bytes(&mut input);
                     self.failed = true;
+                    self.clear_buffers();
                     return Poll::Ready(Err(error));
                 }
                 Poll::Ready(Ok(())) => {
@@ -197,6 +200,7 @@ where
                         wipe_bytes(&mut input);
                         if let Err(error) = result {
                             self.failed = true;
+                            self.clear_buffers();
                             return Poll::Ready(Err(error));
                         }
                     } else {
@@ -204,6 +208,7 @@ where
                         wipe_bytes(&mut input);
                         if let Err(error) = result {
                             self.failed = true;
+                            self.clear_buffers();
                             return Poll::Ready(Err(error));
                         }
                     }
@@ -447,6 +452,7 @@ where
                 Poll::Ready(Err(error)) => {
                     wipe_bytes(&mut input);
                     self.failed = true;
+                    self.clear_buffers();
                     return Poll::Ready(Err(error));
                 }
                 Poll::Ready(Ok(())) => {
