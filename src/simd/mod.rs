@@ -8,11 +8,12 @@
 //!
 //! The module admits std `x86`/`x86_64` AVX-512 VBMI, AVX2, SSSE3/SSE4.1,
 //! and std `aarch64` NEON encode backends for Standard and URL-safe alphabet
-//! families. It also admits std `x86`/`x86_64` AVX2 and SSSE3/SSE4.1 strict
-//! decode for Standard and URL-safe alphabet families through the separate
-//! decode backend boundary. Custom alphabets, `no_std` builds, wasm, in-place
-//! decode, wrapped decode, legacy decode, CT secret decode, and every other
-//! SIMD candidate still execute through the scalar implementation.
+//! families. It also admits std `x86`/`x86_64` AVX-512 VBMI, AVX2, and
+//! SSSE3/SSE4.1 strict decode for Standard and URL-safe alphabet families
+//! through the separate decode backend boundary. Custom alphabets, `no_std`
+//! builds, wasm, in-place decode, wrapped decode, legacy decode, CT secret
+//! decode, and every other SIMD candidate still execute through the scalar
+//! implementation.
 //!
 //! The x86 AVX-512 VBMI, AVX2, SSSE3/SSE4.1, and `AArch64` NEON fixed-block
 //! encoders are reachable from runtime encode dispatch on std builds after
@@ -192,9 +193,9 @@ pub(crate) fn detected_candidate() -> Candidate {
     any(target_arch = "x86", target_arch = "x86_64")
 ))]
 pub(crate) use x86::{
-    avx2_decode_available, avx2_supports_alphabet, avx512_supports_alphabet, encode_slice_avx2,
-    encode_slice_avx512, encode_slice_ssse3_sse41, ssse3_sse41_decode_available,
-    ssse3_sse41_supports_alphabet,
+    avx2_decode_available, avx2_supports_alphabet, avx512_decode_available,
+    avx512_supports_alphabet, encode_slice_avx2, encode_slice_avx512, encode_slice_ssse3_sse41,
+    ssse3_sse41_decode_available, ssse3_sse41_supports_alphabet,
 };
 
 #[cfg(all(
@@ -202,7 +203,7 @@ pub(crate) use x86::{
     feature = "simd",
     any(target_arch = "x86", target_arch = "x86_64")
 ))]
-pub(crate) use x86::{decode_slice_avx2, decode_slice_ssse3_sse41};
+pub(crate) use x86::{decode_slice_avx2, decode_slice_avx512, decode_slice_ssse3_sse41};
 
 #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
 fn avx512_vbmi_base64_available() -> bool {

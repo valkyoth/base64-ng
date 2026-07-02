@@ -84,12 +84,12 @@ Implemented now:
   encode helpers can use admitted fixed-block encode for their unwrapped
   encoding step; unsupported CPUs, `no_std`, custom alphabets, tails, padding,
   in-place encode, and line-ending insertion stay scalar.
-- Runtime-dispatched std `x86`/`x86_64` AVX2 fixed-block strict decode,
-  falling back to SSSE3/SSE4.1 and then scalar, in the `1.3.0` working line,
-  limited to Standard and URL-safe alphabets after whole-input scalar
-  validation. Unsupported CPUs, `no_std`, custom alphabets, short inputs,
-  tails, wrapped decode, legacy decode, in-place decode, and CT secret decode
-  stay scalar.
+- Runtime-dispatched std `x86`/`x86_64` AVX-512 VBMI fixed-block strict
+  decode, falling back to AVX2, then SSSE3/SSE4.1, and then scalar, in the
+  `1.3.0` working line, limited to Standard and URL-safe alphabets after
+  whole-input scalar validation. Unsupported CPUs, `no_std`, custom alphabets,
+  short inputs, tails, wrapped decode, legacy decode, in-place decode, and CT
+  secret decode stay scalar.
 - Optional `base64-ng-sanitization` companion crate for applications that
   already admit `sanitization` and want direct CT decode helpers into
   clear-on-drop secret containers.
@@ -102,13 +102,13 @@ Implemented now:
 
 Planned behind admission evidence:
 
-- Additional SIMD decode acceleration beyond AVX2 and SSSE3/SSE4.1 strict
-  Standard and URL-safe decode only after separate `1.3.0` admission evidence
-  is complete. The frozen first scope remains padded and unpadded strict
-  decode only: no line wrapping, no legacy whitespace, no custom alphabets, no
-  bcrypt/crypt profiles, and no constant-time-oriented secret decode. Default
-  builds, unsupported runtime CPUs, `no_std`, and all out-of-scope decode
-  surfaces remain scalar.
+- Additional SIMD decode acceleration beyond AVX-512 VBMI, AVX2, and
+  SSSE3/SSE4.1 strict Standard and URL-safe decode only after separate
+  `1.3.0` admission evidence is complete. The frozen first scope remains
+  padded and unpadded strict decode only: no line wrapping, no legacy
+  whitespace, no custom alphabets, no bcrypt/crypt profiles, and no
+  constant-time-oriented secret decode. Default builds, unsupported runtime
+  CPUs, `no_std`, and all out-of-scope decode surfaces remain scalar.
 - Additional admitted wasm `simd128`, custom alphabet, and in-place encode
   fast paths only after separate SIMD admission evidence is complete. Default
   builds and unsupported runtime CPUs remain scalar.

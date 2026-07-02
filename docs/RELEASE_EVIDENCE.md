@@ -124,9 +124,10 @@ The release gate runs:
   prototypes
 - SIMD admission policy for the current release series, with AVX-512 VBMI,
   AVX2, SSSE3/SSE4.1, and NEON encode admitted only for std x86/x86_64 or std
-  aarch64 Standard and URL-safe alphabets, AVX2 and SSSE3/SSE4.1 strict decode
-  admitted only for std x86/x86_64 Standard and URL-safe alphabets, and no
-  SIMD performance claims without complete local benchmark evidence
+  aarch64 Standard and URL-safe alphabets, AVX-512 VBMI, AVX2, and
+  SSSE3/SSE4.1 strict decode admitted only for std x86/x86_64 Standard and
+  URL-safe alphabets, and no SIMD performance claims without complete local
+  benchmark evidence
 - unsafe-boundary validation that confines `allow(unsafe_code)` to the audited
   cleanup helpers in `src/cleanup.rs`, CT barrier/comparison helpers in
   `src/ct/`, and the SIMD boundary in `src/simd/`

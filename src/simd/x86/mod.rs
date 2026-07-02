@@ -10,6 +10,7 @@ use cleanup::{
     clear_zmm_registers_after_encode_block,
 };
 pub(crate) use decode::decode_slice_avx2;
+pub(crate) use decode::decode_slice_avx512;
 pub(crate) use decode::decode_slice_ssse3_sse41;
 #[cfg(test)]
 pub(crate) use decode::{
@@ -43,6 +44,10 @@ pub(crate) fn ssse3_sse41_decode_available() -> bool {
 
 pub(crate) fn avx2_decode_available() -> bool {
     super::avx2_available()
+}
+
+pub(crate) fn avx512_decode_available() -> bool {
+    super::avx512_vbmi_base64_available()
 }
 
 pub(crate) fn encode_slice_avx512<A, const PAD: bool>(

@@ -6,6 +6,8 @@ const SSSE3_DECODE_INPUT_BLOCK: usize = 16;
 const SSSE3_DECODE_OUTPUT_BLOCK: usize = 12;
 const AVX2_DECODE_INPUT_BLOCK: usize = 32;
 const AVX2_DECODE_OUTPUT_BLOCK: usize = 24;
+const AVX512_DECODE_INPUT_BLOCK: usize = 64;
+const AVX512_DECODE_OUTPUT_BLOCK: usize = 48;
 
 pub(crate) fn decode_slice_ssse3_sse41<A, const PAD: bool>(
     input: &[u8],
@@ -108,6 +110,58 @@ where
     }
 
     let tail_written = decode_slice_ssse3_sse41::<A, PAD>(&input[read..], &mut output[write..])?;
+    Ok(write + tail_written)
+}
+
+pub(crate) fn decode_slice_avx512<A, const PAD: bool>(
+    input: &[u8],
+    output: &mut [u8],
+) -> Result<usize, DecodeError>
+where
+    A: Alphabet,
+{
+    if input.len() < AVX512_DECODE_INPUT_BLOCK || !super::avx512_supports_alphabet::<A>() {
+        return decode_slice_avx2::<A, PAD>(input, output);
+    }
+
+    let required = scalar::validate_decode::<A, PAD>(input)?;
+    if output.len() < required {
+        return Err(DecodeError::OutputTooSmall {
+            required,
+            available: output.len(),
+        });
+    }
+
+    let mut read = 0;
+    let mut write = 0;
+    while read + AVX512_DECODE_INPUT_BLOCK <= input.len() {
+        let mut decoded = [0u8; AVX512_DECODE_OUTPUT_BLOCK];
+        // SAFETY: Runtime dispatch reaches this function only after std CPU
+        // feature detection proves AVX-512 VBMI availability. The loop guard
+        // proves the fixed input view is in bounds. Whole-input scalar
+        // validation above preserves public error shape before any bytes are
+        // copied to caller output.
+        let written = match unsafe {
+            let block = &*(input
+                .as_ptr()
+                .add(read)
+                .cast::<[u8; AVX512_DECODE_INPUT_BLOCK]>());
+            decode_64_bytes_avx512::<A, PAD>(block, &mut decoded)
+        } {
+            Ok(written) => written,
+            Err(error) => {
+                crate::wipe_bytes(&mut decoded);
+                return Err(error.with_index_offset(read));
+            }
+        };
+
+        output[write..write + written].copy_from_slice(&decoded[..written]);
+        crate::wipe_bytes(&mut decoded);
+        read += AVX512_DECODE_INPUT_BLOCK;
+        write += written;
+    }
+
+    let tail_written = decode_slice_avx2::<A, PAD>(&input[read..], &mut output[write..])?;
     Ok(write + tail_written)
 }
 

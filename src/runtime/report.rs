@@ -348,6 +348,8 @@ fn active_decode_backend() -> Backend {
     match crate::decode_backend::active_decode_backend() {
         crate::decode_backend::DecodeBackend::Scalar => Backend::Scalar,
         #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
+        crate::decode_backend::DecodeBackend::Avx512Vbmi => Backend::Avx512Vbmi,
+        #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
         crate::decode_backend::DecodeBackend::Avx2 => Backend::Avx2,
         #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
         crate::decode_backend::DecodeBackend::Ssse3Sse41 => Backend::Ssse3Sse41,
