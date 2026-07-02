@@ -136,7 +136,8 @@ and CWE mapping lives in [docs/SECURITY_CONTROLS.md](docs/SECURITY_CONTROLS.md).
 ## Rust Version Support
 
 The minimum supported Rust version is Rust `1.90.0`. New deployments should
-prefer the latest stable Rust; as of May 29, 2026, that is Rust `1.96.0`.
+prefer the latest tested stable Rust; as of July 2, 2026, this project tests
+through Rust `1.96.1`.
 
 Compatibility evidence for the `1.2.3` workspace:
 
@@ -149,6 +150,7 @@ Compatibility evidence for the `1.2.3` workspace:
 | `1.94.0` | ✓ `cargo check --all-features` |
 | `1.95.0` | ✓ `cargo check --all-features` |
 | `1.96.0` | ✓ `cargo check --all-features` |
+| `1.96.1` | ✓ `cargo check --all-features` |
 
 ## Install
 
@@ -1021,7 +1023,7 @@ assert_eq!(&encoded[..written], b"aGVsbG8");
 Security commitments:
 
 - Stable Rust first. Current MSRV toolchain pin: Rust `1.90.0`. New deployments
-  should prefer the latest stable Rust, currently Rust `1.96.0`.
+  should prefer the latest tested stable Rust, currently Rust `1.96.1`.
 - `no_std` core by default.
 - Scalar encode/decode remains safe Rust.
 - Audited unsafe helpers in `src/cleanup.rs` perform volatile best-effort

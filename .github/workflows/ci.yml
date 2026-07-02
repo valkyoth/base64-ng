@@ -69,6 +69,41 @@ jobs:
       - name: Check SIMD feature bundles
         run: scripts/check_simd_feature_bundles.sh
 
+  rust-version-compat:
+    name: Rust compatibility (${{ matrix.toolchain }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        toolchain:
+          - 1.91.0
+          - 1.92.0
+          - 1.93.0
+          - 1.94.0
+          - 1.95.0
+          - 1.96.0
+          - 1.96.1
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install Rust toolchain
+        run: rustup toolchain install ${{ matrix.toolchain }}
+
+      - name: Cache Rust build output
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+          key: rust-${{ matrix.toolchain }}
+
+      - name: Check all features
+        run: cargo +${{ matrix.toolchain }} check --all-features
+
+      - name: Check no-default-features library
+        run: cargo +${{ matrix.toolchain }} check --no-default-features --lib
+
   platform:
     name: Platform tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
