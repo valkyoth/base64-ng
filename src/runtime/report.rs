@@ -30,9 +30,9 @@ impl std::error::Error for BackendPolicyError {}
 pub struct BackendReport {
     /// Backend currently used for admitted runtime dispatch.
     ///
-    /// In the staged `1.2.0` line, AVX-512 VBMI, AVX2, SSSE3/SSE4.1, and NEON
-    /// admission covers encode dispatch only. Decode remains scalar until a
-    /// separate decode admission package is complete.
+    /// This field reports the primary active backend used by the established
+    /// encode dispatch boundary. Decode has its own narrower admission path;
+    /// use [`Self::active_decode_backend`] to inspect decode dispatch.
     pub active: Backend,
     /// Strongest backend candidate visible to the current build.
     pub candidate: Backend,
@@ -63,8 +63,9 @@ pub struct BackendReport {
 pub struct BackendSnapshot {
     /// Stable active backend identifier.
     ///
-    /// In the staged `1.2.0` line, non-scalar active values describe admitted
-    /// encode dispatch; decode remains scalar.
+    /// Non-scalar active values describe the primary admitted encode backend.
+    /// Decode dispatch can be queried separately through
+    /// [`BackendReport::active_decode_backend`].
     pub active: &'static str,
     /// Stable detected candidate identifier.
     pub candidate: &'static str,
@@ -157,6 +158,18 @@ impl BackendReport {
     #[must_use]
     pub const fn candidate_required_cpu_features(self) -> &'static [&'static str] {
         self.candidate.required_cpu_features()
+    }
+
+    /// Returns the active backend for the normal strict decode boundary.
+    ///
+    /// This is intentionally separate from [`Self::active`]. In the `1.3.0`
+    /// decode line, strict decode may admit a narrower backend than encode;
+    /// unsupported decode surfaces still return scalar here through the public
+    /// API fallback rules.
+    #[must_use]
+    pub fn active_decode_backend(self) -> Backend {
+        let _ = self;
+        active_decode_backend()
     }
 
     /// Returns whether `base64-ng` itself locks secret buffers into physical
@@ -327,6 +340,20 @@ fn active_backend() -> Backend {
 
 #[cfg(not(feature = "simd"))]
 const fn active_backend() -> Backend {
+    Backend::Scalar
+}
+
+#[cfg(feature = "simd")]
+fn active_decode_backend() -> Backend {
+    match crate::decode_backend::active_decode_backend() {
+        crate::decode_backend::DecodeBackend::Scalar => Backend::Scalar,
+        #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
+        crate::decode_backend::DecodeBackend::Ssse3Sse41 => Backend::Ssse3Sse41,
+    }
+}
+
+#[cfg(not(feature = "simd"))]
+const fn active_decode_backend() -> Backend {
     Backend::Scalar
 }
 

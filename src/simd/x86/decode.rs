@@ -2,6 +2,61 @@
 
 use crate::{Alphabet, DecodeError, scalar};
 
+const SSSE3_DECODE_INPUT_BLOCK: usize = 16;
+const SSSE3_DECODE_OUTPUT_BLOCK: usize = 12;
+
+pub(crate) fn decode_slice_ssse3_sse41<A, const PAD: bool>(
+    input: &[u8],
+    output: &mut [u8],
+) -> Result<usize, DecodeError>
+where
+    A: Alphabet,
+{
+    if input.len() < SSSE3_DECODE_INPUT_BLOCK || !super::ssse3_sse41_supports_alphabet::<A>() {
+        return scalar::decode_slice::<A, PAD>(input, output);
+    }
+
+    let required = scalar::validate_decode::<A, PAD>(input)?;
+    if output.len() < required {
+        return Err(DecodeError::OutputTooSmall {
+            required,
+            available: output.len(),
+        });
+    }
+
+    let mut read = 0;
+    let mut write = 0;
+    while read + SSSE3_DECODE_INPUT_BLOCK <= input.len() {
+        let mut decoded = [0u8; SSSE3_DECODE_OUTPUT_BLOCK];
+        // SAFETY: Runtime dispatch reaches this function only after std CPU
+        // feature detection proves SSSE3/SSE4.1 availability. The loop guard
+        // proves the fixed input view is in bounds. Whole-input scalar
+        // validation above preserves public error shape before any bytes are
+        // copied to caller output.
+        let written = match unsafe {
+            let block = &*(input
+                .as_ptr()
+                .add(read)
+                .cast::<[u8; SSSE3_DECODE_INPUT_BLOCK]>());
+            decode_16_bytes_ssse3_sse41::<A, PAD>(block, &mut decoded)
+        } {
+            Ok(written) => written,
+            Err(error) => {
+                crate::wipe_bytes(&mut decoded);
+                return Err(error.with_index_offset(read));
+            }
+        };
+
+        output[write..write + written].copy_from_slice(&decoded[..written]);
+        crate::wipe_bytes(&mut decoded);
+        read += SSSE3_DECODE_INPUT_BLOCK;
+        write += written;
+    }
+
+    let tail_written = scalar::decode_slice::<A, PAD>(&input[read..], &mut output[write..])?;
+    Ok(write + tail_written)
+}
+
 #[cfg(target_arch = "x86")]
 use core::arch::x86::{
     __m128i, __m256i, __m512i, _mm_loadu_si128, _mm_madd_epi16, _mm_maddubs_epi16, _mm_set1_epi32,
@@ -75,6 +130,7 @@ where
     clippy::cast_ptr_alignment,
     reason = "_mm256_loadu_si256 and _mm256_storeu_si256 accept unaligned pointers"
 )]
+#[cfg_attr(not(test), allow(dead_code))]
 #[target_feature(enable = "avx2")]
 pub(crate) unsafe fn decode_32_bytes_avx2<A, const PAD: bool>(
     input: &[u8; 32],
@@ -133,6 +189,7 @@ where
     clippy::cast_ptr_alignment,
     reason = "_mm512_loadu_si512 and _mm512_storeu_si512 accept unaligned pointers"
 )]
+#[cfg_attr(not(test), allow(dead_code))]
 #[target_feature(enable = "avx512f,avx512bw,avx512vl,avx512vbmi")]
 pub(crate) unsafe fn decode_64_bytes_avx512<A, const PAD: bool>(
     input: &[u8; 64],

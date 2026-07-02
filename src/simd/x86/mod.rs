@@ -1,7 +1,6 @@
 #![allow(unsafe_code)]
 
 mod cleanup;
-#[cfg(test)]
 mod decode;
 
 use crate::{Alphabet, EncodeError, checked_encoded_len, encode_base64_value, scalar};
@@ -10,6 +9,7 @@ use cleanup::{
     clear_xmm_registers_after_encode_block, clear_ymm_registers_after_encode_block,
     clear_zmm_registers_after_encode_block,
 };
+pub(crate) use decode::decode_slice_ssse3_sse41;
 #[cfg(test)]
 pub(crate) use decode::{
     decode_16_bytes_ssse3_sse41, decode_32_bytes_avx2, decode_64_bytes_avx512,
@@ -34,6 +34,10 @@ where
     A: Alphabet,
 {
     is_standard_or_url_safe_family::<A>()
+}
+
+pub(crate) fn ssse3_sse41_decode_available() -> bool {
+    super::ssse3_sse41_available()
 }
 
 pub(crate) fn encode_slice_avx512<A, const PAD: bool>(

@@ -70,7 +70,7 @@ do
     fi
 done
 
-if ! grep -F -q "Admitted backends: AVX-512 VBMI encode, AVX2 encode, SSSE3/SSE4.1 encode, and NEON encode" "$manifest"; then
+if ! grep -F -q "Admitted backends: AVX-512 VBMI encode, AVX2 encode, SSSE3/SSE4.1 encode, NEON encode" "$manifest"; then
     echo "simd encode admission draft: manifest must report the admitted AVX-512, AVX2, SSSE3/SSE4.1, and NEON encode backends" >&2
     exit 1
 fi

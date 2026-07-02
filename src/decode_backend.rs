@@ -12,22 +12,27 @@ use crate::{Alphabet, DecodeError, scalar};
 pub(crate) enum DecodeBackend {
     /// The audited scalar implementation.
     Scalar,
+    /// std `x86`/`x86_64` SSSE3/SSE4.1 fixed-block strict decode.
+    #[cfg(all(
+        feature = "simd",
+        feature = "std",
+        any(target_arch = "x86", target_arch = "x86_64")
+    ))]
+    Ssse3Sse41,
 }
 
 /// Returns the decode backend selected for this build and target.
 #[must_use]
 pub(crate) fn active_decode_backend() -> DecodeBackend {
-    #[cfg(feature = "simd")]
-    match crate::simd::active_backend() {
-        crate::simd::ActiveBackend::Scalar => {}
-        #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
-        crate::simd::ActiveBackend::Avx512Vbmi => {}
-        #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
-        crate::simd::ActiveBackend::Avx2 => {}
-        #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
-        crate::simd::ActiveBackend::Ssse3Sse41 => {}
-        #[cfg(all(feature = "std", target_arch = "aarch64"))]
-        crate::simd::ActiveBackend::Neon => {}
+    #[cfg(all(
+        feature = "simd",
+        feature = "std",
+        any(target_arch = "x86", target_arch = "x86_64")
+    ))]
+    {
+        if crate::simd::ssse3_sse41_decode_available() {
+            return DecodeBackend::Ssse3Sse41;
+        }
     }
 
     DecodeBackend::Scalar
@@ -48,5 +53,31 @@ where
 {
     match active_decode_backend() {
         DecodeBackend::Scalar => scalar::decode_slice::<A, PAD>(input, output),
+        #[cfg(all(
+            feature = "simd",
+            feature = "std",
+            any(target_arch = "x86", target_arch = "x86_64")
+        ))]
+        DecodeBackend::Ssse3Sse41 => crate::simd::decode_slice_ssse3_sse41::<A, PAD>(input, output),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{DecodeBackend, active_decode_backend};
+
+    #[test]
+    fn boundary_uses_only_admitted_backends() {
+        let backend = active_decode_backend();
+        #[cfg(all(
+            feature = "simd",
+            feature = "std",
+            any(target_arch = "x86", target_arch = "x86_64")
+        ))]
+        if backend == DecodeBackend::Ssse3Sse41 {
+            assert!(crate::simd::ssse3_sse41_decode_available());
+            return;
+        }
+        assert_eq!(backend, DecodeBackend::Scalar);
     }
 }
