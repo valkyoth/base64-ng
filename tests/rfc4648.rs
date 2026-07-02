@@ -1170,6 +1170,68 @@ fn const_array_encoding_matches_runtime_encoding() {
 }
 
 #[test]
+fn const_array_decoding_matches_runtime_decoding() {
+    const STANDARD_HELLO: Result<([u8; 5], usize), DecodeError> =
+        STANDARD.decode_array(b"aGVsbG8=");
+    const STANDARD_HELLO_NO_PAD: Result<([u8; 5], usize), DecodeError> =
+        STANDARD_NO_PAD.decode_array(b"aGVsbG8");
+    const URL_SAFE_BYTES: Result<([u8; 2], usize), DecodeError> = URL_SAFE.decode_array(b"-_8=");
+    const URL_SAFE_BYTES_NO_PAD: Result<([u8; 2], usize), DecodeError> =
+        URL_SAFE_NO_PAD.decode_array(b"-_8");
+    const EMPTY: Result<([u8; 0], usize), DecodeError> = STANDARD.decode_array(b"");
+
+    let (decoded, written) = STANDARD_HELLO.unwrap();
+    assert_eq!(written, 5);
+    assert_eq!(&decoded[..written], b"hello");
+
+    let (decoded, written) = STANDARD_HELLO_NO_PAD.unwrap();
+    assert_eq!(written, 5);
+    assert_eq!(&decoded[..written], b"hello");
+
+    let (decoded, written) = URL_SAFE_BYTES.unwrap();
+    assert_eq!(written, 2);
+    assert_eq!(&decoded[..written], &[0xfb, 0xff]);
+
+    let (decoded, written) = URL_SAFE_BYTES_NO_PAD.unwrap();
+    assert_eq!(written, 2);
+    assert_eq!(&decoded[..written], &[0xfb, 0xff]);
+
+    assert_eq!(EMPTY, Ok(([], 0)));
+}
+
+#[test]
+fn const_array_decoding_reports_errors_without_panicking() {
+    const SMALL: Result<([u8; 4], usize), DecodeError> = STANDARD.decode_array(b"aGVsbG8=");
+    const BAD_BYTE: Result<([u8; 8], usize), DecodeError> = STANDARD.decode_array(b"aGV$");
+    const BAD_PADDING: Result<([u8; 8], usize), DecodeError> = STANDARD.decode_array(b"Zh==");
+    const BAD_UNPADDED_LEN: Result<([u8; 8], usize), DecodeError> =
+        STANDARD_NO_PAD.decode_array(b"Z");
+    const PAD_IN_UNPADDED: Result<([u8; 8], usize), DecodeError> =
+        STANDARD_NO_PAD.decode_array(b"Zg==");
+
+    assert_eq!(
+        SMALL,
+        Err(DecodeError::OutputTooSmall {
+            required: 5,
+            available: 4
+        })
+    );
+    assert_eq!(
+        BAD_BYTE,
+        Err(DecodeError::InvalidByte {
+            index: 3,
+            byte: b'$'
+        })
+    );
+    assert_eq!(BAD_PADDING, Err(DecodeError::InvalidPadding { index: 1 }));
+    assert_eq!(BAD_UNPADDED_LEN, Err(DecodeError::InvalidLength));
+    assert_eq!(
+        PAD_IN_UNPADDED,
+        Err(DecodeError::InvalidPadding { index: 2 })
+    );
+}
+
+#[test]
 fn decoded_capacity_is_upper_bound() {
     for encoded_len in 0..128 {
         assert!(decoded_capacity(encoded_len) <= encoded_len / 4 * 3 + 2);

@@ -86,3 +86,9 @@ Use `Engine::encode_array` for fixed-size static data and compile-time checked
 arrays. For runtime data, especially data sized from packet headers, file
 metadata, network frames, or other untrusted sources, use checked length helpers
 and caller-owned slice APIs instead.
+
+Compile-time array decoding is intentionally `Result`-based:
+`Engine::decode_array` reports malformed input, padding errors, and undersized
+output arrays with `DecodeError` rather than adding another reviewed panic
+exception. It is still a strict decoder, not a constant-time-oriented secret
+decoder.

@@ -464,6 +464,26 @@ caller. A wrong output length fails during const evaluation.
 Use `encode_array` for fixed-size static values, not for runtime data whose
 size is controlled by an attacker.
 
+Compile-time strict decoding:
+
+```rust
+use base64_ng::{DecodeError, STANDARD, URL_SAFE_NO_PAD};
+
+const HELLO: Result<([u8; 5], usize), DecodeError> = STANDARD.decode_array(b"aGVsbG8=");
+const URL_BYTES: Result<([u8; 2], usize), DecodeError> =
+    URL_SAFE_NO_PAD.decode_array(b"-_8");
+
+let (hello, hello_len) = HELLO.unwrap();
+let (url_bytes, url_len) = URL_BYTES.unwrap();
+
+assert_eq!(&hello[..hello_len], b"hello");
+assert_eq!(&url_bytes[..url_len], b"\xfb\xff");
+```
+
+`decode_array` is strict and returns `Result` for malformed input, padding
+errors, and undersized output arrays. It is useful for fixed static Base64
+literals and does not replace the `ct` APIs for secret-bearing decode.
+
 For untrusted length metadata, use checked length calculation:
 
 ```rust

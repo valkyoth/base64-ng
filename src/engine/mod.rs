@@ -83,6 +83,7 @@ where
 }
 
 mod decode;
+mod decode_const;
 mod decode_in_place;
 mod encode;
 mod encode_in_place;

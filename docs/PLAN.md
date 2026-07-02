@@ -782,7 +782,7 @@ Each commit must follow these rules:
 
 Recommended commit sequence:
 
-Current progress in the `1.3.0` working line: commits 1 through 12 have
+Current progress in the `1.3.0` working line: commits 1 through 13 have
 landed or are in this reviewed slice. The active strict decode boundary now
 admits std x86/x86_64 SSSE3/SSE4.1, AVX2, AVX-512 VBMI, and little-endian std
 aarch64 NEON for Standard and URL-safe alphabet families only. Encode surface
@@ -792,9 +792,11 @@ line-ending insertion remain intentionally scalar unless a later admission
 package proves otherwise. The Tokio companion now has caller-limited
 read-all/write-all helpers and manual async reader streaming adapters. Async
 writer adapters remain deferred until accepted-byte, cancellation, and
-backpressure evidence is complete. The remaining completion work is therefore
-focused on optional companion ergonomics, const decode feasibility, final
-evidence refresh, and release-candidate hardening.
+backpressure evidence is complete. Strict compile-time array decode is now
+available as a `Result`-based API for fixed static literals. The remaining
+completion work is therefore focused on optional companion ergonomics, formal
+verification expansion, final evidence refresh, and release-candidate
+hardening.
 
 1. Commit: decode SIMD design and API freeze.
    - Freeze the decode acceleration scope: strict Standard and URL-safe
@@ -977,8 +979,8 @@ evidence refresh, and release-candidate hardening.
 - Tokio read-side streaming exists only if the cancellation/drop/buffering
   evidence is complete. Tokio writer streaming remains explicitly deferred
   unless a later slice admits it separately.
-- Const decode exists only if the panic and error contract is clear; otherwise
-  it remains deferred and does not block SIMD decode release.
+- Const decode exists with a clear strict `Result` contract and does not add a
+  runtime panic surface.
 - Kani, fuzz, Miri, dudect, generated assembly, benchmark, unsafe-boundary,
   panic-policy, dependency, package, macOS, AArch64, and GitHub CI evidence are
   clean for the exact release candidate.
