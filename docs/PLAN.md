@@ -782,7 +782,7 @@ Each commit must follow these rules:
 
 Recommended commit sequence:
 
-Current progress in the `1.3.0` working line: commits 1 through 14 have
+Current progress in the `1.3.0` working line: commits 1 through 15 have
 landed or are in this reviewed slice. The active strict decode boundary now
 admits std x86/x86_64 SSSE3/SSE4.1, AVX2, AVX-512 VBMI, and little-endian std
 aarch64 NEON for Standard and URL-safe alphabet families only. Encode surface
@@ -795,9 +795,12 @@ writer adapters remain deferred until accepted-byte, cancellation, and
 backpressure evidence is complete. Strict compile-time array decode is now
 available as a `Result`-based API for fixed static literals.
 `base64-ng-serde` now includes field modules for Standard, Standard no-pad,
-URL-safe, URL-safe no-pad, MIME, and PEM. The remaining completion work is
-therefore focused on formal verification expansion, final evidence refresh,
-and release-candidate hardening.
+URL-safe, URL-safe no-pad, MIME, and PEM. Bounded Kani coverage now includes
+strict decode backend/scalar agreement for one padded quantum. Wrapped decode
+remains covered by deterministic tests and release-gate checks rather than a
+Kani proof, because the wrapped symbolic path is currently too expensive for a
+practical release gate. The remaining completion work is therefore focused on
+final evidence refresh, wasm posture, and release-candidate hardening.
 
 1. Commit: decode SIMD design and API freeze.
    - Freeze the decode acceleration scope: strict Standard and URL-safe

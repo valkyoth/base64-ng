@@ -1,6 +1,6 @@
 use super::{
-    STANDARD, Standard, checked_encoded_len, ct, decode_byte, decode_chunk, decode_tail_unpadded,
-    decoded_capacity, validate_tail_unpadded,
+    STANDARD, Standard, checked_encoded_len, ct, decode_backend, decode_byte, decode_chunk,
+    decode_tail_unpadded, decoded_capacity, scalar, validate_tail_unpadded,
 };
 
 #[kani::proof]
@@ -41,6 +41,22 @@ fn standard_decode_slice_returns_written_within_output() {
 
     if let Ok(written) = result {
         assert!(written <= output.len());
+    }
+}
+
+#[kani::proof]
+#[kani::unwind(70)]
+fn standard_decode_backend_matches_scalar_for_one_quantum() {
+    let input = kani::any::<[u8; 4]>();
+    let mut backend_output = kani::any::<[u8; 3]>();
+    let mut scalar_output = backend_output;
+
+    let backend = decode_backend::decode_slice::<Standard, true>(&input, &mut backend_output);
+    let scalar = scalar::decode_slice::<Standard, true>(&input, &mut scalar_output);
+
+    assert!(backend == scalar);
+    if backend.is_ok() {
+        assert!(backend_output == scalar_output);
     }
 }
 

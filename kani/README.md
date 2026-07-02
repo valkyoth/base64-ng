@@ -20,6 +20,7 @@ Current proof harnesses cover:
 - decoded capacity bounds for small symbolic lengths
 - strict in-place decode returning only a prefix inside the caller buffer
 - strict slice decode returning a written length inside the caller output
+- strict decode backend agreement with scalar decode for one padded quantum
 - strict clear-tail slice decode clearing caller output on error
 - strict slice encode returning a written length inside the caller output
 - strict in-place encode returning only a prefix inside the caller buffer
