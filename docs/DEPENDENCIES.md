@@ -148,7 +148,8 @@ core crate today:
 - `tokio`: the core feature remains reserved and inert. Use `base64-ng-tokio`
   for the admitted read-all/write-all helper surface and read-side streaming
   adapters. Prefer caller-limited helpers for peer-controlled input.
-- `serde`: use `base64-ng-serde` when explicit serialization wrappers are
+- `serde`: use `base64-ng-serde` when explicit serialization wrappers or
+  field-level modules for Standard, URL-safe, MIME, or PEM profiles are
   needed. The core crate does not admit `serde`.
 - `bytes`: use `base64-ng-bytes` when `Bytes`, `Buf`, or `BufMut` integration
   is needed. The core crate does not admit `bytes`.

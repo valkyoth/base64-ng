@@ -27,7 +27,10 @@ extern crate alloc;
 use alloc::{string::String, vec::Vec};
 
 #[cfg(feature = "alloc")]
-use base64_ng::{DecodeError, Engine, STANDARD, URL_SAFE_NO_PAD, clear_bytes, constant_time_eq};
+use base64_ng::{
+    Alphabet, DecodeError, Engine, MIME, PEM, Profile, STANDARD, STANDARD_NO_PAD, URL_SAFE,
+    URL_SAFE_NO_PAD, clear_bytes, constant_time_eq,
+};
 #[cfg(feature = "alloc")]
 use serde::{Deserialize, Deserializer, Serialize, Serializer, de::Error as _};
 
@@ -234,6 +237,84 @@ pub mod standard {
     }
 }
 
+/// Serde helpers for strict standard unpadded Base64 fields.
+///
+/// # Security
+///
+/// Deserialization uses the strict timing-variable decoder. Use this module
+/// for interoperability-oriented fields, not secret-bearing fields where
+/// malformed-input timing matters.
+#[cfg(feature = "alloc")]
+pub mod standard_no_pad {
+    use super::{STANDARD_NO_PAD, Vec, deserialize_with_engine, serialize_with_engine};
+    use serde::{Deserializer, Serializer};
+
+    /// Serializes bytes as strict standard unpadded Base64 text.
+    ///
+    /// # Errors
+    ///
+    /// Returns the serializer's error if Base64 encoding fails or the
+    /// serializer rejects the string value.
+    pub fn serialize<S>(bytes: impl AsRef<[u8]>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serialize_with_engine(STANDARD_NO_PAD, bytes.as_ref(), serializer)
+    }
+
+    /// Deserializes strict standard unpadded Base64 text into owned bytes.
+    ///
+    /// # Errors
+    ///
+    /// Returns the deserializer's error if the value is not a string or if the
+    /// string is not valid strict standard unpadded Base64.
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<Vec<u8>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        deserialize_with_engine(STANDARD_NO_PAD, deserializer)
+    }
+}
+
+/// Serde helpers for URL-safe padded Base64 fields.
+///
+/// # Security
+///
+/// Deserialization uses the strict timing-variable decoder. Use this module
+/// for interoperability-oriented fields, not secret-bearing fields where
+/// malformed-input timing matters.
+#[cfg(feature = "alloc")]
+pub mod url_safe {
+    use super::{URL_SAFE, Vec, deserialize_with_engine, serialize_with_engine};
+    use serde::{Deserializer, Serializer};
+
+    /// Serializes bytes as URL-safe padded Base64 text.
+    ///
+    /// # Errors
+    ///
+    /// Returns the serializer's error if Base64 encoding fails or the
+    /// serializer rejects the string value.
+    pub fn serialize<S>(bytes: impl AsRef<[u8]>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serialize_with_engine(URL_SAFE, bytes.as_ref(), serializer)
+    }
+
+    /// Deserializes URL-safe padded Base64 text into owned bytes.
+    ///
+    /// # Errors
+    ///
+    /// Returns the deserializer's error if the value is not a string or if the
+    /// string is not valid URL-safe padded Base64.
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<Vec<u8>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        deserialize_with_engine(URL_SAFE, deserializer)
+    }
+}
+
 /// Serde helpers for URL-safe unpadded Base64 fields.
 ///
 /// # Security
@@ -273,6 +354,86 @@ pub mod url_safe_no_pad {
     }
 }
 
+/// Serde helpers for MIME Base64 fields with 76-column CRLF wrapping.
+///
+/// # Security
+///
+/// Deserialization uses the strict timing-variable decoder. Use this module
+/// for interoperability-oriented fields, not secret-bearing fields where
+/// malformed-input timing matters.
+#[cfg(feature = "alloc")]
+pub mod mime {
+    use super::{MIME, Vec, deserialize_with_profile, serialize_with_profile};
+    use serde::{Deserializer, Serializer};
+
+    /// Serializes bytes as MIME Base64 text with 76-column CRLF wrapping.
+    ///
+    /// # Errors
+    ///
+    /// Returns the serializer's error if Base64 encoding fails or the
+    /// serializer rejects the string value.
+    pub fn serialize<S>(bytes: impl AsRef<[u8]>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serialize_with_profile(&MIME, bytes.as_ref(), serializer)
+    }
+
+    /// Deserializes MIME Base64 text into owned bytes.
+    ///
+    /// # Errors
+    ///
+    /// Returns the deserializer's error if the value is not a string or if the
+    /// string is not valid strict MIME Base64 for the configured wrapping
+    /// profile.
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<Vec<u8>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        deserialize_with_profile(&MIME, deserializer)
+    }
+}
+
+/// Serde helpers for PEM Base64 fields with 64-column LF wrapping.
+///
+/// # Security
+///
+/// Deserialization uses the strict timing-variable decoder. Use this module
+/// for interoperability-oriented fields, not secret-bearing fields where
+/// malformed-input timing matters.
+#[cfg(feature = "alloc")]
+pub mod pem {
+    use super::{PEM, Vec, deserialize_with_profile, serialize_with_profile};
+    use serde::{Deserializer, Serializer};
+
+    /// Serializes bytes as PEM Base64 text with 64-column LF wrapping.
+    ///
+    /// # Errors
+    ///
+    /// Returns the serializer's error if Base64 encoding fails or the
+    /// serializer rejects the string value.
+    pub fn serialize<S>(bytes: impl AsRef<[u8]>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serialize_with_profile(&PEM, bytes.as_ref(), serializer)
+    }
+
+    /// Deserializes PEM Base64 text into owned bytes.
+    ///
+    /// # Errors
+    ///
+    /// Returns the deserializer's error if the value is not a string or if the
+    /// string is not valid strict PEM Base64 for the configured wrapping
+    /// profile.
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<Vec<u8>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        deserialize_with_profile(&PEM, deserializer)
+    }
+}
+
 #[cfg(feature = "alloc")]
 fn serialize_with_engine<A, const PAD: bool, S>(
     engine: Engine<A, PAD>,
@@ -290,6 +451,22 @@ where
 }
 
 #[cfg(feature = "alloc")]
+fn serialize_with_profile<A, const PAD: bool, S>(
+    profile: &Profile<A, PAD>,
+    bytes: &[u8],
+    serializer: S,
+) -> Result<S::Ok, S::Error>
+where
+    A: Alphabet,
+    S: Serializer,
+{
+    let encoded = profile
+        .encode_string(bytes)
+        .map_err(serde::ser::Error::custom)?;
+    serializer.serialize_str(&encoded)
+}
+
+#[cfg(feature = "alloc")]
 fn deserialize_with_engine<'de, A, const PAD: bool, D>(
     engine: Engine<A, PAD>,
     deserializer: D,
@@ -300,6 +477,21 @@ where
 {
     let encoded = String::deserialize(deserializer)?;
     engine
+        .decode_vec(encoded.as_bytes())
+        .map_err(|error: DecodeError| D::Error::custom(error.kind()))
+}
+
+#[cfg(feature = "alloc")]
+fn deserialize_with_profile<'de, A, const PAD: bool, D>(
+    profile: &Profile<A, PAD>,
+    deserializer: D,
+) -> Result<Vec<u8>, D::Error>
+where
+    A: Alphabet,
+    D: Deserializer<'de>,
+{
+    let encoded = String::deserialize(deserializer)?;
+    profile
         .decode_vec(encoded.as_bytes())
         .map_err(|error: DecodeError| D::Error::custom(error.kind()))
 }

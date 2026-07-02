@@ -297,6 +297,9 @@ struct Message {
 }
 ```
 
+Field-level modules are available for `standard`, `standard_no_pad`,
+`url_safe`, `url_safe_no_pad`, `mime`, and `pem`.
+
 `base64-ng-bytes` provides `Bytes`, `Buf`, and `BufMut` helpers:
 
 ```toml
@@ -365,8 +368,6 @@ assert_eq!(streamed, b"aGVsbG8=");
 Future optional crates that may be useful, but are intentionally not part of
 the core package yet:
 
-- Additional profile-specific serde wrappers if users need non-default
-  alphabets beyond the initial standard and URL-safe no-padding modules.
 - Tokio async writer adapters once accepted-byte, backpressure, and
   cancellation-safety evidence clears the async admission policy.
 

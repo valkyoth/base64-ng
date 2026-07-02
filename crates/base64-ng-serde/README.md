@@ -30,3 +30,8 @@ struct Message {
     payload: Vec<u8>,
 }
 ```
+
+Available field modules are `standard`, `standard_no_pad`, `url_safe`,
+`url_safe_no_pad`, `mime`, and `pem`. MIME and PEM use the strict wrapping
+profiles from `base64-ng`; they are interoperability helpers, not
+constant-time-oriented secret decoders.
