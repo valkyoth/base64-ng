@@ -720,9 +720,10 @@ Safety argument:
   unaligned intrinsics, so no alignment precondition is required.
 - The SSSE3/SSE4.1 target-feature contract enables every intrinsic used by
   the prototype.
-- The prototype copies only the validated decoded length to caller output and
-  wipes local value, packed, and scalar-validation staging buffers before
-  returning.
+- The prototype copies only the validated decoded length to caller output after
+  an unconditional release-mode equality check proves the vector-packed prefix
+  matches the scalar-validation prefix. It wipes local value, packed, and
+  scalar-validation staging buffers before returning.
 - Runtime decode dispatch does not call this function. Future admission must
   update this inventory, generated-code evidence, fuzzing, backend reporting,
   benchmarks, and release notes in the same commit that makes any decode SIMD
@@ -784,9 +785,10 @@ Safety argument:
   prototype.
 - VBMI compaction indices are constants in `0..=59`, so the permute reads only
   bytes produced by the lane-local decode shuffle.
-- The prototype copies only the validated decoded length to caller output and
-  wipes local value, packed, and scalar-validation staging buffers before
-  returning.
+- The prototype copies only the validated decoded length to caller output after
+  an unconditional release-mode equality check proves the vector-packed prefix
+  matches the scalar-validation prefix. It wipes local value, packed, and
+  scalar-validation staging buffers before returning.
 - Runtime decode dispatch does not call this function. Future admission must
   update this inventory, generated-code evidence, fuzzing, backend reporting,
   benchmarks, and release notes in the same commit that makes any decode SIMD
@@ -846,9 +848,10 @@ Safety argument:
 - AVX2 byte shuffle is lane-local, so the prototype explicitly compacts the
   second 12-byte decoded lane from offsets `16..28` to `12..24` inside local
   staging before copying to caller output.
-- The prototype copies only the validated decoded length to caller output and
-  wipes local value, packed, and scalar-validation staging buffers before
-  returning.
+- The prototype copies only the validated decoded length to caller output after
+  an unconditional release-mode equality check proves the vector-packed prefix
+  matches the scalar-validation prefix. It wipes local value, packed, and
+  scalar-validation staging buffers before returning.
 - Runtime decode dispatch does not call this function. Future admission must
   update this inventory, generated-code evidence, fuzzing, backend reporting,
   benchmarks, and release notes in the same commit that makes any decode SIMD
@@ -977,7 +980,9 @@ Safety argument:
   prototype copies bytes to caller-visible output.
 - The input and output array types provide fixed readable and writable bounds.
 - The vector store writes only to a local 16-byte packed buffer; the caller
-  output receives at most the scalar-validated `written` prefix.
+  output receives at most the scalar-validated `written` prefix, and only after
+  an unconditional release-mode equality check proves the vector-packed prefix
+  matches the scalar-validation prefix.
 - The compaction mask contains only valid source indices or zero lanes.
 - Staging, packed, and scalar-output buffers are wiped before successful return
   or along the error path.

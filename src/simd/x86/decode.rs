@@ -66,11 +66,8 @@ where
         super::cleanup::clear_xmm_registers_after_encode_block();
     }
 
-    debug_assert_eq!(&packed[..written], &scalar_output[..written]);
-    output[..written].copy_from_slice(&packed[..written]);
     crate::wipe_bytes(&mut values);
-    crate::wipe_bytes(&mut packed);
-    crate::wipe_bytes(&mut scalar_output);
+    copy_verified_decode_output(&mut packed, &mut scalar_output, output, written)?;
     Ok(written)
 }
 
@@ -127,11 +124,8 @@ where
     ];
     packed[12..24].copy_from_slice(&upper_lane);
 
-    debug_assert_eq!(&packed[..written], &scalar_output[..written]);
-    output[..written].copy_from_slice(&packed[..written]);
     crate::wipe_bytes(&mut values);
-    crate::wipe_bytes(&mut packed);
-    crate::wipe_bytes(&mut scalar_output);
+    copy_verified_decode_output(&mut packed, &mut scalar_output, output, written)?;
     Ok(written)
 }
 
@@ -192,12 +186,27 @@ where
         super::cleanup::clear_zmm_registers_after_encode_block();
     }
 
-    debug_assert_eq!(&packed[..written], &scalar_output[..written]);
-    output[..written].copy_from_slice(&packed[..written]);
     crate::wipe_bytes(&mut values);
-    crate::wipe_bytes(&mut packed);
-    crate::wipe_bytes(&mut scalar_output);
+    copy_verified_decode_output(&mut packed, &mut scalar_output, output, written)?;
     Ok(written)
+}
+
+fn copy_verified_decode_output<const PACKED: usize, const SCALAR: usize>(
+    packed: &mut [u8; PACKED],
+    scalar_output: &mut [u8; SCALAR],
+    output: &mut [u8],
+    written: usize,
+) -> Result<(), DecodeError> {
+    if packed[..written] != scalar_output[..written] {
+        crate::wipe_bytes(packed);
+        crate::wipe_bytes(scalar_output);
+        return Err(DecodeError::InvalidInput);
+    }
+
+    output[..written].copy_from_slice(&packed[..written]);
+    crate::wipe_bytes(packed);
+    crate::wipe_bytes(scalar_output);
+    Ok(())
 }
 
 fn fill_decode_values<A, const N: usize>(input: &[u8; N], values: &mut [u8; N])
@@ -206,10 +215,16 @@ where
 {
     let mut index = 0;
     while index < input.len() {
-        values[index] = if input[index] == b'=' {
-            0
-        } else {
-            A::decode(input[index]).unwrap_or(0)
+        values[index] = match input[index] {
+            b'=' => 0,
+            byte => {
+                if let Some(value) = A::decode(byte) {
+                    value
+                } else {
+                    debug_assert!(false, "fill_decode_values called on unvalidated input");
+                    0
+                }
+            }
         };
         index += 1;
     }
