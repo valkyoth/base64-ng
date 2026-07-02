@@ -124,6 +124,7 @@ for required_script in \
     "scripts/validate-msrv-policy.sh" \
     "scripts/validate-panic-policy.sh" \
     "scripts/validate-release-metadata.sh" \
+    "scripts/validate-wasm-posture.sh" \
     "scripts/validate-simd-encode-admission-draft.sh" \
     "scripts/validate-simd-admission.sh" \
     "scripts/validate-unsafe-boundary.sh"
@@ -280,6 +281,7 @@ done
 for required_checks_command in \
     "scripts/validate-api-audit.sh" \
     "scripts/validate-msrv-policy.sh" \
+    "scripts/validate-wasm-posture.sh" \
     "scripts/validate-simd-encode-admission-draft.sh" \
     "scripts/release_crates.py --check" \
     "python3 scripts/test-release-crates.py" \

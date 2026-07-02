@@ -14,8 +14,10 @@ block must be added here before an accelerated backend can be admitted.
 - Default builds compile audited unsafe volatile wipe helpers, the
   constant-time comparison accumulator barrier, and the constant-time error
   gate barrier.
-- Optional SIMD prototypes live only in `src/simd/` and are compiled only
-  for tests until a real backend is admitted.
+- Optional SIMD code lives only in `src/simd/`. Admitted encode and strict
+  decode backends are reachable only through the reviewed runtime dispatch
+  boundaries named in `docs/SIMD_ADMISSION.md`; prototype-only backends remain
+  test/evidence code and are not eligible for runtime dispatch.
 - `scripts/validate-unsafe-boundary.sh` fails if `allow(unsafe_code)` appears
   outside `src/cleanup.rs`, `src/ct/`, or `src/simd/`.
 - `scripts/validate-unsafe-boundary.sh` fails if architecture intrinsics, CPU

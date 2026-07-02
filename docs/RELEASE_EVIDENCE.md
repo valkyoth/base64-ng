@@ -60,6 +60,8 @@ The release gate runs:
 - fail-closed wasm wipe policy check proving default `wasm32` builds reject
   compiler-fence-only cleanup and the explicit
   `allow-wasm32-best-effort-wipe` opt-in build succeeds
+- wasm SIMD posture validation proving wasm `simd128` remains
+  compile/codegen evidence only and is not represented as an active backend
 - fail-closed unsupported-native wipe policy documented through
   `allow-compiler-fence-only-wipe` for architectures without an implemented
   hardware wipe barrier

@@ -41,7 +41,15 @@ SSSE3/SSE4.1, and `aarch64` NEON. Decode, custom alphabets, `no_std`, wasm
 `simd128`, in-place encode, line-ending insertion, tails, and padding remain
 scalar unless separately admitted.
 
-Implemented now:
+The development branch is preparing the `1.3.0` release candidate. That
+candidate admits normal strict SIMD decode for Standard and URL-safe alphabet
+families on std `x86`/`x86_64` AVX-512 VBMI, AVX2, SSSE3/SSE4.1, and
+little-endian std `aarch64` NEON after whole-input scalar validation. Wrapped
+decode, legacy whitespace decode, custom alphabets, bcrypt-style and
+`crypt(3)` profiles, in-place decode, `no_std`, wasm runtime dispatch, and
+constant-time-oriented secret decode remain scalar.
+
+Implemented on this branch now:
 
 - `no_std` core with optional `alloc` and `std` features.
 - Zero external runtime or development dependencies in `Cargo.toml`.
@@ -85,13 +93,13 @@ Implemented now:
   encode for their unwrapped encoding step; unsupported CPUs, `no_std`, custom
   alphabets, tails, padding, in-place encode, and line-ending insertion stay
   scalar.
-- Runtime-dispatched std `x86`/`x86_64` AVX-512 VBMI fixed-block strict
-  decode, falling back to AVX2, then SSSE3/SSE4.1, and then scalar, plus
-  little-endian std `aarch64` NEON fixed-block strict decode in the `1.3.0`
-  working line, limited to Standard and URL-safe alphabets after whole-input
-  scalar validation. Unsupported CPUs, big-endian AArch64, `no_std`, custom
-  alphabets, short inputs, tails, wrapped decode, legacy decode, in-place
-  decode, and CT secret decode stay scalar.
+- Runtime-dispatched std `x86`/`x86_64` AVX-512 VBMI fixed-block strict decode
+  in the `1.3.0` release-candidate line, falling back to AVX2, then
+  SSSE3/SSE4.1, and then scalar, plus little-endian std `aarch64` NEON
+  fixed-block strict decode, limited to Standard and URL-safe alphabets after
+  whole-input scalar validation. Unsupported CPUs, big-endian AArch64,
+  `no_std`, custom alphabets, short inputs, tails, wrapped decode, legacy
+  decode, in-place decode, and CT secret decode stay scalar.
 - Optional `base64-ng-sanitization` companion crate for applications that
   already admit `sanitization` and want direct CT decode helpers into
   clear-on-drop secret containers.
@@ -104,13 +112,13 @@ Implemented now:
 
 Planned behind admission evidence:
 
-- Additional SIMD decode acceleration beyond AVX-512 VBMI, AVX2,
-  SSSE3/SSE4.1, and NEON strict Standard and URL-safe decode only after
-  separate admission evidence is complete. The frozen first scope remains
-  padded and unpadded strict decode only: no line wrapping, no legacy
-  whitespace, no custom alphabets, no bcrypt/crypt profiles, and no
-  constant-time-oriented secret decode. Default builds, unsupported runtime
-  CPUs, `no_std`, and all out-of-scope decode surfaces remain scalar.
+- Additional SIMD decode acceleration beyond the `1.3.0` release-candidate
+  strict Standard and URL-safe decode scope only after separate admission
+  evidence is complete. The frozen first scope remains padded and unpadded
+  strict decode only: no line wrapping, no legacy whitespace, no custom
+  alphabets, no bcrypt/crypt profiles, and no constant-time-oriented secret
+  decode. Default builds, unsupported runtime CPUs, `no_std`, and all
+  out-of-scope decode surfaces remain scalar.
 - Additional admitted wasm `simd128`, custom alphabet, and in-place encode
   fast paths only after separate SIMD admission evidence is complete. Default
   builds and unsupported runtime CPUs remain scalar.
@@ -1070,9 +1078,10 @@ Security commitments:
   dead-store elimination and are ordered before the cleanup boundary on
   supported native architectures. Constant-time comparison, byte accumulation,
   CT scan, and CT result-gate hardening remain audited in `src/ct/`.
-- Unsafe SIMD remains isolated under `src/simd/`; the admitted AVX-512 VBMI,
-  AVX2, SSSE3/SSE4.1, and NEON encode paths are std-gated and all non-admitted
-  backends remain prototype-only.
+- Unsafe SIMD remains isolated under `src/simd/`; admitted AVX-512 VBMI,
+  AVX2, SSSE3/SSE4.1, and NEON encode and strict decode paths are std-gated,
+  and all non-admitted backends and API surfaces remain prototype-only or
+  scalar.
 - Local checks verify that `allow(unsafe_code)` is confined to the volatile
   wipe helpers and SIMD boundary, every unsafe function is inventoried, and
   every unsafe block has a nearby `SAFETY:` explanation. Architecture intrinsics,
@@ -1080,8 +1089,10 @@ Security commitments:
   boundary.
 - [docs/UNSAFE.md](docs/UNSAFE.md) inventories every current unsafe site and
   its safety invariants.
-- [docs/ASYNC.md](docs/ASYNC.md) defines the admission bar for any future
-  async/Tokio API while the `tokio` feature remains inert.
+- [docs/ASYNC.md](docs/ASYNC.md) defines the admission bar for async/Tokio
+  APIs. The optional companion crate now admits read-all/write-all helpers and
+  manual `AsyncRead` streaming adapters; async writer adapters and the core
+  `tokio` feature remain deferred.
 - [docs/DEPENDENCIES.md](docs/DEPENDENCIES.md) defines the dependency
   admission bar for any future external crate.
 - `runtime::backend_report()` exposes the active admitted backend, detected

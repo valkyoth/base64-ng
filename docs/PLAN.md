@@ -782,8 +782,8 @@ Each commit must follow these rules:
 
 Recommended commit sequence:
 
-Current progress in the `1.3.0` working line: commits 1 through 15 have
-landed or are in this reviewed slice. The active strict decode boundary now
+Current progress in the `1.3.0` working line: commits 1 through 17 have
+landed. The active strict decode boundary now
 admits std x86/x86_64 SSSE3/SSE4.1, AVX2, AVX-512 VBMI, and little-endian std
 aarch64 NEON for Standard and URL-safe alphabet families only. Encode surface
 review is complete for the current `1.3.0` scope: in-place encode, custom
@@ -801,8 +801,8 @@ remains covered by deterministic tests and release-gate checks rather than a
 mandatory Kani proof, because the wrapped symbolic path is currently too
 expensive for a practical release gate. An opt-in advanced Kani script carries
 those expensive wrapped/public-surface harnesses for background runs. The
-remaining completion work is therefore focused on final evidence refresh, wasm
-posture, and release-candidate hardening.
+remaining completion work is therefore focused on final release-candidate
+documentation and release-gate rehearsal.
 
 1. Commit: decode SIMD design and API freeze.
    - Freeze the decode acceleration scope: strict Standard and URL-safe

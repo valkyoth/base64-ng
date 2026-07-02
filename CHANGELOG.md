@@ -1,5 +1,32 @@
 # Changelog
 
+## 1.3.0 - Unreleased
+
+- Admitted normal strict SIMD decode for Standard and URL-safe alphabet
+  families on std `x86`/`x86_64` AVX-512 VBMI, AVX2, SSSE3/SSE4.1, and
+  little-endian std `aarch64` NEON after whole-input scalar validation.
+- Kept wrapped decode, legacy whitespace decode, custom alphabets,
+  bcrypt-style and `crypt(3)` profiles, in-place decode, `no_std`, wasm
+  runtime dispatch, and constant-time-oriented secret decode scalar unless a
+  future evidence package admits them separately.
+- Added scalar-equivalence, malformed-input, dispatch-boundary, fuzz,
+  benchmark, hardware-check, unsafe-inventory, and backend-evidence coverage
+  for the admitted strict decode scope.
+- Added `base64-ng-tokio` manual `AsyncRead` streaming adapters with fixed
+  buffers, cancellation/resume tests, chunk-boundary tests, drop cleanup, and
+  bounded helper APIs. Async writer adapters remain deferred.
+- Added strict const decode helpers for fixed static inputs with recoverable
+  `Result` errors instead of new runtime panic surfaces.
+- Expanded companion-crate coverage for serde profile modules, bytes helpers,
+  subtle comparison examples, sanitization locked-secret direct-fill guidance,
+  derive examples, and Tokio streaming documentation.
+- Expanded bounded Kani verification for the decode backend/scalar agreement
+  path and added an opt-in advanced Kani script for expensive background
+  harnesses.
+- Refreshed benchmark evidence, backend evidence, and wasm posture
+  documentation. Wasm `simd128` remains compile/codegen evidence only and is
+  not admitted for runtime dispatch.
+
 ## 1.2.3 - Unreleased
 
 - Updated the optional `base64-ng-sanitization` companion dependency to

@@ -67,8 +67,9 @@ without `std`-equivalent runtime probing.
 - formal zeroization of all historical memory copies
 - wasm, custom-alphabet, in-place, wrapped, legacy, CT secret, or `no_std`
   acceleration
-- async/Tokio support
-- serde or bytes integration
+- async/Tokio support in the core crate's inert `tokio` feature, or Tokio
+  async writer adapters in the companion crate
+- serde or bytes integration in the core crate
 - Kani-complete whole-crate formal verification
 
 Those features remain admission-gated until their evidence is strong enough for
