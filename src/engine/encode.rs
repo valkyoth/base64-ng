@@ -283,7 +283,7 @@ where
         let output = self.encode_wrapped_vec(input, wrap)?;
         match alloc::string::String::from_utf8(output) {
             Ok(output) => Ok(output),
-            Err(_) => unreachable!("base64 encoder produced non-UTF-8 output"),
+            Err(_) => Err(EncodeError::InvalidAlphabet),
         }
     }
 
@@ -437,7 +437,7 @@ where
         let output = self.encode_vec(input)?;
         match alloc::string::String::from_utf8(output) {
             Ok(output) => Ok(output),
-            Err(_) => unreachable!("base64 encoder produced non-UTF-8 output"),
+            Err(_) => Err(EncodeError::InvalidAlphabet),
         }
     }
 

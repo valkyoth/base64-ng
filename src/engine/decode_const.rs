@@ -196,6 +196,9 @@ const fn const_decode_unpadded<A: Alphabet, const INPUT_LEN: usize, const OUTPUT
             if v1 & 0b0000_1111 != 0 {
                 return Err(DecodeError::InvalidPadding { index: read + 1 });
             }
+            if let Err(error) = const_ensure_output::<OUTPUT_CAP>(write, 1) {
+                return Err(error);
+            }
             output[write] = (v0 << 2) | (v1 >> 4);
             Ok(write + 1)
         }
@@ -214,6 +217,9 @@ const fn const_decode_unpadded<A: Alphabet, const INPUT_LEN: usize, const OUTPUT
             };
             if v2 & 0b0000_0011 != 0 {
                 return Err(DecodeError::InvalidPadding { index: read + 2 });
+            }
+            if let Err(error) = const_ensure_output::<OUTPUT_CAP>(write, 2) {
+                return Err(error);
             }
             output[write] = (v0 << 2) | (v1 >> 4);
             output[write + 1] = (v1 << 4) | (v2 >> 2);
@@ -248,6 +254,9 @@ const fn const_decode_quantum<A: Alphabet, const PAD: bool, const OUTPUT_CAP: us
                     index: input_offset + 1,
                 });
             }
+            if let Err(error) = const_ensure_output::<OUTPUT_CAP>(write, 1) {
+                return Err(error);
+            }
             output[write] = (v0 << 2) | (v1 >> 4);
             Ok(1)
         }
@@ -263,6 +272,9 @@ const fn const_decode_quantum<A: Alphabet, const PAD: bool, const OUTPUT_CAP: us
                 return Err(DecodeError::InvalidPadding {
                     index: input_offset + 2,
                 });
+            }
+            if let Err(error) = const_ensure_output::<OUTPUT_CAP>(write, 2) {
+                return Err(error);
             }
             output[write] = (v0 << 2) | (v1 >> 4);
             output[write + 1] = (v1 << 4) | (v2 >> 2);
@@ -283,12 +295,34 @@ const fn const_decode_quantum<A: Alphabet, const PAD: bool, const OUTPUT_CAP: us
                 Ok(value) => value,
                 Err(error) => return Err(error),
             };
+            if let Err(error) = const_ensure_output::<OUTPUT_CAP>(write, 3) {
+                return Err(error);
+            }
             output[write] = (v0 << 2) | (v1 >> 4);
             output[write + 1] = (v1 << 4) | (v2 >> 2);
             output[write + 2] = (v2 << 6) | v3;
             Ok(3)
         }
     }
+}
+
+const fn const_ensure_output<const OUTPUT_CAP: usize>(
+    write: usize,
+    needed: usize,
+) -> Result<(), DecodeError> {
+    if write > OUTPUT_CAP || OUTPUT_CAP - write < needed {
+        let required = if write > usize::MAX - needed {
+            usize::MAX
+        } else {
+            write + needed
+        };
+        return Err(DecodeError::OutputTooSmall {
+            required,
+            available: OUTPUT_CAP,
+        });
+    }
+
+    Ok(())
 }
 
 const fn const_decode_byte<A: Alphabet>(byte: u8, index: usize) -> Result<u8, DecodeError> {

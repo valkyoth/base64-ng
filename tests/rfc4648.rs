@@ -27,6 +27,27 @@ impl Alphabet for ReverseAlphabet {
 
 const REVERSE_PADDED: Engine<ReverseAlphabet, true> = Engine::new();
 
+#[cfg(feature = "alloc")]
+struct NonAsciiAlphabet;
+
+#[cfg(feature = "alloc")]
+impl Alphabet for NonAsciiAlphabet {
+    const ENCODE: [u8; 64] = [
+        0x80, b'B', b'C', b'D', b'E', b'F', b'G', b'H', b'I', b'J', b'K', b'L', b'M', b'N', b'O',
+        b'P', b'Q', b'R', b'S', b'T', b'U', b'V', b'W', b'X', b'Y', b'Z', b'a', b'b', b'c', b'd',
+        b'e', b'f', b'g', b'h', b'i', b'j', b'k', b'l', b'm', b'n', b'o', b'p', b'q', b'r', b's',
+        b't', b'u', b'v', b'w', b'x', b'y', b'z', b'0', b'1', b'2', b'3', b'4', b'5', b'6', b'7',
+        b'8', b'9', b'+', b'/',
+    ];
+
+    fn decode(byte: u8) -> Option<u8> {
+        decode_alphabet_byte(byte, &Self::ENCODE)
+    }
+}
+
+#[cfg(feature = "alloc")]
+const NON_ASCII_PADDED: Engine<NonAsciiAlphabet, true> = Engine::new();
+
 base64_ng::define_alphabet! {
     struct MacroAlphabet = b"./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 }
@@ -326,6 +347,19 @@ fn custom_alphabet_helper_decodes_and_round_trips() {
     let mut standard = [0u8; 64];
     let standard_len = STANDARD.encode_slice(input, &mut standard).unwrap();
     assert_ne!(&encoded[..encoded_len], &standard[..standard_len]);
+}
+
+#[cfg(feature = "alloc")]
+#[test]
+fn hand_written_non_ascii_alphabet_string_helpers_return_error() {
+    assert_eq!(
+        NON_ASCII_PADDED.encode_string(&[0, 0, 0]),
+        Err(EncodeError::InvalidAlphabet)
+    );
+    assert_eq!(
+        NON_ASCII_PADDED.encode_wrapped_string(&[0, 0, 0], LineWrap::new(76, LineEnding::CrLf)),
+        Err(EncodeError::InvalidAlphabet)
+    );
 }
 
 #[test]
