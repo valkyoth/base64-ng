@@ -135,7 +135,9 @@ fi
     echo
     echo "review focus:"
     echo "- SSSE3/SSE4.1 admitted encode path contains byte shuffle, XMM operations, and XMM cleanup"
+    echo "- SSSE3/SSE4.1 non-dispatchable decode prototype contains byte shuffle, multiply-add packing, XMM operations, and XMM cleanup"
     echo "- AVX2 admitted encode path contains byte shuffle, YMM operations, and vzeroupper"
+    echo "- AVX2 non-dispatchable decode prototype contains byte shuffle, multiply-add packing, YMM operations, and vzeroupper"
     echo "- AVX-512 admitted encode path contains VBMI byte permute, ZMM operations, ZMM cleanup, and vzeroupper"
     if [ "$neon_status" = "generated" ]; then
         echo "- NEON admitted encode path contains AArch64 table lookup, bit-select mapping, and NEON cleanup"

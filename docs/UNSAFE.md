@@ -675,7 +675,7 @@ Safety argument:
 
 ### `decode_16_bytes_ssse3_sse41`
 
-Location: `src/simd/x86/mod.rs`
+Location: `src/simd/x86/decode.rs`
 
 Status: non-dispatchable std x86/x86_64 SSSE3/SSE4.1 decode prototype for
 Standard and URL-safe alphabet families. It is reachable only from SIMD tests
@@ -720,6 +720,68 @@ Safety argument:
   unaligned intrinsics, so no alignment precondition is required.
 - The SSSE3/SSE4.1 target-feature contract enables every intrinsic used by
   the prototype.
+- The prototype copies only the validated decoded length to caller output and
+  wipes local value, packed, and scalar-validation staging buffers before
+  returning.
+- Runtime decode dispatch does not call this function. Future admission must
+  update this inventory, generated-code evidence, fuzzing, backend reporting,
+  benchmarks, and release notes in the same commit that makes any decode SIMD
+  path reachable.
+
+### `decode_32_bytes_avx2`
+
+Location: `src/simd/x86/decode.rs`
+
+Status: non-dispatchable std x86/x86_64 AVX2 decode prototype for Standard and
+URL-safe alphabet families. It is reachable only from SIMD tests and backend
+evidence capture. Runtime decode dispatch remains scalar.
+
+Purpose:
+
+- Extend fixed-block SIMD decode evidence from one SSSE3/SSE4.1 lane to the
+  two-lane AVX2 shape without changing public decode behavior.
+- Exercise AVX2 6-bit-value packing for a 32-byte encoded block that decodes
+  to at most 24 bytes.
+- Verify lane-boundary compaction, error agreement, padding behavior,
+  canonical trailing-bit rejection, and rejected-input output retention before
+  any later dispatch admission.
+
+Preconditions:
+
+- Caller must prove AVX2 is available on the current CPU.
+- Input is exactly 32 encoded bytes.
+- Output is exactly 24 bytes.
+- The vectorized packing path is used only for Standard-family alphabets
+  (`A-Z`, `a-z`, `0-9`, and either `+/` or `-_`). Other alphabets use the
+  staged scalar fallback inside the prototype.
+
+Unsafe operation:
+
+- `_mm256_loadu_si256` loads thirty-two 6-bit values from a local staging
+  array.
+- `_mm256_maddubs_epi16` and `_mm256_madd_epi16` pack groups of four 6-bit
+  values into 24-bit decoded quanta within each 128-bit lane.
+- `_mm256_shuffle_epi8` compacts the packed quanta into byte order within
+  each lane.
+- `_mm256_storeu_si256` stores the packed prototype output into a local
+  32-byte staging array.
+- `clear_ymm_registers_after_encode_block` clears lower XMM state and upper
+  YMM state before return to reduce register retention in the vector decode
+  prototype.
+
+Safety argument:
+
+- Scalar strict decode validation runs into a private 24-byte staging buffer
+  before any byte is copied to the caller output. If validation fails, the
+  caller output is left untouched and the staging buffer is wiped.
+- The input and output array types provide fixed readable and writable bounds.
+- The SIMD load and store operate only on local 32-byte arrays and use
+  unaligned intrinsics, so no alignment precondition is required.
+- The AVX2 target-feature contract enables every intrinsic used by the
+  prototype.
+- AVX2 byte shuffle is lane-local, so the prototype explicitly compacts the
+  second 12-byte decoded lane from offsets `16..28` to `12..24` inside local
+  staging before copying to caller output.
 - The prototype copies only the validated decoded length to caller output and
   wipes local value, packed, and scalar-validation staging buffers before
   returning.
