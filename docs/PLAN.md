@@ -992,21 +992,88 @@ those expensive wrapped/public-surface harnesses for background runs.
   clean for the exact release candidate.
 - Release notes make no claim that is broader than the admitted evidence.
 
-After `1.2.0`:
+### Post-`1.3.0` Expansion Plan
 
-- Pause encode feature work for roughly two weeks before starting SIMD decode
-  work.
-- Build SIMD decode prototypes as a separate non-accelerated `1.2.x` line.
-  Start with strict Standard and URL-safe decode only. Keep prototypes
-  non-dispatchable while proving invalid-byte handling, canonical trailing-bit
-  rejection, padding behavior, output-retention cleanup, error-shape
-  compatibility where promised, scalar differential tests, fuzz coverage, and
-  timing-oriented evidence.
-- Consider active SIMD decode dispatch in `1.3.0` only if the `1.2.x` decode
-  evidence line is complete and the `1.2.0` encode acceleration line has had a
-  clean soak period. If admitted, release notes must distinguish encode
-  backends from decode backends and keep `HighAssuranceScalarOnly` available
-  for deployments that prefer scalar execution.
+`1.3.0` completes the original full Base64 implementation scope. Remaining
+work is optional integration and acceleration breadth. These slices may stay
+inside the `1.3.x` line if they remain evidence-gated and do not weaken the
+`1.3.0` security posture.
+
+`1.3.1`: Tokio async writer adapters.
+
+- Add design/API documentation and explicit state-machine invariants for
+  `AsyncWrite` streaming.
+- Implement async encoder writer and async decoder writer adapters in
+  `base64-ng-tokio`.
+- Prove accepted-byte behavior, short-write behavior, backpressure handling,
+  cancellation safety, resume safety, bounded memory usage, and drop cleanup.
+- Add deterministic adversarial polling tests and examples.
+- Run pentest specifically against cancellation, buffered plaintext cleanup,
+  failed-writer latching, duplicate writes, lost bytes, and denial-of-service
+  bounds.
+
+`1.3.2`: non-standard SIMD surface review.
+
+- Review and admit only surfaces with complete scalar-equivalence, fuzz,
+  assembly, register-cleanup, benchmark, and fallback evidence.
+- Candidate surfaces: custom alphabet encode/decode, MIME/PEM wrapped
+  encode/decode, legacy-whitespace decode, and in-place encode/decode.
+- Keep unsupported surfaces scalar and documented rather than silently widening
+  acceleration claims.
+- Do not include `ct` SIMD in this slice by default. CT-oriented SIMD requires
+  a separate high-assurance side-channel evidence package and should not be
+  treated as ordinary performance work.
+- Pentest each admitted surface separately because this is several admission
+  surfaces, not one feature.
+
+`1.3.3`: wasm `simd128` runtime-dispatch decision.
+
+- Decide whether a specific wasm runtime/deployment profile can be admitted.
+- If admitted, implement an explicit wasm dispatch boundary and evidence for
+  encode first, then decode only if the same evidence standard is met.
+- Keep wasm wipe behavior fail-closed unless callers explicitly enable
+  `allow-wasm32-best-effort-wipe`.
+- Document JIT, runtime, timing, and zeroization caveats without implying
+  hardware-like guarantees.
+- Add CI target evidence and generated-code review for the admitted wasm
+  profile. If the runtime evidence is incomplete, keep wasm `simd128` as
+  compile/codegen evidence only.
+
+`1.3.4`: big-endian and niche-architecture acceleration review.
+
+- Add or refresh big-endian AArch64 scalar/fallback evidence first. Admit
+  acceleration only if endian-specific vector behavior, tests, and hardware
+  evidence are complete.
+- Review other niche targets case by case. Do not admit backend names in
+  runtime reports until real target-feature, fallback, assembly, cleanup, and
+  benchmark evidence exists.
+- Keep all niche acceleration opt-in through the same SIMD admission boundary;
+  no target should bypass unsafe-inventory, panic-policy, or release-gate
+  checks.
+
+`1.3.5`: RISC-V Vector research and evidence path.
+
+- Create RISC-V scalar support scripts and RVV detection scripts so external
+  labs, companies, or universities can run the same evidence commands on
+  hardware that actually advertises the RISC-V Vector extension.
+- Keep release notes extremely explicit that the project has no owned RVV
+  hardware unless that changes. A VisionFive2/JH7110-style `RV64GC` board is
+  useful scalar RISC-V evidence, but it is not RVV evidence.
+- Implement RVV prototypes only behind non-dispatchable evidence gates until
+  real RVV 1.0 hardware, toolchain support, generated assembly, scalar
+  differential tests, fuzzing, register cleanup, and benchmark data exist.
+- Do not claim RVV acceleration in crates.io docs until the exact hardware and
+  toolchain evidence is linked in the release artifacts.
+
+Historical `1.2.x` to `1.3.0` transition:
+
+- `1.2.0` admitted conservative encode acceleration.
+- `1.2.x` soaked and hardened the encode line while decode prototypes and
+  evidence matured.
+- `1.3.0` admitted the first normal strict SIMD decode scope after the decode
+  evidence line completed. Release notes distinguish encode backends from
+  decode backends and keep `HighAssuranceScalarOnly` available for deployments
+  that prefer scalar execution.
 
 SIMD admission rules for all post-`1.0` work:
 
