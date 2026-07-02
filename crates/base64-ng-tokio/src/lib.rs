@@ -5,12 +5,21 @@
 
 //! Optional Tokio async helpers for `base64-ng`.
 //!
-//! These helpers are read-all/write-all convenience functions, not streaming
-//! state machines. The `*_limited` variants enforce a caller-provided maximum
-//! input size before allocation grows past that bound. Output is written only
-//! after the complete input has been read and encoded or decoded, which avoids
-//! partial decoded writes on malformed input and keeps cancellation semantics
-//! simple for the companion crate.
+//! The crate provides two API tiers:
+//!
+//! - read-all/write-all convenience functions, with `*_limited` variants for
+//!   peer-controlled request or frame boundaries.
+//! - manual [`AsyncRead`] streaming adapters,
+//!   [`EncoderReader`] and [`DecoderReader`], with fixed internal buffers and
+//!   explicit drop cleanup.
+//!
+//! The streaming readers are implemented as explicit state machines. They do
+//! not use `async fn` internally, so cancellation can only leave data in the
+//! adapter's fixed pending/output buffers; those buffers are cleared on drop.
+
+mod readers;
+
+pub use readers::{DecoderReader, EncoderReader};
 
 use base64_ng::{Alphabet, Engine};
 use tokio::io::{self, AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
@@ -156,6 +165,10 @@ fn encode_io_error(error: base64_ng::EncodeError) -> io::Error {
 
 fn decode_io_error(error: base64_ng::DecodeError) -> io::Error {
     io::Error::new(io::ErrorKind::InvalidData, error.kind().as_str())
+}
+
+fn wipe_bytes(bytes: &mut [u8]) {
+    bytes.fill(0);
 }
 
 async fn read_to_end_limited<R>(reader: &mut R, max_input_len: usize) -> io::Result<Vec<u8>>

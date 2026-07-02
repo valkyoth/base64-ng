@@ -790,11 +790,11 @@ review is complete for the current `1.3.0` scope: in-place encode, custom
 alphabets, bcrypt/crypt profiles, `no_std`, wasm runtime dispatch, and
 line-ending insertion remain intentionally scalar unless a later admission
 package proves otherwise. The Tokio companion now has caller-limited
-read-all/write-all helpers; full async streaming state machines remain
-deferred until cancellation and backpressure evidence is complete. The
-remaining completion work is therefore focused on optional companion
-ergonomics, const decode feasibility, final evidence refresh, and
-release-candidate hardening.
+read-all/write-all helpers and manual async reader streaming adapters. Async
+writer adapters remain deferred until accepted-byte, cancellation, and
+backpressure evidence is complete. The remaining completion work is therefore
+focused on optional companion ergonomics, const decode feasibility, final
+evidence refresh, and release-candidate hardening.
 
 1. Commit: decode SIMD design and API freeze.
    - Freeze the decode acceleration scope: strict Standard and URL-safe
@@ -891,14 +891,17 @@ release-candidate hardening.
     - Pentest focus: no accidental acceleration of custom/secret-indexed
       alphabet paths and no output-overlap mistakes in in-place encode.
 
-12. Commit: full Tokio async streaming adapters.
-    - Upgrade `base64-ng-tokio` from bounded helper APIs to reviewed
-      `AsyncRead`/`AsyncWrite` streaming state machines if cancellation,
+12. Commit: Tokio async reader streaming adapters.
+    - Upgrade `base64-ng-tokio` from bounded helper-only APIs to reviewed
+      `AsyncRead` streaming state machines with fixed buffers, deterministic
+      cancellation/resume tests, chunk-boundary tests, drop cleanup, and
+      dependency admission evidence.
+    - Keep `AsyncWrite` state machines deferred unless accepted-byte,
       buffering, backpressure, drop cleanup, and dependency admission evidence
       are complete.
     - Keep bounded helper APIs as the simple path.
-    - Pentest focus: cancellation safety, partial writes, buffered plaintext
-      cleanup, framed-payload boundaries, and denial-of-service bounds.
+    - Pentest focus: cancellation safety, buffered plaintext cleanup,
+      framed-payload boundaries, and denial-of-service bounds.
 
 13. Commit: const decode API.
     - Add strict const decode only if the API can stay explicit about output
@@ -971,9 +974,9 @@ release-candidate hardening.
 - CT-oriented secret decode remains scalar unless a separate formal
   side-channel evidence package proves otherwise. Do not route CT decode
   through normal SIMD decode.
-- Full Tokio streaming exists only if the cancellation/drop/buffering evidence
-  is complete; otherwise it remains explicitly deferred and does not block
-  `1.3.0`.
+- Tokio read-side streaming exists only if the cancellation/drop/buffering
+  evidence is complete. Tokio writer streaming remains explicitly deferred
+  unless a later slice admits it separately.
 - Const decode exists only if the panic and error contract is clear; otherwise
   it remains deferred and does not block SIMD decode release.
 - Kani, fuzz, Miri, dudect, generated assembly, benchmark, unsafe-boundary,

@@ -1,15 +1,17 @@
 # Async Admission Policy
 
 `base64-ng` does not currently provide async streaming wrappers in the core
-crate. The core `tokio` feature is intentionally inert and dependency-free
-until a streaming async API is admitted through the same evidence-driven
-process used for SIMD and other security-sensitive surfaces.
+crate. The core `tokio` feature is intentionally inert and dependency-free.
+Async integration lives in the optional `base64-ng-tokio` companion crate so
+the core package remains `no_std`-first and dependency-free by default.
 
 The optional `base64-ng-tokio` companion crate is admitted separately for
-read-all/write-all helper functions. Its `*_limited` helpers enforce a
-caller-provided maximum input size before writing output. Full
-`AsyncRead`/`AsyncWrite` state machines remain deferred until cancellation,
-backpressure, drop cleanup, and dependency evidence is complete.
+read-all/write-all helper functions and manual `AsyncRead` streaming adapters.
+Its `*_limited` helpers enforce a caller-provided maximum input size before
+writing output. Its `EncoderReader` and `DecoderReader` adapters use explicit
+state machines, fixed internal buffers, and drop cleanup. Async writer
+adapters remain deferred until accepted-byte semantics, backpressure, drop
+cleanup, and dependency evidence are complete.
 
 ## Current Status
 
@@ -22,10 +24,14 @@ backpressure, drop cleanup, and dependency evidence is complete.
 - `base64-ng-tokio` provides optional read-all/write-all helpers for projects
   that already admit Tokio. Prefer its limited helpers for peer-controlled
   input.
+- `base64-ng-tokio` also provides read-side streaming adapters:
+  `EncoderReader` and `DecoderReader`.
+- Async writer adapters are intentionally not admitted yet.
 
 ## Admission Requirements
 
-Before the `tokio` feature may add a dependency or public API, the change must
+Before the core `tokio` feature may add a dependency or public API, or before
+`base64-ng-tokio` admits a new async state-machine surface, the change must
 include:
 
 - A written dependency review covering the Tokio version, transitive
@@ -36,12 +42,12 @@ include:
   encoded output, pending decode input, and terminal padding states.
 - Drop behavior must clear internal staging buffers with the same best-effort
   retention-reduction posture as the current `std::io` wrappers.
-- Chunk-boundary tests must cover reads and writes split at every Base64
-  quantum boundary.
+- Chunk-boundary tests must cover every admitted direction split at Base64
+  quantum boundaries.
 - Adjacent framed payload tests must prove decoder readers do not consume bytes
   beyond terminal padding.
-- Fuzz coverage must include fragmented async-like chunk schedules before any
-  performance claim is made.
+- Fuzz or adversarial polling coverage must include fragmented async-like chunk
+  schedules before any performance claim is made.
 - Release evidence must include `cargo deny check`, `cargo audit`, and
   `cargo license --json` output with the async feature enabled.
 
@@ -54,5 +60,7 @@ include:
 
 ## Release Rule
 
-Do not advertise async or Tokio support in release notes until the feature
-exports a tested public API and the dependency/admission evidence is present.
+Do not advertise a new async/Tokio surface in release notes until it exports a
+tested public API and the dependency/admission evidence is present. Reader
+streaming and read-all/write-all helpers are admitted in the companion crate;
+writer streaming is not.

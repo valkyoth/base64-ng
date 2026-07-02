@@ -114,10 +114,10 @@ Planned behind admission evidence:
 - Additional admitted wasm `simd128`, custom alphabet, and in-place encode
   fast paths only after separate SIMD admission evidence is complete. Default
   builds and unsupported runtime CPUs remain scalar.
-- Full async streaming wrappers only after the `tokio` feature passes the
-  cancellation-safety admission bar in [docs/ASYNC.md](docs/ASYNC.md). The
-  `base64-ng-tokio` companion crate currently provides bounded async
-  read-all/write-all helpers, not streaming state machines.
+- Async reader streaming is available through the optional `base64-ng-tokio`
+  companion crate after cancellation-safety review. The core `tokio` feature
+  remains inert, and async writer adapters remain deferred until their
+  accepted-byte and backpressure semantics pass [docs/ASYNC.md](docs/ASYNC.md).
 - Additional Kani harnesses beyond the current bounded no-default-features
   proof set. A clean Kani run proves only the scoped harness properties, not a
   whole-crate or cryptographic constant-time guarantee.
@@ -205,7 +205,7 @@ and crates.io examples resolve consistently across the workspace.
 | `base64-ng-serde` | Optional `serde` wrappers for projects that already admit `serde`. |
 | `base64-ng-bytes` | Optional `bytes` helpers for `Bytes`, `Buf`, and `BufMut` users. |
 | `base64-ng-subtle` | Optional `subtle::ConstantTimeEq` helpers for token/MAC comparison boundaries. |
-| `base64-ng-tokio` | Optional bounded Tokio async helpers for services that already admit Tokio. |
+| `base64-ng-tokio` | Optional Tokio read-all/write-all helpers and async reader streaming adapters. |
 
 Subcrates are documented so crate pages are readable, but they belong to the
 main `base64-ng` crate family and are not intended as independent protocol
@@ -331,9 +331,10 @@ let decoded = ct::STANDARD.decode_secret(b"aGVsbG8=").unwrap();
 assert!(decoded.subtle_verify(b"hello"));
 ```
 
-`base64-ng-tokio` provides read-all/write-all async helpers for applications
-that already use Tokio. Prefer the `*_limited` variants for request or frame
-boundaries controlled by a peer:
+`base64-ng-tokio` provides read-all/write-all async helpers and manual
+`AsyncRead` streaming adapters for applications that already use Tokio. Prefer
+the `*_limited` helper variants for request or frame boundaries controlled by a
+peer:
 
 ```toml
 [dependencies]
@@ -344,13 +345,19 @@ tokio = { version = "1.52.3", features = ["io-util"] }
 
 ```rust
 use base64_ng::STANDARD;
-use base64_ng_tokio::encode_reader_to_writer_limited;
+use base64_ng_tokio::{encode_reader_to_writer_limited, EncoderReader};
+use tokio::io::AsyncReadExt;
 
 # async fn example() -> std::io::Result<()> {
 let mut input = &b"hello"[..];
 let mut output = Vec::new();
 encode_reader_to_writer_limited(&STANDARD, &mut input, &mut output, 1024).await?;
 assert_eq!(output, b"aGVsbG8=");
+
+let mut reader = EncoderReader::new(&b"hello"[..], STANDARD);
+let mut streamed = Vec::new();
+reader.read_to_end(&mut streamed).await?;
+assert_eq!(streamed, b"aGVsbG8=");
 # Ok(())
 # }
 ```
@@ -360,8 +367,8 @@ the core package yet:
 
 - Additional profile-specific serde wrappers if users need non-default
   alphabets beyond the initial standard and URL-safe no-padding modules.
-- Full Tokio streaming adapters once cancellation-safety evidence clears the
-  async admission policy.
+- Tokio async writer adapters once accepted-byte, backpressure, and
+  cancellation-safety evidence clears the async admission policy.
 
 Disable defaults for embedded or freestanding use:
 

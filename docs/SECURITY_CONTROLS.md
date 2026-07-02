@@ -130,7 +130,12 @@ certification claim.
   For async services using the optional `base64-ng-tokio` companion crate,
   prefer `encode_reader_to_writer_limited` and
   `decode_reader_to_writer_limited` at request or frame boundaries controlled
-  by a peer.
+  by a peer. Its `EncoderReader` and `DecoderReader` adapters are true
+  read-side streaming state machines with fixed internal buffers and drop
+  cleanup, but decoded output from valid leading quanta can still reach the
+  caller before a later malformed quantum is observed. Buffer full
+  secret-bearing frames first when atomic success/failure semantics are
+  required.
 - Log redacted error classifications such as `DecodeError::kind()` for
   secret-adjacent inputs. Strict decode errors can carry exact offsets and
   offending input bytes for diagnostics.
