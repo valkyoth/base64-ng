@@ -92,7 +92,7 @@ for required_text in \
     "Decode acceleration" \
     "Required precision" \
     "Performance numbers are release notes evidence only" \
-    "Admitted backends: AVX-512 VBMI encode, AVX2 encode, SSSE3/SSE4.1 encode, NEON encode, and SSSE3/SSE4.1 strict decode" \
+    "Admitted backends: AVX-512 VBMI encode, AVX2 encode, SSSE3/SSE4.1 encode, NEON encode, AVX2 strict decode, and SSSE3/SSE4.1 strict decode" \
     "Active backend priority: AVX-512 VBMI, then AVX2, then SSSE3/SSE4.1 on x86/x86_64; NEON on aarch64" \
     "The active non-scalar backends" \
     "Advertise SIMD acceleration only with the admitted backend name and scope"
@@ -164,4 +164,4 @@ if grep -q 'wasm .*admitted backend' docs/SIMD_ADMISSION.md docs/SIMD.md; then
     exit 1
 fi
 
-echo "simd admission: AVX-512 VBMI, AVX2, SSSE3/SSE4.1, NEON encode, and SSSE3/SSE4.1 strict decode admission gate ok"
+echo "simd admission: AVX-512 VBMI, AVX2, SSSE3/SSE4.1, NEON encode, AVX2 strict decode, and SSSE3/SSE4.1 strict decode admission gate ok"

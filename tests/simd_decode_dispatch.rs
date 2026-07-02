@@ -76,12 +76,13 @@ fn strict_decode_keeps_public_error_shape_for_simd_sized_inputs() {
 ))]
 #[test]
 fn runtime_report_exposes_strict_decode_backend() {
-    let expected =
-        if std::is_x86_feature_detected!("ssse3") && std::is_x86_feature_detected!("sse4.1") {
-            base64_ng::runtime::Backend::Ssse3Sse41
-        } else {
-            base64_ng::runtime::Backend::Scalar
-        };
+    let expected = if std::is_x86_feature_detected!("avx2") {
+        base64_ng::runtime::Backend::Avx2
+    } else if std::is_x86_feature_detected!("ssse3") && std::is_x86_feature_detected!("sse4.1") {
+        base64_ng::runtime::Backend::Ssse3Sse41
+    } else {
+        base64_ng::runtime::Backend::Scalar
+    };
 
     assert_eq!(
         base64_ng::runtime::backend_report().active_decode_backend(),

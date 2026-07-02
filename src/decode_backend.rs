@@ -12,6 +12,13 @@ use crate::{Alphabet, DecodeError, scalar};
 pub(crate) enum DecodeBackend {
     /// The audited scalar implementation.
     Scalar,
+    /// std `x86`/`x86_64` AVX2 fixed-block strict decode.
+    #[cfg(all(
+        feature = "simd",
+        feature = "std",
+        any(target_arch = "x86", target_arch = "x86_64")
+    ))]
+    Avx2,
     /// std `x86`/`x86_64` SSSE3/SSE4.1 fixed-block strict decode.
     #[cfg(all(
         feature = "simd",
@@ -30,6 +37,10 @@ pub(crate) fn active_decode_backend() -> DecodeBackend {
         any(target_arch = "x86", target_arch = "x86_64")
     ))]
     {
+        if crate::simd::avx2_decode_available() {
+            return DecodeBackend::Avx2;
+        }
+
         if crate::simd::ssse3_sse41_decode_available() {
             return DecodeBackend::Ssse3Sse41;
         }
@@ -58,6 +69,12 @@ where
             feature = "std",
             any(target_arch = "x86", target_arch = "x86_64")
         ))]
+        DecodeBackend::Avx2 => crate::simd::decode_slice_avx2::<A, PAD>(input, output),
+        #[cfg(all(
+            feature = "simd",
+            feature = "std",
+            any(target_arch = "x86", target_arch = "x86_64")
+        ))]
         DecodeBackend::Ssse3Sse41 => crate::simd::decode_slice_ssse3_sse41::<A, PAD>(input, output),
     }
 }
@@ -69,6 +86,15 @@ mod tests {
     #[test]
     fn boundary_uses_only_admitted_backends() {
         let backend = active_decode_backend();
+        #[cfg(all(
+            feature = "simd",
+            feature = "std",
+            any(target_arch = "x86", target_arch = "x86_64")
+        ))]
+        if backend == DecodeBackend::Avx2 {
+            assert!(crate::simd::avx2_decode_available());
+            return;
+        }
         #[cfg(all(
             feature = "simd",
             feature = "std",

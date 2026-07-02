@@ -9,6 +9,7 @@ use cleanup::{
     clear_xmm_registers_after_encode_block, clear_ymm_registers_after_encode_block,
     clear_zmm_registers_after_encode_block,
 };
+pub(crate) use decode::decode_slice_avx2;
 pub(crate) use decode::decode_slice_ssse3_sse41;
 #[cfg(test)]
 pub(crate) use decode::{
@@ -38,6 +39,10 @@ where
 
 pub(crate) fn ssse3_sse41_decode_available() -> bool {
     super::ssse3_sse41_available()
+}
+
+pub(crate) fn avx2_decode_available() -> bool {
+    super::avx2_available()
 }
 
 pub(crate) fn encode_slice_avx512<A, const PAD: bool>(
