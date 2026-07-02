@@ -937,10 +937,11 @@ Safety argument:
 
 Location: `src/simd/`
 
-Status: admitted std AArch64 NEON encode wrapper for Standard and URL-safe
-alphabet families. It is reachable through AArch64 encode dispatch for fixed
-12-byte blocks. 32-bit ARM, unsupported alphabets, tails, padding, `no_std`,
-in-place encode, and decode use scalar fallback.
+Status: admitted little-endian std AArch64 NEON encode wrapper for Standard
+and URL-safe alphabet families. It is reachable through AArch64 encode
+dispatch for fixed 12-byte blocks. Big-endian AArch64, 32-bit ARM, unsupported
+alphabets, tails, padding, `no_std`, in-place encode, and decode use scalar
+fallback.
 
 Purpose:
 
@@ -975,9 +976,9 @@ Safety argument:
 - The function is compiled only for `aarch64` or `arm` builds with the `neon`
   target feature.
 - The function's safety contract requires runtime NEON availability.
-- Runtime dispatch reaches the AArch64 vector path only on std AArch64, where
-  NEON is part of the target contract. Direct tests use the same availability
-  precondition.
+- Runtime dispatch reaches the AArch64 vector path only on little-endian std
+  AArch64, where NEON is part of the target contract. Direct tests use the
+  same availability precondition.
 - Register-retention note: the AArch64 vector path loads caller bytes into NEON
   state and expands `clear_neon_registers_after_vector_block!` directly inside
   the block function before return. This is retention reduction for the
@@ -987,9 +988,9 @@ Safety argument:
 
 Location: `src/simd/neon.rs`
 
-Status: admitted std AArch64 strict decode dispatch wrapper for Standard and
-URL-safe alphabet families. It is reachable only when the `simd` and `std`
-features are enabled on `aarch64`.
+Status: admitted little-endian std AArch64 strict decode dispatch wrapper for
+Standard and URL-safe alphabet families. It is reachable only when the `simd`
+and `std` features are enabled on little-endian `aarch64`.
 
 Purpose:
 
@@ -1001,8 +1002,8 @@ Purpose:
 
 Preconditions:
 
-- Runtime dispatch has selected AArch64 NEON. NEON is mandatory for the
-  admitted AArch64 target.
+- Runtime dispatch has selected little-endian AArch64 NEON. NEON is mandatory
+  for the admitted AArch64 target.
 - The input block loop guard proves that each carved block is fully within the
   original input slice.
 - The output capacity has been checked against the scalar validated decoded
@@ -1034,7 +1035,7 @@ Safety argument:
 
 Location: `src/simd/neon.rs`
 
-Status: admitted std AArch64 NEON strict decode block for Standard and
+Status: admitted little-endian std AArch64 NEON strict decode block for Standard and
 URL-safe alphabet families. It is reachable through strict decode dispatch for
 full 16-byte encoded blocks after whole-input scalar validation.
 
@@ -1052,8 +1053,8 @@ Preconditions:
 - Caller must prove NEON is available on the current CPU.
 - Input is exactly 16 encoded bytes.
 - Output is exactly 12 bytes.
-- The function is reached only through the std AArch64 strict decode wrapper
-  or direct tests with the same availability precondition.
+- The function is reached only through the little-endian std AArch64 strict
+  decode wrapper or direct tests with the same availability precondition.
 
 Unsafe operation:
 

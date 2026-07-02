@@ -88,12 +88,12 @@ for required_text in \
     "real non-dispatchable prototype" \
     "candidate only" \
     "admitted backend" \
-    "std x86/x86_64 and std aarch64 dispatch only" \
+    "std x86/x86_64 and little-endian std aarch64 dispatch only" \
     "Decode acceleration" \
     "Required precision" \
     "Performance numbers are release notes evidence only" \
     "Admitted backends: AVX-512 VBMI encode, AVX2 encode, SSSE3/SSE4.1 encode, NEON encode, AVX-512 VBMI strict decode, AVX2 strict decode, SSSE3/SSE4.1 strict decode, and NEON strict decode" \
-    "Active backend priority: AVX-512 VBMI, then AVX2, then SSSE3/SSE4.1 on x86/x86_64; NEON on aarch64" \
+    "Active backend priority: AVX-512 VBMI, then AVX2, then SSSE3/SSE4.1 on x86/x86_64; NEON on little-endian aarch64" \
     "The active non-scalar backends" \
     "Advertise SIMD acceleration only with the admitted backend name and scope"
 do

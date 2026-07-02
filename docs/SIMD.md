@@ -2,8 +2,8 @@
 
 `base64-ng` is scalar by default and admits conservative accelerated encode
 paths in the `1.2.x` line: std `x86`/`x86_64` AVX-512 VBMI first, then
-AVX2, then SSSE3/SSE4.1, plus std `aarch64` NEON, for Standard and URL-safe
-alphabet families. Future SIMD dispatch remains gated
+AVX2, then SSSE3/SSE4.1, plus little-endian std `aarch64` NEON, for Standard
+and URL-safe alphabet families. Future SIMD dispatch remains gated
 unless a complete SIMD admission evidence package lands in the same release
 commit as the active backend change. The crate uses `#![deny(unsafe_code)]` and permits
 reviewed `allow(unsafe_code)` exceptions only for audited cleanup in
@@ -74,13 +74,13 @@ The SIMD roadmap separates implementation evidence from active acceleration:
   the `1.2.x` decode evidence line is complete and the encode acceleration line
   has remained stable.
 - The admitted `1.3.0` decode backends are std `x86`/`x86_64` AVX-512 VBMI
-  first, then AVX2, then SSSE3/SSE4.1 strict decode, plus std `aarch64` NEON
-  strict decode for Standard and URL-safe alphabet families. They validate the
-  complete input with the scalar decoder first so public error shape and
-  indexes remain scalar-compatible, then use fixed 64-byte AVX-512 VBMI, fixed
-  32-byte AVX2, fixed 16-byte SSSE3/SSE4.1, or fixed 16-byte NEON encoded
-  blocks where possible. Tails and every unsupported decode surface remain
-  scalar.
+  first, then AVX2, then SSSE3/SSE4.1 strict decode, plus little-endian std
+  `aarch64` NEON strict decode for Standard and URL-safe alphabet families.
+  They validate the complete input with the scalar decoder first so public
+  error shape and indexes remain scalar-compatible, then use fixed 64-byte
+  AVX-512 VBMI, fixed 32-byte AVX2, fixed 16-byte SSSE3/SSE4.1, or fixed
+  16-byte NEON encoded blocks where possible. Tails and every unsupported
+  decode surface remain scalar.
 
 The `1.3.0` decode scope is frozen before implementation starts: strict
 Standard and URL-safe decode only, padded and unpadded, through the normal
@@ -111,14 +111,16 @@ runtime behavior for that line.
 - Encode and normal strict decode entry points pass through internal backend
   boundaries. In-place encode remains scalar-only. Strict decode may use the
   admitted AVX-512 VBMI, AVX2, or SSSE3/SSE4.1 backend on std x86/x86_64
-  builds, or the admitted NEON backend on std AArch64 builds, with the `simd`
-  feature; every unsupported decode surface still falls back to scalar.
+  builds, or the admitted NEON backend on little-endian std AArch64 builds,
+  with the `simd` feature; every unsupported decode surface still falls back to
+  scalar.
 - With the `simd` feature enabled, the private dispatch scaffold detects
   AVX-512 VBMI, AVX2, SSSE3/SSE4.1, NEON, and wasm `simd128` candidates.
-  Only std `x86`/`x86_64` AVX-512 VBMI, AVX2, SSSE3/SSE4.1, and std
-  `aarch64` NEON encode can become active; normal strict decode may also use
-  the admitted x86/x86_64 or AArch64 backend through its separate decode
-  boundary. All other candidates still execute scalar code.
+  Only std `x86`/`x86_64` AVX-512 VBMI, AVX2, SSSE3/SSE4.1, and
+  little-endian std `aarch64` NEON encode can become active; normal strict
+  decode may also use the admitted x86/x86_64 or little-endian AArch64 backend
+  through its separate decode boundary. All other candidates still execute
+  scalar code.
 - Admitted SIMD encode paths run only when the current input can fill at least
   one block for the selected backend: 48 bytes for AVX-512 VBMI, 24 bytes for
   AVX2, and 12 bytes for SSSE3/SSE4.1 or NEON. Shorter inputs use scalar encode
@@ -130,10 +132,10 @@ runtime behavior for that line.
   alloc strict decode helpers route through the decode boundary. AVX-512 VBMI
   decode applies only to full 64-byte encoded blocks after scalar whole-input
   validation and falls back to AVX2, SSSE3/SSE4.1, or scalar for shorter
-  inputs; AArch64 NEON decode applies only to full 16-byte encoded blocks
-  after scalar whole-input validation. Legacy decode, wrapped decode, in-place
-  decode, CT secret decode, custom alphabets, short inputs, and tails remain
-  scalar.
+  inputs; little-endian AArch64 NEON decode applies only to full 16-byte
+  encoded blocks after scalar whole-input validation. Legacy decode, wrapped
+  decode, in-place decode, CT secret decode, custom alphabets, big-endian
+  AArch64, short inputs, and tails remain scalar.
 - AVX-512 VBMI encode is admitted for std `x86`/`x86_64` Standard and URL-safe
   alphabet families. It uses AVX-512 lane-local byte shuffling, vector
   shifts/masks, and VBMI byte permutes over the alphabet table for fixed
@@ -168,13 +170,14 @@ runtime behavior for that line.
   padding, `no_std`, in-place encode, line-ending insertion, and every decode
   surface outside the separate AVX-512/AVX2/SSSE3/SSE4.1/NEON strict decode
   admission stay scalar.
-- AArch64 NEON encode is admitted for std `aarch64` Standard and URL-safe
-  alphabet families. It uses NEON table lookup, vector shifts/masks, and
-  byte-select alphabet mapping for fixed 12-byte input blocks, then clears used
-  NEON registers before returning. NEON is mandatory for the admitted AArch64
-  target. Custom alphabets, tails, padding, 32-bit `arm+neon`, `no_std`,
-  in-place encode, line-ending insertion, and every decode surface outside the
-  separate AVX-512/AVX2/SSSE3/SSE4.1/NEON strict decode admission stay scalar.
+- AArch64 NEON encode is admitted for little-endian std `aarch64` Standard and
+  URL-safe alphabet families. It uses NEON table lookup, vector shifts/masks,
+  and byte-select alphabet mapping for fixed 12-byte input blocks, then clears
+  used NEON registers before returning. NEON is mandatory for the admitted
+  little-endian AArch64 target. Custom alphabets, tails, padding, big-endian
+  AArch64, 32-bit `arm+neon`, `no_std`, in-place encode, line-ending
+  insertion, and every decode surface outside the separate
+  AVX-512/AVX2/SSSE3/SSE4.1/NEON strict decode admission stay scalar.
 - An inactive wasm `simd128` fixed-block encode prototype exists behind the
   same boundary as real non-dispatchable vector encode evidence for Standard
   and URL-safe alphabets. It uses wasm byte shuffling, vector shifts/masks, and
@@ -196,10 +199,10 @@ runtime behavior for that line.
   reporting. A binary compiled with `-C target-feature=+avx2` can therefore
   report an AVX2 candidate even if it is deployed on a CPU that cannot execute
   AVX2 instructions. Active x86/x86_64 encode dispatch is std runtime-probed
-  only; active AArch64 NEON encode dispatch is std-only and relies on the
-  mandatory AArch64 NEON target contract. Any future `no_std` SIMD activation
-  must require an explicit caller-side CPU contract or remain disabled where
-  runtime probing is unavailable.
+  only; active AArch64 NEON encode dispatch is little-endian std-only and
+  relies on the mandatory AArch64 NEON target contract. Any future `no_std`
+  SIMD activation must require an explicit caller-side CPU contract or remain
+  disabled where runtime probing is unavailable.
 - `runtime::require_backend_policy()` allows deployments to enforce scalar
   execution, disabled SIMD features, or no detected SIMD candidate.
 - `BackendPolicy::HighAssuranceScalarOnly` combines scalar execution, disabled
@@ -222,8 +225,8 @@ runtime behavior for that line.
 - Unit tests compare dispatch behavior against the scalar reference for
   canonical inputs, malformed inputs, and undersized output buffers.
 - The `simd` feature enables only the admitted std x86/x86_64 AVX-512 VBMI,
-  AVX2, SSSE3/SSE4.1, and std aarch64 NEON encode paths where the platform
-  requirements are met.
+  AVX2, SSSE3/SSE4.1, and little-endian std aarch64 NEON encode paths where
+  the platform requirements are met.
 - Current `1.2.x` development keeps every non-admitted backend scalar or
   prototype-only unless the SIMD admission manifest, scalar differential tests,
   fuzz evidence, unsafe inventory, architecture evidence, benchmark evidence,
@@ -330,7 +333,8 @@ must include:
 backends. The gate currently requires:
 
 - `ActiveBackend` to expose only `Scalar` plus the std x86/x86_64 AVX-512
-  VBMI, AVX2, SSSE3/SSE4.1, and std aarch64 NEON encode variants.
+  VBMI, AVX2, SSSE3/SSE4.1, and little-endian std aarch64 NEON encode
+  variants.
 - `active_backend()` to return AVX-512 VBMI before AVX2 before SSSE3/SSE4.1
   only after std runtime CPU probing, and scalar otherwise.
 - No accelerated `ActiveBackend::Wasm*` or generic SIMD dispatch variants in
@@ -360,9 +364,11 @@ remain pending.
   execute scalar until the accelerated backend is admitted.
 - The active non-scalar backends in the `1.2.x` encode line are std
   x86/x86_64 AVX-512 VBMI encode, AVX2 encode, SSSE3/SSE4.1 encode, and std
-  aarch64 NEON encode for Standard and URL-safe alphabet families. The
+  little-endian aarch64 NEON encode for Standard and URL-safe alphabet
+  families. The
   `1.3.0` decode admission is separate: std x86/x86_64 AVX-512 VBMI first,
-  then AVX2, then SSSE3/SSE4.1, plus std aarch64 NEON strict decode only.
+  then AVX2, then SSSE3/SSE4.1, plus little-endian std aarch64 NEON strict
+  decode only.
 - Prototype functions may exercise target-feature and unsafe plumbing without
   being eligible for dispatch.
 - Runtime CPU detection may be used only behind `std`.

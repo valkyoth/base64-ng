@@ -2,6 +2,7 @@
 
 #[cfg(all(
     target_arch = "aarch64",
+    target_endian = "little",
     any(test, all(feature = "std", feature = "simd"))
 ))]
 use super::decode_helpers::{copy_verified_decode_output, fill_decode_values};
@@ -9,6 +10,7 @@ use super::decode_helpers::{copy_verified_decode_output, fill_decode_values};
 use crate::Alphabet;
 #[cfg(all(
     target_arch = "aarch64",
+    target_endian = "little",
     any(test, all(feature = "std", feature = "simd"))
 ))]
 use crate::Standard;
@@ -20,16 +22,32 @@ use crate::Standard;
     )
 ))]
 use crate::encode_base64_value;
-#[cfg(all(feature = "std", feature = "simd", target_arch = "aarch64"))]
+#[cfg(all(
+    feature = "std",
+    feature = "simd",
+    target_arch = "aarch64",
+    target_endian = "little"
+))]
 use crate::{EncodeError, checked_encoded_len, scalar};
 
-#[cfg(all(feature = "std", feature = "simd", target_arch = "aarch64"))]
+#[cfg(all(
+    feature = "std",
+    feature = "simd",
+    target_arch = "aarch64",
+    target_endian = "little"
+))]
 const NEON_DECODE_INPUT_BLOCK: usize = 16;
-#[cfg(all(feature = "std", feature = "simd", target_arch = "aarch64"))]
+#[cfg(all(
+    feature = "std",
+    feature = "simd",
+    target_arch = "aarch64",
+    target_endian = "little"
+))]
 const NEON_DECODE_OUTPUT_BLOCK: usize = 12;
 
 #[cfg(all(
     target_arch = "aarch64",
+    target_endian = "little",
     any(test, all(feature = "std", feature = "simd"))
 ))]
 use core::arch::aarch64::{
@@ -40,7 +58,7 @@ use core::arch::aarch64::{
 #[cfg(all(test, target_arch = "arm", target_feature = "neon"))]
 use core::arch::arm::{uint8x16_t, vdupq_n_u8, vst1q_u8};
 
-#[cfg(all(feature = "std", target_arch = "aarch64"))]
+#[cfg(all(feature = "std", target_arch = "aarch64", target_endian = "little"))]
 pub(crate) fn neon_supports_alphabet<A>() -> bool
 where
     A: Alphabet,
@@ -48,7 +66,12 @@ where
     is_standard_or_url_safe_family::<A>()
 }
 
-#[cfg(all(feature = "std", feature = "simd", target_arch = "aarch64"))]
+#[cfg(all(
+    feature = "std",
+    feature = "simd",
+    target_arch = "aarch64",
+    target_endian = "little"
+))]
 pub(crate) fn encode_slice_neon<A, const PAD: bool>(
     input: &[u8],
     output: &mut [u8],
@@ -75,9 +98,9 @@ where
     let mut read = 0;
     let mut write = 0;
     while read + 12 <= input.len() {
-        // SAFETY: Runtime dispatch reaches this function only on std AArch64
-        // where NEON is part of the target contract. The fixed arrays satisfy
-        // the block encoder's size preconditions.
+        // SAFETY: Runtime dispatch reaches this function only on little-endian
+        // std AArch64 where NEON is part of the target contract. The fixed
+        // arrays satisfy the block encoder's size preconditions.
         unsafe {
             let block = &*(input.as_ptr().add(read).cast::<[u8; 12]>());
             let encoded = &mut *(output.as_mut_ptr().add(write).cast::<[u8; 16]>());
@@ -91,7 +114,12 @@ where
     Ok(write + tail_written)
 }
 
-#[cfg(all(feature = "std", feature = "simd", target_arch = "aarch64"))]
+#[cfg(all(
+    feature = "std",
+    feature = "simd",
+    target_arch = "aarch64",
+    target_endian = "little"
+))]
 pub(crate) fn decode_slice_neon<A, const PAD: bool>(
     input: &[u8],
     output: &mut [u8],
@@ -115,11 +143,11 @@ where
     let mut write = 0;
     while read + NEON_DECODE_INPUT_BLOCK <= input.len() {
         let mut decoded = [0u8; NEON_DECODE_OUTPUT_BLOCK];
-        // SAFETY: Runtime dispatch reaches this function only on std AArch64,
-        // where NEON is part of the target contract. The loop guard proves the
-        // fixed input view is in bounds. Whole-input scalar validation above
-        // preserves public error shape before any bytes are copied to caller
-        // output.
+        // SAFETY: Runtime dispatch reaches this function only on little-endian
+        // std AArch64, where NEON is part of the target contract. The loop
+        // guard proves the fixed input view is in bounds. Whole-input scalar
+        // validation above preserves public error shape before any bytes are
+        // copied to caller output.
         let written = match unsafe {
             let block = &*(input
                 .as_ptr()
@@ -152,9 +180,9 @@ pub(crate) fn neon_available() -> bool {
 
 /// Encodes one 12-byte block into 16 bytes through the NEON block encoder.
 ///
-/// On `aarch64`, Standard and URL-safe alphabets use real NEON fixed-block
-/// logic. Other alphabets and 32-bit `arm+neon` builds use the scalar fallback
-/// scaffold.
+/// On little-endian `aarch64`, Standard and URL-safe alphabets use real NEON
+/// fixed-block logic. Other alphabets, big-endian `AArch64`, and 32-bit
+/// `arm+neon` builds use the scalar fallback scaffold.
 ///
 /// Admission note: a real NEON implementation must explicitly clear every
 /// vector register that carries caller data before returning, document the
@@ -179,7 +207,7 @@ pub(super) unsafe fn encode_12_bytes_neon<A>(input: &[u8; 12], output: &mut [u8;
 where
     A: Alphabet,
 {
-    #[cfg(target_arch = "aarch64")]
+    #[cfg(all(target_arch = "aarch64", target_endian = "little"))]
     {
         if is_standard_or_url_safe_family::<A>() {
             // SAFETY: The caller has proven NEON availability. The helper uses
@@ -205,6 +233,7 @@ where
 
 #[cfg(all(
     target_arch = "aarch64",
+    target_endian = "little",
     any(test, all(feature = "std", feature = "simd"))
 ))]
 macro_rules! clear_neon_registers_after_vector_block {
@@ -216,38 +245,10 @@ macro_rules! clear_neon_registers_after_vector_block {
         // clobbered while the assembly clears it. This is retention reduction
         // for SIMD evidence, not a formal microarchitectural proof.
         core::arch::asm!(
-            "eor v0.16b, v0.16b, v0.16b",
-            "eor v1.16b, v1.16b, v1.16b",
-            "eor v2.16b, v2.16b, v2.16b",
-            "eor v3.16b, v3.16b, v3.16b",
-            "eor v4.16b, v4.16b, v4.16b",
-            "eor v5.16b, v5.16b, v5.16b",
-            "eor v6.16b, v6.16b, v6.16b",
-            "eor v7.16b, v7.16b, v7.16b",
-            "eor v8.16b, v8.16b, v8.16b",
-            "eor v9.16b, v9.16b, v9.16b",
-            "eor v10.16b, v10.16b, v10.16b",
-            "eor v11.16b, v11.16b, v11.16b",
-            "eor v12.16b, v12.16b, v12.16b",
-            "eor v13.16b, v13.16b, v13.16b",
-            "eor v14.16b, v14.16b, v14.16b",
-            "eor v15.16b, v15.16b, v15.16b",
-            "eor v16.16b, v16.16b, v16.16b",
-            "eor v17.16b, v17.16b, v17.16b",
-            "eor v18.16b, v18.16b, v18.16b",
-            "eor v19.16b, v19.16b, v19.16b",
-            "eor v20.16b, v20.16b, v20.16b",
-            "eor v21.16b, v21.16b, v21.16b",
-            "eor v22.16b, v22.16b, v22.16b",
-            "eor v23.16b, v23.16b, v23.16b",
-            "eor v24.16b, v24.16b, v24.16b",
-            "eor v25.16b, v25.16b, v25.16b",
-            "eor v26.16b, v26.16b, v26.16b",
-            "eor v27.16b, v27.16b, v27.16b",
-            "eor v28.16b, v28.16b, v28.16b",
-            "eor v29.16b, v29.16b, v29.16b",
-            "eor v30.16b, v30.16b, v30.16b",
-            "eor v31.16b, v31.16b, v31.16b",
+            "eor v0.16b, v0.16b, v0.16b\neor v1.16b, v1.16b, v1.16b\neor v2.16b, v2.16b, v2.16b\neor v3.16b, v3.16b, v3.16b\neor v4.16b, v4.16b, v4.16b\neor v5.16b, v5.16b, v5.16b\neor v6.16b, v6.16b, v6.16b\neor v7.16b, v7.16b, v7.16b",
+            "eor v8.16b, v8.16b, v8.16b\neor v9.16b, v9.16b, v9.16b\neor v10.16b, v10.16b, v10.16b\neor v11.16b, v11.16b, v11.16b\neor v12.16b, v12.16b, v12.16b\neor v13.16b, v13.16b, v13.16b\neor v14.16b, v14.16b, v14.16b\neor v15.16b, v15.16b, v15.16b",
+            "eor v16.16b, v16.16b, v16.16b\neor v17.16b, v17.16b, v17.16b\neor v18.16b, v18.16b, v18.16b\neor v19.16b, v19.16b, v19.16b\neor v20.16b, v20.16b, v20.16b\neor v21.16b, v21.16b, v21.16b\neor v22.16b, v22.16b, v22.16b\neor v23.16b, v23.16b, v23.16b",
+            "eor v24.16b, v24.16b, v24.16b\neor v25.16b, v25.16b, v25.16b\neor v26.16b, v26.16b, v26.16b\neor v27.16b, v27.16b, v27.16b\neor v28.16b, v28.16b, v28.16b\neor v29.16b, v29.16b, v29.16b\neor v30.16b, v30.16b, v30.16b\neor v31.16b, v31.16b, v31.16b",
             out("v0") _,
             out("v1") _,
             out("v2") _,
@@ -288,10 +289,10 @@ macro_rules! clear_neon_registers_after_vector_block {
 /// Decodes one 16-byte Base64 block into at most 12 bytes through the NEON
 /// block decoder.
 ///
-/// This is the admitted `AArch64` NEON block decoder for the `1.3.0` strict
-/// decode admission line. It validates with the scalar decoder before copying
-/// any bytes into the caller-visible output, so malformed inputs cannot expose
-/// prototype output.
+/// This is the admitted little-endian `AArch64` NEON block decoder for the
+/// `1.3.0` strict decode admission line. It validates with the scalar decoder
+/// before copying any bytes into the caller-visible output, so malformed inputs
+/// cannot expose prototype output.
 ///
 /// # Safety
 ///
@@ -299,6 +300,7 @@ macro_rules! clear_neon_registers_after_vector_block {
 /// current CPU. The input and output sizes are fixed by their array types.
 #[cfg(all(
     target_arch = "aarch64",
+    target_endian = "little",
     any(test, all(feature = "std", feature = "simd"))
 ))]
 pub(crate) unsafe fn decode_16_bytes_neon<A, const PAD: bool>(
@@ -390,6 +392,7 @@ where
 
 #[cfg(all(
     target_arch = "aarch64",
+    target_endian = "little",
     any(test, all(feature = "std", feature = "simd"))
 ))]
 fn is_standard_or_url_safe_family<A>() -> bool
@@ -410,6 +413,7 @@ where
 
 #[cfg(all(
     target_arch = "aarch64",
+    target_endian = "little",
     any(test, all(feature = "std", feature = "simd"))
 ))]
 #[target_feature(enable = "neon")]
@@ -450,6 +454,7 @@ where
 
 #[cfg(all(
     target_arch = "aarch64",
+    target_endian = "little",
     any(test, all(feature = "std", feature = "simd"))
 ))]
 #[target_feature(enable = "neon")]

@@ -7,13 +7,14 @@
 //! this boundary, with a local safety explanation for every unsafe block.
 //!
 //! The module admits std `x86`/`x86_64` AVX-512 VBMI, AVX2, SSSE3/SSE4.1,
-//! and std `aarch64` NEON encode backends for Standard and URL-safe alphabet
-//! families. It also admits std `x86`/`x86_64` AVX-512 VBMI, AVX2, and
-//! SSSE3/SSE4.1 strict decode plus std `aarch64` NEON strict decode for
-//! Standard and URL-safe alphabet families through the separate decode backend
-//! boundary. Custom alphabets, `no_std` builds, wasm, in-place decode, wrapped
-//! decode, legacy decode, CT secret decode, and every other SIMD candidate
-//! still execute through the scalar implementation.
+//! and little-endian std `aarch64` NEON encode backends for Standard and
+//! URL-safe alphabet families. It also admits std `x86`/`x86_64` AVX-512 VBMI,
+//! AVX2, and SSSE3/SSE4.1 strict decode plus little-endian std `aarch64` NEON
+//! strict decode for Standard and URL-safe alphabet families through the
+//! separate decode backend boundary. Custom alphabets, `no_std` builds, wasm,
+//! big-endian `AArch64`, in-place decode, wrapped decode, legacy decode, CT
+//! secret decode, and every other SIMD candidate still execute through the
+//! scalar implementation.
 //!
 //! The x86 AVX-512 VBMI, AVX2, SSSE3/SSE4.1, and `AArch64` NEON fixed-block
 //! encoders are reachable from runtime encode dispatch on std builds after
@@ -21,16 +22,28 @@
 //! fixed-block implementation remains prototype evidence and is not reachable
 //! from runtime backend selection.
 
-#[cfg(all(
-    target_arch = "aarch64",
-    any(test, all(feature = "std", feature = "simd"))
+#[cfg(any(
+    all(
+        any(target_arch = "x86", target_arch = "x86_64"),
+        any(test, all(feature = "std", feature = "simd"))
+    ),
+    all(
+        target_arch = "aarch64",
+        target_endian = "little",
+        any(test, all(feature = "std", feature = "simd"))
+    )
 ))]
 mod decode_helpers;
 #[cfg(any(target_arch = "aarch64", target_arch = "arm"))]
 mod neon;
-#[cfg(all(test, target_arch = "aarch64"))]
+#[cfg(all(test, target_arch = "aarch64", target_endian = "little"))]
 pub(in crate::simd) use neon::decode_16_bytes_neon;
-#[cfg(all(feature = "std", feature = "simd", target_arch = "aarch64"))]
+#[cfg(all(
+    feature = "std",
+    feature = "simd",
+    target_arch = "aarch64",
+    target_endian = "little"
+))]
 pub(crate) use neon::decode_slice_neon;
 #[cfg(all(
     test,
@@ -40,11 +53,16 @@ pub(crate) use neon::decode_slice_neon;
     )
 ))]
 pub(in crate::simd) use neon::encode_12_bytes_neon;
-#[cfg(all(feature = "std", feature = "simd", target_arch = "aarch64"))]
+#[cfg(all(
+    feature = "std",
+    feature = "simd",
+    target_arch = "aarch64",
+    target_endian = "little"
+))]
 pub(crate) use neon::encode_slice_neon;
 #[cfg(any(target_arch = "aarch64", target_arch = "arm"))]
 pub(crate) use neon::neon_available;
-#[cfg(all(feature = "std", target_arch = "aarch64"))]
+#[cfg(all(feature = "std", target_arch = "aarch64", target_endian = "little"))]
 pub(crate) use neon::neon_supports_alphabet;
 #[cfg(any(
     all(test, any(target_arch = "x86", target_arch = "x86_64")),
@@ -60,7 +78,12 @@ pub(super) use x86::{
     decode_16_bytes_ssse3_sse41, decode_32_bytes_avx2, decode_64_bytes_avx512,
     encode_12_bytes_ssse3_sse41, encode_24_bytes_avx2, encode_48_bytes_avx512,
 };
-#[cfg(all(feature = "std", test, target_arch = "aarch64"))]
+#[cfg(all(
+    feature = "std",
+    test,
+    target_arch = "aarch64",
+    target_endian = "little"
+))]
 mod neon_decode_tests;
 #[cfg(all(test, target_arch = "wasm32"))]
 mod wasm;
@@ -85,8 +108,8 @@ pub(crate) enum ActiveBackend {
     /// std `x86`/`x86_64` SSSE3/SSE4.1 encode backend.
     #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
     Ssse3Sse41,
-    /// std `aarch64` NEON encode backend.
-    #[cfg(all(feature = "std", target_arch = "aarch64"))]
+    /// little-endian std `aarch64` NEON encode backend.
+    #[cfg(all(feature = "std", target_arch = "aarch64", target_endian = "little"))]
     Neon,
 }
 
@@ -143,7 +166,7 @@ fn detect_active_backend() -> ActiveBackend {
         }
     }
 
-    #[cfg(all(feature = "std", target_arch = "aarch64"))]
+    #[cfg(all(feature = "std", target_arch = "aarch64", target_endian = "little"))]
     {
         if neon_available() {
             return ActiveBackend::Neon;

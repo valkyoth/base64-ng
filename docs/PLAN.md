@@ -700,7 +700,7 @@ Completed `1.2.0` work packages:
   dispatch above AVX2 and SSSE3/SSE4.1 for Standard and URL-safe alphabet
   families, with runtime CPU probing, fixed 48-byte vector blocks, ZMM cleanup,
   scalar fallback behavior, generated assembly evidence, and benchmark evidence.
-- AArch64 encode completion: admitted std-only aarch64 NEON encode dispatch for
+- AArch64 encode completion: admitted little-endian std-only aarch64 NEON encode dispatch for
   Standard and URL-safe alphabets, with fixed 12-byte vector blocks, register
   cleanup review, scalar fallback behavior, generated assembly evidence, and
   real AArch64 hardware evidence.
@@ -784,7 +784,7 @@ Recommended commit sequence:
 
 Current progress in the `1.3.0` working line: commits 1 through 10 have
 landed or are in this reviewed slice. The active strict decode boundary now
-admits std x86/x86_64 SSSE3/SSE4.1, AVX2, AVX-512 VBMI, and std aarch64 NEON
+admits std x86/x86_64 SSSE3/SSE4.1, AVX2, AVX-512 VBMI, and little-endian std aarch64 NEON
 for Standard and URL-safe alphabet families only. The remaining completion
 work is therefore focused on surface review, optional companion ergonomics,
 const decode feasibility, final evidence refresh, and release-candidate

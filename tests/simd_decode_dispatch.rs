@@ -96,7 +96,12 @@ fn runtime_report_exposes_strict_decode_backend() {
     );
 }
 
-#[cfg(all(feature = "simd", feature = "std", target_arch = "aarch64"))]
+#[cfg(all(
+    feature = "simd",
+    feature = "std",
+    target_arch = "aarch64",
+    target_endian = "little"
+))]
 #[test]
 fn runtime_report_exposes_aarch64_strict_decode_backend() {
     assert_eq!(

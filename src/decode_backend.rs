@@ -33,8 +33,13 @@ pub(crate) enum DecodeBackend {
         any(target_arch = "x86", target_arch = "x86_64")
     ))]
     Ssse3Sse41,
-    /// std `aarch64` NEON fixed-block strict decode.
-    #[cfg(all(feature = "simd", feature = "std", target_arch = "aarch64"))]
+    /// little-endian std `aarch64` NEON fixed-block strict decode.
+    #[cfg(all(
+        feature = "simd",
+        feature = "std",
+        target_arch = "aarch64",
+        target_endian = "little"
+    ))]
     Neon,
 }
 
@@ -60,7 +65,12 @@ pub(crate) fn active_decode_backend() -> DecodeBackend {
         }
     }
 
-    #[cfg(all(feature = "simd", feature = "std", target_arch = "aarch64"))]
+    #[cfg(all(
+        feature = "simd",
+        feature = "std",
+        target_arch = "aarch64",
+        target_endian = "little"
+    ))]
     {
         if crate::simd::neon_available() {
             return DecodeBackend::Neon;
@@ -103,7 +113,12 @@ where
             any(target_arch = "x86", target_arch = "x86_64")
         ))]
         DecodeBackend::Ssse3Sse41 => crate::simd::decode_slice_ssse3_sse41::<A, PAD>(input, output),
-        #[cfg(all(feature = "simd", feature = "std", target_arch = "aarch64"))]
+        #[cfg(all(
+            feature = "simd",
+            feature = "std",
+            target_arch = "aarch64",
+            target_endian = "little"
+        ))]
         DecodeBackend::Neon => crate::simd::decode_slice_neon::<A, PAD>(input, output),
     }
 }
@@ -142,7 +157,12 @@ mod tests {
             assert!(crate::simd::ssse3_sse41_decode_available());
             return;
         }
-        #[cfg(all(feature = "simd", feature = "std", target_arch = "aarch64"))]
+        #[cfg(all(
+            feature = "simd",
+            feature = "std",
+            target_arch = "aarch64",
+            target_endian = "little"
+        ))]
         if backend == DecodeBackend::Neon {
             assert!(crate::simd::neon_available());
             return;

@@ -333,7 +333,7 @@ fn active_backend() -> Backend {
         crate::simd::ActiveBackend::Avx2 => Backend::Avx2,
         #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
         crate::simd::ActiveBackend::Ssse3Sse41 => Backend::Ssse3Sse41,
-        #[cfg(all(feature = "std", target_arch = "aarch64"))]
+        #[cfg(all(feature = "std", target_arch = "aarch64", target_endian = "little"))]
         crate::simd::ActiveBackend::Neon => Backend::Neon,
     }
 }
@@ -353,7 +353,7 @@ fn active_decode_backend() -> Backend {
         crate::decode_backend::DecodeBackend::Avx2 => Backend::Avx2,
         #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
         crate::decode_backend::DecodeBackend::Ssse3Sse41 => Backend::Ssse3Sse41,
-        #[cfg(all(feature = "std", target_arch = "aarch64"))]
+        #[cfg(all(feature = "std", target_arch = "aarch64", target_endian = "little"))]
         crate::decode_backend::DecodeBackend::Neon => Backend::Neon,
     }
 }

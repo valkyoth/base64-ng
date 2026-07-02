@@ -2,7 +2,8 @@
 
 This checklist is mandatory before any additional SIMD code becomes
 dispatchable. AVX-512 VBMI, AVX2, SSSE3/SSE4.1, and NEON encode are admitted
-only for std x86/x86_64 or std aarch64 Standard and URL-safe alphabet families.
+only for std x86/x86_64 or little-endian std aarch64 Standard and URL-safe
+alphabet families.
 wasm, custom-alphabet, in-place, and decode SIMD paths remain prototype-only or
 scalar until their own checklist evidence is complete.
 

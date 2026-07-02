@@ -121,11 +121,11 @@ The release gate runs:
   VBMI, AVX2, SSSE3/SSE4.1, or NEON encode dispatch when supported, and
   admitted strict decode dispatch when supported
 - SIMD admission policy for the current release series, with AVX-512 VBMI,
-  AVX2, SSSE3/SSE4.1, and NEON encode admitted only for std x86/x86_64 or std
-  aarch64 Standard and URL-safe alphabets, AVX-512 VBMI, AVX2, SSSE3/SSE4.1,
-  and NEON strict decode admitted only for std x86/x86_64 or std aarch64
-  Standard and URL-safe alphabets, and no SIMD performance claims without
-  complete local benchmark evidence
+  AVX2, SSSE3/SSE4.1, and NEON encode admitted only for std x86/x86_64 or
+  little-endian std aarch64 Standard and URL-safe alphabets, AVX-512 VBMI,
+  AVX2, SSSE3/SSE4.1, and NEON strict decode admitted only for std x86/x86_64
+  or little-endian std aarch64 Standard and URL-safe alphabets, and no SIMD
+  performance claims without complete local benchmark evidence
 - unsafe-boundary validation that confines `allow(unsafe_code)` to the audited
   cleanup helpers in `src/cleanup.rs`, CT barrier/comparison helpers in
   `src/ct/`, and the SIMD boundary in `src/simd/`
@@ -287,9 +287,9 @@ scalar-equivalence tests with `--nocapture`. The runtime report records
 `candidate_detection_mode`, which distinguishes x86/x86_64 `std` runtime CPU
 probing from compile-time target-feature reporting used by `no_std` and other
 compile-time-only targets. On CPUs with AVX-512 VBMI, AVX2, SSSE3/SSE4.1, or
-AArch64 NEON, an admitted encode path may be active for Standard and URL-safe
-alphabets. 32-bit ARM NEON remains scaffold evidence. Wasm `simd128` evidence
-is kept in
+little-endian AArch64 NEON, an admitted encode path may be active for Standard
+and URL-safe alphabets. Big-endian AArch64 stays scalar, and 32-bit ARM NEON
+remains scaffold evidence. Wasm `simd128` evidence is kept in
 `scripts/check_simd_feature_bundles.sh` as compile/test-binary evidence only
 because runtime JIT behavior is outside the crate's release gate. The
 script writes

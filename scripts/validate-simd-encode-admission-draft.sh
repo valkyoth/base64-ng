@@ -14,7 +14,7 @@ for required_text in \
     "AVX-512 VBMI, AVX2, SSSE3/SSE4.1, and NEON encode are already admitted" \
     "every additional backend or broader API surface remains pending" \
     "Decode acceleration" \
-    "std x86/x86_64 and std aarch64 dispatch only" \
+    "std x86/x86_64 and little-endian std aarch64 dispatch only" \
     "Unsupported CPUs must execute scalar code without illegal instructions" \
     "Any backend whose evidence is incomplete stays candidate-only" \
     "full \`Engine::encode_slice\`, \`encode_slice_clear_tail\`, and alloc helper" \
@@ -75,7 +75,7 @@ if ! grep -F -q "Admitted backends: AVX-512 VBMI encode, AVX2 encode, SSSE3/SSE4
     exit 1
 fi
 
-if ! grep -F -q "Active backend priority: AVX-512 VBMI, then AVX2, then SSSE3/SSE4.1 on x86/x86_64; NEON on aarch64" "$manifest"; then
+if ! grep -F -q "Active backend priority: AVX-512 VBMI, then AVX2, then SSSE3/SSE4.1 on x86/x86_64; NEON on little-endian aarch64" "$manifest"; then
     echo "simd encode admission draft: manifest must report AVX-512, AVX2, SSSE3/SSE4.1, and NEON encode priority" >&2
     exit 1
 fi

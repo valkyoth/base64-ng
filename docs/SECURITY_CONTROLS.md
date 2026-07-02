@@ -273,11 +273,11 @@ Normal SIMD decode admission is not a secret-decoding claim. The `1.3.0`
 decode acceleration scope is limited to strict Standard and URL-safe
 interoperability decode. The admitted decode backends are std x86/x86_64
 AVX-512 VBMI for full 64-byte encoded blocks, AVX2 for full 32-byte encoded
-blocks, SSSE3/SSE4.1 for full 16-byte encoded blocks, and std aarch64 NEON
-for full 16-byte encoded blocks after scalar whole-input validation; every
-other decode backend and the `base64_ng::ct` constant-time-oriented decode
-path remain scalar unless a separate formal side-channel evidence package
-admits otherwise.
+blocks, SSSE3/SSE4.1 for full 16-byte encoded blocks, and little-endian std
+aarch64 NEON for full 16-byte encoded blocks after scalar whole-input
+validation; every other decode backend, including big-endian AArch64, and the
+`base64_ng::ct` constant-time-oriented decode path remain scalar unless a
+separate formal side-channel evidence package admits otherwise.
 Deployments that require the most conservative side-channel posture should
 combine `base64_ng::ct` with
 `runtime::BackendPolicy::HighAssuranceScalarOnly` so sensitive decode paths

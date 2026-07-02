@@ -2,6 +2,8 @@
 
 use crate::{Alphabet, DecodeError, scalar};
 
+use super::super::decode_helpers::{copy_verified_decode_output, fill_decode_values};
+
 const SSSE3_DECODE_INPUT_BLOCK: usize = 16;
 const SSSE3_DECODE_OUTPUT_BLOCK: usize = 12;
 const AVX2_DECODE_INPUT_BLOCK: usize = 32;
@@ -357,43 +359,4 @@ where
     crate::wipe_bytes(&mut values);
     copy_verified_decode_output(&mut packed, &mut scalar_output, output, written)?;
     Ok(written)
-}
-
-fn copy_verified_decode_output<const PACKED: usize, const SCALAR: usize>(
-    packed: &mut [u8; PACKED],
-    scalar_output: &mut [u8; SCALAR],
-    output: &mut [u8],
-    written: usize,
-) -> Result<(), DecodeError> {
-    if packed[..written] != scalar_output[..written] {
-        crate::wipe_bytes(packed);
-        crate::wipe_bytes(scalar_output);
-        return Err(DecodeError::InvalidInput);
-    }
-
-    output[..written].copy_from_slice(&packed[..written]);
-    crate::wipe_bytes(packed);
-    crate::wipe_bytes(scalar_output);
-    Ok(())
-}
-
-fn fill_decode_values<A, const N: usize>(input: &[u8; N], values: &mut [u8; N])
-where
-    A: Alphabet,
-{
-    let mut index = 0;
-    while index < input.len() {
-        values[index] = match input[index] {
-            b'=' => 0,
-            byte => {
-                if let Some(value) = A::decode(byte) {
-                    value
-                } else {
-                    debug_assert!(false, "fill_decode_values called on unvalidated input");
-                    0
-                }
-            }
-        };
-        index += 1;
-    }
 }

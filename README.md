@@ -78,19 +78,20 @@ Implemented now:
   `cargo-kani 0.67.0`.
 - Constant-time assembly evidence generation for reviewer inspection.
 - Runtime-dispatched std `x86`/`x86_64` AVX-512 VBMI fixed-block encode,
-  falling back to AVX2, then SSSE3/SSE4.1, and then scalar, plus std
-  `aarch64` NEON fixed-block encode, for Standard and URL-safe alphabets behind
-  the SIMD admission boundary. Public slice, clear-tail, alloc, and wrapped
-  encode helpers can use admitted fixed-block encode for their unwrapped
-  encoding step; unsupported CPUs, `no_std`, custom alphabets, tails, padding,
-  in-place encode, and line-ending insertion stay scalar.
+  falling back to AVX2, then SSSE3/SSE4.1, and then scalar, plus
+  little-endian std `aarch64` NEON fixed-block encode, for Standard and
+  URL-safe alphabets behind the SIMD admission boundary. Public slice,
+  clear-tail, alloc, and wrapped encode helpers can use admitted fixed-block
+  encode for their unwrapped encoding step; unsupported CPUs, `no_std`, custom
+  alphabets, tails, padding, in-place encode, and line-ending insertion stay
+  scalar.
 - Runtime-dispatched std `x86`/`x86_64` AVX-512 VBMI fixed-block strict
-  decode, falling back to AVX2, then SSSE3/SSE4.1, and then scalar, plus std
-  `aarch64` NEON fixed-block strict decode in the `1.3.0` working line,
-  limited to Standard and URL-safe alphabets after whole-input scalar
-  validation. Unsupported CPUs, `no_std`, custom alphabets, short inputs,
-  tails, wrapped decode, legacy decode, in-place decode, and CT secret decode
-  stay scalar.
+  decode, falling back to AVX2, then SSSE3/SSE4.1, and then scalar, plus
+  little-endian std `aarch64` NEON fixed-block strict decode in the `1.3.0`
+  working line, limited to Standard and URL-safe alphabets after whole-input
+  scalar validation. Unsupported CPUs, big-endian AArch64, `no_std`, custom
+  alphabets, short inputs, tails, wrapped decode, legacy decode, in-place
+  decode, and CT secret decode stay scalar.
 - Optional `base64-ng-sanitization` companion crate for applications that
   already admit `sanitization` and want direct CT decode helpers into
   clear-on-drop secret containers.
@@ -130,7 +131,7 @@ Planned behind admission evidence:
 | MSRV | Rust `1.90.0` |
 | Runtime dependencies | Zero external crates |
 | Unsafe policy | Scalar encode/decode remains safe Rust; audited unsafe is limited to volatile wiping, CT comparison/barrier helpers, and the reviewed SIMD boundary |
-| Active backend | Scalar by default; std x86/x86_64 AVX-512 VBMI encode preferred, then AVX2, then SSSE3/SSE4.1 encode, plus std aarch64 NEON encode, when `simd` is enabled and platform checks pass |
+| Active backend | Scalar by default; std x86/x86_64 AVX-512 VBMI encode preferred, then AVX2, then SSSE3/SSE4.1 encode, plus little-endian std aarch64 NEON encode, when `simd` is enabled and platform checks pass |
 | Strict decoding | Default, canonical, no whitespace |
 | Legacy compatibility | Explicit opt-in APIs |
 | Constant-time posture | Constant-time-oriented scalar validation/decode with isolated dudect-style timing evidence; no formal cryptographic guarantee |

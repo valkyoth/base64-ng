@@ -164,7 +164,7 @@ fi
     else
         echo "- NEON admitted encode and strict decode assembly evidence was skipped because the AArch64 target is not installed"
     fi
-    echo "- AVX-512 VBMI, AVX2, SSSE3/SSE4.1, and NEON encode are admitted for std x86/x86_64 or std aarch64 Standard and URL-safe alphabets"
+    echo "- AVX-512 VBMI, AVX2, SSSE3/SSE4.1, and NEON encode are admitted for std x86/x86_64 or little-endian std aarch64 Standard and URL-safe alphabets"
 } >"$manifest"
 
 echo "simd asm evidence: wrote $output_dir"
