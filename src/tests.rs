@@ -99,6 +99,37 @@ where
     }
 }
 
+fn assert_strict_decode_public_surfaces_match_scalar<A, const PAD: bool>(input: &[u8])
+where
+    A: Alphabet,
+{
+    let engine = Engine::<A, PAD>::new();
+    let mut slice_output = [0x55; 128];
+    let mut clear_tail_output = [0xaa; 128];
+    let mut scalar_output = [0xcc; 128];
+
+    let scalar_result = scalar::scalar_reference_decode_slice::<A, PAD>(input, &mut scalar_output);
+    let slice_result = engine.decode_slice(input, &mut slice_output);
+    let clear_tail_result = engine.decode_slice_clear_tail(input, &mut clear_tail_output);
+    let buffer_result: Result<DecodedBuffer<128>, DecodeError> = engine.decode_buffer(input);
+
+    assert_eq!(slice_result, scalar_result);
+    assert_eq!(clear_tail_result, scalar_result);
+    match slice_result {
+        Ok(written) => {
+            assert_eq!(&slice_output[..written], &scalar_output[..written]);
+            assert_eq!(&clear_tail_output[..written], &scalar_output[..written]);
+            assert!(clear_tail_output[written..].iter().all(|byte| *byte == 0));
+            let buffer = buffer_result.unwrap();
+            assert_eq!(buffer.as_bytes(), &scalar_output[..written]);
+        }
+        Err(err) => {
+            assert!(clear_tail_output.iter().all(|byte| *byte == 0));
+            assert_eq!(buffer_result.unwrap_err(), err);
+        }
+    }
+}
+
 fn assert_backend_round_trip_matches_scalar<A, const PAD: bool>(input: &[u8])
 where
     A: Alphabet,
@@ -177,6 +208,54 @@ fn backend_dispatch_matches_scalar_reference_for_malformed_inputs() {
     assert_decode_backend_matches_scalar::<UrlSafe, false>(b"AA/A");
     assert_decode_backend_matches_scalar::<Standard, true>(b"AA-A");
     assert_decode_backend_matches_scalar::<Standard, false>(b"AA_A");
+}
+
+#[test]
+fn strict_decode_public_surfaces_match_scalar_reference() {
+    for input in [
+        &b""[..],
+        b"Zg==",
+        b"Zm8=",
+        b"Zm9v",
+        b"Zm9vYg==",
+        b"Zm9vYmE=",
+        b"Zm9vYmFy",
+        b"////",
+        b"AAEC",
+    ] {
+        assert_strict_decode_public_surfaces_match_scalar::<Standard, true>(input);
+    }
+
+    for input in [
+        &b""[..],
+        b"Zg",
+        b"Zm8",
+        b"Zm9v",
+        b"Zm9vYg",
+        b"Zm9vYmE",
+        b"Zm9vYmFy",
+        b"____",
+        b"AAEC",
+    ] {
+        assert_strict_decode_public_surfaces_match_scalar::<UrlSafe, false>(input);
+    }
+
+    for input in [
+        &b"Z"[..],
+        b"====",
+        b"AA=A",
+        b"Zh==",
+        b"Zm9=",
+        b"Zm9v$g==",
+        b"Zm9vZh==",
+        b"AA-A",
+    ] {
+        assert_strict_decode_public_surfaces_match_scalar::<Standard, true>(input);
+    }
+
+    for input in [&b"Z"[..], b"AA=A", b"Zh", b"Zm9", b"Zm9vYg$", b"AA/A"] {
+        assert_strict_decode_public_surfaces_match_scalar::<UrlSafe, false>(input);
+    }
 }
 
 #[test]

@@ -33,7 +33,12 @@ pub(crate) fn active_decode_backend() -> DecodeBackend {
     DecodeBackend::Scalar
 }
 
-/// Decodes `input` into `output` through the admitted decode backend.
+/// Decodes `input` into `output` through the admitted strict decode backend.
+///
+/// Only the normal strict `Engine::decode_slice` family enters this boundary.
+/// Legacy whitespace handling, wrapped decode, in-place decode, and `ct`
+/// secret decode remain separate scalar surfaces unless a future admission
+/// package explicitly adds and tests them.
 pub(crate) fn decode_slice<A, const PAD: bool>(
     input: &[u8],
     output: &mut [u8],
