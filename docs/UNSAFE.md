@@ -673,18 +673,65 @@ Safety argument:
   six-bit Base64 value.
 - The helper is private to the Standard-family SSSE3/SSE4.1 encode path.
 
+### `decode_slice_ssse3_sse41`, `decode_slice_avx2`, and `decode_slice_avx512`
+
+Location: `src/simd/x86/decode.rs`
+
+Status: admitted std x86/x86_64 strict decode dispatch wrappers for Standard
+and URL-safe alphabet families. They are reachable only when the `simd` and
+`std` features are enabled and runtime CPU feature probing has selected the
+matching backend.
+
+Purpose:
+
+- Carve full encoded input blocks into fixed-size array references for the
+  target-feature decode block functions.
+- Preserve scalar public error shape by validating the complete input before
+  any SIMD block output is copied to caller-visible buffers.
+- Fall back from AVX-512 to AVX2, from AVX2 to SSSE3/SSE4.1, and from
+  SSSE3/SSE4.1 to scalar for shorter tails or unsupported surfaces.
+
+Preconditions:
+
+- Runtime dispatch has selected only a backend whose CPU features are present.
+- The input block loop guard proves that each carved block is fully within the
+  original input slice.
+- The output capacity has been checked against the scalar validated decoded
+  length before any block output is copied.
+
+Unsafe operation:
+
+- Each wrapper uses `input.as_ptr().add(read).cast::<[u8; N]>()` and
+  dereferences the result to pass a fixed-size block reference to the matching
+  target-feature decoder.
+
+Safety argument:
+
+- `read + N <= input.len()` is checked before every raw-pointer block carve.
+- `read` advances by exactly `N`, so the pointer remains within the same input
+  allocation and never crosses the slice boundary.
+- The wrapper never constructs a mutable alias to input memory.
+- Output writes go through private stack staging buffers first. Bytes are
+  copied to caller output only after whole-input scalar validation and block
+  equality checks inside the target-feature decoder.
+- Any unexpected block-level error wipes the local decoded staging buffer and
+  rebases the error index to the original input. Tail fallback errors are also
+  rebased to the original input offset.
+- Unsupported alphabets, short inputs, tails, wrapped decode, legacy decode,
+  in-place decode, CT secret decode, `no_std`, and wasm decode stay scalar.
+
 ### `decode_16_bytes_ssse3_sse41`
 
 Location: `src/simd/x86/decode.rs`
 
-Status: non-dispatchable std x86/x86_64 SSSE3/SSE4.1 decode prototype for
-Standard and URL-safe alphabet families. It is reachable only from SIMD tests
-and backend evidence capture. Runtime decode dispatch remains scalar.
+Status: admitted std x86/x86_64 SSSE3/SSE4.1 strict decode block for Standard
+and URL-safe alphabet families. It is reachable through strict decode dispatch
+for full 16-byte encoded blocks after whole-input scalar validation.
 
 Purpose:
 
-- Establish the first fixed-block SIMD decode admission boundary without
-  changing public decode behavior.
+- Provide the fixed-block SSSE3/SSE4.1 decode primitive for the admitted strict
+  decode boundary without changing scalar public error behavior.
 - Exercise SSSE3/SSE4.1 6-bit-value packing for a 16-byte encoded block that
   decodes to at most 12 bytes.
 - Verify error agreement, padding behavior, canonical trailing-bit rejection,
@@ -724,23 +771,22 @@ Safety argument:
   an unconditional release-mode equality check proves the vector-packed prefix
   matches the scalar-validation prefix. It wipes local value, packed, and
   scalar-validation staging buffers before returning.
-- Runtime decode dispatch does not call this function. Future admission must
-  update this inventory, generated-code evidence, fuzzing, backend reporting,
-  benchmarks, and release notes in the same commit that makes any decode SIMD
-  path reachable.
+- The public dispatch wrapper validates the complete input with scalar before
+  calling this block function and rebases any unexpected block error to the
+  original input offset.
 
 ### `decode_64_bytes_avx512`
 
 Location: `src/simd/x86/decode.rs`
 
-Status: non-dispatchable std x86/x86_64 AVX-512 VBMI decode prototype for
-Standard and URL-safe alphabet families. It is reachable only from SIMD tests
-and backend evidence capture. Runtime decode dispatch remains scalar.
+Status: admitted std x86/x86_64 AVX-512 VBMI strict decode block for Standard
+and URL-safe alphabet families. It is reachable through strict decode dispatch
+for full 64-byte encoded blocks after whole-input scalar validation.
 
 Purpose:
 
-- Extend fixed-block SIMD decode evidence to the AVX-512 VBMI backend shape
-  without changing public decode behavior.
+- Provide the fixed-block AVX-512 VBMI decode primitive for the admitted strict
+  decode boundary without changing scalar public error behavior.
 - Exercise AVX-512 6-bit-value packing for a 64-byte encoded block that
   decodes to at most 48 bytes.
 - Verify VBMI lane compaction, error agreement, padding behavior, canonical
@@ -789,23 +835,22 @@ Safety argument:
   an unconditional release-mode equality check proves the vector-packed prefix
   matches the scalar-validation prefix. It wipes local value, packed, and
   scalar-validation staging buffers before returning.
-- Runtime decode dispatch does not call this function. Future admission must
-  update this inventory, generated-code evidence, fuzzing, backend reporting,
-  benchmarks, and release notes in the same commit that makes any decode SIMD
-  path reachable.
+- The public dispatch wrapper validates the complete input with scalar before
+  calling this block function and rebases any unexpected block error to the
+  original input offset.
 
 ### `decode_32_bytes_avx2`
 
 Location: `src/simd/x86/decode.rs`
 
-Status: non-dispatchable std x86/x86_64 AVX2 decode prototype for Standard and
-URL-safe alphabet families. It is reachable only from SIMD tests and backend
-evidence capture. Runtime decode dispatch remains scalar.
+Status: admitted std x86/x86_64 AVX2 strict decode block for Standard and
+URL-safe alphabet families. It is reachable through strict decode dispatch for
+full 32-byte encoded blocks after whole-input scalar validation.
 
 Purpose:
 
-- Extend fixed-block SIMD decode evidence from one SSSE3/SSE4.1 lane to the
-  two-lane AVX2 shape without changing public decode behavior.
+- Provide the fixed-block AVX2 decode primitive for the admitted strict decode
+  boundary without changing scalar public error behavior.
 - Exercise AVX2 6-bit-value packing for a 32-byte encoded block that decodes
   to at most 24 bytes.
 - Verify lane-boundary compaction, error agreement, padding behavior,
@@ -852,10 +897,9 @@ Safety argument:
   an unconditional release-mode equality check proves the vector-packed prefix
   matches the scalar-validation prefix. It wipes local value, packed, and
   scalar-validation staging buffers before returning.
-- Runtime decode dispatch does not call this function. Future admission must
-  update this inventory, generated-code evidence, fuzzing, backend reporting,
-  benchmarks, and release notes in the same commit that makes any decode SIMD
-  path reachable.
+- The public dispatch wrapper validates the complete input with scalar before
+  calling this block function and rebases any unexpected block error to the
+  original input offset.
 
 ### `clear_xmm_registers_after_encode_block`
 

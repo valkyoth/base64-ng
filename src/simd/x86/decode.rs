@@ -57,7 +57,8 @@ where
         write += written;
     }
 
-    let tail_written = scalar::decode_slice::<A, PAD>(&input[read..], &mut output[write..])?;
+    let tail_written = scalar::decode_slice::<A, PAD>(&input[read..], &mut output[write..])
+        .map_err(|error| error.with_index_offset(read))?;
     Ok(write + tail_written)
 }
 
@@ -109,7 +110,8 @@ where
         write += written;
     }
 
-    let tail_written = decode_slice_ssse3_sse41::<A, PAD>(&input[read..], &mut output[write..])?;
+    let tail_written = decode_slice_ssse3_sse41::<A, PAD>(&input[read..], &mut output[write..])
+        .map_err(|error| error.with_index_offset(read))?;
     Ok(write + tail_written)
 }
 
@@ -161,7 +163,8 @@ where
         write += written;
     }
 
-    let tail_written = decode_slice_avx2::<A, PAD>(&input[read..], &mut output[write..])?;
+    let tail_written = decode_slice_avx2::<A, PAD>(&input[read..], &mut output[write..])
+        .map_err(|error| error.with_index_offset(read))?;
     Ok(write + tail_written)
 }
 
