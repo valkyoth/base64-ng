@@ -33,6 +33,8 @@ fuzz_target!(|data: &[u8]| {
     exercise_legacy_decode(data, STANDARD_NO_PAD);
     exercise_legacy_decode(data, URL_SAFE);
     exercise_legacy_decode(data, URL_SAFE_NO_PAD);
+
+    exercise_generated_malformed_decode(data);
 });
 
 fn exercise_encode<A, const PAD: bool>(input: &[u8], engine: base64_ng::Engine<A, PAD>)
@@ -284,4 +286,65 @@ where
         );
         assert!(too_small.iter().all(|byte| *byte == 0));
     }
+}
+
+fn exercise_generated_malformed_decode(input: &[u8]) {
+    exercise_mutated_canonical(input, STANDARD, b'-');
+    exercise_mutated_canonical(input, STANDARD_NO_PAD, b'_');
+    exercise_mutated_canonical(input, URL_SAFE, b'/');
+    exercise_mutated_canonical(input, URL_SAFE_NO_PAD, b'+');
+
+    for malformed in [
+        &b"=m9v"[..],
+        b"Z=9v",
+        b"Zm=v",
+        b"Zm9v=AAA",
+        b"Zh==",
+        b"Zi==",
+        b"Zm9=",
+        b"Zm+=",
+        b"AA-A",
+        b"AA_A",
+        b"AA+A",
+        b"AA/A",
+    ] {
+        exercise_decode(malformed, STANDARD);
+        exercise_decode(malformed, STANDARD_NO_PAD);
+        exercise_decode(malformed, URL_SAFE);
+        exercise_decode(malformed, URL_SAFE_NO_PAD);
+    }
+}
+
+fn exercise_mutated_canonical<A, const PAD: bool>(
+    input: &[u8],
+    engine: base64_ng::Engine<A, PAD>,
+    mixed_alphabet_byte: u8,
+) where
+    A: base64_ng::Alphabet,
+{
+    let encoded = engine.encode_vec(input).expect("encoding byte input succeeds");
+    exercise_decode(&encoded, engine);
+
+    for index in 0..encoded.len().min(64) {
+        exercise_mutated_at(&encoded, engine, index, b'!');
+    }
+
+    if !encoded.is_empty() {
+        exercise_mutated_at(&encoded, engine, encoded.len() - 1, b'!');
+        exercise_mutated_at(&encoded, engine, encoded.len() / 2, mixed_alphabet_byte);
+        exercise_mutated_at(&encoded, engine, 0, b'=');
+    }
+}
+
+fn exercise_mutated_at<A, const PAD: bool>(
+    encoded: &[u8],
+    engine: base64_ng::Engine<A, PAD>,
+    index: usize,
+    byte: u8,
+) where
+    A: base64_ng::Alphabet,
+{
+    let mut invalid = encoded.to_vec();
+    invalid[index] = byte;
+    exercise_decode(&invalid, engine);
 }

@@ -211,6 +211,53 @@ fn backend_dispatch_matches_scalar_reference_for_malformed_inputs() {
 }
 
 #[test]
+fn strict_decode_reports_invalid_byte_positions_exhaustively() {
+    for index in 0..8 {
+        let mut input = *b"Zm9vYmFy";
+        input[index] = b'!';
+        let mut output = [0; 6];
+        assert_eq!(
+            STANDARD.decode_slice(&input, &mut output),
+            Err(DecodeError::InvalidByte { index, byte: b'!' })
+        );
+        assert_decode_backend_matches_scalar::<Standard, true>(&input);
+    }
+
+    for index in 0..8 {
+        let mut input = *b"Zm9vYmFy";
+        input[index] = b'/';
+        let mut output = [0; 6];
+        assert_eq!(
+            URL_SAFE.decode_slice(&input, &mut output),
+            Err(DecodeError::InvalidByte { index, byte: b'/' })
+        );
+        assert_decode_backend_matches_scalar::<UrlSafe, true>(&input);
+    }
+}
+
+#[test]
+fn strict_decode_rejects_padding_and_canonicality_matrix() {
+    for input in [
+        &b"=m9v"[..],
+        b"Z=9v",
+        b"Zm=v",
+        b"Zm9v=AAA",
+        b"Zh==",
+        b"Zi==",
+        b"Zm9=",
+        b"Zm+=",
+    ] {
+        assert_decode_backend_matches_scalar::<Standard, true>(input);
+        assert!(STANDARD.decode_buffer::<8>(input).is_err());
+    }
+
+    for input in [&b"Z"[..], b"Zh", b"Zi", b"Zm9", b"Zm+"] {
+        assert_decode_backend_matches_scalar::<Standard, false>(input);
+        assert!(STANDARD_NO_PAD.decode_buffer::<8>(input).is_err());
+    }
+}
+
+#[test]
 fn strict_decode_public_surfaces_match_scalar_reference() {
     for input in [
         &b""[..],

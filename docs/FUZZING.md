@@ -22,7 +22,9 @@ Current fuzz targets:
 
 - `decode`: arbitrary strict, strict line-wrapped, legacy, and
   constant-time-oriented decode input plus wrapped encode slice/alloc
-  equivalence
+  equivalence; it also derives malformed cases from canonical encodings to
+  exercise invalid-byte positions, mixed alphabets, early padding,
+  non-canonical trailing bits, and clear-tail error behavior
 - `in_place`: in-place encode/decode, legacy compaction behavior, and strict
   line-wrapped in-place compaction behavior
 - `stream_chunks`: fragmented stream reader/writer state machines, adjacent
