@@ -331,8 +331,9 @@ let decoded = ct::STANDARD.decode_secret(b"aGVsbG8=").unwrap();
 assert!(decoded.subtle_verify(b"hello"));
 ```
 
-`base64-ng-tokio` provides bounded async helpers for applications that already
-use Tokio:
+`base64-ng-tokio` provides read-all/write-all async helpers for applications
+that already use Tokio. Prefer the `*_limited` variants for request or frame
+boundaries controlled by a peer:
 
 ```toml
 [dependencies]
@@ -343,12 +344,12 @@ tokio = { version = "1.52.3", features = ["io-util"] }
 
 ```rust
 use base64_ng::STANDARD;
-use base64_ng_tokio::encode_reader_to_writer;
+use base64_ng_tokio::encode_reader_to_writer_limited;
 
 # async fn example() -> std::io::Result<()> {
 let mut input = &b"hello"[..];
 let mut output = Vec::new();
-encode_reader_to_writer(&STANDARD, &mut input, &mut output).await?;
+encode_reader_to_writer_limited(&STANDARD, &mut input, &mut output, 1024).await?;
 assert_eq!(output, b"aGVsbG8=");
 # Ok(())
 # }

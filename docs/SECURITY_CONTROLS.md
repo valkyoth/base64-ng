@@ -127,6 +127,10 @@ certification claim.
 - Set protocol-level maximum input sizes before allocation helpers or CT decode
   are reachable from untrusted traffic. Prefer caller-owned buffers, fixed-size
   `decode_buffer::<MAX>()` patterns, or streaming adapters for bounded services.
+  For async services using the optional `base64-ng-tokio` companion crate,
+  prefer `encode_reader_to_writer_limited` and
+  `decode_reader_to_writer_limited` at request or frame boundaries controlled
+  by a peer.
 - Log redacted error classifications such as `DecodeError::kind()` for
   secret-adjacent inputs. Strict decode errors can carry exact offsets and
   offending input bytes for diagnostics.

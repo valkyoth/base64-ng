@@ -782,16 +782,19 @@ Each commit must follow these rules:
 
 Recommended commit sequence:
 
-Current progress in the `1.3.0` working line: commits 1 through 11 have
+Current progress in the `1.3.0` working line: commits 1 through 12 have
 landed or are in this reviewed slice. The active strict decode boundary now
 admits std x86/x86_64 SSSE3/SSE4.1, AVX2, AVX-512 VBMI, and little-endian std
 aarch64 NEON for Standard and URL-safe alphabet families only. Encode surface
 review is complete for the current `1.3.0` scope: in-place encode, custom
 alphabets, bcrypt/crypt profiles, `no_std`, wasm runtime dispatch, and
 line-ending insertion remain intentionally scalar unless a later admission
-package proves otherwise. The remaining completion work is therefore focused
-on optional companion ergonomics, const decode feasibility, final evidence
-refresh, and release-candidate hardening.
+package proves otherwise. The Tokio companion now has caller-limited
+read-all/write-all helpers; full async streaming state machines remain
+deferred until cancellation and backpressure evidence is complete. The
+remaining completion work is therefore focused on optional companion
+ergonomics, const decode feasibility, final evidence refresh, and
+release-candidate hardening.
 
 1. Commit: decode SIMD design and API freeze.
    - Freeze the decode acceleration scope: strict Standard and URL-safe

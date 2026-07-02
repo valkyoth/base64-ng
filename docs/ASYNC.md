@@ -1,12 +1,15 @@
 # Async Admission Policy
 
-`base64-ng` does not currently provide async streaming wrappers. The `tokio`
-feature is intentionally inert and dependency-free until an async API is
-admitted through the same evidence-driven process used for SIMD and other
-security-sensitive surfaces.
+`base64-ng` does not currently provide async streaming wrappers in the core
+crate. The core `tokio` feature is intentionally inert and dependency-free
+until a streaming async API is admitted through the same evidence-driven
+process used for SIMD and other security-sensitive surfaces.
 
-This keeps the published crate small and avoids adding a runtime dependency
-before the API, cancellation behavior, and security tradeoffs are documented.
+The optional `base64-ng-tokio` companion crate is admitted separately for
+read-all/write-all helper functions. Its `*_limited` helpers enforce a
+caller-provided maximum input size before writing output. Full
+`AsyncRead`/`AsyncWrite` state machines remain deferred until cancellation,
+backpressure, drop cleanup, and dependency evidence is complete.
 
 ## Current Status
 
@@ -16,6 +19,9 @@ before the API, cancellation behavior, and security tradeoffs are documented.
   dependency-free until admission.
 - No async traits, Tokio types, or async runtime dependencies are exported by
   the crate today.
+- `base64-ng-tokio` provides optional read-all/write-all helpers for projects
+  that already admit Tokio. Prefer its limited helpers for peer-controlled
+  input.
 
 ## Admission Requirements
 

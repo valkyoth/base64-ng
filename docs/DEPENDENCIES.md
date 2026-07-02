@@ -80,9 +80,10 @@ Current decisions:
   MAC, password-hash, and token verification boundaries can opt into a reviewed
   `subtle::ConstantTimeEq` primitive without adding `subtle` to the core
   package.
-- `base64-ng-tokio` is admitted as a companion crate for bounded async
-  read-all/write-all helpers. Full streaming state machines remain deferred
-  until cancellation-safety and drop-cleanup evidence is complete.
+- `base64-ng-tokio` is admitted as a companion crate for async read-all/write-all
+  helpers, including caller-limited variants for peer-controlled request or
+  frame boundaries. Full streaming state machines remain deferred until
+  cancellation-safety and drop-cleanup evidence is complete.
 - The core `tokio` feature remains reserved and inert until async
   cancellation, drop cleanup, chunk-boundary, dependency, and release-evidence
   requirements are satisfied.
@@ -144,7 +145,8 @@ core crate today:
 
 - `tokio`: the core feature remains reserved for async streaming only after the
   policy in [`ASYNC.md`](ASYNC.md) is satisfied. Use `base64-ng-tokio` for the
-  admitted bounded async helper surface.
+  admitted read-all/write-all helper surface and prefer its caller-limited
+  variants for peer-controlled input.
 - `serde`: use `base64-ng-serde` when explicit serialization wrappers are
   needed. The core crate does not admit `serde`.
 - `bytes`: use `base64-ng-bytes` when `Bytes`, `Buf`, or `BufMut` integration
