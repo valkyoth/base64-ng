@@ -28,10 +28,14 @@ new dependency expands the audit, license, advisory, and supply-chain surface.
   audit logs preserve the operator-attestation boundary.
 - `base64-ng-sanitization` is an optional companion package for applications
   that already admit `sanitization`; it is not a dependency of the core
-  `base64-ng` package. Its `1.2.x` line requires `sanitization` `1.2.2`
+  `base64-ng` package. Its `1.2.x` line requires an exact
+  `sanitization` `=1.2.2` dependency
   so callers can use `sanitization::ct::Choice`, native
   constant-time-oriented equality helpers, and opt-in locked-secret fill APIs
-  without adding dependencies to the core crate.
+  without adding dependencies to the core crate. Release review must verify
+  the crates.io owner set for `sanitization` before publishing companion
+  updates because that crate sits directly in the optional secret-cleanup
+  dependency chain.
 - `base64-ng-derive` is an optional companion package for fixed-size byte
   newtypes. It is dependency-free and does not add proc-macro machinery to the
   core `base64-ng` package.

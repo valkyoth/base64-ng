@@ -98,6 +98,11 @@ certification claim.
   `ct::CtEngine::decode_slice_staged_clear_tail` when the caller-owned output
   buffer could be observed during the decode call, such as shared memory,
   sandbox boundaries, enclave-adjacent code, or multi-principal processes.
+- Do not treat `SecretBuffer::try_from`, `SecretBuffer::from_str`, or related
+  conversion traits as constant-time-oriented decode APIs. They use the normal
+  strict `STANDARD` decoder and provide redacted storage plus best-effort
+  cleanup after decoding. Use `base64_ng::ct`, `base64-ng-derive`, or
+  `base64-ng-sanitization` when malformed-input timing posture matters.
 - Treat in-place clear-tail APIs as destructive cleanup boundaries. On error,
   they clear the full caller-provided buffer, including original plaintext or
   encoded input. Preserve a separate audit/retry copy before calling them if
@@ -108,9 +113,10 @@ certification claim.
   drop-time cleanup by default.
 - For long-lived decoded key material on supported native targets, consider
   `base64-ng-sanitization` with its `high-assurance` feature. That path uses
-  `sanitization` `memory-lock`, `canary-check`, and `random-canary` features
-  and exposes helpers that decode directly into `LockedSecretBytes` or
-  `LockedSecretVec` without first landing in a normal `Vec`.
+  exact-pinned `sanitization` `=1.2.2` `memory-lock`, `canary-check`, and
+  `random-canary` features and exposes helpers that decode directly into
+  `LockedSecretBytes` or `LockedSecretVec` without first landing in a normal
+  `Vec`.
 - Keep dependency review split by package. The core `base64-ng` crate has zero
   runtime dependencies; optional companion crates such as `base64-ng-serde`,
   `base64-ng-bytes`, `base64-ng-subtle`, and `base64-ng-tokio` intentionally

@@ -75,12 +75,14 @@ Limitations:
   hibernation images, core dumps, CPU registers, cache lines, write buffers,
   cold-boot remanence, or buffers outside the slice provided to the API.
   Software-only wiping also cannot make claims about temporary stack copies
-  created before the wipe boundary. Miri, `wasm32`, and unsupported native
-  architectures fall back to the compiler fence only. On `wasm32`, downstream
-  runtime JIT behavior is outside this crate's control; `wasm32` builds
-  therefore fail closed unless `allow-wasm32-best-effort-wipe` is explicitly
-  enabled. Unsupported native architectures also fail closed unless
-  `allow-compiler-fence-only-wipe` is explicitly enabled after platform review.
+  created before the wipe boundary. Miri, Kani, `wasm32`, and unsupported
+  native architectures fall back to the compiler fence only. The Miri and Kani
+  fallbacks are verifier/interpreter constraints, not deployed runtime
+  postures. On `wasm32`, downstream runtime JIT behavior is outside this
+  crate's control; `wasm32` builds therefore fail closed unless
+  `allow-wasm32-best-effort-wipe` is explicitly enabled. Unsupported native
+  architectures also fail closed unless `allow-compiler-fence-only-wipe` is
+  explicitly enabled after platform review.
 - Callers with platform-specific formal zeroization requirements should apply
   their own zeroization policy to caller-owned buffers in addition to using the
   crate cleanup APIs. Applications that already admit dependencies such as
@@ -103,8 +105,8 @@ Purpose:
 - On supported native architectures, provide a stable inline assembly optimizer
   barrier and store-ordering fence similar in shape to dependency-backed
   zeroization crates.
-- Fall back to a `SeqCst` compiler fence under Miri and on architectures where
-  the crate does not enable inline assembly.
+- Fall back to a `SeqCst` compiler fence under Miri, under Kani, and on
+  architectures where the crate does not enable inline assembly.
 
 Preconditions:
 

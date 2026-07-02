@@ -33,8 +33,8 @@ The current public release is `1.2.3`.
 
 `1.2.3` is a small dependency-sync patch on top of the `1.2.0`
 encode-acceleration family release. It updates the optional
-`base64-ng-sanitization` companion to `sanitization` `1.2.2` and syncs
-workspace package metadata and examples to the `1.2.3` crate family. The
+`base64-ng-sanitization` companion to exact-pinned `sanitization` `=1.2.2`
+and syncs workspace package metadata and examples to the `1.2.3` crate family. The
 `1.2.x` line admits conservative std runtime-dispatched encode acceleration for
 Standard and URL-safe alphabets on `x86`/`x86_64` AVX-512 VBMI, AVX2,
 SSSE3/SSE4.1, and `aarch64` NEON. Decode, custom alphabets, `no_std`, wasm
@@ -205,9 +205,10 @@ only the crates that changed instead of republishing the whole ecosystem.
 `base64-ng-sanitization` provides extension helpers for
 `base64_ng::ct::CtEngine` that decode directly into
 `sanitization::SecretBytes<N>` in `no_std`, with `SecretVec` helpers behind its
-own `alloc` feature. The `1.2.3` companion uses `sanitization` `1.2.2`
-and exposes `sanitization::ct::Choice` comparison helpers through
-`SanitizationCtEqExt`. Enable the companion's `high-assurance` feature to
+own `alloc` feature. The `1.2.3` companion uses exact-pinned
+`sanitization` `=1.2.2` and exposes `sanitization::ct::Choice` comparison
+helpers through `SanitizationCtEqExt`. Enable the companion's
+`high-assurance` feature to
 decode directly into `sanitization::LockedSecretBytes` or
 `sanitization::LockedSecretVec` on supported native targets, using
 `sanitization` memory locking plus canary checking and random canaries:
@@ -823,6 +824,12 @@ assert_eq!(legacy.expose_secret(), b"hello");
 let decoded = base64_ng::SecretBuffer::try_from("aGVsbG8=").unwrap();
 assert_eq!(decoded.expose_secret(), b"hello");
 ```
+
+`SecretBuffer` conversion traits use the normal strict `STANDARD` decoder.
+They provide redacted owned storage and best-effort cleanup, not
+constant-time-oriented decoding. Use `base64_ng::ct` or the
+`base64-ng-derive`/`base64-ng-sanitization` companions for secret-bearing
+protocol inputs where malformed-input timing matters.
 
 For malformed-input timing-sensitive payloads, prefer the `ct` owned secret
 helper:
