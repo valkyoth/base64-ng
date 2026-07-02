@@ -194,7 +194,10 @@ runtime behavior for that line.
   not provide a direct 64-byte alphabet lookup. The wasm feature-bundle check
   builds wasm test binaries with `target-feature=+simd128`; this is compile and
   codegen evidence only, not a runtime/JIT timing or register-retention claim.
-  Runtime backend selection remains scalar for wasm.
+  Runtime backend selection remains scalar for wasm. The `1.3.0` wasm posture
+  decision keeps wasm `simd128` as compile/codegen evidence only; candidate
+  detection may report `wasm-simd128`, but active encode and decode backends
+  remain scalar on wasm32.
 - `runtime::backend_report()` reports the active backend, detected candidate,
   detection mode, SIMD feature status, security posture, and a
   conservative unsafe-boundary posture flag. The flag is true only when the

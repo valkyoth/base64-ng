@@ -38,6 +38,9 @@ scripts/validate-unsafe-boundary.sh
 echo "checks: wasm wipe policy"
 scripts/check_wasm_wipe_policy.sh
 
+echo "checks: wasm SIMD posture"
+scripts/validate-wasm-posture.sh
+
 echo "checks: SIMD admission policy"
 scripts/validate-simd-admission.sh
 

@@ -7,7 +7,7 @@ only for backends named in this file and the release gate.
 ## Current Admission State
 
 - Admitted backends: AVX-512 VBMI encode, AVX2 encode, SSSE3/SSE4.1 encode,
-  NEON encode, AVX-512 VBMI strict decode, AVX2 strict decode, and
+  NEON encode, AVX-512 VBMI strict decode, AVX2 strict decode,
   SSSE3/SSE4.1 strict decode, and NEON strict decode for std `x86`/`x86_64`
   or little-endian std `aarch64` where applicable.
 - Active backend priority: AVX-512 VBMI, then AVX2, then SSSE3/SSE4.1 on
@@ -53,6 +53,19 @@ separate normal strict decode acceleration from the constant-time-oriented
 scalar path. Future normal SIMD decode must not be routed into `ct::CtEngine`
 or advertised as a secret-decoding acceleration path without a separate formal
 side-channel evidence package.
+
+## Wasm Posture Decision
+
+For the `1.3.0` line, wasm `simd128` remains compile/codegen evidence only.
+It is not admitted for runtime dispatch, and there is no admitted wasm runtime
+profile. Candidate reporting may expose `wasm-simd128`, but active encode and
+decode backends remain scalar on wasm32.
+
+This is a deliberate decision: wasm execution passes through runtime/JIT
+engines outside the crate's control, and this release does not have runtime
+evidence for timing behavior, register retention, or the wasm wipe-barrier
+caveat. The wasm32 wipe policy remains fail-closed unless callers explicitly
+enable `allow-wasm32-best-effort-wipe`.
 
 ## Required For Every Admitted Backend
 
