@@ -16,7 +16,7 @@ fi
 toolchain="$(rustup show active-toolchain | sed 's/ .*//')"
 rustc_path="$(rustup which --toolchain "$toolchain" rustc)"
 host="$(rustup run "$toolchain" rustc -vV | sed -n 's/^host: //p')"
-script_revision="2026-06-21-aarch64-linux-v1"
+script_revision="2026-07-02-aarch64-linux-v2"
 
 cargo_check() {
     RUSTC="$rustc_path" rustup run "$toolchain" cargo "$@"
@@ -51,8 +51,11 @@ cargo_check test --target "$host" --all-targets --all-features
 echo "AArch64 Linux checks: host clippy all features"
 cargo_check clippy --target "$host" --all-targets --all-features -- -D warnings
 
-echo "AArch64 Linux checks: NEON block evidence"
+echo "AArch64 Linux checks: NEON encode block evidence"
 cargo_check test --target "$host" --features simd neon_encode_block_matches_scalar_when_available -- --nocapture
+
+echo "AArch64 Linux checks: NEON decode block evidence"
+cargo_check test --target "$host" --features simd neon_decode_block_matches_scalar_when_available -- --nocapture
 
 echo "AArch64 Linux checks: backend evidence"
 scripts/check_backend_evidence.sh

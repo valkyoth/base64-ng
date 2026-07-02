@@ -8,12 +8,12 @@ only for backends named in this file and the release gate.
 
 - Admitted backends: AVX-512 VBMI encode, AVX2 encode, SSSE3/SSE4.1 encode,
   NEON encode, AVX-512 VBMI strict decode, AVX2 strict decode, and
-  SSSE3/SSE4.1 strict decode for std `x86`/`x86_64` or std `aarch64` where
-  applicable.
+  SSSE3/SSE4.1 strict decode, and NEON strict decode for std `x86`/`x86_64`
+  or std `aarch64` where applicable.
 - Active backend priority: AVX-512 VBMI, then AVX2, then SSSE3/SSE4.1 on
   x86/x86_64; NEON on aarch64; scalar otherwise.
 - Runtime activation scope: std x86/x86_64 and std aarch64 dispatch only.
-- Gate summary: Admitted backends: AVX-512 VBMI encode, AVX2 encode, SSSE3/SSE4.1 encode, NEON encode, AVX-512 VBMI strict decode, AVX2 strict decode, and SSSE3/SSE4.1 strict decode.
+- Gate summary: Admitted backends: AVX-512 VBMI encode, AVX2 encode, SSSE3/SSE4.1 encode, NEON encode, AVX-512 VBMI strict decode, AVX2 strict decode, SSSE3/SSE4.1 strict decode, and NEON strict decode.
 - Gate priority: Active backend priority: AVX-512 VBMI, then AVX2, then SSSE3/SSE4.1 on x86/x86_64; NEON on aarch64.
 - Public performance claims: none without local benchmark evidence.
 - Release status: `1.2.3`; `1.2.0` admitted conservative active encode
@@ -23,11 +23,12 @@ only for backends named in this file and the release gate.
   URL-safe alphabet families. In the `1.3.0` working line, AVX-512 VBMI strict
   decode is admitted above AVX2 and SSSE3/SSE4.1 strict decode for std
   `x86`/`x86_64` Standard and URL-safe alphabet families when a full 64-byte
-  encoded block is present; AVX2 covers full 32-byte encoded blocks and
-  SSSE3/SSE4.1 covers full 16-byte encoded blocks. NEON, custom alphabets,
-  in-place decode, wrapped decode, legacy decode, CT secret decode, `no_std`,
-  and wasm `simd128` decode remain scalar or prototype-only. Wrapped encode
-  may use admitted fixed-block encode for its
+  encoded block is present; AVX2 covers full 32-byte encoded blocks,
+  SSSE3/SSE4.1 covers full 16-byte encoded blocks, and std `aarch64` NEON
+  covers full 16-byte encoded blocks. Custom alphabets, in-place decode,
+  wrapped decode, legacy decode, CT secret decode, `no_std`, and wasm
+  `simd128` decode remain scalar or prototype-only. Wrapped encode may use
+  admitted fixed-block encode for its
   unwrapped staging step; line-ending insertion remains scalar.
 
 ## `1.3.0` Decode Admission Scope Freeze
@@ -96,13 +97,13 @@ State labels are intentionally strict:
 | AVX-512 VBMI | admitted backend | `avx512f`, `avx512bw`, `avx512vl`, `avx512vbmi` | std x86/x86_64 runtime-dispatched encode and strict decode for Standard and URL-safe alphabet families; encode uses fixed 48-byte input blocks, and decode uses fixed 64-byte encoded blocks only after whole-input scalar validation preserves public error shape; shorter inputs fall back to AVX2, SSSE3/SSE4.1, or scalar, tails use scalar, and unsupported alphabets, in-place encode/decode, wrapped decode, legacy decode, CT secret decode, line-ending insertion, and `no_std` use scalar fallback |
 | AVX2 | admitted backend | `avx2` | std x86/x86_64 runtime-dispatched encode and strict decode for Standard and URL-safe alphabet families; encode uses fixed 24-byte input blocks, and decode uses fixed 32-byte encoded blocks only after whole-input scalar validation preserves public error shape; shorter inputs fall back to SSSE3/SSE4.1 or scalar, tails use scalar, and unsupported alphabets, in-place encode/decode, wrapped decode, legacy decode, CT secret decode, line-ending insertion, and `no_std` use scalar fallback |
 | SSSE3/SSE4.1 | admitted backend | `ssse3`, `sse4.1` | std x86/x86_64 runtime-dispatched encode and strict decode for Standard and URL-safe alphabet families; encode uses fixed 12-byte input blocks, and decode uses fixed 16-byte encoded blocks only after whole-input scalar validation preserves public error shape; shorter inputs, tails, unsupported alphabets, in-place encode/decode, wrapped decode, legacy decode, CT secret decode, line-ending insertion, and `no_std` use scalar fallback |
-| NEON | admitted backend | `neon` | std aarch64 runtime-dispatched encode for Standard and URL-safe alphabet families; fixed 12-byte encode blocks use vector code only when at least one full block is present; a fixed 16-byte decode block prototype exists for tests and evidence only; public decode through NEON remains prototype-only, while shorter inputs, tails, unsupported alphabets, 32-bit ARM, in-place encode, line-ending insertion, and `no_std` use scalar fallback |
+| NEON | admitted backend | `neon` | std aarch64 runtime-dispatched encode and strict decode for Standard and URL-safe alphabet families; encode uses fixed 12-byte input blocks, and decode uses fixed 16-byte encoded blocks only after whole-input scalar validation preserves public error shape; shorter inputs, tails, unsupported alphabets, 32-bit ARM, in-place encode/decode, wrapped decode, legacy decode, CT secret decode, line-ending insertion, and `no_std` use scalar fallback |
 | wasm `simd128` | real non-dispatchable prototype | `simd128` | real fixed-block encode prototype for Standard and URL-safe alphabets; test-binary compile evidence only; non-dispatchable |
 
 ## Release Rule
 
 Advertise SIMD acceleration only with the admitted backend name and scope. Do
-not claim wasm `simd128`, custom alphabet, in-place, NEON decode, or any
-broader decode acceleration until this manifest names those backends or API
-surfaces and links to the matching differential, fuzz, unsafe, benchmark, and
-release-note evidence.
+not claim wasm `simd128`, custom alphabet, in-place, or any broader decode
+acceleration until this manifest names those backends or API surfaces and
+links to the matching differential, fuzz, unsafe, benchmark, and release-note
+evidence.

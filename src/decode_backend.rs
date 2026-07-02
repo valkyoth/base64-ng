@@ -1,9 +1,9 @@
 //! Decode backend dispatch boundary.
 //!
-//! This module mirrors the encode backend boundary. Decode acceleration remains
-//! inactive; future SIMD decode admission must update this boundary together
-//! with canonicality, error-shape, fallback, retention, timing, and release
-//! evidence.
+//! This module mirrors the encode backend boundary. Decode acceleration is
+//! admitted only for the backends and surfaces named here; future SIMD decode
+//! admission must update this boundary together with canonicality, error-shape,
+//! fallback, retention, timing, and release evidence.
 
 use crate::{Alphabet, DecodeError, scalar};
 
@@ -33,6 +33,9 @@ pub(crate) enum DecodeBackend {
         any(target_arch = "x86", target_arch = "x86_64")
     ))]
     Ssse3Sse41,
+    /// std `aarch64` NEON fixed-block strict decode.
+    #[cfg(all(feature = "simd", feature = "std", target_arch = "aarch64"))]
+    Neon,
 }
 
 /// Returns the decode backend selected for this build and target.
@@ -54,6 +57,13 @@ pub(crate) fn active_decode_backend() -> DecodeBackend {
 
         if crate::simd::ssse3_sse41_decode_available() {
             return DecodeBackend::Ssse3Sse41;
+        }
+    }
+
+    #[cfg(all(feature = "simd", feature = "std", target_arch = "aarch64"))]
+    {
+        if crate::simd::neon_available() {
+            return DecodeBackend::Neon;
         }
     }
 
@@ -93,6 +103,8 @@ where
             any(target_arch = "x86", target_arch = "x86_64")
         ))]
         DecodeBackend::Ssse3Sse41 => crate::simd::decode_slice_ssse3_sse41::<A, PAD>(input, output),
+        #[cfg(all(feature = "simd", feature = "std", target_arch = "aarch64"))]
+        DecodeBackend::Neon => crate::simd::decode_slice_neon::<A, PAD>(input, output),
     }
 }
 
@@ -128,6 +140,11 @@ mod tests {
         ))]
         if backend == DecodeBackend::Ssse3Sse41 {
             assert!(crate::simd::ssse3_sse41_decode_available());
+            return;
+        }
+        #[cfg(all(feature = "simd", feature = "std", target_arch = "aarch64"))]
+        if backend == DecodeBackend::Neon {
+            assert!(crate::simd::neon_available());
             return;
         }
         assert_eq!(backend, DecodeBackend::Scalar);

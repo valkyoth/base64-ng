@@ -119,15 +119,13 @@ The release gate runs:
   Rust targets are installed
 - backend evidence capture for runtime backend reporting, admitted AVX-512
   VBMI, AVX2, SSSE3/SSE4.1, or NEON encode dispatch when supported, and
-  inactive SIMD prototype scalar-equivalence output for remaining candidates,
-  including the AVX-512 VBMI, AVX2, SSSE3/SSE4.1, and NEON fixed-block decode
-  prototypes
+  admitted strict decode dispatch when supported
 - SIMD admission policy for the current release series, with AVX-512 VBMI,
   AVX2, SSSE3/SSE4.1, and NEON encode admitted only for std x86/x86_64 or std
-  aarch64 Standard and URL-safe alphabets, AVX-512 VBMI, AVX2, and
-  SSSE3/SSE4.1 strict decode admitted only for std x86/x86_64 Standard and
-  URL-safe alphabets, and no SIMD performance claims without complete local
-  benchmark evidence
+  aarch64 Standard and URL-safe alphabets, AVX-512 VBMI, AVX2, SSSE3/SSE4.1,
+  and NEON strict decode admitted only for std x86/x86_64 or std aarch64
+  Standard and URL-safe alphabets, and no SIMD performance claims without
+  complete local benchmark evidence
 - unsafe-boundary validation that confines `allow(unsafe_code)` to the audited
   cleanup helpers in `src/cleanup.rs`, CT barrier/comparison helpers in
   `src/ct/`, and the SIMD boundary in `src/simd/`
@@ -387,11 +385,10 @@ admitted AVX-512 VBMI, AVX2, and SSSE3/SSE4.1 encode paths, then checks for the
 expected byte-shuffle, byte-permute, vector-register, and cleanup instructions.
 When the `aarch64-unknown-linux-gnu` target is installed, it also emits AArch64
 NEON release assembly and checks for table lookup, bit-select, and
-register-cleanup instructions. Cross-host runs record admitted NEON encode
-library assembly; the non-dispatchable NEON decode prototype requires an
-AArch64 host test-harness assembly run because cross-linking the test binary is
-not assumed. On non-x86 hosts it records a skip manifest. The generated files
-are written to `target/release-evidence/simd-asm/`.
+register-cleanup instructions. Cross-host runs record NEON library assembly
+and compile evidence; real AArch64 host runs provide the matching test-harness
+execution evidence. On non-x86 hosts it records a skip manifest. The generated
+files are written to `target/release-evidence/simd-asm/`.
 
 ## Performance Evidence
 

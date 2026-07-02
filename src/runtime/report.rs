@@ -353,6 +353,8 @@ fn active_decode_backend() -> Backend {
         crate::decode_backend::DecodeBackend::Avx2 => Backend::Avx2,
         #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
         crate::decode_backend::DecodeBackend::Ssse3Sse41 => Backend::Ssse3Sse41,
+        #[cfg(all(feature = "std", target_arch = "aarch64"))]
+        crate::decode_backend::DecodeBackend::Neon => Backend::Neon,
     }
 }
 

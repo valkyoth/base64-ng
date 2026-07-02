@@ -95,3 +95,12 @@ fn runtime_report_exposes_strict_decode_backend() {
         expected
     );
 }
+
+#[cfg(all(feature = "simd", feature = "std", target_arch = "aarch64"))]
+#[test]
+fn runtime_report_exposes_aarch64_strict_decode_backend() {
+    assert_eq!(
+        base64_ng::runtime::backend_report().active_decode_backend(),
+        base64_ng::runtime::Backend::Neon
+    );
+}

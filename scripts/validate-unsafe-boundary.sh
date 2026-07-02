@@ -92,7 +92,7 @@ for symbol in $unsafe_functions; do
     fi
 done
 
-bare_unsafe_wrappers='decode_slice_ssse3_sse41 decode_slice_avx2 decode_slice_avx512'
+bare_unsafe_wrappers='decode_slice_ssse3_sse41 decode_slice_avx2 decode_slice_avx512 decode_slice_neon'
 for symbol in $bare_unsafe_wrappers; do
     if ! grep -q "$symbol" docs/UNSAFE.md; then
         echo "unsafe boundary: docs/UNSAFE.md must document $symbol"

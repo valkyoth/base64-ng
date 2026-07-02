@@ -755,7 +755,7 @@ Unsafe operation:
 - `_mm_storeu_si128` stores the packed prototype output into a local 16-byte
   staging array.
 - `clear_xmm_registers_after_encode_block` clears XMM registers before return
-  to reduce register retention in the vector decode prototype.
+  to reduce register retention in the vector decode block.
 
 Safety argument:
 
@@ -983,18 +983,65 @@ Safety argument:
   the block function before return. This is retention reduction for the
   admitted encode block, not a formal microarchitectural side-channel proof.
 
+### `decode_slice_neon`
+
+Location: `src/simd/neon.rs`
+
+Status: admitted std AArch64 strict decode dispatch wrapper for Standard and
+URL-safe alphabet families. It is reachable only when the `simd` and `std`
+features are enabled on `aarch64`.
+
+Purpose:
+
+- Carve full encoded input blocks into fixed-size array references for the
+  NEON target decode block function.
+- Preserve scalar public error shape by validating the complete input before
+  any NEON block output is copied to caller-visible buffers.
+- Fall back to scalar for shorter tails or unsupported surfaces.
+
+Preconditions:
+
+- Runtime dispatch has selected AArch64 NEON. NEON is mandatory for the
+  admitted AArch64 target.
+- The input block loop guard proves that each carved block is fully within the
+  original input slice.
+- The output capacity has been checked against the scalar validated decoded
+  length before any block output is copied.
+
+Unsafe operation:
+
+- The wrapper uses `input.as_ptr().add(read).cast::<[u8; 16]>()` and
+  dereferences the result to pass a fixed-size block reference to
+  `decode_16_bytes_neon`.
+
+Safety argument:
+
+- `read + 16 <= input.len()` is checked before every raw-pointer block carve.
+- `read` advances by exactly 16, so the pointer remains within the same input
+  allocation and never crosses the slice boundary.
+- The wrapper never constructs a mutable alias to input memory.
+- Output writes go through a private stack staging buffer first. Bytes are
+  copied to caller output only after whole-input scalar validation and block
+  equality checks inside `decode_16_bytes_neon`.
+- Any unexpected block-level error wipes the local decoded staging buffer and
+  rebases the error index to the original input. Tail fallback errors are also
+  rebased to the original input offset.
+- Unsupported alphabets, short inputs, tails, wrapped decode, legacy decode,
+  in-place decode, CT secret decode, `no_std`, wasm decode, and 32-bit ARM stay
+  scalar.
+
 ### `decode_16_bytes_neon`
 
 Location: `src/simd/neon.rs`
 
-Status: non-dispatchable std AArch64 NEON decode prototype for Standard and
-URL-safe alphabet families. It exists for tests and evidence only. Public
-decode APIs still execute scalar code.
+Status: admitted std AArch64 NEON strict decode block for Standard and
+URL-safe alphabet families. It is reachable through strict decode dispatch for
+full 16-byte encoded blocks after whole-input scalar validation.
 
 Purpose:
 
-- Extend fixed-block SIMD decode evidence to the AArch64 NEON backend shape
-  before any active decode dispatch is considered.
+- Provide the fixed-block AArch64 NEON decode primitive for the admitted strict
+  decode boundary without changing scalar public error behavior.
 - Exercise NEON 6-bit-value packing for a 16-byte encoded block that produces
   at most 12 decoded bytes.
 - Preserve scalar validation, padding, canonicality, and error behavior as the
@@ -1005,7 +1052,8 @@ Preconditions:
 - Caller must prove NEON is available on the current CPU.
 - Input is exactly 16 encoded bytes.
 - Output is exactly 12 bytes.
-- The function is test/evidence-only and is not called by public decode APIs.
+- The function is reached only through the std AArch64 strict decode wrapper
+  or direct tests with the same availability precondition.
 
 Unsafe operation:
 
@@ -1031,6 +1079,9 @@ Safety argument:
 - Staging, packed, and scalar-output buffers are wiped before successful return
   or along the error path.
 - The NEON target-feature contract enables the required instructions.
+- The public dispatch wrapper validates the complete input with scalar before
+  calling this block function and rebases any unexpected block error to the
+  original input offset.
 
 ### `encode_12_bytes_neon_aarch64_standard_family`
 
@@ -1113,8 +1164,8 @@ Safety argument:
 
 Location: `src/simd/neon.rs`
 
-Status: private macro for the admitted AArch64 NEON encode block, the
-non-dispatchable AArch64 NEON decode prototype, and their tests.
+Status: private macro for the admitted AArch64 NEON encode and strict decode
+blocks and their tests.
 
 Purpose:
 

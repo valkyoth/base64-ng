@@ -1,5 +1,10 @@
 #![allow(unsafe_code)]
 
+#[cfg(all(
+    target_arch = "aarch64",
+    any(test, all(feature = "std", feature = "simd"))
+))]
+use super::decode_helpers::{copy_verified_decode_output, fill_decode_values};
 #[cfg(any(test, all(feature = "std", target_arch = "aarch64")))]
 use crate::Alphabet;
 #[cfg(all(
@@ -17,6 +22,11 @@ use crate::Standard;
 use crate::encode_base64_value;
 #[cfg(all(feature = "std", feature = "simd", target_arch = "aarch64"))]
 use crate::{EncodeError, checked_encoded_len, scalar};
+
+#[cfg(all(feature = "std", feature = "simd", target_arch = "aarch64"))]
+const NEON_DECODE_INPUT_BLOCK: usize = 16;
+#[cfg(all(feature = "std", feature = "simd", target_arch = "aarch64"))]
+const NEON_DECODE_OUTPUT_BLOCK: usize = 12;
 
 #[cfg(all(
     target_arch = "aarch64",
@@ -78,6 +88,60 @@ where
     }
 
     let tail_written = scalar::encode_slice::<A, PAD>(&input[read..], &mut output[write..])?;
+    Ok(write + tail_written)
+}
+
+#[cfg(all(feature = "std", feature = "simd", target_arch = "aarch64"))]
+pub(crate) fn decode_slice_neon<A, const PAD: bool>(
+    input: &[u8],
+    output: &mut [u8],
+) -> Result<usize, crate::DecodeError>
+where
+    A: Alphabet,
+{
+    if input.len() < NEON_DECODE_INPUT_BLOCK || !neon_supports_alphabet::<A>() {
+        return scalar::decode_slice::<A, PAD>(input, output);
+    }
+
+    let required = scalar::validate_decode::<A, PAD>(input)?;
+    if output.len() < required {
+        return Err(crate::DecodeError::OutputTooSmall {
+            required,
+            available: output.len(),
+        });
+    }
+
+    let mut read = 0;
+    let mut write = 0;
+    while read + NEON_DECODE_INPUT_BLOCK <= input.len() {
+        let mut decoded = [0u8; NEON_DECODE_OUTPUT_BLOCK];
+        // SAFETY: Runtime dispatch reaches this function only on std AArch64,
+        // where NEON is part of the target contract. The loop guard proves the
+        // fixed input view is in bounds. Whole-input scalar validation above
+        // preserves public error shape before any bytes are copied to caller
+        // output.
+        let written = match unsafe {
+            let block = &*(input
+                .as_ptr()
+                .add(read)
+                .cast::<[u8; NEON_DECODE_INPUT_BLOCK]>());
+            decode_16_bytes_neon::<A, PAD>(block, &mut decoded)
+        } {
+            Ok(written) => written,
+            Err(error) => {
+                crate::wipe_bytes(&mut decoded);
+                return Err(error.with_index_offset(read));
+            }
+        };
+
+        output[write..write + written].copy_from_slice(&decoded[..written]);
+        crate::wipe_bytes(&mut decoded);
+        read += NEON_DECODE_INPUT_BLOCK;
+        write += written;
+    }
+
+    let tail_written = scalar::decode_slice::<A, PAD>(&input[read..], &mut output[write..])
+        .map_err(|error| error.with_index_offset(read))?;
     Ok(write + tail_written)
 }
 
@@ -224,16 +288,20 @@ macro_rules! clear_neon_registers_after_vector_block {
 /// Decodes one 16-byte Base64 block into at most 12 bytes through the NEON
 /// block decoder.
 ///
-/// This is non-dispatchable evidence for the `1.3.0` decode admission line.
-/// It validates with the scalar decoder before copying any bytes into the
-/// caller-visible output, so malformed inputs cannot expose prototype output.
+/// This is the admitted `AArch64` NEON block decoder for the `1.3.0` strict
+/// decode admission line. It validates with the scalar decoder before copying
+/// any bytes into the caller-visible output, so malformed inputs cannot expose
+/// prototype output.
 ///
 /// # Safety
 ///
 /// The caller must execute this function only when NEON is available on the
 /// current CPU. The input and output sizes are fixed by their array types.
-#[cfg(all(test, target_arch = "aarch64"))]
-pub(super) unsafe fn decode_16_bytes_neon<A, const PAD: bool>(
+#[cfg(all(
+    target_arch = "aarch64",
+    any(test, all(feature = "std", feature = "simd"))
+))]
+pub(crate) unsafe fn decode_16_bytes_neon<A, const PAD: bool>(
     input: &[u8; 16],
     output: &mut [u8; 12],
 ) -> Result<usize, crate::DecodeError>
@@ -417,45 +485,4 @@ where
     );
     encoded = vbslq_u8(plus, vdupq_n_u8(plus_char), encoded);
     vbslq_u8(slash, vdupq_n_u8(slash_char), encoded)
-}
-
-#[cfg(all(target_arch = "aarch64", test))]
-fn copy_verified_decode_output<const PACKED: usize, const SCALAR: usize>(
-    packed: &mut [u8; PACKED],
-    scalar_output: &mut [u8; SCALAR],
-    output: &mut [u8],
-    written: usize,
-) -> Result<(), crate::DecodeError> {
-    if packed[..written] != scalar_output[..written] {
-        crate::wipe_bytes(packed);
-        crate::wipe_bytes(scalar_output);
-        return Err(crate::DecodeError::InvalidInput);
-    }
-
-    output[..written].copy_from_slice(&packed[..written]);
-    crate::wipe_bytes(packed);
-    crate::wipe_bytes(scalar_output);
-    Ok(())
-}
-
-#[cfg(all(target_arch = "aarch64", test))]
-fn fill_decode_values<A, const N: usize>(input: &[u8; N], values: &mut [u8; N])
-where
-    A: Alphabet,
-{
-    let mut index = 0;
-    while index < input.len() {
-        values[index] = match input[index] {
-            b'=' => 0,
-            byte => {
-                if let Some(value) = A::decode(byte) {
-                    value
-                } else {
-                    debug_assert!(false, "fill_decode_values called on unvalidated input");
-                    0
-                }
-            }
-        };
-        index += 1;
-    }
 }

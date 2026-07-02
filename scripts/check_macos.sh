@@ -10,7 +10,7 @@ toolchain="$(rustup show active-toolchain | sed 's/ .*//')"
 rustc_path="$(rustup which --toolchain "$toolchain" rustc)"
 host="$(rustup run "$toolchain" rustc -vV | sed -n 's/^host: //p')"
 machine="$(uname -m)"
-script_revision="2026-05-29-host-target-v3"
+script_revision="2026-07-02-host-target-v4"
 
 cargo_check() {
     RUSTC="$rustc_path" rustup run "$toolchain" cargo "$@"
@@ -83,6 +83,14 @@ cargo_check test --target "$host" --no-default-features --all-targets
 
 echo "macOS checks: host clippy all features"
 cargo_check clippy --target "$host" --all-targets --all-features -- -D warnings
+
+if [ "$host" = "aarch64-apple-darwin" ]; then
+    echo "macOS checks: NEON encode block evidence"
+    cargo_check test --target "$host" --features simd neon_encode_block_matches_scalar_when_available -- --nocapture
+
+    echo "macOS checks: NEON decode block evidence"
+    cargo_check test --target "$host" --features simd neon_decode_block_matches_scalar_when_available -- --nocapture
+fi
 
 for target in aarch64-apple-darwin x86_64-apple-darwin; do
     echo "macOS checks: target compile all features for $target"

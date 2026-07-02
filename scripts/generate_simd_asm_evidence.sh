@@ -149,20 +149,20 @@ fi
     echo
     echo "review focus:"
     echo "- SSSE3/SSE4.1 admitted encode path contains byte shuffle, XMM operations, and XMM cleanup"
-    echo "- SSSE3/SSE4.1 non-dispatchable decode prototype contains byte shuffle, multiply-add packing, XMM operations, and XMM cleanup"
+    echo "- SSSE3/SSE4.1 admitted strict decode path contains byte shuffle, multiply-add packing, XMM operations, and XMM cleanup"
     echo "- AVX2 admitted encode path contains byte shuffle, YMM operations, and vzeroupper"
-    echo "- AVX2 non-dispatchable decode prototype contains byte shuffle, multiply-add packing, YMM operations, and vzeroupper"
+    echo "- AVX2 admitted strict decode path contains byte shuffle, multiply-add packing, YMM operations, and vzeroupper"
     echo "- AVX-512 admitted encode path contains VBMI byte permute, ZMM operations, ZMM cleanup, and vzeroupper"
-    echo "- AVX-512 VBMI non-dispatchable decode prototype contains byte shuffle, multiply-add packing, VBMI lane compaction, ZMM operations, ZMM cleanup, and vzeroupper"
+    echo "- AVX-512 VBMI admitted strict decode path contains byte shuffle, multiply-add packing, VBMI lane compaction, ZMM operations, ZMM cleanup, and vzeroupper"
     if [ "$neon_status" = "generated" ]; then
         echo "- NEON admitted encode path contains AArch64 table lookup, bit-select mapping, and NEON cleanup"
         if [ "$neon_decode_status" = "generated" ]; then
-            echo "- NEON non-dispatchable decode prototype contains AArch64 table compaction, vector shift/mask packing, and NEON cleanup"
+            echo "- NEON admitted strict decode path contains AArch64 table compaction, vector shift/mask packing, and NEON cleanup"
         else
-            echo "- NEON non-dispatchable decode prototype assembly evidence requires an AArch64 host test-harness build; this cross-host run recorded library encode assembly only"
+            echo "- NEON admitted strict decode test-harness assembly evidence requires an AArch64 host; this cross-host run recorded library assembly and compile evidence only"
         fi
     else
-        echo "- NEON admitted encode and non-dispatchable decode assembly evidence was skipped because the AArch64 target is not installed"
+        echo "- NEON admitted encode and strict decode assembly evidence was skipped because the AArch64 target is not installed"
     fi
     echo "- AVX-512 VBMI, AVX2, SSSE3/SSE4.1, and NEON encode are admitted for std x86/x86_64 or std aarch64 Standard and URL-safe alphabets"
 } >"$manifest"

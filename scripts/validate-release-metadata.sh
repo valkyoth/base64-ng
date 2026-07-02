@@ -191,7 +191,7 @@ for required_trust_text in \
 	"Active backend | Scalar by default; std x86/x86_64 AVX-512 VBMI encode preferred, then AVX2, then SSSE3/SSE4.1 encode, plus std aarch64 NEON encode" \
 	"no formal cryptographic constant-time guarantee" \
 	"formally verified cryptographic constant-time behavior" \
-	"wasm, custom-alphabet, in-place, wrapped, legacy, CT secret, NEON decode" \
+	"wasm, custom-alphabet, in-place, wrapped, legacy, CT secret" \
 	"async/Tokio support" \
     "serde or bytes integration"
 do
