@@ -82,6 +82,33 @@ check_file() {
 
 test -s docs/PANIC_POLICY.md
 
+for test_file in src/*_tests.rs; do
+    test -e "$test_file" || continue
+    module_name="$(basename "$test_file" .rs)"
+    if ! awk -v module_name="$module_name" '
+        /^#\[cfg\(test\)\]/ {
+            saw_cfg_test = 1
+            next
+        }
+        saw_cfg_test && /^[[:space:]]*$/ {
+            next
+        }
+        saw_cfg_test {
+            expected = "^[[:space:]]*mod " module_name ";"
+            if ($0 ~ expected) {
+                found = 1
+            }
+            saw_cfg_test = 0
+        }
+        END {
+            exit found ? 0 : 1
+        }
+    ' src/lib.rs; then
+        echo "panic policy: $test_file must be declared behind #[cfg(test)] in src/lib.rs" >&2
+        exit 1
+    fi
+done
+
 find src crates/*/src -name '*.rs' | sort | while IFS= read -r source_file; do
     case "$source_file" in
         src/*_tests.rs|src/kani_proofs.rs|src/tests.rs|src/simd/tests.rs|src/simd/wasm.rs|src/simd/neon_decode_tests.rs|src/simd/x86_decode_tests.rs|crates/*/src/tests.rs|crates/*/src/*_tests.rs)

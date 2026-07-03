@@ -16,6 +16,9 @@ new `panic!`, `unreachable!`, `assert!`, `.unwrap()`, or `.expect()` sites
 unless they match an allowlisted pattern documented here. `debug_assert!` is
 allowed for internal invariant documentation because it is not a release-mode
 panic surface.
+Root `src/*_tests.rs` files are exempt only when the validator can also prove
+that each file is declared behind `#[cfg(test)]` in `src/lib.rs`; the filename
+convention alone is not enough.
 Remaining bounded indexing invariants are documented in
 [INVARIANTS.md](INVARIANTS.md).
 
