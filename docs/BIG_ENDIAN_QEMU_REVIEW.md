@@ -46,6 +46,9 @@ The pinned release toolchain is Rust `1.90.0`. On that toolchain:
 
 Those gates prevent a stable, no-dependency Rust implementation from using the
 normal intrinsic-based vector path for s390x or PowerPC64 today.
+`scripts/check_big_endian_intrinsics_status.sh` verifies this toolchain state
+and fails if those intrinsics become available, forcing the admission manifest
+to be revisited before release.
 
 Hand-written inline assembly is not accepted as a shortcut for this release
 line. It would require a separate unsafe-boundary review, generated assembly

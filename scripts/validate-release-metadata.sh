@@ -105,6 +105,7 @@ fi
 for required_script in \
     "scripts/check_backend_evidence.sh" \
     "scripts/check_big_endian_qemu.sh" \
+    "scripts/check_big_endian_intrinsics_status.sh" \
     "scripts/validate-api-audit.sh" \
     "scripts/validate-big-endian-posture.sh" \
     "scripts/check_dudect.sh" \
@@ -375,6 +376,7 @@ for required_package_file in \
     "portability/migration_smoke/src/lib.rs" \
     "scripts/check_backend_evidence.sh" \
     "scripts/check_big_endian_qemu.sh" \
+    "scripts/check_big_endian_intrinsics_status.sh" \
     "scripts/validate-api-audit.sh" \
     "scripts/validate-big-endian-posture.sh" \
     "scripts/check_dudect.sh" \

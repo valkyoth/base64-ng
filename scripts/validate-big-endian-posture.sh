@@ -5,6 +5,7 @@ review_doc="docs/BIG_ENDIAN_QEMU_REVIEW.md"
 simd_doc="docs/SIMD.md"
 admission_doc="docs/SIMD_ADMISSION.md"
 qemu_script="scripts/check_big_endian_qemu.sh"
+intrinsics_script="scripts/check_big_endian_intrinsics_status.sh"
 
 require_text() {
     file="$1"
@@ -26,6 +27,7 @@ reject_text() {
 
 test -s "$review_doc"
 test -x "$qemu_script"
+test -x "$intrinsics_script"
 
 require_text "$review_doc" "QEMU-tested scalar/fallback targets"
 require_text "$review_doc" "not accepted for:"
@@ -39,6 +41,10 @@ require_text "$simd_doc" "documented as QEMU-tested and community-hardware evide
 require_text "$admission_doc" "big-endian AArch64, CT secret decode, and \`no_std\` remain scalar or"
 require_text "$qemu_script" "not_evidence_for=real hardware performance, timing, microarchitectural behavior, or side-channel behavior"
 require_text "$qemu_script" "hardware_status=community real-hardware reports requested for s390x, powerpc64, and big-endian AArch64"
+require_text "$intrinsics_script" "stdarch_s390x"
+require_text "$intrinsics_script" "stdarch_powerpc"
+
+"$intrinsics_script"
 
 if grep -R -E 'S390x|s390x|Powerpc64|powerpc64' src/encode_backend.rs src/decode_backend.rs src/simd/mod.rs src/runtime; then
     echo "big-endian posture: source contains big-endian backend names before active admission review" >&2
