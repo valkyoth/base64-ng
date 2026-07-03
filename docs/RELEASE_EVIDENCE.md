@@ -74,6 +74,12 @@ The release gate runs:
   when installed, requiring `wasm-simd128` active encode/decode reporting and
   Standard plus URL-safe deterministic length sweeps, independent scalar
   reference encode checks, malformed-input rejection, and round trips
+- strict decode public-surface evidence through
+  `standard_family_decode_surfaces_cover_tails_and_padding` and
+  `standard_family_decode_error_surfaces_match_scalar`, proving Standard and
+  URL-safe padded/unpadded slice, clear-tail, stack-buffer, vec, and secret
+  helpers match the scalar reference for accepted input and rejected input
+  while clear-tail APIs wipe caller buffers on errors
 - wasm simd128 browser smoke evidence through
   `scripts/check_wasm_browser_dispatch.sh`, which executes the same wasm32
   smoke module in a Chromium-family browser when installed or when

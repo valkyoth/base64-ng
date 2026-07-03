@@ -54,6 +54,49 @@ where
     }
 }
 
+fn assert_standard_family_decode_error_surface_matches_scalar<A, const PAD: bool>(input: &[u8])
+where
+    A: Alphabet,
+{
+    let engine = Engine::<A, PAD>::new();
+    let mut slice_output = [0x55; 512];
+    let mut clear_tail_output = [0xaa; 512];
+    let mut scalar_output = [0xcc; 512];
+
+    let scalar_err = scalar::scalar_reference_decode_slice::<A, PAD>(input, &mut scalar_output)
+        .expect_err("malformed fixture must fail through the scalar reference");
+    let slice_err = engine
+        .decode_slice(input, &mut slice_output)
+        .expect_err("malformed fixture must fail through decode_slice");
+    let clear_tail_err = engine
+        .decode_slice_clear_tail(input, &mut clear_tail_output)
+        .expect_err("malformed fixture must fail through decode_slice_clear_tail");
+    let buffer_err = engine
+        .decode_buffer::<512>(input)
+        .expect_err("malformed fixture must fail through decode_buffer");
+
+    assert_eq!(slice_err, scalar_err);
+    assert_eq!(clear_tail_err, scalar_err);
+    assert_eq!(buffer_err, scalar_err);
+    assert!(
+        clear_tail_output.iter().all(|byte| *byte == 0),
+        "decode_slice_clear_tail must wipe the caller buffer on error"
+    );
+
+    #[cfg(feature = "alloc")]
+    {
+        let vec_err = engine
+            .decode_vec(input)
+            .expect_err("malformed fixture must fail through decode_vec");
+        let secret_err = engine
+            .decode_secret(input)
+            .expect_err("malformed fixture must fail through decode_secret");
+
+        assert_eq!(vec_err, scalar_err);
+        assert_eq!(secret_err, scalar_err);
+    }
+}
+
 #[test]
 fn standard_family_decode_surfaces_cover_tails_and_padding() {
     let mut input = [0; 193];
@@ -66,5 +109,31 @@ fn standard_family_decode_surfaces_cover_tails_and_padding() {
         assert_standard_family_decode_surface_matches_scalar::<Standard, false>(input);
         assert_standard_family_decode_surface_matches_scalar::<UrlSafe, true>(input);
         assert_standard_family_decode_surface_matches_scalar::<UrlSafe, false>(input);
+    }
+}
+
+#[test]
+fn standard_family_decode_error_surfaces_match_scalar() {
+    for input in [
+        b"!!!!".as_slice(),
+        b"AAAA!",
+        b"AA=A",
+        b"Zh==",
+        b"Zm9v$g==",
+        b"AAAA====",
+    ] {
+        assert_standard_family_decode_error_surface_matches_scalar::<Standard, true>(input);
+    }
+
+    for input in [b"Z".as_slice(), b"Zg=", b"Zg==", b"Zm9v$g", b"Zh"] {
+        assert_standard_family_decode_error_surface_matches_scalar::<Standard, false>(input);
+    }
+
+    for input in [b"AA+A".as_slice(), b"AA/A", b"AA=A", b"Zh==", b"AAAA!"] {
+        assert_standard_family_decode_error_surface_matches_scalar::<UrlSafe, true>(input);
+    }
+
+    for input in [b"Z".as_slice(), b"AA+A", b"AA/A", b"Zg=", b"Zh"] {
+        assert_standard_family_decode_error_surface_matches_scalar::<UrlSafe, false>(input);
     }
 }

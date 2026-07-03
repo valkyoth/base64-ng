@@ -66,6 +66,10 @@ encoded length: `standard_family_decode_surfaces_cover_tails_and_padding`
 checks `decode_slice`, `decode_slice_clear_tail`, stack buffers, and alloc
 helpers against the scalar reference across fixed-block thresholds, short
 inputs, non-block tails, and padded or unpadded input.
+Malformed Standard and URL-safe strict decode inputs are pinned by
+`standard_family_decode_error_surfaces_match_scalar`, which checks the same
+public surfaces against scalar error shapes and verifies clear-tail buffer
+wiping on rejected input.
 
 ## Wasm Posture Decision
 
