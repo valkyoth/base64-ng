@@ -62,6 +62,11 @@ The release gate runs:
   `allow-wasm32-best-effort-wipe` opt-in build succeeds
 - wasm SIMD posture validation proving wasm `simd128` remains
   compile/codegen evidence only and is not represented as an active backend
+- wasm SIMD codegen evidence through
+  `scripts/generate_wasm_simd_evidence.sh`, which emits release test-harness
+  LLVM IR with `target-feature=+simd128` when the wasm target is installed and
+  checks for vector shuffle, 128-bit byte-vector, and wasm bitselect markers
+  without claiming runtime/JIT admission
 - fail-closed unsupported-native wipe policy documented through
   `allow-compiler-fence-only-wipe` for architectures without an implemented
   hardware wipe barrier

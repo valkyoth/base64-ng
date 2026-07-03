@@ -42,6 +42,9 @@ scripts/check_wasm_wipe_policy.sh
 echo "checks: wasm SIMD posture"
 scripts/validate-wasm-posture.sh
 
+echo "checks: wasm SIMD codegen evidence"
+scripts/generate_wasm_simd_evidence.sh
+
 echo "checks: SIMD admission policy"
 scripts/validate-simd-admission.sh
 

@@ -8,6 +8,7 @@ admission_doc="docs/SIMD_ADMISSION.md"
 review_doc="docs/WASM_SIMD128_RUNTIME_REVIEW.md"
 wipe_script="scripts/check_wasm_wipe_policy.sh"
 feature_script="scripts/check_simd_feature_bundles.sh"
+evidence_script="scripts/generate_wasm_simd_evidence.sh"
 
 require_text() {
     file="$1"
@@ -31,8 +32,12 @@ require_text "$review_doc" "No wasm \`simd128\` runtime dispatch is admitted in 
 require_text "$review_doc" "Candidate reporting may expose \`wasm-simd128\`"
 require_text "$review_doc" "active encode and decode backends remain scalar on \`wasm32\`"
 require_text "$review_doc" "src/simd/mod.rs\` must not include \`WasmSimd128\` in \`ActiveBackend\`"
+require_text "$review_doc" "scripts/generate_wasm_simd_evidence.sh"
 require_text "$wipe_script" "allow-wasm32-best-effort-wipe"
 require_text "$feature_script" "target-feature=+simd128"
+require_text "$evidence_script" "target-feature=+simd128"
+require_text "$evidence_script" "wasm bitselect intrinsic"
+require_text "$evidence_script" "does not attest any runtime/JIT timing or cleanup behavior"
 require_text "$runtime_report" "Candidate::WasmSimd128 => Backend::WasmSimd128"
 
 if awk '

@@ -58,6 +58,9 @@ Before wasm `simd128` can become an active backend, a release must provide:
 - `scripts/check_simd_feature_bundles.sh` keeps compile/test-binary evidence
   for `wasm32-unknown-unknown` with `target-feature=+simd128` when the target
   is installed.
+- `scripts/generate_wasm_simd_evidence.sh` emits release test-harness LLVM IR
+  for the inactive prototype and checks for `simd128` codegen markers. This is
+  compile/codegen evidence only; it is not runtime/JIT admission evidence.
 - `scripts/check_wasm_wipe_policy.sh` keeps the wasm cleanup posture
   fail-closed by default unless `allow-wasm32-best-effort-wipe` is explicitly
   enabled.
