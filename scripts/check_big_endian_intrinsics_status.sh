@@ -6,12 +6,24 @@ trap 'rm -rf "$tmp"' EXIT
 
 mkdir -p "$tmp"
 
+require_rust_target() {
+    target="$1"
+    if rustup target list --installed | grep -qx "$target"; then
+        return
+    fi
+
+    echo "big-endian intrinsics status: installing missing Rust target $target"
+    rustup target add "$target"
+}
+
 check_unstable_intrinsics() {
     target="$1"
     module="$2"
     feature_gate="$3"
     source="$tmp/$target.rs"
     stderr="$tmp/$target.stderr"
+
+    require_rust_target "$target"
 
     cat >"$source" <<EOF
 #![no_std]
