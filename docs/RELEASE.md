@@ -83,8 +83,11 @@ sudo zypper install cross-riscv64-gcc16 cross-riscv64-binutils cross-riscv64-gli
 
 `scripts/check_big_endian_qemu.sh` requires the `s390x` path and treats
 `powerpc64` as opt-in until a complete local PowerPC64 glibc sysroot is
-available. The evidence is QEMU functional correctness and fallback evidence
-only; it is not real hardware performance, timing, or side-channel evidence.
+available. The optional PowerPC64 path preflights target start files and libc
+objects before running tests, because a cross compiler without the target
+sysroot cannot link Rust test binaries. The evidence is QEMU functional
+correctness and fallback evidence only; it is not real hardware performance,
+timing, or side-channel evidence.
 
 The no-alloc portability smoke crate checks the same installed target list with:
 

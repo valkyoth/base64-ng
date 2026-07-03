@@ -15,7 +15,9 @@ scripts/check_big_endian_qemu.sh
 
 The required path is `s390x-unknown-linux-gnu` through `qemu-s390x`. The
 optional path is `powerpc64-unknown-linux-gnu` through `qemu-ppc64` when a
-complete local PowerPC64 glibc sysroot is available.
+complete local PowerPC64 glibc sysroot is available. A PowerPC64 cross
+compiler alone is not enough; the optional path also needs target start files
+and libc objects such as `Scrt1.o`, `crti.o`, and `libc.so`.
 
 ## Evidence Boundary
 
@@ -54,6 +56,10 @@ Hand-written inline assembly is not accepted as a shortcut for this release
 line. It would require a separate unsafe-boundary review, generated assembly
 review, register cleanup review, fallback evidence, and real hardware reports
 before it could be described as hardware-attested acceleration.
+
+The current result is therefore a deliberate non-admission of big-endian
+acceleration. The release evidence proves that supported big-endian test
+targets continue to execute the scalar/fallback path correctly.
 
 ## Admission Rule
 

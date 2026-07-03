@@ -1104,31 +1104,31 @@ inside the `1.3.x` line if they remain evidence-gated and do not weaken the
   validation and staging; line-profile validation, line-ending compaction, and
   legacy-whitespace compaction remain scalar.
 
-`1.3.4`: big-endian accelerated encode/decode implementation with QEMU-only
-evidence.
+`1.3.4`: big-endian QEMU evidence and stable-intrinsic blocker review.
 
-- Build the big-endian acceleration line for both encode and strict decode,
-  starting with the practical Rust/QEMU targets (`s390x-unknown-linux-gnu`
-  first, with `powerpc64-unknown-linux-gnu` as an optional second target when
-  the local cross toolchain is available).
-- Add QEMU user-mode evidence scripts that run under `qemu-s390x` and, when
-  available, `qemu-ppc64`. The scripts must exercise encode, decode,
-  in-place, wrapped/legacy compatibility where applicable, clear-tail behavior,
-  runtime backend reports, scalar fallback behavior, and malformed-input
-  handling.
-- Label the admission honestly: QEMU evidence is accepted for functional
-  correctness and fallback behavior only. It is not hardware performance
-  evidence, not hardware side-channel evidence, and not proof that a specific
+- Run the practical Rust/QEMU big-endian target first:
+  `s390x-unknown-linux-gnu` under `qemu-s390x`. Keep
+  `powerpc64-unknown-linux-gnu` as an optional second target when a complete
+  local PowerPC64 glibc sysroot is available.
+- Exercise encode, decode, in-place, wrapped/legacy compatibility,
+  clear-tail behavior, runtime backend reports, scalar fallback behavior, and
+  malformed-input handling under QEMU user mode.
+- Verify the current stable Rust blocker: on the active release toolchain,
+  `core::arch::s390x` remains gated by `stdarch_s390x` and
+  `core::arch::powerpc64` remains gated by `stdarch_powerpc`.
+- Do not implement an assembly-only big-endian acceleration shortcut in this
+  line. That would require a new unsafe-boundary review, generated assembly
+  review, register cleanup review, fallback evidence, and real hardware
+  reports before it could be described as hardware-attested acceleration.
+- Label the result honestly: QEMU evidence is accepted for functional
+  correctness and scalar/fallback behavior only. It is not hardware
+  performance evidence, hardware side-channel evidence, or proof that a
   production CPU behaves identically.
 - Keep docs and release notes explicit that the project does not own real
   big-endian hardware. Request community evidence from operators with real
   `s390x`, `powerpc64`, or big-endian AArch64 machines before upgrading any
-  backend from QEMU-tested to hardware-attested.
-- Keep the same admission boundary as the current SIMD work: generated
-  assembly review, register cleanup review, panic-policy, unsafe-boundary,
-  target-matrix checks, fuzz/differential tests, runtime reporting, and release
-  evidence must all name the backend as QEMU-tested unless real hardware
-  evidence is linked.
+  backend from QEMU-tested scalar/fallback evidence to accelerated or
+  hardware-attested status.
 
 `1.3.5`: RISC-V accelerated encode/decode implementation with QEMU-only
 evidence.

@@ -7,6 +7,7 @@ required_target="s390x-unknown-linux-gnu"
 required_linker="${BASE64_NG_S390X_LINKER:-s390x-suse-linux-gcc}"
 required_runner="${BASE64_NG_S390X_RUNNER:-qemu-s390x -L /usr/s390x-suse-linux/sys-root}"
 optional_powerpc64="${BASE64_NG_BIG_ENDIAN_RUN_POWERPC64:-0}"
+powerpc64_sysroot="${BASE64_NG_POWERPC64_SYSROOT:-/usr/powerpc64-suse-linux/sys-root}"
 
 require_command() {
     command_name="$1"
@@ -35,6 +36,21 @@ require_big_endian_target() {
         echo "big-endian QEMU checks: target is not big-endian: $target" >&2
         exit 1
     fi
+}
+
+require_glibc_sysroot() {
+    label="$1"
+    sysroot="$2"
+    libdir="$3"
+    install_hint="$4"
+
+    for required_file in Scrt1.o crti.o libc.so; do
+        if [ ! -e "$sysroot/$libdir/$required_file" ]; then
+            echo "big-endian QEMU checks: $label sysroot is incomplete: missing $sysroot/$libdir/$required_file" >&2
+            echo "big-endian QEMU checks: install hint: $install_hint" >&2
+            exit 1
+        fi
+    done
 }
 
 target_key() {
@@ -85,6 +101,18 @@ run_target_suite() {
         --target "$target" --all-features --test stream
 }
 
+preflight_optional_powerpc64() {
+    if [ "$optional_powerpc64" = "1" ]; then
+        require_command qemu-ppc64 "sudo zypper install qemu-linux-user"
+        require_command powerpc64-suse-linux-gcc-16 "sudo zypper install cross-ppc64-gcc16 cross-ppc64-binutils plus the matching powerpc64 glibc-devel/sysroot package"
+        require_glibc_sysroot \
+            "powerpc64" \
+            "$powerpc64_sysroot" \
+            "usr/lib64" \
+            "install the matching powerpc64 glibc-devel/sysroot package, or set BASE64_NG_POWERPC64_SYSROOT to a complete sysroot"
+    fi
+}
+
 echo "big-endian QEMU checks: script=$script_revision"
 echo "big-endian QEMU checks: host=$(rustc -vV | sed -n 's/^host: //p')"
 echo "big-endian QEMU checks: rustc=$(rustc --version)"
@@ -92,17 +120,16 @@ echo "big-endian QEMU checks: cargo=$(cargo --version)"
 
 require_command qemu-s390x "sudo zypper install qemu-linux-user"
 require_command "$required_linker" "sudo zypper install cross-s390x-gcc16 cross-s390x-binutils cross-s390x-glibc-devel cross-s390x-linux-glibc-devel"
+preflight_optional_powerpc64
 
 run_target_suite "s390x" "$required_target" "$required_linker" "$required_runner"
 
 if [ "$optional_powerpc64" = "1" ]; then
-    require_command qemu-ppc64 "sudo zypper install qemu-linux-user"
-    require_command powerpc64-suse-linux-gcc-16 "sudo zypper install cross-ppc64-gcc16 cross-ppc64-binutils plus the matching powerpc64 glibc-devel/sysroot package"
     run_target_suite \
         "powerpc64" \
         "powerpc64-unknown-linux-gnu" \
         "powerpc64-suse-linux-gcc-16" \
-        "qemu-ppc64 -L /usr/powerpc64-suse-linux/sys-root"
+        "qemu-ppc64 -L $powerpc64_sysroot"
 else
     echo "big-endian QEMU checks: skipping optional powerpc64; set BASE64_NG_BIG_ENDIAN_RUN_POWERPC64=1 to require it"
 fi
