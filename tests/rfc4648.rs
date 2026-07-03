@@ -189,6 +189,12 @@ fn named_profiles_expose_expected_policies() {
     let standard_profile: Profile<Standard, true> = STANDARD.into();
     assert_eq!(standard_profile, Profile::<Standard, true>::default());
     assert_eq!(STANDARD.profile(), standard_profile);
+    assert_eq!(STANDARD.profile_with_wrap(LineWrap::MIME), MIME);
+    assert_eq!(
+        STANDARD.checked_profile_with_wrap(LineWrap::MIME),
+        Some(MIME)
+    );
+    assert_eq!(STANDARD.checked_profile_with_wrap(INVALID_LINE_WRAP), None);
     assert_eq!(URL_SAFE_NO_PAD.profile().engine(), URL_SAFE_NO_PAD);
     assert!(!URL_SAFE_NO_PAD.profile().is_padded());
     assert!(!URL_SAFE_NO_PAD.profile().is_wrapped());
