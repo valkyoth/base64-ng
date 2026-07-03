@@ -61,6 +61,11 @@ separate normal strict decode acceleration from the constant-time-oriented
 scalar path. Future normal SIMD decode must not be routed into `ct::CtEngine`
 or advertised as a secret-decoding acceleration path without a separate formal
 side-channel evidence package.
+The public Standard and URL-safe strict decode surfaces cover every valid
+encoded length: `standard_family_decode_surfaces_cover_tails_and_padding`
+checks `decode_slice`, `decode_slice_clear_tail`, stack buffers, and alloc
+helpers against the scalar reference across fixed-block thresholds, short
+inputs, non-block tails, and padded or unpadded input.
 
 ## Wasm Posture Decision
 

@@ -414,6 +414,8 @@ pub fn clear_bytes(bytes: &mut [u8]) {
 mod kani_proofs;
 
 #[cfg(test)]
+mod decode_surface_tests;
+#[cfg(test)]
 mod encode_surface_tests;
 #[cfg(test)]
 mod non_standard_surface_tests;

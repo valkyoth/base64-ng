@@ -133,9 +133,10 @@ runtime behavior for that line.
   decode applies only to full 64-byte encoded blocks after scalar whole-input
   validation and falls back to AVX2, SSSE3/SSE4.1, or scalar for shorter
   inputs; little-endian AArch64 NEON decode applies only to full 16-byte
-  encoded blocks after scalar whole-input validation. Legacy decode, wrapped
-  decode, in-place decode, CT secret decode, custom alphabets, big-endian
-  AArch64, short inputs, and tails remain scalar.
+  encoded blocks after scalar whole-input validation. Public strict decode
+  supports every valid encoded length; short inputs and non-block tails are
+  decoded by scalar code. Legacy decode, wrapped decode, in-place decode,
+  CT secret decode, custom alphabets, and big-endian AArch64 remain scalar.
 - AVX-512 VBMI encode is admitted for std `x86`/`x86_64` Standard and URL-safe
   alphabet families. It uses AVX-512 lane-local byte shuffling, vector
   shifts/masks, and VBMI byte permutes over the alphabet table for fixed

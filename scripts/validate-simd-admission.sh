@@ -169,4 +169,9 @@ if ! grep -q 'Safari/WebKit runtime smoke evidence' docs/SIMD_ADMISSION.md docs/
     exit 1
 fi
 
+if ! grep -F -q "fn standard_family_decode_surfaces_cover_tails_and_padding()" src/decode_surface_tests.rs; then
+    echo "simd admission: missing Standard-family tail/padding decode surface evidence" >&2
+    exit 1
+fi
+
 echo "simd admission: AVX-512 VBMI, AVX2, SSSE3/SSE4.1, NEON, and wasm simd128 encode/decode admission gate ok"

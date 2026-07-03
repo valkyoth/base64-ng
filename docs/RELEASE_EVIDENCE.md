@@ -149,6 +149,11 @@ The release gate runs:
 - backend evidence capture for runtime backend reporting, admitted AVX-512
   VBMI, AVX2, SSSE3/SSE4.1, or NEON encode dispatch when supported, and
   admitted strict decode dispatch when supported
+- Standard-family strict decode surface tests covering `decode_slice`,
+  `decode_slice_clear_tail`, stack buffers, and alloc helpers for every input
+  length from 0 through 193 bytes after scalar-reference encode, including
+  fixed-block thresholds, short inputs, non-block tails, and padded or
+  unpadded input
 - SIMD admission policy for the current release series, with AVX-512 VBMI,
   AVX2, SSSE3/SSE4.1, and NEON encode admitted only for std x86/x86_64 or
   little-endian std aarch64 Standard and URL-safe alphabets, AVX-512 VBMI,

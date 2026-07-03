@@ -104,8 +104,10 @@ Implemented on this branch now:
   in the `1.3.0` line, falling back to AVX2, then
   SSSE3/SSE4.1, and then scalar, plus little-endian std `aarch64` NEON
   fixed-block strict decode, limited to Standard and URL-safe alphabets after
-  whole-input scalar validation. Unsupported CPUs, big-endian AArch64,
-  `no_std`, custom alphabets, short inputs, tails, wrapped decode, legacy
+  whole-input scalar validation. Public strict decode supports every valid
+  encoded length: fixed blocks may be accelerated, while short inputs and
+  non-block tails are decoded by scalar code. Unsupported CPUs,
+  big-endian AArch64, `no_std`, custom alphabets, wrapped decode, legacy
   decode, in-place decode, and CT secret decode stay scalar.
 - Runtime-dispatched wasm `simd128` fixed-block encode and normal strict
   decode for Standard and URL-safe alphabets when built for `wasm32` with
