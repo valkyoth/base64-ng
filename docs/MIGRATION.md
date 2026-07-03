@@ -213,9 +213,40 @@ expose `is_failed()` and fail closed after malformed Base64 input; unchecked
 `into_inner()` remains available for explicit recovery of the wrapped object
 after a decode error.
 
-The `tokio` feature is reserved for future async wrappers. It is currently
-inert and dependency-free; use the explicit `stream` feature for `std::io`
-wrappers.
+The core crate's `tokio` feature is reserved, inert, and dependency-free. For
+Tokio applications, use the optional `base64-ng-tokio` companion crate instead:
+
+```toml
+[dependencies]
+base64-ng = "1.3.3"
+base64-ng-tokio = "1.3.3"
+tokio = { version = "1.52.3", features = ["io-util"] }
+```
+
+```rust
+use base64_ng::STANDARD;
+use base64_ng_tokio::{encode_reader_to_writer_limited, EncoderReader, EncoderWriter};
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+# async fn example() -> std::io::Result<()> {
+let mut input = &b"hello"[..];
+let mut output = Vec::new();
+encode_reader_to_writer_limited(&STANDARD, &mut input, &mut output, 1024).await?;
+assert_eq!(output, b"aGVsbG8=");
+
+let mut reader = EncoderReader::new(&b"hello"[..], STANDARD);
+let mut streamed = Vec::new();
+reader.read_to_end(&mut streamed).await?;
+assert_eq!(streamed, b"aGVsbG8=");
+
+let mut writer = EncoderWriter::new(Vec::new(), STANDARD);
+writer.write_all(b"hello").await?;
+writer.shutdown().await?;
+let encoded = writer.into_inner()?;
+assert_eq!(encoded, b"aGVsbG8=");
+# Ok(())
+# }
+```
 
 ## Security Notes
 
