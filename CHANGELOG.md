@@ -11,6 +11,8 @@
   plus Standard and URL-safe deterministic length sweeps, independent scalar
   reference encode checks, malformed-input rejection, and public API round
   trips.
+- Added Chromium-family browser runtime smoke evidence for the same admitted
+  wasm `simd128` profile.
 - Added a fail-closed wasm encode scalar-verification step: fixed-block wasm
   encode output is staged, compared against scalar output, wiped, and only then
   copied to caller output.

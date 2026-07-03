@@ -74,6 +74,10 @@ The release gate runs:
   when installed, requiring `wasm-simd128` active encode/decode reporting and
   Standard plus URL-safe deterministic length sweeps, independent scalar
   reference encode checks, malformed-input rejection, and round trips
+- wasm simd128 browser smoke evidence through
+  `scripts/check_wasm_browser_dispatch.sh`, which executes the same wasm32
+  smoke module in a Chromium-family browser when installed or when
+  `BASE64_NG_BROWSER` points to a compatible browser binary
 - fail-closed unsupported-native wipe policy documented through
   `allow-compiler-fence-only-wipe` for architectures without an implemented
   hardware wipe barrier
@@ -306,8 +310,9 @@ active for Standard and URL-safe alphabets. Big-endian AArch64 stays scalar,
 and 32-bit ARM NEON remains scaffold evidence. Wasm `simd128` evidence is kept
 in `scripts/check_simd_feature_bundles.sh` as compile/test-binary evidence and
 in `scripts/check_wasm_runtime_dispatch.sh` as Node/V8 and Wasmtime runtime
-smoke evidence. Runtime/JIT timing behavior remains outside the crate's formal
-claim. The script writes
+smoke evidence, and in `scripts/check_wasm_browser_dispatch.sh` as
+Chromium-family browser smoke evidence. Runtime/JIT timing behavior remains
+outside the crate's formal claim. The script writes
 `target/release-evidence/backend/MANIFEST.txt`, `runtime-backend-report.txt`,
 and `simd-prototype-equivalence.txt` so local CPU evidence can be archived. The
 manifest labels prototype-only evidence as `real-non-dispatchable` and

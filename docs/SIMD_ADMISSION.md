@@ -67,13 +67,14 @@ side-channel evidence package.
 For the `1.3.3` line, wasm `simd128` is admitted for runtime dispatch when the
 binary is compiled for `wasm32` with `target-feature=+simd128`, the `simd`
 feature, and the explicit `allow-wasm32-best-effort-wipe` feature. The
-admitted runtime profile is backed by Node/V8 and Wasmtime runtime smoke
-evidence.
+admitted runtime profile is backed by Node/V8, Wasmtime, and Chromium-family
+browser runtime smoke evidence.
 
 This is a narrow admission, not a browser-wide or runtime-universal claim.
 Wasm execution passes through runtime/JIT engines outside the crate's control,
 so timing, register-retention, cleanup, fallback, and performance claims remain
-limited to the evidence named in this release. The wasm32 wipe policy remains
+limited to the evidence named in this release. Broader browser claims remain
+out of scope until separately evidenced. The wasm32 wipe policy remains
 fail-closed unless callers explicitly enable `allow-wasm32-best-effort-wipe`.
 
 The detailed runtime decision is tracked in
@@ -123,7 +124,7 @@ State labels are intentionally strict:
 | AVX2 | admitted backend | `avx2` | std x86/x86_64 runtime-dispatched encode and strict decode for Standard and URL-safe alphabet families; encode uses fixed 24-byte input blocks, and decode uses fixed 32-byte encoded blocks only after whole-input scalar validation preserves public error shape; shorter inputs fall back to SSSE3/SSE4.1 or scalar, tails use scalar, and unsupported alphabets, in-place encode/decode, wrapped decode, legacy decode, CT secret decode, line-ending insertion, and `no_std` use scalar fallback |
 | SSSE3/SSE4.1 | admitted backend | `ssse3`, `sse4.1` | std x86/x86_64 runtime-dispatched encode and strict decode for Standard and URL-safe alphabet families; encode uses fixed 12-byte input blocks, and decode uses fixed 16-byte encoded blocks only after whole-input scalar validation preserves public error shape; shorter inputs, tails, unsupported alphabets, in-place encode/decode, wrapped decode, legacy decode, CT secret decode, line-ending insertion, and `no_std` use scalar fallback |
 | NEON | admitted backend | `neon` | little-endian std aarch64 runtime-dispatched encode and strict decode for Standard and URL-safe alphabet families; encode uses fixed 12-byte input blocks, and decode uses fixed 16-byte encoded blocks only after whole-input scalar validation preserves public error shape; shorter inputs, tails, unsupported alphabets, big-endian AArch64, 32-bit ARM, in-place encode/decode, wrapped decode, legacy decode, CT secret decode, line-ending insertion, and `no_std` use scalar fallback |
-| wasm `simd128` | admitted backend | `simd128` | wasm32 runtime-dispatched encode and strict decode for Standard and URL-safe alphabet families when compiled with `target-feature=+simd128`, the `simd` feature, and `allow-wasm32-best-effort-wipe`; wasm encode stages vector output and compares it against scalar output before copying to caller output; Node/V8 and Wasmtime runtime smoke evidence proves active encode/decode reporting, a deterministic length sweep, independent scalar reference encode checks, malformed-input rejection, and round trips; shorter inputs, tails, unsupported alphabets, in-place encode/decode, wrapped decode, legacy decode, CT secret decode, line-ending insertion, and browser-specific claims remain scalar, out of scope, or separately reviewed |
+| wasm `simd128` | admitted backend | `simd128` | wasm32 runtime-dispatched encode and strict decode for Standard and URL-safe alphabet families when compiled with `target-feature=+simd128`, the `simd` feature, and `allow-wasm32-best-effort-wipe`; wasm encode stages vector output and compares it against scalar output before copying to caller output; Node/V8, Wasmtime, and Chromium-family browser runtime smoke evidence proves active encode/decode reporting, a deterministic length sweep, independent scalar reference encode checks, malformed-input rejection, and round trips; shorter inputs, tails, unsupported alphabets, in-place encode/decode, wrapped decode, legacy decode, CT secret decode, line-ending insertion, and broader browser-specific claims remain scalar, out of scope, or separately reviewed |
 
 ## Encode Surface Review
 

@@ -1240,9 +1240,10 @@ Safety argument:
 Limitations:
 
 - Wasm engines include a runtime/JIT optimization layer outside Rust's compiler
-  boundary. This admission is backed by Node/V8 and Wasmtime runtime smoke
-  evidence for correctness and dispatch reporting, but it does not claim
-  runtime timing, register-retention, or JIT zeroization guarantees.
+  boundary. This admission is backed by Node/V8, Wasmtime, and
+  Chromium-family browser runtime smoke evidence for correctness and dispatch
+  reporting, but it does not claim runtime timing, register-retention, or JIT
+  zeroization guarantees.
 
 ### `encode_12_bytes_wasm_standard_family`
 

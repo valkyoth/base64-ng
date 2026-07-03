@@ -49,9 +49,10 @@ binary is compiled with `target-feature=+simd128`, the `simd` feature, and the
 explicit `allow-wasm32-best-effort-wipe` feature.
 
 The latest patch in this line is `1.3.3`, which admits narrow wasm `simd128`
-runtime dispatch with Node/V8 and Wasmtime smoke evidence, keeps the wasm
-cleanup caveat fail-closed by default, and adds wrapped-profile helper
-ergonomics. The workspace crate family stays version-aligned at `1.3.3`.
+runtime dispatch with Node/V8, Wasmtime, and Chromium-family browser smoke
+evidence, keeps the wasm cleanup caveat fail-closed by default, and adds
+wrapped-profile helper ergonomics. The workspace crate family stays
+version-aligned at `1.3.3`.
 
 Implemented on this branch now:
 
@@ -107,9 +108,9 @@ Implemented on this branch now:
 - Runtime-dispatched wasm `simd128` fixed-block encode and normal strict
   decode for Standard and URL-safe alphabets when built for `wasm32` with
   `target-feature=+simd128`, `simd`, and
-  `allow-wasm32-best-effort-wipe`. The admission is backed by Node/V8 and
-  Wasmtime runtime smoke evidence; unsupported wasm builds stay scalar by
-  compiling without `+simd128`.
+  `allow-wasm32-best-effort-wipe`. The admission is backed by Node/V8,
+  Wasmtime, and Chromium-family browser runtime smoke evidence; unsupported
+  wasm builds stay scalar by compiling without `+simd128`.
 - Optional `base64-ng-sanitization` companion crate for applications that
   already admit `sanitization` and want direct CT decode helpers into
   clear-on-drop secret containers.

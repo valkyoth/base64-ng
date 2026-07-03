@@ -17,7 +17,8 @@ The admitted runtime profile is intentionally narrow:
 - full fixed blocks use `simd128`; tails and unsupported surfaces use scalar
 - no line-wrapped decode, legacy whitespace decode, custom alphabets,
   bcrypt-style profiles, in-place decode, or `ct` secret decode
-- runtime smoke evidence is required for Node/V8 and Wasmtime
+- runtime smoke evidence is required for Node/V8, Wasmtime, and at least one
+  Chromium-family browser
 
 When compiled with `simd128`, active encode and decode backends are `wasm-simd128`
 on `wasm32`.
@@ -29,6 +30,9 @@ The admission is backed by:
 - `scripts/check_wasm_runtime_dispatch.sh`, which builds a `cdylib` smoke
   module with `RUSTFLAGS='-C target-feature=+simd128'` and executes it under
   Node/V8 and Wasmtime.
+- `scripts/check_wasm_browser_dispatch.sh`, which executes the same smoke
+  module in a Chromium-family browser through synchronous browser
+  `WebAssembly.Module` instantiation.
 - The smoke checks `runtime::backend_report()` and requires candidate, active
   encode, and active decode backend reporting to be `wasm-simd128`.
 - The smoke runs a deterministic length sweep from 0 through 200 bytes with
@@ -49,7 +53,7 @@ Wasm execution still includes a runtime or JIT layer outside the Rust compiler
 and outside this crate's control. This admission proves correctness and
 dispatch behavior for the named runtime smoke profile; it does not claim:
 
-- browser-wide behavior
+- browser-wide behavior beyond the named Chromium-family smoke runtime
 - runtime/JIT timing behavior for every V8, SpiderMonkey, Wasmtime, Wasmer, or
   edge-compute deployment
 - hardware register-retention cleanup guarantees after the wasm runtime lowers
@@ -85,6 +89,9 @@ provide:
   documentation, the admission manifest, and the runtime boundary.
 - `scripts/check_wasm_runtime_dispatch.sh` executes the runtime smoke under
   Node/V8 and Wasmtime when the tools are installed.
+- `scripts/check_wasm_browser_dispatch.sh` executes the same runtime smoke in
+  a Chromium-family browser when Chrome/Chromium is installed or
+  `BASE64_NG_BROWSER` points to a compatible browser binary.
 - `scripts/check_simd_feature_bundles.sh` keeps compile/test-binary evidence
   for `wasm32-unknown-unknown` with `target-feature=+simd128` when the target
   is installed.

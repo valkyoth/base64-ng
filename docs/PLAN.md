@@ -1059,6 +1059,9 @@ inside the `1.3.x` line if they remain evidence-gated and do not weaken the
   execute it under Node/V8 and Wasmtime, requiring `wasm-simd128` candidate,
   active encode, and active decode backend reporting plus Standard and
   URL-safe public API round trips.
+- Add `scripts/check_wasm_browser_dispatch.sh` to execute the same smoke module
+  in a Chromium-family browser when available, without turning the admission
+  into a browser-wide claim.
 - Keep wasm wipe behavior fail-closed unless callers explicitly enable
   `allow-wasm32-best-effort-wipe`.
 - Document JIT, runtime, timing, and zeroization caveats without implying
