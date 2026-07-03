@@ -1051,6 +1051,10 @@ inside the `1.3.x` line if they remain evidence-gated and do not weaken the
   [WASM_SIMD128_RUNTIME_REVIEW.md](WASM_SIMD128_RUNTIME_REVIEW.md), because
   current evidence is compile/codegen-only and does not prove runtime/JIT
   timing, register-retention, cleanup, fallback, or benchmark posture.
+- Second checkpoint: add `scripts/generate_wasm_simd_evidence.sh` to emit
+  release test-harness LLVM IR with `target-feature=+simd128` and check vector
+  codegen markers while still treating wasm as non-dispatchable runtime
+  evidence.
 - If admitted, implement an explicit wasm dispatch boundary and evidence for
   encode first, then decode only if the same evidence standard is met.
 - Keep wasm wipe behavior fail-closed unless callers explicitly enable
