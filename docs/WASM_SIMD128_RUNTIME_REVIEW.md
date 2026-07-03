@@ -31,8 +31,12 @@ The admission is backed by:
   Node/V8 and Wasmtime.
 - The smoke checks `runtime::backend_report()` and requires candidate, active
   encode, and active decode backend reporting to be `wasm-simd128`.
-- The smoke round-trips Standard padded and URL-safe no-padding payloads
-  through public encode and strict decode APIs.
+- The smoke runs a deterministic length sweep from 0 through 200 bytes with
+  multiple seeds for Standard padded and URL-safe no-padding payloads.
+- The smoke compares public encode output against an independent scalar reference encoder
+  before decoding it back through the public strict decode APIs.
+- The smoke includes malformed block-boundary inputs that must return decode
+  errors without trapping.
 - `scripts/generate_wasm_simd_evidence.sh`, which emits release test-harness
   LLVM IR and checks for `simd128` codegen markers.
 - `scripts/check_simd_feature_bundles.sh`, which keeps compile/test-binary
@@ -74,6 +78,9 @@ provide:
 
 - `src/simd/mod.rs` includes `WasmSimd128` in `ActiveBackend` only behind
   `cfg(all(feature = "simd", target_arch = "wasm32"))`.
+- `src/simd/wasm.rs` stages wasm encode output and compares it against scalar
+  output before copying bytes to the caller's output buffer; specifically, it
+  compares it against scalar output before copying bytes to caller output.
 - `scripts/validate-wasm-posture.sh` checks this review document, the SIMD
   documentation, the admission manifest, and the runtime boundary.
 - `scripts/check_wasm_runtime_dispatch.sh` executes the runtime smoke under

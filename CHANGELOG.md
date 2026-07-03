@@ -8,7 +8,12 @@
   `allow-wasm32-best-effort-wipe` feature.
 - Added Node/V8 and Wasmtime runtime smoke evidence requiring
   `wasm-simd128` candidate, active encode, and active decode backend reporting
-  plus Standard and URL-safe public API round trips.
+  plus Standard and URL-safe deterministic length sweeps, independent scalar
+  reference encode checks, malformed-input rejection, and public API round
+  trips.
+- Added a fail-closed wasm encode scalar-verification step: fixed-block wasm
+  encode output is staged, compared against scalar output, wiped, and only then
+  copied to caller output.
 - Added `scripts/generate_wasm_simd_evidence.sh` and wired it into the local
   release checks so installed wasm targets emit release test-harness LLVM IR
   with `target-feature=+simd128` and checked vector-codegen markers.

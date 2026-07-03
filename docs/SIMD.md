@@ -192,9 +192,12 @@ runtime behavior for that line.
   12-byte encode input blocks and fixed 16-byte decode input blocks after
   whole-input scalar validation. Custom alphabets remain scalar because
   portable wasm SIMD does not provide a direct 64-byte alphabet lookup.
-  Node/V8 and Wasmtime runtime smoke evidence proves active backend reporting
-  and round trips for the admitted profile; this is not a browser-wide timing,
-  register-retention, or cleanup guarantee. The release-facing decision is
+  Wasm encode stages vector output and compares it against scalar output before
+  copying to caller output. Node/V8 and Wasmtime runtime smoke evidence proves
+  active backend reporting, deterministic length sweeps, independent scalar
+  reference encode checks, malformed-input rejection, and round trips for the
+  admitted profile; this is not a browser-wide timing, register-retention, or
+  cleanup guarantee. The release-facing decision is
   tracked in
   [WASM_SIMD128_RUNTIME_REVIEW.md](WASM_SIMD128_RUNTIME_REVIEW.md).
 - `runtime::backend_report()` reports the active backend, detected candidate,

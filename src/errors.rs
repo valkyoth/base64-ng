@@ -12,6 +12,13 @@ pub enum EncodeError {
     /// It is returned when a hand-written [`Alphabet`](crate::Alphabet)
     /// implementation violates the visible-ASCII alphabet contract.
     InvalidAlphabet,
+    /// An accelerated backend produced bytes that did not match the scalar
+    /// reference implementation.
+    ///
+    /// This is an internal fail-closed integrity error. It indicates that a
+    /// platform backend, runtime, or compiler path diverged from the scalar
+    /// foundation of trust.
+    BackendMismatch,
     /// The requested line wrapping policy is invalid.
     InvalidLineWrap {
         /// Requested line length.
@@ -38,6 +45,9 @@ impl core::fmt::Display for EncodeError {
         match self {
             Self::LengthOverflow => f.write_str("base64 output length overflows usize"),
             Self::InvalidAlphabet => f.write_str("base64 alphabet produced non-ASCII output"),
+            Self::BackendMismatch => {
+                f.write_str("base64 accelerated backend diverged from scalar output")
+            }
             Self::InvalidLineWrap { line_len } => {
                 write!(f, "base64 line wrap length {line_len} is invalid")
             }

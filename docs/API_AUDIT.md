@@ -307,7 +307,8 @@ Decision rationale:
 - Public runtime errors are recoverable through `Result` and avoid panic-based
   failure for malformed input, size errors, and invalid policies.
 - `EncodeError` separates length overflow, invalid line wrapping, input length,
-  and output capacity failures.
+  output capacity failures, invalid alphabet output, and accelerated-backend
+  scalar mismatch failures.
 - `DecodeError` separates invalid length, invalid bytes, invalid padding,
   invalid line wrapping, output capacity, and deliberately opaque malformed
   input.

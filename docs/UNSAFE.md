@@ -1233,6 +1233,9 @@ Safety argument:
 - Public dispatch reaches the helper only after the feature-gated wasm backend
   reports `simd128` availability and the caller routes through an admitted
   Standard-family encode surface.
+- Public dispatch stages this helper's output, compares it against scalar
+  output for the same 12-byte block, and copies to caller output only after the
+  scalar-verification check succeeds.
 
 Limitations:
 
@@ -1273,6 +1276,8 @@ Safety argument:
 - Shuffle lanes that refer to the second input vector read from a zero vector.
 - The shifts and masks constrain every encoded index byte to `0..=63`.
 - The target-feature contract enables the required wasm SIMD instructions.
+- Public dispatch stages this helper's output and compares it against scalar
+  output before copying bytes to caller output.
 
 Limitations:
 

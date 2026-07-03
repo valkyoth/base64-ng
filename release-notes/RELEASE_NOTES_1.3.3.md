@@ -11,7 +11,10 @@ wasm `simd128` runtime-dispatch profile with explicit runtime smoke evidence.
   `allow-wasm32-best-effort-wipe`.
 - Added Node/V8 and Wasmtime runtime smoke evidence requiring `wasm-simd128`
   candidate, active encode, and active decode backend reporting plus Standard
-  and URL-safe public API round trips.
+  and URL-safe deterministic length sweeps, independent scalar reference
+  encode checks, malformed-input rejection, and public API round trips.
+- Added fail-closed scalar verification for wasm fixed-block encode before
+  copying staged SIMD output to caller output.
 - Added release-gated wasm SIMD codegen evidence through
   `scripts/generate_wasm_simd_evidence.sh`, which emits test-harness LLVM IR
   with `target-feature=+simd128` when the wasm target is installed.

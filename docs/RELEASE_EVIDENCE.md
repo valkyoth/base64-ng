@@ -72,7 +72,8 @@ The release gate runs:
   `scripts/check_wasm_runtime_dispatch.sh`, which builds a wasm32 smoke module
   with `target-feature=+simd128` and executes it under Node/V8 and Wasmtime
   when installed, requiring `wasm-simd128` active encode/decode reporting and
-  Standard plus URL-safe round trips
+  Standard plus URL-safe deterministic length sweeps, independent scalar
+  reference encode checks, malformed-input rejection, and round trips
 - fail-closed unsupported-native wipe policy documented through
   `allow-compiler-fence-only-wipe` for architectures without an implemented
   hardware wipe barrier
