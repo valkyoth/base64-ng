@@ -416,4 +416,6 @@ mod kani_proofs;
 #[cfg(test)]
 mod encode_surface_tests;
 #[cfg(test)]
+mod non_standard_surface_tests;
+#[cfg(test)]
 mod tests;

@@ -84,7 +84,7 @@ test -s docs/PANIC_POLICY.md
 
 find src crates/*/src -name '*.rs' | sort | while IFS= read -r source_file; do
     case "$source_file" in
-        src/encode_surface_tests.rs|src/kani_proofs.rs|src/tests.rs|src/simd/tests.rs|src/simd/wasm.rs|src/simd/neon_decode_tests.rs|src/simd/x86_decode_tests.rs|crates/*/src/tests.rs|crates/*/src/*_tests.rs)
+        src/*_tests.rs|src/kani_proofs.rs|src/tests.rs|src/simd/tests.rs|src/simd/wasm.rs|src/simd/neon_decode_tests.rs|src/simd/x86_decode_tests.rs|crates/*/src/tests.rs|crates/*/src/*_tests.rs)
             continue
             ;;
     esac

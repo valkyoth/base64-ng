@@ -317,7 +317,8 @@ execution evidence.
 ## Required Before SIMD Code Lands
 
 Any wasm `simd128`, additional decode backend, custom alphabet, in-place, or
-additional runtime-dispatch implementation
+additional runtime-dispatch implementation must include the surface ledger in
+[SIMD_NON_STANDARD_SURFACE_REVIEW.md](SIMD_NON_STANDARD_SURFACE_REVIEW.md) and
 must include:
 
 - Completion of

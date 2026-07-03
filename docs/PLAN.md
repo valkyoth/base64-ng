@@ -1016,6 +1016,9 @@ inside the `1.3.x` line if they remain evidence-gated and do not weaken the
 
 - Review and admit only surfaces with complete scalar-equivalence, fuzz,
   assembly, register-cleanup, benchmark, and fallback evidence.
+- Maintain the checked admission ledger in
+  [SIMD_NON_STANDARD_SURFACE_REVIEW.md](SIMD_NON_STANDARD_SURFACE_REVIEW.md)
+  for every reviewed non-standard surface.
 - First checkpoint: add explicit regression coverage proving current
   non-standard candidate surfaces still preserve scalar-visible behavior while
   remaining outside the admitted acceleration scope. This covers custom

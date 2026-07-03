@@ -32,6 +32,12 @@ only for backends named in this file and the release gate.
   prototype-only. Wrapped encode may use admitted fixed-block encode for its
   unwrapped staging step; line-ending insertion remains scalar.
 
+The post-`1.3.1` non-standard surface review is tracked in
+[SIMD_NON_STANDARD_SURFACE_REVIEW.md](SIMD_NON_STANDARD_SURFACE_REVIEW.md).
+That ledger is not an admission record; it pins the current scalar/fallback
+posture and lists evidence required before any broader surface can be
+advertised.
+
 ## `1.3.0` Decode Admission Scope Freeze
 
 The first decode acceleration line is intentionally narrower than the full

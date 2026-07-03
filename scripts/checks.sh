@@ -48,6 +48,9 @@ scripts/validate-simd-admission.sh
 echo "checks: SIMD encode admission draft"
 scripts/validate-simd-encode-admission-draft.sh
 
+echo "checks: SIMD non-standard surface review"
+scripts/validate-simd-non-standard-surfaces.sh
+
 echo "checks: SIMD feature bundles"
 scripts/check_simd_feature_bundles.sh
 

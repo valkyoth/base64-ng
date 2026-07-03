@@ -1318,6 +1318,9 @@ Future SIMD dispatch work must also complete
 
 The admission bar applies equally to AVX2, AVX-512, SSSE3/SSE4.1, NEON, wasm
 `simd128`, and any other future vector backend.
+For custom alphabets, wrapped, legacy whitespace, in-place, and other
+non-standard surfaces, the current scalar/fallback posture is also pinned in
+[SIMD_NON_STANDARD_SURFACE_REVIEW.md](SIMD_NON_STANDARD_SURFACE_REVIEW.md).
 
 Any admitted SIMD path that processes caller data must also document its
 register-retention cleanup strategy and include the matching explicit register
