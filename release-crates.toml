@@ -1,52 +1,52 @@
 [release]
-version = "1.3.0"
+version = "1.3.1"
 policy = "synced-family"
 
 [crates."base64-ng"]
-previous_version = "1.2.3"
-version = "1.3.0"
+previous_version = "1.3.0"
+version = "1.3.1"
 change = "code"
 publish = true
-reason = "Publishes the 1.3.0 implementation-completion release with admitted strict SIMD decode dispatch, const decode helpers, final documentation, and release evidence."
+reason = "Publishes the 1.3.1 family patch with updated async documentation and release evidence."
 
 [crates."base64-ng-sanitization"]
-previous_version = "1.2.3"
-version = "1.3.0"
-change = "code"
+previous_version = "1.3.0"
+version = "1.3.1"
+change = "dependency"
 publish = true
-reason = "Syncs the optional sanitization integration with the 1.3.0 family and publishes locked-secret direct-fill guidance."
+reason = "Keeps the sanitization companion version synchronized with the 1.3.1 family release."
 
 [crates."base64-ng-derive"]
-previous_version = "1.2.3"
-version = "1.3.0"
-change = "code"
+previous_version = "1.3.0"
+version = "1.3.1"
+change = "dependency"
 publish = true
-reason = "Syncs derive companion package metadata and dependency examples with the 1.3.0 family release."
+reason = "Keeps the derive companion version synchronized with the 1.3.1 family release."
 
 [crates."base64-ng-serde"]
-previous_version = "1.2.3"
-version = "1.3.0"
-change = "code"
+previous_version = "1.3.0"
+version = "1.3.1"
+change = "dependency"
 publish = true
-reason = "Syncs serde companion package metadata and dependency examples with the 1.3.0 family release."
+reason = "Keeps the serde companion version synchronized with the 1.3.1 family release."
 
 [crates."base64-ng-bytes"]
-previous_version = "1.2.3"
-version = "1.3.0"
-change = "code"
+previous_version = "1.3.0"
+version = "1.3.1"
+change = "dependency"
 publish = true
-reason = "Syncs bytes companion package metadata and bounded helper documentation with the 1.3.0 family release."
+reason = "Keeps the bytes companion version synchronized with the 1.3.1 family release."
 
 [crates."base64-ng-subtle"]
-previous_version = "1.2.3"
-version = "1.3.0"
-change = "code"
+previous_version = "1.3.0"
+version = "1.3.1"
+change = "dependency"
 publish = true
-reason = "Syncs subtle companion package metadata and comparison-boundary examples with the 1.3.0 family release."
+reason = "Keeps the subtle companion version synchronized with the 1.3.1 family release."
 
 [crates."base64-ng-tokio"]
-previous_version = "1.2.3"
-version = "1.3.0"
+previous_version = "1.3.0"
+version = "1.3.1"
 change = "code"
 publish = true
-reason = "Syncs Tokio companion package metadata, bounded helpers, and async reader streaming docs with the 1.3.0 family release."
+reason = "Publishes the admitted Tokio AsyncWrite streaming adapters, capacity-boundary tests, and async writer documentation."

@@ -1,16 +1,20 @@
 # Changelog
 
-## 1.3.1 - Unreleased
+## 1.3.1 - 2026-07-03
 
 - Added `base64-ng-tokio` `EncoderWriter` and `DecoderWriter` manual
   `AsyncWrite` streaming adapters with fixed internal queues, explicit
   shutdown finalization, short-write/backpressure handling, fail-closed error
   latching, and drop cleanup.
 - Added deterministic Tokio tests for split writes, pending shutdown drains,
-  malformed decode failure, unpadded decoder shutdown tails, and inner writer
-  errors.
+  malformed decode failure, unpadded decoder shutdown tails, inner writer
+  errors, large-input capacity clamps, and one-byte backpressure.
+- Extended panic-policy validation to companion crate production source and
+  added a permanent `security/pentest/v1.3.1.md` review artifact.
 - Updated async, dependency, trust, and README documentation so Tokio writer
   adapters are no longer described as deferred.
+- Synchronized all workspace crate package versions to `1.3.1` so the crate
+  family continues to publish under one visible version line.
 
 ## 1.3.0 - 2026-07-02
 

@@ -999,16 +999,16 @@ work is optional integration and acceleration breadth. These slices may stay
 inside the `1.3.x` line if they remain evidence-gated and do not weaken the
 `1.3.0` security posture.
 
-`1.3.1`: Tokio async writer adapters. Current implementation slice.
+`1.3.1`: Tokio async writer adapters. Release-candidate complete.
 
-- Add design/API documentation and explicit state-machine invariants for
+- Added design/API documentation and explicit state-machine invariants for
   `AsyncWrite` streaming.
-- Implement async encoder writer and async decoder writer adapters in
+- Implemented async encoder writer and async decoder writer adapters in
   `base64-ng-tokio`.
-- Prove accepted-byte behavior, short-write behavior, backpressure handling,
+- Proved accepted-byte behavior, short-write behavior, backpressure handling,
   cancellation safety, resume safety, bounded memory usage, and drop cleanup.
-- Add deterministic adversarial polling tests and examples.
-- Run pentest specifically against cancellation, buffered plaintext cleanup,
+- Added deterministic adversarial polling tests and examples.
+- Ran pentest specifically against cancellation, buffered plaintext cleanup,
   failed-writer latching, duplicate writes, lost bytes, and denial-of-service
   bounds.
 
