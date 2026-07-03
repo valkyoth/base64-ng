@@ -8,8 +8,8 @@ comparison helpers for decoded or encoded Base64 material.
 
 ```toml
 [dependencies]
-base64-ng = "1.3.3"
-base64-ng-subtle = "1.3.3"
+base64-ng = "1.3.4"
+base64-ng-subtle = "1.3.4"
 ```
 
 ```rust

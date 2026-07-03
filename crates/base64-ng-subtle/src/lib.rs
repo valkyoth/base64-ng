@@ -11,7 +11,7 @@
 //! reviewed comparison primitive at the protocol boundary.
 //!
 //! Length is treated as public. Mismatched lengths return
-//! [`subtle::Choice::from(0)`] immediately. Use fixed-size protocol tokens when
+//! `subtle::Choice::from(0)` immediately. Use fixed-size protocol tokens when
 //! length must not vary. When the length itself is secret, compare fixed-size
 //! arrays or fixed-width protocol buffers directly with
 //! [`subtle::ConstantTimeEq`] instead of this public-length helper.

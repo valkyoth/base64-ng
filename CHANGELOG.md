@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.3.4 - 2026-07-03
+
+- Added required `s390x-unknown-linux-gnu` QEMU user-mode evidence for
+  big-endian functional correctness, scalar/fallback runtime reporting,
+  malformed-input behavior, clear-tail behavior, in-place behavior,
+  wrapped/legacy compatibility, and stream behavior.
+- Added stable Rust blocker checks proving `core::arch::s390x` and
+  `core::arch::powerpc64` remain behind unstable `stdarch_*` feature gates on
+  the active release toolchain.
+- Documented that big-endian acceleration is deliberately not admitted in this
+  release; QEMU evidence is fallback/correctness evidence only, not hardware
+  performance, timing, side-channel, or register-retention evidence.
+- Improved the optional PowerPC64 QEMU path with an early glibc sysroot
+  preflight so maintainers get a clear missing-sysroot error instead of a
+  linker dump.
+- Synchronized all workspace crate package versions to `1.3.4`.
+
 ## 1.3.3 - 2026-07-03
 
 - Admitted narrow wasm `simd128` runtime dispatch for Standard and URL-safe

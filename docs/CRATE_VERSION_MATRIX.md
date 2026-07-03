@@ -5,6 +5,26 @@ crate remains the stable user entry point; companion crates are optional
 integration packages for applications that explicitly admit their dependency
 sets.
 
+## 1.3.4 Release Plan
+
+The `1.3.4` release keeps the workspace crate family synchronized. The main
+crate carries the big-endian QEMU scalar/fallback evidence line, required
+`s390x-unknown-linux-gnu` QEMU coverage, stable Rust `s390x`/PowerPC64
+intrinsic blocker checks, and explicit documentation that big-endian
+acceleration is not admitted until stable intrinsics or a separate
+assembly-backed review exists. Companion crates receive synchronized package
+metadata so downstream users see one coherent crate-family version.
+
+| Crate | Version | Publish In 1.3.4 | Cargo |
+| --- | --- | --- | --- |
+| `base64-ng` | `1.3.4` | yes | <https://crates.io/crates/base64-ng> |
+| `base64-ng-sanitization` | `1.3.4` | yes | <https://crates.io/crates/base64-ng-sanitization> |
+| `base64-ng-derive` | `1.3.4` | yes | <https://crates.io/crates/base64-ng-derive> |
+| `base64-ng-serde` | `1.3.4` | yes | <https://crates.io/crates/base64-ng-serde> |
+| `base64-ng-bytes` | `1.3.4` | yes | <https://crates.io/crates/base64-ng-bytes> |
+| `base64-ng-subtle` | `1.3.4` | yes | <https://crates.io/crates/base64-ng-subtle> |
+| `base64-ng-tokio` | `1.3.4` | yes | <https://crates.io/crates/base64-ng-tokio> |
+
 ## 1.3.3 Release Plan
 
 The `1.3.3` release keeps the workspace crate family synchronized. The main
