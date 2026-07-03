@@ -215,7 +215,7 @@ license = "MIT OR Apache-2.0"
 | `stream` | no | `std::io` streaming wrappers. |
 | `allow-wasm32-best-effort-wipe` | no | Explicitly allow `wasm32` builds with compiler-fence-only cleanup. |
 | `allow-compiler-fence-only-wipe` | no | Explicitly allow unsupported native architectures to build with compiler-fence-only cleanup after platform review. |
-| `tokio` | no | Reserved for future async streaming wrappers; currently inert and dependency-free. |
+| `tokio` | no | Reserved placeholder in the core crate; currently inert and dependency-free. Use `base64-ng-tokio` for the admitted async helper and streaming adapter surface. |
 | `kani` | no | Reserved for verifier harnesses; normal builds do not require Kani. |
 | `fuzzing` | no | Reserved for verifier and fuzz harness integration; published crate stays dependency-free. |
 
@@ -1123,7 +1123,7 @@ Security commitments:
 - [docs/ASYNC.md](docs/ASYNC.md) defines the admission bar for async/Tokio
   APIs. The optional companion crate now admits read-all/write-all helpers and
   manual `AsyncRead`/`AsyncWrite` streaming adapters; the core `tokio` feature
-  remains deferred and inert.
+  remains reserved and inert.
 - [docs/DEPENDENCIES.md](docs/DEPENDENCIES.md) defines the dependency
   admission bar for any future external crate.
 - `runtime::backend_report()` exposes the active admitted backend, detected

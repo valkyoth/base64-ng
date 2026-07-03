@@ -39,9 +39,13 @@ Allowed without adding dependencies:
 
 External crates require written justification before inclusion:
 
-- `tokio` may be accepted only behind the optional `tokio` feature for async stream wrappers.
-- `serde` may be accepted only behind an optional feature after API and dependency review.
-- `bytes` may be accepted only behind an optional feature after API and dependency review.
+- `tokio` remains excluded from the core crate; admitted Tokio integration lives
+  in the optional `base64-ng-tokio` companion crate after async API,
+  cancellation, backpressure, and dependency review.
+- `serde` may be accepted only behind an optional integration crate or feature
+  after API and dependency review.
+- `bytes` may be accepted only behind an optional integration crate or feature
+  after API and dependency review.
 - `zeroize` remains rejected by default; the current direction is an internal
   best-effort wiping helper and secret wrapper types before considering a
   dependency.
@@ -993,9 +997,9 @@ those expensive wrapped/public-surface harnesses for background runs.
 - CT-oriented secret decode remains scalar unless a separate formal
   side-channel evidence package proves otherwise. Do not route CT decode
   through normal SIMD decode.
-- Tokio read-side streaming exists only if the cancellation/drop/buffering
-  evidence is complete. Tokio writer streaming remains explicitly deferred for
-  `1.3.0` unless a later slice admits it separately.
+- Tokio reader and writer streaming exist in `base64-ng-tokio` only because the
+  cancellation/drop/buffering evidence is complete for that companion crate.
+  The core crate's `tokio` feature remains inert.
 - Const decode exists with a clear strict `Result` contract and does not add a
   runtime panic surface.
 - Kani, fuzz, Miri, dudect, generated assembly, benchmark, unsafe-boundary,

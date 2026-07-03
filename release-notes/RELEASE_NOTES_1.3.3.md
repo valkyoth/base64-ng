@@ -41,6 +41,9 @@ wasm `simd128` runtime-dispatch profile with explicit runtime smoke evidence.
   before admitted strict decode backend use, preserving overlap safety by
   copying encoded chunks into fixed scratch buffers before writing decoded
   bytes behind the unread input cursor.
+- Aligned roadmap and README wording with the current async split: the core
+  `tokio` feature remains inert, while `base64-ng-tokio` is the admitted
+  async helper and streaming adapter surface.
 - Added release-gated wasm SIMD codegen evidence through
   `scripts/generate_wasm_simd_evidence.sh`, which emits test-harness LLVM IR
   with `target-feature=+simd128` when the wasm target is installed.
