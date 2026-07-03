@@ -90,10 +90,16 @@ Any dependency addition must answer:
    - Optional feature.
 
 3. `simd`
-   - Future SSSE3/SSE4.1, AVX2, AVX-512 VBMI, ARM NEON, and wasm `simd128`.
-   - Runtime dispatch only under `std` for the first admitted accelerated
-     backends, because `std::is_x86_feature_detected!` provides the required
-     CPU-feature gate on x86/x86_64.
+   - Admitted SSSE3/SSE4.1, AVX2, AVX-512 VBMI, ARM NEON, and wasm
+     `simd128` backends for the exact surfaces named in
+     [`SIMD_ADMISSION.md`](SIMD_ADMISSION.md).
+   - Native runtime dispatch remains `std`-gated for admitted native
+     accelerated backends, because `std::is_x86_feature_detected!` provides
+     the required CPU-feature gate on x86/x86_64 and native no-std builds do
+     not have an equivalent portable runtime probe.
+   - Wasm `simd128` dispatch is admitted only when the binary is compiled with
+     `target-feature=+simd128`, the `simd` feature, and the explicit
+     `allow-wasm32-best-effort-wipe` feature.
    - `no_std` builds remain scalar-only unless a future API adds an explicit
      unsafe caller-side CPU contract. Compile-time target-feature reporting is
      not enough to dispatch safely on unknown hardware.
@@ -104,9 +110,12 @@ Any dependency addition must answer:
    - Chunk-boundary state machines.
 
 5. `tokio`
-   - Reserved feature for future async wrappers.
-   - Inert and dependency-free until the async API is admitted.
-   - Admission requirements documented in `docs/ASYNC.md`.
+   - The root `tokio` feature remains an inert reserved placeholder so the
+     core crate stays dependency-free.
+   - The optional `base64-ng-tokio` companion crate provides the admitted
+     Tokio async helper and streaming adapter surface.
+   - Admission requirements and cancellation/backpressure evidence are
+     documented in `docs/ASYNC.md`.
 
 ### API Policy
 
@@ -215,11 +224,13 @@ the zero-runtime-dependency stance.
 - Continue replacing unchecked indexing where practical or documenting bounded
   internal indexing with proof, tests, or local invariants.
 
-### Missing Performance Features
+### Remaining Performance Work
 
-- Admit real AVX2, AVX-512, NEON, SSSE3/SSE4.1, and wasm `simd128` paths only
-  after scalar differential tests, fuzz evidence, target-feature checks, unsafe
-  inventory updates, and benchmark evidence are complete.
+- Maintain admitted AVX2, AVX-512, NEON, SSSE3/SSE4.1, and wasm `simd128`
+  paths only for the surfaces named in `docs/SIMD_ADMISSION.md`.
+- Admit any broader surface only after scalar differential tests, fuzz
+  evidence, target-feature checks, unsafe inventory updates, and benchmark
+  evidence are complete.
 - Keep alignment and prefetch work internal and evidence-driven. Public
   alignment APIs are not admitted unless benchmarks show practical value and
   the API cannot cause unsafe caller assumptions.
