@@ -241,17 +241,23 @@ where
         while read < input_len {
             let chunk_len = in_place_decode_chunk_len(input_len - read);
             scratch[..chunk_len].copy_from_slice(&buffer[read..read + chunk_len]);
-
-            let written = match decode_backend::decode_slice::<A, PAD>(
-                &scratch[..chunk_len],
-                &mut buffer[write..],
-            ) {
-                Ok(written) => written,
-                Err(err) => {
-                    wipe_bytes(&mut scratch[..chunk_len]);
-                    return Err(err.with_index_offset(read));
-                }
+            let available = buffer.len();
+            let Some(output_tail) = buffer.get_mut(write..) else {
+                wipe_bytes(&mut scratch[..chunk_len]);
+                return Err(DecodeError::OutputTooSmall {
+                    required: write,
+                    available,
+                });
             };
+
+            let written =
+                match decode_backend::decode_slice::<A, PAD>(&scratch[..chunk_len], output_tail) {
+                    Ok(written) => written,
+                    Err(err) => {
+                        wipe_bytes(&mut scratch[..chunk_len]);
+                        return Err(err.with_index_offset(read));
+                    }
+                };
             wipe_bytes(&mut scratch[..chunk_len]);
 
             read += chunk_len;

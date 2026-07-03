@@ -251,6 +251,25 @@ impl DecodeError {
             | Self::StagingTooSmall { .. } => self,
         }
     }
+
+    pub(crate) fn with_index_map(self, indexes: &[usize]) -> Self {
+        match self {
+            Self::InvalidByte { index, byte } => Self::InvalidByte {
+                index: indexes.get(index).copied().unwrap_or(index),
+                byte,
+            },
+            Self::InvalidPadding { index } => Self::InvalidPadding {
+                index: indexes.get(index).copied().unwrap_or(index),
+            },
+            Self::InvalidLineWrap { index } => Self::InvalidLineWrap {
+                index: indexes.get(index).copied().unwrap_or(index),
+            },
+            Self::InvalidInput
+            | Self::InvalidLength
+            | Self::OutputTooSmall { .. }
+            | Self::StagingTooSmall { .. } => self,
+        }
+    }
 }
 
 #[cfg(feature = "std")]

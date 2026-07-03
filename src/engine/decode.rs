@@ -365,6 +365,7 @@ where
     ) -> Result<usize, DecodeError> {
         let line_ending = wrap.line_ending.as_bytes();
         let mut scratch = [0u8; 1024];
+        let mut scratch_indexes = [0usize; 1024];
         let mut scratch_len = 0;
         let mut read = 0;
         let mut write = 0;
@@ -379,11 +380,18 @@ where
             }
 
             scratch[scratch_len] = input[read];
+            scratch_indexes[scratch_len] = read;
             scratch_len += 1;
             read += 1;
 
             if scratch_len == scratch.len() {
-                Self::decode_strict_scratch_chunk(&mut scratch, scratch_len, output, &mut write)?;
+                Self::decode_strict_scratch_chunk(
+                    &mut scratch,
+                    &scratch_indexes,
+                    scratch_len,
+                    output,
+                    &mut write,
+                )?;
                 scratch_len = 0;
             }
         }
@@ -392,7 +400,13 @@ where
             return Ok(write);
         }
 
-        Self::decode_strict_scratch_chunk(&mut scratch, scratch_len, output, &mut write)?;
+        Self::decode_strict_scratch_chunk(
+            &mut scratch,
+            &scratch_indexes,
+            scratch_len,
+            output,
+            &mut write,
+        )?;
         Ok(write)
     }
 
@@ -401,25 +415,39 @@ where
         output: &mut [u8],
     ) -> Result<usize, DecodeError> {
         let mut scratch = [0u8; 1024];
+        let mut scratch_indexes = [0usize; 1024];
         let mut scratch_len = 0;
         let mut write = 0;
 
-        for byte in input {
+        for (index, byte) in input.iter().enumerate() {
             if is_legacy_whitespace(*byte) {
                 continue;
             }
 
             scratch[scratch_len] = *byte;
+            scratch_indexes[scratch_len] = index;
             scratch_len += 1;
 
             if scratch_len == scratch.len() {
-                Self::decode_strict_scratch_chunk(&mut scratch, scratch_len, output, &mut write)?;
+                Self::decode_strict_scratch_chunk(
+                    &mut scratch,
+                    &scratch_indexes,
+                    scratch_len,
+                    output,
+                    &mut write,
+                )?;
                 scratch_len = 0;
             }
         }
 
         if scratch_len != 0 {
-            Self::decode_strict_scratch_chunk(&mut scratch, scratch_len, output, &mut write)?;
+            Self::decode_strict_scratch_chunk(
+                &mut scratch,
+                &scratch_indexes,
+                scratch_len,
+                output,
+                &mut write,
+            )?;
         }
 
         Ok(write)
@@ -427,20 +455,27 @@ where
 
     fn decode_strict_scratch_chunk(
         scratch: &mut [u8; 1024],
+        scratch_indexes: &[usize; 1024],
         scratch_len: usize,
         output: &mut [u8],
         write: &mut usize,
     ) -> Result<(), DecodeError> {
-        let written = match decode_backend::decode_slice::<A, PAD>(
-            &scratch[..scratch_len],
-            &mut output[*write..],
-        ) {
-            Ok(written) => written,
-            Err(err) => {
-                wipe_bytes(&mut scratch[..scratch_len]);
-                return Err(err);
-            }
+        let available = output.len();
+        let Some(output_tail) = output.get_mut(*write..) else {
+            wipe_bytes(&mut scratch[..scratch_len]);
+            return Err(DecodeError::OutputTooSmall {
+                required: *write,
+                available,
+            });
         };
+        let written =
+            match decode_backend::decode_slice::<A, PAD>(&scratch[..scratch_len], output_tail) {
+                Ok(written) => written,
+                Err(err) => {
+                    wipe_bytes(&mut scratch[..scratch_len]);
+                    return Err(err.with_index_map(&scratch_indexes[..scratch_len]));
+                }
+            };
         wipe_bytes(&mut scratch[..scratch_len]);
         *write += written;
         Ok(())
