@@ -57,6 +57,8 @@ test -s release-crates.toml
 test -s README.md
 test -s CONTRIBUTING.md
 test -s SECURITY.md
+test -d release-notes
+test -s security/pentest/README.md
 test -s docs/API_AUDIT.md
 test -s docs/ASYNC.md
 test -s docs/BENCHMARKS.md
@@ -79,7 +81,10 @@ test -s docs/SIMD_ENCODE_ADMISSION_DRAFT.md
 test -s docs/TRUST.md
 test -s docs/UNSAFE.md
 test -x scripts/release_crates.py
+test -x scripts/generate_release_history.py
+test -x scripts/validate-release-readiness.sh
 test -s scripts/test-release-crates.py
+test -x scripts/test-release-readiness.sh
 
 if [ "$(sed -n '1p' scripts/release_crates.py)" != "#!/usr/bin/env python3" ]; then
     echo "release metadata: scripts/release_crates.py must use #!/usr/bin/env python3" >&2
@@ -123,6 +128,7 @@ for required_script in \
     "scripts/validate-doc-versions.sh" \
     "scripts/validate-msrv-policy.sh" \
     "scripts/validate-panic-policy.sh" \
+    "scripts/validate-release-readiness.sh" \
     "scripts/validate-release-metadata.sh" \
     "scripts/validate-wasm-posture.sh" \
     "scripts/validate-simd-encode-admission-draft.sh" \
@@ -139,6 +145,21 @@ do
         exit 1
     fi
 done
+
+if [ "$(sed -n '1p' scripts/validate-release-readiness.sh)" != "#!/usr/bin/env sh" ]; then
+    echo "release metadata: scripts/validate-release-readiness.sh must use #!/usr/bin/env sh" >&2
+    exit 1
+fi
+
+if [ "$(sed -n '1p' scripts/test-release-readiness.sh)" != "#!/usr/bin/env sh" ]; then
+    echo "release metadata: scripts/test-release-readiness.sh must use #!/usr/bin/env sh" >&2
+    exit 1
+fi
+
+if [ "$(sed -n '1p' scripts/generate_release_history.py)" != "#!/usr/bin/env python3" ]; then
+    echo "release metadata: scripts/generate_release_history.py must use #!/usr/bin/env python3" >&2
+    exit 1
+fi
 
 if ! grep -q '^The MIT License (MIT)$' LICENSE-MIT; then
     echo "release metadata: LICENSE-MIT does not look like the canonical MIT license" >&2

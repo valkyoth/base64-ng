@@ -206,6 +206,27 @@ The script writes a backend evidence manifest under
 checksums for the captured runtime backend report and inactive SIMD prototype
 equivalence output.
 
+## Pentest Evidence
+
+Root `PENTEST.md` is temporary scratch input. Do not commit it.
+
+For every release candidate:
+
+1. Stop implementation at the exact commit to be reviewed.
+2. Run the local gates and push the candidate for GitHub CI.
+3. Run the external pentest and CodeQL/security review for that exact commit.
+4. Put temporary findings in root `PENTEST.md`.
+5. Fix or document every finding.
+6. Delete root `PENTEST.md`.
+7. Run the local gates again.
+8. Commit one permanent report at `security/pentest/vX.Y.Z.md`.
+9. Run `scripts/validate-release-readiness.sh vX.Y.Z`.
+
+The permanent pentest report commit must only change the report file. The
+report must contain `Status: PASS`, `Reviewed-Commit:`, `Tester:`, `Scope:`,
+and `Date:` metadata. CodeQL or GitHub security findings that affect the
+release decision belong in the same permanent report.
+
 ## Publish
 
 Run the full stable release gate before creating the tag:
