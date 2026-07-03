@@ -63,7 +63,7 @@ side-channel evidence package.
 
 ## Wasm Posture Decision
 
-For the `1.3.0` line, wasm `simd128` remains compile/codegen evidence only.
+For the `1.3.3` line, wasm `simd128` remains compile/codegen evidence only.
 It is not admitted for runtime dispatch, and there is no admitted wasm runtime
 profile. Candidate reporting may expose `wasm-simd128`, but active encode and
 decode backends remain scalar on wasm32.
@@ -73,6 +73,9 @@ engines outside the crate's control, and this release does not have runtime
 evidence for timing behavior, register retention, or the wasm wipe-barrier
 caveat. The wasm32 wipe policy remains fail-closed unless callers explicitly
 enable `allow-wasm32-best-effort-wipe`.
+
+The detailed runtime decision is tracked in
+[WASM_SIMD128_RUNTIME_REVIEW.md](WASM_SIMD128_RUNTIME_REVIEW.md).
 
 ## Required For Every Admitted Backend
 

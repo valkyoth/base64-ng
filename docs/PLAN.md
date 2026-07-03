@@ -1046,6 +1046,11 @@ inside the `1.3.x` line if they remain evidence-gated and do not weaken the
 `1.3.3`: wasm `simd128` runtime-dispatch decision.
 
 - Decide whether a specific wasm runtime/deployment profile can be admitted.
+- First checkpoint: keep wasm `simd128` runtime dispatch unadmitted and record
+  the decision in
+  [WASM_SIMD128_RUNTIME_REVIEW.md](WASM_SIMD128_RUNTIME_REVIEW.md), because
+  current evidence is compile/codegen-only and does not prove runtime/JIT
+  timing, register-retention, cleanup, fallback, or benchmark posture.
 - If admitted, implement an explicit wasm dispatch boundary and evidence for
   encode first, then decode only if the same evidence standard is met.
 - Keep wasm wipe behavior fail-closed unless callers explicitly enable
