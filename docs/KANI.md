@@ -46,11 +46,28 @@ For opt-in expensive exploration, run:
 scripts/check_kani_advanced.sh
 ```
 
-The advanced script enables `--cfg base64_ng_kani_advanced` and includes
-symbolic wrapped-decode and broad public strict-decode harnesses that may take
-substantially longer than the normal release-gate suite. These harnesses are
-not part of the mandatory release gate unless a future release explicitly
-promotes them after runtime evidence shows they are practical for CI.
+The advanced script enables `--cfg base64_ng_kani_advanced`, prints each stage
+before it starts, and runs advanced harness code generation by default. This
+keeps the default advanced check bounded and verifies that the opt-in harnesses
+still compile through Kani.
+
+To run the broad public strict-decode no-panic proof, use:
+
+```sh
+BASE64_NG_KANI_PROVE_PUBLIC_SURFACE=1 scripts/check_kani_advanced.sh
+```
+
+The symbolic wrapped-decode harnesses are intentionally excluded from the
+default advanced script because they can consume very large amounts of memory
+and run for hours on local workstations. To run them manually, use:
+
+```sh
+BASE64_NG_KANI_EXPENSIVE_WRAPPED=1 scripts/check_kani_advanced.sh
+```
+
+These harnesses are not part of the mandatory release gate unless a future
+release explicitly promotes them after runtime evidence shows they are
+practical for CI.
 
 ## Harness Scope
 
@@ -67,12 +84,22 @@ Current harnesses cover:
 - clear-tail cleanup behavior on decode failures
 - constant-time-oriented validate/decode agreement for one quantum
 
-Advanced opt-in harnesses additionally attempt:
+The default advanced opt-in script additionally checks code generation for:
+
+- broad no-panic exercise of selected public strict decode surfaces for an
+  8-byte symbolic input
+- strict wrapped decode output-prefix bounds for an 8-byte symbolic input
+- strict wrapped clear-tail cleanup for an 8-byte symbolic input
+
+The `BASE64_NG_KANI_PROVE_PUBLIC_SURFACE=1` harness additionally proves:
+
+- broad no-panic exercise of selected public strict decode surfaces for an
+  8-byte symbolic input
+
+The `BASE64_NG_KANI_EXPENSIVE_WRAPPED=1` harness set additionally proves:
 
 - strict wrapped decode output-prefix bounds for an 8-byte symbolic input
 - strict wrapped clear-tail cleanup for an 8-byte symbolic input
-- broad no-panic exercise of selected public strict decode surfaces for an
-  8-byte symbolic input
 
 ## Historical v1.0.0 Verifier Exception
 
