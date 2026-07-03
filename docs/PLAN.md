@@ -1034,11 +1034,14 @@ inside the `1.3.x` line if they remain evidence-gated and do not weaken the
 - Maintain the checked admission ledger in
   [SIMD_NON_STANDARD_SURFACE_REVIEW.md](SIMD_NON_STANDARD_SURFACE_REVIEW.md)
   for every reviewed non-standard surface.
-- First checkpoint: add explicit regression coverage proving current
-  non-standard candidate surfaces still preserve scalar-visible behavior while
-  remaining outside the admitted acceleration scope. This covers custom
-  alphabets, bcrypt/crypt-style alphabets, strict in-place decode,
-  legacy-whitespace decode, strict wrapped decode, and wrapped encode staging.
+- First checkpoint: add explicit regression coverage proving the then-current
+  non-standard candidate surfaces still preserved scalar-visible behavior while
+  remaining outside the admitted acceleration scope. At the `1.3.2` checkpoint
+  this covered custom alphabets, bcrypt/crypt-style alphabets, strict in-place
+  decode, legacy-whitespace decode, strict wrapped decode, and wrapped encode
+  staging. The later `1.3.3` slice separately admitted wrapped decode, legacy
+  decode, in-place encode, and strict in-place decode only through scalar
+  validation/compaction or stack-staging boundaries.
 - Second checkpoint: pin malformed/error-path parity for the same surfaces,
   and keep wrapped encode regression coverage backed by an independent naive
   line-splitting oracle rather than only the production wrapping primitive.

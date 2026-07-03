@@ -49,6 +49,9 @@ wasm `simd128` runtime-dispatch profile with explicit runtime smoke evidence.
 - Clarified dependency-policy wording so the admitted Tokio surface remains
   the companion crate, while the core `tokio` feature stays reserved and
   dependency-free by design.
+- Clarified the roadmap wording for the `1.3.2` non-standard surface review so
+  it no longer reads as if later-admitted staged surfaces are still entirely
+  outside acceleration.
 - Added release-gated wasm SIMD codegen evidence through
   `scripts/generate_wasm_simd_evidence.sh`, which emits test-harness LLVM IR
   with `target-feature=+simd128` when the wasm target is installed.
