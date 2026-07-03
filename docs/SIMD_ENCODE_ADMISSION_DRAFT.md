@@ -1,7 +1,9 @@
 # SIMD Encode Admission Draft
 
 This draft is the reusable working package for any future encode acceleration
-scope beyond the `1.2.0` release. It is not an admission record. AVX-512 VBMI, AVX2, SSSE3/SSE4.1, and NEON encode are already admitted for std x86/x86_64 or little-endian std aarch64 Standard and URL-safe alphabet families; every additional backend or broader API surface remains pending until `docs/SIMD_ADMISSION.md`, release evidence, tests, benchmarks, unsafe inventory, and release notes are updated in the same commit as the active backend change.
+scope beyond the currently admitted native and narrow wasm profiles. It is not an admission record. AVX-512 VBMI, AVX2, SSSE3/SSE4.1, NEON, and narrow wasm
+`simd128` encode are already admitted for their documented Standard and
+URL-safe alphabet-family scopes; every additional backend or broader API surface remains pending until `docs/SIMD_ADMISSION.md`, release evidence, tests, benchmarks, unsafe inventory, and release notes are updated in the same commit as the active backend change.
 
 ## Scope
 
@@ -11,10 +13,12 @@ and timing behavior make decode higher risk than encode.
 
 The conservative initial activation shape is:
 
-- `std` x86/x86_64 and little-endian std aarch64 dispatch only. x86/x86_64 uses
-  `std::is_x86_feature_detected!` runtime CPU feature probing, while aarch64
-  NEON relies on the mandatory target contract.
-- Release gate phrase: std x86/x86_64 and little-endian std aarch64 dispatch only.
+- `std` x86/x86_64, little-endian std aarch64, and the admitted wasm
+  `simd128` profile only. x86/x86_64 uses `std::is_x86_feature_detected!`
+  runtime CPU feature probing, aarch64 NEON relies on the mandatory target
+  contract, and wasm requires a binary compiled with `target-feature=+simd128`,
+  `simd`, and `allow-wasm32-best-effort-wipe`.
+- Release gate phrase: std x86/x86_64, little-endian std aarch64, and narrow wasm `simd128` dispatch only.
 - `no_std` builds remain scalar-only unless a later unsafe caller-contract API
   is designed and reviewed.
 - Unsupported CPUs must execute scalar code without illegal instructions.
@@ -44,9 +48,9 @@ Architecture-specific admission blockers:
 - AArch64 NEON must include generated assembly that identifies every
   caller-derived vector register and any callee-saved vector spill/restore slot
   that may carry caller data.
-- wasm `simd128` must include generated-code/JIT evidence for the selected wasm
-  runtime, or the release must explicitly keep wasm SIMD candidate-only and make
-  no runtime register-retention claim.
+- Any broader wasm `simd128` scope must include generated-code/JIT evidence for
+  the selected wasm runtime, or the release must explicitly keep that broader
+  wasm SIMD scope candidate-only and make no runtime register-retention claim.
 
 ## Runtime Report Expectations
 
@@ -106,10 +110,11 @@ BASE64_NG_RUN_PERF=1 scripts/check_perf.sh
 Allowed wording:
 
 ```text
-This release admits std-only x86_64 AVX-512 VBMI, AVX2, SSSE3/SSE4.1, and
-little-endian std-only aarch64 NEON encode dispatch for Standard and URL-safe Base64 on
-platforms that pass the admission checks. Unsupported CPUs continue to use the
-scalar backend. Decode remains scalar-only.
+This release admits x86_64 AVX-512 VBMI, AVX2, SSSE3/SSE4.1, little-endian
+aarch64 NEON, and narrow wasm simd128 encode dispatch for Standard and URL-safe
+Base64 on platforms that pass the admission checks. Unsupported CPUs and
+out-of-scope wasm runtimes continue to use the scalar backend. Decode admission
+is documented separately.
 ```
 
 Required precision:

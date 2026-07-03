@@ -720,7 +720,8 @@ Safety argument:
   rebases the error index to the original input. Tail fallback errors are also
   rebased to the original input offset.
 - Unsupported alphabets, short inputs, tails, wrapped decode, legacy decode,
-  in-place decode, CT secret decode, `no_std`, and wasm decode stay scalar.
+  in-place decode, CT secret decode, and `no_std` stay scalar. Wasm decode is
+  admitted only through its separate narrow `simd128` profile.
 
 ### `decode_16_bytes_ssse3_sse41`
 
@@ -1030,8 +1031,8 @@ Safety argument:
   rebases the error index to the original input. Tail fallback errors are also
   rebased to the original input offset.
 - Unsupported alphabets, short inputs, tails, wrapped decode, legacy decode,
-  in-place decode, CT secret decode, `no_std`, wasm decode, and 32-bit ARM stay
-  scalar.
+  in-place decode, CT secret decode, `no_std`, and 32-bit ARM stay scalar.
+  Wasm decode is admitted only through its separate narrow `simd128` profile.
 
 ### `decode_16_bytes_neon`
 
@@ -1204,14 +1205,16 @@ Safety argument:
 
 Location: `src/simd/wasm.rs`
 
-Status: private helper for an inactive wasm `simd128` test-only prototype, not
-dispatchable and not reachable from runtime backend selection.
+Status: private helper for the admitted narrow wasm `simd128` runtime profile.
+It is reachable through runtime backend selection only for `wasm32` binaries
+compiled with `target-feature=+simd128`, `simd`, and
+`allow-wasm32-best-effort-wipe`.
 
 Purpose:
 
 - Select the real wasm `simd128` fixed-block encode helper for Standard-family
   alphabets.
-- Keep custom alphabets on scalar scaffold logic because portable wasm SIMD
+- Keep custom alphabets on scalar fallback logic because portable wasm SIMD
   does not provide a direct 64-byte alphabet lookup instruction.
 
 Preconditions:
@@ -1227,22 +1230,22 @@ Safety argument:
 
 - Fixed array types enforce the required block sizes.
 - The target-feature contract is explicit on the function.
-- The helper is test-only and cannot be reached by runtime dispatch.
+- Public dispatch reaches the helper only after the feature-gated wasm backend
+  reports `simd128` availability and the caller routes through an admitted
+  Standard-family encode surface.
 
 Limitations:
 
-- This is compile and codegen evidence only. Wasm engines include a runtime/JIT
-  optimization layer outside Rust's compiler boundary, so this prototype does
-  not claim runtime timing, register-retention, or JIT zeroization guarantees.
-  wasm `simd128` admission requires runtime/JIT-specific evidence or an
-  explicit release scope that makes no register-retention claim.
+- Wasm engines include a runtime/JIT optimization layer outside Rust's compiler
+  boundary. This admission is backed by Node/V8 and Wasmtime runtime smoke
+  evidence for correctness and dispatch reporting, but it does not claim
+  runtime timing, register-retention, or JIT zeroization guarantees.
 
 ### `encode_12_bytes_wasm_standard_family`
 
 Location: `src/simd/wasm.rs`
 
-Status: private helper for the inactive wasm `simd128` test-only prototype, not
-dispatchable and not reachable from runtime backend selection.
+Status: private helper for the admitted narrow wasm `simd128` runtime profile.
 
 Purpose:
 
@@ -1281,8 +1284,7 @@ Limitations:
 
 Location: `src/simd/wasm.rs`
 
-Status: private helper for the inactive wasm `simd128` test-only prototype, not
-dispatchable and not reachable from runtime backend selection.
+Status: private helper for the admitted narrow wasm `simd128` runtime profile.
 
 Purpose:
 
@@ -1306,7 +1308,53 @@ Safety argument:
 - The target-feature contract enables the required wasm SIMD instructions.
 - The caller constructs `indices` with masks that constrain every byte to a
   six-bit Base64 value.
-- The helper is private to the test-only prototype path.
+- The helper is private to the admitted wasm encode path.
+
+### `decode_16_bytes_wasm_simd128`
+
+Location: `src/simd/wasm.rs`
+
+Status: private helper for the admitted narrow wasm `simd128` runtime profile.
+It is reachable through strict decode dispatch only for Standard and URL-safe
+alphabet families after whole-input scalar validation.
+
+Purpose:
+
+- Decode one 16-byte Base64 block into 12 bytes with wasm `simd128` shifts,
+  masks, byte shuffles, and stack staging.
+- Preserve scalar strict-decode behavior by validating the entire input through
+  the scalar decoder before any wasm block writes reach caller output.
+- Wipe the staged scalar and decoded stack buffers before returning.
+
+Preconditions:
+
+- Caller must prove `simd128` is available for the current wasm runtime.
+- Input and output lengths are fixed by `[u8; 16]` and `[u8; 12]` arrays.
+- Whole-input scalar validation has already accepted the full encoded input.
+- The alphabet must be Standard-family as checked by the dispatch wrapper.
+
+Unsafe operation:
+
+- `v128_load` loads the staged 16-byte decoded-value array.
+- wasm SIMD shifts, masks, ORs, and `u8x16_shuffle` pack the decoded bytes.
+- `v128_store` writes exactly 16 bytes into a local scratch array; only the
+  first 12 decoded bytes are copied after scalar-equivalence verification.
+
+Safety argument:
+
+- Fixed array types enforce the required block sizes for every load and store.
+- Whole-input scalar validation prevents malformed input from reaching caller
+  output through the wasm block path.
+- The helper compares the wasm block output against the scalar block output
+  before returning success.
+- Local staging buffers are wiped before the helper returns.
+- The target-feature contract enables the required wasm SIMD instructions.
+
+Limitations:
+
+- This helper does not provide a wasm runtime/JIT timing or register-retention
+  guarantee. wasm32 cleanup remains governed by the separate fail-closed
+  best-effort wipe policy and `allow-wasm32-best-effort-wipe` opt-in.
 
 ## Admission Rule
 

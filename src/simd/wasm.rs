@@ -3,27 +3,132 @@ use core::arch::wasm32::{
     u32x4_shr, u32x4_splat, v128, v128_and, v128_bitselect, v128_load, v128_or, v128_store,
 };
 
-use crate::{Alphabet, Engine, Standard, UrlSafe, decode_alphabet_byte, encode_base64_value};
+use super::decode_helpers::{copy_verified_decode_output, fill_decode_values};
+use crate::{Alphabet, EncodeError, Standard, checked_encoded_len, encode_base64_value, scalar};
+#[cfg(test)]
+use crate::{Engine, UrlSafe, decode_alphabet_byte};
 
-/// Encodes one 12-byte block into 16 bytes through the inactive wasm
-/// `simd128` prototype.
+const WASM_DECODE_INPUT_BLOCK: usize = 16;
+const WASM_DECODE_OUTPUT_BLOCK: usize = 12;
+
+pub(crate) fn wasm_simd128_supports_alphabet<A>() -> bool
+where
+    A: Alphabet,
+{
+    is_standard_or_url_safe_family::<A>()
+}
+
+pub(crate) fn wasm_simd128_decode_available() -> bool {
+    super::wasm_simd128_available()
+}
+
+pub(crate) fn encode_slice_wasm_simd128<A, const PAD: bool>(
+    input: &[u8],
+    output: &mut [u8],
+) -> Result<usize, EncodeError>
+where
+    A: Alphabet,
+{
+    if input.len() < 12 || !wasm_simd128_supports_alphabet::<A>() {
+        return scalar::encode_slice::<A, PAD>(input, output);
+    }
+
+    let required = checked_encoded_len(input.len(), PAD).ok_or(EncodeError::LengthOverflow)?;
+    if output.len() < required {
+        return Err(EncodeError::OutputTooSmall {
+            required,
+            available: output.len(),
+        });
+    }
+
+    let mut read = 0;
+    let mut write = 0;
+    while read + 12 <= input.len() {
+        // SAFETY: Runtime dispatch reaches this function only when this wasm
+        // binary was compiled with target-feature=+simd128. The loop guard and
+        // prevalidated output length prove the fixed-size views are in bounds.
+        unsafe {
+            let block = &*(input.as_ptr().add(read).cast::<[u8; 12]>());
+            let encoded = &mut *(output.as_mut_ptr().add(write).cast::<[u8; 16]>());
+            encode_12_bytes_wasm_simd128::<A>(block, encoded);
+        }
+        read += 12;
+        write += 16;
+    }
+
+    let tail_written = scalar::encode_slice::<A, PAD>(&input[read..], &mut output[write..])?;
+    Ok(write + tail_written)
+}
+
+pub(crate) fn decode_slice_wasm_simd128<A, const PAD: bool>(
+    input: &[u8],
+    output: &mut [u8],
+) -> Result<usize, crate::DecodeError>
+where
+    A: Alphabet,
+{
+    if input.len() < WASM_DECODE_INPUT_BLOCK || !wasm_simd128_supports_alphabet::<A>() {
+        return scalar::decode_slice::<A, PAD>(input, output);
+    }
+
+    let required = scalar::validate_decode::<A, PAD>(input)?;
+    if output.len() < required {
+        return Err(crate::DecodeError::OutputTooSmall {
+            required,
+            available: output.len(),
+        });
+    }
+
+    let mut read = 0;
+    let mut write = 0;
+    while read + WASM_DECODE_INPUT_BLOCK <= input.len() {
+        let mut decoded = [0u8; WASM_DECODE_OUTPUT_BLOCK];
+        // SAFETY: Runtime dispatch reaches this function only when this wasm
+        // binary was compiled with target-feature=+simd128. Whole-input scalar
+        // validation above preserves public error shape before any bytes are
+        // copied to caller output.
+        let written = match unsafe {
+            let block = &*(input
+                .as_ptr()
+                .add(read)
+                .cast::<[u8; WASM_DECODE_INPUT_BLOCK]>());
+            decode_16_bytes_wasm_simd128::<A, PAD>(block, &mut decoded)
+        } {
+            Ok(written) => written,
+            Err(error) => {
+                crate::wipe_bytes(&mut decoded);
+                return Err(error.with_index_offset(read));
+            }
+        };
+
+        output[write..write + written].copy_from_slice(&decoded[..written]);
+        crate::wipe_bytes(&mut decoded);
+        read += WASM_DECODE_INPUT_BLOCK;
+        write += written;
+    }
+
+    let tail_written = scalar::decode_slice::<A, PAD>(&input[read..], &mut output[write..])
+        .map_err(|error| error.with_index_offset(read))?;
+    Ok(write + tail_written)
+}
+
+/// Encodes one 12-byte block into 16 bytes through the admitted narrow wasm
+/// `simd128` backend.
 ///
-/// This is not an admitted fast path. It exists to compile and review wasm
-/// vector encode code without changing runtime dispatch. Standard and URL-safe
-/// alphabets use real fixed-block `simd128` logic. Custom alphabets use the
-/// scalar fallback scaffold because portable wasm SIMD lacks a direct 64-byte
-/// table lookup instruction.
+/// Standard and URL-safe alphabets use real fixed-block `simd128` logic.
+/// Custom alphabets use the scalar fallback scaffold because portable wasm SIMD
+/// lacks a direct 64-byte table lookup instruction.
 ///
 /// Admission note: wasm `simd128` has a second optimization layer in the
-/// runtime/JIT. This prototype is codegen evidence only and does not claim a
-/// runtime timing, register-retention, or JIT zeroization guarantee.
+/// runtime/JIT. The admitted profile is backed by Node/V8 and Wasmtime smoke
+/// evidence, but it does not claim runtime timing, register-retention, or JIT
+/// zeroization guarantees.
 ///
 /// # Safety
 ///
 /// The caller must execute this function only when `simd128` is available for
 /// the current wasm runtime. The input and output sizes are fixed by their
 /// array types.
-#[allow(dead_code, reason = "inactive prototype is not dispatchable yet")]
 #[target_feature(enable = "simd128")]
 unsafe fn encode_12_bytes_wasm_simd128<A>(input: &[u8; 12], output: &mut [u8; 16])
 where
@@ -145,8 +250,61 @@ where
     v128_bitselect(u8x16_splat(slash_char), encoded, slash)
 }
 
+#[target_feature(enable = "simd128")]
+unsafe fn decode_16_bytes_wasm_simd128<A, const PAD: bool>(
+    input: &[u8; WASM_DECODE_INPUT_BLOCK],
+    output: &mut [u8; WASM_DECODE_OUTPUT_BLOCK],
+) -> Result<usize, crate::DecodeError>
+where
+    A: Alphabet,
+{
+    let mut scalar_output = [0u8; WASM_DECODE_OUTPUT_BLOCK];
+    let written = match scalar::decode_slice::<A, PAD>(input, &mut scalar_output) {
+        Ok(written) => written,
+        Err(error) => {
+            crate::wipe_bytes(&mut scalar_output);
+            return Err(error);
+        }
+    };
+
+    let mut values = [0u8; WASM_DECODE_INPUT_BLOCK];
+    fill_decode_values::<A, WASM_DECODE_INPUT_BLOCK>(input, &mut values);
+
+    let mut packed = [0u8; 16];
+    // SAFETY: Fixed arrays back every 128-bit load/store and the target-feature
+    // contract enables wasm simd128. Whole-block scalar decode above validated
+    // alphabet, padding, and canonicality before this vector packing step.
+    unsafe {
+        let lanes = v128_load(values.as_ptr().cast());
+        let byte0 = v128_or(
+            v128_and(u32x4_shl(lanes, 2), u32x4_splat(0x0000_00fc)),
+            v128_and(u32x4_shr(lanes, 12), u32x4_splat(0x0000_0003)),
+        );
+        let byte1 = v128_or(
+            v128_and(u32x4_shl(lanes, 4), u32x4_splat(0x0000_f000)),
+            v128_and(u32x4_shr(lanes, 10), u32x4_splat(0x0000_0f00)),
+        );
+        let byte2 = v128_or(
+            v128_and(u32x4_shl(lanes, 6), u32x4_splat(0x00c0_0000)),
+            v128_and(u32x4_shr(lanes, 8), u32x4_splat(0x003f_0000)),
+        );
+        let merged = v128_or(byte0, v128_or(byte1, byte2));
+        let compact = u8x16_shuffle::<0, 1, 2, 4, 5, 6, 8, 9, 10, 12, 13, 14, 16, 16, 16, 16>(
+            merged,
+            u8x16_splat(0),
+        );
+        v128_store(packed.as_mut_ptr().cast(), compact);
+    }
+
+    crate::wipe_bytes(&mut values);
+    copy_verified_decode_output(&mut packed, &mut scalar_output, output, written)?;
+    Ok(written)
+}
+
+#[cfg(test)]
 struct AnchorMatchingCustom;
 
+#[cfg(test)]
 impl Alphabet for AnchorMatchingCustom {
     const ENCODE: [u8; 64] = *b"ACBDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
@@ -155,6 +313,7 @@ impl Alphabet for AnchorMatchingCustom {
     }
 }
 
+#[cfg(test)]
 fn fill_pattern(output: &mut [u8], seed: u8) {
     let mut value = seed.wrapping_mul(19);
     for byte in output {
@@ -163,6 +322,7 @@ fn fill_pattern(output: &mut [u8], seed: u8) {
     }
 }
 
+#[cfg(test)]
 fn fill_indices_pattern(output: &mut [u8; 12], seed: u8) {
     let mut write = 0;
     for group in 0..4 {

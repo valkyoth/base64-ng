@@ -11,10 +11,10 @@ test -s "$simd_doc"
 
 for required_text in \
     "It is not an admission record" \
-    "AVX-512 VBMI, AVX2, SSSE3/SSE4.1, and NEON encode are already admitted" \
+    "AVX-512 VBMI, AVX2, SSSE3/SSE4.1, NEON, and narrow wasm" \
     "every additional backend or broader API surface remains pending" \
     "Decode acceleration" \
-    "std x86/x86_64 and little-endian std aarch64 dispatch only" \
+    "std x86/x86_64, little-endian std aarch64, and narrow wasm" \
     "Unsupported CPUs must execute scalar code without illegal instructions" \
     "Any backend whose evidence is incomplete stays candidate-only" \
     "full \`Engine::encode_slice\`, \`encode_slice_clear_tail\`, and alloc helper" \
@@ -26,7 +26,7 @@ for required_text in \
     "hardware evidence from a CPU that actually supports the backend" \
     "benchmark output with scalar baseline" \
     "AArch64 NEON must include generated assembly" \
-    "wasm \`simd128\` must include generated-code/JIT evidence" \
+    "Any broader wasm \`simd128\` scope must include generated-code/JIT evidence" \
     "accelerated_backend_active=true" \
     "security_posture=accelerated" \
     "candidate_detection_mode" \
@@ -80,7 +80,7 @@ if ! grep -F -q "Active backend priority: AVX-512 VBMI, then AVX2, then SSSE3/SS
     exit 1
 fi
 
-if grep -R -q "ActiveBackend::Wasm\|ActiveBackend::Simd" src; then
+if grep -R -q "ActiveBackend::Simd" src; then
     echo "simd encode admission draft: non-admitted accelerated ActiveBackend variant exists before admission" >&2
     exit 1
 fi

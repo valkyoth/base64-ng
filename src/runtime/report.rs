@@ -335,6 +335,8 @@ fn active_backend() -> Backend {
         crate::simd::ActiveBackend::Ssse3Sse41 => Backend::Ssse3Sse41,
         #[cfg(all(feature = "std", target_arch = "aarch64", target_endian = "little"))]
         crate::simd::ActiveBackend::Neon => Backend::Neon,
+        #[cfg(all(feature = "simd", target_arch = "wasm32"))]
+        crate::simd::ActiveBackend::WasmSimd128 => Backend::WasmSimd128,
     }
 }
 
@@ -355,6 +357,8 @@ fn active_decode_backend() -> Backend {
         crate::decode_backend::DecodeBackend::Ssse3Sse41 => Backend::Ssse3Sse41,
         #[cfg(all(feature = "std", target_arch = "aarch64", target_endian = "little"))]
         crate::decode_backend::DecodeBackend::Neon => Backend::Neon,
+        #[cfg(all(feature = "simd", target_arch = "wasm32"))]
+        crate::decode_backend::DecodeBackend::WasmSimd128 => Backend::WasmSimd128,
     }
 }
 

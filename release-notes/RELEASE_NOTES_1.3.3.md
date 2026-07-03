@@ -1,24 +1,31 @@
 # base64-ng 1.3.3
 
-This patch keeps the workspace crate family synchronized and tightens the wasm
-SIMD release posture without admitting new wasm runtime acceleration.
+This patch keeps the workspace crate family synchronized and admits a narrow
+wasm `simd128` runtime-dispatch profile with explicit runtime smoke evidence.
 
 ## Changed
 
-- Recorded that wasm `simd128` remains compile/codegen evidence only in
-  `1.3.3`; active encode and decode dispatch remain scalar on `wasm32`.
+- Admitted wasm `simd128` runtime dispatch for Standard and URL-safe public
+  encode plus normal strict decode when `wasm32` binaries are compiled with
+  `target-feature=+simd128`, `simd`, and
+  `allow-wasm32-best-effort-wipe`.
+- Added Node/V8 and Wasmtime runtime smoke evidence requiring `wasm-simd128`
+  candidate, active encode, and active decode backend reporting plus Standard
+  and URL-safe public API round trips.
 - Added release-gated wasm SIMD codegen evidence through
   `scripts/generate_wasm_simd_evidence.sh`, which emits test-harness LLVM IR
   with `target-feature=+simd128` when the wasm target is installed.
 - Added `Engine::profile_with_wrap` and `Engine::checked_profile_with_wrap` for
   simpler construction of strict wrapped profiles.
 - Updated README, release evidence, SIMD admission, and roadmap documentation
-  to distinguish wasm candidate reporting from active runtime dispatch.
+  to describe the narrow admitted wasm profile and the remaining browser/JIT,
+  zeroization, and benchmark caveats.
 
 ## Security Notes
 
-- No new SIMD runtime backend is admitted in this release.
-- Wasm `simd128` still requires named runtime/JIT evidence, fallback evidence,
-  benchmark evidence, and cleanup-posture review before it can become active.
+- Wasm `simd128` is admitted only for the named Node/V8 and Wasmtime smoke
+  profile and the narrow Standard/URL-safe encode plus strict-decode surface.
+- Browser-wide behavior, runtime/JIT timing behavior, and performance claims
+  remain out of scope until separately evidenced.
 - The default wasm cleanup policy remains fail-closed unless
   `allow-wasm32-best-effort-wipe` is explicitly enabled.

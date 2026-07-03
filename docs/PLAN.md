@@ -1043,27 +1043,29 @@ inside the `1.3.x` line if they remain evidence-gated and do not weaken the
 - Pentest each admitted surface separately because this is several admission
   surfaces, not one feature.
 
-`1.3.3`: wasm `simd128` runtime-dispatch decision.
+`1.3.3`: wasm `simd128` runtime-dispatch admission.
 
-- Decide whether a specific wasm runtime/deployment profile can be admitted.
-- First checkpoint: keep wasm `simd128` runtime dispatch unadmitted and record
-  the decision in
-  [WASM_SIMD128_RUNTIME_REVIEW.md](WASM_SIMD128_RUNTIME_REVIEW.md), because
-  current evidence is compile/codegen-only and does not prove runtime/JIT
-  timing, register-retention, cleanup, fallback, or benchmark posture.
-- Second checkpoint: add `scripts/generate_wasm_simd_evidence.sh` to emit
-  release test-harness LLVM IR with `target-feature=+simd128` and check vector
-  codegen markers while still treating wasm as non-dispatchable runtime
-  evidence.
-- If admitted, implement an explicit wasm dispatch boundary and evidence for
-  encode first, then decode only if the same evidence standard is met.
+- Admit a narrow wasm `simd128` runtime profile for Standard and URL-safe
+  public encode plus normal strict decode when the binary is compiled with
+  `target-feature=+simd128`, `simd`, and the explicit
+  `allow-wasm32-best-effort-wipe` feature.
+- Record the decision in
+  [WASM_SIMD128_RUNTIME_REVIEW.md](WASM_SIMD128_RUNTIME_REVIEW.md), including
+  the limits: this does not prove every browser/JIT, runtime timing,
+  register-retention, cleanup, fallback, or benchmark posture.
+- Add `scripts/generate_wasm_simd_evidence.sh` to emit release test-harness
+  LLVM IR with `target-feature=+simd128` and check vector codegen markers.
+- Add `scripts/check_wasm_runtime_dispatch.sh` to build a wasm smoke module and
+  execute it under Node/V8 and Wasmtime, requiring `wasm-simd128` candidate,
+  active encode, and active decode backend reporting plus Standard and
+  URL-safe public API round trips.
 - Keep wasm wipe behavior fail-closed unless callers explicitly enable
   `allow-wasm32-best-effort-wipe`.
 - Document JIT, runtime, timing, and zeroization caveats without implying
   hardware-like guarantees.
-- Add CI target evidence and generated-code review for the admitted wasm
-  profile. If the runtime evidence is incomplete, keep wasm `simd128` as
-  compile/codegen evidence only.
+- Keep broader wasm/browser profiles, custom alphabets, wrapped/legacy
+  surfaces, in-place decode, and CT secret decode scalar until separate
+  evidence admits them.
 
 `1.3.4`: big-endian and niche-architecture acceleration review.
 

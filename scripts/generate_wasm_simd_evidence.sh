@@ -84,10 +84,10 @@ require_pattern "$artifact" "llvm\\.wasm\\.bitselect\\.v16i8" "wasm bitselect in
     checksum_file "$artifact"
     echo
     echo "review focus:"
-    echo "- wasm simd128 remains non-dispatchable runtime evidence"
-    echo "- test-harness LLVM IR contains the inactive fixed-block encode prototype"
+    echo "- wasm simd128 release codegen evidence for the admitted narrow runtime profile"
+    echo "- test-harness LLVM IR contains fixed-block encode and decode vector code"
     echo "- IR contains simd128 target features, vector shuffle, 128-bit byte vectors, and wasm bitselect"
-    echo "- this evidence does not execute wasm and does not attest any runtime/JIT timing or cleanup behavior"
+    echo "- this evidence does not execute wasm and does not attest any runtime/JIT timing or cleanup behavior; runtime dispatch is checked separately by scripts/check_wasm_runtime_dispatch.sh"
 } >"$manifest"
 
 echo "wasm simd evidence: wrote $output_dir"

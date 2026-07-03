@@ -19,39 +19,42 @@ require_text() {
     fi
 }
 
-echo "wasm posture: checking non-dispatchable simd128 policy"
+runtime_script="scripts/check_wasm_runtime_dispatch.sh"
 
-require_text "$simd_doc" "Runtime backend selection remains scalar for wasm."
+echo "wasm posture: checking admitted simd128 runtime policy"
+
+require_text "$simd_doc" "Node/V8 and Wasmtime runtime smoke evidence"
 require_text "$simd_doc" "WASM_SIMD128_RUNTIME_REVIEW.md"
-require_text "$admission_doc" "wasm \`simd128\` remains compile/codegen evidence only"
-require_text "$admission_doc" "Candidate reporting may expose \`wasm-simd128\`, but active encode and"
-require_text "$admission_doc" "decode backends remain scalar on wasm32."
-require_text "$admission_doc" "test-binary compile evidence only; non-dispatchable"
+require_text "$admission_doc" "wasm \`simd128\` is admitted for runtime dispatch"
+require_text "$admission_doc" "Node/V8 and Wasmtime runtime smoke evidence"
+require_text "$admission_doc" "| wasm \`simd128\` | admitted backend |"
 require_text "$admission_doc" "WASM_SIMD128_RUNTIME_REVIEW.md"
-require_text "$review_doc" "No wasm \`simd128\` runtime dispatch is admitted in \`1.3.3\`."
-require_text "$review_doc" "Candidate reporting may expose \`wasm-simd128\`"
-require_text "$review_doc" "active encode and decode backends remain scalar on \`wasm32\`"
-require_text "$review_doc" "src/simd/mod.rs\` must not include \`WasmSimd128\` in \`ActiveBackend\`"
+require_text "$review_doc" "wasm \`simd128\` runtime dispatch is admitted in \`1.3.3\`"
+require_text "$review_doc" "Node/V8"
+require_text "$review_doc" "Wasmtime"
+require_text "$review_doc" "active encode and decode backends are \`wasm-simd128\`"
 require_text "$review_doc" "scripts/generate_wasm_simd_evidence.sh"
+require_text "$review_doc" "scripts/check_wasm_runtime_dispatch.sh"
 require_text "$wipe_script" "allow-wasm32-best-effort-wipe"
 require_text "$feature_script" "target-feature=+simd128"
 require_text "$evidence_script" "target-feature=+simd128"
 require_text "$evidence_script" "wasm bitselect intrinsic"
 require_text "$evidence_script" "does not attest any runtime/JIT timing or cleanup behavior"
+require_text "$runtime_script" "Node/V8"
+require_text "$runtime_script" "Wasmtime"
 require_text "$runtime_report" "Candidate::WasmSimd128 => Backend::WasmSimd128"
 
-if awk '
+if ! awk '
     /enum ActiveBackend/ { inside = 1 }
     inside && /}/ { inside = 0 }
     inside && /WasmSimd128/ { found = 1 }
     END { exit found ? 0 : 1 }
 ' "$simd_mod"; then
-    echo "wasm posture: ActiveBackend must not include WasmSimd128" >&2
+    echo "wasm posture: ActiveBackend must include admitted WasmSimd128" >&2
     exit 1
 fi
 
 require_text "$simd_mod" "WasmSimd128"
-require_text "$simd_mod" "fixed-block implementation remains prototype evidence and is not reachable"
-require_text "$simd_mod" "from runtime backend selection."
+require_text "$simd_mod" "wasm \`simd128\`"
 
 echo "wasm posture: ok"

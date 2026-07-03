@@ -41,6 +41,9 @@ pub(crate) enum DecodeBackend {
         target_endian = "little"
     ))]
     Neon,
+    /// wasm32 `simd128` fixed-block strict decode.
+    #[cfg(all(feature = "simd", target_arch = "wasm32"))]
+    WasmSimd128,
 }
 
 /// Returns the decode backend selected for this build and target.
@@ -74,6 +77,13 @@ pub(crate) fn active_decode_backend() -> DecodeBackend {
     {
         if crate::simd::neon_available() {
             return DecodeBackend::Neon;
+        }
+    }
+
+    #[cfg(all(feature = "simd", target_arch = "wasm32"))]
+    {
+        if crate::simd::wasm_simd128_decode_available() {
+            return DecodeBackend::WasmSimd128;
         }
     }
 
@@ -120,6 +130,10 @@ where
             target_endian = "little"
         ))]
         DecodeBackend::Neon => crate::simd::decode_slice_neon::<A, PAD>(input, output),
+        #[cfg(all(feature = "simd", target_arch = "wasm32"))]
+        DecodeBackend::WasmSimd128 => {
+            crate::simd::decode_slice_wasm_simd128::<A, PAD>(input, output)
+        }
     }
 }
 
@@ -165,6 +179,11 @@ mod tests {
         ))]
         if backend == DecodeBackend::Neon {
             assert!(crate::simd::neon_available());
+            return;
+        }
+        #[cfg(all(feature = "simd", target_arch = "wasm32"))]
+        if backend == DecodeBackend::WasmSimd128 {
+            assert!(crate::simd::wasm_simd128_decode_available());
             return;
         }
         assert_eq!(backend, DecodeBackend::Scalar);

@@ -45,6 +45,9 @@ scripts/validate-wasm-posture.sh
 echo "checks: wasm SIMD codegen evidence"
 scripts/generate_wasm_simd_evidence.sh
 
+echo "checks: wasm SIMD runtime dispatch"
+scripts/check_wasm_runtime_dispatch.sh
+
 echo "checks: SIMD admission policy"
 scripts/validate-simd-admission.sh
 

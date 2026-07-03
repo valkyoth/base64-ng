@@ -44,6 +44,9 @@ pub(crate) enum EncodeBackend {
         target_endian = "little"
     ))]
     Neon,
+    /// wasm32 `simd128` fixed-block encode.
+    #[cfg(all(feature = "simd", target_arch = "wasm32"))]
+    WasmSimd128,
 }
 
 /// Returns the encode backend selected for this build and target.
@@ -60,6 +63,8 @@ pub(crate) fn active_encode_backend() -> EncodeBackend {
         crate::simd::ActiveBackend::Ssse3Sse41 => return EncodeBackend::Ssse3Sse41,
         #[cfg(all(feature = "std", target_arch = "aarch64", target_endian = "little"))]
         crate::simd::ActiveBackend::Neon => return EncodeBackend::Neon,
+        #[cfg(all(feature = "simd", target_arch = "wasm32"))]
+        crate::simd::ActiveBackend::WasmSimd128 => return EncodeBackend::WasmSimd128,
     }
 
     EncodeBackend::Scalar
@@ -128,6 +133,14 @@ where
                 scalar::encode_slice::<A, PAD>(input, output)
             }
         }
+        #[cfg(all(feature = "simd", target_arch = "wasm32"))]
+        EncodeBackend::WasmSimd128 => {
+            if input.len() >= 12 && crate::simd::wasm_simd128_supports_alphabet::<A>() {
+                crate::simd::encode_slice_wasm_simd128::<A, PAD>(input, output)
+            } else {
+                scalar::encode_slice::<A, PAD>(input, output)
+            }
+        }
     }
 }
 
@@ -172,5 +185,9 @@ where
             target_endian = "little"
         ))]
         EncodeBackend::Neon => scalar_encode_in_place::encode_in_place::<A, PAD>(buffer, input_len),
+        #[cfg(all(feature = "simd", target_arch = "wasm32"))]
+        EncodeBackend::WasmSimd128 => {
+            scalar_encode_in_place::encode_in_place::<A, PAD>(buffer, input_len)
+        }
     }
 }

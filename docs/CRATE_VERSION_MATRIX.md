@@ -8,8 +8,9 @@ sets.
 ## 1.3.3 Release Plan
 
 The `1.3.3` release keeps the workspace crate family synchronized. The main
-crate carries the wasm `simd128` runtime-posture decision, release-gated wasm
-codegen evidence, and wrapped-profile helper ergonomics. Companion crates
+crate carries the narrow wasm `simd128` runtime-dispatch admission, Node/V8 and
+Wasmtime smoke evidence, release-gated wasm codegen evidence, and
+wrapped-profile helper ergonomics. Companion crates
 receive synchronized package metadata so downstream users see one coherent
 crate-family version.
 

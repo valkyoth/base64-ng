@@ -85,7 +85,7 @@ The `1.3.0` decode scope is frozen to strict
 Standard and URL-safe decode only, padded and unpadded, through the normal
 strict decode backend boundary. Wrapped decode, legacy whitespace decode,
 custom alphabets, bcrypt-style and `crypt(3)` profiles, in-place decode,
-`no_std` SIMD dispatch, wasm runtime dispatch, and the `base64_ng::ct`
+`no_std` SIMD dispatch, broader wasm/browser runtime dispatch, and the `base64_ng::ct`
 constant-time-oriented secret decode path remain scalar unless separately
 admitted with their own evidence package.
 
@@ -183,20 +183,19 @@ runtime behavior for that line.
   custom alphabets, and other non-Standard-family alphabets remain scalar
   because accelerated alphabet mapping has not been separately proven. Wrapped
   encode may still use the admitted unwrapped staging step, but line-ending
-  insertion is scalar. `no_std` and wasm runtime dispatch remain scalar or
-  compile-evidence-only.
-- An inactive wasm `simd128` fixed-block encode prototype exists behind the
-  same boundary as real non-dispatchable vector encode evidence for Standard
-  and URL-safe alphabets. It uses wasm byte shuffling, vector shifts/masks, and
-  branchless Standard-family alphabet mapping for fixed 12-byte input blocks.
-  Custom alphabets remain scalar scaffold paths because portable wasm SIMD does
-  not provide a direct 64-byte alphabet lookup. The wasm feature-bundle check
-  builds wasm test binaries with `target-feature=+simd128`; this is compile and
-  codegen evidence only, not a runtime/JIT timing or register-retention claim.
-  Runtime backend selection remains scalar for wasm. The `1.3.3` wasm posture
-  decision keeps wasm `simd128` as compile/codegen evidence only; candidate
-  detection may report `wasm-simd128`, but active encode and decode backends
-  remain scalar on wasm32. The release-facing decision is tracked in
+  insertion is scalar. `no_std` runtime dispatch remains scalar.
+- wasm `simd128` is admitted in `1.3.3` for wasm32 binaries compiled with
+  `target-feature=+simd128`, the `simd` feature, and
+  `allow-wasm32-best-effort-wipe`. The admitted scope is Standard and URL-safe
+  public encode plus normal strict decode. It uses wasm byte shuffling, vector
+  shifts/masks, and branchless Standard-family alphabet mapping for fixed
+  12-byte encode input blocks and fixed 16-byte decode input blocks after
+  whole-input scalar validation. Custom alphabets remain scalar because
+  portable wasm SIMD does not provide a direct 64-byte alphabet lookup.
+  Node/V8 and Wasmtime runtime smoke evidence proves active backend reporting
+  and round trips for the admitted profile; this is not a browser-wide timing,
+  register-retention, or cleanup guarantee. The release-facing decision is
+  tracked in
   [WASM_SIMD128_RUNTIME_REVIEW.md](WASM_SIMD128_RUNTIME_REVIEW.md).
 - `runtime::backend_report()` reports the active backend, detected candidate,
   detection mode, SIMD feature status, security posture, and a
@@ -236,8 +235,8 @@ runtime behavior for that line.
 - Unit tests compare dispatch behavior against the scalar reference for
   canonical inputs, malformed inputs, and undersized output buffers.
 - The `simd` feature enables only the admitted std x86/x86_64 AVX-512 VBMI,
-  AVX2, SSSE3/SSE4.1, and little-endian std aarch64 NEON encode paths where
-  the platform requirements are met.
+  AVX2, SSSE3/SSE4.1, little-endian std aarch64 NEON, and narrow wasm
+  `simd128` encode paths where the platform requirements are met.
 - Current `1.2.x` development keeps every non-admitted backend scalar or
   prototype-only unless the SIMD admission manifest, scalar differential tests,
   fuzz evidence, unsafe inventory, architecture evidence, benchmark evidence,
@@ -271,11 +270,13 @@ Compile-check the reserved SIMD feature bundles:
 scripts/check_simd_feature_bundles.sh
 ```
 
-This does not execute accelerated code. It proves the reserved AVX2,
+This does not execute native accelerated code. It proves the reserved AVX2,
 AVX-512, SSSE3/SSE4.1, NEON, and wasm `simd128` feature-gated code still
 compiles under `no_std` when the corresponding Rust targets are installed. For
 wasm `simd128`, it also builds the wasm test binaries with `simd128` enabled so
-the inactive prototype body is checked without requiring a wasm runtime.
+the admitted fixed-block wasm code is checked; runtime execution is covered by
+`scripts/check_wasm_runtime_dispatch.sh` when Node/V8 and Wasmtime are
+installed.
 
 Capture local backend and prototype evidence:
 
@@ -293,12 +294,12 @@ scaffold evidence. The script also writes
 commands, status values, artifact checksums, and explicit
 `prototype_state=real-non-dispatchable` labels for prototype-only backends,
 admitted strict decode status labels for AVX-512 VBMI, AVX2, SSSE3/SSE4.1,
-and NEON, and
-`active_backend_admitted=avx512-vbmi-or-avx2-or-ssse3-sse4.1-or-neon-encode`
+NEON, and wasm `simd128`, and
+`active_backend_admitted=avx512-vbmi-or-avx2-or-ssse3-sse4.1-or-neon-or-wasm-simd128-encode`
 for admitted encode backends. The runtime report also exposes
 `BackendReport::active_decode_backend()` so release evidence can distinguish
-the narrower AVX-512/AVX2/SSSE3/SSE4.1/NEON strict decode admission from the
-active encode backend.
+the narrower AVX-512/AVX2/SSSE3/SSE4.1/NEON/wasm strict decode admission from
+the active encode backend.
 
 Capture generated assembly evidence for x86 encode paths:
 
@@ -317,8 +318,8 @@ execution evidence.
 
 ## Required Before SIMD Code Lands
 
-Any wasm `simd128`, additional decode backend, custom alphabet, in-place, or
-additional runtime-dispatch implementation must include the surface ledger in
+Any broader wasm `simd128` runtime/browser profile, additional decode backend,
+custom alphabet, in-place, or additional runtime-dispatch implementation must include the surface ledger in
 [SIMD_NON_STANDARD_SURFACE_REVIEW.md](SIMD_NON_STANDARD_SURFACE_REVIEW.md) and
 must include:
 
@@ -345,19 +346,19 @@ must include:
 backends. The gate currently requires:
 
 - `ActiveBackend` to expose only `Scalar` plus the std x86/x86_64 AVX-512
-  VBMI, AVX2, SSSE3/SSE4.1, and little-endian std aarch64 NEON encode
-  variants.
+  VBMI, AVX2, SSSE3/SSE4.1, little-endian std aarch64 NEON, and narrow wasm
+  `simd128` encode variants.
 - `active_backend()` to return AVX-512 VBMI before AVX2 before SSSE3/SSE4.1
   only after std runtime CPU probing, and scalar otherwise.
-- No accelerated `ActiveBackend::Wasm*` or generic SIMD dispatch variants in
-  source.
+- No generic SIMD dispatch variants in source.
 - `docs/SIMD_ADMISSION.md` to record the admitted AVX-512 VBMI, AVX2,
-  SSSE3/SSE4.1, and NEON encode scope and keep all other backends
-  prototype-only.
+  SSSE3/SSE4.1, NEON, and wasm `simd128` encode scope and keep all other
+  backends prototype-only.
 - Documentation for benchmark evidence, release-note restrictions, and
   vector-register retention cleanup strategy to remain packaged.
 - The encode admission draft to remain packaged and validated before any future
-  encode dispatch scope expands beyond the currently admitted `1.2.x` backends.
+  encode dispatch scope expands beyond the currently admitted native and narrow
+  wasm backends.
 
 When an accelerated backend is ready for admission, update this gate in the
 same commit as the scalar differential tests, fuzz evidence, unsafe inventory,

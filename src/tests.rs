@@ -340,6 +340,13 @@ fn simd_dispatch_uses_only_admitted_backends() {
         simd::ActiveBackend::Neon => {
             assert!(matches!(simd::detected_candidate(), simd::Candidate::Neon));
         }
+        #[cfg(all(feature = "simd", target_arch = "wasm32"))]
+        simd::ActiveBackend::WasmSimd128 => {
+            assert!(matches!(
+                simd::detected_candidate(),
+                simd::Candidate::WasmSimd128
+            ));
+        }
     }
 }
 
@@ -383,6 +390,11 @@ fn encode_backend_boundary_uses_only_admitted_backends() {
         encode_backend::EncodeBackend::Neon => {
             assert!(simd::neon_supports_alphabet::<Standard>());
             assert!(simd::neon_supports_alphabet::<UrlSafe>());
+        }
+        #[cfg(all(feature = "simd", target_arch = "wasm32"))]
+        encode_backend::EncodeBackend::WasmSimd128 => {
+            assert!(simd::wasm_simd128_supports_alphabet::<Standard>());
+            assert!(simd::wasm_simd128_supports_alphabet::<UrlSafe>());
         }
     }
 }

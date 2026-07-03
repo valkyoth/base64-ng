@@ -60,13 +60,19 @@ The release gate runs:
 - fail-closed wasm wipe policy check proving default `wasm32` builds reject
   compiler-fence-only cleanup and the explicit
   `allow-wasm32-best-effort-wipe` opt-in build succeeds
-- wasm SIMD posture validation proving wasm `simd128` remains
-  compile/codegen evidence only and is not represented as an active backend
+- wasm SIMD posture validation proving the narrow wasm `simd128` runtime
+  dispatch profile, its feature gates, its runtime smoke evidence, and its
+  remaining JIT/zeroization caveats
 - wasm SIMD codegen evidence through
   `scripts/generate_wasm_simd_evidence.sh`, which emits release test-harness
   LLVM IR with `target-feature=+simd128` when the wasm target is installed and
   checks for vector shuffle, 128-bit byte-vector, and wasm bitselect markers
-  without claiming runtime/JIT admission
+  while leaving runtime/JIT behavior to the separate runtime smoke gate
+- wasm simd128 runtime smoke evidence through
+  `scripts/check_wasm_runtime_dispatch.sh`, which builds a wasm32 smoke module
+  with `target-feature=+simd128` and executes it under Node/V8 and Wasmtime
+  when installed, requiring `wasm-simd128` active encode/decode reporting and
+  Standard plus URL-safe round trips
 - fail-closed unsupported-native wipe policy documented through
   `allow-compiler-fence-only-wipe` for architectures without an implemented
   hardware wipe barrier
@@ -280,8 +286,8 @@ This currently proves `no_std` reserved builds for AVX2, SSSE3/SSE4.1, the
 AVX-512 Base64 candidate bundle (`avx512f`, `avx512bw`, `avx512vl`, and
 `avx512vbmi`), NEON, and wasm `simd128` when the corresponding Rust targets
 are installed. For wasm `simd128`, the script also builds the wasm test
-binaries with `target-feature=+simd128` so the inactive fixed-block prototype
-body remains typechecked and codegen-ready without requiring a wasm runtime.
+binaries with `target-feature=+simd128` so the admitted fixed-block wasm code
+remains typechecked and codegen-ready.
 
 Capture local runtime backend and prototype evidence with:
 
@@ -294,17 +300,18 @@ scalar-equivalence tests with `--nocapture`. The runtime report records
 `candidate_detection_mode`, which distinguishes x86/x86_64 `std` runtime CPU
 probing from compile-time target-feature reporting used by `no_std` and other
 compile-time-only targets. On CPUs with AVX-512 VBMI, AVX2, SSSE3/SSE4.1, or
-little-endian AArch64 NEON, an admitted encode path may be active for Standard
-and URL-safe alphabets. Big-endian AArch64 stays scalar, and 32-bit ARM NEON
-remains scaffold evidence. Wasm `simd128` evidence is kept in
-`scripts/check_simd_feature_bundles.sh` as compile/test-binary evidence only
-because runtime JIT behavior is outside the crate's release gate. The
-script writes
+little-endian AArch64 NEON, or wasm `simd128`, an admitted encode path may be
+active for Standard and URL-safe alphabets. Big-endian AArch64 stays scalar,
+and 32-bit ARM NEON remains scaffold evidence. Wasm `simd128` evidence is kept
+in `scripts/check_simd_feature_bundles.sh` as compile/test-binary evidence and
+in `scripts/check_wasm_runtime_dispatch.sh` as Node/V8 and Wasmtime runtime
+smoke evidence. Runtime/JIT timing behavior remains outside the crate's formal
+claim. The script writes
 `target/release-evidence/backend/MANIFEST.txt`, `runtime-backend-report.txt`,
 and `simd-prototype-equivalence.txt` so local CPU evidence can be archived. The
 manifest labels prototype-only evidence as `real-non-dispatchable` and
 separately records
-`active_backend_admitted=avx512-vbmi-or-avx2-or-ssse3-sse4.1-or-neon-encode`,
+`active_backend_admitted=avx512-vbmi-or-avx2-or-ssse3-sse4.1-or-neon-or-wasm-simd128-encode`,
 so audit logs do not confuse remaining fixed-block prototype execution with
 active dispatch admission.
 

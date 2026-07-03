@@ -31,7 +31,8 @@
         target_arch = "aarch64",
         target_endian = "little",
         any(test, all(feature = "std", feature = "simd"))
-    )
+    ),
+    all(target_arch = "wasm32", any(test, feature = "simd"))
 ))]
 mod decode_helpers;
 #[cfg(any(target_arch = "aarch64", target_arch = "arm"))]
@@ -85,7 +86,7 @@ pub(super) use x86::{
     target_endian = "little"
 ))]
 mod neon_decode_tests;
-#[cfg(all(test, target_arch = "wasm32"))]
+#[cfg(all(target_arch = "wasm32", any(test, feature = "simd")))]
 mod wasm;
 #[cfg(all(
     feature = "std",
@@ -111,6 +112,9 @@ pub(crate) enum ActiveBackend {
     /// little-endian std `aarch64` NEON encode backend.
     #[cfg(all(feature = "std", target_arch = "aarch64", target_endian = "little"))]
     Neon,
+    /// wasm32 `simd128` fixed-block encode backend.
+    #[cfg(all(feature = "simd", target_arch = "wasm32"))]
+    WasmSimd128,
 }
 
 /// SIMD candidate detected for the current target.
@@ -170,6 +174,13 @@ fn detect_active_backend() -> ActiveBackend {
     {
         if neon_available() {
             return ActiveBackend::Neon;
+        }
+    }
+
+    #[cfg(all(feature = "simd", target_arch = "wasm32"))]
+    {
+        if wasm_simd128_available() {
+            return ActiveBackend::WasmSimd128;
         }
     }
 
@@ -234,6 +245,12 @@ pub(crate) use x86::{
     any(target_arch = "x86", target_arch = "x86_64")
 ))]
 pub(crate) use x86::{decode_slice_avx2, decode_slice_avx512, decode_slice_ssse3_sse41};
+
+#[cfg(all(feature = "simd", target_arch = "wasm32"))]
+pub(crate) use wasm::{decode_slice_wasm_simd128, encode_slice_wasm_simd128};
+
+#[cfg(all(feature = "simd", target_arch = "wasm32"))]
+pub(crate) use wasm::{wasm_simd128_decode_available, wasm_simd128_supports_alphabet};
 
 #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
 fn avx512_vbmi_base64_available() -> bool {

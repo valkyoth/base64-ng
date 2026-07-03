@@ -2,16 +2,20 @@
 
 ## 1.3.3 - 2026-07-03
 
-- Recorded the wasm `simd128` runtime-dispatch decision: wasm vector code
-  remains compile/codegen evidence only and is not admitted as an active
-  runtime backend.
+- Admitted narrow wasm `simd128` runtime dispatch for Standard and URL-safe
+  public encode plus normal strict decode when `wasm32` binaries are compiled
+  with `target-feature=+simd128`, `simd`, and the explicit
+  `allow-wasm32-best-effort-wipe` feature.
+- Added Node/V8 and Wasmtime runtime smoke evidence requiring
+  `wasm-simd128` candidate, active encode, and active decode backend reporting
+  plus Standard and URL-safe public API round trips.
 - Added `scripts/generate_wasm_simd_evidence.sh` and wired it into the local
   release checks so installed wasm targets emit release test-harness LLVM IR
   with `target-feature=+simd128` and checked vector-codegen markers.
-- Added `WASM_SIMD128_RUNTIME_REVIEW.md` and release-gated posture validation
-  documenting that wasm candidate reporting is distinct from active dispatch,
-  and that runtime/JIT timing, cleanup, fallback, and benchmark evidence remain
-  required before admission.
+- Updated `WASM_SIMD128_RUNTIME_REVIEW.md` and release-gated posture
+  validation to document the narrow admitted runtime profile, remaining
+  browser/runtime timing caveats, wasm cleanup caveats, and future broadening
+  requirements.
 - Added `Engine::profile_with_wrap` and `Engine::checked_profile_with_wrap`
   convenience helpers for turning an engine into a strict wrapped profile.
 - Synchronized all workspace crate package versions to `1.3.3`.

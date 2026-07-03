@@ -1,44 +1,64 @@
 # Wasm `simd128` Runtime Review
 
-This file tracks the `1.3.3` wasm runtime-dispatch decision. It is an
-admission review, not an acceleration announcement.
+This file tracks the `1.3.3` wasm runtime-dispatch decision and admission
+evidence.
 
 ## Decision
 
-No wasm `simd128` runtime dispatch is admitted in `1.3.3`.
+wasm `simd128` runtime dispatch is admitted in `1.3.3` for binaries compiled
+with `target-feature=+simd128`, the `simd` feature, and the explicit
+`allow-wasm32-best-effort-wipe` feature.
 
-The existing wasm `simd128` code remains real fixed-block encode prototype
-evidence for Standard and URL-safe alphabet families. It is compiled and
-typechecked when the wasm target and `target-feature=+simd128` are available,
-but it is not reachable from public encode or decode APIs.
+The admitted runtime profile is intentionally narrow:
 
-Candidate reporting may expose `wasm-simd128` when the binary is compiled with
-`simd128`, but active encode and decode backends remain scalar on `wasm32`.
+- Standard and URL-safe alphabet families only
+- normal encode through the public encode boundary
+- normal strict decode through the public strict decode boundary
+- full fixed blocks use `simd128`; tails and unsupported surfaces use scalar
+- no line-wrapped decode, legacy whitespace decode, custom alphabets,
+  bcrypt-style profiles, in-place decode, or `ct` secret decode
+- runtime smoke evidence is required for Node/V8 and Wasmtime
 
-## Rationale
+When compiled with `simd128`, active encode and decode backends are `wasm-simd128`
+on `wasm32`.
 
-Wasm execution includes a runtime or JIT layer outside the Rust compiler and
-outside this crate's control. The current project evidence proves that the
-prototype code compiles and matches scalar fixed-block output, but it does not
-prove the properties needed for active dispatch:
+## Evidence
 
-- runtime/JIT timing behavior for V8, SpiderMonkey, Wasmtime, Wasmer, and
-  other deployment engines
-- register-retention or value-retention posture in the wasm runtime
-- memory cleanup behavior after the Rust-generated wasm is optimized by a
-  downstream runtime
-- production fallback behavior across engines with and without `simd128`
-- benchmark evidence from named engines and deployment profiles
+The admission is backed by:
 
-Because that evidence is incomplete, the secure decision is to keep wasm
-runtime execution scalar and keep the vector code as compile/codegen evidence
-only.
+- `scripts/check_wasm_runtime_dispatch.sh`, which builds a `cdylib` smoke
+  module with `RUSTFLAGS='-C target-feature=+simd128'` and executes it under
+  Node/V8 and Wasmtime.
+- The smoke checks `runtime::backend_report()` and requires candidate, active
+  encode, and active decode backend reporting to be `wasm-simd128`.
+- The smoke round-trips Standard padded and URL-safe no-padding payloads
+  through public encode and strict decode APIs.
+- `scripts/generate_wasm_simd_evidence.sh`, which emits release test-harness
+  LLVM IR and checks for `simd128` codegen markers.
+- `scripts/check_simd_feature_bundles.sh`, which keeps compile/test-binary
+  evidence for `wasm32-unknown-unknown` with `target-feature=+simd128` when
+  the target is installed.
+
+## Limits
+
+Wasm execution still includes a runtime or JIT layer outside the Rust compiler
+and outside this crate's control. This admission proves correctness and
+dispatch behavior for the named runtime smoke profile; it does not claim:
+
+- browser-wide behavior
+- runtime/JIT timing behavior for every V8, SpiderMonkey, Wasmtime, Wasmer, or
+  edge-compute deployment
+- hardware register-retention cleanup guarantees after the wasm runtime lowers
+  wasm to native code
+- stronger zeroization behavior than the documented wasm wipe-barrier caveat
+- performance superiority without local benchmark evidence
 
 ## Required Before Admission
 
-Before wasm `simd128` can become an active backend, a release must provide:
+Before broadening wasm `simd128` beyond this admitted profile, a release must
+provide:
 
-- a named admitted wasm runtime profile, not a generic "wasm" claim
+- a named additional wasm runtime profile, not a generic "wasm" claim
 - scalar differential tests for encode, clear-tail, allocation helpers, and
   every admitted decode surface if decode is included
 - generated wasm/codegen evidence with `target-feature=+simd128`
@@ -52,15 +72,17 @@ Before wasm `simd128` can become an active backend, a release must provide:
 
 ## Current Enforcement
 
-- `src/simd/mod.rs` must not include `WasmSimd128` in `ActiveBackend`.
+- `src/simd/mod.rs` includes `WasmSimd128` in `ActiveBackend` only behind
+  `cfg(all(feature = "simd", target_arch = "wasm32"))`.
 - `scripts/validate-wasm-posture.sh` checks this review document, the SIMD
   documentation, the admission manifest, and the runtime boundary.
+- `scripts/check_wasm_runtime_dispatch.sh` executes the runtime smoke under
+  Node/V8 and Wasmtime when the tools are installed.
 - `scripts/check_simd_feature_bundles.sh` keeps compile/test-binary evidence
   for `wasm32-unknown-unknown` with `target-feature=+simd128` when the target
   is installed.
 - `scripts/generate_wasm_simd_evidence.sh` emits release test-harness LLVM IR
-  for the inactive prototype and checks for `simd128` codegen markers. This is
-  compile/codegen evidence only; it is not runtime/JIT admission evidence.
+  and checks for `simd128` codegen markers.
 - `scripts/check_wasm_wipe_policy.sh` keeps the wasm cleanup posture
   fail-closed by default unless `allow-wasm32-best-effort-wipe` is explicitly
   enabled.

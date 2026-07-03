@@ -31,24 +31,27 @@ The crate starts conservative: a small scalar implementation, strict RFC 4648 be
 
 The current public release is `1.3.3`.
 
-`1.3.3` is a focused wasm SIMD posture and profile-ergonomics patch on top of
-the `1.3.0` implementation-completion release, the `1.3.1` Tokio writer patch,
-and the `1.3.2` non-standard SIMD surface review. It keeps the conservative
-`1.2.x` encode acceleration posture and the admitted `1.3.0` normal strict
-SIMD decode scope for Standard and URL-safe alphabet families on std
-`x86`/`x86_64` AVX-512 VBMI, AVX2, SSSE3/SSE4.1, and little-endian std
+`1.3.3` is a focused wasm SIMD runtime-dispatch and profile-ergonomics patch
+on top of the `1.3.0` implementation-completion release, the `1.3.1` Tokio
+writer patch, and the `1.3.2` non-standard SIMD surface review. It keeps the
+admitted `1.2.x` native encode acceleration posture and the admitted `1.3.0`
+normal strict SIMD decode scope for Standard and URL-safe alphabet families on
+std `x86`/`x86_64` AVX-512 VBMI, AVX2, SSSE3/SSE4.1, and little-endian std
 `aarch64` NEON after whole-input scalar validation.
 
 Encode acceleration remains active only for admitted Standard and URL-safe
 fixed-block surfaces. Decode acceleration remains limited to normal strict
 decode. Wrapped decode, legacy whitespace decode, custom alphabets,
-bcrypt-style and `crypt(3)` profiles, in-place decode, `no_std`, wasm runtime
-dispatch, and constant-time-oriented secret decode remain scalar.
+bcrypt-style and `crypt(3)` profiles, in-place decode, `no_std`, and
+constant-time-oriented secret decode remain scalar. Wasm `simd128` is admitted
+only for Standard and URL-safe public encode and normal strict decode when the
+binary is compiled with `target-feature=+simd128`, the `simd` feature, and the
+explicit `allow-wasm32-best-effort-wipe` feature.
 
-The latest patch in this line is `1.3.3`, which records that wasm `simd128`
-runtime dispatch remains unadmitted, adds release-gated wasm codegen evidence
-for the inactive prototype, and adds wrapped-profile helper ergonomics. The
-workspace crate family stays version-aligned at `1.3.3`.
+The latest patch in this line is `1.3.3`, which admits narrow wasm `simd128`
+runtime dispatch with Node/V8 and Wasmtime smoke evidence, keeps the wasm
+cleanup caveat fail-closed by default, and adds wrapped-profile helper
+ergonomics. The workspace crate family stays version-aligned at `1.3.3`.
 
 Implemented on this branch now:
 
@@ -101,6 +104,12 @@ Implemented on this branch now:
   whole-input scalar validation. Unsupported CPUs, big-endian AArch64,
   `no_std`, custom alphabets, short inputs, tails, wrapped decode, legacy
   decode, in-place decode, and CT secret decode stay scalar.
+- Runtime-dispatched wasm `simd128` fixed-block encode and normal strict
+  decode for Standard and URL-safe alphabets when built for `wasm32` with
+  `target-feature=+simd128`, `simd`, and
+  `allow-wasm32-best-effort-wipe`. The admission is backed by Node/V8 and
+  Wasmtime runtime smoke evidence; unsupported wasm builds stay scalar by
+  compiling without `+simd128`.
 - Optional `base64-ng-sanitization` companion crate for applications that
   already admit `sanitization` and want direct CT decode helpers into
   clear-on-drop secret containers.
@@ -120,9 +129,9 @@ Planned behind admission evidence:
   alphabets, no bcrypt/crypt profiles, and no constant-time-oriented secret
   decode. Default builds, unsupported runtime CPUs, `no_std`, and all
   out-of-scope decode surfaces remain scalar.
-- Additional admitted wasm `simd128`, custom alphabet, and in-place encode
-  fast paths only after separate SIMD admission evidence is complete. Default
-  builds and unsupported runtime CPUs remain scalar.
+- Additional custom alphabet, wrapped/legacy, in-place, and broader wasm
+  runtime/browser fast paths only after separate SIMD admission evidence is
+  complete. Default builds and unsupported runtime CPUs remain scalar.
 - Async reader and writer streaming is available through the optional
   `base64-ng-tokio` companion crate after cancellation-safety, accepted-byte,
   and backpressure review. The core `tokio` feature remains inert; use the
@@ -140,7 +149,7 @@ Planned behind admission evidence:
 | MSRV | Rust `1.90.0` |
 | Runtime dependencies | Zero external crates |
 | Unsafe policy | Scalar encode/decode remains safe Rust; audited unsafe is limited to volatile wiping, CT comparison/barrier helpers, and the reviewed SIMD boundary |
-| Active backend | Scalar by default; std x86/x86_64 AVX-512 VBMI preferred, then AVX2, then SSSE3/SSE4.1, plus little-endian std aarch64 NEON, when `simd` is enabled and platform checks pass |
+| Active backend | Scalar by default; std x86/x86_64 AVX-512 VBMI preferred, then AVX2, then SSSE3/SSE4.1, plus little-endian std aarch64 NEON, and wasm `simd128` when the admitted feature/runtime profile is present |
 | Strict decoding | Default, canonical, no whitespace |
 | Legacy compatibility | Explicit opt-in APIs |
 | Constant-time posture | Constant-time-oriented scalar validation/decode with isolated dudect-style timing evidence; no formal cryptographic guarantee |

@@ -18,8 +18,10 @@ only for backends named in this file and the release gate.
 - Public performance claims: none without local benchmark evidence.
 - Release status: `1.3.3`; `1.2.0` admitted conservative active encode
   dispatch, and `1.3.0` admitted normal strict decode dispatch for the first
-  narrow decode scope. `1.3.3` does not expand SIMD admission. Active encode
-  dispatch admits AVX-512 VBMI above AVX2
+  narrow decode scope. `1.3.3` admits a narrow wasm `simd128` runtime profile
+  for Standard and URL-safe public encode plus normal strict decode when the
+  binary is compiled with `target-feature=+simd128`, `simd`, and the explicit
+  `allow-wasm32-best-effort-wipe` feature. Active encode dispatch admits AVX-512 VBMI above AVX2
   above SSSE3/SSE4.1 on x86/x86_64 and NEON on little-endian aarch64 for
   Standard and URL-safe alphabet families. AVX-512 VBMI strict decode is
   admitted above AVX2 and SSSE3/SSE4.1 strict decode for std
@@ -28,9 +30,7 @@ only for backends named in this file and the release gate.
   SSSE3/SSE4.1 covers full 16-byte encoded blocks, and little-endian std
   `aarch64` NEON covers full 16-byte encoded blocks. Custom alphabets,
   big-endian AArch64, in-place decode, wrapped decode, legacy decode, CT
-  secret decode, `no_std`, and wasm `simd128` decode remain scalar or
-  prototype-only. Wasm `simd128` runtime dispatch is explicitly unadmitted in
-  `1.3.3`; release evidence is compile/codegen-only. Wrapped encode may use
+  secret decode, and `no_std` remain scalar or prototype-only. Wrapped encode may use
   admitted fixed-block encode for its unwrapped staging step; line-ending
   insertion remains scalar.
 
@@ -53,7 +53,6 @@ scalar unless a later evidence package separately admits them:
 - bcrypt-style and `crypt(3)`-style profiles
 - custom alphabets
 - `no_std` SIMD dispatch
-- wasm `simd128` runtime dispatch
 - in-place decode
 - constant-time-oriented `base64_ng::ct` secret decode
 
@@ -65,16 +64,17 @@ side-channel evidence package.
 
 ## Wasm Posture Decision
 
-For the `1.3.3` line, wasm `simd128` remains compile/codegen evidence only.
-It is not admitted for runtime dispatch, and there is no admitted wasm runtime
-profile. Candidate reporting may expose `wasm-simd128`, but active encode and
-decode backends remain scalar on wasm32.
+For the `1.3.3` line, wasm `simd128` is admitted for runtime dispatch when the
+binary is compiled for `wasm32` with `target-feature=+simd128`, the `simd`
+feature, and the explicit `allow-wasm32-best-effort-wipe` feature. The
+admitted runtime profile is backed by Node/V8 and Wasmtime runtime smoke
+evidence.
 
-This is a deliberate decision: wasm execution passes through runtime/JIT
-engines outside the crate's control, and this release does not have runtime
-evidence for timing behavior, register retention, or the wasm wipe-barrier
-caveat. The wasm32 wipe policy remains fail-closed unless callers explicitly
-enable `allow-wasm32-best-effort-wipe`.
+This is a narrow admission, not a browser-wide or runtime-universal claim.
+Wasm execution passes through runtime/JIT engines outside the crate's control,
+so timing, register-retention, cleanup, fallback, and performance claims remain
+limited to the evidence named in this release. The wasm32 wipe policy remains
+fail-closed unless callers explicitly enable `allow-wasm32-best-effort-wipe`.
 
 The detailed runtime decision is tracked in
 [WASM_SIMD128_RUNTIME_REVIEW.md](WASM_SIMD128_RUNTIME_REVIEW.md).
@@ -123,7 +123,7 @@ State labels are intentionally strict:
 | AVX2 | admitted backend | `avx2` | std x86/x86_64 runtime-dispatched encode and strict decode for Standard and URL-safe alphabet families; encode uses fixed 24-byte input blocks, and decode uses fixed 32-byte encoded blocks only after whole-input scalar validation preserves public error shape; shorter inputs fall back to SSSE3/SSE4.1 or scalar, tails use scalar, and unsupported alphabets, in-place encode/decode, wrapped decode, legacy decode, CT secret decode, line-ending insertion, and `no_std` use scalar fallback |
 | SSSE3/SSE4.1 | admitted backend | `ssse3`, `sse4.1` | std x86/x86_64 runtime-dispatched encode and strict decode for Standard and URL-safe alphabet families; encode uses fixed 12-byte input blocks, and decode uses fixed 16-byte encoded blocks only after whole-input scalar validation preserves public error shape; shorter inputs, tails, unsupported alphabets, in-place encode/decode, wrapped decode, legacy decode, CT secret decode, line-ending insertion, and `no_std` use scalar fallback |
 | NEON | admitted backend | `neon` | little-endian std aarch64 runtime-dispatched encode and strict decode for Standard and URL-safe alphabet families; encode uses fixed 12-byte input blocks, and decode uses fixed 16-byte encoded blocks only after whole-input scalar validation preserves public error shape; shorter inputs, tails, unsupported alphabets, big-endian AArch64, 32-bit ARM, in-place encode/decode, wrapped decode, legacy decode, CT secret decode, line-ending insertion, and `no_std` use scalar fallback |
-| wasm `simd128` | real non-dispatchable prototype | `simd128` | real fixed-block encode prototype for Standard and URL-safe alphabets; test-binary compile evidence only; non-dispatchable |
+| wasm `simd128` | admitted backend | `simd128` | wasm32 runtime-dispatched encode and strict decode for Standard and URL-safe alphabet families when compiled with `target-feature=+simd128`, the `simd` feature, and `allow-wasm32-best-effort-wipe`; Node/V8 and Wasmtime runtime smoke evidence proves active encode/decode reporting and round trips; shorter inputs, tails, unsupported alphabets, in-place encode/decode, wrapped decode, legacy decode, CT secret decode, line-ending insertion, and browser-specific claims remain scalar, out of scope, or separately reviewed |
 
 ## Encode Surface Review
 
@@ -131,8 +131,9 @@ The `1.3.0` encode surface review keeps the active encode admission unchanged:
 std x86/x86_64 AVX-512 VBMI, AVX2, SSSE3/SSE4.1, and little-endian std
 aarch64 NEON fixed-block encode for Standard and URL-safe alphabet families
 only. Bcrypt, `crypt(3)`, custom alphabets, in-place encode, `no_std`
-activation, and wasm runtime dispatch remain scalar or prototype-only. Wrapped
-encode may route its unwrapped Base64 staging step through the admitted encode
+activation remain scalar unless separately admitted. Wasm runtime dispatch is
+admitted only for the narrow `1.3.3` runtime smoke profile. Wrapped encode may
+route its unwrapped Base64 staging step through the admitted encode
 boundary, but line-ending insertion itself remains scalar.
 
 ## Release Rule
