@@ -298,5 +298,8 @@ fn wasm_simd128_available() -> bool {
     cfg!(target_feature = "simd128")
 }
 
-#[cfg(all(test, not(target_arch = "wasm32")))]
+#[cfg(all(
+    test,
+    any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64")
+))]
 mod tests;

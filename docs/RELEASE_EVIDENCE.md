@@ -105,6 +105,16 @@ The release gate runs:
   `scripts/check_aarch64_linux.sh`, which runs the full host test/clippy set,
   NEON encode block evidence, backend evidence, SIMD feature-bundle checks, and
   SIMD admission validators on real ARM Linux hardware
+- big-endian QEMU user-mode verification through
+  `scripts/check_big_endian_qemu.sh`, which runs `s390x-unknown-linux-gnu`
+  no-std portability checks and QEMU-executed RFC4648, buffer, backend
+  fallback, malformed-input, clear-tail, in-place, wrapped/legacy, and stream
+  tests. This is functional correctness and scalar/fallback evidence under
+  emulation only; it is not real hardware performance, timing,
+  microarchitectural, or side-channel evidence. The script records that
+  community reports from real `s390x`, `powerpc64`, and big-endian AArch64
+  systems are still requested before any backend is upgraded from QEMU-tested
+  to hardware-attested.
 - moved-code review for the `src/alphabet.rs` extraction, preserving root
   public exports for built-in alphabets, custom alphabet validation, and the
   `define_alphabet!` macro

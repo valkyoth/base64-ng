@@ -8,9 +8,14 @@ for target in $targets; do
     if printf '%s\n' "$installed" | grep -qx "$target"; then
         echo "target checks: no_std simd-reserved build for $target"
         features="simd"
-        if [ "$target" = "wasm32-unknown-unknown" ]; then
-            features="simd,allow-wasm32-best-effort-wipe"
-        fi
+        case "$target" in
+            wasm32-unknown-unknown)
+                features="simd,allow-wasm32-best-effort-wipe"
+                ;;
+            s390x-unknown-linux-gnu | powerpc64-unknown-linux-gnu)
+                features="simd,allow-compiler-fence-only-wipe"
+                ;;
+        esac
         cargo check --target "$target" --no-default-features --features "$features" --lib
     else
         echo "target checks: skipping $target; Rust target is not installed"

@@ -103,6 +103,7 @@ fi
 
 for required_script in \
     "scripts/check_backend_evidence.sh" \
+    "scripts/check_big_endian_qemu.sh" \
     "scripts/validate-api-audit.sh" \
     "scripts/check_dudect.sh" \
     "scripts/check_fuzz.sh" \
@@ -193,6 +194,7 @@ for required_release_gate_command in \
     "scripts/check_miri.sh" \
     "cargo +nightly fuzz build" \
     "scripts/check_targets.sh" \
+    "scripts/check_big_endian_qemu.sh" \
     "scripts/check_no_alloc_smoke.sh" \
     "scripts/check_migration_smoke.sh" \
     "scripts/check_simd_feature_bundles.sh" \
@@ -368,6 +370,7 @@ for required_package_file in \
     "portability/no_alloc_smoke/src/lib.rs" \
     "portability/migration_smoke/src/lib.rs" \
     "scripts/check_backend_evidence.sh" \
+    "scripts/check_big_endian_qemu.sh" \
     "scripts/validate-api-audit.sh" \
     "scripts/check_dudect.sh" \
     "scripts/check_fuzz.sh" \

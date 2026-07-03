@@ -68,8 +68,23 @@ The release gate covers:
 Install the cross targets used by `scripts/check_targets.sh` and CI:
 
 ```sh
-rustup target add aarch64-unknown-linux-gnu x86_64-unknown-freebsd wasm32-unknown-unknown thumbv7em-none-eabihf
+rustup target add aarch64-unknown-linux-gnu x86_64-unknown-freebsd wasm32-unknown-unknown thumbv7em-none-eabihf s390x-unknown-linux-gnu powerpc64-unknown-linux-gnu riscv64gc-unknown-linux-gnu
 ```
+
+On openSUSE, the big-endian and RISC-V QEMU evidence scripts use user-mode
+QEMU plus SUSE-style cross compiler names:
+
+```sh
+sudo zypper install qemu-linux-user
+sudo zypper install cross-s390x-gcc16 cross-s390x-binutils cross-s390x-glibc-devel cross-s390x-linux-glibc-devel
+sudo zypper install cross-ppc64-gcc16 cross-ppc64-binutils
+sudo zypper install cross-riscv64-gcc16 cross-riscv64-binutils cross-riscv64-glibc-devel cross-riscv64-linux-glibc-devel
+```
+
+`scripts/check_big_endian_qemu.sh` requires the `s390x` path and treats
+`powerpc64` as opt-in until a complete local PowerPC64 glibc sysroot is
+available. The evidence is QEMU functional correctness and fallback evidence
+only; it is not real hardware performance, timing, or side-channel evidence.
 
 The no-alloc portability smoke crate checks the same installed target list with:
 

@@ -50,6 +50,9 @@ echo "stable release gate: isolated dudect/fuzz/performance harness checks cover
 echo "stable release gate: installed cross-target checks"
 scripts/check_targets.sh
 
+echo "stable release gate: big-endian QEMU checks"
+scripts/check_big_endian_qemu.sh
+
 echo "stable release gate: no-alloc portability smoke"
 scripts/check_no_alloc_smoke.sh
 
