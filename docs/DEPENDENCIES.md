@@ -86,9 +86,10 @@ Current decisions:
   fixed buffers and drop cleanup. Writer adapters finalize pending Base64 tails
   during `AsyncWrite::poll_shutdown`; callers must drive shutdown to completion
   before extracting the wrapped writer.
-- The core `tokio` feature remains reserved and inert until async
+- The core `tokio` feature remains reserved and inert by design. The async
   cancellation, drop cleanup, chunk-boundary, dependency, and release-evidence
-  requirements are satisfied.
+  requirements have been satisfied for `base64-ng-tokio`; moving Tokio into
+  the core crate would require a separate dependency admission review.
 - `zeroize` remains deferred for the core crate; applications can combine their
   own approved dependencies with caller-owned buffers while `base64-ng` keeps
   its audited local best-effort helpers dependency-free.
