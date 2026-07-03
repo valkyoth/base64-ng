@@ -107,6 +107,33 @@ fn assert_wrapped_decode_matches_strict_after_compaction(
     }
 }
 
+fn assert_decode_error_matches_scalar<A, const PAD: bool>(input: &[u8])
+where
+    A: Alphabet,
+{
+    let engine = Engine::<A, PAD>::new();
+    let mut output = [0x55; 128];
+    let mut scalar_output = [0xaa; 128];
+
+    let result = engine.decode_slice(input, &mut output);
+    let scalar_result = scalar::scalar_reference_decode_slice::<A, PAD>(input, &mut scalar_output);
+
+    assert_eq!(result, scalar_result);
+}
+
+fn assert_in_place_decode_error_matches_slice(input: &[u8]) {
+    let mut in_place = [0u8; 32];
+    let mut output = [0u8; 32];
+    in_place[..input.len()].copy_from_slice(input);
+
+    let in_place_result = STANDARD
+        .decode_in_place(&mut in_place[..input.len()])
+        .map(|decoded| decoded.len());
+    let slice_result = STANDARD.decode_slice(input, &mut output);
+
+    assert_eq!(in_place_result, slice_result);
+}
+
 #[test]
 fn non_standard_simd_candidate_surfaces_preserve_scalar_behavior() {
     let mut input = [0; 96];
@@ -151,4 +178,38 @@ fn non_standard_simd_candidate_surfaces_preserve_scalar_behavior() {
         .unwrap();
     assert_wrapped_decode_matches_strict_after_compaction(&wrapped[..wrapped_len], encoded, wrap);
     assert_wrapped_encode_matches_unwrapped_then_wrap(&input, wrap);
+}
+
+#[test]
+fn non_standard_simd_candidate_error_surfaces_preserve_scalar_behavior() {
+    assert_decode_error_matches_scalar::<DispatchFallbackAlphabet, true>(b"++++");
+    assert_decode_error_matches_scalar::<DispatchFallbackAlphabet, false>(b"++++");
+    assert_decode_error_matches_scalar::<Bcrypt, false>(b"....=");
+    assert_decode_error_matches_scalar::<Crypt, false>(b"!!!!");
+    assert_in_place_decode_error_matches_slice(b"aGV!");
+
+    let mut legacy = [0u8; 16];
+    assert_eq!(
+        STANDARD.decode_slice_legacy(b" aG\nV!", &mut legacy),
+        Err(DecodeError::InvalidByte {
+            index: 5,
+            byte: b'!'
+        })
+    );
+
+    let wrap = LineWrap::new(4, LineEnding::Lf);
+    let mut wrapped_decode = [0u8; 16];
+    assert_eq!(
+        STANDARD.decode_slice_wrapped(b"aG\nVsbG8=", &mut wrapped_decode, wrap),
+        Err(DecodeError::InvalidLineWrap { index: 2 })
+    );
+
+    let mut wrapped_encode = [0u8; 8];
+    assert_eq!(
+        STANDARD.encode_slice_wrapped(b"hello", &mut wrapped_encode, wrap),
+        Err(EncodeError::OutputTooSmall {
+            required: 9,
+            available: 8
+        })
+    );
 }
