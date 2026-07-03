@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.3.2 - 2026-07-03
+
+- Added a checked SIMD non-standard surface review ledger for custom
+  alphabets, bcrypt-style and `crypt(3)` profiles, MIME/PEM wrapped surfaces,
+  legacy-whitespace decode, in-place encode/decode, and constant-time-oriented
+  secret decode.
+- Added test-only evidence proving those non-standard candidate surfaces
+  preserve scalar-visible behavior, malformed/error behavior, clear-tail
+  behavior, in-place encode parity, and named profile forwarding while
+  remaining outside the admitted acceleration scope.
+- Added a release-gated validator for the non-standard SIMD surface ledger and
+  tightened panic-policy validation so root `src/*_tests.rs` files must be
+  declared behind `#[cfg(test)]` before receiving test-only panic allowances.
+- Documented that `1.3.2` admits no new non-standard SIMD acceleration and
+  keeps wrapped decode, legacy decode, custom alphabets, bcrypt-style and
+  `crypt(3)` profiles, in-place decode, and CT secret decode scalar.
+- Synchronized all workspace crate package versions to `1.3.2`.
+
 ## 1.3.1 - 2026-07-03
 
 - Added `base64-ng-tokio` `EncoderWriter` and `DecoderWriter` manual
