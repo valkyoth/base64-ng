@@ -18,7 +18,9 @@ for required_text in \
     "non_standard_simd_candidate_surfaces_preserve_scalar_behavior" \
     "non_standard_simd_candidate_error_surfaces_preserve_scalar_behavior" \
     "non_standard_simd_candidate_clear_tail_surfaces_preserve_scalar_behavior" \
+    "non_standard_profile_surfaces_preserve_engine_routing" \
     "naive wrapped-output oracle" \
+    "Named profiles" \
     "| Custom alphabet encode | scalar fallback |" \
     "| Custom alphabet decode | scalar fallback |" \
     "| Bcrypt and \`crypt(3)\` profiles | scalar fallback |" \
@@ -80,7 +82,10 @@ for required_test_text in \
     "fn non_standard_simd_candidate_surfaces_preserve_scalar_behavior()" \
     "fn non_standard_simd_candidate_error_surfaces_preserve_scalar_behavior()" \
     "fn non_standard_simd_candidate_clear_tail_surfaces_preserve_scalar_behavior()" \
+    "fn non_standard_profile_surfaces_preserve_engine_routing()" \
     "assert_wrapped_encode_matches_unwrapped_then_wrap" \
+    "assert_wrapped_profile_matches_engine" \
+    "assert_unwrapped_profile_matches_engine" \
     "assert_slice_clear_tail_matches_scalar" \
     "assert_in_place_encode_matches_scalar" \
     "let take = (unwrapped_len - read).min(wrap.line_len())"

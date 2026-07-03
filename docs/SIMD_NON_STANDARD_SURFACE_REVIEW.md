@@ -31,6 +31,9 @@ The checked test evidence currently includes:
 - `non_standard_simd_candidate_clear_tail_surfaces_preserve_scalar_behavior`,
   covering custom, bcrypt-style, `crypt(3)`, wrapped encode, and wrapped
   decode clear-tail behavior plus in-place encode scalar-visible output.
+- `non_standard_profile_surfaces_preserve_engine_routing`, covering MIME, PEM,
+  PEM-CRLF, bcrypt-style, and `crypt(3)` profile forwarding to the same
+  wrapped or unwrapped engine behavior.
 - A naive wrapped-output oracle that inserts line endings by line length rather
   than calling the production `write_wrapped_byte` helper. This keeps the
   wrapped encode regression test from depending only on the same primitive used
@@ -61,6 +64,9 @@ The checked test evidence currently includes:
   `write_wrapped_byte` or `write_wrapped_bytes`.
 - `Engine::encode_in_place` and `Engine::decode_in_place` remain scalar unless
   this ledger and the main admission manifest are updated in the same release.
+- Named profiles (`MIME`, `PEM`, `PEM_CRLF`, `BCRYPT`, and `CRYPT`) remain
+  convenience forwarding surfaces. They do not create a separate SIMD
+  admission scope from their underlying wrapped or unwrapped engine paths.
 
 ## Review Rule
 

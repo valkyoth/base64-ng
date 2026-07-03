@@ -1030,6 +1030,9 @@ inside the `1.3.x` line if they remain evidence-gated and do not weaken the
 - Third checkpoint: pin clear-tail behavior for custom, bcrypt-style,
   `crypt(3)`, wrapped encode, and wrapped decode surfaces, and add in-place
   encode scalar-visible output parity.
+- Fourth checkpoint: pin named profile forwarding for MIME, PEM, PEM-CRLF,
+  bcrypt-style, and `crypt(3)` profiles so profile convenience APIs cannot
+  imply a broader SIMD admission scope than the underlying engine path.
 - Candidate surfaces: custom alphabet encode/decode, MIME/PEM wrapped
   encode/decode, legacy-whitespace decode, and in-place encode/decode.
 - Keep unsupported surfaces scalar and documented rather than silently widening

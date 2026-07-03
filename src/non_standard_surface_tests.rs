@@ -189,6 +189,135 @@ where
     assert!(decoded[decoded_len..].iter().all(|byte| *byte == 0));
 }
 
+fn assert_wrapped_profile_matches_engine(
+    profile: &Profile<Standard, true>,
+    wrap: LineWrap,
+    input: &[u8],
+) {
+    let mut profile_encoded = [0x55; 256];
+    let mut engine_encoded = [0xaa; 256];
+    let mut profile_decoded = [0x33; 128];
+    let mut engine_decoded = [0x77; 128];
+
+    assert_eq!(
+        profile.encoded_len(input.len()),
+        STANDARD.wrapped_encoded_len(input.len(), wrap)
+    );
+    let profile_encoded_len = profile.encode_slice(input, &mut profile_encoded).unwrap();
+    let engine_encoded_len = STANDARD
+        .encode_slice_wrapped(input, &mut engine_encoded, wrap)
+        .unwrap();
+
+    assert_eq!(profile_encoded_len, engine_encoded_len);
+    assert_eq!(
+        &profile_encoded[..profile_encoded_len],
+        &engine_encoded[..engine_encoded_len]
+    );
+    assert_eq!(
+        profile.validate_result(&profile_encoded[..profile_encoded_len]),
+        STANDARD.validate_wrapped_result(&engine_encoded[..engine_encoded_len], wrap)
+    );
+
+    let profile_decoded_len = profile
+        .decode_slice_clear_tail(
+            &profile_encoded[..profile_encoded_len],
+            &mut profile_decoded,
+        )
+        .unwrap();
+    let engine_decoded_len = STANDARD
+        .decode_slice_wrapped_clear_tail(
+            &engine_encoded[..engine_encoded_len],
+            &mut engine_decoded,
+            wrap,
+        )
+        .unwrap();
+
+    assert_eq!(profile_decoded_len, engine_decoded_len);
+    assert_eq!(
+        &profile_decoded[..profile_decoded_len],
+        &engine_decoded[..engine_decoded_len]
+    );
+    assert_eq!(&profile_decoded[..profile_decoded_len], input);
+    assert!(
+        profile_decoded[profile_decoded_len..]
+            .iter()
+            .all(|byte| *byte == 0)
+    );
+
+    let mut profile_in_place = [0u8; 256];
+    let mut engine_in_place = [0u8; 256];
+    profile_in_place[..profile_encoded_len]
+        .copy_from_slice(&profile_encoded[..profile_encoded_len]);
+    engine_in_place[..engine_encoded_len].copy_from_slice(&engine_encoded[..engine_encoded_len]);
+
+    let profile_in_place_len = profile
+        .decode_in_place_clear_tail(&mut profile_in_place[..profile_encoded_len])
+        .unwrap()
+        .len();
+    let engine_in_place_len = STANDARD
+        .decode_in_place_wrapped_clear_tail(&mut engine_in_place[..engine_encoded_len], wrap)
+        .unwrap()
+        .len();
+
+    assert_eq!(profile_in_place_len, engine_in_place_len);
+    assert_eq!(
+        &profile_in_place[..profile_in_place_len],
+        &engine_in_place[..engine_in_place_len]
+    );
+}
+
+fn assert_unwrapped_profile_matches_engine<A, const PAD: bool>(
+    profile: &Profile<A, PAD>,
+    engine: Engine<A, PAD>,
+    input: &[u8],
+) where
+    A: Alphabet,
+{
+    let mut profile_encoded = [0x55; 256];
+    let mut engine_encoded = [0xaa; 256];
+    let mut profile_decoded = [0x33; 128];
+    let mut engine_decoded = [0x77; 128];
+
+    assert_eq!(
+        profile.encoded_len(input.len()),
+        engine.encoded_len(input.len())
+    );
+    let profile_encoded_len = profile.encode_slice(input, &mut profile_encoded).unwrap();
+    let engine_encoded_len = engine.encode_slice(input, &mut engine_encoded).unwrap();
+
+    assert_eq!(profile_encoded_len, engine_encoded_len);
+    assert_eq!(
+        &profile_encoded[..profile_encoded_len],
+        &engine_encoded[..engine_encoded_len]
+    );
+    assert_eq!(
+        profile.validate_result(&profile_encoded[..profile_encoded_len]),
+        engine.validate_result(&engine_encoded[..engine_encoded_len])
+    );
+
+    let profile_decoded_len = profile
+        .decode_slice_clear_tail(
+            &profile_encoded[..profile_encoded_len],
+            &mut profile_decoded,
+        )
+        .unwrap();
+    let engine_decoded_len = engine
+        .decode_slice_clear_tail(&engine_encoded[..engine_encoded_len], &mut engine_decoded)
+        .unwrap();
+
+    assert_eq!(profile_decoded_len, engine_decoded_len);
+    assert_eq!(
+        &profile_decoded[..profile_decoded_len],
+        &engine_decoded[..engine_decoded_len]
+    );
+    assert_eq!(&profile_decoded[..profile_decoded_len], input);
+    assert!(
+        profile_decoded[profile_decoded_len..]
+            .iter()
+            .all(|byte| *byte == 0)
+    );
+}
+
 #[test]
 fn non_standard_simd_candidate_surfaces_preserve_scalar_behavior() {
     let mut input = [0; 96];
@@ -303,4 +432,16 @@ fn non_standard_simd_candidate_clear_tail_surfaces_preserve_scalar_behavior() {
 
     assert_eq!(&wrapped_decoded[..decoded_len], input);
     assert!(wrapped_decoded[decoded_len..].iter().all(|byte| *byte == 0));
+}
+
+#[test]
+fn non_standard_profile_surfaces_preserve_engine_routing() {
+    let mut input = [0; 58];
+    fill_pattern(&mut input, 41);
+
+    assert_wrapped_profile_matches_engine(&MIME, LineWrap::MIME, &input);
+    assert_wrapped_profile_matches_engine(&PEM, LineWrap::PEM, &input);
+    assert_wrapped_profile_matches_engine(&PEM_CRLF, LineWrap::PEM_CRLF, &input);
+    assert_unwrapped_profile_matches_engine(&BCRYPT, BCRYPT_NO_PAD, &input);
+    assert_unwrapped_profile_matches_engine(&CRYPT, CRYPT_NO_PAD, &input);
 }
