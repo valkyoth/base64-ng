@@ -18,6 +18,7 @@ for required_text in \
     "Unsupported CPUs must execute scalar code without illegal instructions" \
     "Any backend whose evidence is incomplete stays candidate-only" \
     "full \`Engine::encode_slice\`, \`encode_slice_clear_tail\`, and alloc helper" \
+    "scalar tail handling" \
     "undersized-output error parity" \
     "in-place encode parity" \
     "custom alphabet fallback behavior" \
@@ -82,6 +83,11 @@ fi
 
 if grep -R -q "ActiveBackend::Simd" src; then
     echo "simd encode admission draft: non-admitted accelerated ActiveBackend variant exists before admission" >&2
+    exit 1
+fi
+
+if ! grep -F -q "fn standard_family_encode_surfaces_cover_tails_and_padding()" src/encode_surface_tests.rs; then
+    echo "simd encode admission draft: missing Standard-family tail/padding encode surface evidence" >&2
     exit 1
 fi
 

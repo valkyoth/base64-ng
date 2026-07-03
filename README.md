@@ -96,9 +96,10 @@ Implemented on this branch now:
   little-endian std `aarch64` NEON fixed-block encode, for Standard and
   URL-safe alphabets behind the SIMD admission boundary. Public slice,
   clear-tail, alloc, and wrapped encode helpers can use admitted fixed-block
-  encode for their unwrapped encoding step; unsupported CPUs, `no_std`, custom
-  alphabets, tails, padding, in-place encode, and line-ending insertion stay
-  scalar.
+  encode for their unwrapped encoding step. All input lengths are supported:
+  fixed blocks may be accelerated, while the final tail and padding are
+  completed by the scalar encoder. Unsupported CPUs, `no_std`, custom
+  alphabets, in-place encode, and line-ending insertion stay scalar.
 - Runtime-dispatched std `x86`/`x86_64` AVX-512 VBMI fixed-block strict decode
   in the `1.3.0` line, falling back to AVX2, then
   SSSE3/SSE4.1, and then scalar, plus little-endian std `aarch64` NEON

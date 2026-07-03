@@ -35,16 +35,17 @@ The SIMD roadmap separates implementation evidence from active acceleration:
 - `1.1.6` admits std `x86`/`x86_64` SSSE3/SSE4.1 encode dispatch for Standard
   and URL-safe alphabet families. It processes fixed 12-byte blocks with vector
   code after runtime CPU probing. Scalar remains the fallback for unsupported
-  CPUs, `no_std`, custom alphabets, tails, padding, in-place encode,
-  line-ending insertion, and every decode path. Wrapped encode helpers may use
+  CPUs, `no_std`, custom alphabets, in-place encode, line-ending insertion,
+  and every decode path. Final tail and padding completion use scalar code.
+  Wrapped encode helpers may use
   the admitted backend for their unwrapped staging step when the normal
   `encode_slice` admission conditions are met.
 - `1.1.7` admits std `x86`/`x86_64` AVX2 encode dispatch for Standard and
   URL-safe alphabet families. AVX2 is selected before SSSE3/SSE4.1 when runtime
   CPU probing proves `avx2`; otherwise the existing SSSE3/SSE4.1 or scalar
-  fallback path is used. Tails, padding, custom alphabets, `no_std`, in-place
-  encode, line-ending insertion, and every decode path remain scalar. Wrapped
-  encode helpers may use admitted fixed-block encode for their unwrapped staging
+  fallback path is used. Final tail and padding completion use scalar code.
+  Custom alphabets, `no_std`, in-place encode, line-ending insertion, and every
+  decode path remain scalar. Wrapped encode helpers may use admitted fixed-block encode for their unwrapped staging
   step.
 - `1.2.0` is the release where encode acceleration became fully working for
   the admitted encode scope. Public encode APIs dispatch to admitted
@@ -141,9 +142,10 @@ runtime behavior for that line.
   48-byte input blocks, then clears ZMM/YMM state before returning. Runtime
   dispatch uses `std::is_x86_feature_detected!` and requires `avx512f`,
   `avx512bw`, `avx512vl`, and `avx512vbmi`; unsupported CPUs fall back to
-  AVX2, SSSE3/SSE4.1, or scalar. Custom alphabets, tails, padding, `no_std`,
-  in-place encode, line-ending insertion, and every decode surface outside the
-  separate AVX-512/AVX2/SSSE3/SSE4.1/NEON strict decode admission stay scalar.
+  AVX2, SSSE3/SSE4.1, or scalar. Final tail and padding completion use scalar
+  code. Custom alphabets, `no_std`, in-place encode, line-ending insertion, and
+  every decode surface outside the separate AVX-512/AVX2/SSSE3/SSE4.1/NEON
+  strict decode admission stay scalar.
 - Runtime backend identifiers expose their required CPU feature bundles through
   `runtime::Backend::required_cpu_features()`.
 - Runtime backend reports include `candidate_required_cpu_features=[...]` in
@@ -158,24 +160,24 @@ runtime behavior for that line.
   shifts/masks, and SSE4.1 byte blending for fixed 12-byte input blocks, then
   clears XMM registers before returning. Runtime dispatch uses
   `std::is_x86_feature_detected!`; unsupported CPUs execute scalar code.
-  Custom alphabets, tails, padding, `no_std`, in-place encode, line-ending
-  insertion, and every decode surface outside the separate
+  Custom alphabets, final tail/padding completion, `no_std`, in-place encode,
+  line-ending insertion, and every decode surface outside the separate
   AVX-512/AVX2/SSSE3/SSE4.1/NEON strict decode admission stay scalar.
 - AVX2 encode is admitted for std `x86`/`x86_64` Standard and URL-safe alphabet
   families. It uses AVX2 lane-local byte shuffling, vector shifts/masks, and
   byte blending for fixed 24-byte input blocks, then clears XMM/YMM state
   before returning. Runtime dispatch uses `std::is_x86_feature_detected!`;
-  unsupported CPUs fall back to SSSE3/SSE4.1 or scalar. Custom alphabets, tails,
-  padding, `no_std`, in-place encode, line-ending insertion, and every decode
-  surface outside the separate AVX-512/AVX2/SSSE3/SSE4.1/NEON strict decode
-  admission stay scalar.
+  unsupported CPUs fall back to SSSE3/SSE4.1 or scalar. Final tail and padding
+  completion use scalar code. Custom alphabets, `no_std`, in-place encode,
+  line-ending insertion, and every decode surface outside the separate
+  AVX-512/AVX2/SSSE3/SSE4.1/NEON strict decode admission stay scalar.
 - AArch64 NEON encode is admitted for little-endian std `aarch64` Standard and
   URL-safe alphabet families. It uses NEON table lookup, vector shifts/masks,
   and byte-select alphabet mapping for fixed 12-byte input blocks, then clears
   used NEON registers before returning. NEON is mandatory for the admitted
-  little-endian AArch64 target. Custom alphabets, tails, padding, big-endian
-  AArch64, 32-bit `arm+neon`, `no_std`, in-place encode, line-ending
-  insertion, and every decode surface outside the separate
+  little-endian AArch64 target. Final tail and padding completion use scalar
+  code. Custom alphabets, big-endian AArch64, 32-bit `arm+neon`, `no_std`,
+  in-place encode, line-ending insertion, and every decode surface outside the separate
   AVX-512/AVX2/SSSE3/SSE4.1/NEON strict decode admission stay scalar.
 - The `1.3.0` encode surface review does not expand the `1.2.x` encode
   admission. In-place encode remains scalar because overlapping input/output

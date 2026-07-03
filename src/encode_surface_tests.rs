@@ -39,6 +39,59 @@ where
     }
 }
 
+fn assert_standard_family_encode_surface_matches_scalar<A, const PAD: bool>(input: &[u8])
+where
+    A: Alphabet,
+{
+    let engine = Engine::<A, PAD>::new();
+    let mut encoded = [0x55; 512];
+    let mut clear_tail = [0x66; 512];
+    let mut scalar = [0xaa; 512];
+
+    let encoded_len = engine.encode_slice(input, &mut encoded).unwrap();
+    let clear_tail_len = engine
+        .encode_slice_clear_tail(input, &mut clear_tail)
+        .unwrap();
+    let scalar_len = scalar::scalar_reference_encode_slice::<A, PAD>(input, &mut scalar).unwrap();
+
+    assert_eq!(encoded_len, scalar_len);
+    assert_eq!(clear_tail_len, scalar_len);
+    assert_eq!(&encoded[..encoded_len], &scalar[..scalar_len]);
+    assert_eq!(&clear_tail[..clear_tail_len], &scalar[..scalar_len]);
+    assert!(clear_tail[clear_tail_len..].iter().all(|byte| *byte == 0));
+
+    let stack_buffer = engine.encode_buffer::<512>(input).unwrap();
+    assert_eq!(stack_buffer.as_bytes(), &scalar[..scalar_len]);
+
+    #[cfg(feature = "alloc")]
+    {
+        let encoded_vec = engine.encode_vec(input).unwrap();
+        let encoded_vec_infallible = engine.encode_vec_infallible(input);
+        let encoded_string = engine.encode_string(input).unwrap();
+        let encoded_string_infallible = engine.encode_string_infallible(input);
+
+        assert_eq!(encoded_vec, &scalar[..scalar_len]);
+        assert_eq!(encoded_vec_infallible, &scalar[..scalar_len]);
+        assert_eq!(encoded_string.as_bytes(), &scalar[..scalar_len]);
+        assert_eq!(encoded_string_infallible.as_bytes(), &scalar[..scalar_len]);
+    }
+}
+
+#[test]
+fn standard_family_encode_surfaces_cover_tails_and_padding() {
+    let mut input = [0; 193];
+
+    for input_len in 0..=input.len() {
+        fill_pattern(&mut input[..input_len], input_len);
+        let input = &input[..input_len];
+
+        assert_standard_family_encode_surface_matches_scalar::<Standard, true>(input);
+        assert_standard_family_encode_surface_matches_scalar::<Standard, false>(input);
+        assert_standard_family_encode_surface_matches_scalar::<UrlSafe, true>(input);
+        assert_standard_family_encode_surface_matches_scalar::<UrlSafe, false>(input);
+    }
+}
+
 #[test]
 fn encode_in_place_backend_matches_scalar_reference() {
     let mut input = [0; 128];

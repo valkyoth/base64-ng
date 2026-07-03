@@ -133,6 +133,10 @@ The release gate runs:
   custom alphabet/profile, recoverable length, stack-buffer state surfaces,
   and native byte-array and `FromStr` interop surfaces; the harness also runs
   host-side unit tests before cross-target compile checks
+- Standard-family encode surface tests covering `encode_slice`,
+  `encode_slice_clear_tail`, stack buffers, and alloc helpers for every input
+  length from 0 through 193 bytes, including fixed-block thresholds, all tail
+  lengths, and padded or unpadded output
 - Local and CI target-matrix no-alloc portability smoke checks so installed
   Linux, FreeBSD, wasm32, ARM, and Cortex-M targets compile the same
   stack-backed dependency-free harness
