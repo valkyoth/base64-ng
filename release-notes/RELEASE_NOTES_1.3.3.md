@@ -21,6 +21,12 @@ wasm `simd128` runtime-dispatch profile with explicit runtime smoke evidence.
   for the same admitted wasm `simd128` profile.
 - Added fail-closed scalar verification for wasm fixed-block encode before
   copying staged SIMD output to caller output.
+- Hardened wasm scalar-verification cleanup so staged stack buffers are wiped
+  before any verification error returns, and kept the unsafe block scoped to
+  the fixed-size wasm SIMD view/call.
+- Added strict decode error-surface evidence for Standard and URL-safe
+  padded/unpadded public helpers, including clear-tail wiping on rejected
+  input.
 - Added release-gated wasm SIMD codegen evidence through
   `scripts/generate_wasm_simd_evidence.sh`, which emits test-harness LLVM IR
   with `target-feature=+simd128` when the wasm target is installed.

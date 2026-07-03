@@ -19,6 +19,13 @@
 - Added a fail-closed wasm encode scalar-verification step: fixed-block wasm
   encode output is staged, compared against scalar output, wiped, and only then
   copied to caller output.
+- Hardened the wasm scalar-verification error path so staged stack buffers are
+  wiped before any verification error returns, and narrowed the unsafe block to
+  only the fixed-size wasm SIMD view/call.
+- Added Standard and URL-safe strict decode error-surface evidence proving
+  `decode_slice`, `decode_slice_clear_tail`, stack-buffer, vec, and secret
+  helpers match scalar error shapes and that clear-tail buffers are wiped on
+  rejected input.
 - Added `scripts/generate_wasm_simd_evidence.sh` and wired it into the local
   release checks so installed wasm targets emit release test-harness LLVM IR
   with `target-feature=+simd128` and checked vector-codegen markers.

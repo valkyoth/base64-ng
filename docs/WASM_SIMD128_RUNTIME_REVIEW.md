@@ -88,9 +88,11 @@ provide:
 
 - `src/simd/mod.rs` includes `WasmSimd128` in `ActiveBackend` only behind
   `cfg(all(feature = "simd", target_arch = "wasm32"))`.
-- `src/simd/wasm.rs` stages wasm encode output and compares it against scalar
-  output before copying bytes to the caller's output buffer; specifically, it
-  compares it against scalar output before copying bytes to caller output.
+- `src/simd/wasm.rs` stages wasm encode output, compares it against scalar
+  output before copying bytes to the caller's output buffer, and wipes staged
+  stack buffers on every verification failure path before returning.
+  Evidence phrase: compares it against scalar output before copying bytes to the caller's output buffer.
+  Evidence phrase: wipes staged stack buffers on every verification failure path before returning.
 - `scripts/validate-wasm-posture.sh` checks this review document, the SIMD
   documentation, the admission manifest, and the runtime boundary.
 - `scripts/check_wasm_runtime_dispatch.sh` executes the runtime smoke under
