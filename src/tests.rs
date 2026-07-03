@@ -108,6 +108,59 @@ where
     }
 }
 
+fn assert_wrapped_encode_matches_unwrapped_then_wrap(input: &[u8], wrap: LineWrap) {
+    let mut wrapped = [0x55; 256];
+    let mut unwrapped = [0xaa; 256];
+    let mut expected = [0xcc; 256];
+
+    let wrapped_len = STANDARD
+        .encode_slice_wrapped(input, &mut wrapped, wrap)
+        .unwrap();
+    let unwrapped_len =
+        scalar::scalar_reference_encode_slice::<Standard, true>(input, &mut unwrapped).unwrap();
+
+    let mut output_offset = 0;
+    let mut column = 0;
+    for byte in &unwrapped[..unwrapped_len] {
+        write_wrapped_byte(*byte, &mut expected, &mut output_offset, &mut column, wrap).unwrap();
+    }
+
+    assert_eq!(wrapped_len, output_offset);
+    assert_eq!(&wrapped[..wrapped_len], &expected[..output_offset]);
+}
+
+fn assert_legacy_decode_matches_strict_after_compaction(input: &[u8], compacted: &[u8]) {
+    let mut legacy = [0x55; 128];
+    let mut strict = [0xaa; 128];
+
+    let legacy_result = STANDARD.decode_slice_legacy(input, &mut legacy);
+    let strict_result =
+        scalar::scalar_reference_decode_slice::<Standard, true>(compacted, &mut strict);
+
+    assert_eq!(legacy_result, strict_result);
+    if let Ok(written) = legacy_result {
+        assert_eq!(&legacy[..written], &strict[..written]);
+    }
+}
+
+fn assert_wrapped_decode_matches_strict_after_compaction(
+    input: &[u8],
+    compacted: &[u8],
+    wrap: LineWrap,
+) {
+    let mut wrapped = [0x55; 128];
+    let mut strict = [0xaa; 128];
+
+    let wrapped_result = STANDARD.decode_slice_wrapped(input, &mut wrapped, wrap);
+    let strict_result =
+        scalar::scalar_reference_decode_slice::<Standard, true>(compacted, &mut strict);
+
+    assert_eq!(wrapped_result, strict_result);
+    if let Ok(written) = wrapped_result {
+        assert_eq!(&wrapped[..written], &strict[..written]);
+    }
+}
+
 fn assert_backend_round_trip_matches_scalar<A, const PAD: bool>(input: &[u8])
 where
     A: Alphabet,
@@ -266,6 +319,52 @@ fn strict_decode_public_surfaces_match_scalar_reference() {
     for input in [&b"Z"[..], b"AA=A", b"Zh", b"Zm9", b"Zm9vYg$", b"AA/A"] {
         assert_strict_decode_public_surfaces_match_scalar::<UrlSafe, false>(input);
     }
+}
+
+#[test]
+fn non_standard_simd_candidate_surfaces_preserve_scalar_behavior() {
+    let mut input = [0; 96];
+    fill_pattern(&mut input, 17);
+
+    assert_backend_round_trip_matches_scalar::<DispatchFallbackAlphabet, true>(&input);
+    assert_backend_round_trip_matches_scalar::<DispatchFallbackAlphabet, false>(&input);
+    assert_backend_round_trip_matches_scalar::<Bcrypt, false>(&input);
+    assert_backend_round_trip_matches_scalar::<Crypt, false>(&input);
+
+    let mut encoded = [0; 160];
+    let encoded_len = STANDARD.encode_slice(&input, &mut encoded).unwrap();
+    let encoded = &encoded[..encoded_len];
+
+    let mut in_place = [0; 160];
+    in_place[..encoded.len()].copy_from_slice(encoded);
+    let decoded = STANDARD
+        .decode_in_place(&mut in_place[..encoded.len()])
+        .unwrap();
+    assert_eq!(decoded, input);
+
+    let mut legacy = [0; 192];
+    let mut legacy_len = 0;
+    for (index, byte) in encoded.iter().enumerate() {
+        if index % 7 == 0 {
+            legacy[legacy_len] = b' ';
+            legacy_len += 1;
+        }
+        legacy[legacy_len] = *byte;
+        legacy_len += 1;
+        if index % 11 == 10 {
+            legacy[legacy_len] = b'\n';
+            legacy_len += 1;
+        }
+    }
+    assert_legacy_decode_matches_strict_after_compaction(&legacy[..legacy_len], encoded);
+
+    let wrap = LineWrap::new(16, LineEnding::Lf);
+    let mut wrapped = [0; 192];
+    let wrapped_len = STANDARD
+        .encode_slice_wrapped(&input, &mut wrapped, wrap)
+        .unwrap();
+    assert_wrapped_decode_matches_strict_after_compaction(&wrapped[..wrapped_len], encoded, wrap);
+    assert_wrapped_encode_matches_unwrapped_then_wrap(&input, wrap);
 }
 
 #[test]
