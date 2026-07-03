@@ -12,6 +12,7 @@ for required_text in \
     "custom alphabet encode and decode" \
     "bcrypt-style and \`crypt(3)\`-style alphabet encode and decode" \
     "strict in-place decode" \
+    "in-place encode through stack staging" \
     "legacy-whitespace decode's compacted strict decode stage" \
     "strict wrapped decode" \
     "wrapped encode staging" \
@@ -27,7 +28,7 @@ for required_text in \
     "| MIME/PEM wrapped encode | admitted for unwrapped staging only |" \
     "| MIME/PEM wrapped decode | admitted for compacted strict decode only |" \
     "| Legacy-whitespace decode | admitted for compacted strict decode only |" \
-    "| In-place encode | scalar fallback |" \
+    "| In-place encode | admitted for stack-staged Standard/URL-safe encode only |" \
     "| In-place decode | scalar fallback |" \
     "| Constant-time-oriented secret decode | scalar only |" \
     "Engine::decode_slice_legacy" \
@@ -37,6 +38,7 @@ for required_text in \
     "Engine::encode_slice_wrapped" \
     "write_wrapped_byte" \
     "write_wrapped_bytes" \
+    "in-place encode uses stack staging" \
     "Do not broaden public SIMD claims"
 do
     if ! grep -F -q "$required_text" "$review"; then
@@ -83,8 +85,18 @@ if ! grep -F -q "self.encode_slice(input, &mut output[required..required + encod
     exit 1
 fi
 
+if ! grep -F -q "encode_in_place_staged::<A, PAD>" src/encode_backend.rs; then
+    echo "simd non-standard surfaces: in-place encode must route through stack staging before admitted backend use" >&2
+    exit 1
+fi
+
 if ! grep -F -q "scalar_encode_in_place::encode_in_place::<A, PAD>" src/encode_backend.rs; then
-    echo "simd non-standard surfaces: in-place encode must remain scalar-routed" >&2
+    echo "simd non-standard surfaces: unsupported in-place encode must keep scalar fallback" >&2
+    exit 1
+fi
+
+if ! grep -F -q "input_scratch[..chunk_len].copy_from_slice" src/encode_backend.rs; then
+    echo "simd non-standard surfaces: in-place encode must copy unread input into scratch before writing output" >&2
     exit 1
 fi
 

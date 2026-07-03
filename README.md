@@ -44,17 +44,18 @@ fixed-block surfaces. Decode acceleration remains limited to normal strict
 decode, including the compacted strict stage used after wrapped line-profile
 validation. Legacy whitespace decode, custom alphabets, bcrypt-style and
 `crypt(3)` profiles, in-place decode, `no_std`, and constant-time-oriented
-secret decode remain scalar. Wasm `simd128` is admitted
-only for Standard and URL-safe public encode and normal strict decode when the
-binary is compiled with `target-feature=+simd128`, the `simd` feature, and the
-explicit `allow-wasm32-best-effort-wipe` feature.
+secret decode remain scalar. In-place encode may use admitted encode backends
+only after stack staging protects unread input bytes. Wasm `simd128` is
+admitted only for Standard and URL-safe public encode and normal strict decode
+when the binary is compiled with `target-feature=+simd128`, the `simd`
+feature, and the explicit `allow-wasm32-best-effort-wipe` feature.
 
 The latest patch in this line is `1.3.3`, which admits narrow wasm `simd128`
 runtime dispatch with Node/V8, Wasmtime, Chromium-family browser,
 Firefox/SpiderMonkey, and Safari/WebKit smoke evidence, keeps the wasm cleanup
 caveat fail-closed by default, and adds
-wrapped-profile helper ergonomics. The workspace crate family stays
-version-aligned at `1.3.3`.
+wrapped-profile helper ergonomics plus stack-staged in-place encode dispatch.
+The workspace crate family stays version-aligned at `1.3.3`.
 
 Implemented on this branch now:
 
@@ -99,8 +100,9 @@ Implemented on this branch now:
   clear-tail, alloc, and wrapped encode helpers can use admitted fixed-block
   encode for their unwrapped encoding step. All input lengths are supported:
   fixed blocks may be accelerated, while the final tail and padding are
-  completed by the scalar encoder. Unsupported CPUs, `no_std`, custom
-  alphabets, in-place encode, and line-ending insertion stay scalar.
+  completed by the scalar encoder. In-place encode may use admitted encode
+  backends only after stack staging protects unread input bytes. Unsupported
+  CPUs, `no_std`, custom alphabets, and line-ending insertion stay scalar.
 - Runtime-dispatched std `x86`/`x86_64` AVX-512 VBMI fixed-block strict decode
   in the `1.3.0` line, falling back to AVX2, then
   SSSE3/SSE4.1, and then scalar, plus little-endian std `aarch64` NEON
@@ -138,7 +140,7 @@ Planned behind admission evidence:
   alphabets, no bcrypt/crypt profiles, and no constant-time-oriented secret
   decode. Default builds, unsupported runtime CPUs, `no_std`, and all
   out-of-scope decode surfaces remain scalar.
-- Additional custom alphabet, legacy, in-place, and broader wasm
+- Additional custom alphabet, in-place decode, and broader wasm
   runtime/browser fast paths only after separate SIMD admission evidence is
   complete. Default builds and unsupported runtime CPUs remain scalar.
 - Async reader and writer streaming is available through the optional

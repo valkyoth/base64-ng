@@ -1910,6 +1910,45 @@ fn encodes_in_place() {
 }
 
 #[test]
+fn encode_in_place_handles_large_chunked_staging() {
+    let mut input = vec![0u8; 1537];
+    for (index, byte) in input.iter_mut().enumerate() {
+        *byte = ((index * 41 + 11) % 251) as u8;
+    }
+
+    fn assert_large_chunked_staging<A, const PAD: bool>(engine: Engine<A, PAD>, input: &[u8])
+    where
+        A: Alphabet,
+    {
+        let required = engine.encoded_len(input.len()).unwrap();
+        let mut expected = vec![0u8; required];
+        let expected_len = engine.encode_slice(input, &mut expected).unwrap();
+        expected.truncate(expected_len);
+
+        let mut buffer = vec![0xee; required + 17];
+        buffer[..input.len()].copy_from_slice(input);
+        let encoded = engine
+            .encode_in_place(&mut buffer[..required], input.len())
+            .unwrap();
+        assert_eq!(encoded, expected.as_slice());
+
+        buffer.fill(0xee);
+        buffer[..input.len()].copy_from_slice(input);
+        let encoded = engine
+            .encode_in_place_clear_tail(&mut buffer, input.len())
+            .unwrap();
+        assert_eq!(encoded, expected.as_slice());
+        let encoded_len = encoded.len();
+        assert!(buffer[encoded_len..].iter().all(|byte| *byte == 0));
+    }
+
+    assert_large_chunked_staging(STANDARD, &input);
+    assert_large_chunked_staging(STANDARD_NO_PAD, &input);
+    assert_large_chunked_staging(URL_SAFE, &input);
+    assert_large_chunked_staging(URL_SAFE_NO_PAD, &input);
+}
+
+#[test]
 fn encode_in_place_reports_bad_lengths() {
     let mut too_small = [0u8; 3];
     too_small[..2].copy_from_slice(b"hi");

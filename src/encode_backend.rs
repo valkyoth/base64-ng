@@ -4,11 +4,58 @@
 //! the implementation that performs encoding. AVX-512 VBMI, AVX2,
 //! SSSE3/SSE4.1, and little-endian `AArch64` NEON encode dispatch is admitted
 //! only for std builds and Standard/URL-safe alphabet families; unsupported
-//! alphabets, targets, and in-place encode still fall back to scalar.
+//! alphabets and targets still fall back to scalar. In-place encode uses
+//! stack staging before entering admitted encode backends so output writes do
+//! not overwrite unread input bytes.
 
 use crate::{Alphabet, EncodeError, scalar, scalar_encode_in_place};
+#[cfg(any(
+    all(
+        feature = "simd",
+        feature = "std",
+        any(target_arch = "x86", target_arch = "x86_64")
+    ),
+    all(
+        feature = "simd",
+        feature = "std",
+        target_arch = "aarch64",
+        target_endian = "little"
+    ),
+    all(feature = "simd", target_arch = "wasm32")
+))]
+use crate::{checked_encoded_len, wipe_bytes};
 
 const MIN_SIMD_ENCODE_BLOCK: usize = 12;
+#[cfg(any(
+    all(
+        feature = "simd",
+        feature = "std",
+        any(target_arch = "x86", target_arch = "x86_64")
+    ),
+    all(
+        feature = "simd",
+        feature = "std",
+        target_arch = "aarch64",
+        target_endian = "little"
+    ),
+    all(feature = "simd", target_arch = "wasm32")
+))]
+const IN_PLACE_INPUT_CHUNK: usize = 768;
+#[cfg(any(
+    all(
+        feature = "simd",
+        feature = "std",
+        any(target_arch = "x86", target_arch = "x86_64")
+    ),
+    all(
+        feature = "simd",
+        feature = "std",
+        target_arch = "aarch64",
+        target_endian = "little"
+    ),
+    all(feature = "simd", target_arch = "wasm32")
+))]
+const IN_PLACE_OUTPUT_CHUNK: usize = 1024;
 
 /// Encode backend currently allowed to execute.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -162,21 +209,35 @@ where
             any(target_arch = "x86", target_arch = "x86_64")
         ))]
         EncodeBackend::Avx512Vbmi => {
-            scalar_encode_in_place::encode_in_place::<A, PAD>(buffer, input_len)
+            if input_len >= 48 && crate::simd::avx512_supports_alphabet::<A>() {
+                encode_in_place_staged::<A, PAD>(buffer, input_len)
+            } else {
+                scalar_encode_in_place::encode_in_place::<A, PAD>(buffer, input_len)
+            }
         }
         #[cfg(all(
             feature = "simd",
             feature = "std",
             any(target_arch = "x86", target_arch = "x86_64")
         ))]
-        EncodeBackend::Avx2 => scalar_encode_in_place::encode_in_place::<A, PAD>(buffer, input_len),
+        EncodeBackend::Avx2 => {
+            if input_len >= 24 && crate::simd::avx2_supports_alphabet::<A>() {
+                encode_in_place_staged::<A, PAD>(buffer, input_len)
+            } else {
+                scalar_encode_in_place::encode_in_place::<A, PAD>(buffer, input_len)
+            }
+        }
         #[cfg(all(
             feature = "simd",
             feature = "std",
             any(target_arch = "x86", target_arch = "x86_64")
         ))]
         EncodeBackend::Ssse3Sse41 => {
-            scalar_encode_in_place::encode_in_place::<A, PAD>(buffer, input_len)
+            if input_len >= 12 && crate::simd::ssse3_sse41_supports_alphabet::<A>() {
+                encode_in_place_staged::<A, PAD>(buffer, input_len)
+            } else {
+                scalar_encode_in_place::encode_in_place::<A, PAD>(buffer, input_len)
+            }
         }
         #[cfg(all(
             feature = "simd",
@@ -184,10 +245,152 @@ where
             target_arch = "aarch64",
             target_endian = "little"
         ))]
-        EncodeBackend::Neon => scalar_encode_in_place::encode_in_place::<A, PAD>(buffer, input_len),
+        EncodeBackend::Neon => {
+            if input_len >= 12 && crate::simd::neon_supports_alphabet::<A>() {
+                encode_in_place_staged::<A, PAD>(buffer, input_len)
+            } else {
+                scalar_encode_in_place::encode_in_place::<A, PAD>(buffer, input_len)
+            }
+        }
         #[cfg(all(feature = "simd", target_arch = "wasm32"))]
         EncodeBackend::WasmSimd128 => {
-            scalar_encode_in_place::encode_in_place::<A, PAD>(buffer, input_len)
+            if input_len >= 12 && crate::simd::wasm_simd128_supports_alphabet::<A>() {
+                encode_in_place_staged::<A, PAD>(buffer, input_len)
+            } else {
+                scalar_encode_in_place::encode_in_place::<A, PAD>(buffer, input_len)
+            }
         }
+    }
+}
+
+#[cfg(any(
+    all(
+        feature = "simd",
+        feature = "std",
+        any(target_arch = "x86", target_arch = "x86_64")
+    ),
+    all(
+        feature = "simd",
+        feature = "std",
+        target_arch = "aarch64",
+        target_endian = "little"
+    ),
+    all(feature = "simd", target_arch = "wasm32")
+))]
+fn encode_in_place_staged<A, const PAD: bool>(
+    buffer: &mut [u8],
+    input_len: usize,
+) -> Result<usize, EncodeError>
+where
+    A: Alphabet,
+{
+    if input_len > buffer.len() {
+        return Err(EncodeError::InputTooLarge {
+            input_len,
+            buffer_len: buffer.len(),
+        });
+    }
+
+    let required = checked_encoded_len(input_len, PAD).ok_or(EncodeError::LengthOverflow)?;
+    if buffer.len() < required {
+        return Err(EncodeError::OutputTooSmall {
+            required,
+            available: buffer.len(),
+        });
+    }
+
+    let mut input_scratch = [0u8; IN_PLACE_INPUT_CHUNK];
+    let mut output_scratch = [0u8; IN_PLACE_OUTPUT_CHUNK];
+    let mut remaining = input_len;
+    let mut output_end = required;
+
+    while remaining != 0 {
+        let chunk_start = in_place_chunk_start(remaining)?;
+        let chunk_len = remaining - chunk_start;
+        let output_start =
+            checked_encoded_len(chunk_start, PAD).ok_or(EncodeError::LengthOverflow)?;
+        let expected_output_len = output_end - output_start;
+        if chunk_len > input_scratch.len() || expected_output_len > output_scratch.len() {
+            return Err(EncodeError::LengthOverflow);
+        }
+
+        input_scratch[..chunk_len].copy_from_slice(&buffer[chunk_start..remaining]);
+        let written = match encode_slice::<A, PAD>(
+            &input_scratch[..chunk_len],
+            &mut output_scratch[..expected_output_len],
+        ) {
+            Ok(written) => written,
+            Err(err) => {
+                wipe_bytes(&mut input_scratch[..chunk_len]);
+                wipe_bytes(&mut output_scratch[..expected_output_len]);
+                return Err(err);
+            }
+        };
+
+        debug_assert_eq!(
+            written, expected_output_len,
+            "encode_in_place_staged chunk length mismatch"
+        );
+        if written != expected_output_len {
+            wipe_bytes(&mut input_scratch[..chunk_len]);
+            wipe_bytes(&mut output_scratch[..expected_output_len]);
+            return Err(EncodeError::LengthOverflow);
+        }
+
+        buffer[output_start..output_end].copy_from_slice(&output_scratch[..written]);
+        wipe_bytes(&mut input_scratch[..chunk_len]);
+        wipe_bytes(&mut output_scratch[..written]);
+
+        remaining = chunk_start;
+        output_end = output_start;
+    }
+
+    Ok(required)
+}
+
+#[cfg(any(
+    all(
+        feature = "simd",
+        feature = "std",
+        any(target_arch = "x86", target_arch = "x86_64")
+    ),
+    all(
+        feature = "simd",
+        feature = "std",
+        target_arch = "aarch64",
+        target_endian = "little"
+    ),
+    all(feature = "simd", target_arch = "wasm32")
+))]
+fn in_place_chunk_start(remaining: usize) -> Result<usize, EncodeError> {
+    if remaining <= IN_PLACE_INPUT_CHUNK {
+        Ok(0)
+    } else {
+        round_up_to_multiple_of_three(remaining - IN_PLACE_INPUT_CHUNK)
+    }
+}
+
+#[cfg(any(
+    all(
+        feature = "simd",
+        feature = "std",
+        any(target_arch = "x86", target_arch = "x86_64")
+    ),
+    all(
+        feature = "simd",
+        feature = "std",
+        target_arch = "aarch64",
+        target_endian = "little"
+    ),
+    all(feature = "simd", target_arch = "wasm32")
+))]
+fn round_up_to_multiple_of_three(value: usize) -> Result<usize, EncodeError> {
+    let remainder = value % 3;
+    if remainder == 0 {
+        Ok(value)
+    } else {
+        value
+            .checked_add(3 - remainder)
+            .ok_or(EncodeError::LengthOverflow)
     }
 }

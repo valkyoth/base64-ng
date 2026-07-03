@@ -11,16 +11,18 @@ unsafe inventory, and release notes all move together.
 Wrapped encode staging and wrapped decode's compacted strict decode stage are
 admitted to use the existing Standard/URL-safe strict backend boundaries.
 Legacy-whitespace decode's compacted strict decode stage is admitted through
-the same boundary. Line-ending insertion, line-profile validation, line-ending
-compaction, and legacy-whitespace compaction remain scalar.
+the same boundary. In-place encode is admitted only through stack staging into
+the existing Standard/URL-safe encode backend. Line-ending insertion,
+line-profile validation, line-ending compaction, and legacy-whitespace
+compaction remain scalar.
 
-The current `1.3.2` checkpoint adds regression evidence that these surfaces
-preserve scalar-visible behavior while staying outside the active accelerated
-scope:
+The checked evidence covers these surfaces and their current routing
+posture:
 
 - custom alphabet encode and decode
 - bcrypt-style and `crypt(3)`-style alphabet encode and decode
 - strict in-place decode
+- in-place encode through stack staging
 - legacy-whitespace decode's compacted strict decode stage
 - strict wrapped decode's compacted strict decode stage
 - wrapped encode staging
@@ -35,7 +37,8 @@ The checked test evidence currently includes:
   legacy-whitespace, wrapped decode, and wrapped encode error behavior.
 - `non_standard_simd_candidate_clear_tail_surfaces_preserve_scalar_behavior`,
   covering custom, bcrypt-style, `crypt(3)`, wrapped encode, and wrapped
-  decode clear-tail behavior plus in-place encode scalar-visible output.
+  decode clear-tail behavior plus in-place encode scalar-visible output
+  through stack staging.
 - `non_standard_profile_surfaces_preserve_engine_routing`, covering MIME, PEM,
   PEM-CRLF, bcrypt-style, and `crypt(3)` profile forwarding to the same
   wrapped or unwrapped engine behavior.
@@ -54,7 +57,7 @@ The checked test evidence currently includes:
 | MIME/PEM wrapped encode | admitted for unwrapped staging only | line-ending insertion remains scalar; future broader admission requires benchmark evidence showing wrapping overhead does not hide the SIMD benefit |
 | MIME/PEM wrapped decode | admitted for compacted strict decode only | line-profile validation and compaction remain scalar; future broader admission requires line-profile vectorization evidence, absolute error-index parity, fuzz evidence, and benchmark evidence |
 | Legacy-whitespace decode | admitted for compacted strict decode only | whitespace compaction remains scalar; future broader admission requires whitespace vectorization evidence, original-index error reporting parity, post-padding rejection parity, fuzz evidence, and benchmark evidence |
-| In-place encode | scalar fallback | overlap proof, backwards-write proof, clear-tail parity, malformed length parity, Miri/Kani evidence where applicable, and benchmark evidence |
+| In-place encode | admitted for stack-staged Standard/URL-safe encode only | output-overlap protection is provided by fixed-size stack input/output staging; custom alphabets remain scalar; future broader admission requires additional overlap proof, clear-tail parity, malformed length parity, Miri/Kani evidence where applicable, and benchmark evidence |
 | In-place decode | scalar fallback | prevalidation proof, overlap proof, failed-buffer-state policy, clear-tail parity, fuzz evidence, and benchmark evidence |
 | Constant-time-oriented secret decode | scalar only | separate high-assurance side-channel project; do not admit through ordinary performance SIMD review |
 
@@ -73,8 +76,12 @@ The checked test evidence currently includes:
 - `Engine::encode_slice_wrapped` may use admitted unwrapped encode for its
   temporary Base64 staging step, but line-ending insertion remains scalar via
   `write_wrapped_byte` or `write_wrapped_bytes`.
-- `Engine::encode_in_place` and `Engine::decode_in_place` remain scalar unless
-  this ledger and the main admission manifest are updated in the same release.
+- `Engine::encode_in_place` may use fixed-size stack input/output staging
+  before entering the admitted encode backend. It must not write backend output
+  directly over unread caller input.
+  Evidence phrase: in-place encode uses stack staging.
+- `Engine::decode_in_place` remains scalar unless this ledger and the main
+  admission manifest are updated in the same release.
 - Named profiles (`MIME`, `PEM`, `PEM_CRLF`, `BCRYPT`, and `CRYPT`) remain
   convenience forwarding surfaces. They do not create a separate SIMD
   admission scope from their underlying wrapped or unwrapped engine paths.

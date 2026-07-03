@@ -34,6 +34,9 @@ wasm `simd128` runtime-dispatch profile with explicit runtime smoke evidence.
 - Routed legacy whitespace decode through the admitted strict decode backend
   after scalar whitespace validation and fixed-size compaction. Whitespace
   handling and public error positions remain scalar-governed.
+- Routed Standard and URL-safe in-place encode through stack staging before
+  admitted encode backend use, preserving overlap safety by copying unread
+  input into fixed scratch buffers before writing encoded output.
 - Added release-gated wasm SIMD codegen evidence through
   `scripts/generate_wasm_simd_evidence.sh`, which emits test-harness LLVM IR
   with `target-feature=+simd128` when the wasm target is installed.

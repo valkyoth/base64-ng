@@ -33,6 +33,9 @@
 - Routed legacy whitespace decode through the admitted strict decode backend
   after scalar whitespace validation and fixed-size compaction, while keeping
   whitespace handling and public error positions scalar-governed.
+- Routed Standard and URL-safe in-place encode through stack staging before
+  admitted encode backend use, preserving output-overlap safety by copying
+  unread input into fixed scratch buffers before writing encoded output.
 - Added `scripts/generate_wasm_simd_evidence.sh` and wired it into the local
   release checks so installed wasm targets emit release test-harness LLVM IR
   with `target-feature=+simd128` and checked vector-codegen markers.

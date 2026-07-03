@@ -1068,6 +1068,10 @@ inside the `1.3.x` line if they remain evidence-gated and do not weaken the
   WebDriver smoke evidence.
 - Keep wasm wipe behavior fail-closed unless callers explicitly enable
   `allow-wasm32-best-effort-wipe`.
+- Admit Standard and URL-safe in-place encode through stack staging before
+  admitted encode backend use. The staging step must copy unread input into
+  fixed scratch buffers before writing encoded output so overlap safety stays
+  independent from the backend implementation.
 - Document JIT, runtime, timing, and zeroization caveats without implying
   hardware-like guarantees.
 - Keep broader wasm/browser profiles, custom alphabets, in-place decode, and

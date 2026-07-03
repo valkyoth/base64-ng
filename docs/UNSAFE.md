@@ -373,8 +373,9 @@ Location: `src/simd/x86/mod.rs`
 
 Status: admitted std x86/x86_64 AVX-512 VBMI encode block for Standard and
 URL-safe alphabet families. It is reachable through runtime-probed AVX-512 VBMI
-encode dispatch for fixed 48-byte blocks. Unsupported alphabets, tails,
-padding, `no_std`, in-place encode, and decode use scalar fallback.
+encode dispatch for fixed 48-byte blocks. In-place encode may enter only
+through stack staging. Unsupported alphabets, tails, padding, `no_std`, and
+decode use scalar fallback.
 
 Purpose:
 
@@ -514,9 +515,10 @@ Safety argument:
 - The function is guarded by an AVX2 target-feature contract.
 - The output length is fixed by the output array type.
 - Runtime dispatch is gated by `std::is_x86_feature_detected!` and the
-  Standard-family alphabet check; unsupported CPUs, custom alphabets, `no_std`,
-  in-place encode, line-ending insertion, and decode use scalar fallback.
-  Final tail and padding completion use scalar code.
+  Standard-family alphabet check; in-place encode may enter only through stack
+  staging. Unsupported CPUs, custom alphabets, `no_std`, line-ending
+  insertion, and decode use scalar fallback. Final tail and padding completion
+  use scalar code.
 - Register-retention note: the path loads caller bytes into YMM/XMM state. It
   calls `clear_ymm_registers_after_encode_block` before return. This is
   retention reduction, not a formal microarchitectural side-channel proof.
@@ -636,9 +638,10 @@ Safety argument:
 - The function is guarded by an SSSE3/SSE4.1 target-feature contract.
 - The output length is fixed by the output array type.
 - Runtime dispatch is gated by `std::is_x86_feature_detected!` and the
-  Standard-family alphabet check; unsupported CPUs, custom alphabets, `no_std`,
-  in-place encode, line-ending insertion, and decode use scalar fallback.
-  Final tail and padding completion use scalar code.
+  Standard-family alphabet check; in-place encode may enter only through stack
+  staging. Unsupported CPUs, custom alphabets, `no_std`, line-ending
+  insertion, and decode use scalar fallback. Final tail and padding completion
+  use scalar code.
 - Register-retention note: the path loads caller bytes into XMM registers. It
   calls `clear_xmm_registers_after_encode_block` before return. This is
   retention reduction, not a formal microarchitectural side-channel proof.
@@ -945,8 +948,8 @@ Location: `src/simd/`
 Status: admitted little-endian std AArch64 NEON encode wrapper for Standard
 and URL-safe alphabet families. It is reachable through AArch64 encode
 dispatch for fixed 12-byte blocks. Big-endian AArch64, 32-bit ARM, unsupported
-alphabets, `no_std`, in-place encode, and decode use scalar fallback. Final
-tail and padding completion use scalar code.
+alphabets, `no_std`, and decode use scalar fallback. In-place encode may enter
+only through stack staging. Final tail and padding completion use scalar code.
 
 Purpose:
 

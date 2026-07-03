@@ -13,6 +13,7 @@ The admitted runtime profile is intentionally narrow:
 
 - Standard and URL-safe alphabet families only
 - normal encode through the public encode boundary
+- in-place encode only through stack staging before the public encode boundary
 - normal strict decode through the public strict decode boundary
 - strict wrapped decode may enter the public strict decode boundary after
   scalar line-profile validation and line-ending compaction
