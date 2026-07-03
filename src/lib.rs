@@ -8,8 +8,8 @@
 //! `base64-ng` is a `no_std`-first Base64 encoder and decoder.
 //!
 //! The core API provides strict RFC 4648-style behavior, caller-owned output
-//! buffers, and an audited scalar fallback. The `1.2.x` line admits selected
-//! SIMD encode acceleration while keeping decode on the scalar foundation.
+//! buffers, and an audited scalar fallback. The `1.3.x` line admits selected
+//! SIMD encode and strict decode acceleration for standard-family alphabets.
 //! Any accelerated backend must match the scalar module byte-for-byte and pass
 //! the documented admission evidence before dispatch can select it.
 //!

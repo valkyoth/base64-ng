@@ -57,9 +57,18 @@ fn assert_wrapped_encode_matches_unwrapped_then_wrap(input: &[u8], wrap: LineWra
         scalar::scalar_reference_encode_slice::<Standard, true>(input, &mut unwrapped).unwrap();
 
     let mut output_offset = 0;
-    let mut column = 0;
-    for byte in &unwrapped[..unwrapped_len] {
-        write_wrapped_byte(*byte, &mut expected, &mut output_offset, &mut column, wrap).unwrap();
+    let mut read = 0;
+    while read < unwrapped_len {
+        if read != 0 {
+            let line_ending = wrap.line_ending().as_bytes();
+            expected[output_offset..output_offset + line_ending.len()].copy_from_slice(line_ending);
+            output_offset += line_ending.len();
+        }
+        let take = (unwrapped_len - read).min(wrap.line_len());
+        expected[output_offset..output_offset + take]
+            .copy_from_slice(&unwrapped[read..read + take]);
+        output_offset += take;
+        read += take;
     }
 
     assert_eq!(wrapped_len, output_offset);
