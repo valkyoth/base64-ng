@@ -8,7 +8,8 @@ Build `base64-ng` as a modern, secure, `no_std`-first Base64 implementation for 
 
 ## Current Baseline
 
-- Rust stable/MSRV: `1.90.0`.
+- Rust MSRV: `1.90.0`.
+- Active release toolchain: `1.96.1`.
 - License: `MIT OR Apache-2.0`.
 - Project name: `base64-ng`.
 - Runtime and dev dependency graph: zero external crates.
@@ -271,8 +272,9 @@ The current release path is:
   pentest results. This line should change only for release blockers,
   documentation corrections, or evidence-policy fixes before tagging.
 - `1.0.x`: maintenance, assurance, and move-only source-layout releases. The
-  current bounded no-default-features Kani harness set now runs on the pinned
-  Rust `1.90.0` toolchain with `cargo-kani 0.67.0`; future `1.0.x` work may
+  current bounded no-default-features Kani harness set now runs on the
+  documented Rust `1.90.0` Kani toolchain with `cargo-kani 0.67.0`; future
+  `1.0.x` work may
   expand the harness scope, but the crate must still avoid claiming
   whole-crate or cryptographic formal verification.
 
@@ -400,8 +402,8 @@ cryptographic behavior until that stronger evidence exists.
   requirements and a release-gated non-claim wording check.
 - Expanded gated Kani proof harness definitions for length helpers, in-place
   bounds, slice encode/decode bounds, and clear-tail decode cleanup. Current
-  `1.0.x` evidence now runs these bounded harnesses on Rust `1.90.0` with
-  `cargo-kani 0.67.0`.
+  `1.0.x` evidence now runs these bounded harnesses on the Rust `1.90.0` Kani
+  toolchain with `cargo-kani 0.67.0`.
 - Hardened scalar chunk validation and decode internals with checked quad reads
   and typed chunk helper inputs across strict, legacy, wrapped, and in-place
   decode paths.
@@ -512,7 +514,7 @@ cryptographic behavior until that stronger evidence exists.
 ### v0.11
 
 - Verification and panic-policy hardening.
-- Resolve Kani execution for the pinned Rust toolchain, pin a compatible Kani
+- Resolve Kani execution for the documented verifier toolchain, pin a compatible Kani
   workflow, or document through [KANI.md](KANI.md) why a verifier exception is
   required and what evidence replaces it for `v1.0`.
   Completed direction: keep the Kani harnesses in-tree, document the initial
@@ -620,8 +622,8 @@ Recommended `1.0.x` source-layout sequence:
   alphabet notes. Keep `serde` deferred as a future optional integration
   candidate until a concrete use case passes dependency admission review.
 - `1.0.7`: assurance evidence release. Enable the current bounded
-  no-default-features Kani harness set on Rust `1.90.0` with
-  `cargo-kani 0.67.0`, strengthen constant-time-oriented byte accumulation,
+  no-default-features Kani harness set on the Rust `1.90.0` Kani toolchain
+  with `cargo-kani 0.67.0`, strengthen constant-time-oriented byte accumulation,
   add AArch64 CSDB attestation posture reporting, expose memory-locking
   posture, and document streaming decoder partial-output semantics.
 - `1.0.8`: audit-log and fail-closed maintenance release. Add redacted

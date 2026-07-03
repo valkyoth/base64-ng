@@ -6,7 +6,18 @@ if [ ! -d kani ]; then
     exit 0
 fi
 
-if ! cargo kani --version >/dev/null 2>&1; then
+kani_toolchain="${BASE64_NG_KANI_TOOLCHAIN:-1.90.0-x86_64-unknown-linux-gnu}"
+
+if ! rustup toolchain list | grep -q "^$kani_toolchain"; then
+    echo "Advanced Kani checks: skipping; Rust toolchain $kani_toolchain is not installed"
+    exit 0
+fi
+
+cargo_kani() {
+    rustup run "$kani_toolchain" cargo kani "$@"
+}
+
+if ! cargo_kani --version >/dev/null 2>&1; then
     echo "Advanced Kani checks: skipping; cargo kani is not installed"
     exit 0
 fi
@@ -23,7 +34,7 @@ run_kani() {
     log="$(mktemp)"
 
     echo "Advanced Kani checks: running $label"
-    if cargo kani "$@" >"$log" 2>&1; then
+    if cargo_kani "$@" >"$log" 2>&1; then
         cat "$log"
         rm -f "$log"
         return 0
@@ -42,6 +53,7 @@ run_kani() {
     exit "$status"
 }
 
+echo "Advanced Kani checks: using Rust toolchain $kani_toolchain"
 run_kani "advanced harness codegen" --no-default-features --only-codegen
 
 if [ "${BASE64_NG_KANI_PROVE_PUBLIC_SURFACE:-0}" = "1" ]; then

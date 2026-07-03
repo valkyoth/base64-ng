@@ -94,7 +94,10 @@ scripts/check_no_alloc_smoke.sh
 
 Install release and deep-check tools:
 
-CI and local release scripts use `scripts/ci_install_rust.sh`; that script uses rust-toolchain.toml as the single source of truth for the pinned stable Rust toolchain.
+CI and local release scripts use `scripts/ci_install_rust.sh`; that script uses
+`rust-toolchain.toml` as the single source of truth for the active release
+toolchain. MSRV remains Rust `1.90.0` and is checked separately in the
+compatibility matrix.
 
 ```sh
 cargo install --locked cargo-audit
@@ -144,11 +147,13 @@ Kani may need a one-time setup after `cargo install --locked kani-verifier`:
 cargo kani setup
 ```
 
-Kani bundles its own Rust compiler. The current supported local path is Rust
-`1.90.0` with `cargo-kani 0.67.0`; `scripts/check_kani.sh` runs the
-no-default-features harness set when that pairing is available. If a future
-Kani/compiler pairing is incompatible with this crate's `rust-version`, the
-script records an explicit skip rather than treating it as proof.
+Kani bundles its own Rust compiler and is intentionally documented as a
+separate verifier pairing. The current supported local path is Rust `1.90.0`
+with `cargo-kani 0.67.0`; `scripts/check_kani.sh` runs the
+no-default-features harness set through that toolchain when it is available.
+If a future Kani/compiler pairing is incompatible with this crate's
+`rust-version`, the script records an explicit skip rather than treating it as
+proof.
 The Kani compatibility and verifier policy is documented in
 [`KANI.md`](KANI.md).
 

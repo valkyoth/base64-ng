@@ -460,15 +460,7 @@ fn runtime_backend_report_matches_admission_state() {
                 | runtime::Backend::Ssse3Sse41
                 | runtime::Backend::Neon
         ));
-        assert!(cfg!(all(
-            feature = "simd",
-            feature = "std",
-            any(
-                target_arch = "x86",
-                target_arch = "x86_64",
-                all(target_arch = "aarch64", target_endian = "little")
-            )
-        )));
+        assert!(build_can_report_accelerated_backend());
     } else {
         assert_eq!(report.active, runtime::Backend::Scalar);
         assert!(display.contains("active=scalar"));
@@ -567,6 +559,22 @@ fn runtime_backend_report_matches_admission_state() {
             "simd-candidate-scalar-active"
         );
     }
+}
+
+fn build_can_report_accelerated_backend() -> bool {
+    cfg!(all(
+        feature = "simd",
+        any(
+            all(feature = "std", target_arch = "x86"),
+            all(feature = "std", target_arch = "x86_64"),
+            all(
+                feature = "std",
+                target_arch = "aarch64",
+                target_endian = "little"
+            ),
+            target_arch = "wasm32"
+        )
+    ))
 }
 
 #[test]

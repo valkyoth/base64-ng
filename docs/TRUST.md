@@ -7,7 +7,8 @@ stable release.
 | Area | Current Status | Evidence |
 | --- | --- | --- |
 | License | `MIT OR Apache-2.0` | `Cargo.toml`, `LICENSE-MIT`, `LICENSE-APACHE` |
-| MSRV | Rust `1.90.0` | `Cargo.toml`, `rust-toolchain.toml` |
+| MSRV | Rust `1.90.0` | `Cargo.toml`, CI compatibility matrix |
+| Active release toolchain | Rust `1.96.1`; MSRV remains Rust `1.90.0` | `rust-toolchain.toml`, `scripts/ci_install_rust.sh` |
 | Runtime dependencies | Zero external crates in the core package; optional companion crates are separate opt-in packages | `scripts/validate-dependencies.sh`, `scripts/check_companion_crates.sh` |
 | Default dev dependencies | Zero external crates | `Cargo.toml` |
 | Optional runtime features | `alloc`, `std`, `stream`; `allow-wasm32-best-effort-wipe` explicit wasm cleanup-limit acceptance; `allow-compiler-fence-only-wipe` explicit unsupported-native cleanup-limit acceptance; reserved `simd`, `tokio`, `kani`, `fuzzing`. AArch64 CSDB attestation uses custom cfg `base64_ng_aarch64_csdb_attested`, not a feature. | `Cargo.toml`, `scripts/check_reserved_features.sh`, `scripts/check_wasm_wipe_policy.sh` |
@@ -21,7 +22,7 @@ stable release.
 | Cleanup posture | Clear-tail APIs, stream cleanup, `EncodedBuffer`, `DecodedBuffer`, and `SecretBuffer` provide best-effort cleanup; `SecretBuffer` also clears vector spare capacity when wrapping and dropping owned vectors. `wasm32` fails closed by default unless `allow-wasm32-best-effort-wipe` is enabled, and unsupported native architectures fail closed unless `allow-compiler-fence-only-wipe` is enabled. | `SECURITY.md`, `docs/UNSAFE.md`, `scripts/check_wasm_wipe_policy.sh` |
 | Fuzzing | Isolated `cargo-fuzz` harnesses outside the published dependency graph | `fuzz/`, `docs/RELEASE_EVIDENCE.md` |
 | Miri | Release gate runs Miri when nightly Miri is installed and writes evidence artifacts | `scripts/check_miri.sh`, `target/release-evidence/miri/` |
-| Kani | 17 bounded no-default-features harnesses verify cleanly with Rust `1.90.0` and `cargo-kani 0.67.0`; incompatible future verifier/toolchain pairs must skip explicitly rather than pretending to prove. | `scripts/check_kani.sh`, `docs/KANI.md` |
+| Kani | 18 bounded no-default-features harnesses verify cleanly with the Rust `1.90.0` Kani toolchain and `cargo-kani 0.67.0`; incompatible future verifier/toolchain pairs must skip explicitly rather than pretending to prove. | `scripts/check_kani.sh`, `docs/KANI.md` |
 | Bounds invariants | Remaining internal indexing is grouped by documented local invariants | `docs/INVARIANTS.md` |
 | Audit | RustSec check required | `cargo audit`, `scripts/checks.sh` |
 | License policy | `cargo deny` and `cargo license --json` required | `deny.toml`, `scripts/checks.sh` |

@@ -6,7 +6,18 @@ if [ ! -d kani ]; then
     exit 0
 fi
 
-if ! cargo kani --version >/dev/null 2>&1; then
+kani_toolchain="${BASE64_NG_KANI_TOOLCHAIN:-1.90.0-x86_64-unknown-linux-gnu}"
+
+if ! rustup toolchain list | grep -q "^$kani_toolchain"; then
+    echo "Kani checks: skipping; Rust toolchain $kani_toolchain is not installed"
+    exit 0
+fi
+
+cargo_kani() {
+    rustup run "$kani_toolchain" cargo kani "$@"
+}
+
+if ! cargo_kani --version >/dev/null 2>&1; then
     echo "Kani checks: skipping; cargo kani is not installed"
     exit 0
 fi
@@ -14,7 +25,9 @@ fi
 log="$(mktemp)"
 trap 'rm -f "$log"' EXIT
 
-if cargo kani --no-default-features >"$log" 2>&1; then
+echo "Kani checks: using Rust toolchain $kani_toolchain"
+
+if cargo_kani --no-default-features >"$log" 2>&1; then
     cat "$log"
     exit 0
 else

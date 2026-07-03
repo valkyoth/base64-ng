@@ -13,10 +13,22 @@ if [ -z "$cargo_rust_version" ]; then
     exit 1
 fi
 
+if [ -z "$toolchain_version" ]; then
+    echo "MSRV policy: rust-toolchain.toml channel is missing" >&2
+    exit 1
+fi
+
 msrv_full="$cargo_rust_version.0"
 
-if [ "$toolchain_version" != "$msrv_full" ]; then
-    echo "MSRV policy: rust-toolchain.toml channel $toolchain_version does not match Cargo.toml rust-version $cargo_rust_version" >&2
+case "$toolchain_version" in
+    *-*)
+        echo "MSRV policy: rust-toolchain.toml must pin a stable release toolchain, got $toolchain_version" >&2
+        exit 1
+        ;;
+esac
+
+if ! grep -F -q "$msrv_full" .github/workflows/ci.yml; then
+    echo "MSRV policy: CI compatibility matrix is missing MSRV $msrv_full" >&2
     exit 1
 fi
 
@@ -37,8 +49,13 @@ for required_doc in README.md docs/TRUST.md docs/PLAN.md docs/KANI.md; do
     fi
 done
 
-if ! grep -F -q "script uses rust-toolchain.toml" docs/RELEASE.md README.md; then
-    echo "MSRV policy: release docs must explain that CI installs from rust-toolchain.toml" >&2
+if ! grep -F -q "active release toolchain" docs/RELEASE.md README.md; then
+    echo "MSRV policy: release docs must explain the active release toolchain" >&2
+    exit 1
+fi
+
+if ! grep -F -q "MSRV remains Rust \`$msrv_full\`" docs/RELEASE.md README.md; then
+    echo "MSRV policy: release docs must explain that MSRV remains Rust $msrv_full" >&2
     exit 1
 fi
 
@@ -78,4 +95,4 @@ do
     fi
 done
 
-echo "MSRV policy: ok ($msrv_full)"
+echo "MSRV policy: ok (MSRV $msrv_full, active $toolchain_version)"

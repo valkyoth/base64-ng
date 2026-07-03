@@ -29,10 +29,17 @@ if [ -z "$cargo_rust_version" ]; then
     exit 1
 fi
 
-if [ "$toolchain_version" != "$cargo_rust_version.0" ]; then
-    echo "release metadata: rust-toolchain.toml channel $toolchain_version does not match Cargo.toml rust-version $cargo_rust_version" >&2
+if [ -z "$toolchain_version" ]; then
+    echo "release metadata: rust-toolchain.toml channel is missing" >&2
     exit 1
 fi
+
+case "$toolchain_version" in
+    *-*)
+        echo "release metadata: rust-toolchain.toml must pin a stable release toolchain, got $toolchain_version" >&2
+        exit 1
+        ;;
+esac
 
 if ! grep -q '^license = "MIT OR Apache-2.0"$' Cargo.toml; then
     echo "release metadata: Cargo.toml must declare license = \"MIT OR Apache-2.0\"" >&2

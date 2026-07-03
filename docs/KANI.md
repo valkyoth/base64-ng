@@ -6,14 +6,17 @@ pairing is documented rather than assumed.
 
 ## Current Status
 
-- Local Rust toolchain: Rust `1.90.0`.
+- Active release toolchain: Rust `1.96.1`.
+- Kani verifier toolchain: Rust `1.90.0`.
 - Locally tested Kani: `cargo-kani 0.67.0`.
 - Current result: `scripts/check_kani.sh` verifies the full current
   no-default-features Kani harness set: 18 harnesses, 0 failures.
 
 This is not a normal Cargo dependency-resolution issue. Kani runs are compiler-integration-sensitive because Kani is a verifier with its own compiler integration.
-Updating the project to Rust `1.90` does not make an older Kani release
-understand that toolchain automatically.
+Updating the active release toolchain to Rust `1.96.1`
+does not make every Kani release understand that compiler automatically, so
+Kani evidence records the exact verifier pairing separately from the normal
+Cargo release toolchain.
 
 ## How To Check
 
@@ -22,6 +25,14 @@ Run:
 ```sh
 cargo kani --version
 scripts/check_kani.sh
+```
+
+By default, `scripts/check_kani.sh` runs through the documented
+`1.90.0-x86_64-unknown-linux-gnu` toolchain. Override this only for verifier
+experiments:
+
+```sh
+BASE64_NG_KANI_TOOLCHAIN=1.96.1-x86_64-unknown-linux-gnu scripts/check_kani.sh
 ```
 
 If the installed Kani compiler is compatible, `scripts/check_kani.sh` runs:
@@ -138,7 +149,7 @@ Other verifier or model-checking tools may be evaluated, but they are not
 release-gate evidence until they have:
 
 - a documented local install and CI path
-- reproducible commands that work with the pinned Rust toolchain
+- reproducible commands that work with the documented Kani toolchain
 - a scoped harness plan for scalar Base64 bit-packing and buffer bounds
 - no runtime dependency impact on the published crate
 - clear failure behavior in release scripts
@@ -173,4 +184,5 @@ scripts/check_kani.sh
 ```
 
 For future releases, revisit this document whenever the installed Kani release,
-the pinned Rust toolchain, or the harness unwind policy changes.
+the documented Kani toolchain, the active release toolchain, or the harness
+unwind policy changes.

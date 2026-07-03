@@ -91,8 +91,8 @@ Implemented on this branch now:
   chunk-boundary behavior.
 - Isolated dudect-style timing harness for the constant-time-oriented scalar
   decoder.
-- Bounded Kani proof harnesses that run on Rust `1.90.0` with
-  `cargo-kani 0.67.0`.
+- Bounded Kani proof harnesses that run with the documented Rust `1.90.0`
+  verifier pairing and `cargo-kani 0.67.0`.
 - Constant-time assembly evidence generation for reviewer inspection.
 - Runtime-dispatched std `x86`/`x86_64` AVX-512 VBMI fixed-block encode,
   falling back to AVX2, then SSSE3/SSE4.1, and then scalar, plus
@@ -160,6 +160,7 @@ Planned behind admission evidence:
 | --- | --- |
 | License | `MIT OR Apache-2.0` |
 | MSRV | Rust `1.90.0` |
+| Active release toolchain | Rust `1.96.1` |
 | Runtime dependencies | Zero external crates |
 | Unsafe policy | Scalar encode/decode remains safe Rust; audited unsafe is limited to volatile wiping, CT comparison/barrier helpers, and the reviewed SIMD boundary |
 | Active backend | Scalar by default; std x86/x86_64 AVX-512 VBMI preferred, then AVX2, then SSSE3/SSE4.1, plus little-endian std aarch64 NEON, and wasm `simd128` when the admitted feature/runtime profile is present |
@@ -167,7 +168,7 @@ Planned behind admission evidence:
 | Legacy compatibility | Explicit opt-in APIs |
 | Constant-time posture | Constant-time-oriented scalar validation/decode with isolated dudect-style timing evidence; no formal cryptographic guarantee |
 | Cleanup posture | Best-effort initialized-byte cleanup and redacted secret wrappers |
-| Kani | 17 bounded no-default-features harnesses verified with Rust `1.90.0` and `cargo-kani 0.67.0`; not a whole-crate formal-verification claim |
+| Kani | 18 bounded no-default-features harnesses verified with the Rust `1.90.0` Kani toolchain and `cargo-kani 0.67.0`; not a whole-crate formal-verification claim |
 | Release evidence | fmt, clippy, tests, docs, deny, audit, license, SBOM, reproducibility |
 
 Full adoption details live in [docs/TRUST.md](docs/TRUST.md). Security-control
@@ -179,11 +180,15 @@ The minimum supported Rust version is Rust `1.90.0`. New deployments should
 prefer the latest tested stable Rust; as of July 2, 2026, this project tests
 through Rust `1.96.1`.
 
+The active release toolchain is Rust `1.96.1`. MSRV remains Rust `1.90.0` and
+is checked separately in CI so the project can build and test with the latest
+stable compiler without dropping older supported users.
+
 Compatibility evidence for the `1.3.3` workspace:
 
 | Rust | Local Evidence |
 | --- | --- |
-| `1.90.0` | ✓ full release gate |
+| `1.90.0` | ✓ MSRV compatibility check |
 | `1.91.0` | ✓ `cargo check --all-features` |
 | `1.92.0` | ✓ `cargo check --all-features` |
 | `1.93.0` | ✓ `cargo check --all-features` |
@@ -1099,8 +1104,9 @@ assert_eq!(&encoded[..written], b"aGVsbG8");
 
 Security commitments:
 
-- Stable Rust first. Current MSRV toolchain pin: Rust `1.90.0`. New deployments
-  should prefer the latest tested stable Rust, currently Rust `1.96.1`.
+- Stable Rust first. MSRV remains Rust `1.90.0`; the active release toolchain
+  is Rust `1.96.1`. New deployments should prefer the latest tested stable
+  Rust, currently Rust `1.96.1`.
 - `no_std` core by default.
 - Scalar encode/decode remains safe Rust.
 - Audited unsafe helpers in `src/cleanup.rs` perform volatile best-effort
@@ -1182,9 +1188,9 @@ Security commitments:
   dependency policy, audit, license review, isolated fuzz/perf dependency
   checks, SBOM, and reproducible build checks.
 - Kani harnesses stay in-tree and release-gated. The current
-  no-default-features harness set verifies cleanly with Rust `1.90.0` and
-  `cargo-kani 0.67.0`; this is scoped bounded evidence, not a whole-crate
-  formal-verification claim.
+  no-default-features harness set verifies cleanly with the Rust `1.90.0`
+  Kani toolchain and `cargo-kani 0.67.0`; this is scoped bounded evidence,
+  not a whole-crate formal-verification claim.
 
 See [docs/PLAN.md](docs/PLAN.md), [SECURITY.md](SECURITY.md),
 [docs/RELEASE_EVIDENCE.md](docs/RELEASE_EVIDENCE.md), and
@@ -1280,7 +1286,9 @@ validators on the real AArch64 host.
 
 Required security tools:
 
-CI and local release scripts use `scripts/ci_install_rust.sh`; that script uses rust-toolchain.toml as the single source of truth for the pinned stable Rust toolchain.
+CI and local release scripts use `scripts/ci_install_rust.sh`; that script uses
+`rust-toolchain.toml` as the single source of truth for the active release
+toolchain. MSRV remains Rust `1.90.0` and is checked separately.
 
 ```sh
 cargo install --locked cargo-audit

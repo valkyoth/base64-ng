@@ -229,8 +229,8 @@ The release gate runs:
 - LTO symbol-presence checks for non-inlined wipe boundaries and the
   `constant_time_eq_public_len` equal-length comparison helper
 - Kani proofs through `scripts/check_kani.sh`; current local evidence is the
-  full no-default-features harness set on Rust `1.90.0` with
-  `cargo-kani 0.67.0`
+  full no-default-features harness set on the Rust `1.90.0` Kani toolchain
+  with `cargo-kani 0.67.0`
 - bounded Kani coverage for constant-time-oriented decode result bounds,
   clear-tail cleanup on error, and validate/decode agreement
 - bounded-index invariant documentation in [INVARIANTS.md](INVARIANTS.md)
