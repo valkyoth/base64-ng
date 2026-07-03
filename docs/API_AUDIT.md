@@ -347,10 +347,26 @@ Stable boundary:
   they pass dependency admission.
 - The `ct` module remains constant-time-oriented and does not claim formal
   cryptographic constant-time behavior.
-- Active backend dispatch remains scalar-only; SIMD candidates remain governed
-  by the SIMD admission policy.
+- Active backend dispatch remained scalar-only at the `v1.0` boundary; later
+  admitted SIMD backends remain governed by the SIMD admission policy and the
+  trust dashboard.
 - A future secure-decode marker trait or wrapper type remains a post-`v1.0`
   candidate. It should be designed only after the stable `ct` contract is
   exercised by downstream users, so the `v1.0` boundary relies on explicit
   `ct` constants, `Engine::ct_decoder()`, and prominent default-decoder
   warnings rather than a late broad API addition.
+
+## Current Post-`1.3.3` Outcome
+
+- Public encode and normal strict decode have admitted SIMD acceleration only
+  for the Standard and URL-safe alphabet families under the runtime profiles
+  documented in `docs/SIMD_ADMISSION.md`.
+- The narrow wasm `simd128` profile is admitted only for binaries compiled with
+  `target-feature=+simd128`, `simd`, and
+  `allow-wasm32-best-effort-wipe`, backed by the runtime smoke evidence named
+  in `docs/WASM_SIMD128_RUNTIME_REVIEW.md`.
+- Non-standard surfaces remain intentionally scalar unless a later admission
+  package covers them: custom alphabets, bcrypt-style and `crypt(3)` profiles,
+  wrapped decode, legacy whitespace decode, in-place decode, `ct` secret
+  decode, broader wasm/browser claims, big-endian AArch64, and `no_std`
+  dispatch.

@@ -4,7 +4,7 @@ This checklist is mandatory before any additional SIMD code becomes
 dispatchable. AVX-512 VBMI, AVX2, SSSE3/SSE4.1, NEON, and the narrow wasm
 `simd128` runtime profile are admitted only for their documented Standard and
 URL-safe alphabet-family scopes. Custom-alphabet, in-place, wrapped, legacy,
-CT-secret, broader wasm/browser, and future decode surfaces remain
+CT-secret, broader wasm/browser, and future non-standard decode surfaces remain
 prototype-only or scalar until their own checklist evidence is complete.
 
 ## Non-Negotiable Rule

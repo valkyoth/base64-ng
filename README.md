@@ -1102,9 +1102,9 @@ Security commitments:
   supported native architectures. Constant-time comparison, byte accumulation,
   CT scan, and CT result-gate hardening remain audited in `src/ct/`.
 - Unsafe SIMD remains isolated under `src/simd/`; admitted AVX-512 VBMI,
-  AVX2, SSSE3/SSE4.1, and NEON encode and strict decode paths are std-gated,
-  and all non-admitted backends and API surfaces remain prototype-only or
-  scalar.
+  AVX2, SSSE3/SSE4.1, NEON, and narrow wasm `simd128` encode and strict decode
+  paths are gated by their documented runtime profiles, and all non-admitted
+  backends and API surfaces remain prototype-only or scalar.
 - Local checks verify that `allow(unsafe_code)` is confined to the volatile
   wipe helpers and SIMD boundary, every unsafe function is inventoried, and
   every unsafe block has a nearby `SAFETY:` explanation. Architecture intrinsics,
