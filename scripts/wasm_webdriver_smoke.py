@@ -19,6 +19,7 @@ import urllib.parse
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 SMOKE_DIR = ROOT / "target" / "wasm-runtime-smoke"
 PASS_TEXT = "BASE64_NG_BROWSER_WASM_SMOKE_PASS"
+HTTP_TIMEOUT_SECONDS = 120
 
 
 def free_port() -> int:
@@ -35,7 +36,7 @@ def request(
 ) -> dict[str, object]:
     payload = None if body is None else json.dumps(body).encode("utf-8")
     headers = {"Content-Type": "application/json"} if payload is not None else {}
-    conn = http.client.HTTPConnection("127.0.0.1", port, timeout=10)
+    conn = http.client.HTTPConnection("127.0.0.1", port, timeout=HTTP_TIMEOUT_SECONDS)
     try:
         conn.request(method, path, payload, headers)
         response = conn.getresponse()
@@ -153,11 +154,16 @@ def run(args: argparse.Namespace) -> None:
 
     port = free_port()
     driver_cmd = [args.driver, "--port", str(port)]
-    print(f"wasm webdriver dispatch: running {args.browser} smoke with {args.driver}")
+    print(
+        f"wasm webdriver dispatch: running {args.browser} smoke with {args.driver}",
+        flush=True,
+    )
+    driver_log_path = SMOKE_DIR / f"webdriver-{args.browser}.log"
+    driver_log = driver_log_path.open("wb")
     process = subprocess.Popen(  # noqa: S603 - driver path is an explicit local argument.
         driver_cmd,
         cwd=ROOT,
-        stdout=subprocess.PIPE,
+        stdout=driver_log,
         stderr=subprocess.STDOUT,
     )
 
@@ -166,6 +172,16 @@ def run(args: argparse.Namespace) -> None:
         wait_for_driver(port, process)
         payload = request(port, "POST", "/session", capabilities(args.browser, args.headless))
         session = session_id(payload)
+        request(
+            port,
+            "POST",
+            f"/session/{session}/timeouts",
+            {
+                "implicit": 0,
+                "pageLoad": int(args.timeout * 1000),
+                "script": int(args.timeout * 1000),
+            },
+        )
         request(port, "POST", f"/session/{session}/url", {"url": html_url})
 
         deadline = time.monotonic() + args.timeout
@@ -202,6 +218,16 @@ def run(args: argparse.Namespace) -> None:
             process.wait(timeout=5)
         except subprocess.TimeoutExpired:
             process.kill()
+        driver_log.close()
+        if process.returncode not in (0, None):
+            try:
+                log_tail = driver_log_path.read_text("utf-8", "replace").splitlines()[-40:]
+            except OSError:
+                log_tail = []
+            if log_tail:
+                print("wasm webdriver dispatch: driver log tail:", file=sys.stderr)
+                for line in log_tail:
+                    print(line, file=sys.stderr)
 
 
 def main() -> int:
@@ -209,7 +235,7 @@ def main() -> int:
     parser.add_argument("--browser", choices=("firefox", "safari"), required=True)
     parser.add_argument("--driver", required=True)
     parser.add_argument("--target", default="wasm32-unknown-unknown")
-    parser.add_argument("--timeout", type=float, default=20.0)
+    parser.add_argument("--timeout", type=float, default=120.0)
     parser.add_argument(
         "--headless",
         action=argparse.BooleanOptionalAction,
