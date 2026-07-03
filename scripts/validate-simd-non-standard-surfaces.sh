@@ -12,7 +12,7 @@ for required_text in \
     "custom alphabet encode and decode" \
     "bcrypt-style and \`crypt(3)\`-style alphabet encode and decode" \
     "strict in-place decode" \
-    "legacy-whitespace decode" \
+    "legacy-whitespace decode's compacted strict decode stage" \
     "strict wrapped decode" \
     "wrapped encode staging" \
     "non_standard_simd_candidate_surfaces_preserve_scalar_behavior" \
@@ -26,12 +26,12 @@ for required_text in \
     "| Bcrypt and \`crypt(3)\` profiles | scalar fallback |" \
     "| MIME/PEM wrapped encode | admitted for unwrapped staging only |" \
     "| MIME/PEM wrapped decode | admitted for compacted strict decode only |" \
-    "| Legacy-whitespace decode | scalar fallback |" \
+    "| Legacy-whitespace decode | admitted for compacted strict decode only |" \
     "| In-place encode | scalar fallback |" \
     "| In-place decode | scalar fallback |" \
     "| Constant-time-oriented secret decode | scalar only |" \
     "Engine::decode_slice_legacy" \
-    "decode_legacy_to_slice" \
+    "legacy decode compacts into strict chunks" \
     "Engine::decode_slice_wrapped" \
     "decodes those strict chunks through \`Engine::decode_slice\`" \
     "Engine::encode_slice_wrapped" \
@@ -53,8 +53,13 @@ do
     fi
 done
 
-if ! grep -F -q "decode_legacy_to_slice::<A, PAD>(input, output)" src/engine/decode.rs; then
-    echo "simd non-standard surfaces: legacy decode must route through decode_legacy_to_slice" >&2
+if ! grep -F -q "decode_legacy_via_strict_backend(input, output)" src/engine/decode.rs; then
+    echo "simd non-standard surfaces: legacy decode must route through compacted strict backend staging" >&2
+    exit 1
+fi
+
+if ! grep -F -q "is_legacy_whitespace(*byte)" src/engine/decode.rs; then
+    echo "simd non-standard surfaces: legacy decode staging must keep scalar whitespace compaction" >&2
     exit 1
 fi
 

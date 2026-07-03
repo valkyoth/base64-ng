@@ -14,9 +14,11 @@
 //! separate decode backend boundary. Narrow wasm `simd128` encode and strict
 //! decode are admitted for the documented wasm runtime profile. Wrapped decode
 //! may enter admitted strict decode only after scalar line-profile validation
-//! and line-ending compaction. Custom alphabets, `no_std` builds, big-endian
-//! `AArch64`, in-place decode, legacy decode, CT secret decode, and every other
-//! SIMD candidate still execute through the scalar implementation.
+//! and line-ending compaction. Legacy whitespace decode may enter admitted
+//! strict decode only after scalar whitespace compaction. Custom alphabets,
+//! `no_std` builds, big-endian `AArch64`, in-place decode, CT secret decode,
+//! and every other SIMD candidate still execute through the scalar
+//! implementation.
 //!
 //! The x86 AVX-512 VBMI, AVX2, SSSE3/SSE4.1, and `AArch64` NEON fixed-block
 //! encoders are reachable from runtime encode dispatch on std builds after

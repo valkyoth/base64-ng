@@ -31,6 +31,9 @@ wasm `simd128` runtime-dispatch profile with explicit runtime smoke evidence.
   scalar line-profile validation and fixed-size line-ending compaction. Line
   handling remains scalar; the compacted strict Base64 chunks may use admitted
   Standard/URL-safe decode acceleration.
+- Routed legacy whitespace decode through the admitted strict decode backend
+  after scalar whitespace validation and fixed-size compaction. Whitespace
+  handling and public error positions remain scalar-governed.
 - Added release-gated wasm SIMD codegen evidence through
   `scripts/generate_wasm_simd_evidence.sh`, which emits test-harness LLVM IR
   with `target-feature=+simd128` when the wasm target is installed.

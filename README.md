@@ -109,8 +109,9 @@ Implemented on this branch now:
   encoded length: fixed blocks may be accelerated, while short inputs and
   non-block tails are decoded by scalar code. Wrapped decode may use admitted
   strict decode after scalar line-profile validation and line-ending
-  compaction. Unsupported CPUs, big-endian AArch64, `no_std`, custom
-  alphabets, legacy decode, in-place decode, and CT secret decode stay scalar.
+  compaction; legacy whitespace decode may use admitted strict decode after
+  scalar whitespace compaction. Unsupported CPUs, big-endian AArch64, `no_std`,
+  custom alphabets, in-place decode, and CT secret decode stay scalar.
 - Runtime-dispatched wasm `simd128` fixed-block encode and normal strict
   decode for Standard and URL-safe alphabets when built for `wasm32` with
   `target-feature=+simd128`, `simd`, and
@@ -132,7 +133,8 @@ Planned behind admission evidence:
 - Additional SIMD decode acceleration beyond the `1.3.0`
   strict Standard and URL-safe decode scope only after separate admission
   evidence is complete. The frozen first scope remains padded and unpadded
-  strict decode only: no line wrapping, no legacy whitespace, no custom
+  strict decode only after any scalar line or whitespace compaction: no
+  vectorized line wrapping, no vectorized legacy whitespace, no custom
   alphabets, no bcrypt/crypt profiles, and no constant-time-oriented secret
   decode. Default builds, unsupported runtime CPUs, `no_std`, and all
   out-of-scope decode surfaces remain scalar.

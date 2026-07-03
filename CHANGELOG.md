@@ -30,6 +30,9 @@
   scalar line-profile validation and fixed-size line-ending compaction, so
   MIME/PEM-style wrapped input can use the same accelerated Standard/URL-safe
   decode blocks while line handling remains scalar.
+- Routed legacy whitespace decode through the admitted strict decode backend
+  after scalar whitespace validation and fixed-size compaction, while keeping
+  whitespace handling and public error positions scalar-governed.
 - Added `scripts/generate_wasm_simd_evidence.sh` and wired it into the local
   release checks so installed wasm targets emit release test-harness LLVM IR
   with `target-feature=+simd128` and checked vector-codegen markers.

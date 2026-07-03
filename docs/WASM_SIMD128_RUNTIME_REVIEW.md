@@ -16,10 +16,12 @@ The admitted runtime profile is intentionally narrow:
 - normal strict decode through the public strict decode boundary
 - strict wrapped decode may enter the public strict decode boundary after
   scalar line-profile validation and line-ending compaction
+- legacy whitespace decode may enter the public strict decode boundary after
+  scalar whitespace compaction
 - full fixed blocks use `simd128`; tails and unsupported surfaces use scalar
-- no vectorized line-profile validation or line-ending compaction; no legacy
-  whitespace decode, custom alphabets, bcrypt-style profiles, in-place decode,
-  or `ct` secret decode
+- no vectorized line-profile validation, line-ending compaction, or
+  legacy-whitespace compaction; no custom alphabets, bcrypt-style profiles,
+  in-place decode, or `ct` secret decode
 - runtime smoke evidence is required for Node/V8, Wasmtime, at least one
   Chromium-family browser, Firefox/SpiderMonkey, and Safari/WebKit
 

@@ -10,8 +10,9 @@ unsafe inventory, and release notes all move together.
 
 Wrapped encode staging and wrapped decode's compacted strict decode stage are
 admitted to use the existing Standard/URL-safe strict backend boundaries.
-Line-ending insertion, line-profile validation, and line-ending compaction
-remain scalar.
+Legacy-whitespace decode's compacted strict decode stage is admitted through
+the same boundary. Line-ending insertion, line-profile validation, line-ending
+compaction, and legacy-whitespace compaction remain scalar.
 
 The current `1.3.2` checkpoint adds regression evidence that these surfaces
 preserve scalar-visible behavior while staying outside the active accelerated
@@ -20,7 +21,7 @@ scope:
 - custom alphabet encode and decode
 - bcrypt-style and `crypt(3)`-style alphabet encode and decode
 - strict in-place decode
-- legacy-whitespace decode
+- legacy-whitespace decode's compacted strict decode stage
 - strict wrapped decode's compacted strict decode stage
 - wrapped encode staging
 
@@ -52,15 +53,18 @@ The checked test evidence currently includes:
 | Bcrypt and `crypt(3)` profiles | scalar fallback | separate profile evidence for alphabet order, no-padding behavior, malformed input, canonicality, and benchmark value |
 | MIME/PEM wrapped encode | admitted for unwrapped staging only | line-ending insertion remains scalar; future broader admission requires benchmark evidence showing wrapping overhead does not hide the SIMD benefit |
 | MIME/PEM wrapped decode | admitted for compacted strict decode only | line-profile validation and compaction remain scalar; future broader admission requires line-profile vectorization evidence, absolute error-index parity, fuzz evidence, and benchmark evidence |
-| Legacy-whitespace decode | scalar fallback | whitespace compaction parity, original-index error reporting, post-padding rejection, fuzz evidence, and benchmark evidence |
+| Legacy-whitespace decode | admitted for compacted strict decode only | whitespace compaction remains scalar; future broader admission requires whitespace vectorization evidence, original-index error reporting parity, post-padding rejection parity, fuzz evidence, and benchmark evidence |
 | In-place encode | scalar fallback | overlap proof, backwards-write proof, clear-tail parity, malformed length parity, Miri/Kani evidence where applicable, and benchmark evidence |
 | In-place decode | scalar fallback | prevalidation proof, overlap proof, failed-buffer-state policy, clear-tail parity, fuzz evidence, and benchmark evidence |
 | Constant-time-oriented secret decode | scalar only | separate high-assurance side-channel project; do not admit through ordinary performance SIMD review |
 
 ## Source Routing Invariants
 
-- `Engine::decode_slice_legacy` validates with `validate_legacy_decode` and
-  decodes through `decode_legacy_to_slice`.
+- `Engine::decode_slice_legacy` validates with `validate_legacy_decode`,
+  compacts legacy whitespace into fixed-size scratch chunks, and decodes those
+  strict chunks through `Engine::decode_slice` so admitted strict decode
+  backends may run.
+  Evidence phrase: legacy decode compacts into strict chunks.
 - `Engine::decode_slice_wrapped` validates with `validate_wrapped_decode`,
   compacts line endings into fixed-size scratch chunks, and decodes those
   strict chunks through `Engine::decode_slice` so admitted strict decode

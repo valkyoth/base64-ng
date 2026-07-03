@@ -86,7 +86,8 @@ The `1.3.0` decode scope is frozen to strict
 Standard and URL-safe decode only, padded and unpadded, through the normal
 strict decode backend boundary. Wrapped decode may use admitted strict decode
 after scalar line-profile validation and line-ending compaction. Legacy
-whitespace decode, custom alphabets, bcrypt-style and `crypt(3)` profiles,
+whitespace decode may use the admitted strict decode boundary after scalar
+whitespace compaction. Custom alphabets, bcrypt-style and `crypt(3)` profiles,
 in-place decode, `no_std` SIMD dispatch, broader wasm/browser runtime
 dispatch, and the `base64_ng::ct` constant-time-oriented secret decode path
 remain scalar unless separately admitted with their own evidence package.
@@ -137,9 +138,10 @@ runtime behavior for that line.
   encoded blocks after scalar whole-input validation. Public strict decode
   supports every valid encoded length; short inputs and non-block tails are
   decoded by scalar code. Wrapped decode may use admitted strict decode after
-  scalar line-profile validation and line-ending compaction. Legacy decode,
-  in-place decode, CT secret decode, custom alphabets, and big-endian AArch64
-  remain scalar.
+  scalar line-profile validation and line-ending compaction. Legacy whitespace
+  decode may use the admitted strict decode boundary after scalar whitespace
+  compaction. In-place decode, CT secret decode, custom alphabets, and
+  big-endian AArch64 remain scalar.
 - AVX-512 VBMI encode is admitted for std `x86`/`x86_64` Standard and URL-safe
   alphabet families. It uses AVX-512 lane-local byte shuffling, vector
   shifts/masks, and VBMI byte permutes over the alphabet table for fixed

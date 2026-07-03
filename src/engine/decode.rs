@@ -3,7 +3,7 @@ use crate::SecretBuffer;
 #[cfg(feature = "alloc")]
 use crate::validate_decode;
 use crate::{
-    Alphabet, DecodeError, DecodedBuffer, Engine, LineWrap, decode_backend, decode_legacy_to_slice,
+    Alphabet, DecodeError, DecodedBuffer, Engine, LineWrap, decode_backend, is_legacy_whitespace,
     validate_legacy_decode, validate_wrapped_decode, wipe_bytes, wipe_tail,
 };
 
@@ -125,7 +125,7 @@ where
                 available: output.len(),
             });
         }
-        decode_legacy_to_slice::<A, PAD>(input, output)
+        Self::decode_legacy_via_strict_backend(input, output)
     }
 
     /// Decodes `input` using the explicit legacy whitespace profile and clears
@@ -383,17 +383,8 @@ where
             read += 1;
 
             if scratch_len == scratch.len() {
-                let written =
-                    match decode_backend::decode_slice::<A, PAD>(&scratch, &mut output[write..]) {
-                        Ok(written) => written,
-                        Err(err) => {
-                            wipe_bytes(&mut scratch);
-                            return Err(err);
-                        }
-                    };
-                wipe_bytes(&mut scratch);
+                Self::decode_strict_scratch_chunk(&mut scratch, scratch_len, output, &mut write)?;
                 scratch_len = 0;
-                write += written;
             }
         }
 
@@ -401,9 +392,48 @@ where
             return Ok(write);
         }
 
+        Self::decode_strict_scratch_chunk(&mut scratch, scratch_len, output, &mut write)?;
+        Ok(write)
+    }
+
+    fn decode_legacy_via_strict_backend(
+        input: &[u8],
+        output: &mut [u8],
+    ) -> Result<usize, DecodeError> {
+        let mut scratch = [0u8; 1024];
+        let mut scratch_len = 0;
+        let mut write = 0;
+
+        for byte in input {
+            if is_legacy_whitespace(*byte) {
+                continue;
+            }
+
+            scratch[scratch_len] = *byte;
+            scratch_len += 1;
+
+            if scratch_len == scratch.len() {
+                Self::decode_strict_scratch_chunk(&mut scratch, scratch_len, output, &mut write)?;
+                scratch_len = 0;
+            }
+        }
+
+        if scratch_len != 0 {
+            Self::decode_strict_scratch_chunk(&mut scratch, scratch_len, output, &mut write)?;
+        }
+
+        Ok(write)
+    }
+
+    fn decode_strict_scratch_chunk(
+        scratch: &mut [u8; 1024],
+        scratch_len: usize,
+        output: &mut [u8],
+        write: &mut usize,
+    ) -> Result<(), DecodeError> {
         let written = match decode_backend::decode_slice::<A, PAD>(
             &scratch[..scratch_len],
-            &mut output[write..],
+            &mut output[*write..],
         ) {
             Ok(written) => written,
             Err(err) => {
@@ -412,6 +442,7 @@ where
             }
         };
         wipe_bytes(&mut scratch[..scratch_len]);
-        Ok(write + written)
+        *write += written;
+        Ok(())
     }
 }

@@ -1849,6 +1849,40 @@ fn decode_slice_clear_tail_scrubs_output_on_error() {
 }
 
 #[test]
+fn decode_slice_legacy_handles_large_chunked_staging() {
+    let mut input = vec![0u8; 1537];
+    for (index, byte) in input.iter_mut().enumerate() {
+        *byte = ((index * 29 + 7) % 251) as u8;
+    }
+
+    let mut encoded = vec![0u8; STANDARD.encoded_len(input.len()).unwrap()];
+    let encoded_len = STANDARD.encode_slice(&input, &mut encoded).unwrap();
+    encoded.truncate(encoded_len);
+    let mut legacy_input = Vec::with_capacity(encoded.len() + encoded.len() / 17 + 8);
+    for (index, byte) in encoded.iter().copied().enumerate() {
+        legacy_input.push(byte);
+        if index % 17 == 3 {
+            legacy_input.extend_from_slice(b" \r\n\t");
+        }
+    }
+
+    let mut output = vec![0xdd; input.len() + 32];
+    let decoded_len = STANDARD
+        .decode_slice_legacy(&legacy_input, &mut output)
+        .unwrap();
+    assert_eq!(decoded_len, input.len());
+    assert_eq!(&output[..decoded_len], input.as_slice());
+
+    output.fill(0xdd);
+    let decoded_len = STANDARD
+        .decode_slice_legacy_clear_tail(&legacy_input, &mut output)
+        .unwrap();
+    assert_eq!(decoded_len, input.len());
+    assert_eq!(&output[..decoded_len], input.as_slice());
+    assert!(output[decoded_len..].iter().all(|byte| *byte == 0));
+}
+
+#[test]
 fn encodes_in_place() {
     let mut standard = [0u8; 8];
     standard[..5].copy_from_slice(b"hello");

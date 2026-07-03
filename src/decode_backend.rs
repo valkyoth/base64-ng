@@ -94,8 +94,9 @@ pub(crate) fn active_decode_backend() -> DecodeBackend {
 ///
 /// Normal strict `Engine::decode_slice` enters this boundary directly.
 /// `Engine::decode_slice_wrapped` also enters after strict line-profile
-/// validation and scalar line-ending compaction. Legacy whitespace handling,
-/// in-place decode, and `ct` secret decode remain separate scalar surfaces
+/// validation and scalar line-ending compaction. `Engine::decode_slice_legacy`
+/// enters after strict legacy validation and scalar whitespace compaction.
+/// In-place decode and `ct` secret decode remain separate scalar surfaces
 /// unless a future admission package explicitly adds and tests them.
 pub(crate) fn decode_slice<A, const PAD: bool>(
     input: &[u8],

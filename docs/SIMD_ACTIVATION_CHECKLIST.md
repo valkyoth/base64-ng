@@ -3,11 +3,12 @@
 This checklist is mandatory before any additional SIMD code becomes
 dispatchable. AVX-512 VBMI, AVX2, SSSE3/SSE4.1, NEON, and the narrow wasm
 `simd128` runtime profile are admitted only for their documented Standard and
-URL-safe alphabet-family scopes. Wrapped decode may enter the admitted strict
-decode backend only after scalar line-profile validation and line-ending
-compaction. Custom-alphabet, in-place, legacy, CT-secret, broader wasm/browser,
-and future non-standard decode surfaces remain prototype-only or scalar until
-their own checklist evidence is complete.
+URL-safe alphabet-family scopes. Wrapped and legacy decode may enter the
+admitted strict decode backend only after scalar line-profile validation,
+line-ending compaction, or legacy-whitespace compaction. Custom-alphabet,
+in-place, CT-secret, broader wasm/browser, and future non-standard decode
+surfaces remain prototype-only or scalar until their own checklist evidence is
+complete.
 
 ## Non-Negotiable Rule
 

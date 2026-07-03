@@ -1070,10 +1070,11 @@ inside the `1.3.x` line if they remain evidence-gated and do not weaken the
   `allow-wasm32-best-effort-wipe`.
 - Document JIT, runtime, timing, and zeroization caveats without implying
   hardware-like guarantees.
-- Keep broader wasm/browser profiles, custom alphabets, legacy surfaces,
-  in-place decode, and CT secret decode scalar until separate evidence admits
-  them. Wrapped decode may use the admitted strict decode backend only after
-  scalar line-profile validation and line-ending compaction.
+- Keep broader wasm/browser profiles, custom alphabets, in-place decode, and
+  CT secret decode scalar until separate evidence admits them. Wrapped and
+  legacy decode may use the admitted strict decode backend only after scalar
+  line-profile validation, line-ending compaction, or legacy-whitespace
+  compaction.
 
 `1.3.4`: big-endian and niche-architecture acceleration review.
 
