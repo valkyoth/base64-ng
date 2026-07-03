@@ -41,9 +41,10 @@ std `x86`/`x86_64` AVX-512 VBMI, AVX2, SSSE3/SSE4.1, and little-endian std
 
 Encode acceleration remains active only for admitted Standard and URL-safe
 fixed-block surfaces. Decode acceleration remains limited to normal strict
-decode. Wrapped decode, legacy whitespace decode, custom alphabets,
-bcrypt-style and `crypt(3)` profiles, in-place decode, `no_std`, and
-constant-time-oriented secret decode remain scalar. Wasm `simd128` is admitted
+decode, including the compacted strict stage used after wrapped line-profile
+validation. Legacy whitespace decode, custom alphabets, bcrypt-style and
+`crypt(3)` profiles, in-place decode, `no_std`, and constant-time-oriented
+secret decode remain scalar. Wasm `simd128` is admitted
 only for Standard and URL-safe public encode and normal strict decode when the
 binary is compiled with `target-feature=+simd128`, the `simd` feature, and the
 explicit `allow-wasm32-best-effort-wipe` feature.
@@ -106,9 +107,10 @@ Implemented on this branch now:
   fixed-block strict decode, limited to Standard and URL-safe alphabets after
   whole-input scalar validation. Public strict decode supports every valid
   encoded length: fixed blocks may be accelerated, while short inputs and
-  non-block tails are decoded by scalar code. Unsupported CPUs,
-  big-endian AArch64, `no_std`, custom alphabets, wrapped decode, legacy
-  decode, in-place decode, and CT secret decode stay scalar.
+  non-block tails are decoded by scalar code. Wrapped decode may use admitted
+  strict decode after scalar line-profile validation and line-ending
+  compaction. Unsupported CPUs, big-endian AArch64, `no_std`, custom
+  alphabets, legacy decode, in-place decode, and CT secret decode stay scalar.
 - Runtime-dispatched wasm `simd128` fixed-block encode and normal strict
   decode for Standard and URL-safe alphabets when built for `wasm32` with
   `target-feature=+simd128`, `simd`, and
@@ -134,7 +136,7 @@ Planned behind admission evidence:
   alphabets, no bcrypt/crypt profiles, and no constant-time-oriented secret
   decode. Default builds, unsupported runtime CPUs, `no_std`, and all
   out-of-scope decode surfaces remain scalar.
-- Additional custom alphabet, wrapped/legacy, in-place, and broader wasm
+- Additional custom alphabet, legacy, in-place, and broader wasm
   runtime/browser fast paths only after separate SIMD admission evidence is
   complete. Default builds and unsupported runtime CPUs remain scalar.
 - Async reader and writer streaming is available through the optional

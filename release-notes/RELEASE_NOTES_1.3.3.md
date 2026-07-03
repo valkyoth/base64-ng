@@ -27,6 +27,10 @@ wasm `simd128` runtime-dispatch profile with explicit runtime smoke evidence.
 - Added strict decode error-surface evidence for Standard and URL-safe
   padded/unpadded public helpers, including clear-tail wiping on rejected
   input.
+- Routed strict wrapped decode through the admitted strict decode backend after
+  scalar line-profile validation and fixed-size line-ending compaction. Line
+  handling remains scalar; the compacted strict Base64 chunks may use admitted
+  Standard/URL-safe decode acceleration.
 - Added release-gated wasm SIMD codegen evidence through
   `scripts/generate_wasm_simd_evidence.sh`, which emits test-harness LLVM IR
   with `target-feature=+simd128` when the wasm target is installed.

@@ -11,16 +11,18 @@
 //! URL-safe alphabet families. It also admits std `x86`/`x86_64` AVX-512 VBMI,
 //! AVX2, and SSSE3/SSE4.1 strict decode plus little-endian std `aarch64` NEON
 //! strict decode for Standard and URL-safe alphabet families through the
-//! separate decode backend boundary. Custom alphabets, `no_std` builds, wasm,
-//! big-endian `AArch64`, in-place decode, wrapped decode, legacy decode, CT
-//! secret decode, and every other SIMD candidate still execute through the
-//! scalar implementation.
+//! separate decode backend boundary. Narrow wasm `simd128` encode and strict
+//! decode are admitted for the documented wasm runtime profile. Wrapped decode
+//! may enter admitted strict decode only after scalar line-profile validation
+//! and line-ending compaction. Custom alphabets, `no_std` builds, big-endian
+//! `AArch64`, in-place decode, legacy decode, CT secret decode, and every other
+//! SIMD candidate still execute through the scalar implementation.
 //!
 //! The x86 AVX-512 VBMI, AVX2, SSSE3/SSE4.1, and `AArch64` NEON fixed-block
 //! encoders are reachable from runtime encode dispatch on std builds after
 //! runtime CPU probing or mandatory-target feature checks. The wasm `simd128`
-//! fixed-block implementation remains prototype evidence and is not reachable
-//! from runtime backend selection.
+//! fixed-block implementation is reachable only for the admitted wasm runtime
+//! profile and remains scoped out of broader browser/JIT claims.
 
 #[cfg(any(
     all(

@@ -719,9 +719,11 @@ Safety argument:
 - Any unexpected block-level error wipes the local decoded staging buffer and
   rebases the error index to the original input. Tail fallback errors are also
   rebased to the original input offset.
-- Unsupported alphabets, short inputs, tails, wrapped decode, legacy decode,
-  in-place decode, CT secret decode, and `no_std` stay scalar. Wasm decode is
-  admitted only through its separate narrow `simd128` profile.
+- Unsupported alphabets, short inputs, tails, legacy decode, in-place decode,
+  CT secret decode, and `no_std` stay scalar. Wrapped decode may enter this
+  strict backend only after scalar line-profile validation and line-ending
+  compaction. Wasm decode is admitted only through its separate narrow
+  `simd128` profile.
 
 ### `decode_16_bytes_ssse3_sse41`
 
@@ -1030,9 +1032,11 @@ Safety argument:
 - Any unexpected block-level error wipes the local decoded staging buffer and
   rebases the error index to the original input. Tail fallback errors are also
   rebased to the original input offset.
-- Unsupported alphabets, short inputs, tails, wrapped decode, legacy decode,
-  in-place decode, CT secret decode, `no_std`, and 32-bit ARM stay scalar.
-  Wasm decode is admitted only through its separate narrow `simd128` profile.
+- Unsupported alphabets, short inputs, tails, legacy decode, in-place decode,
+  CT secret decode, `no_std`, and 32-bit ARM stay scalar. Wrapped decode may
+  enter this strict backend only after scalar line-profile validation and
+  line-ending compaction. Wasm decode is admitted only through its separate
+  narrow `simd128` profile.
 
 ### `decode_16_bytes_neon`
 
@@ -1372,9 +1376,12 @@ Future SIMD dispatch work must also complete
 
 The admission bar applies equally to AVX2, AVX-512, SSSE3/SSE4.1, NEON, wasm
 `simd128`, and any other future vector backend.
-For custom alphabets, wrapped, legacy whitespace, in-place, and other
-non-standard surfaces, the current scalar/fallback posture is also pinned in
+For custom alphabets, legacy whitespace, in-place, and other non-standard
+surfaces, the current scalar/fallback posture is also pinned in
 [SIMD_NON_STANDARD_SURFACE_REVIEW.md](SIMD_NON_STANDARD_SURFACE_REVIEW.md).
+Wrapped decode may enter the admitted strict decode backend only after scalar
+line-profile validation and line-ending compaction; those line-handling stages
+remain scalar.
 
 Any admitted SIMD path that processes caller data must also document its
 register-retention cleanup strategy and include the matching explicit register

@@ -176,8 +176,8 @@ pub(crate) use scalar::{
     validate_tail_unpadded,
 };
 pub(crate) use wrap::{
-    compact_wrapped_input, decode_legacy_to_slice, decode_wrapped_to_slice, is_legacy_whitespace,
-    validate_legacy_decode, validate_wrapped_decode, write_wrapped_byte, write_wrapped_bytes,
+    compact_wrapped_input, decode_legacy_to_slice, is_legacy_whitespace, validate_legacy_decode,
+    validate_wrapped_decode, write_wrapped_byte, write_wrapped_bytes,
 };
 
 #[cfg(feature = "simd")]

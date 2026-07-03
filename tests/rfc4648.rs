@@ -1641,6 +1641,35 @@ fn decode_slice_wrapped_clear_tail_scrubs_output() {
 }
 
 #[test]
+fn decode_slice_wrapped_handles_large_chunked_staging() {
+    let wrap = LineWrap::new(64, LineEnding::Lf);
+    let mut input = [0u8; 1537];
+    for (index, byte) in input.iter_mut().enumerate() {
+        *byte = ((index * 17 + 31) % 251) as u8;
+    }
+
+    let mut wrapped = [0u8; 2300];
+    let wrapped_len = STANDARD
+        .encode_slice_wrapped(&input, &mut wrapped, wrap)
+        .unwrap();
+
+    let mut output = [0xff; 1600];
+    let written = STANDARD
+        .decode_slice_wrapped(&wrapped[..wrapped_len], &mut output, wrap)
+        .unwrap();
+    assert_eq!(written, input.len());
+    assert_eq!(&output[..written], input);
+
+    let mut clear_tail_output = [0xff; 1600];
+    let written = STANDARD
+        .decode_slice_wrapped_clear_tail(&wrapped[..wrapped_len], &mut clear_tail_output, wrap)
+        .unwrap();
+    assert_eq!(written, input.len());
+    assert_eq!(&clear_tail_output[..written], input);
+    assert!(clear_tail_output[written..].iter().all(|byte| *byte == 0));
+}
+
+#[test]
 fn decode_wrapped_buffer_uses_stack_backed_output() {
     let wrap = LineWrap::new(4, LineEnding::Lf);
     let decoded = STANDARD

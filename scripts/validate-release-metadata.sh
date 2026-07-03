@@ -213,7 +213,8 @@ for required_trust_text in \
 	"Active backend | Scalar by default; std x86/x86_64 AVX-512 VBMI encode preferred, then AVX2, then SSSE3/SSE4.1 encode, plus little-endian std aarch64 NEON encode" \
 	"no formal cryptographic constant-time guarantee" \
 	"formally verified cryptographic constant-time behavior" \
-	"custom-alphabet, in-place, wrapped, legacy, CT secret, broader wasm/browser" \
+	"Wrapped decode may enter the admitted strict decode backend only after scalar line-profile validation" \
+	"custom-alphabet, in-place, legacy, CT secret, broader wasm/browser" \
 	"async/Tokio support" \
     "serde or bytes integration"
 do

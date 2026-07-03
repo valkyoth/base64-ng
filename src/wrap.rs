@@ -278,53 +278,6 @@ pub(crate) fn validate_wrapped_decode<A: Alphabet, const PAD: bool>(
     Ok(required + decoded_capacity(chunk_len))
 }
 
-pub(crate) fn decode_wrapped_to_slice<A: Alphabet, const PAD: bool>(
-    input: &[u8],
-    output: &mut [u8],
-    wrap: LineWrap,
-) -> Result<usize, DecodeError> {
-    let mut bytes = WrappedBytes::new(input, wrap)?;
-    let mut chunk = [0u8; 4];
-    let mut indexes = [0usize; 4];
-    let mut chunk_len = 0;
-    let mut write = 0;
-    let mut terminal_seen = false;
-
-    while let Some((index, byte)) = bytes.next_byte()? {
-        if terminal_seen {
-            return Err(DecodeError::InvalidPadding { index });
-        }
-
-        chunk[chunk_len] = byte;
-        indexes[chunk_len] = index;
-        chunk_len += 1;
-
-        if chunk_len == 4 {
-            let available = output.len();
-            let output_tail = output.get_mut(write..).ok_or(DecodeError::OutputTooSmall {
-                required: write,
-                available,
-            })?;
-            let written = decode_chunk::<A, PAD>(chunk, output_tail)
-                .map_err(|err| map_chunk_error(err, &indexes))?;
-            write += written;
-            terminal_seen = written < 3;
-            chunk_len = 0;
-        }
-    }
-
-    if chunk_len == 0 {
-        return Ok(write);
-    }
-    if PAD {
-        return Err(DecodeError::InvalidLength);
-    }
-
-    decode_tail_unpadded::<A>(&chunk[..chunk_len], &mut output[write..])
-        .map_err(|err| map_partial_chunk_error(err, &indexes, chunk_len))
-        .map(|n| write + n)
-}
-
 pub(crate) fn compact_wrapped_input(
     buffer: &mut [u8],
     wrap: LineWrap,

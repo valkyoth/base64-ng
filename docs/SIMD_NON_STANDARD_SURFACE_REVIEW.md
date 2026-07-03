@@ -1,13 +1,17 @@
 # SIMD Non-Standard Surface Review
 
-This file tracks the `1.3.2` review scope. It is an admission ledger, not an
+This file started as the `1.3.2` review scope and now tracks incremental
+non-standard surface admissions. It is an admission ledger, not a broad
 acceleration announcement. A surface listed here remains scalar unless this
 file, [SIMD_ADMISSION.md](SIMD_ADMISSION.md), generated evidence, benchmarks,
 unsafe inventory, and release notes all move together.
 
 ## Current Decision
 
-No new non-standard SIMD acceleration is admitted yet.
+Wrapped encode staging and wrapped decode's compacted strict decode stage are
+admitted to use the existing Standard/URL-safe strict backend boundaries.
+Line-ending insertion, line-profile validation, and line-ending compaction
+remain scalar.
 
 The current `1.3.2` checkpoint adds regression evidence that these surfaces
 preserve scalar-visible behavior while staying outside the active accelerated
@@ -17,7 +21,7 @@ scope:
 - bcrypt-style and `crypt(3)`-style alphabet encode and decode
 - strict in-place decode
 - legacy-whitespace decode
-- strict wrapped decode
+- strict wrapped decode's compacted strict decode stage
 - wrapped encode staging
 
 The checked test evidence currently includes:
@@ -46,8 +50,8 @@ The checked test evidence currently includes:
 | Custom alphabet encode | scalar fallback | fixed-block scalar equivalence for arbitrary alphabets, malformed alphabet rejection, output-size parity, fuzz evidence, benchmark evidence, and proof that any table lookup or SIMD shuffle does not introduce unsupported timing claims |
 | Custom alphabet decode | scalar fallback | full error-shape parity, canonicality parity, invalid-byte offset parity, fuzz evidence, benchmark evidence, and a decision on whether a vector lookup can support arbitrary alphabets without secret-indexed timing claims |
 | Bcrypt and `crypt(3)` profiles | scalar fallback | separate profile evidence for alphabet order, no-padding behavior, malformed input, canonicality, and benchmark value |
-| MIME/PEM wrapped encode | partially staged through admitted unwrapped encode | line-ending insertion remains scalar; admission requires wrapped output parity, staging-retention review, clear-tail parity, and benchmark evidence showing wrapping overhead does not hide the SIMD benefit |
-| MIME/PEM wrapped decode | scalar fallback | line-profile validation parity, compacted-input parity, absolute error-index parity, clear-tail behavior, fuzz evidence, and benchmark evidence |
+| MIME/PEM wrapped encode | admitted for unwrapped staging only | line-ending insertion remains scalar; future broader admission requires benchmark evidence showing wrapping overhead does not hide the SIMD benefit |
+| MIME/PEM wrapped decode | admitted for compacted strict decode only | line-profile validation and compaction remain scalar; future broader admission requires line-profile vectorization evidence, absolute error-index parity, fuzz evidence, and benchmark evidence |
 | Legacy-whitespace decode | scalar fallback | whitespace compaction parity, original-index error reporting, post-padding rejection, fuzz evidence, and benchmark evidence |
 | In-place encode | scalar fallback | overlap proof, backwards-write proof, clear-tail parity, malformed length parity, Miri/Kani evidence where applicable, and benchmark evidence |
 | In-place decode | scalar fallback | prevalidation proof, overlap proof, failed-buffer-state policy, clear-tail parity, fuzz evidence, and benchmark evidence |
@@ -57,8 +61,11 @@ The checked test evidence currently includes:
 
 - `Engine::decode_slice_legacy` validates with `validate_legacy_decode` and
   decodes through `decode_legacy_to_slice`.
-- `Engine::decode_slice_wrapped` validates with `validate_wrapped_decode` and
-  decodes through `decode_wrapped_to_slice`.
+- `Engine::decode_slice_wrapped` validates with `validate_wrapped_decode`,
+  compacts line endings into fixed-size scratch chunks, and decodes those
+  strict chunks through `Engine::decode_slice` so admitted strict decode
+  backends may run.
+  Evidence phrase: decodes those strict chunks through `Engine::decode_slice`.
 - `Engine::encode_slice_wrapped` may use admitted unwrapped encode for its
   temporary Base64 staging step, but line-ending insertion remains scalar via
   `write_wrapped_byte` or `write_wrapped_bytes`.

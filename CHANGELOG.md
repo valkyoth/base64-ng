@@ -26,6 +26,10 @@
   `decode_slice`, `decode_slice_clear_tail`, stack-buffer, vec, and secret
   helpers match scalar error shapes and that clear-tail buffers are wiped on
   rejected input.
+- Routed strict wrapped decode through the admitted strict decode backend after
+  scalar line-profile validation and fixed-size line-ending compaction, so
+  MIME/PEM-style wrapped input can use the same accelerated Standard/URL-safe
+  decode blocks while line handling remains scalar.
 - Added `scripts/generate_wasm_simd_evidence.sh` and wired it into the local
   release checks so installed wasm targets emit release test-harness LLVM IR
   with `target-feature=+simd128` and checked vector-codegen markers.

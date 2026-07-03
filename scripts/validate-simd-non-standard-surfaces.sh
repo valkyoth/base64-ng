@@ -8,7 +8,7 @@ plan="docs/PLAN.md"
 test -s "$review"
 
 for required_text in \
-    "No new non-standard SIMD acceleration is admitted yet." \
+    "Wrapped encode staging and wrapped decode's compacted strict decode stage are" \
     "custom alphabet encode and decode" \
     "bcrypt-style and \`crypt(3)\`-style alphabet encode and decode" \
     "strict in-place decode" \
@@ -24,8 +24,8 @@ for required_text in \
     "| Custom alphabet encode | scalar fallback |" \
     "| Custom alphabet decode | scalar fallback |" \
     "| Bcrypt and \`crypt(3)\` profiles | scalar fallback |" \
-    "| MIME/PEM wrapped encode | partially staged through admitted unwrapped encode |" \
-    "| MIME/PEM wrapped decode | scalar fallback |" \
+    "| MIME/PEM wrapped encode | admitted for unwrapped staging only |" \
+    "| MIME/PEM wrapped decode | admitted for compacted strict decode only |" \
     "| Legacy-whitespace decode | scalar fallback |" \
     "| In-place encode | scalar fallback |" \
     "| In-place decode | scalar fallback |" \
@@ -33,7 +33,7 @@ for required_text in \
     "Engine::decode_slice_legacy" \
     "decode_legacy_to_slice" \
     "Engine::decode_slice_wrapped" \
-    "decode_wrapped_to_slice" \
+    "decodes those strict chunks through \`Engine::decode_slice\`" \
     "Engine::encode_slice_wrapped" \
     "write_wrapped_byte" \
     "write_wrapped_bytes" \
@@ -58,8 +58,13 @@ if ! grep -F -q "decode_legacy_to_slice::<A, PAD>(input, output)" src/engine/dec
     exit 1
 fi
 
-if ! grep -F -q "decode_wrapped_to_slice::<A, PAD>(input, output, wrap)" src/engine/decode.rs; then
-    echo "simd non-standard surfaces: wrapped decode must route through decode_wrapped_to_slice" >&2
+if ! grep -F -q "decode_wrapped_via_strict_backend(input, output, wrap)" src/engine/decode.rs; then
+    echo "simd non-standard surfaces: wrapped decode must route through compacted strict backend staging" >&2
+    exit 1
+fi
+
+if ! grep -F -q "decode_backend::decode_slice::<A, PAD>" src/engine/decode.rs; then
+    echo "simd non-standard surfaces: wrapped decode staging must enter strict decode backend" >&2
     exit 1
 fi
 

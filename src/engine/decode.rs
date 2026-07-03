@@ -4,8 +4,7 @@ use crate::SecretBuffer;
 use crate::validate_decode;
 use crate::{
     Alphabet, DecodeError, DecodedBuffer, Engine, LineWrap, decode_backend, decode_legacy_to_slice,
-    decode_wrapped_to_slice, validate_legacy_decode, validate_wrapped_decode, wipe_bytes,
-    wipe_tail,
+    validate_legacy_decode, validate_wrapped_decode, wipe_bytes, wipe_tail,
 };
 
 impl<A, const PAD: bool> Engine<A, PAD>
@@ -214,7 +213,7 @@ where
                 available: output.len(),
             });
         }
-        decode_wrapped_to_slice::<A, PAD>(input, output, wrap)
+        Self::decode_wrapped_via_strict_backend(input, output, wrap)
     }
 
     /// Decodes `input` using a strict line-wrapped profile and clears all bytes
@@ -357,5 +356,62 @@ where
     ) -> Result<SecretBuffer, DecodeError> {
         self.decode_wrapped_vec(input, wrap)
             .map(SecretBuffer::from_vec)
+    }
+
+    fn decode_wrapped_via_strict_backend(
+        input: &[u8],
+        output: &mut [u8],
+        wrap: LineWrap,
+    ) -> Result<usize, DecodeError> {
+        let line_ending = wrap.line_ending.as_bytes();
+        let mut scratch = [0u8; 1024];
+        let mut scratch_len = 0;
+        let mut read = 0;
+        let mut write = 0;
+
+        while read < input.len() {
+            let line_end = read
+                .checked_add(line_ending.len())
+                .filter(|end| *end <= input.len());
+            if line_end.and_then(|end| input.get(read..end)) == Some(line_ending) {
+                read += line_ending.len();
+                continue;
+            }
+
+            scratch[scratch_len] = input[read];
+            scratch_len += 1;
+            read += 1;
+
+            if scratch_len == scratch.len() {
+                let written =
+                    match decode_backend::decode_slice::<A, PAD>(&scratch, &mut output[write..]) {
+                        Ok(written) => written,
+                        Err(err) => {
+                            wipe_bytes(&mut scratch);
+                            return Err(err);
+                        }
+                    };
+                wipe_bytes(&mut scratch);
+                scratch_len = 0;
+                write += written;
+            }
+        }
+
+        if scratch_len == 0 {
+            return Ok(write);
+        }
+
+        let written = match decode_backend::decode_slice::<A, PAD>(
+            &scratch[..scratch_len],
+            &mut output[write..],
+        ) {
+            Ok(written) => written,
+            Err(err) => {
+                wipe_bytes(&mut scratch[..scratch_len]);
+                return Err(err);
+            }
+        };
+        wipe_bytes(&mut scratch[..scratch_len]);
+        Ok(write + written)
     }
 }
