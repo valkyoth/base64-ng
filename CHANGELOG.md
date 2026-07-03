@@ -36,6 +36,10 @@
 - Routed Standard and URL-safe in-place encode through stack staging before
   admitted encode backend use, preserving output-overlap safety by copying
   unread input into fixed scratch buffers before writing encoded output.
+- Routed Standard and URL-safe strict in-place decode through stack staging
+  before admitted strict decode backend use, preserving overlap safety by
+  copying encoded chunks into fixed scratch buffers before writing decoded
+  bytes behind the unread input cursor.
 - Added `scripts/generate_wasm_simd_evidence.sh` and wired it into the local
   release checks so installed wasm targets emit release test-harness LLVM IR
   with `target-feature=+simd128` and checked vector-codegen markers.

@@ -1,8 +1,10 @@
 use crate::{
-    Alphabet, DecodeError, Engine, LineWrap, compact_wrapped_input, decode_chunk,
-    decode_tail_unpadded, is_legacy_whitespace, read_quad, validate_decode, validate_legacy_decode,
-    validate_wrapped_decode, wipe_bytes, wipe_tail,
+    Alphabet, DecodeError, Engine, LineWrap, compact_wrapped_input, decode_backend,
+    is_legacy_whitespace, validate_decode, validate_legacy_decode, validate_wrapped_decode,
+    wipe_bytes, wipe_tail,
 };
+
+const IN_PLACE_DECODE_INPUT_CHUNK: usize = 1024;
 
 impl<A, const PAD: bool> Engine<A, PAD>
 where
@@ -111,13 +113,16 @@ where
     ///
     /// # Security
     ///
-    /// This default scalar decoder prioritizes strict validation, exact error
+    /// This default strict decoder prioritizes validation, exact error
     /// reporting, and ordinary throughput. It may branch or return early based
     /// on malformed input and reports exact failure positions and invalid byte
-    /// values through [`DecodeError`]. Do not use this method for token
-    /// comparison, key-material decoding, or secret-bearing validation where
-    /// malformed-input timing matters. Do not log strict decode errors
-    /// verbatim for secret-bearing input; log [`DecodeError::kind`] instead.
+    /// values through [`DecodeError`]. For admitted Standard and URL-safe
+    /// runtime profiles, successful decode may use stack staging before the
+    /// strict decode backend writes behind the unread input cursor. Do not use
+    /// this method for token comparison, key-material decoding, or
+    /// secret-bearing validation where malformed-input timing matters. Do not
+    /// log strict decode errors verbatim for secret-bearing input; log
+    /// [`DecodeError::kind`] instead.
     ///
     /// # Examples
     ///
@@ -229,40 +234,45 @@ where
     fn decode_slice_to_start(buffer: &mut [u8]) -> Result<usize, DecodeError> {
         let _required = validate_decode::<A, PAD>(buffer)?;
         let input_len = buffer.len();
+        let mut scratch = [0u8; IN_PLACE_DECODE_INPUT_CHUNK];
         let mut read = 0;
         let mut write = 0;
-        while read + 4 <= input_len {
-            let chunk = read_quad(buffer, read)?;
-            let available = buffer.len();
-            let output_tail = buffer.get_mut(write..).ok_or(DecodeError::OutputTooSmall {
-                required: write,
-                available,
-            })?;
-            let written = decode_chunk::<A, PAD>(chunk, output_tail)
-                .map_err(|err| err.with_index_offset(read))?;
-            read += 4;
-            write += written;
-            if written < 3 {
-                if read != input_len {
-                    return Err(DecodeError::InvalidPadding { index: read - 4 });
+
+        while read < input_len {
+            let chunk_len = in_place_decode_chunk_len(input_len - read);
+            scratch[..chunk_len].copy_from_slice(&buffer[read..read + chunk_len]);
+
+            let written = match decode_backend::decode_slice::<A, PAD>(
+                &scratch[..chunk_len],
+                &mut buffer[write..],
+            ) {
+                Ok(written) => written,
+                Err(err) => {
+                    wipe_bytes(&mut scratch[..chunk_len]);
+                    return Err(err.with_index_offset(read));
                 }
-                return Ok(write);
+            };
+            wipe_bytes(&mut scratch[..chunk_len]);
+
+            read += chunk_len;
+            write += written;
+            if written < decoded_chunk_max(chunk_len) {
+                break;
             }
         }
 
-        let rem = input_len - read;
-        if rem == 0 {
-            return Ok(write);
-        }
-        if PAD {
-            return Err(DecodeError::InvalidLength);
-        }
-        let mut tail = [0u8; 3];
-        tail[..rem].copy_from_slice(&buffer[read..input_len]);
-        let result = decode_tail_unpadded::<A>(&tail[..rem], &mut buffer[write..])
-            .map_err(|err| err.with_index_offset(read))
-            .map(|n| write + n);
-        wipe_bytes(&mut tail);
-        result
+        Ok(write)
     }
+}
+
+const fn in_place_decode_chunk_len(remaining: usize) -> usize {
+    if remaining <= IN_PLACE_DECODE_INPUT_CHUNK {
+        remaining
+    } else {
+        IN_PLACE_DECODE_INPUT_CHUNK
+    }
+}
+
+const fn decoded_chunk_max(chunk_len: usize) -> usize {
+    (chunk_len / 4) * 3
 }

@@ -214,7 +214,8 @@ for required_trust_text in \
 	"no formal cryptographic constant-time guarantee" \
 	"formally verified cryptographic constant-time behavior" \
 	"Wrapped and legacy decode may enter the admitted strict decode backend only after scalar line-profile validation" \
-	"custom-alphabet, in-place, CT secret, broader wasm/browser" \
+	"Strict in-place encode and decode may enter admitted backends only after stack staging" \
+	"custom-alphabet, CT secret, broader wasm/browser" \
 	"async/Tokio support" \
     "serde or bytes integration"
 do

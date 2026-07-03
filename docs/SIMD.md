@@ -87,8 +87,9 @@ Standard and URL-safe decode only, padded and unpadded, through the normal
 strict decode backend boundary. Wrapped decode may use admitted strict decode
 after scalar line-profile validation and line-ending compaction. Legacy
 whitespace decode may use the admitted strict decode boundary after scalar
-whitespace compaction. Custom alphabets, bcrypt-style and `crypt(3)` profiles,
-in-place decode, `no_std` SIMD dispatch, broader wasm/browser runtime
+whitespace compaction. Strict in-place decode may use admitted strict decode
+backends only after stack staging. Custom alphabets, bcrypt-style and
+`crypt(3)` profiles, `no_std` SIMD dispatch, broader wasm/browser runtime
 dispatch, and the `base64_ng::ct` constant-time-oriented secret decode path
 remain scalar unless separately admitted with their own evidence package.
 
@@ -141,8 +142,9 @@ runtime behavior for that line.
   decoded by scalar code. Wrapped decode may use admitted strict decode after
   scalar line-profile validation and line-ending compaction. Legacy whitespace
   decode may use the admitted strict decode boundary after scalar whitespace
-  compaction. In-place decode, CT secret decode, custom alphabets, and
-  big-endian AArch64 remain scalar.
+  compaction. Strict in-place decode may use admitted strict decode backends
+  only after stack staging. CT secret decode, custom alphabets, and big-endian
+  AArch64 remain scalar.
 - AVX-512 VBMI encode is admitted for std `x86`/`x86_64` Standard and URL-safe
   alphabet families. It uses AVX-512 lane-local byte shuffling, vector
   shifts/masks, and VBMI byte permutes over the alphabet table for fixed
@@ -341,7 +343,8 @@ execution evidence.
 ## Required Before SIMD Code Lands
 
 Any broader wasm `simd128` runtime/browser profile, additional decode backend,
-custom alphabet, in-place, or additional runtime-dispatch implementation must include the surface ledger in
+custom alphabet, in-place extension, or additional runtime-dispatch
+implementation must include the surface ledger in
 [SIMD_NON_STANDARD_SURFACE_REVIEW.md](SIMD_NON_STANDARD_SURFACE_REVIEW.md) and
 must include:
 

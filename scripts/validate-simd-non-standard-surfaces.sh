@@ -11,7 +11,7 @@ for required_text in \
     "Wrapped encode staging and wrapped decode's compacted strict decode stage are" \
     "custom alphabet encode and decode" \
     "bcrypt-style and \`crypt(3)\`-style alphabet encode and decode" \
-    "strict in-place decode" \
+    "strict in-place decode through stack staging" \
     "in-place encode through stack staging" \
     "legacy-whitespace decode's compacted strict decode stage" \
     "strict wrapped decode" \
@@ -29,7 +29,7 @@ for required_text in \
     "| MIME/PEM wrapped decode | admitted for compacted strict decode only |" \
     "| Legacy-whitespace decode | admitted for compacted strict decode only |" \
     "| In-place encode | admitted for stack-staged Standard/URL-safe encode only |" \
-    "| In-place decode | scalar fallback |" \
+    "| In-place decode | admitted for stack-staged Standard/URL-safe strict decode only |" \
     "| Constant-time-oriented secret decode | scalar only |" \
     "Engine::decode_slice_legacy" \
     "legacy decode compacts into strict chunks" \
@@ -39,6 +39,7 @@ for required_text in \
     "write_wrapped_byte" \
     "write_wrapped_bytes" \
     "in-place encode uses stack staging" \
+    "in-place decode uses stack staging" \
     "Do not broaden public SIMD claims"
 do
     if ! grep -F -q "$required_text" "$review"; then
@@ -100,6 +101,16 @@ if ! grep -F -q "input_scratch[..chunk_len].copy_from_slice" src/encode_backend.
     exit 1
 fi
 
+if ! grep -F -q "decode_backend::decode_slice::<A, PAD>" src/engine/decode_in_place.rs; then
+    echo "simd non-standard surfaces: in-place decode must route staged chunks through strict decode backend" >&2
+    exit 1
+fi
+
+if ! grep -F -q "scratch[..chunk_len].copy_from_slice" src/engine/decode_in_place.rs; then
+    echo "simd non-standard surfaces: in-place decode must copy encoded input into scratch before backend decode" >&2
+    exit 1
+fi
+
 for required_test_text in \
     "fn non_standard_simd_candidate_surfaces_preserve_scalar_behavior()" \
     "fn non_standard_simd_candidate_error_surfaces_preserve_scalar_behavior()" \
@@ -117,5 +128,10 @@ do
         exit 1
     fi
 done
+
+if ! grep -F -q "fn decode_in_place_handles_large_chunked_staging()" tests/rfc4648.rs; then
+    echo "simd non-standard surfaces: missing chunked in-place decode regression evidence" >&2
+    exit 1
+fi
 
 echo "simd non-standard surfaces: ok"

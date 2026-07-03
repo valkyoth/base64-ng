@@ -15,6 +15,8 @@ The admitted runtime profile is intentionally narrow:
 - normal encode through the public encode boundary
 - in-place encode only through stack staging before the public encode boundary
 - normal strict decode through the public strict decode boundary
+- strict in-place decode only through stack staging before the public strict
+  decode boundary
 - strict wrapped decode may enter the public strict decode boundary after
   scalar line-profile validation and line-ending compaction
 - legacy whitespace decode may enter the public strict decode boundary after
@@ -22,7 +24,7 @@ The admitted runtime profile is intentionally narrow:
 - full fixed blocks use `simd128`; tails and unsupported surfaces use scalar
 - no vectorized line-profile validation, line-ending compaction, or
   legacy-whitespace compaction; no custom alphabets, bcrypt-style profiles,
-  in-place decode, or `ct` secret decode
+  or `ct` secret decode
 - runtime smoke evidence is required for Node/V8, Wasmtime, at least one
   Chromium-family browser, Firefox/SpiderMonkey, and Safari/WebKit
 

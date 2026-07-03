@@ -15,8 +15,9 @@
 //! decode are admitted for the documented wasm runtime profile. Wrapped decode
 //! may enter admitted strict decode only after scalar line-profile validation
 //! and line-ending compaction. Legacy whitespace decode may enter admitted
-//! strict decode only after scalar whitespace compaction. Custom alphabets,
-//! `no_std` builds, big-endian `AArch64`, in-place decode, CT secret decode,
+//! strict decode only after scalar whitespace compaction. Strict in-place
+//! encode and decode may enter admitted backends only after stack staging.
+//! Custom alphabets, `no_std` builds, big-endian `AArch64`, CT secret decode,
 //! and every other SIMD candidate still execute through the scalar
 //! implementation.
 //!

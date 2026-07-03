@@ -722,11 +722,12 @@ Safety argument:
 - Any unexpected block-level error wipes the local decoded staging buffer and
   rebases the error index to the original input. Tail fallback errors are also
   rebased to the original input offset.
-- Unsupported alphabets, short inputs, tails, in-place decode, CT secret
-  decode, and `no_std` stay scalar. Wrapped and legacy decode may enter this
-  strict backend only after scalar line-profile validation, line-ending
-  compaction, or legacy-whitespace compaction. Wasm decode is admitted only
-  through its separate narrow `simd128` profile.
+- Unsupported alphabets, short inputs, tails, CT secret decode, and `no_std`
+  stay scalar. Strict in-place decode may enter this backend only after
+  whole-input scalar validation and stack staging. Wrapped and legacy decode
+  may enter this strict backend only after scalar line-profile validation,
+  line-ending compaction, or legacy-whitespace compaction. Wasm decode is
+  admitted only through its separate narrow `simd128` profile.
 
 ### `decode_16_bytes_ssse3_sse41`
 
@@ -1035,11 +1036,12 @@ Safety argument:
 - Any unexpected block-level error wipes the local decoded staging buffer and
   rebases the error index to the original input. Tail fallback errors are also
   rebased to the original input offset.
-- Unsupported alphabets, short inputs, tails, in-place decode, CT secret
-  decode, `no_std`, and 32-bit ARM stay scalar. Wrapped and legacy decode may
-  enter this strict backend only after scalar line-profile validation,
-  line-ending compaction, or legacy-whitespace compaction. Wasm decode is
-  admitted only through its separate narrow `simd128` profile.
+- Unsupported alphabets, short inputs, tails, CT secret decode, `no_std`, and
+  32-bit ARM stay scalar. Strict in-place decode may enter this backend only
+  after whole-input scalar validation and stack staging. Wrapped and legacy
+  decode may enter this strict backend only after scalar line-profile
+  validation, line-ending compaction, or legacy-whitespace compaction. Wasm
+  decode is admitted only through its separate narrow `simd128` profile.
 
 ### `decode_16_bytes_neon`
 
@@ -1379,8 +1381,8 @@ Future SIMD dispatch work must also complete
 
 The admission bar applies equally to AVX2, AVX-512, SSSE3/SSE4.1, NEON, wasm
 `simd128`, and any other future vector backend.
-For custom alphabets, in-place, and other non-standard surfaces, the current
-scalar/fallback posture is also pinned in
+For custom alphabets, in-place extensions, and other non-standard surfaces, the
+current scalar/fallback or staged-admission posture is also pinned in
 [SIMD_NON_STANDARD_SURFACE_REVIEW.md](SIMD_NON_STANDARD_SURFACE_REVIEW.md).
 Wrapped and legacy decode may enter the admitted strict decode backend only
 after scalar line-profile validation, line-ending compaction, or

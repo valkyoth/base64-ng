@@ -10,9 +10,10 @@ sets.
 The `1.3.3` release keeps the workspace crate family synchronized. The main
 crate carries the narrow wasm `simd128` runtime-dispatch admission, Node/V8,
 Wasmtime, Chromium-family browser, Firefox/SpiderMonkey, and Safari/WebKit
-smoke evidence, release-gated wasm codegen evidence, and wrapped-profile helper ergonomics. Companion crates
-receive synchronized package metadata so downstream users see one coherent
-crate-family version.
+smoke evidence, release-gated wasm codegen evidence, wrapped-profile helper
+ergonomics, wrapped/legacy decode staging, and stack-staged in-place
+encode/decode admission. Companion crates receive synchronized package
+metadata so downstream users see one coherent crate-family version.
 
 | Crate | Version | Publish In 1.3.3 | Cargo |
 | --- | --- | --- | --- |

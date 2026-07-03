@@ -367,8 +367,7 @@ Stable boundary:
   in `docs/WASM_SIMD128_RUNTIME_REVIEW.md`.
 - Non-standard surfaces remain intentionally scalar unless a later admission
   package covers them: custom alphabets, bcrypt-style and `crypt(3)` profiles,
-  in-place decode, `ct` secret decode, broader wasm/browser claims,
-  big-endian AArch64, and `no_std` dispatch. Wrapped and legacy decode are
-  admitted only for the compacted strict decode stage after scalar
-  line-profile validation, line-ending compaction, or legacy-whitespace
-  compaction.
+  `ct` secret decode, broader wasm/browser claims, big-endian AArch64, and
+  `no_std` dispatch. Wrapped, legacy, and strict in-place decode are admitted
+  only after scalar validation and staging; line-profile validation,
+  line-ending compaction, and legacy-whitespace compaction remain scalar.

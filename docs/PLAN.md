@@ -1072,13 +1072,17 @@ inside the `1.3.x` line if they remain evidence-gated and do not weaken the
   admitted encode backend use. The staging step must copy unread input into
   fixed scratch buffers before writing encoded output so overlap safety stays
   independent from the backend implementation.
+- Admit Standard and URL-safe strict in-place decode through stack staging
+  before admitted strict decode backend use. The staging step must copy encoded
+  input chunks into fixed scratch buffers before writing decoded bytes behind
+  the unread input cursor.
 - Document JIT, runtime, timing, and zeroization caveats without implying
   hardware-like guarantees.
-- Keep broader wasm/browser profiles, custom alphabets, in-place decode, and
-  CT secret decode scalar until separate evidence admits them. Wrapped and
-  legacy decode may use the admitted strict decode backend only after scalar
-  line-profile validation, line-ending compaction, or legacy-whitespace
-  compaction.
+- Keep broader wasm/browser profiles, custom alphabets, and CT secret decode
+  scalar until separate evidence admits them. Wrapped, legacy, and strict
+  in-place decode may use the admitted strict decode backend only after scalar
+  validation and staging; line-profile validation, line-ending compaction, and
+  legacy-whitespace compaction remain scalar.
 
 `1.3.4`: big-endian and niche-architecture acceleration review.
 

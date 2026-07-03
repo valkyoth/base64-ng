@@ -2060,6 +2060,45 @@ fn decode_in_place_clear_tail_scrubs_unused_bytes() {
 }
 
 #[test]
+fn decode_in_place_handles_large_chunked_staging() {
+    let mut input = vec![0u8; 2049];
+    for (index, byte) in input.iter_mut().enumerate() {
+        *byte = ((index * 29 + 7) % 251) as u8;
+    }
+
+    fn assert_large_chunked_staging<A, const PAD: bool>(engine: Engine<A, PAD>, input: &[u8])
+    where
+        A: Alphabet,
+    {
+        let encoded_len = engine.encoded_len(input.len()).unwrap();
+        let mut encoded = vec![0u8; encoded_len];
+        let written = engine.encode_slice(input, &mut encoded).unwrap();
+        encoded.truncate(written);
+
+        let mut in_place = encoded.clone();
+        let decoded = engine.decode_in_place(&mut in_place).unwrap();
+        assert_eq!(decoded, input);
+
+        let mut clear_tail = encoded;
+        clear_tail.extend_from_slice(&[0xee; 19]);
+        let len = {
+            let decoded = engine
+                .decode_in_place_clear_tail(&mut clear_tail[..written])
+                .unwrap();
+            assert_eq!(decoded, input);
+            decoded.len()
+        };
+        assert!(clear_tail[len..written].iter().all(|byte| *byte == 0));
+        assert!(clear_tail[written..].iter().all(|byte| *byte == 0xee));
+    }
+
+    assert_large_chunked_staging(STANDARD, &input);
+    assert_large_chunked_staging(STANDARD_NO_PAD, &input);
+    assert_large_chunked_staging(URL_SAFE, &input);
+    assert_large_chunked_staging(URL_SAFE_NO_PAD, &input);
+}
+
+#[test]
 fn decode_in_place_clear_tail_scrubs_buffer_on_error() {
     let mut invalid_byte = *b"Zm9v$g==";
     assert_eq!(

@@ -171,10 +171,9 @@ pub(crate) use length::{decoded_len_padded, decoded_len_unpadded};
 pub use profiles::{BCRYPT, CRYPT, MIME, PEM, PEM_CRLF, Profile};
 #[cfg(kani)]
 pub(crate) use scalar::decode_byte;
-pub(crate) use scalar::{
-    decode_chunk, decode_tail_unpadded, read_quad, validate_chunk, validate_decode,
-    validate_tail_unpadded,
-};
+#[cfg(test)]
+pub(crate) use scalar::decode_chunk;
+pub(crate) use scalar::{read_quad, validate_chunk, validate_decode, validate_tail_unpadded};
 pub(crate) use wrap::{
     compact_wrapped_input, is_legacy_whitespace, validate_legacy_decode, validate_wrapped_decode,
     write_wrapped_byte, write_wrapped_bytes,
