@@ -62,6 +62,7 @@ test -s security/pentest/README.md
 test -s docs/API_AUDIT.md
 test -s docs/ASYNC.md
 test -s docs/BENCHMARKS.md
+test -s docs/BIG_ENDIAN_QEMU_REVIEW.md
 test -s docs/CONSTANT_TIME.md
 test -s docs/CT_ASM_REVIEW.md
 test -s docs/DEPENDENCIES.md
@@ -105,6 +106,7 @@ for required_script in \
     "scripts/check_backend_evidence.sh" \
     "scripts/check_big_endian_qemu.sh" \
     "scripts/validate-api-audit.sh" \
+    "scripts/validate-big-endian-posture.sh" \
     "scripts/check_dudect.sh" \
     "scripts/check_fuzz.sh" \
     "scripts/check_fuzz_corpus.sh" \
@@ -305,6 +307,7 @@ done
 
 for required_checks_command in \
     "scripts/validate-api-audit.sh" \
+    "scripts/validate-big-endian-posture.sh" \
     "scripts/validate-msrv-policy.sh" \
     "scripts/validate-wasm-posture.sh" \
     "scripts/validate-simd-encode-admission-draft.sh" \
@@ -349,6 +352,7 @@ for required_package_file in \
     "docs/API_AUDIT.md" \
     "docs/ASYNC.md" \
     "docs/BENCHMARKS.md" \
+    "docs/BIG_ENDIAN_QEMU_REVIEW.md" \
     "docs/CONSTANT_TIME.md" \
     "docs/CT_ASM_REVIEW.md" \
     "docs/DEPENDENCIES.md" \
@@ -372,6 +376,7 @@ for required_package_file in \
     "scripts/check_backend_evidence.sh" \
     "scripts/check_big_endian_qemu.sh" \
     "scripts/validate-api-audit.sh" \
+    "scripts/validate-big-endian-posture.sh" \
     "scripts/check_dudect.sh" \
     "scripts/check_fuzz.sh" \
     "scripts/check_fuzz_corpus.sh" \
