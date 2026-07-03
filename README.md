@@ -605,13 +605,15 @@ assert!(!profile.is_wrapped());
 assert_eq!(ct_decoder.decoded_len(b"aGVsbG8=").unwrap(), 5);
 ```
 
-When wrapping policy comes from configuration, prefer checked construction:
+When wrapping policy comes from configuration, prefer checked construction.
+Use `Engine::checked_profile_with_wrap` when the profile should use the same
+engine and only the wrapping policy is dynamic:
 
 ```rust
-use base64_ng::{LineEnding, LineWrap, Profile, STANDARD};
+use base64_ng::{LineEnding, LineWrap, STANDARD};
 
 let wrap = LineWrap::checked_new(76, LineEnding::CrLf).unwrap();
-let profile = Profile::checked_new(STANDARD, Some(wrap)).unwrap();
+let profile = STANDARD.checked_profile_with_wrap(wrap).unwrap();
 
 assert!(profile.is_valid());
 assert!(profile.is_wrapped());
