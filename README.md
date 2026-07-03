@@ -29,13 +29,14 @@ The crate starts conservative: a small scalar implementation, strict RFC 4648 be
 
 ## Current Status
 
-The current public release is `1.3.2`.
+The current public release is `1.3.3`.
 
-`1.3.2` is a focused governance and evidence patch on top of the `1.3.0`
-implementation-completion release and the `1.3.1` Tokio writer patch. It keeps
-the conservative `1.2.x` encode acceleration posture and the admitted `1.3.0`
-normal strict SIMD decode scope for Standard and URL-safe alphabet families on
-std `x86`/`x86_64` AVX-512 VBMI, AVX2, SSSE3/SSE4.1, and little-endian std
+`1.3.3` is a focused wasm SIMD posture and profile-ergonomics patch on top of
+the `1.3.0` implementation-completion release, the `1.3.1` Tokio writer patch,
+and the `1.3.2` non-standard SIMD surface review. It keeps the conservative
+`1.2.x` encode acceleration posture and the admitted `1.3.0` normal strict
+SIMD decode scope for Standard and URL-safe alphabet families on std
+`x86`/`x86_64` AVX-512 VBMI, AVX2, SSSE3/SSE4.1, and little-endian std
 `aarch64` NEON after whole-input scalar validation.
 
 Encode acceleration remains active only for admitted Standard and URL-safe
@@ -44,9 +45,10 @@ decode. Wrapped decode, legacy whitespace decode, custom alphabets,
 bcrypt-style and `crypt(3)` profiles, in-place decode, `no_std`, wasm runtime
 dispatch, and constant-time-oriented secret decode remain scalar.
 
-The latest patch in this line is `1.3.2`, which adds checked documentation and
-test evidence for non-standard SIMD candidate surfaces without admitting new
-acceleration. The workspace crate family stays version-aligned at `1.3.2`.
+The latest patch in this line is `1.3.3`, which records that wasm `simd128`
+runtime dispatch remains unadmitted, adds release-gated wasm codegen evidence
+for the inactive prototype, and adds wrapped-profile helper ergonomics. The
+workspace crate family stays version-aligned at `1.3.3`.
 
 Implemented on this branch now:
 
@@ -155,7 +157,7 @@ The minimum supported Rust version is Rust `1.90.0`. New deployments should
 prefer the latest tested stable Rust; as of July 2, 2026, this project tests
 through Rust `1.96.1`.
 
-Compatibility evidence for the `1.3.2` workspace:
+Compatibility evidence for the `1.3.3` workspace:
 
 | Rust | Local Evidence |
 | --- | --- |
@@ -172,7 +174,7 @@ Compatibility evidence for the `1.3.2` workspace:
 
 ```toml
 [dependencies]
-base64-ng = "1.3.2"
+base64-ng = "1.3.3"
 ```
 
 The crate is dual-licensed:
@@ -233,8 +235,8 @@ decode directly into `sanitization::LockedSecretBytes` or
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.3.2", default-features = false }
-base64-ng-sanitization = { version = "1.3.2", default-features = false }
+base64-ng = { version = "1.3.3", default-features = false }
+base64-ng-sanitization = { version = "1.3.3", default-features = false }
 ```
 
 ```rust
@@ -253,7 +255,7 @@ assert!(secret.sanitization_verify(
 
 ```toml
 [dependencies]
-base64-ng-sanitization = { version = "1.3.2", features = ["high-assurance"] }
+base64-ng-sanitization = { version = "1.3.3", features = ["high-assurance"] }
 ```
 
 ```rust
@@ -272,8 +274,8 @@ newtypes around fixed byte arrays:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.3.2", default-features = false }
-base64-ng-derive = "1.3.2"
+base64-ng = { version = "1.3.3", default-features = false }
+base64-ng-derive = "1.3.3"
 ```
 
 ```rust
@@ -292,7 +294,7 @@ assert_eq!(key.encode_base64::<8>().unwrap().as_str(), "aGVsbG8=");
 
 ```toml
 [dependencies]
-base64-ng-serde = "1.3.2"
+base64-ng-serde = "1.3.3"
 serde = { version = "1.0.228", features = ["derive"] }
 ```
 
@@ -311,8 +313,8 @@ Field-level modules are available for `standard`, `standard_no_pad`,
 
 ```toml
 [dependencies]
-base64-ng = "1.3.2"
-base64-ng-bytes = "1.3.2"
+base64-ng = "1.3.3"
+base64-ng-bytes = "1.3.3"
 bytes = "1.12.0"
 ```
 
@@ -329,8 +331,8 @@ projects that already admit `subtle`:
 
 ```toml
 [dependencies]
-base64-ng = "1.3.2"
-base64-ng-subtle = "1.3.2"
+base64-ng = "1.3.3"
+base64-ng-subtle = "1.3.3"
 ```
 
 ```rust
@@ -348,8 +350,8 @@ controlled by a peer:
 
 ```toml
 [dependencies]
-base64-ng = "1.3.2"
-base64-ng-tokio = "1.3.2"
+base64-ng = "1.3.3"
+base64-ng-tokio = "1.3.3"
 tokio = { version = "1.52.3", features = ["io-util"] }
 ```
 
@@ -382,7 +384,7 @@ Disable defaults for embedded or freestanding use:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.3.2", default-features = false }
+base64-ng = { version = "1.3.3", default-features = false }
 ```
 
 Enable admitted encode acceleration on supported `std` targets with the
@@ -394,7 +396,7 @@ and URL-safe alphabets after whole-input scalar validation:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.3.2", features = ["simd"] }
+base64-ng = { version = "1.3.3", features = ["simd"] }
 ```
 
 ```rust

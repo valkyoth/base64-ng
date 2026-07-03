@@ -16,9 +16,9 @@ only for backends named in this file and the release gate.
 - Gate summary: Admitted backends: AVX-512 VBMI encode, AVX2 encode, SSSE3/SSE4.1 encode, NEON encode, AVX-512 VBMI strict decode, AVX2 strict decode, SSSE3/SSE4.1 strict decode, and NEON strict decode.
 - Gate priority: Active backend priority: AVX-512 VBMI, then AVX2, then SSSE3/SSE4.1 on x86/x86_64; NEON on little-endian aarch64.
 - Public performance claims: none without local benchmark evidence.
-- Release status: `1.3.2`; `1.2.0` admitted conservative active encode
+- Release status: `1.3.3`; `1.2.0` admitted conservative active encode
   dispatch, and `1.3.0` admitted normal strict decode dispatch for the first
-  narrow decode scope. `1.3.2` does not expand SIMD admission. Active encode
+  narrow decode scope. `1.3.3` does not expand SIMD admission. Active encode
   dispatch admits AVX-512 VBMI above AVX2
   above SSSE3/SSE4.1 on x86/x86_64 and NEON on little-endian aarch64 for
   Standard and URL-safe alphabet families. AVX-512 VBMI strict decode is
@@ -29,8 +29,10 @@ only for backends named in this file and the release gate.
   `aarch64` NEON covers full 16-byte encoded blocks. Custom alphabets,
   big-endian AArch64, in-place decode, wrapped decode, legacy decode, CT
   secret decode, `no_std`, and wasm `simd128` decode remain scalar or
-  prototype-only. Wrapped encode may use admitted fixed-block encode for its
-  unwrapped staging step; line-ending insertion remains scalar.
+  prototype-only. Wasm `simd128` runtime dispatch is explicitly unadmitted in
+  `1.3.3`; release evidence is compile/codegen-only. Wrapped encode may use
+  admitted fixed-block encode for its unwrapped staging step; line-ending
+  insertion remains scalar.
 
 The post-`1.3.2` non-standard surface review is tracked in
 [SIMD_NON_STANDARD_SURFACE_REVIEW.md](SIMD_NON_STANDARD_SURFACE_REVIEW.md).
