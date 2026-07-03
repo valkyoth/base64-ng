@@ -18,7 +18,7 @@ The admitted runtime profile is intentionally narrow:
 - no line-wrapped decode, legacy whitespace decode, custom alphabets,
   bcrypt-style profiles, in-place decode, or `ct` secret decode
 - runtime smoke evidence is required for Node/V8, Wasmtime, at least one
-  Chromium-family browser, and Firefox/SpiderMonkey
+  Chromium-family browser, Firefox/SpiderMonkey, and Safari/WebKit
 
 When compiled with `simd128`, active encode and decode backends are `wasm-simd128`
 on `wasm32`.
@@ -35,9 +35,9 @@ The admission is backed by:
   `WebAssembly.Module` instantiation.
 - `scripts/check_wasm_browser_firefox_dispatch.sh`, which executes the same
   smoke module in Firefox/SpiderMonkey through `geckodriver`.
-- `scripts/check_wasm_browser_safari_dispatch.sh`, which is an optional
-  operator-run WebDriver evidence script for Safari WebKit. This script is not
-  release-gated until its output is captured for a release candidate.
+- `scripts/check_wasm_browser_safari_dispatch.sh`, which executes the same
+  smoke module in Safari/WebKit through `safaridriver` when Safari remote
+  automation is enabled on macOS.
 - The smoke checks `runtime::backend_report()` and requires candidate, active
   encode, and active decode backend reporting to be `wasm-simd128`.
 - The smoke runs a deterministic length sweep from 0 through 200 bytes with
@@ -58,8 +58,8 @@ Wasm execution still includes a runtime or JIT layer outside the Rust compiler
 and outside this crate's control. This admission proves correctness and
 dispatch behavior for the named runtime smoke profile; it does not claim:
 
-- browser-wide behavior beyond the named Chromium-family and
-  Firefox/SpiderMonkey smoke runtimes
+- browser-wide behavior beyond the named Chromium-family, Firefox/SpiderMonkey,
+  and Safari/WebKit smoke runtimes
 - runtime/JIT timing behavior for every V8, SpiderMonkey, Wasmtime, Wasmer, or
   edge-compute deployment
 - hardware register-retention cleanup guarantees after the wasm runtime lowers
@@ -103,8 +103,8 @@ provide:
   CI.
 - `scripts/check_wasm_browser_safari_dispatch.sh` executes the same runtime
   smoke through `safaridriver` when Safari remote automation is enabled on
-  macOS. Safari remains optional evidence until captured for a release
-  candidate.
+  macOS. The `1.3.3` release evidence includes a macOS Safari pass reported
+  from `/System/Cryptexes/App/usr/bin/safaridriver`.
 - `scripts/check_simd_feature_bundles.sh` keeps compile/test-binary evidence
   for `wasm32-unknown-unknown` with `target-feature=+simd128` when the target
   is installed.

@@ -1064,8 +1064,8 @@ inside the `1.3.x` line if they remain evidence-gated and do not weaken the
   into a browser-wide claim.
 - Add `scripts/check_wasm_browser_firefox_dispatch.sh` for
   Firefox/SpiderMonkey WebDriver smoke evidence and
-  `scripts/check_wasm_browser_safari_dispatch.sh` as optional macOS
-  Safari/WebKit evidence tooling.
+  `scripts/check_wasm_browser_safari_dispatch.sh` for macOS Safari/WebKit
+  WebDriver smoke evidence.
 - Keep wasm wipe behavior fail-closed unless callers explicitly enable
   `allow-wasm32-best-effort-wipe`.
 - Document JIT, runtime, timing, and zeroization caveats without implying

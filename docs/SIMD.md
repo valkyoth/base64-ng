@@ -193,8 +193,8 @@ runtime behavior for that line.
   whole-input scalar validation. Custom alphabets remain scalar because
   portable wasm SIMD does not provide a direct 64-byte alphabet lookup.
   Wasm encode stages vector output and compares it against scalar output before
-  copying to caller output. Node/V8, Wasmtime, Chromium-family browser, and
-  Firefox/SpiderMonkey runtime smoke evidence proves active backend reporting,
+  copying to caller output. Node/V8, Wasmtime, Chromium-family browser,
+  Firefox/SpiderMonkey, and Safari/WebKit runtime smoke evidence proves active backend reporting,
   deterministic length sweeps, independent scalar reference encode checks, malformed-input
   rejection, and round trips for the admitted profile; this is not a
   browser-wide timing, register-retention, or cleanup guarantee. The
@@ -281,10 +281,10 @@ wasm `simd128`, it also builds the wasm test binaries with `simd128` enabled so
 the admitted fixed-block wasm code is checked; runtime execution is covered by
 `scripts/check_wasm_runtime_dispatch.sh` when Node/V8 and Wasmtime are
 installed, by `scripts/check_wasm_browser_dispatch.sh` when a Chromium-family
-browser is installed, and by `scripts/check_wasm_browser_firefox_dispatch.sh`
-when Firefox plus `geckodriver` are installed. Safari/WebKit evidence can be
-gathered separately with `scripts/check_wasm_browser_safari_dispatch.sh` on
-macOS with Safari remote automation enabled.
+browser is installed, by `scripts/check_wasm_browser_firefox_dispatch.sh`
+when Firefox plus `geckodriver` are installed, and by
+`scripts/check_wasm_browser_safari_dispatch.sh` on macOS with Safari remote
+automation enabled.
 
 Capture local backend and prototype evidence:
 

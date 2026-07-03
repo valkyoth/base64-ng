@@ -49,8 +49,9 @@ binary is compiled with `target-feature=+simd128`, the `simd` feature, and the
 explicit `allow-wasm32-best-effort-wipe` feature.
 
 The latest patch in this line is `1.3.3`, which admits narrow wasm `simd128`
-runtime dispatch with Node/V8, Wasmtime, Chromium-family browser, and
-Firefox/SpiderMonkey smoke evidence, keeps the wasm cleanup caveat fail-closed by default, and adds
+runtime dispatch with Node/V8, Wasmtime, Chromium-family browser,
+Firefox/SpiderMonkey, and Safari/WebKit smoke evidence, keeps the wasm cleanup
+caveat fail-closed by default, and adds
 wrapped-profile helper ergonomics. The workspace crate family stays
 version-aligned at `1.3.3`.
 
@@ -109,12 +110,8 @@ Implemented on this branch now:
   decode for Standard and URL-safe alphabets when built for `wasm32` with
   `target-feature=+simd128`, `simd`, and
   `allow-wasm32-best-effort-wipe`. The admission is backed by Node/V8,
-  Wasmtime, Chromium-family browser, and Firefox/SpiderMonkey runtime smoke evidence; unsupported
+  Wasmtime, Chromium-family browser, Firefox/SpiderMonkey, and Safari/WebKit runtime smoke evidence; unsupported
   wasm builds stay scalar by compiling without `+simd128`.
-  A Safari/WebKit WebDriver smoke script is included for macOS evidence
-  gathering once Safari remote automation is enabled, but Safari is not part
-  of the admitted release claim until its output is captured for a release
-  candidate.
 - Optional `base64-ng-sanitization` companion crate for applications that
   already admit `sanitization` and want direct CT decode helpers into
   clear-on-drop secret containers.

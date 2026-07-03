@@ -81,10 +81,10 @@ The release gate runs:
 - wasm simd128 Firefox/SpiderMonkey smoke evidence through
   `scripts/check_wasm_browser_firefox_dispatch.sh`, which executes the same
   wasm32 smoke module through `geckodriver` when Firefox is installed
-- optional Safari/WebKit WebDriver smoke evidence through
-  `scripts/check_wasm_browser_safari_dispatch.sh`; this is a manual
-  evidence-gathering script until a release candidate records its output and
-  broadens the admitted browser claim
+- Safari/WebKit WebDriver smoke evidence through
+  `scripts/check_wasm_browser_safari_dispatch.sh`; the `1.3.3` release
+  evidence includes a macOS pass with
+  `/System/Cryptexes/App/usr/bin/safaridriver`
 - fail-closed unsupported-native wipe policy documented through
   `allow-compiler-fence-only-wipe` for architectures without an implemented
   hardware wipe barrier
@@ -317,9 +317,12 @@ active for Standard and URL-safe alphabets. Big-endian AArch64 stays scalar,
 and 32-bit ARM NEON remains scaffold evidence. Wasm `simd128` evidence is kept
 in `scripts/check_simd_feature_bundles.sh` as compile/test-binary evidence and
 in `scripts/check_wasm_runtime_dispatch.sh` as Node/V8 and Wasmtime runtime
-smoke evidence, and in `scripts/check_wasm_browser_dispatch.sh` as
-Chromium-family browser smoke evidence. Runtime/JIT timing behavior remains
-outside the crate's formal claim. The script writes
+smoke evidence, in `scripts/check_wasm_browser_dispatch.sh` as
+Chromium-family browser smoke evidence, in
+`scripts/check_wasm_browser_firefox_dispatch.sh` as Firefox/SpiderMonkey smoke
+evidence, and in `scripts/check_wasm_browser_safari_dispatch.sh` as
+Safari/WebKit smoke evidence. Runtime/JIT timing behavior remains outside the
+crate's formal claim. The script writes
 `target/release-evidence/backend/MANIFEST.txt`, `runtime-backend-report.txt`,
 and `simd-prototype-equivalence.txt` so local CPU evidence can be archived. The
 manifest labels prototype-only evidence as `real-non-dispatchable` and
