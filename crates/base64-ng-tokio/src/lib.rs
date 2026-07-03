@@ -9,12 +9,11 @@
 //!
 //! - read-all/write-all convenience functions, with `*_limited` variants for
 //!   peer-controlled request or frame boundaries.
-//! - manual [`AsyncRead`] streaming adapters,
-//!   [`EncoderReader`] and [`DecoderReader`], with fixed internal buffers and
-//!   explicit drop cleanup.
+//! - manual [`AsyncRead`] and [`AsyncWrite`] streaming adapters with fixed
+//!   internal buffers and explicit drop cleanup.
 //!
-//! The streaming readers are implemented as explicit state machines. They do
-//! not use `async fn` internally, so cancellation can only leave data in the
+//! The streaming adapters are implemented as explicit state machines. They do
+//! not use `async fn` internally, so cancellation can only leave data in each
 //! adapter's fixed pending/output buffers; those buffers are cleared on drop.
 //!
 //! # Security
@@ -27,8 +26,13 @@
 //! `base64_ng::ct`, staged CT decode, `base64-ng-derive`, or
 //! `base64-ng-sanitization`.
 
+mod decoder_writer;
+mod encoder_writer;
+mod queue;
 mod readers;
 
+pub use decoder_writer::DecoderWriter;
+pub use encoder_writer::EncoderWriter;
 pub use readers::{DecoderReader, EncoderReader};
 
 use base64_ng::{Alphabet, Engine};

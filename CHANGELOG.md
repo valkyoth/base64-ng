@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.3.1 - Unreleased
+
+- Added `base64-ng-tokio` `EncoderWriter` and `DecoderWriter` manual
+  `AsyncWrite` streaming adapters with fixed internal queues, explicit
+  shutdown finalization, short-write/backpressure handling, fail-closed error
+  latching, and drop cleanup.
+- Added deterministic Tokio tests for split writes, pending shutdown drains,
+  malformed decode failure, unpadded decoder shutdown tails, and inner writer
+  errors.
+- Updated async, dependency, trust, and README documentation so Tokio writer
+  adapters are no longer described as deferred.
+
 ## 1.3.0 - 2026-07-02
 
 - Admitted normal strict SIMD decode for Standard and URL-safe alphabet

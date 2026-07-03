@@ -116,10 +116,10 @@ Planned behind admission evidence:
 - Additional admitted wasm `simd128`, custom alphabet, and in-place encode
   fast paths only after separate SIMD admission evidence is complete. Default
   builds and unsupported runtime CPUs remain scalar.
-- Async reader streaming is available through the optional `base64-ng-tokio`
-  companion crate after cancellation-safety review. The core `tokio` feature
-  remains inert, and async writer adapters remain deferred until their
-  accepted-byte and backpressure semantics pass [docs/ASYNC.md](docs/ASYNC.md).
+- Async reader and writer streaming is available through the optional
+  `base64-ng-tokio` companion crate after cancellation-safety, accepted-byte,
+  and backpressure review. The core `tokio` feature remains inert; use the
+  companion crate for admitted async integration.
 - Additional Kani harnesses beyond the current bounded no-default-features
   proof set. A clean Kani run proves only the scoped harness properties, not a
   whole-crate or cryptographic constant-time guarantee.
@@ -207,7 +207,7 @@ and crates.io examples resolve consistently across the workspace.
 | `base64-ng-serde` | Optional `serde` wrappers for projects that already admit `serde`. |
 | `base64-ng-bytes` | Optional `bytes` helpers for `Bytes`, `Buf`, and `BufMut` users. |
 | `base64-ng-subtle` | Optional `subtle::ConstantTimeEq` helpers for token/MAC comparison boundaries. |
-| `base64-ng-tokio` | Optional Tokio read-all/write-all helpers and async reader streaming adapters. |
+| `base64-ng-tokio` | Optional Tokio read-all/write-all helpers and async reader/writer streaming adapters. |
 
 Subcrates are documented so crate pages are readable, but they belong to the
 main `base64-ng` crate family and are not intended as independent protocol
@@ -337,9 +337,9 @@ assert!(decoded.subtle_verify(b"hello"));
 ```
 
 `base64-ng-tokio` provides read-all/write-all async helpers and manual
-`AsyncRead` streaming adapters for applications that already use Tokio. Prefer
-the `*_limited` helper variants for request or frame boundaries controlled by a
-peer:
+`AsyncRead`/`AsyncWrite` streaming adapters for applications that already use
+Tokio. Prefer the `*_limited` helper variants for request or frame boundaries
+controlled by a peer:
 
 ```toml
 [dependencies]
@@ -350,8 +350,8 @@ tokio = { version = "1.52.3", features = ["io-util"] }
 
 ```rust
 use base64_ng::STANDARD;
-use base64_ng_tokio::{encode_reader_to_writer_limited, EncoderReader};
-use tokio::io::AsyncReadExt;
+use base64_ng_tokio::{encode_reader_to_writer_limited, EncoderReader, EncoderWriter};
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 # async fn example() -> std::io::Result<()> {
 let mut input = &b"hello"[..];
@@ -363,15 +363,15 @@ let mut reader = EncoderReader::new(&b"hello"[..], STANDARD);
 let mut streamed = Vec::new();
 reader.read_to_end(&mut streamed).await?;
 assert_eq!(streamed, b"aGVsbG8=");
+
+let mut writer = EncoderWriter::new(Vec::new(), STANDARD);
+writer.write_all(b"hello").await?;
+writer.shutdown().await?;
+let encoded = writer.into_inner()?;
+assert_eq!(encoded, b"aGVsbG8=");
 # Ok(())
 # }
 ```
-
-Future optional crates that may be useful, but are intentionally not part of
-the core package yet:
-
-- Tokio async writer adapters once accepted-byte, backpressure, and
-  cancellation-safety evidence clears the async admission policy.
 
 Disable defaults for embedded or freestanding use:
 
@@ -1091,8 +1091,8 @@ Security commitments:
   its safety invariants.
 - [docs/ASYNC.md](docs/ASYNC.md) defines the admission bar for async/Tokio
   APIs. The optional companion crate now admits read-all/write-all helpers and
-  manual `AsyncRead` streaming adapters; async writer adapters and the core
-  `tokio` feature remain deferred.
+  manual `AsyncRead`/`AsyncWrite` streaming adapters; the core `tokio` feature
+  remains deferred and inert.
 - [docs/DEPENDENCIES.md](docs/DEPENDENCIES.md) defines the dependency
   admission bar for any future external crate.
 - `runtime::backend_report()` exposes the active admitted backend, detected

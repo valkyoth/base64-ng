@@ -6,12 +6,11 @@ Async integration lives in the optional `base64-ng-tokio` companion crate so
 the core package remains `no_std`-first and dependency-free by default.
 
 The optional `base64-ng-tokio` companion crate is admitted separately for
-read-all/write-all helper functions and manual `AsyncRead` streaming adapters.
-Its `*_limited` helpers enforce a caller-provided maximum input size before
-writing output. Its `EncoderReader` and `DecoderReader` adapters use explicit
-state machines, fixed internal buffers, and drop cleanup. Async writer
-adapters remain deferred until accepted-byte semantics, backpressure, drop
-cleanup, and dependency evidence are complete.
+read-all/write-all helper functions and manual `AsyncRead`/`AsyncWrite`
+streaming adapters. Its `*_limited` helpers enforce a caller-provided maximum
+input size before writing output. Its `EncoderReader`, `DecoderReader`,
+`EncoderWriter`, and `DecoderWriter` adapters use explicit state machines,
+fixed internal buffers, and drop cleanup.
 
 ## Current Status
 
@@ -24,9 +23,11 @@ cleanup, and dependency evidence are complete.
 - `base64-ng-tokio` provides optional read-all/write-all helpers for projects
   that already admit Tokio. Prefer its limited helpers for peer-controlled
   input.
-- `base64-ng-tokio` also provides read-side streaming adapters:
-  `EncoderReader` and `DecoderReader`.
-- Async writer adapters are intentionally not admitted yet.
+- `base64-ng-tokio` also provides streaming adapters: `EncoderReader`,
+  `DecoderReader`, `EncoderWriter`, and `DecoderWriter`.
+- Async writer shutdown is the finalization boundary. Call
+  `AsyncWriteExt::shutdown` to encode or validate final partial quanta before
+  recovering the wrapped writer.
 
 ## Admission Requirements
 
@@ -62,5 +63,5 @@ include:
 
 Do not advertise a new async/Tokio surface in release notes until it exports a
 tested public API and the dependency/admission evidence is present. Reader
-streaming and read-all/write-all helpers are admitted in the companion crate;
-writer streaming is not.
+streaming, writer streaming, and read-all/write-all helpers are admitted in the
+companion crate.

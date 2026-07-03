@@ -782,20 +782,20 @@ Each commit must follow these rules:
 
 Recommended commit sequence:
 
-Current status: the `1.3.0` implementation-completion line is ready for the
-final GitHub CI pass after the local release gate, Kani, macOS, AArch64, and
-external pentest reviews completed cleanly. Commits 1 through 19 have landed.
-The active strict decode boundary now
+Release status: the `1.3.0` implementation-completion line shipped after the
+local release gate, Kani, macOS, AArch64, GitHub CI, and external pentest
+reviews completed cleanly. Commits 1 through 19 landed in that line. The
+`1.3.0` strict decode boundary
 admits std x86/x86_64 SSSE3/SSE4.1, AVX2, AVX-512 VBMI, and little-endian std
 aarch64 NEON for Standard and URL-safe alphabet families only. Encode surface
 review is complete for the current `1.3.0` scope: in-place encode, custom
 alphabets, bcrypt/crypt profiles, `no_std`, wasm runtime dispatch, and
 line-ending insertion remain intentionally scalar unless a later admission
-package proves otherwise. The Tokio companion now has caller-limited
-read-all/write-all helpers and manual async reader streaming adapters. Async
-writer adapters remain deferred until accepted-byte, cancellation, and
-backpressure evidence is complete. Strict compile-time array decode is now
-available as a `Result`-based API for fixed static literals.
+package proves otherwise. At `1.3.0`, the Tokio companion had caller-limited
+read-all/write-all helpers and manual async reader streaming adapters, while
+async writer adapters were left for the post-`1.3.0` expansion plan. Strict
+compile-time array decode is available as a `Result`-based API for fixed static
+literals.
 `base64-ng-serde` now includes field modules for Standard, Standard no-pad,
 URL-safe, URL-safe no-pad, MIME, and PEM. Bounded Kani coverage now includes
 strict decode backend/scalar agreement for one padded quantum. Wrapped decode
@@ -983,8 +983,8 @@ those expensive wrapped/public-surface harnesses for background runs.
   side-channel evidence package proves otherwise. Do not route CT decode
   through normal SIMD decode.
 - Tokio read-side streaming exists only if the cancellation/drop/buffering
-  evidence is complete. Tokio writer streaming remains explicitly deferred
-  unless a later slice admits it separately.
+  evidence is complete. Tokio writer streaming remains explicitly deferred for
+  `1.3.0` unless a later slice admits it separately.
 - Const decode exists with a clear strict `Result` contract and does not add a
   runtime panic surface.
 - Kani, fuzz, Miri, dudect, generated assembly, benchmark, unsafe-boundary,
@@ -999,7 +999,7 @@ work is optional integration and acceleration breadth. These slices may stay
 inside the `1.3.x` line if they remain evidence-gated and do not weaken the
 `1.3.0` security posture.
 
-`1.3.1`: Tokio async writer adapters.
+`1.3.1`: Tokio async writer adapters. Current implementation slice.
 
 - Add design/API documentation and explicit state-machine invariants for
   `AsyncWrite` streaming.

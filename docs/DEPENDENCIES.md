@@ -82,10 +82,10 @@ Current decisions:
   package.
 - `base64-ng-tokio` is admitted as a companion crate for async read-all/write-all
   helpers, including caller-limited variants for peer-controlled request or
-  frame boundaries, and manual `AsyncRead` streaming adapters with fixed
-  buffers and drop cleanup. Async writer state machines remain deferred until
-  cancellation-safety, accepted-byte, backpressure, and drop-cleanup evidence is
-  complete.
+  frame boundaries, and manual `AsyncRead`/`AsyncWrite` streaming adapters with
+  fixed buffers and drop cleanup. Writer adapters finalize pending Base64 tails
+  during `AsyncWrite::poll_shutdown`; callers must drive shutdown to completion
+  before extracting the wrapped writer.
 - The core `tokio` feature remains reserved and inert until async
   cancellation, drop cleanup, chunk-boundary, dependency, and release-evidence
   requirements are satisfied.
@@ -146,8 +146,8 @@ The following integrations are intentionally not admitted in the published
 core crate today:
 
 - `tokio`: the core feature remains reserved and inert. Use `base64-ng-tokio`
-  for the admitted read-all/write-all helper surface and read-side streaming
-  adapters. Prefer caller-limited helpers for peer-controlled input.
+  for the admitted read-all/write-all helper surface and reader/writer
+  streaming adapters. Prefer caller-limited helpers for peer-controlled input.
 - `serde`: use `base64-ng-serde` when explicit serialization wrappers or
   field-level modules for Standard, URL-safe, MIME, or PEM profiles are
   needed. The core crate does not admit `serde`.
