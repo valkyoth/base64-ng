@@ -78,6 +78,13 @@ The release gate runs:
   `scripts/check_wasm_browser_dispatch.sh`, which executes the same wasm32
   smoke module in a Chromium-family browser when installed or when
   `BASE64_NG_BROWSER` points to a compatible browser binary
+- wasm simd128 Firefox/SpiderMonkey smoke evidence through
+  `scripts/check_wasm_browser_firefox_dispatch.sh`, which executes the same
+  wasm32 smoke module through `geckodriver` when Firefox is installed
+- optional Safari/WebKit WebDriver smoke evidence through
+  `scripts/check_wasm_browser_safari_dispatch.sh`; this is a manual
+  evidence-gathering script until a release candidate records its output and
+  broadens the admitted browser claim
 - fail-closed unsupported-native wipe policy documented through
   `allow-compiler-fence-only-wipe` for architectures without an implemented
   hardware wipe barrier

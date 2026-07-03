@@ -51,6 +51,9 @@ scripts/check_wasm_runtime_dispatch.sh
 echo "checks: wasm SIMD browser dispatch"
 scripts/check_wasm_browser_dispatch.sh
 
+echo "checks: wasm SIMD Firefox dispatch"
+scripts/check_wasm_browser_firefox_dispatch.sh
+
 echo "checks: SIMD admission policy"
 scripts/validate-simd-admission.sh
 

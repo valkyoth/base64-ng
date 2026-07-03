@@ -15,6 +15,11 @@ wasm `simd128` runtime-dispatch profile with explicit runtime smoke evidence.
   encode checks, malformed-input rejection, and public API round trips.
 - Added Chromium-family browser runtime smoke evidence for the same admitted
   wasm `simd128` profile.
+- Added Firefox/SpiderMonkey WebDriver runtime smoke evidence through
+  `geckodriver` for the same admitted wasm `simd128` profile.
+- Added an optional Safari/WebKit WebDriver smoke script for macOS evidence
+  gathering; Safari remains outside the admitted claim until its output is
+  captured for a release candidate.
 - Added fail-closed scalar verification for wasm fixed-block encode before
   copying staged SIMD output to caller output.
 - Added release-gated wasm SIMD codegen evidence through
@@ -28,10 +33,11 @@ wasm `simd128` runtime-dispatch profile with explicit runtime smoke evidence.
 
 ## Security Notes
 
-- Wasm `simd128` is admitted only for the named Node/V8, Wasmtime, and
-  Chromium-family browser smoke profiles and the narrow Standard/URL-safe
-  encode plus strict-decode surface.
-- Browser-wide behavior beyond the named Chromium-family runtime,
+- Wasm `simd128` is admitted only for the named Node/V8, Wasmtime,
+  Chromium-family browser, and Firefox/SpiderMonkey smoke profiles and the
+  narrow Standard/URL-safe encode plus strict-decode surface.
+- Browser-wide behavior beyond the named Chromium-family and
+  Firefox/SpiderMonkey runtimes,
   runtime/JIT timing behavior, and performance claims remain out of scope
   until separately evidenced.
 - The default wasm cleanup policy remains fail-closed unless

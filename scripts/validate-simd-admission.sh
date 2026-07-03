@@ -154,13 +154,13 @@ if ! printf '%s\n' "$wasm_row" | grep '| admitted backend |' >/dev/null 2>&1; th
     exit 1
 fi
 
-if ! grep -q 'Node/V8, Wasmtime, and Chromium-family browser runtime smoke evidence' docs/SIMD_ADMISSION.md docs/SIMD.md; then
-    echo "simd admission: wasm admission must name Node/V8, Wasmtime, and Chromium-family browser runtime smoke evidence" >&2
+if ! grep -q 'Node/V8, Wasmtime, Chromium-family browser, and Firefox/SpiderMonkey runtime smoke evidence' docs/SIMD_ADMISSION.md docs/SIMD.md; then
+    echo "simd admission: wasm admission must name Node/V8, Wasmtime, Chromium-family browser, and Firefox/SpiderMonkey runtime smoke evidence" >&2
     exit 1
 fi
 
-if ! grep -q 'Chromium-family browser runtime smoke evidence' docs/SIMD_ADMISSION.md docs/SIMD.md; then
-    echo "simd admission: wasm admission must name Chromium-family browser runtime smoke evidence" >&2
+if ! grep -q 'Firefox/SpiderMonkey runtime smoke evidence' docs/SIMD_ADMISSION.md docs/SIMD.md; then
+    echo "simd admission: wasm admission must name Firefox/SpiderMonkey runtime smoke evidence" >&2
     exit 1
 fi
 

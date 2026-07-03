@@ -13,6 +13,9 @@
   trips.
 - Added Chromium-family browser runtime smoke evidence for the same admitted
   wasm `simd128` profile.
+- Added Firefox/SpiderMonkey WebDriver runtime smoke evidence through
+  `geckodriver` and an optional Safari/WebKit WebDriver smoke script for
+  macOS evidence gathering.
 - Added a fail-closed wasm encode scalar-verification step: fixed-block wasm
   encode output is staged, compared against scalar output, wiped, and only then
   copied to caller output.

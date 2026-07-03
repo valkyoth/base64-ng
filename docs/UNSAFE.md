@@ -1241,7 +1241,7 @@ Limitations:
 
 - Wasm engines include a runtime/JIT optimization layer outside Rust's compiler
   boundary. This admission is backed by Node/V8, Wasmtime, and
-  Chromium-family browser runtime smoke evidence for correctness and dispatch
+  Chromium-family browser and Firefox/SpiderMonkey runtime smoke evidence for correctness and dispatch
   reporting, but it does not claim runtime timing, register-retention, or JIT
   zeroization guarantees.
 
