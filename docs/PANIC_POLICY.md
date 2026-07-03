@@ -57,10 +57,10 @@ The current reviewed exceptions are:
   length/allocation invariant break. Do not use them for untrusted length
   metadata, constrained allocation environments, or code paths that require
   recoverable errors; use the fallible encode helpers instead.
-- Stream `get_ref`, `get_mut`, and `into_inner` internal helpers use
-  `unreachable!` if a wrapper has already consumed its inner value. The public
-  API consumes `self` for `into_inner`/`finish`, so this state is not reachable
-  through safe public calls.
+- Core stream and Tokio writer `get_ref`, `get_mut`, and `into_inner` internal
+  helpers use `unreachable!` if a wrapper has already consumed its inner value.
+  The public API consumes `self` for `into_inner`/`finish`, so this state is not
+  reachable through safe public calls.
 
 Test code, doctest examples, and Kani proof harnesses may use `unwrap`,
 `expect`, or panic-like macros when they are asserting expected outcomes.

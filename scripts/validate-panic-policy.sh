@@ -45,6 +45,9 @@ check_file() {
             if ($0 ~ /unreachable!\("stream .* was already taken"\)/) {
                 allowed = 1
             }
+            if ($0 ~ /unreachable!\("tokio .* writer inner writer was already taken"\)/) {
+                allowed = 1
+            }
             if ($0 ~ /unreachable!\("base64 encoder produced non-UTF-8 output"\)/) {
                 allowed = 1
             }
@@ -79,9 +82,9 @@ check_file() {
 
 test -s docs/PANIC_POLICY.md
 
-find src -name '*.rs' | sort | while IFS= read -r source_file; do
+find src crates/*/src -name '*.rs' | sort | while IFS= read -r source_file; do
     case "$source_file" in
-        src/encode_surface_tests.rs|src/kani_proofs.rs|src/tests.rs|src/simd/tests.rs|src/simd/wasm.rs|src/simd/neon_decode_tests.rs|src/simd/x86_decode_tests.rs)
+        src/encode_surface_tests.rs|src/kani_proofs.rs|src/tests.rs|src/simd/tests.rs|src/simd/wasm.rs|src/simd/neon_decode_tests.rs|src/simd/x86_decode_tests.rs|crates/*/src/tests.rs|crates/*/src/*_tests.rs)
             continue
             ;;
     esac

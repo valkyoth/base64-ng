@@ -23,6 +23,9 @@ const ENCODE_OUTPUT_CAP: usize = 1024;
 /// Internal cleanup is best-effort and limited to this adapter's fixed pending
 /// and output buffers. It cannot clear copies held by the wrapped writer, the
 /// caller's buffers, registers, caches, swap, or crash dumps.
+///
+/// I/O errors from the wrapped writer during drain do not set [`Self::is_failed`];
+/// only internal protocol or capacity violations latch a permanent failure.
 pub struct EncoderWriter<W, A, const PAD: bool>
 where
     A: Alphabet,

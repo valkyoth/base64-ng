@@ -21,6 +21,9 @@ const DECODE_OUTPUT_CAP: usize = 1024;
 /// already have been written before a later malformed quantum is observed. For
 /// atomic or secret-bearing frames, collect a bounded frame and use a
 /// non-streaming strict or `ct` decode path.
+///
+/// I/O errors from the wrapped writer during drain do not set [`Self::is_failed`];
+/// only internal protocol or capacity violations latch a permanent failure.
 pub struct DecoderWriter<W, A, const PAD: bool>
 where
     A: Alphabet,

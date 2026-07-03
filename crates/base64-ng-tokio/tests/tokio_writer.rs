@@ -222,3 +222,71 @@ async fn streaming_encoder_writer_propagates_inner_write_error() {
     assert_eq!(error.kind(), std::io::ErrorKind::BrokenPipe);
     assert!(!writer.is_failed());
 }
+
+#[tokio::test]
+async fn streaming_encoder_writer_round_trips_large_input_with_one_byte_backpressure() {
+    let input: Vec<u8> = (0u8..=250).cycle().take(5000).collect();
+    let expected = STANDARD.encode_vec(&input).unwrap();
+    let inner = ScriptedWriter::new((0..expected.len()).map(|_| WriteAction::Accept(1)));
+    let mut writer = EncoderWriter::new(inner, STANDARD);
+
+    writer.write_all(&input).await.unwrap();
+    writer.shutdown().await.unwrap();
+
+    assert_eq!(writer.into_inner().output(), expected);
+}
+
+#[tokio::test]
+async fn streaming_decoder_writer_round_trips_large_input_with_one_byte_backpressure() {
+    let input: Vec<u8> = (0u8..=250).cycle().take(5000).collect();
+    let encoded = STANDARD.encode_vec(&input).unwrap();
+    let inner = ScriptedWriter::new((0..input.len()).map(|_| WriteAction::Accept(1)));
+    let mut writer = DecoderWriter::new(inner, STANDARD);
+
+    writer.write_all(&encoded).await.unwrap();
+    writer.shutdown().await.unwrap();
+
+    assert_eq!(writer.into_inner().output(), input);
+}
+
+#[tokio::test]
+async fn streaming_encoder_writer_clamps_single_large_poll_write_to_queue_capacity() {
+    let input: Vec<u8> = (0u8..=250).cycle().take(2000).collect();
+    let expected = STANDARD.encode_vec(&input).unwrap();
+    let mut writer = EncoderWriter::new(Vec::new(), STANDARD);
+    let waker = noop_waker();
+    let mut context = Context::from_waker(&waker);
+
+    let accepted = Pin::new(&mut writer)
+        .poll_write(&mut context, &input)
+        .map(|result| result.unwrap());
+
+    assert_eq!(accepted, Poll::Ready(768));
+    assert_eq!(writer.buffered_output_len(), 1024);
+
+    writer.write_all(&input[768..]).await.unwrap();
+    writer.shutdown().await.unwrap();
+
+    assert_eq!(writer.into_inner(), expected);
+}
+
+#[tokio::test]
+async fn streaming_decoder_writer_clamps_single_large_poll_write_to_queue_capacity() {
+    let input: Vec<u8> = (0u8..=250).cycle().take(2000).collect();
+    let encoded = STANDARD.encode_vec(&input).unwrap();
+    let mut writer = DecoderWriter::new(Vec::new(), STANDARD);
+    let waker = noop_waker();
+    let mut context = Context::from_waker(&waker);
+
+    let accepted = Pin::new(&mut writer)
+        .poll_write(&mut context, &encoded)
+        .map(|result| result.unwrap());
+
+    assert_eq!(accepted, Poll::Ready(1364));
+    assert_eq!(writer.buffered_output_len(), 1023);
+
+    writer.write_all(&encoded[1364..]).await.unwrap();
+    writer.shutdown().await.unwrap();
+
+    assert_eq!(writer.into_inner(), input);
+}
