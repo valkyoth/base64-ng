@@ -1102,31 +1102,53 @@ inside the `1.3.x` line if they remain evidence-gated and do not weaken the
   validation and staging; line-profile validation, line-ending compaction, and
   legacy-whitespace compaction remain scalar.
 
-`1.3.4`: big-endian and niche-architecture acceleration review.
+`1.3.4`: big-endian accelerated encode/decode implementation with QEMU-only
+evidence.
 
-- Add or refresh big-endian AArch64 scalar/fallback evidence first. Admit
-  acceleration only if endian-specific vector behavior, tests, and hardware
-  evidence are complete.
-- Review other niche targets case by case. Do not admit backend names in
-  runtime reports until real target-feature, fallback, assembly, cleanup, and
-  benchmark evidence exists.
-- Keep all niche acceleration opt-in through the same SIMD admission boundary;
-  no target should bypass unsafe-inventory, panic-policy, or release-gate
-  checks.
+- Build the big-endian acceleration line for both encode and strict decode,
+  starting with the practical Rust/QEMU targets (`s390x-unknown-linux-gnu`
+  first, with `powerpc64-unknown-linux-gnu` as an optional second target when
+  the local cross toolchain is available).
+- Add QEMU user-mode evidence scripts that run under `qemu-s390x` and, when
+  available, `qemu-ppc64`. The scripts must exercise encode, decode,
+  in-place, wrapped/legacy compatibility where applicable, clear-tail behavior,
+  runtime backend reports, scalar fallback behavior, and malformed-input
+  handling.
+- Label the admission honestly: QEMU evidence is accepted for functional
+  correctness and fallback behavior only. It is not hardware performance
+  evidence, not hardware side-channel evidence, and not proof that a specific
+  production CPU behaves identically.
+- Keep docs and release notes explicit that the project does not own real
+  big-endian hardware. Request community evidence from operators with real
+  `s390x`, `powerpc64`, or big-endian AArch64 machines before upgrading any
+  backend from QEMU-tested to hardware-attested.
+- Keep the same admission boundary as the current SIMD work: generated
+  assembly review, register cleanup review, panic-policy, unsafe-boundary,
+  target-matrix checks, fuzz/differential tests, runtime reporting, and release
+  evidence must all name the backend as QEMU-tested unless real hardware
+  evidence is linked.
 
-`1.3.5`: RISC-V Vector research and evidence path.
+`1.3.5`: RISC-V accelerated encode/decode implementation with QEMU-only
+evidence.
 
-- Create RISC-V scalar support scripts and RVV detection scripts so external
-  labs, companies, or universities can run the same evidence commands on
-  hardware that actually advertises the RISC-V Vector extension.
-- Keep release notes extremely explicit that the project has no owned RVV
-  hardware unless that changes. A VisionFive2/JH7110-style `RV64GC` board is
-  useful scalar RISC-V evidence, but it is not RVV evidence.
-- Implement RVV prototypes only behind non-dispatchable evidence gates until
-  real RVV 1.0 hardware, toolchain support, generated assembly, scalar
-  differential tests, fuzzing, register cleanup, and benchmark data exist.
-- Do not claim RVV acceleration in crates.io docs until the exact hardware and
-  toolchain evidence is linked in the release artifacts.
+- Build the RISC-V acceleration line for both encode and strict decode around
+  `riscv64gc-unknown-linux-gnu` and QEMU user-mode (`qemu-riscv64`) first.
+  Treat `riscv32` as a separate fallback/compatibility check unless a practical
+  vector-capable Rust target and toolchain path is available.
+- Add RISC-V QEMU evidence scripts that run functional encode/decode,
+  malformed-input, in-place, clear-tail, runtime-report, and scalar-fallback
+  checks under emulation.
+- Add RVV detection/evidence hooks so external labs, companies, universities,
+  or users with Vector 1.0 hardware can run the same commands on real boards
+  such as SpacemiT K1/X60-class systems.
+- Keep release notes extremely explicit that project-owned evidence is QEMU
+  evidence unless real hardware results are provided. QEMU is useful for
+  correctness and release reproducibility, but it is not enough for hardware
+  performance, timing, microarchitectural, or side-channel claims.
+- Do not upgrade any RISC-V backend from QEMU-tested to hardware-attested in
+  crates.io docs until the exact hardware, kernel/runtime, Rust target,
+  generated assembly, differential tests, register cleanup, and benchmark
+  evidence are linked in the release artifacts.
 
 Historical `1.2.x` to `1.3.0` transition:
 
