@@ -28,6 +28,9 @@ The checked test evidence currently includes:
 - `non_standard_simd_candidate_error_surfaces_preserve_scalar_behavior`,
   covering malformed custom, bcrypt-style, `crypt(3)`, in-place,
   legacy-whitespace, wrapped decode, and wrapped encode error behavior.
+- `non_standard_simd_candidate_clear_tail_surfaces_preserve_scalar_behavior`,
+  covering custom, bcrypt-style, `crypt(3)`, wrapped encode, and wrapped
+  decode clear-tail behavior plus in-place encode scalar-visible output.
 - A naive wrapped-output oracle that inserts line endings by line length rather
   than calling the production `write_wrapped_byte` helper. This keeps the
   wrapped encode regression test from depending only on the same primitive used

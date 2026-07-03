@@ -1027,6 +1027,9 @@ inside the `1.3.x` line if they remain evidence-gated and do not weaken the
 - Second checkpoint: pin malformed/error-path parity for the same surfaces,
   and keep wrapped encode regression coverage backed by an independent naive
   line-splitting oracle rather than only the production wrapping primitive.
+- Third checkpoint: pin clear-tail behavior for custom, bcrypt-style,
+  `crypt(3)`, wrapped encode, and wrapped decode surfaces, and add in-place
+  encode scalar-visible output parity.
 - Candidate surfaces: custom alphabet encode/decode, MIME/PEM wrapped
   encode/decode, legacy-whitespace decode, and in-place encode/decode.
 - Keep unsupported surfaces scalar and documented rather than silently widening

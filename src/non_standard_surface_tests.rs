@@ -134,6 +134,61 @@ fn assert_in_place_decode_error_matches_slice(input: &[u8]) {
     assert_eq!(in_place_result, slice_result);
 }
 
+fn assert_in_place_encode_matches_scalar<A, const PAD: bool>(input: &[u8])
+where
+    A: Alphabet,
+{
+    let engine = Engine::<A, PAD>::new();
+    let mut in_place = [0xee; 256];
+    let mut scalar_output = [0xaa; 256];
+
+    in_place[..input.len()].copy_from_slice(input);
+    let encoded = engine.encode_in_place(&mut in_place, input.len()).unwrap();
+    let scalar_len =
+        scalar::scalar_reference_encode_slice::<A, PAD>(input, &mut scalar_output).unwrap();
+
+    assert_eq!(encoded, &scalar_output[..scalar_len]);
+}
+
+fn assert_slice_clear_tail_matches_scalar<A, const PAD: bool>(input: &[u8])
+where
+    A: Alphabet,
+{
+    let engine = Engine::<A, PAD>::new();
+    let mut encoded = [0x55; 256];
+    let mut scalar_encoded = [0xaa; 256];
+    let mut decoded = [0x33; 128];
+    let mut scalar_decoded = [0x77; 128];
+
+    let encoded_len = engine.encode_slice_clear_tail(input, &mut encoded).unwrap();
+    let scalar_encoded_len =
+        scalar::scalar_reference_encode_slice::<A, PAD>(input, &mut scalar_encoded).unwrap();
+
+    assert_eq!(encoded_len, scalar_encoded_len);
+    assert_eq!(
+        &encoded[..encoded_len],
+        &scalar_encoded[..scalar_encoded_len]
+    );
+    assert!(encoded[encoded_len..].iter().all(|byte| *byte == 0));
+
+    let decoded_len = engine
+        .decode_slice_clear_tail(&encoded[..encoded_len], &mut decoded)
+        .unwrap();
+    let scalar_decoded_len = scalar::scalar_reference_decode_slice::<A, PAD>(
+        &scalar_encoded[..scalar_encoded_len],
+        &mut scalar_decoded,
+    )
+    .unwrap();
+
+    assert_eq!(decoded_len, scalar_decoded_len);
+    assert_eq!(
+        &decoded[..decoded_len],
+        &scalar_decoded[..scalar_decoded_len]
+    );
+    assert_eq!(&decoded[..decoded_len], input);
+    assert!(decoded[decoded_len..].iter().all(|byte| *byte == 0));
+}
+
 #[test]
 fn non_standard_simd_candidate_surfaces_preserve_scalar_behavior() {
     let mut input = [0; 96];
@@ -212,4 +267,40 @@ fn non_standard_simd_candidate_error_surfaces_preserve_scalar_behavior() {
             available: 8
         })
     );
+}
+
+#[test]
+fn non_standard_simd_candidate_clear_tail_surfaces_preserve_scalar_behavior() {
+    let mut input = [0; 81];
+    fill_pattern(&mut input, 29);
+
+    assert_slice_clear_tail_matches_scalar::<DispatchFallbackAlphabet, true>(&input);
+    assert_slice_clear_tail_matches_scalar::<DispatchFallbackAlphabet, false>(&input);
+    assert_slice_clear_tail_matches_scalar::<Bcrypt, false>(&input);
+    assert_slice_clear_tail_matches_scalar::<Crypt, false>(&input);
+    assert_in_place_encode_matches_scalar::<DispatchFallbackAlphabet, true>(&input);
+    assert_in_place_encode_matches_scalar::<Bcrypt, false>(&input);
+
+    let wrap = LineWrap::new(12, LineEnding::CrLf);
+    let mut wrapped_output = [0xee; 192];
+    let wrapped_len = STANDARD
+        .encode_slice_wrapped_clear_tail(&input, &mut wrapped_output, wrap)
+        .unwrap();
+    assert!(wrapped_output[wrapped_len..].iter().all(|byte| *byte == 0));
+
+    let mut wrapped_input = [0u8; 192];
+    let wrapped_input_len = STANDARD
+        .encode_slice_wrapped(&input, &mut wrapped_input, wrap)
+        .unwrap();
+    let mut wrapped_decoded = [0xdd; 128];
+    let decoded_len = STANDARD
+        .decode_slice_wrapped_clear_tail(
+            &wrapped_input[..wrapped_input_len],
+            &mut wrapped_decoded,
+            wrap,
+        )
+        .unwrap();
+
+    assert_eq!(&wrapped_decoded[..decoded_len], input);
+    assert!(wrapped_decoded[decoded_len..].iter().all(|byte| *byte == 0));
 }

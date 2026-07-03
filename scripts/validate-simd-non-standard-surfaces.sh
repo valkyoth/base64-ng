@@ -17,6 +17,7 @@ for required_text in \
     "wrapped encode staging" \
     "non_standard_simd_candidate_surfaces_preserve_scalar_behavior" \
     "non_standard_simd_candidate_error_surfaces_preserve_scalar_behavior" \
+    "non_standard_simd_candidate_clear_tail_surfaces_preserve_scalar_behavior" \
     "naive wrapped-output oracle" \
     "| Custom alphabet encode | scalar fallback |" \
     "| Custom alphabet decode | scalar fallback |" \
@@ -78,7 +79,10 @@ fi
 for required_test_text in \
     "fn non_standard_simd_candidate_surfaces_preserve_scalar_behavior()" \
     "fn non_standard_simd_candidate_error_surfaces_preserve_scalar_behavior()" \
+    "fn non_standard_simd_candidate_clear_tail_surfaces_preserve_scalar_behavior()" \
     "assert_wrapped_encode_matches_unwrapped_then_wrap" \
+    "assert_slice_clear_tail_matches_scalar" \
+    "assert_in_place_encode_matches_scalar" \
     "let take = (unwrapped_len - read).min(wrap.line_len())"
 do
     if ! grep -F -q "$required_test_text" src/non_standard_surface_tests.rs; then
