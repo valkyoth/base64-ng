@@ -31,7 +31,7 @@ where
                     value
                 } else {
                     debug_assert!(false, "fill_decode_values called on unvalidated input");
-                    0
+                    0xff
                 }
             }
         };

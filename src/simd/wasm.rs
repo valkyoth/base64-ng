@@ -46,14 +46,19 @@ where
     while read + 12 <= input.len() {
         let mut simd_output = [0u8; 16];
         let mut scalar_output = [0u8; 16];
+        let block = &input[read..read + 12];
         // SAFETY: Runtime dispatch reaches this function only when this wasm
         // binary was compiled with target-feature=+simd128. The loop guard and
         // prevalidated output length prove the fixed-size input view is in
         // bounds. SIMD output is staged until scalar verification succeeds.
         unsafe {
-            let block = &*(input.as_ptr().add(read).cast::<[u8; 12]>());
-            encode_12_bytes_wasm_simd128::<A>(block, &mut simd_output);
-            scalar::encode_slice::<A, PAD>(block, &mut scalar_output)?;
+            let fixed_block = &*(block.as_ptr().cast::<[u8; 12]>());
+            encode_12_bytes_wasm_simd128::<A>(fixed_block, &mut simd_output);
+        }
+        if let Err(error) = scalar::encode_slice::<A, PAD>(block, &mut scalar_output) {
+            crate::wipe_bytes(&mut simd_output);
+            crate::wipe_bytes(&mut scalar_output);
+            return Err(error);
         }
         if simd_output != scalar_output {
             crate::wipe_bytes(&mut simd_output);
