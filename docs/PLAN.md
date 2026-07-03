@@ -1024,6 +1024,9 @@ inside the `1.3.x` line if they remain evidence-gated and do not weaken the
   remaining outside the admitted acceleration scope. This covers custom
   alphabets, bcrypt/crypt-style alphabets, strict in-place decode,
   legacy-whitespace decode, strict wrapped decode, and wrapped encode staging.
+- Second checkpoint: pin malformed/error-path parity for the same surfaces,
+  and keep wrapped encode regression coverage backed by an independent naive
+  line-splitting oracle rather than only the production wrapping primitive.
 - Candidate surfaces: custom alphabet encode/decode, MIME/PEM wrapped
   encode/decode, legacy-whitespace decode, and in-place encode/decode.
 - Keep unsupported surfaces scalar and documented rather than silently widening

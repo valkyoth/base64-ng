@@ -15,6 +15,9 @@ for required_text in \
     "legacy-whitespace decode" \
     "strict wrapped decode" \
     "wrapped encode staging" \
+    "non_standard_simd_candidate_surfaces_preserve_scalar_behavior" \
+    "non_standard_simd_candidate_error_surfaces_preserve_scalar_behavior" \
+    "naive wrapped-output oracle" \
     "| Custom alphabet encode | scalar fallback |" \
     "| Custom alphabet decode | scalar fallback |" \
     "| Bcrypt and \`crypt(3)\` profiles | scalar fallback |" \
@@ -71,5 +74,17 @@ if ! grep -F -q "scalar_encode_in_place::encode_in_place::<A, PAD>" src/encode_b
     echo "simd non-standard surfaces: in-place encode must remain scalar-routed" >&2
     exit 1
 fi
+
+for required_test_text in \
+    "fn non_standard_simd_candidate_surfaces_preserve_scalar_behavior()" \
+    "fn non_standard_simd_candidate_error_surfaces_preserve_scalar_behavior()" \
+    "assert_wrapped_encode_matches_unwrapped_then_wrap" \
+    "let take = (unwrapped_len - read).min(wrap.line_len())"
+do
+    if ! grep -F -q "$required_test_text" src/non_standard_surface_tests.rs; then
+        echo "simd non-standard surfaces: missing regression test evidence: $required_test_text" >&2
+        exit 1
+    fi
+done
 
 echo "simd non-standard surfaces: ok"
