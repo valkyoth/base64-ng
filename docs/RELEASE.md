@@ -89,6 +89,12 @@ sysroot cannot link Rust test binaries. The evidence is QEMU functional
 correctness and fallback evidence only; it is not real hardware performance,
 timing, or side-channel evidence.
 
+`scripts/check_riscv_qemu.sh` requires the `riscv64gc` path and the `lp64d`
+glibc sysroot used by the SUSE cross packages. The evidence is RISC-V QEMU
+functional correctness and scalar/fallback evidence only; it is not RVV
+hardware performance, timing, microarchitectural, register-retention, or
+side-channel evidence.
+
 The no-alloc portability smoke crate checks the same installed target list with:
 
 ```sh

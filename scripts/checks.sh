@@ -45,6 +45,9 @@ scripts/validate-wasm-posture.sh
 echo "checks: big-endian QEMU posture"
 scripts/validate-big-endian-posture.sh
 
+echo "checks: RISC-V QEMU posture"
+scripts/validate-riscv-posture.sh
+
 echo "checks: wasm SIMD codegen evidence"
 scripts/generate_wasm_simd_evidence.sh
 

@@ -53,6 +53,9 @@ scripts/check_targets.sh
 echo "stable release gate: big-endian QEMU checks"
 scripts/check_big_endian_qemu.sh
 
+echo "stable release gate: RISC-V QEMU checks"
+scripts/check_riscv_qemu.sh
+
 echo "stable release gate: no-alloc portability smoke"
 scripts/check_no_alloc_smoke.sh
 

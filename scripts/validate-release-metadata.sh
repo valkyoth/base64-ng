@@ -113,8 +113,11 @@ for required_script in \
     "scripts/check_backend_evidence.sh" \
     "scripts/check_big_endian_qemu.sh" \
     "scripts/check_big_endian_intrinsics_status.sh" \
+    "scripts/check_riscv_qemu.sh" \
+    "scripts/check_riscv_intrinsics_status.sh" \
     "scripts/validate-api-audit.sh" \
     "scripts/validate-big-endian-posture.sh" \
+    "scripts/validate-riscv-posture.sh" \
     "scripts/check_dudect.sh" \
     "scripts/check_fuzz.sh" \
     "scripts/check_fuzz_corpus.sh" \
@@ -205,6 +208,7 @@ for required_release_gate_command in \
     "cargo +nightly fuzz build" \
     "scripts/check_targets.sh" \
     "scripts/check_big_endian_qemu.sh" \
+    "scripts/check_riscv_qemu.sh" \
     "scripts/check_no_alloc_smoke.sh" \
     "scripts/check_migration_smoke.sh" \
     "scripts/check_simd_feature_bundles.sh" \
@@ -316,6 +320,7 @@ done
 for required_checks_command in \
     "scripts/validate-api-audit.sh" \
     "scripts/validate-big-endian-posture.sh" \
+    "scripts/validate-riscv-posture.sh" \
     "scripts/validate-msrv-policy.sh" \
     "scripts/validate-wasm-posture.sh" \
     "scripts/validate-simd-encode-admission-draft.sh" \
@@ -361,6 +366,7 @@ for required_package_file in \
     "docs/ASYNC.md" \
     "docs/BENCHMARKS.md" \
     "docs/BIG_ENDIAN_QEMU_REVIEW.md" \
+    "docs/RISCV_QEMU_REVIEW.md" \
     "docs/CONSTANT_TIME.md" \
     "docs/CT_ASM_REVIEW.md" \
     "docs/DEPENDENCIES.md" \
@@ -384,8 +390,11 @@ for required_package_file in \
     "scripts/check_backend_evidence.sh" \
     "scripts/check_big_endian_qemu.sh" \
     "scripts/check_big_endian_intrinsics_status.sh" \
+    "scripts/check_riscv_qemu.sh" \
+    "scripts/check_riscv_intrinsics_status.sh" \
     "scripts/validate-api-audit.sh" \
     "scripts/validate-big-endian-posture.sh" \
+    "scripts/validate-riscv-posture.sh" \
     "scripts/check_dudect.sh" \
     "scripts/check_fuzz.sh" \
     "scripts/check_fuzz_corpus.sh" \

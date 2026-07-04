@@ -29,12 +29,13 @@ The crate starts conservative: a small scalar implementation, strict RFC 4648 be
 
 ## Current Status
 
-The current public release is `1.3.4`.
+The current public release is `1.3.5`.
 
-`1.3.4` is a big-endian QEMU evidence and stable-intrinsic-blocker patch on
+`1.3.5` is a RISC-V QEMU evidence and stable-RVV-intrinsic-blocker patch on
 top of the `1.3.0` implementation-completion release, the `1.3.1` Tokio
-writer patch, the `1.3.2` non-standard SIMD surface review, and the `1.3.3`
-wasm SIMD runtime-dispatch and profile-ergonomics patch. It keeps the admitted
+writer patch, the `1.3.2` non-standard SIMD surface review, the `1.3.3`
+wasm SIMD runtime-dispatch and profile-ergonomics patch, and the `1.3.4`
+big-endian QEMU evidence patch. It keeps the admitted
 `1.2.x` native encode acceleration posture and the admitted `1.3.0` normal
 strict SIMD decode scope for Standard and URL-safe alphabet families on std
 `x86`/`x86_64` AVX-512 VBMI, AVX2, SSSE3/SSE4.1, and little-endian std
@@ -52,12 +53,14 @@ and normal strict decode when the binary is compiled with
 `target-feature=+simd128`, the `simd` feature, and the explicit
 `allow-wasm32-best-effort-wipe` feature.
 
-The latest patch in this line is `1.3.4`, which adds required
-`s390x-unknown-linux-gnu` QEMU user-mode functional evidence for scalar
-fallback behavior, records that stable Rust still gates `s390x` and
-PowerPC64 vector intrinsics, and documents that big-endian acceleration is not
-admitted until stable intrinsics or a separate assembly-backed review exists.
-The workspace crate family stays version-aligned at `1.3.4`.
+The latest patch in this line is `1.3.5`, which adds required
+`riscv64gc-unknown-linux-gnu` QEMU user-mode functional evidence for scalar
+fallback behavior, records that stable Rust still gates `core::arch::riscv64`
+behind `riscv_ext_intrinsics`, and documents that RISC-V RVV acceleration is
+not admitted until real hardware evidence and a reviewed stable-intrinsic or
+assembly-backed backend exist. The `1.3.4` big-endian QEMU evidence remains in
+the release gate.
+The workspace crate family stays version-aligned at `1.3.5`.
 
 Implemented on this branch now:
 
@@ -185,7 +188,7 @@ The active release toolchain is Rust `1.96.1`. MSRV remains Rust `1.90.0` and
 is checked separately in CI so the project can build and test with the latest
 stable compiler without dropping older supported users.
 
-Compatibility evidence for the `1.3.4` workspace:
+Compatibility evidence for the `1.3.5` workspace:
 
 | Rust | Local Evidence |
 | --- | --- |
@@ -202,7 +205,7 @@ Compatibility evidence for the `1.3.4` workspace:
 
 ```toml
 [dependencies]
-base64-ng = "1.3.4"
+base64-ng = "1.3.5"
 ```
 
 The crate is dual-licensed:
@@ -263,8 +266,8 @@ decode directly into `sanitization::LockedSecretBytes` or
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.3.4", default-features = false }
-base64-ng-sanitization = { version = "1.3.4", default-features = false }
+base64-ng = { version = "1.3.5", default-features = false }
+base64-ng-sanitization = { version = "1.3.5", default-features = false }
 ```
 
 ```rust
@@ -283,7 +286,7 @@ assert!(secret.sanitization_verify(
 
 ```toml
 [dependencies]
-base64-ng-sanitization = { version = "1.3.4", features = ["high-assurance"] }
+base64-ng-sanitization = { version = "1.3.5", features = ["high-assurance"] }
 ```
 
 ```rust
@@ -302,8 +305,8 @@ newtypes around fixed byte arrays:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.3.4", default-features = false }
-base64-ng-derive = "1.3.4"
+base64-ng = { version = "1.3.5", default-features = false }
+base64-ng-derive = "1.3.5"
 ```
 
 ```rust
@@ -322,7 +325,7 @@ assert_eq!(key.encode_base64::<8>().unwrap().as_str(), "aGVsbG8=");
 
 ```toml
 [dependencies]
-base64-ng-serde = "1.3.4"
+base64-ng-serde = "1.3.5"
 serde = { version = "1.0.228", features = ["derive"] }
 ```
 
@@ -341,8 +344,8 @@ Field-level modules are available for `standard`, `standard_no_pad`,
 
 ```toml
 [dependencies]
-base64-ng = "1.3.4"
-base64-ng-bytes = "1.3.4"
+base64-ng = "1.3.5"
+base64-ng-bytes = "1.3.5"
 bytes = "1.12.0"
 ```
 
@@ -359,8 +362,8 @@ projects that already admit `subtle`:
 
 ```toml
 [dependencies]
-base64-ng = "1.3.4"
-base64-ng-subtle = "1.3.4"
+base64-ng = "1.3.5"
+base64-ng-subtle = "1.3.5"
 ```
 
 ```rust
@@ -378,8 +381,8 @@ controlled by a peer:
 
 ```toml
 [dependencies]
-base64-ng = "1.3.4"
-base64-ng-tokio = "1.3.4"
+base64-ng = "1.3.5"
+base64-ng-tokio = "1.3.5"
 tokio = { version = "1.52.3", features = ["io-util"] }
 ```
 
@@ -412,7 +415,7 @@ Disable defaults for embedded or freestanding use:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.3.4", default-features = false }
+base64-ng = { version = "1.3.5", default-features = false }
 ```
 
 Enable admitted encode acceleration on supported `std` targets with the
@@ -424,7 +427,7 @@ and URL-safe alphabets after whole-input scalar validation:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.3.4", features = ["simd"] }
+base64-ng = { version = "1.3.5", features = ["simd"] }
 ```
 
 ```rust

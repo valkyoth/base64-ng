@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.3.5 - 2026-07-04
+
+- Added required `riscv64gc-unknown-linux-gnu` QEMU user-mode evidence for
+  RISC-V functional correctness, scalar/fallback runtime reporting,
+  malformed-input behavior, clear-tail behavior, in-place behavior,
+  wrapped/legacy compatibility, strict SIMD decode dispatch surface fallback,
+  and stream behavior.
+- Added stable Rust blocker checks proving `core::arch::riscv64` remains
+  behind the unstable `riscv_ext_intrinsics` feature gate on the active
+  release toolchain.
+- Documented that RISC-V RVV acceleration is deliberately not admitted in this
+  release; QEMU evidence is fallback/correctness evidence only, not hardware
+  performance, timing, side-channel, or register-retention evidence.
+- Added RISC-V release-gate posture validation and package-included review
+  documentation requesting community evidence from real RVV 1.0 systems.
+- Synchronized all workspace crate package versions to `1.3.5`.
+
 ## 1.3.4 - 2026-07-03
 
 - Added required `s390x-unknown-linux-gnu` QEMU user-mode evidence for

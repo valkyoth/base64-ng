@@ -1130,27 +1130,29 @@ inside the `1.3.x` line if they remain evidence-gated and do not weaken the
   backend from QEMU-tested scalar/fallback evidence to accelerated or
   hardware-attested status.
 
-`1.3.5`: RISC-V accelerated encode/decode implementation with QEMU-only
-evidence.
+`1.3.5`: RISC-V RVV evidence track with QEMU-only scalar/fallback evidence.
 
-- Build the RISC-V acceleration line for both encode and strict decode around
-  `riscv64gc-unknown-linux-gnu` and QEMU user-mode (`qemu-riscv64`) first.
-  Treat `riscv32` as a separate fallback/compatibility check unless a practical
-  vector-capable Rust target and toolchain path is available.
+- Run the practical Rust/QEMU RISC-V target first:
+  `riscv64gc-unknown-linux-gnu` under `qemu-riscv64`. Treat `riscv32` as a
+  separate fallback/compatibility check unless a practical vector-capable Rust
+  target and toolchain path is available.
 - Add RISC-V QEMU evidence scripts that run functional encode/decode,
-  malformed-input, in-place, clear-tail, runtime-report, and scalar-fallback
-  checks under emulation.
+  malformed-input, in-place, clear-tail, runtime-report, strict decode dispatch
+  surface, stream, and scalar-fallback checks under emulation.
+- Verify the current stable Rust blocker: on the active release toolchain,
+  `core::arch::riscv64` remains gated by `riscv_ext_intrinsics`.
 - Add RVV detection/evidence hooks so external labs, companies, universities,
   or users with Vector 1.0 hardware can run the same commands on real boards
   such as SpacemiT K1/X60-class systems.
 - Keep release notes extremely explicit that project-owned evidence is QEMU
   evidence unless real hardware results are provided. QEMU is useful for
   correctness and release reproducibility, but it is not enough for hardware
-  performance, timing, microarchitectural, or side-channel claims.
-- Do not upgrade any RISC-V backend from QEMU-tested to hardware-attested in
-  crates.io docs until the exact hardware, kernel/runtime, Rust target,
-  generated assembly, differential tests, register cleanup, and benchmark
-  evidence are linked in the release artifacts.
+  performance, timing, microarchitectural, register-retention, or side-channel
+  claims.
+- Do not upgrade any RISC-V backend from QEMU-tested scalar/fallback evidence
+  to hardware-attested acceleration in crates.io docs until the exact hardware,
+  kernel/runtime, Rust target, generated assembly, differential tests, register
+  cleanup, and benchmark evidence are linked in the release artifacts.
 
 Historical `1.2.x` to `1.3.0` transition:
 

@@ -219,10 +219,10 @@ runtime behavior for that line.
   [WASM_SIMD128_RUNTIME_REVIEW.md](WASM_SIMD128_RUNTIME_REVIEW.md).
 - Big-endian and RISC-V acceleration work is tracked as a QEMU-first evidence
   path. QEMU user-mode evidence can prove functional correctness and
-  scalar/fallback behavior for targets such as `s390x-unknown-linux-gnu`, but
-  it is not hardware performance, timing, microarchitectural, or side-channel
-  evidence. Until real hardware reports are linked, any such backend must be
-  documented as QEMU-tested and community-hardware evidence requested.
+  scalar/fallback behavior for targets such as `s390x-unknown-linux-gnu` and
+  `riscv64gc-unknown-linux-gnu`, but it is not hardware performance, timing,
+  microarchitectural, register-retention, or side-channel evidence. Until real
+  hardware reports are linked, any such backend must be documented as QEMU-tested and community-hardware evidence requested.
 - `runtime::backend_report()` reports the active backend, detected candidate,
   detection mode, SIMD feature status, security posture, and a
   conservative unsafe-boundary posture flag. The flag is true only when the

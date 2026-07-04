@@ -115,6 +115,15 @@ The release gate runs:
   community reports from real `s390x`, `powerpc64`, and big-endian AArch64
   systems are still requested before any backend is upgraded from QEMU-tested
   to hardware-attested.
+- RISC-V QEMU user-mode verification through `scripts/check_riscv_qemu.sh`,
+  which runs `riscv64gc-unknown-linux-gnu` no-std portability checks and
+  QEMU-executed RFC4648, buffer, backend fallback, malformed-input,
+  clear-tail, in-place, wrapped/legacy, strict decode dispatch surface, and
+  stream tests. This is functional correctness and scalar/fallback evidence
+  under emulation only; it is not RVV hardware performance, timing,
+  microarchitectural, register-retention, or side-channel evidence. The script
+  records that community reports from real RVV 1.0 systems are still requested
+  before any RISC-V backend is upgraded from QEMU-tested to hardware-attested.
 - moved-code review for the `src/alphabet.rs` extraction, preserving root
   public exports for built-in alphabets, custom alphabet validation, and the
   `define_alphabet!` macro
