@@ -37,7 +37,7 @@ Current fuzz targets:
 
 ```sh
 cargo audit --file fuzz/Cargo.lock
-cargo deny --manifest-path fuzz/Cargo.toml --config fuzz/deny.toml check
+scripts/cargo-deny-check.sh fuzz/Cargo.toml fuzz/deny.toml
 ```
 
 The isolated `fuzz/deny.toml` permits the `libfuzzer-sys` license exception

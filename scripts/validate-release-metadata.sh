@@ -113,6 +113,7 @@ for required_script in \
     "scripts/check_backend_evidence.sh" \
     "scripts/check_big_endian_qemu.sh" \
     "scripts/check_big_endian_intrinsics_status.sh" \
+    "scripts/cargo-deny-check.sh" \
     "scripts/check_riscv_qemu.sh" \
     "scripts/check_riscv_intrinsics_status.sh" \
     "scripts/validate-api-audit.sh" \
@@ -340,7 +341,7 @@ done
 
 for required_fuzz_gate_text in \
     "cargo audit --file fuzz/Cargo.lock" \
-    "cargo deny --manifest-path fuzz/Cargo.toml --config fuzz/deny.toml check"
+    "scripts/cargo-deny-check.sh fuzz/Cargo.toml fuzz/deny.toml"
 do
     if ! grep -F -q "$required_fuzz_gate_text" scripts/check_fuzz.sh docs/FUZZING.md docs/RELEASE_EVIDENCE.md; then
         echo "release metadata: fuzz dependency gates are missing required text: $required_fuzz_gate_text" >&2

@@ -293,7 +293,7 @@ scripts/check_fuzz.sh
 
 ```sh
 cargo audit --file fuzz/Cargo.lock
-cargo deny --manifest-path fuzz/Cargo.toml --config fuzz/deny.toml check
+scripts/cargo-deny-check.sh fuzz/Cargo.toml fuzz/deny.toml
 ```
 
 The `differential` fuzz target includes static RFC 4648 ground-truth vectors in

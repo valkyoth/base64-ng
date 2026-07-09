@@ -13,7 +13,7 @@ echo "dudect checks: RustSec advisories"
 cargo audit --file dudect/Cargo.lock
 
 echo "dudect checks: dependency policy"
-cargo deny --manifest-path dudect/Cargo.toml --config dudect/deny.toml check
+scripts/cargo-deny-check.sh dudect/Cargo.toml dudect/deny.toml
 
 if [ "${BASE64_NG_RUN_DUDECT:-0}" = "1" ]; then
     evidence_dir="target/release-evidence/dudect"
