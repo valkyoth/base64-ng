@@ -1,3 +1,28 @@
+<p align="center">
+  <b>async Tokio readers, writers, and bounded helpers for base64-ng.</b><br>
+  Strict decoding, caller-owned buffers, optional integrations, and release-gated evidence.
+</p>
+
+<div align="center">
+  <a href="https://crates.io/crates/base64-ng">base64-ng crate</a>
+  |
+  <a href="https://docs.rs/base64-ng-tokio">Docs.rs</a>
+  |
+  <a href="https://github.com/valkyoth/base64-ng/blob/main/docs/PLAN.md">Roadmap</a>
+  |
+  <a href="https://github.com/valkyoth/base64-ng/blob/main/docs/TRUST.md">Trust Dashboard</a>
+  |
+  <a href="https://github.com/valkyoth/base64-ng/blob/main/SECURITY.md">Security</a>
+</div>
+
+<br>
+
+<p align="center">
+  <a href="https://github.com/valkyoth/base64-ng">
+    <img src="https://raw.githubusercontent.com/valkyoth/base64-ng/main/.github/images/base64-ng.webp" alt="base64-ng Rust crate overview">
+  </a>
+</p>
+
 # base64-ng-tokio
 
 Optional Tokio helpers for `base64-ng`.
