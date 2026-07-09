@@ -14,7 +14,7 @@ echo "perf checks: RustSec advisories"
 cargo audit --file perf/Cargo.lock
 
 echo "perf checks: dependency policy"
-cargo deny --manifest-path perf/Cargo.toml check --config perf/deny.toml
+cargo deny --manifest-path perf/Cargo.toml --config perf/deny.toml check
 
 if [ "${BASE64_NG_RUN_PERF:-0}" = "1" ]; then
     evidence_dir="target/release-evidence/perf"

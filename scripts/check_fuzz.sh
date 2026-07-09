@@ -16,7 +16,7 @@ echo "fuzz checks: RustSec advisories"
 cargo audit --file fuzz/Cargo.lock
 
 echo "fuzz checks: dependency policy"
-cargo deny --manifest-path fuzz/Cargo.toml check --config fuzz/deny.toml
+cargo deny --manifest-path fuzz/Cargo.toml --config fuzz/deny.toml check
 
 if [ "${BASE64_NG_RUN_FUZZ_SMOKE:-0}" != "1" ]; then
     echo "fuzz checks: smoke campaigns skipped; set BASE64_NG_RUN_FUZZ_SMOKE=1 to run bounded campaigns"
