@@ -1,52 +1,52 @@
 [release]
-version = "1.3.5"
+version = "1.3.6"
 policy = "synced-family"
 
 [crates."base64-ng"]
-previous_version = "1.3.4"
-version = "1.3.5"
-change = "code"
+previous_version = "1.3.5"
+version = "1.3.6"
+change = "dependency"
 publish = true
-reason = "Publishes the 1.3.5 family patch with RISC-V QEMU scalar/fallback evidence, stable riscv64 RVV intrinsic blocker checks, required riscv64gc QEMU coverage, and explicit non-admission wording for RISC-V acceleration."
+reason = "Publishes the 1.3.6 family patch with synchronized crate versions and refreshed companion crate README headers."
 
 [crates."base64-ng-sanitization"]
-previous_version = "1.3.4"
-version = "1.3.5"
+previous_version = "1.3.5"
+version = "1.3.6"
 change = "dependency"
 publish = true
-reason = "Keeps the sanitization companion version synchronized with the 1.3.5 family release."
+reason = "Keeps the sanitization companion version synchronized and publishes the refreshed README header."
 
 [crates."base64-ng-derive"]
-previous_version = "1.3.4"
-version = "1.3.5"
+previous_version = "1.3.5"
+version = "1.3.6"
 change = "dependency"
 publish = true
-reason = "Keeps the derive companion version synchronized with the 1.3.5 family release."
+reason = "Keeps the derive companion version synchronized and publishes the refreshed README header."
 
 [crates."base64-ng-serde"]
-previous_version = "1.3.4"
-version = "1.3.5"
+previous_version = "1.3.5"
+version = "1.3.6"
 change = "dependency"
 publish = true
-reason = "Keeps the serde companion version synchronized with the 1.3.5 family release."
+reason = "Keeps the serde companion version synchronized and publishes the refreshed README header."
 
 [crates."base64-ng-bytes"]
-previous_version = "1.3.4"
-version = "1.3.5"
+previous_version = "1.3.5"
+version = "1.3.6"
 change = "dependency"
 publish = true
-reason = "Keeps the bytes companion version synchronized with the 1.3.5 family release."
+reason = "Keeps the bytes companion version synchronized and publishes the refreshed README header."
 
 [crates."base64-ng-subtle"]
-previous_version = "1.3.4"
-version = "1.3.5"
+previous_version = "1.3.5"
+version = "1.3.6"
 change = "dependency"
 publish = true
-reason = "Keeps the subtle companion version synchronized with the 1.3.5 family release."
+reason = "Keeps the subtle companion version synchronized and publishes the refreshed README header."
 
 [crates."base64-ng-tokio"]
-previous_version = "1.3.4"
-version = "1.3.5"
+previous_version = "1.3.5"
+version = "1.3.6"
 change = "dependency"
 publish = true
-reason = "Keeps the Tokio companion version synchronized with the 1.3.5 family release."
+reason = "Keeps the Tokio companion version synchronized and publishes the refreshed README header."

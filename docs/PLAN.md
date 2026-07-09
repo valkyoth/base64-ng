@@ -1154,6 +1154,14 @@ inside the `1.3.x` line if they remain evidence-gated and do not weaken the
   kernel/runtime, Rust target, generated assembly, differential tests, register
   cleanup, and benchmark evidence are linked in the release artifacts.
 
+`1.3.6`: companion README header and crate-family version synchronization.
+
+- Keep all workspace crates version-aligned for the documentation refresh.
+- Add consistent companion-crate README headers with the shared project image,
+  core documentation links, and a crate-specific top-line summary.
+- Do not change encode/decode logic, SIMD admission scope, runtime dependency
+  policy, or target evidence posture in this maintenance release.
+
 Historical `1.2.x` to `1.3.0` transition:
 
 - `1.2.0` admitted conservative encode acceleration.

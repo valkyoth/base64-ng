@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.6 - 2026-07-09
+
+- Synchronized all workspace crate package versions to `1.3.6`.
+- Added consistent companion-crate README headers with the shared project image,
+  core documentation links, and crate-specific one-line summaries.
+- No encode/decode logic, SIMD admission scope, or runtime dependency posture
+  changes.
+
 ## 1.3.5 - 2026-07-04
 
 - Added required `riscv64gc-unknown-linux-gnu` QEMU user-mode evidence for

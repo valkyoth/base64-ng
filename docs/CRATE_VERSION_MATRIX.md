@@ -5,6 +5,24 @@ crate remains the stable user entry point; companion crates are optional
 integration packages for applications that explicitly admit their dependency
 sets.
 
+## 1.3.6 Release Plan
+
+The `1.3.6` release keeps the workspace crate family synchronized. The main
+crate and all companion crates carry the companion README header refresh so
+crate pages share the project image, core documentation links, and a
+crate-specific one-line summary. No encode/decode logic, SIMD admission scope,
+or runtime dependency posture changes in this release.
+
+| Crate | Version | Publish In 1.3.6 | Cargo |
+| --- | --- | --- | --- |
+| `base64-ng` | `1.3.6` | yes | <https://crates.io/crates/base64-ng> |
+| `base64-ng-sanitization` | `1.3.6` | yes | <https://crates.io/crates/base64-ng-sanitization> |
+| `base64-ng-derive` | `1.3.6` | yes | <https://crates.io/crates/base64-ng-derive> |
+| `base64-ng-serde` | `1.3.6` | yes | <https://crates.io/crates/base64-ng-serde> |
+| `base64-ng-bytes` | `1.3.6` | yes | <https://crates.io/crates/base64-ng-bytes> |
+| `base64-ng-subtle` | `1.3.6` | yes | <https://crates.io/crates/base64-ng-subtle> |
+| `base64-ng-tokio` | `1.3.6` | yes | <https://crates.io/crates/base64-ng-tokio> |
+
 ## 1.3.5 Release Plan
 
 The `1.3.5` release keeps the workspace crate family synchronized. The main
