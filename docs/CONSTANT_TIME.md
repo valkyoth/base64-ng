@@ -17,8 +17,10 @@ payloads:
 ```rust
 use base64_ng::ct;
 
+let mut staging = [0u8; 32];
 let mut output = [0u8; 32];
-let written = ct::STANDARD.decode_slice_clear_tail(b"...", &mut output)?;
+let written = ct::STANDARD
+    .decode_slice_staged_clear_tail(b"...", &mut output, &mut staging)?;
 ```
 
 The API should be separate from the default strict decoder so users can choose
@@ -61,6 +63,19 @@ use base64_ng::runtime::{require_backend_policy, BackendPolicy};
 require_backend_policy(BackendPolicy::HighAssuranceScalarOnly)
     .expect("base64-ng posture check failed: CT gate not attested on this core");
 ```
+
+Deployments that want a compile-time fail-closed guard can also build with the
+custom cfg `base64_ng_require_high_assurance`. That cfg rejects builds where
+the `simd` feature is enabled:
+
+```sh
+RUSTFLAGS="--cfg base64_ng_require_high_assurance" cargo build --no-default-features
+```
+
+This is a custom cfg rather than a Cargo feature so normal `--all-features`
+release evidence and docs.rs builds can continue to exercise every public
+feature. Treat the cfg as a deployment policy assertion and keep the runtime
+`require_backend_policy(BackendPolicy::HighAssuranceScalarOnly)` startup gate.
 
 `HighAssuranceScalarOnly` is still a build and target posture assertion. On
 AArch64, the crate emits `isb sy` plus the CSDB hint for the CT result gate.

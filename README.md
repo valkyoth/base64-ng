@@ -225,6 +225,12 @@ license = "MIT OR Apache-2.0"
 | `kani` | no | Reserved for verifier harnesses; normal builds do not require Kani. |
 | `fuzzing` | no | Reserved for verifier and fuzz harness integration; published crate stays dependency-free. |
 
+High-assurance deployments that must fail closed when SIMD is enabled can build
+with `RUSTFLAGS="--cfg base64_ng_require_high_assurance"`. This custom cfg is
+not a Cargo feature, so normal `--all-features` release evidence and docs.rs
+builds remain usable. When the cfg is set, `base64-ng` refuses to compile if
+the `simd` feature is enabled.
+
 ## Companion Crates
 
 The core `base64-ng` crate keeps its zero-runtime-dependency policy. Optional

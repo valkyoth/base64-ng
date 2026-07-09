@@ -5,6 +5,11 @@
 - Synchronized all workspace crate package versions to `1.3.6`.
 - Added consistent companion-crate README headers with the shared project image,
   core documentation links, and crate-specific one-line summaries.
+- Moved the top constant-time guide example to
+  `decode_slice_staged_clear_tail` so shared-memory and HSM-adjacent users see
+  the safer staged pattern first.
+- Added the custom `base64_ng_require_high_assurance` cfg. When set, builds
+  that also enable `simd` fail at compile time.
 - No encode/decode logic, SIMD admission scope, or runtime dependency posture
   changes.
 

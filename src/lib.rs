@@ -112,6 +112,12 @@ compile_error!(
      caller-owned, platform-approved zeroization for high-assurance wasm deployments."
 );
 
+#[cfg(all(base64_ng_require_high_assurance, feature = "simd"))]
+compile_error!(
+    "base64-ng: base64_ng_require_high_assurance and the `simd` feature are \
+     mutually exclusive. Disable `simd` or remove the high-assurance build cfg."
+);
+
 #[cfg(all(
     not(miri),
     not(feature = "allow-compiler-fence-only-wipe"),

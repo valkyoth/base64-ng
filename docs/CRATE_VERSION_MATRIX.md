@@ -10,8 +10,11 @@ sets.
 The `1.3.6` release keeps the workspace crate family synchronized. The main
 crate and all companion crates carry the companion README header refresh so
 crate pages share the project image, core documentation links, and a
-crate-specific one-line summary. No encode/decode logic, SIMD admission scope,
-or runtime dependency posture changes in this release.
+crate-specific one-line summary. The main crate also moves the top
+constant-time guide example to staged decode and adds the custom
+`base64_ng_require_high_assurance` cfg so deployments can fail builds that
+combine a high-assurance posture assertion with `simd`. No encode/decode logic,
+SIMD admission scope, or runtime dependency posture changes in this release.
 
 | Crate | Version | Publish In 1.3.6 | Cargo |
 | --- | --- | --- | --- |

@@ -7,7 +7,7 @@ previous_version = "1.3.5"
 version = "1.3.6"
 change = "dependency"
 publish = true
-reason = "Publishes the 1.3.6 family patch with synchronized crate versions and refreshed companion crate README headers."
+reason = "Publishes the 1.3.6 family patch with synchronized crate versions, refreshed companion crate README headers, staged CT decode docs, and a high-assurance compile cfg guard."
 
 [crates."base64-ng-sanitization"]
 previous_version = "1.3.5"
