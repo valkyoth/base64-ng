@@ -18,11 +18,12 @@
 //!
 //! # Security
 //!
-//! The read-all helpers use temporary `Vec<u8>` allocations and the normal
-//! strict decode path. They wipe those temporary vectors before returning, but
-//! they are not constant-time-oriented token validators or high-assurance
-//! secret decoders. For secret-bearing async frames, collect a bounded frame
-//! under the application's approved memory policy and decode through
+//! The read-all helpers use RAII-guarded temporary `Vec<u8>` allocations and
+//! the normal strict decode path. The guards wipe initialized bytes and spare
+//! capacity on ordinary return, I/O error, or future cancellation. They are
+//! not constant-time-oriented token validators or high-assurance secret
+//! decoders. For secret-bearing async frames, collect a bounded frame under
+//! the application's approved memory policy and decode through
 //! `base64_ng::ct`, staged CT decode, `base64-ng-derive`, or
 //! `base64-ng-sanitization`.
 
@@ -56,20 +57,15 @@ where
     R: AsyncRead + Unpin + ?Sized,
     W: AsyncWrite + Unpin + ?Sized,
 {
-    let mut input = Vec::new();
-    reader.read_to_end(&mut input).await?;
-    let mut output = match engine.encode_vec(&input).map_err(encode_io_error) {
-        Ok(output) => output,
-        Err(error) => {
-            wipe_bytes(&mut input);
-            return Err(error);
-        }
-    };
+    let mut input = WipingVec::new();
+    reader.read_to_end(input.as_mut_vec()).await?;
+    let output = WipingVec::from_vec(
+        engine
+            .encode_vec(input.as_slice())
+            .map_err(encode_io_error)?,
+    );
     let written = output.len() as u64;
-    let result = writer.write_all(&output).await;
-    wipe_bytes(&mut input);
-    wipe_bytes(&mut output);
-    result?;
+    writer.write_all(output.as_slice()).await?;
     Ok(written)
 }
 
@@ -95,19 +91,14 @@ where
     R: AsyncRead + Unpin + ?Sized,
     W: AsyncWrite + Unpin + ?Sized,
 {
-    let mut input = read_to_end_limited(reader, max_input_len).await?;
-    let mut output = match engine.encode_vec(&input).map_err(encode_io_error) {
-        Ok(output) => output,
-        Err(error) => {
-            wipe_bytes(&mut input);
-            return Err(error);
-        }
-    };
+    let input = read_to_end_limited(reader, max_input_len).await?;
+    let output = WipingVec::from_vec(
+        engine
+            .encode_vec(input.as_slice())
+            .map_err(encode_io_error)?,
+    );
     let written = output.len() as u64;
-    let result = writer.write_all(&output).await;
-    wipe_bytes(&mut input);
-    wipe_bytes(&mut output);
-    result?;
+    writer.write_all(output.as_slice()).await?;
     Ok(written)
 }
 
@@ -130,20 +121,15 @@ where
     R: AsyncRead + Unpin + ?Sized,
     W: AsyncWrite + Unpin + ?Sized,
 {
-    let mut input = Vec::new();
-    reader.read_to_end(&mut input).await?;
-    let mut output = match engine.decode_vec(&input).map_err(decode_io_error) {
-        Ok(output) => output,
-        Err(error) => {
-            wipe_bytes(&mut input);
-            return Err(error);
-        }
-    };
+    let mut input = WipingVec::new();
+    reader.read_to_end(input.as_mut_vec()).await?;
+    let output = WipingVec::from_vec(
+        engine
+            .decode_vec(input.as_slice())
+            .map_err(decode_io_error)?,
+    );
     let written = output.len() as u64;
-    let result = writer.write_all(&output).await;
-    wipe_bytes(&mut input);
-    wipe_bytes(&mut output);
-    result?;
+    writer.write_all(output.as_slice()).await?;
     Ok(written)
 }
 
@@ -169,19 +155,14 @@ where
     R: AsyncRead + Unpin + ?Sized,
     W: AsyncWrite + Unpin + ?Sized,
 {
-    let mut input = read_to_end_limited(reader, max_input_len).await?;
-    let mut output = match engine.decode_vec(&input).map_err(decode_io_error) {
-        Ok(output) => output,
-        Err(error) => {
-            wipe_bytes(&mut input);
-            return Err(error);
-        }
-    };
+    let input = read_to_end_limited(reader, max_input_len).await?;
+    let output = WipingVec::from_vec(
+        engine
+            .decode_vec(input.as_slice())
+            .map_err(decode_io_error)?,
+    );
     let written = output.len() as u64;
-    let result = writer.write_all(&output).await;
-    wipe_bytes(&mut input);
-    wipe_bytes(&mut output);
-    result?;
+    writer.write_all(output.as_slice()).await?;
     Ok(written)
 }
 
@@ -227,37 +208,85 @@ fn wipe_bytes(bytes: &mut [u8]) {
     base64_ng::secure_wipe(bytes);
 }
 
-async fn read_to_end_limited<R>(reader: &mut R, max_input_len: usize) -> io::Result<Vec<u8>>
+struct WipingVec(Vec<u8>);
+
+impl WipingVec {
+    fn new() -> Self {
+        Self(Vec::new())
+    }
+
+    fn with_capacity(capacity: usize) -> Self {
+        Self(Vec::with_capacity(capacity))
+    }
+
+    fn from_vec(bytes: Vec<u8>) -> Self {
+        Self(bytes)
+    }
+
+    fn as_slice(&self) -> &[u8] {
+        &self.0
+    }
+
+    fn as_mut_vec(&mut self) -> &mut Vec<u8> {
+        &mut self.0
+    }
+
+    fn len(&self) -> usize {
+        self.0.len()
+    }
+}
+
+impl Drop for WipingVec {
+    fn drop(&mut self) {
+        // Initialize the existing spare capacity without reallocating so the
+        // reviewed wipe primitive covers the complete allocation.
+        self.0.resize(self.0.capacity(), 0);
+        wipe_bytes(&mut self.0);
+        self.0.clear();
+    }
+}
+
+struct WipingArray<const N: usize>([u8; N]);
+
+impl<const N: usize> WipingArray<N> {
+    const fn new() -> Self {
+        Self([0; N])
+    }
+}
+
+impl<const N: usize> Drop for WipingArray<N> {
+    fn drop(&mut self) {
+        wipe_bytes(&mut self.0);
+    }
+}
+
+async fn read_to_end_limited<R>(reader: &mut R, max_input_len: usize) -> io::Result<WipingVec>
 where
     R: AsyncRead + Unpin + ?Sized,
 {
-    let mut input = Vec::with_capacity(max_input_len.min(READ_ALL_EAGER_CAP));
-    let mut chunk = [0u8; 8192];
+    let mut input = WipingVec::with_capacity(max_input_len.min(READ_ALL_EAGER_CAP));
+    let mut chunk = WipingArray::<8192>::new();
 
     loop {
-        let read = match reader.read(&mut chunk).await {
-            Ok(read) => read,
-            Err(error) => {
-                wipe_bytes(&mut chunk);
-                wipe_bytes(&mut input);
-                return Err(error);
-            }
+        let remaining = max_input_len - input.len();
+        let read_cap = if remaining < chunk.0.len() {
+            remaining + 1
+        } else {
+            chunk.0.len()
         };
+        let read = reader.read(&mut chunk.0[..read_cap]).await?;
         if read == 0 {
-            wipe_bytes(&mut chunk);
             return Ok(input);
         }
 
-        if read > max_input_len.saturating_sub(input.len()) {
-            wipe_bytes(&mut chunk);
-            wipe_bytes(&mut input);
+        if read > remaining {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidData,
                 "base64-ng-tokio input exceeds configured limit",
             ));
         }
 
-        input.extend_from_slice(&chunk[..read]);
-        wipe_bytes(&mut chunk);
+        input.0.extend_from_slice(&chunk.0[..read]);
+        wipe_bytes(&mut chunk.0);
     }
 }

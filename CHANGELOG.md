@@ -11,13 +11,18 @@
   release-toolchain pin.
 - Updated test-only byte iteration syntax for the Rust `1.97.0` Clippy policy.
 - Updated constant-time assembly evidence parsing for Rust `1.97.0`'s default
-  v0 symbol mangling while preserving legacy-symbol compatibility.
+  v0 symbol mangling while preserving legacy-symbol compatibility and requiring
+  concrete text-section definitions for both formats.
 - Updated `base64-ng-bytes` to `bytes` `1.12.1` and
   `base64-ng-sanitization` to exact-pinned `sanitization` `1.2.4`.
 - Pinned GitHub Actions to the latest audited releases: checkout `v6.0.2`,
   rust-cache `v2.9.1`, and install-action `v2.83.0`.
 - Added exact-version cargo-nextest installation and the 210-test nextest suite
   to GitHub CI, with install-action fallback disabled.
+- Hardened Tokio companion cleanup with volatile wipes for fixed reader
+  buffers and RAII-wiped read-all allocations that also cover cancellation.
+- Bounded Tokio limited-helper over-read to one lookahead byte and documented
+  the adjacent-frame contract.
 - Pinned documented release-tool installs to the audited current versions,
   including cargo-nextest `0.9.140` and cargo-fuzz `0.13.2`.
 - Deferred the stronger RISC-V RVV proof and backend-admission review to

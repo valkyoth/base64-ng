@@ -384,7 +384,10 @@ assert!(decoded.subtle_verify(b"hello"));
 `base64-ng-tokio` provides read-all/write-all async helpers and manual
 `AsyncRead`/`AsyncWrite` streaming adapters for applications that already use
 Tokio. Prefer the `*_limited` helper variants for request or frame boundaries
-controlled by a peer:
+controlled by a peer. Read-all temporary allocations are RAII-wiped on return,
+error, and cancellation. Limited helpers may consume one lookahead byte to
+detect overflow, so use an already bounded reader when adjacent input must
+remain unread:
 
 ```toml
 [dependencies]

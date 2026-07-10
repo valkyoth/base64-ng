@@ -33,6 +33,11 @@ variants when input size is controlled by a peer or request boundary. Writer
 shutdown is the finalization boundary: call `AsyncWriteExt::shutdown` to encode
 or validate a final partial quantum.
 
+Read-all helper allocations are RAII-wiped on success, error, and cancellation.
+Limited helpers consume no more than the configured limit plus one lookahead
+byte used to detect overflow. Use a separately bounded reader or a streaming
+adapter when an adjacent frame's first byte must remain unread.
+
 ```rust
 use base64_ng::STANDARD;
 use base64_ng_tokio::{encode_reader_to_writer_limited, EncoderReader, EncoderWriter};

@@ -78,6 +78,10 @@ echo "companion crates: base64-ng-subtle dependency policy"
 scripts/cargo-deny-check.sh "$subtle_manifest" deny.toml
 
 echo "companion crates: base64-ng-tokio test"
+if grep -R -n '\.fill(0)' crates/base64-ng-tokio/src; then
+    echo "companion crates: base64-ng-tokio must use hardened wipe helpers" >&2
+    exit 1
+fi
 cargo test --manifest-path "$tokio_manifest" --all-features
 
 echo "companion crates: base64-ng-tokio clippy"

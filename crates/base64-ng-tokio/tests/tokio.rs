@@ -28,6 +28,16 @@ impl ScriptedReader {
             actions: actions.into_iter().collect(),
         }
     }
+
+    fn remaining_data_len(&self) -> usize {
+        self.actions
+            .iter()
+            .map(|action| match action {
+                ReadAction::Data(bytes) => bytes.len(),
+                ReadAction::Error | ReadAction::Pending => 0,
+            })
+            .sum()
+    }
 }
 
 impl AsyncRead for ScriptedReader {
@@ -132,6 +142,22 @@ async fn limited_decode_reports_oversized_input_before_writing() {
         .unwrap_err();
 
     assert_eq!(error.kind(), std::io::ErrorKind::InvalidData);
+    assert_eq!(output, b"untouched");
+}
+
+#[tokio::test]
+async fn limited_helpers_consume_at_most_limit_plus_one_byte() {
+    let input_len = 16_384;
+    let limit = 100;
+    let mut input = ScriptedReader::new([ReadAction::Data(vec![b'x'; input_len])]);
+    let mut output = b"untouched".to_vec();
+
+    let error = encode_reader_to_writer_limited(&STANDARD, &mut input, &mut output, limit)
+        .await
+        .unwrap_err();
+
+    assert_eq!(error.kind(), std::io::ErrorKind::InvalidData);
+    assert_eq!(input.remaining_data_len(), input_len - limit - 1);
     assert_eq!(output, b"untouched");
 }
 

@@ -12,6 +12,13 @@ input size before writing output. Its `EncoderReader`, `DecoderReader`,
 `EncoderWriter`, and `DecoderWriter` adapters use explicit state machines,
 fixed internal buffers, and drop cleanup.
 
+Read-all helper allocations are held behind RAII guards before the first
+suspension point. Their initialized bytes and spare capacity are wiped on
+success, I/O error, or future cancellation. Limited helpers request at most the
+remaining allowance plus one lookahead byte. Generic `AsyncRead` cannot return
+that lookahead byte to the source; callers that must preserve adjacent framed
+input should provide an already bounded reader or use a streaming adapter.
+
 ## Current Status
 
 - The `stream` feature provides `std::io` streaming wrappers.
@@ -22,7 +29,7 @@ fixed internal buffers, and drop cleanup.
   the crate today.
 - `base64-ng-tokio` provides optional read-all/write-all helpers for projects
   that already admit Tokio. Prefer its limited helpers for peer-controlled
-  input.
+  input. Their temporary allocations use cancellation-safe RAII cleanup.
 - `base64-ng-tokio` also provides streaming adapters: `EncoderReader`,
   `DecoderReader`, `EncoderWriter`, and `DecoderWriter`.
 - Async writer shutdown is the finalization boundary. Call

@@ -38,7 +38,7 @@ copy_single_asm() {
 require_lto_symbol() {
     symbol_len="$1"
     symbol_name="$2"
-    legacy_pattern="\\.text\\._ZN9base64_ng.*${symbol_len}${symbol_name}17h"
+    legacy_pattern="^[[:space:]]*\\.section[[:space:]]+\\.text\\._ZN9base64_ng.*${symbol_len}${symbol_name}17h"
     v0_pattern="^[[:space:]]*\\.section[[:space:]]+\\.text\\._R.*9base64_ng.*${symbol_len}${symbol_name},"
 
     if grep -E -q "$legacy_pattern" "$output_dir/base64_ng-all-features-lto.s"; then

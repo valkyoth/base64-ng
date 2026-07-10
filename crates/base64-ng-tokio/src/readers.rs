@@ -71,9 +71,9 @@ where
     }
 
     fn clear_buffers(&mut self) {
-        self.pending.fill(0);
+        wipe_bytes(&mut self.pending);
         self.pending_len = 0;
-        self.output.fill(0);
+        wipe_bytes(&mut self.output);
         self.output_pos = 0;
         self.output_len = 0;
     }
@@ -289,9 +289,9 @@ where
     }
 
     fn clear_buffers(&mut self) {
-        self.pending.fill(0);
+        wipe_bytes(&mut self.pending);
         self.pending_len = 0;
-        self.output.fill(0);
+        wipe_bytes(&mut self.output);
         self.output_pos = 0;
         self.output_len = 0;
     }
