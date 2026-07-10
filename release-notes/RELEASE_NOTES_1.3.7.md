@@ -21,7 +21,9 @@ the `base64-ng` crate family.
 - Pinned GitHub Actions to checkout `v6.0.2`, rust-cache `v2.9.1`, and
   install-action `v2.83.0`, using their verified release commits.
 - Added the 210-test nextest suite to GitHub CI and disabled install-action
-  fallback installation.
+  fallback installation for supported binaries. Cargo-deny uses a separate
+  exact-version locked Cargo installation because its current binary is not
+  available through install-action.
 - Hardened Tokio reader-buffer cleanup and made read-all temporary allocations
   wipe through RAII on success, error, and cancellation.
 - Limited oversized-input detection to one lookahead byte and documented the
@@ -38,7 +40,7 @@ the `base64-ng` crate family.
 ## Notes
 
 No core encode/decode logic, SIMD admission scope, unsafe boundary, target
-evidence, or core zero-dependency policy changes in this release. Existing RISC-V QEMU
-evidence remains valid functional and fallback evidence, but it is not real
-hardware acceleration, performance, timing, side-channel, or
+evidence, or core zero-dependency policy changes in this release. Existing
+RISC-V QEMU evidence remains valid functional and fallback evidence, but it is
+not real hardware acceleration, performance, timing, side-channel, or
 register-retention proof.

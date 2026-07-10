@@ -18,7 +18,8 @@
 - Pinned GitHub Actions to the latest audited releases: checkout `v6.0.2`,
   rust-cache `v2.9.1`, and install-action `v2.83.0`.
 - Added exact-version cargo-nextest installation and the 210-test nextest suite
-  to GitHub CI, with install-action fallback disabled.
+  to GitHub CI, with install-action fallback disabled for supported binaries
+  and cargo-deny installed through an exact-version locked Cargo command.
 - Hardened Tokio companion cleanup with volatile wipes for fixed reader
   buffers and RAII-wiped read-all allocations that also cover cancellation.
 - Bounded Tokio limited-helper over-read to one lookahead byte and documented

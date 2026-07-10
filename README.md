@@ -56,8 +56,9 @@ and normal strict decode when the binary is compiled with
 
 The latest patch in this line is `1.3.7`, which keeps all workspace crate
 versions aligned, moves release builds to Rust `1.97.0`, and refreshes audited
-companion dependencies and GitHub Action pins without changing encode/decode
-behavior or SIMD admission.
+companion dependencies and GitHub Action pins. It also hardens Tokio companion
+cancellation cleanup and bounds limited-helper over-read and cleanup cost
+without changing core encode/decode behavior or SIMD admission.
 The stronger RISC-V RVV proof and admission review is scheduled for `1.3.8`;
 until then, RISC-V remains QEMU-tested scalar/fallback-only. The workspace
 crate family stays version-aligned at `1.3.7`.
