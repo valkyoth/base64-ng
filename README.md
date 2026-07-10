@@ -29,13 +29,14 @@ The crate starts conservative: a small scalar implementation, strict RFC 4648 be
 
 ## Current Status
 
-The current public release is `1.3.6`.
+The current public release is `1.3.7`.
 
-`1.3.6` is a documentation and crate-family version synchronization patch on
-top of the `1.3.0` implementation-completion release, the `1.3.1` Tokio
+`1.3.7` is a maintenance and crate-family version synchronization patch on top
+of the `1.3.0` implementation-completion release, the `1.3.1` Tokio
 writer patch, the `1.3.2` non-standard SIMD surface review, the `1.3.3`
 wasm SIMD runtime-dispatch and profile-ergonomics patch, the `1.3.4`
-big-endian QEMU evidence patch, and the `1.3.5` RISC-V QEMU evidence patch.
+big-endian QEMU evidence patch, the `1.3.5` RISC-V QEMU evidence patch, and
+the `1.3.6` documentation refresh.
 It keeps the admitted `1.2.x` native encode acceleration posture and the
 admitted `1.3.0` normal strict SIMD decode scope for Standard and URL-safe
 alphabet families on std `x86`/`x86_64` AVX-512 VBMI, AVX2, SSSE3/SSE4.1,
@@ -53,11 +54,13 @@ and normal strict decode when the binary is compiled with
 `target-feature=+simd128`, the `simd` feature, and the explicit
 `allow-wasm32-best-effort-wipe` feature.
 
-The latest patch in this line is `1.3.6`, which aligns all workspace crate
-package versions and adds consistent companion-crate README headers with the
-shared project image and crate-specific summaries. The `1.3.5` RISC-V QEMU
-evidence and the `1.3.4` big-endian QEMU evidence remain in the release gate.
-The workspace crate family stays version-aligned at `1.3.6`.
+The latest patch in this line is `1.3.7`, which keeps all workspace crate
+versions aligned, moves release builds to Rust `1.97.0`, and refreshes audited
+companion dependencies and GitHub Action pins without changing encode/decode
+behavior or SIMD admission.
+The stronger RISC-V RVV proof and admission review is scheduled for `1.3.8`;
+until then, RISC-V remains QEMU-tested scalar/fallback-only. The workspace
+crate family stays version-aligned at `1.3.7`.
 
 Implemented on this branch now:
 
@@ -161,7 +164,7 @@ Planned behind admission evidence:
 | --- | --- |
 | License | `MIT OR Apache-2.0` |
 | MSRV | Rust `1.90.0` |
-| Active release toolchain | Rust `1.96.1` |
+| Active release toolchain | Rust `1.97.0` |
 | Runtime dependencies | Zero external crates |
 | Unsafe policy | Scalar encode/decode remains safe Rust; audited unsafe is limited to volatile wiping, CT comparison/barrier helpers, and the reviewed SIMD boundary |
 | Active backend | Scalar by default; std x86/x86_64 AVX-512 VBMI preferred, then AVX2, then SSSE3/SSE4.1, plus little-endian std aarch64 NEON, and wasm `simd128` when the admitted feature/runtime profile is present |
@@ -178,14 +181,14 @@ and CWE mapping lives in [docs/SECURITY_CONTROLS.md](docs/SECURITY_CONTROLS.md).
 ## Rust Version Support
 
 The minimum supported Rust version is Rust `1.90.0`. New deployments should
-prefer the latest tested stable Rust; as of July 2, 2026, this project tests
-through Rust `1.96.1`.
+prefer the latest tested stable Rust; as of July 10, 2026, this project tests
+through Rust `1.97.0`.
 
-The active release toolchain is Rust `1.96.1`. MSRV remains Rust `1.90.0` and
+The active release toolchain is Rust `1.97.0`. MSRV remains Rust `1.90.0` and
 is checked separately in CI so the project can build and test with the latest
 stable compiler without dropping older supported users.
 
-Compatibility evidence for the `1.3.6` workspace:
+Compatibility evidence for the `1.3.7` workspace:
 
 | Rust | Local Evidence |
 | --- | --- |
@@ -197,12 +200,13 @@ Compatibility evidence for the `1.3.6` workspace:
 | `1.95.0` | ✓ `cargo check --all-features` |
 | `1.96.0` | ✓ `cargo check --all-features` |
 | `1.96.1` | ✓ `cargo check --all-features` |
+| `1.97.0` | ✓ active release toolchain and `cargo check --all-features` |
 
 ## Install
 
 ```toml
 [dependencies]
-base64-ng = "1.3.6"
+base64-ng = "1.3.7"
 ```
 
 The crate is dual-licensed:
@@ -259,8 +263,8 @@ only the crates that changed instead of republishing the whole ecosystem.
 `base64-ng-sanitization` provides extension helpers for
 `base64_ng::ct::CtEngine` that decode directly into
 `sanitization::SecretBytes<N>` in `no_std`, with `SecretVec` helpers behind its
-own `alloc` feature. The `1.3.0` companion uses exact-pinned
-`sanitization` `=1.2.2` and exposes `sanitization::ct::Choice` comparison
+own `alloc` feature. The `1.3.7` companion uses exact-pinned
+`sanitization` `=1.2.4` and exposes `sanitization::ct::Choice` comparison
 helpers through `SanitizationCtEqExt`. Enable the companion's
 `high-assurance` feature to
 decode directly into `sanitization::LockedSecretBytes` or
@@ -269,8 +273,8 @@ decode directly into `sanitization::LockedSecretBytes` or
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.3.6", default-features = false }
-base64-ng-sanitization = { version = "1.3.6", default-features = false }
+base64-ng = { version = "1.3.7", default-features = false }
+base64-ng-sanitization = { version = "1.3.7", default-features = false }
 ```
 
 ```rust
@@ -289,7 +293,7 @@ assert!(secret.sanitization_verify(
 
 ```toml
 [dependencies]
-base64-ng-sanitization = { version = "1.3.6", features = ["high-assurance"] }
+base64-ng-sanitization = { version = "1.3.7", features = ["high-assurance"] }
 ```
 
 ```rust
@@ -308,8 +312,8 @@ newtypes around fixed byte arrays:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.3.6", default-features = false }
-base64-ng-derive = "1.3.6"
+base64-ng = { version = "1.3.7", default-features = false }
+base64-ng-derive = "1.3.7"
 ```
 
 ```rust
@@ -328,7 +332,7 @@ assert_eq!(key.encode_base64::<8>().unwrap().as_str(), "aGVsbG8=");
 
 ```toml
 [dependencies]
-base64-ng-serde = "1.3.6"
+base64-ng-serde = "1.3.7"
 serde = { version = "1.0.228", features = ["derive"] }
 ```
 
@@ -347,9 +351,9 @@ Field-level modules are available for `standard`, `standard_no_pad`,
 
 ```toml
 [dependencies]
-base64-ng = "1.3.6"
-base64-ng-bytes = "1.3.6"
-bytes = "1.12.0"
+base64-ng = "1.3.7"
+base64-ng-bytes = "1.3.7"
+bytes = "1.12.1"
 ```
 
 ```rust
@@ -365,8 +369,8 @@ projects that already admit `subtle`:
 
 ```toml
 [dependencies]
-base64-ng = "1.3.6"
-base64-ng-subtle = "1.3.6"
+base64-ng = "1.3.7"
+base64-ng-subtle = "1.3.7"
 ```
 
 ```rust
@@ -384,8 +388,8 @@ controlled by a peer:
 
 ```toml
 [dependencies]
-base64-ng = "1.3.6"
-base64-ng-tokio = "1.3.6"
+base64-ng = "1.3.7"
+base64-ng-tokio = "1.3.7"
 tokio = { version = "1.52.3", features = ["io-util"] }
 ```
 
@@ -418,7 +422,7 @@ Disable defaults for embedded or freestanding use:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.3.6", default-features = false }
+base64-ng = { version = "1.3.7", default-features = false }
 ```
 
 Enable admitted encode acceleration on supported `std` targets with the
@@ -430,7 +434,7 @@ and URL-safe alphabets after whole-input scalar validation:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.3.6", features = ["simd"] }
+base64-ng = { version = "1.3.7", features = ["simd"] }
 ```
 
 ```rust
@@ -1112,8 +1116,8 @@ assert_eq!(&encoded[..written], b"aGVsbG8");
 Security commitments:
 
 - Stable Rust first. MSRV remains Rust `1.90.0`; the active release toolchain
-  is Rust `1.96.1`. New deployments should prefer the latest tested stable
-  Rust, currently Rust `1.96.1`.
+  is Rust `1.97.0`. New deployments should prefer the latest tested stable
+  Rust, currently Rust `1.97.0`.
 - `no_std` core by default.
 - Scalar encode/decode remains safe Rust.
 - Audited unsafe helpers in `src/cleanup.rs` perform volatile best-effort
@@ -1298,18 +1302,18 @@ CI and local release scripts use `scripts/ci_install_rust.sh`; that script uses
 toolchain. MSRV remains Rust `1.90.0` and is checked separately.
 
 ```sh
-cargo install --locked cargo-audit
-cargo install --locked cargo-license
-cargo install --locked cargo-deny
+cargo install --locked cargo-audit --version 0.22.2
+cargo install --locked cargo-license --version 0.7.0
+cargo install --locked cargo-deny --version 0.20.2
 cargo install --locked cargo-sbom --version 0.10.0
 ```
 
 Optional deep tools:
 
 ```sh
-cargo install --locked cargo-nextest
-cargo install --locked cargo-fuzz
-cargo install --locked kani-verifier
+cargo install --locked cargo-nextest --version 0.9.140
+cargo install --locked cargo-fuzz --version 0.13.2
+cargo install --locked kani-verifier --version 0.67.0
 ```
 
 Verify optional tool installation:

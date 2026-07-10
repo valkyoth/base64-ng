@@ -113,7 +113,7 @@ certification claim.
   drop-time cleanup by default.
 - For long-lived decoded key material on supported native targets, consider
   `base64-ng-sanitization` with its `high-assurance` feature. That path uses
-  exact-pinned `sanitization` `=1.2.2` `memory-lock`, `canary-check`, and
+  exact-pinned `sanitization` `=1.2.4` `memory-lock`, `canary-check`, and
   `random-canary` features and exposes helpers that decode directly into
   `LockedSecretBytes` or `LockedSecretVec` without first landing in a normal
   `Vec`.

@@ -70,7 +70,7 @@ Install nightly and cargo-fuzz:
 
 ```sh
 rustup toolchain install nightly
-cargo install --locked cargo-fuzz
+cargo install --locked cargo-fuzz --version 0.13.2
 ```
 
 Run bounded smoke campaigns before release-sensitive stream or decode changes:

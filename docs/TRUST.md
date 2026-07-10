@@ -8,7 +8,7 @@ stable release.
 | --- | --- | --- |
 | License | `MIT OR Apache-2.0` | `Cargo.toml`, `LICENSE-MIT`, `LICENSE-APACHE` |
 | MSRV | Rust `1.90.0` | `Cargo.toml`, CI compatibility matrix |
-| Active release toolchain | Rust `1.96.1`; MSRV remains Rust `1.90.0` | `rust-toolchain.toml`, `scripts/ci_install_rust.sh` |
+| Active release toolchain | Rust `1.97.0`; MSRV remains Rust `1.90.0` | `rust-toolchain.toml`, `scripts/ci_install_rust.sh` |
 | Runtime dependencies | Zero external crates in the core package; optional companion crates are separate opt-in packages | `scripts/validate-dependencies.sh`, `scripts/check_companion_crates.sh` |
 | Default dev dependencies | Zero external crates | `Cargo.toml` |
 | Optional runtime features | `alloc`, `std`, `stream`; `allow-wasm32-best-effort-wipe` explicit wasm cleanup-limit acceptance; `allow-compiler-fence-only-wipe` explicit unsupported-native cleanup-limit acceptance; reserved `simd`, `tokio`, `kani`, `fuzzing`. AArch64 CSDB attestation uses custom cfg `base64_ng_aarch64_csdb_attested`, not a feature. High-assurance deployments may set custom cfg `base64_ng_require_high_assurance` to make `simd` a compile-time error. | `Cargo.toml`, `scripts/check_reserved_features.sh`, `scripts/check_wasm_wipe_policy.sh` |

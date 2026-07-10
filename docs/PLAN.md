@@ -9,7 +9,7 @@ Build `base64-ng` as a modern, secure, `no_std`-first Base64 implementation for 
 ## Current Baseline
 
 - Rust MSRV: `1.90.0`.
-- Active release toolchain: `1.96.1`.
+- Active release toolchain: `1.97.0`.
 - License: `MIT OR Apache-2.0`.
 - Project name: `base64-ng`.
 - Runtime and dev dependency graph: zero external crates.
@@ -1130,7 +1130,7 @@ inside the `1.3.x` line if they remain evidence-gated and do not weaken the
   backend from QEMU-tested scalar/fallback evidence to accelerated or
   hardware-attested status.
 
-`1.3.5`: RISC-V RVV evidence track with QEMU-only scalar/fallback evidence.
+`1.3.5`: RISC-V QEMU baseline with scalar/fallback evidence.
 
 - Run the practical Rust/QEMU RISC-V target first:
   `riscv64gc-unknown-linux-gnu` under `qemu-riscv64`. Treat `riscv32` as a
@@ -1141,9 +1141,6 @@ inside the `1.3.x` line if they remain evidence-gated and do not weaken the
   surface, stream, and scalar-fallback checks under emulation.
 - Verify the current stable Rust blocker: on the active release toolchain,
   `core::arch::riscv64` remains gated by `riscv_ext_intrinsics`.
-- Add RVV detection/evidence hooks so external labs, companies, universities,
-  or users with Vector 1.0 hardware can run the same commands on real boards
-  such as SpacemiT K1/X60-class systems.
 - Keep release notes extremely explicit that project-owned evidence is QEMU
   evidence unless real hardware results are provided. QEMU is useful for
   correctness and release reproducibility, but it is not enough for hardware
@@ -1161,6 +1158,35 @@ inside the `1.3.x` line if they remain evidence-gated and do not weaken the
   core documentation links, and a crate-specific top-line summary.
 - Do not change encode/decode logic, SIMD admission scope, runtime dependency
   policy, or target evidence posture in this maintenance release.
+
+`1.3.7`: maintenance release and RISC-V proof rescheduling.
+
+- Keep all workspace crates version-aligned and refresh release metadata,
+  public dependency examples, migration guidance, and publishing order.
+- Preserve the `1.3.5` RISC-V QEMU functional-correctness and scalar/fallback
+  evidence without upgrading it into a hardware acceleration claim.
+- Move the stronger RISC-V RVV proof and backend-admission review to `1.3.8`
+  so it receives a dedicated evidence cycle.
+- Do not change encode/decode logic, SIMD admission scope, unsafe boundaries,
+  or runtime dependency policy in this maintenance release.
+
+`1.3.8`: RISC-V RVV proof and backend-admission review.
+
+- Add an RVV-specific implementation only when the active stable Rust
+  toolchain exposes a reviewable intrinsic path, or when a separately audited
+  assembly boundary is deliberately approved.
+- Build differential encode/decode evidence against the scalar implementation,
+  including malformed input, tails, padding, in-place operations, clear-tail
+  behavior, wrapped/legacy surfaces, and scalar fallback.
+- Add generated-assembly, target-feature detection, register-cleanup,
+  unsafe-boundary, and runtime-report evidence for every candidate RVV path.
+- Keep QEMU as reproducible functional evidence, while requiring community or
+  lab evidence from real RVV 1.0 hardware before describing the backend as
+  hardware-attested or publishing performance, timing, side-channel, or
+  register-retention claims.
+- If real hardware evidence or a stable implementation boundary is still
+  unavailable, retain scalar active dispatch and publish the blocker honestly
+  rather than weakening the admission requirements.
 
 Historical `1.2.x` to `1.3.0` transition:
 

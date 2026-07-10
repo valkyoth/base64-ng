@@ -22,9 +22,9 @@ exercise the deepest local paths:
 
 ```sh
 rustup target add x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu x86_64-unknown-freebsd wasm32-unknown-unknown thumbv7em-none-eabihf
-cargo install --locked cargo-nextest
-cargo install --locked cargo-fuzz
-cargo install --locked kani-verifier
+cargo install --locked cargo-nextest --version 0.9.140
+cargo install --locked cargo-fuzz --version 0.13.2
+cargo install --locked kani-verifier --version 0.67.0
 ```
 
 `cargo-fuzz` and Miri use nightly components:
@@ -124,6 +124,8 @@ The release gate runs:
   microarchitectural, register-retention, or side-channel evidence. The script
   records that community reports from real RVV 1.0 systems are still requested
   before any RISC-V backend is upgraded from QEMU-tested to hardware-attested.
+  The stronger RVV proof and backend-admission review is scheduled for
+  `1.3.8`; `1.3.7` preserves scalar active dispatch.
 - moved-code review for the `src/alphabet.rs` extraction, preserving root
   public exports for built-in alphabets, custom alphabet validation, and the
   `define_alphabet!` macro
@@ -236,7 +238,9 @@ The release gate runs:
   `scripts/generate_ct_asm_evidence.sh`
 - manual generated-code review checklist in [CT_ASM_REVIEW.md](CT_ASM_REVIEW.md)
 - LTO symbol-presence checks for non-inlined wipe boundaries and the
-  `constant_time_eq_public_len` equal-length comparison helper
+  `constant_time_eq_public_len` equal-length comparison helper; the parser
+  accepts both legacy Rust symbols and the v0 symbols enabled by default in
+  Rust `1.97.0`
 - Kani proofs through `scripts/check_kani.sh`; current local evidence is the
   full no-default-features harness set on the Rust `1.90.0` Kani toolchain
   with `cargo-kani 0.67.0`

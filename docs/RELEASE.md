@@ -105,17 +105,18 @@ Install release and deep-check tools:
 
 CI and local release scripts use `scripts/ci_install_rust.sh`; that script uses
 `rust-toolchain.toml` as the single source of truth for the active release
-toolchain. MSRV remains Rust `1.90.0` and is checked separately in the
-compatibility matrix.
+toolchain and fails if the selected `rustc` does not exactly match that pin.
+MSRV remains Rust `1.90.0` and is checked separately in the compatibility
+matrix.
 
 ```sh
-cargo install --locked cargo-audit
-cargo install --locked cargo-deny
-cargo install --locked cargo-license
+cargo install --locked cargo-audit --version 0.22.2
+cargo install --locked cargo-deny --version 0.20.2
+cargo install --locked cargo-license --version 0.7.0
 cargo install --locked cargo-sbom --version 0.10.0
-cargo install --locked cargo-nextest
-cargo install --locked cargo-fuzz
-cargo install --locked kani-verifier
+cargo install --locked cargo-nextest --version 0.9.140
+cargo install --locked cargo-fuzz --version 0.13.2
+cargo install --locked kani-verifier --version 0.67.0
 ```
 
 Verify installation:

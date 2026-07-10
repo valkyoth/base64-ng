@@ -23,27 +23,33 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Install Rust toolchain
         shell: bash
         run: scripts/ci_install_rust.sh
 
       - name: Cache Rust build output
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
         with:
           cache-on-failure: true
 
-      - name: Install security tools
-        uses: taiki-e/install-action@v2
+      - name: Install security and test tools
+        uses: taiki-e/install-action@c7eb1735f09259a5035e8e5d44b1406b1cddc0fb # v2.83.0
         with:
-          tool: cargo-deny,cargo-audit,cargo-sbom
+          tool: cargo-deny@0.20.2,cargo-audit@0.22.2,cargo-nextest@0.9.140
+          fallback: none
 
-      - name: Install cargo-license
-        run: cargo install --locked cargo-license --version 0.7.0
+      - name: Install crates.io release tools
+        run: |
+          cargo install --locked cargo-license --version 0.7.0
+          cargo install --locked cargo-sbom --version 0.10.0
 
       - name: Run checks
         run: scripts/checks.sh
+
+      - name: Run nextest
+        run: cargo nextest run --all-features
 
       - name: Check fuzz-only dependencies
         run: scripts/check_fuzz.sh
@@ -85,16 +91,17 @@ jobs:
           - 1.95.0
           - 1.96.0
           - 1.96.1
+          - 1.97.0
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Install Rust toolchain
         run: rustup toolchain install ${{ matrix.toolchain }}
 
       - name: Cache Rust build output
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
         with:
           cache-on-failure: true
           key: rust-${{ matrix.toolchain }}
@@ -122,14 +129,14 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Install Rust toolchain
         shell: bash
         run: scripts/ci_install_rust.sh
 
       - name: Cache Rust build output
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
         with:
           cache-on-failure: true
 
@@ -169,7 +176,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Install Rust toolchain
         shell: bash
@@ -179,7 +186,7 @@ jobs:
         run: rustup target add ${{ matrix.target }}
 
       - name: Cache Rust build output
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
         with:
           cache-on-failure: true
 
@@ -196,7 +203,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Install Rust toolchain
         shell: bash

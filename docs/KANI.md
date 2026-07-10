@@ -6,14 +6,14 @@ pairing is documented rather than assumed.
 
 ## Current Status
 
-- Active release toolchain: Rust `1.96.1`.
+- Active release toolchain: Rust `1.97.0`.
 - Kani verifier toolchain: Rust `1.90.0`.
 - Locally tested Kani: `cargo-kani 0.67.0`.
 - Current result: `scripts/check_kani.sh` verifies the full current
   no-default-features Kani harness set: 18 harnesses, 0 failures.
 
 This is not a normal Cargo dependency-resolution issue. Kani runs are compiler-integration-sensitive because Kani is a verifier with its own compiler integration.
-Updating the active release toolchain to Rust `1.96.1`
+Updating the active release toolchain to Rust `1.97.0`
 does not make every Kani release understand that compiler automatically, so
 Kani evidence records the exact verifier pairing separately from the normal
 Cargo release toolchain.
@@ -32,7 +32,7 @@ By default, `scripts/check_kani.sh` runs through the documented
 experiments:
 
 ```sh
-BASE64_NG_KANI_TOOLCHAIN=1.96.1-x86_64-unknown-linux-gnu scripts/check_kani.sh
+BASE64_NG_KANI_TOOLCHAIN=1.97.0-x86_64-unknown-linux-gnu scripts/check_kani.sh
 ```
 
 If the installed Kani compiler is compatible, `scripts/check_kani.sh` runs:
@@ -177,7 +177,7 @@ A Kani skip is not the same as a proof.
 When a newer Kani release is available:
 
 ```sh
-cargo install --locked kani-verifier
+cargo install --locked kani-verifier --version 0.67.0
 cargo kani setup
 cargo kani --version
 scripts/check_kani.sh

@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.3.7 - 2026-07-10
+
+- Synchronized all workspace crate package versions to `1.3.7`.
+- Prepared release metadata, dependency examples, migration guidance, and
+  crate-family publishing order for the `1.3.7` maintenance release.
+- Moved the active release toolchain to Rust `1.97.0` while retaining Rust
+  `1.90.0` as the separately checked MSRV.
+- Made CI fail closed if the active `rustc` version differs from the exact
+  release-toolchain pin.
+- Updated test-only byte iteration syntax for the Rust `1.97.0` Clippy policy.
+- Updated constant-time assembly evidence parsing for Rust `1.97.0`'s default
+  v0 symbol mangling while preserving legacy-symbol compatibility.
+- Updated `base64-ng-bytes` to `bytes` `1.12.1` and
+  `base64-ng-sanitization` to exact-pinned `sanitization` `1.2.4`.
+- Pinned GitHub Actions to the latest audited releases: checkout `v6.0.2`,
+  rust-cache `v2.9.1`, and install-action `v2.83.0`.
+- Added exact-version cargo-nextest installation and the 210-test nextest suite
+  to GitHub CI, with install-action fallback disabled.
+- Pinned documented release-tool installs to the audited current versions,
+  including cargo-nextest `0.9.140` and cargo-fuzz `0.13.2`.
+- Deferred the stronger RISC-V RVV proof and backend-admission review to
+  `1.3.8`; the existing RISC-V posture remains QEMU-tested
+  scalar/fallback-only.
+- No core encode/decode logic, SIMD admission scope, unsafe boundary, or core
+  zero-dependency posture changes.
+
 ## 1.3.6 - 2026-07-09
 
 - Synchronized all workspace crate package versions to `1.3.6`.

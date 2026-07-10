@@ -38,11 +38,19 @@ copy_single_asm() {
 require_lto_symbol() {
     symbol_len="$1"
     symbol_name="$2"
+    legacy_pattern="\\.text\\._ZN9base64_ng.*${symbol_len}${symbol_name}17h"
+    v0_pattern="^[[:space:]]*\\.section[[:space:]]+\\.text\\._R.*9base64_ng.*${symbol_len}${symbol_name},"
 
-    if ! grep -E -q "\\.text\\._ZN9base64_ng.*${symbol_len}${symbol_name}17h" "$output_dir/base64_ng-all-features-lto.s"; then
-        echo "ct asm evidence: missing non-inlined ${symbol_name} symbol in LTO assembly" >&2
-        exit 1
+    if grep -E -q "$legacy_pattern" "$output_dir/base64_ng-all-features-lto.s"; then
+        return
     fi
+
+    if grep -E -q "$v0_pattern" "$output_dir/base64_ng-all-features-lto.s"; then
+        return
+    fi
+
+    echo "ct asm evidence: missing non-inlined ${symbol_name} symbol in LTO assembly" >&2
+    exit 1
 }
 
 echo "ct asm evidence: no-default-features release assembly"
@@ -92,6 +100,7 @@ require_lto_symbol "21" "ct_error_gate_barrier"
     echo "- ct_error_gate_barrier remains a non-inlined malformed-input gate boundary"
     echo "- wipe_bytes and wipe_barrier remain non-inlined cleanup call boundaries"
     echo "- LTO artifact contains separate wipe_bytes, wipe_barrier, constant_time_eq_public_len, and ct_error_gate_barrier text symbols"
+    echo "- symbol checks accept legacy Rust mangling and Rust 1.97+ v0 mangling"
 } >"$manifest"
 
 echo "ct asm evidence: wrote $output_dir"

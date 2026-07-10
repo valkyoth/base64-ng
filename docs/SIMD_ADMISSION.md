@@ -16,7 +16,7 @@ only for backends named in this file and the release gate.
 - Gate summary: Admitted backends: AVX-512 VBMI encode, AVX2 encode, SSSE3/SSE4.1 encode, NEON encode, AVX-512 VBMI strict decode, AVX2 strict decode, SSSE3/SSE4.1 strict decode, and NEON strict decode.
 - Gate priority: Active backend priority: AVX-512 VBMI, then AVX2, then SSSE3/SSE4.1 on x86/x86_64; NEON on little-endian aarch64.
 - Public performance claims: none without local benchmark evidence.
-- Release status: `1.3.6`; `1.2.0` admitted conservative active encode
+- Release status: `1.3.7`; `1.2.0` admitted conservative active encode
   dispatch, and `1.3.0` admitted normal strict decode dispatch for the first
   narrow decode scope. `1.3.3` admits a narrow wasm `simd128` runtime profile
   for Standard and URL-safe public encode plus normal strict decode when the
@@ -27,7 +27,9 @@ only for backends named in this file and the release gate.
   backend; RISC-V acceleration remains scalar/fallback-only under QEMU evidence
   and records the stable Rust `riscv_ext_intrinsics` blocker. `1.3.6` admits
   no new SIMD backend; it is a documentation and crate-family version
-  synchronization patch. Active encode dispatch admits AVX-512 VBMI above AVX2
+  synchronization patch. `1.3.7` admits no new SIMD backend and moves the
+  stronger RISC-V RVV proof and admission review to `1.3.8`. Active encode
+  dispatch admits AVX-512 VBMI above AVX2
   above SSSE3/SSE4.1 on x86/x86_64 and NEON on little-endian aarch64 for
   Standard and URL-safe alphabet families. AVX-512 VBMI strict decode is
   admitted above AVX2 and SSSE3/SSE4.1 strict decode for std

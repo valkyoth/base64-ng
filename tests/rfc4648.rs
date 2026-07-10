@@ -2287,7 +2287,7 @@ fn rejects_all_non_alphabet_bytes_by_position() {
 #[test]
 fn url_safe_rejects_standard_only_symbols_by_position() {
     let mut output = [0u8; 4];
-    for byte in [b'+', b'/'] {
+    for byte in *b"+/" {
         for index in 0..4 {
             let mut input = *b"AAAA";
             input[index] = byte;
@@ -2303,7 +2303,7 @@ fn url_safe_rejects_standard_only_symbols_by_position() {
 #[test]
 fn standard_rejects_url_safe_only_symbols_by_position() {
     let mut output = [0u8; 4];
-    for byte in [b'-', b'_'] {
+    for byte in *b"-_" {
         for index in 0..4 {
             let mut input = *b"AAAA";
             input[index] = byte;

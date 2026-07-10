@@ -2,6 +2,10 @@
 
 This review tracks the `1.3.5` RISC-V evidence line.
 
+The stronger RVV implementation, proof, and backend-admission review is
+scheduled for `1.3.8`. The `1.3.7` maintenance release does not change the
+RISC-V execution or evidence posture.
+
 ## Status
 
 RISC-V is currently a **QEMU-tested scalar/fallback target**, not an admitted
@@ -71,3 +75,13 @@ hardware-attested RVV acceleration:
 
 Until those artifacts exist, release notes and docs must state that RISC-V
 evidence is QEMU functional evidence only.
+
+## `1.3.8` Proof Scope
+
+The `1.3.8` review must either produce a fully reviewed RVV encode/decode
+candidate with differential, generated-assembly, unsafe-boundary,
+register-cleanup, target-feature, fallback, and runtime-report evidence, or
+record the precise blocker and keep scalar active dispatch. QEMU remains part
+of that proof package for reproducible functional testing, but real RVV 1.0
+hardware evidence is required before any hardware-attested or performance
+claim.

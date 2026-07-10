@@ -223,6 +223,8 @@ runtime behavior for that line.
   `riscv64gc-unknown-linux-gnu`, but it is not hardware performance, timing,
   microarchitectural, register-retention, or side-channel evidence. Until real
   hardware reports are linked, any such backend must be documented as QEMU-tested and community-hardware evidence requested.
+  The dedicated RISC-V RVV proof and admission review is scheduled for `1.3.8`;
+  `1.3.7` does not admit a RISC-V backend.
 - `runtime::backend_report()` reports the active backend, detected candidate,
   detection mode, SIMD feature status, security posture, and a
   conservative unsafe-boundary posture flag. The flag is true only when the

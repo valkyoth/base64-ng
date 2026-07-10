@@ -63,6 +63,12 @@ if ! cargo --version >/dev/null 2>&1; then
     exit 1
 fi
 
+active_rust_version="$(rustc --version | awk '{print $2}')"
+if [ "$active_rust_version" != "$toolchain" ]; then
+    echo "ci rust: expected rustc $toolchain, got $active_rust_version" >&2
+    exit 1
+fi
+
 rustup show
 cargo --version
 rustc --version

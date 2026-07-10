@@ -33,8 +33,8 @@ constant-time-oriented Base64 decode into clear-on-drop secret containers.
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.3.6", default-features = false }
-base64-ng-sanitization = { version = "1.3.6", default-features = false }
+base64-ng = { version = "1.3.7", default-features = false }
+base64-ng-sanitization = { version = "1.3.7", default-features = false }
 ```
 
 ```rust
@@ -54,15 +54,15 @@ assert!(secret.sanitization_verify(
 Enable `alloc` for heap-backed `sanitization::SecretVec` helpers:
 
 ```toml
-base64-ng-sanitization = { version = "1.3.6", features = ["alloc"] }
+base64-ng-sanitization = { version = "1.3.7", features = ["alloc"] }
 ```
 
 For high-assurance native deployments, enable locked storage helpers. This
-uses `sanitization` 1.2.2's `memory-lock`, `canary-check`, and
+uses `sanitization` 1.2.4's `memory-lock`, `canary-check`, and
 `random-canary` features and decodes directly into locked memory:
 
 ```toml
-base64-ng-sanitization = { version = "1.3.6", features = ["high-assurance"] }
+base64-ng-sanitization = { version = "1.3.7", features = ["high-assurance"] }
 ```
 
 ```rust
@@ -95,7 +95,7 @@ secret-container API pointed at the constant-time-oriented decode path.
 
 `base64-ng-sanitization` also re-exports `sanitization::ct` and adds
 `SanitizationCtEqExt` for comparing decoded `SecretBytes` and `SecretVec`
-values through `sanitization` 1.2.2's native `Choice` API. This gives projects
+values through `sanitization` 1.2.4's native `Choice` API. This gives projects
 that already admit `sanitization` a dependency-free alternative to external
 `subtle` integration:
 
@@ -115,5 +115,5 @@ For deployments that want `sanitization`'s assembly-backed comparison checks,
 enable the passthrough features:
 
 ```toml
-base64-ng-sanitization = { version = "1.3.6", features = ["strict-ct"] }
+base64-ng-sanitization = { version = "1.3.7", features = ["strict-ct"] }
 ```

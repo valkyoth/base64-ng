@@ -43,6 +43,8 @@ Review focus:
 - Does generated code keep the scalar ct path independent from SIMD dispatch?
 - Does `ct_error_gate_barrier` remain a separate non-inlined symbol in release
   and LTO artifacts before opaque malformed-input reporting?
+- Do the automated symbol checks find the required boundaries under both
+  legacy Rust mangling and Rust `1.97.0`'s default v0 mangling?
 - Does `constant_time_eq_public_len` remain a separate non-inlined symbol in
   release and LTO artifacts, and does the equal-length loop scan all bytes
   rather than lowering into an early-exit compare?
