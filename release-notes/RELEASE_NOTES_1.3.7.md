@@ -26,6 +26,9 @@ the `base64-ng` crate family.
   wipe through RAII on success, error, and cancellation.
 - Limited oversized-input detection to one lookahead byte and documented the
   adjacent-frame behavior for generic `AsyncRead` sources.
+- Capped limited-helper eager allocation at 8 KiB and made per-read staging
+  cleanup proportional to received input while retaining full cancellation
+  cleanup.
 - Pinned documented release/deep-check tool versions to the current audited
   releases, including cargo-nextest `0.9.140` and cargo-fuzz `0.13.2`.
 - Scheduled the stronger RISC-V RVV proof and backend-admission review for

@@ -17,7 +17,10 @@ suspension point. Their initialized bytes and spare capacity are wiped on
 success, I/O error, or future cancellation. Limited helpers request at most the
 remaining allowance plus one lookahead byte. Generic `AsyncRead` cannot return
 that lookahead byte to the source; callers that must preserve adjacent framed
-input should provide an already bounded reader or use a streaming adapter.
+input should provide an already bounded reader or use a streaming adapter. The
+limited helpers cap eager allocation at 8 KiB and wipe only the bytes filled by
+each successful read; their RAII guards still wipe complete live allocations
+and the complete staging array on cancellation or drop.
 
 ## Current Status
 

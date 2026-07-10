@@ -23,6 +23,9 @@
   buffers and RAII-wiped read-all allocations that also cover cancellation.
 - Bounded Tokio limited-helper over-read to one lookahead byte and documented
   the adjacent-frame contract.
+- Capped Tokio limited-helper eager allocation at 8 KiB and made per-read
+  staging cleanup proportional to bytes received while retaining full RAII
+  cleanup on cancellation and drop.
 - Pinned documented release-tool installs to the audited current versions,
   including cargo-nextest `0.9.140` and cargo-fuzz `0.13.2`.
 - Deferred the stronger RISC-V RVV proof and backend-admission review to

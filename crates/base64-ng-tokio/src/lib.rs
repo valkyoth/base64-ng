@@ -39,7 +39,7 @@ pub use readers::{DecoderReader, EncoderReader};
 use base64_ng::{Alphabet, Engine};
 use tokio::io::{self, AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 
-const READ_ALL_EAGER_CAP: usize = 1024 * 1024;
+const READ_ALL_EAGER_CAP: usize = 8192;
 
 /// Reads all bytes from `reader`, encodes them, and writes the encoded output.
 ///
@@ -287,6 +287,6 @@ where
         }
 
         input.0.extend_from_slice(&chunk.0[..read]);
-        wipe_bytes(&mut chunk.0);
+        wipe_bytes(&mut chunk.0[..read]);
     }
 }
