@@ -37,11 +37,12 @@ jobs:
       - name: Install security and test tools
         uses: taiki-e/install-action@c7eb1735f09259a5035e8e5d44b1406b1cddc0fb # v2.83.0
         with:
-          tool: cargo-deny@0.20.2,cargo-audit@0.22.2,cargo-nextest@0.9.140
+          tool: cargo-audit@0.22.2,cargo-nextest@0.9.140
           fallback: none
 
       - name: Install crates.io release tools
         run: |
+          cargo install --locked cargo-deny --version 0.20.2
           cargo install --locked cargo-license --version 0.7.0
           cargo install --locked cargo-sbom --version 0.10.0
 
