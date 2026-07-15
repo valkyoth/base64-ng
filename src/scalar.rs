@@ -1,7 +1,7 @@
 //! Scalar encoding and strict decoding implementation.
 
 use crate::{
-    Alphabet, DecodeError, EncodeError, RuntimeEncodeMapper, checked_encoded_len,
+    Alphabet, DecodeError, EncodeError, RuntimeEncodeMapperFor, checked_encoded_len,
     decoded_len_padded, decoded_len_unpadded,
 };
 
@@ -62,7 +62,7 @@ where
         });
     }
 
-    let mapper = RuntimeEncodeMapper::for_alphabet::<A>();
+    let mapper = RuntimeEncodeMapperFor::<A>::VALUE;
 
     let mut read = 0;
     let mut write = 0;

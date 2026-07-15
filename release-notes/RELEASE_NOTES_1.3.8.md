@@ -13,7 +13,9 @@ the `base64-ng` workspace.
 - Hardened Chromium-family wasm runtime evidence so success requires a
   runtime-created DOM attribute that is absent from the static HTML source.
 - Made `Alphabet::ENCODE` the sole output definition used by `Engine`, so
-  hand-written or stateful `Alphabet::encode` overrides cannot alter output.
+  hand-written or stateful `Alphabet::encode` overrides cannot alter output;
+  standard-family mapper selection is evaluated at compile time.
+- Hardened the API-audit policy gate against harmless Markdown line wrapping.
 - Added daily and manually dispatchable RustSec and cargo-deny monitoring for
   the workspace and isolated tool lockfiles.
 - Updated async cleanup, release evidence, migration, and dependency examples.

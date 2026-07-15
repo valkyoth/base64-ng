@@ -1178,7 +1178,10 @@ inside the `1.3.x` line if they remain evidence-gated and do not weaken the
 - Require Chromium-family wasm smoke evidence to contain a runtime-created DOM
   success attribute that is absent from the static test document.
 - Make `Alphabet::ENCODE` the sole encoding definition used by runtime and
-  const `Engine` APIs so custom overrides cannot affect output.
+  const `Engine` APIs so custom overrides cannot affect output, with
+  standard-family mapper selection evaluated at compile time.
+- Keep API-audit policy checks semantic and insensitive to Markdown line
+  wrapping.
 - Add daily and manually dispatchable advisory monitoring for workspace and
   isolated tool lockfiles.
 - Preserve core encode/decode behavior, SIMD admission scope, unsafe

@@ -13,11 +13,12 @@ guarded read-all vector growth and wipes every replaced allocation before
 deallocation. The Chromium-family wasm evidence gate now requires a
 runtime-created DOM success attribute that is proven absent from the static
 HTML source. Runtime encoding now uses `Alphabet::ENCODE` as its sole output
-definition, so custom overrides cannot create backend-dependent output, and
-scheduled advisory monitoring covers all maintained lockfiles. SIMD admission
-scope, unsafe boundaries, and the zero-dependency core posture remain
-unchanged. The stronger RISC-V RVV proof and backend-admission review moves to
-`1.3.9`.
+definition, so custom overrides cannot create backend-dependent output;
+standard-family mapper selection is compile-time rather than repeated per
+scalar call. Scheduled advisory monitoring covers all maintained lockfiles.
+SIMD admission scope, unsafe boundaries, and the zero-dependency core posture
+remain unchanged. The stronger RISC-V RVV proof and backend-admission review
+moves to `1.3.9`.
 
 | Crate | Version | Publish In 1.3.8 | Cargo |
 | --- | --- | --- | --- |

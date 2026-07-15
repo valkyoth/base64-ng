@@ -252,7 +252,8 @@ Decision rationale:
   `Engine` APIs read that table through crate-owned mappers and never invoke a
   hand-written `Alphabet::encode` override. The method remains available as a
   low-level direct-call helper for API compatibility, but it cannot alter
-  `Engine` output.
+  `Engine` output. Standard-family mapper classification is evaluated as an
+  associated compile-time constant, not repeated for each scalar call.
 - Manual `Alphabet` implementations can override `encode` or `decode`. An
   `encode` override affects only direct calls to that low-level helper; a
   `decode` override affects the normal strict `Engine` path. The `ct` module

@@ -361,7 +361,7 @@ pub(crate) enum RuntimeEncodeMapper {
 }
 
 impl RuntimeEncodeMapper {
-    pub(crate) fn for_alphabet<A: Alphabet>() -> Self {
+    pub(crate) const fn for_alphabet<A: Alphabet>() -> Self {
         const STANDARD_PREFIX: [u8; 62] =
             *b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
@@ -391,6 +391,12 @@ impl RuntimeEncodeMapper {
             Self::ScannedTable => encode_alphabet_value(value, &A::ENCODE),
         }
     }
+}
+
+pub(crate) struct RuntimeEncodeMapperFor<A: Alphabet>(core::marker::PhantomData<A>);
+
+impl<A: Alphabet> RuntimeEncodeMapperFor<A> {
+    pub(crate) const VALUE: RuntimeEncodeMapper = RuntimeEncodeMapper::for_alphabet::<A>();
 }
 
 #[inline]

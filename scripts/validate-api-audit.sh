@@ -35,7 +35,8 @@ for required_text in \
     "try_into_exposed_string" \
     "Encode-to-back and decode-to-front contracts" \
     "define_alphabet!" \
-    "The \`ct\` module scans" \
+    "\`encode\` override affects only direct calls" \
+    "\`decode\` override affects the normal strict \`Engine\` path" \
     "\`Alphabet::ENCODE\` directly" \
     "Keep the custom-alphabet timing contract documented" \
     "Padded \`DecoderReader\` stops after terminal padding" \

@@ -13,7 +13,11 @@
   from the static smoke-test document.
 - Made `Alphabet::ENCODE` the sole encoding definition used by `Engine`, so
   hand-written, inconsistent, or stateful `Alphabet::encode` overrides cannot
-  produce API-, input-length-, or backend-dependent output.
+  produce API-, input-length-, or backend-dependent output. Standard-family
+  mapper selection is an associated compile-time constant rather than a
+  repeated scalar-call prefix scan.
+- Made the API-audit policy gate check stable semantic fragments instead of a
+  Markdown line-wrapping-sensitive sentence.
 - Added daily and manually dispatchable RustSec and cargo-deny advisory checks
   for the workspace and isolated dudect, fuzz, and performance lockfiles.
 - Updated async cleanup and release-evidence documentation.

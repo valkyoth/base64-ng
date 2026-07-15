@@ -155,7 +155,7 @@ pub use alphabet::{
     Alphabet, AlphabetError, Bcrypt, Crypt, Standard, UrlSafe, decode_alphabet_byte,
     validate_alphabet,
 };
-pub(crate) use alphabet::{RuntimeEncodeMapper, encode_base64_value};
+pub(crate) use alphabet::{RuntimeEncodeMapperFor, encode_base64_value};
 pub use buffers::{DecodedBuffer, EncodedBuffer, ExposedDecodedArray, ExposedEncodedArray};
 #[cfg(feature = "alloc")]
 pub use buffers::{ExposedSecretString, ExposedSecretVec, SecretBuffer};

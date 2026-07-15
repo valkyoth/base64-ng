@@ -1,6 +1,6 @@
 //! Scalar in-place encoding helper.
 
-use crate::{Alphabet, EncodeError, RuntimeEncodeMapper, checked_encoded_len};
+use crate::{Alphabet, EncodeError, RuntimeEncodeMapperFor, checked_encoded_len};
 
 pub(crate) fn encode_in_place<A, const PAD: bool>(
     buffer: &mut [u8],
@@ -24,7 +24,7 @@ where
         });
     }
 
-    let mapper = RuntimeEncodeMapper::for_alphabet::<A>();
+    let mapper = RuntimeEncodeMapperFor::<A>::VALUE;
 
     let mut read = input_len;
     let mut write = required;
