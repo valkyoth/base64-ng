@@ -5,6 +5,27 @@ crate remains the stable user entry point; companion crates are optional
 integration packages for applications that explicitly admit their dependency
 sets.
 
+## 1.3.8 Release Plan
+
+The `1.3.8` release keeps the workspace crate family synchronized while
+shipping two low-severity hardening fixes. The Tokio companion now performs
+guarded read-all vector growth and wipes every replaced allocation before
+deallocation. The Chromium-family wasm evidence gate now requires a
+runtime-created DOM success attribute that is proven absent from the static
+HTML source. Core encode/decode behavior, SIMD admission scope, unsafe
+boundaries, and the zero-dependency core posture remain unchanged. The
+stronger RISC-V RVV proof and backend-admission review moves to `1.3.9`.
+
+| Crate | Version | Publish In 1.3.8 | Cargo |
+| --- | --- | --- | --- |
+| `base64-ng` | `1.3.8` | yes | <https://crates.io/crates/base64-ng> |
+| `base64-ng-sanitization` | `1.3.8` | yes | <https://crates.io/crates/base64-ng-sanitization> |
+| `base64-ng-derive` | `1.3.8` | yes | <https://crates.io/crates/base64-ng-derive> |
+| `base64-ng-serde` | `1.3.8` | yes | <https://crates.io/crates/base64-ng-serde> |
+| `base64-ng-bytes` | `1.3.8` | yes | <https://crates.io/crates/base64-ng-bytes> |
+| `base64-ng-subtle` | `1.3.8` | yes | <https://crates.io/crates/base64-ng-subtle> |
+| `base64-ng-tokio` | `1.3.8` | yes | <https://crates.io/crates/base64-ng-tokio> |
+
 ## 1.3.7 Release Plan
 
 The `1.3.7` release keeps the workspace crate family synchronized while

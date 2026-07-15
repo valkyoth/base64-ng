@@ -184,6 +184,45 @@ async fn limited_reader_helpers_round_trip_at_limit() {
 }
 
 #[tokio::test]
+async fn read_all_helpers_preserve_large_input_across_guarded_growth() {
+    let input: Vec<u8> = (0..24_577)
+        .map(|index| u8::try_from(index % 251).unwrap())
+        .collect();
+    let expected = STANDARD.encode_vec(&input).unwrap();
+
+    let mut unlimited_input = &input[..];
+    let mut unlimited_output = Vec::new();
+    encode_reader_to_writer(&STANDARD, &mut unlimited_input, &mut unlimited_output)
+        .await
+        .unwrap();
+    assert_eq!(unlimited_output, expected);
+
+    let mut limited_input = &input[..];
+    let mut limited_output = Vec::new();
+    encode_reader_to_writer_limited(
+        &STANDARD,
+        &mut limited_input,
+        &mut limited_output,
+        input.len(),
+    )
+    .await
+    .unwrap();
+    assert_eq!(limited_output, expected);
+
+    let mut encoded_input = &limited_output[..];
+    let mut decoded = Vec::new();
+    decode_reader_to_writer_limited(
+        &STANDARD,
+        &mut encoded_input,
+        &mut decoded,
+        limited_output.len(),
+    )
+    .await
+    .unwrap();
+    assert_eq!(decoded, input);
+}
+
+#[tokio::test]
 async fn vec_helpers_round_trip() {
     let encoded = encode_to_vec(&URL_SAFE_NO_PAD, [0xfb, 0xff]).unwrap();
     assert_eq!(encoded, b"-_8");

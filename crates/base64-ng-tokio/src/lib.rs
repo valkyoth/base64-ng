@@ -57,8 +57,7 @@ where
     R: AsyncRead + Unpin + ?Sized,
     W: AsyncWrite + Unpin + ?Sized,
 {
-    let mut input = WipingVec::new();
-    reader.read_to_end(input.as_mut_vec()).await?;
+    let input = read_to_end_guarded(reader).await?;
     let output = WipingVec::from_vec(
         engine
             .encode_vec(input.as_slice())
@@ -121,8 +120,7 @@ where
     R: AsyncRead + Unpin + ?Sized,
     W: AsyncWrite + Unpin + ?Sized,
 {
-    let mut input = WipingVec::new();
-    reader.read_to_end(input.as_mut_vec()).await?;
+    let input = read_to_end_guarded(reader).await?;
     let output = WipingVec::from_vec(
         engine
             .decode_vec(input.as_slice())
@@ -227,12 +225,41 @@ impl WipingVec {
         &self.0
     }
 
-    fn as_mut_vec(&mut self) -> &mut Vec<u8> {
-        &mut self.0
-    }
-
     fn len(&self) -> usize {
         self.0.len()
+    }
+
+    fn extend_from_slice_wiping_old(
+        &mut self,
+        bytes: &[u8],
+        capacity_limit: usize,
+    ) -> io::Result<()> {
+        let required = self.len().checked_add(bytes.len()).ok_or_else(|| {
+            io::Error::new(
+                io::ErrorKind::InvalidData,
+                "base64-ng-tokio input is too large",
+            )
+        })?;
+        if required > capacity_limit {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "base64-ng-tokio input exceeds configured limit",
+            ));
+        }
+
+        if required <= self.0.capacity() {
+            self.0.extend_from_slice(bytes);
+            return Ok(());
+        }
+
+        let grown_capacity = self.0.capacity().saturating_mul(2).max(required);
+        let replacement_capacity = grown_capacity.min(capacity_limit);
+        let mut replacement = Self::with_capacity(replacement_capacity);
+        replacement.0.extend_from_slice(&self.0);
+        replacement.0.extend_from_slice(bytes);
+        core::mem::swap(self, &mut replacement);
+        drop(replacement);
+        Ok(())
     }
 }
 
@@ -257,6 +284,24 @@ impl<const N: usize> WipingArray<N> {
 impl<const N: usize> Drop for WipingArray<N> {
     fn drop(&mut self) {
         wipe_bytes(&mut self.0);
+    }
+}
+
+async fn read_to_end_guarded<R>(reader: &mut R) -> io::Result<WipingVec>
+where
+    R: AsyncRead + Unpin + ?Sized,
+{
+    let mut input = WipingVec::new();
+    let mut chunk = WipingArray::<8192>::new();
+
+    loop {
+        let read = reader.read(&mut chunk.0).await?;
+        if read == 0 {
+            return Ok(input);
+        }
+
+        input.extend_from_slice_wiping_old(&chunk.0[..read], usize::MAX)?;
+        wipe_bytes(&mut chunk.0[..read]);
     }
 }
 
@@ -286,7 +331,7 @@ where
             ));
         }
 
-        input.0.extend_from_slice(&chunk.0[..read]);
+        input.extend_from_slice_wiping_old(&chunk.0[..read], max_input_len)?;
         wipe_bytes(&mut chunk.0[..read]);
     }
 }

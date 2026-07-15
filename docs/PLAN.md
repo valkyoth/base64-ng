@@ -1170,7 +1170,19 @@ inside the `1.3.x` line if they remain evidence-gated and do not weaken the
 - Do not change encode/decode logic, SIMD admission scope, unsafe boundaries,
   or runtime dependency policy in this maintenance release.
 
-`1.3.8`: RISC-V RVV proof and backend-admission review.
+`1.3.8`: Tokio cleanup and browser wasm evidence hardening.
+
+- Keep all workspace crates version-aligned for the maintenance patch.
+- Make Tokio read-all vector growth explicit so each replaced allocation is
+  wiped before it is returned to the allocator.
+- Require Chromium-family wasm smoke evidence to contain a runtime-created DOM
+  success attribute that is absent from the static test document.
+- Preserve core encode/decode behavior, SIMD admission scope, unsafe
+  boundaries, and the zero-dependency core posture.
+- Move the stronger RISC-V RVV proof and backend-admission review to `1.3.9`
+  so this security patch can ship independently.
+
+`1.3.9`: RISC-V RVV proof and backend-admission review.
 
 - Add an RVV-specific implementation only when the active stable Rust
   toolchain exposes a reviewable intrinsic path, or when a separately audited

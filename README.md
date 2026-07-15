@@ -29,14 +29,14 @@ The crate starts conservative: a small scalar implementation, strict RFC 4648 be
 
 ## Current Status
 
-The current public release is `1.3.7`.
+The current public release is `1.3.8`.
 
-`1.3.7` is a maintenance and crate-family version synchronization patch on top
+`1.3.8` is a security-hardening and crate-family synchronization patch on top
 of the `1.3.0` implementation-completion release, the `1.3.1` Tokio
 writer patch, the `1.3.2` non-standard SIMD surface review, the `1.3.3`
 wasm SIMD runtime-dispatch and profile-ergonomics patch, the `1.3.4`
 big-endian QEMU evidence patch, the `1.3.5` RISC-V QEMU evidence patch, and
-the `1.3.6` documentation refresh.
+the `1.3.6` documentation refresh and `1.3.7` maintenance patch.
 It keeps the admitted `1.2.x` native encode acceleration posture and the
 admitted `1.3.0` normal strict SIMD decode scope for Standard and URL-safe
 alphabet families on std `x86`/`x86_64` AVX-512 VBMI, AVX2, SSSE3/SSE4.1,
@@ -54,14 +54,14 @@ and normal strict decode when the binary is compiled with
 `target-feature=+simd128`, the `simd` feature, and the explicit
 `allow-wasm32-best-effort-wipe` feature.
 
-The latest patch in this line is `1.3.7`, which keeps all workspace crate
-versions aligned, moves release builds to Rust `1.97.0`, and refreshes audited
-companion dependencies and GitHub Action pins. It also hardens Tokio companion
-cancellation cleanup and bounds limited-helper over-read and cleanup cost
-without changing core encode/decode behavior or SIMD admission.
-The stronger RISC-V RVV proof and admission review is scheduled for `1.3.8`;
+The latest patch in this line is `1.3.8`, which keeps all workspace crate
+versions aligned and closes two low-severity evidence and cleanup gaps. Tokio
+read-all helpers now wipe replaced vector allocations before deallocation, and
+the Chromium wasm smoke gate requires a success attribute created only by
+runtime execution rather than matching a token present in static HTML.
+The stronger RISC-V RVV proof and admission review is scheduled for `1.3.9`;
 until then, RISC-V remains QEMU-tested scalar/fallback-only. The workspace
-crate family stays version-aligned at `1.3.7`.
+crate family stays version-aligned at `1.3.8`.
 
 Implemented on this branch now:
 
@@ -182,14 +182,14 @@ and CWE mapping lives in [docs/SECURITY_CONTROLS.md](docs/SECURITY_CONTROLS.md).
 ## Rust Version Support
 
 The minimum supported Rust version is Rust `1.90.0`. New deployments should
-prefer the latest tested stable Rust; as of July 10, 2026, this project tests
+prefer the latest tested stable Rust; as of July 15, 2026, this project tests
 through Rust `1.97.0`.
 
 The active release toolchain is Rust `1.97.0`. MSRV remains Rust `1.90.0` and
 is checked separately in CI so the project can build and test with the latest
 stable compiler without dropping older supported users.
 
-Compatibility evidence for the `1.3.7` workspace:
+Compatibility evidence for the `1.3.8` workspace:
 
 | Rust | Local Evidence |
 | --- | --- |
@@ -207,7 +207,7 @@ Compatibility evidence for the `1.3.7` workspace:
 
 ```toml
 [dependencies]
-base64-ng = "1.3.7"
+base64-ng = "1.3.8"
 ```
 
 The crate is dual-licensed:
@@ -264,7 +264,7 @@ only the crates that changed instead of republishing the whole ecosystem.
 `base64-ng-sanitization` provides extension helpers for
 `base64_ng::ct::CtEngine` that decode directly into
 `sanitization::SecretBytes<N>` in `no_std`, with `SecretVec` helpers behind its
-own `alloc` feature. The `1.3.7` companion uses exact-pinned
+own `alloc` feature. The `1.3.8` companion uses exact-pinned
 `sanitization` `=1.2.4` and exposes `sanitization::ct::Choice` comparison
 helpers through `SanitizationCtEqExt`. Enable the companion's
 `high-assurance` feature to
@@ -274,8 +274,8 @@ decode directly into `sanitization::LockedSecretBytes` or
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.3.7", default-features = false }
-base64-ng-sanitization = { version = "1.3.7", default-features = false }
+base64-ng = { version = "1.3.8", default-features = false }
+base64-ng-sanitization = { version = "1.3.8", default-features = false }
 ```
 
 ```rust
@@ -294,7 +294,7 @@ assert!(secret.sanitization_verify(
 
 ```toml
 [dependencies]
-base64-ng-sanitization = { version = "1.3.7", features = ["high-assurance"] }
+base64-ng-sanitization = { version = "1.3.8", features = ["high-assurance"] }
 ```
 
 ```rust
@@ -313,8 +313,8 @@ newtypes around fixed byte arrays:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.3.7", default-features = false }
-base64-ng-derive = "1.3.7"
+base64-ng = { version = "1.3.8", default-features = false }
+base64-ng-derive = "1.3.8"
 ```
 
 ```rust
@@ -333,7 +333,7 @@ assert_eq!(key.encode_base64::<8>().unwrap().as_str(), "aGVsbG8=");
 
 ```toml
 [dependencies]
-base64-ng-serde = "1.3.7"
+base64-ng-serde = "1.3.8"
 serde = { version = "1.0.228", features = ["derive"] }
 ```
 
@@ -352,8 +352,8 @@ Field-level modules are available for `standard`, `standard_no_pad`,
 
 ```toml
 [dependencies]
-base64-ng = "1.3.7"
-base64-ng-bytes = "1.3.7"
+base64-ng = "1.3.8"
+base64-ng-bytes = "1.3.8"
 bytes = "1.12.1"
 ```
 
@@ -370,8 +370,8 @@ projects that already admit `subtle`:
 
 ```toml
 [dependencies]
-base64-ng = "1.3.7"
-base64-ng-subtle = "1.3.7"
+base64-ng = "1.3.8"
+base64-ng-subtle = "1.3.8"
 ```
 
 ```rust
@@ -392,8 +392,8 @@ remain unread:
 
 ```toml
 [dependencies]
-base64-ng = "1.3.7"
-base64-ng-tokio = "1.3.7"
+base64-ng = "1.3.8"
+base64-ng-tokio = "1.3.8"
 tokio = { version = "1.52.3", features = ["io-util"] }
 ```
 
@@ -426,7 +426,7 @@ Disable defaults for embedded or freestanding use:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.3.7", default-features = false }
+base64-ng = { version = "1.3.8", default-features = false }
 ```
 
 Enable admitted encode acceleration on supported `std` targets with the
@@ -438,7 +438,7 @@ and URL-safe alphabets after whole-input scalar validation:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.3.7", features = ["simd"] }
+base64-ng = { version = "1.3.8", features = ["simd"] }
 ```
 
 ```rust

@@ -38,7 +38,8 @@ Limited helpers consume no more than the configured limit plus one lookahead
 byte used to detect overflow. Use a separately bounded reader or a streaming
 adapter when an adjacent frame's first byte must remain unread. Their eager
 allocation is capped at 8 KiB so cleanup work stays proportional to accepted
-input rather than the caller's maximum alone.
+input rather than the caller's maximum alone. Guarded vector growth wipes each
+replaced allocation before it is returned to the allocator.
 
 ```rust
 use base64_ng::STANDARD;

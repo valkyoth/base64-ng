@@ -6,6 +6,7 @@ smoke_dir="target/wasm-runtime-smoke"
 wasm_file="$smoke_dir/target/$wasm_target/release/base64_ng_wasm_runtime_smoke.wasm"
 html_file="$smoke_dir/browser-smoke.html"
 browser_output="$smoke_dir/browser-smoke-output.html"
+success_marker='data-base64-ng-wasm-smoke="pass"'
 
 find_browser() {
     if [ -n "${BASE64_NG_BROWSER:-}" ]; then
@@ -90,6 +91,11 @@ try {
 </html>
 EOF
 
+if grep -F -q "$success_marker" "$html_file"; then
+    echo "wasm browser dispatch: success marker must not exist in static HTML" >&2
+    exit 1
+fi
+
 case "$html_file" in
     /*) html_url="file://$html_file" ;;
     *) html_url="file://$(pwd)/$html_file" ;;
@@ -104,7 +110,7 @@ echo "wasm browser dispatch: running Chromium-family browser smoke with $browser
     --dump-dom \
     "$html_url" >"$browser_output" 2>&1
 
-if ! grep -F -q "BASE64_NG_BROWSER_WASM_SMOKE_PASS" "$browser_output"; then
+if ! grep -F -q "$success_marker" "$browser_output"; then
     echo "wasm browser dispatch: browser smoke failed" >&2
     cat "$browser_output" >&2
     exit 1

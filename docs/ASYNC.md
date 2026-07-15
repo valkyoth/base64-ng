@@ -20,7 +20,10 @@ that lookahead byte to the source; callers that must preserve adjacent framed
 input should provide an already bounded reader or use a streaming adapter. The
 limited helpers cap eager allocation at 8 KiB and wipe only the bytes filled by
 each successful read; their RAII guards still wipe complete live allocations
-and the complete staging array on cancellation or drop.
+and the complete staging array on cancellation or drop. When a read-all vector
+must grow, the helper copies into a guarded replacement and wipes the previous
+allocation before deallocation so historical growth buffers are not released
+with live frame contents.
 
 ## Current Status
 

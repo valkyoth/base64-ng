@@ -29,14 +29,14 @@ After:
 
 ```toml
 [dependencies]
-base64-ng = "1.3.7"
+base64-ng = "1.3.8"
 ```
 
 For embedded or freestanding use:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.3.7", default-features = false }
+base64-ng = { version = "1.3.8", default-features = false }
 ```
 
 ## Engine Mapping
@@ -168,7 +168,7 @@ Enable the `stream` feature for `std::io` wrappers:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.3.7", features = ["stream"] }
+base64-ng = { version = "1.3.8", features = ["stream"] }
 ```
 
 ```rust
@@ -218,8 +218,8 @@ Tokio applications, use the optional `base64-ng-tokio` companion crate instead:
 
 ```toml
 [dependencies]
-base64-ng = "1.3.7"
-base64-ng-tokio = "1.3.7"
+base64-ng = "1.3.8"
+base64-ng-tokio = "1.3.8"
 tokio = { version = "1.52.3", features = ["io-util"] }
 ```
 

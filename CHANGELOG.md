@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.3.8 - 2026-07-15
+
+- Synchronized all workspace crate package versions to `1.3.8`.
+- Changed Tokio read-all helpers to grow through guarded replacement
+  allocations, wiping each old allocation before deallocation.
+- Applied the guarded-growth path to bounded and unbounded Tokio helpers and
+  added regression coverage for inputs larger than the 8 KiB eager capacity.
+- Hardened Chromium-family wasm runtime evidence by requiring a DOM success
+  attribute created only after successful JavaScript and wasm execution.
+- Added a fail-closed assertion that the browser success attribute is absent
+  from the static smoke-test document.
+- Updated async cleanup and release-evidence documentation.
+- Moved the stronger RISC-V RVV proof and backend-admission review to `1.3.9`.
+- No core encode/decode logic, SIMD admission scope, unsafe boundary, or core
+  zero-dependency posture changes.
+
 ## 1.3.7 - 2026-07-10
 
 - Synchronized all workspace crate package versions to `1.3.7`.
