@@ -1177,8 +1177,8 @@ inside the `1.3.x` line if they remain evidence-gated and do not weaken the
   wiped before it is returned to the allocator.
 - Require Chromium-family wasm smoke evidence to contain a runtime-created DOM
   success attribute that is absent from the static test document.
-- Reject custom runtime alphabet encoders that disagree with their
-  authoritative `Alphabet::ENCODE` table before writing caller output.
+- Make `Alphabet::ENCODE` the sole encoding definition used by runtime and
+  const `Engine` APIs so custom overrides cannot affect output.
 - Add daily and manually dispatchable advisory monitoring for workspace and
   isolated tool lockfiles.
 - Preserve core encode/decode behavior, SIMD admission scope, unsafe

@@ -248,14 +248,15 @@ Decision rationale:
   for every emitted byte. This preserves the conservative no secret-indexed
   lookup posture, but it is slower than the arithmetic mappers used by built-in
   alphabets.
-- `Alphabet::ENCODE` is the authoritative output table. A hand-written
-  `Alphabet::encode` override must agree with all 64 entries; runtime encode
-  APIs check that contract before dispatch and return
-  `EncodeError::InvalidAlphabet` before writing output when it is violated.
-  Const array encoding reads `Alphabet::ENCODE` directly.
-- Manual `Alphabet` implementations can override `encode` or `decode`; those
-  overrides affect the normal `Engine` path. The `ct` module scans
-  `Alphabet::ENCODE` directly and does not depend on custom `decode`
+- `Alphabet::ENCODE` is the authoritative output table. Runtime and const
+  `Engine` APIs read that table through crate-owned mappers and never invoke a
+  hand-written `Alphabet::encode` override. The method remains available as a
+  low-level direct-call helper for API compatibility, but it cannot alter
+  `Engine` output.
+- Manual `Alphabet` implementations can override `encode` or `decode`. An
+  `encode` override affects only direct calls to that low-level helper; a
+  `decode` override affects the normal strict `Engine` path. The `ct` module
+  scans `Alphabet::ENCODE` directly and does not depend on custom `decode`
   implementations.
 
 Stable boundary:

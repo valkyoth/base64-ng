@@ -11,9 +11,9 @@
   attribute created only after successful JavaScript and wasm execution.
 - Added a fail-closed assertion that the browser success attribute is absent
   from the static smoke-test document.
-- Added a runtime alphabet-contract check that rejects hand-written
-  `Alphabet::encode` overrides when they disagree with `Alphabet::ENCODE`,
-  preventing API-, input-length-, or backend-dependent output.
+- Made `Alphabet::ENCODE` the sole encoding definition used by `Engine`, so
+  hand-written, inconsistent, or stateful `Alphabet::encode` overrides cannot
+  produce API-, input-length-, or backend-dependent output.
 - Added daily and manually dispatchable RustSec and cargo-deny advisory checks
   for the workspace and isolated dudect, fuzz, and performance lockfiles.
 - Updated async cleanup and release-evidence documentation.

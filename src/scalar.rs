@@ -1,8 +1,8 @@
 //! Scalar encoding and strict decoding implementation.
 
 use crate::{
-    Alphabet, DecodeError, EncodeError, checked_encoded_len, decoded_len_padded,
-    decoded_len_unpadded, encode_base64_value_runtime,
+    Alphabet, DecodeError, EncodeError, RuntimeEncodeMapper, checked_encoded_len,
+    decoded_len_padded, decoded_len_unpadded,
 };
 
 pub(crate) fn encode_slice<A, const PAD: bool>(
@@ -62,6 +62,8 @@ where
         });
     }
 
+    let mapper = RuntimeEncodeMapper::for_alphabet::<A>();
+
     let mut read = 0;
     let mut write = 0;
     while read + 3 <= input.len() {
@@ -69,10 +71,10 @@ where
         let b1 = input[read + 1];
         let b2 = input[read + 2];
 
-        output[write] = encode_base64_value_runtime::<A>(b0 >> 2);
-        output[write + 1] = encode_base64_value_runtime::<A>(((b0 & 0b0000_0011) << 4) | (b1 >> 4));
-        output[write + 2] = encode_base64_value_runtime::<A>(((b1 & 0b0000_1111) << 2) | (b2 >> 6));
-        output[write + 3] = encode_base64_value_runtime::<A>(b2 & 0b0011_1111);
+        output[write] = mapper.encode::<A>(b0 >> 2);
+        output[write + 1] = mapper.encode::<A>(((b0 & 0b0000_0011) << 4) | (b1 >> 4));
+        output[write + 2] = mapper.encode::<A>(((b1 & 0b0000_1111) << 2) | (b2 >> 6));
+        output[write + 3] = mapper.encode::<A>(b2 & 0b0011_1111);
 
         read += 3;
         write += 4;
@@ -82,8 +84,8 @@ where
         0 => {}
         1 => {
             let b0 = input[read];
-            output[write] = encode_base64_value_runtime::<A>(b0 >> 2);
-            output[write + 1] = encode_base64_value_runtime::<A>((b0 & 0b0000_0011) << 4);
+            output[write] = mapper.encode::<A>(b0 >> 2);
+            output[write + 1] = mapper.encode::<A>((b0 & 0b0000_0011) << 4);
             write += 2;
             if PAD {
                 output[write] = b'=';
@@ -94,10 +96,9 @@ where
         2 => {
             let b0 = input[read];
             let b1 = input[read + 1];
-            output[write] = encode_base64_value_runtime::<A>(b0 >> 2);
-            output[write + 1] =
-                encode_base64_value_runtime::<A>(((b0 & 0b0000_0011) << 4) | (b1 >> 4));
-            output[write + 2] = encode_base64_value_runtime::<A>((b1 & 0b0000_1111) << 2);
+            output[write] = mapper.encode::<A>(b0 >> 2);
+            output[write + 1] = mapper.encode::<A>(((b0 & 0b0000_0011) << 4) | (b1 >> 4));
+            output[write + 2] = mapper.encode::<A>((b1 & 0b0000_1111) << 2);
             write += 3;
             if PAD {
                 output[write] = b'=';

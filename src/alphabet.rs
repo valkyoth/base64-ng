@@ -219,14 +219,11 @@ pub const fn decode_alphabet_byte(byte: u8, encode: &[u8; 64]) -> Option<u8> {
 ///
 /// The default [`Alphabet::encode`] implementation is constant-time-oriented:
 /// it scans all 64 alphabet entries instead of using `ENCODE[value as usize]`.
-/// If an implementation overrides `encode` with a direct table lookup, normal
-/// [`Engine`](crate::Engine) encoding becomes timing-sensitive with respect to
-/// the emitted 6-bit value. An override must return exactly the byte stored at
-/// the corresponding [`Alphabet::ENCODE`] index for every value from 0 through
-/// 63. Runtime encode APIs verify this fixed contract before dispatch and
-/// return [`EncodeError::InvalidAlphabet`](crate::EncodeError::InvalidAlphabet)
-/// without writing output when it is violated. Const array encoding uses
-/// [`Alphabet::ENCODE`] directly.
+/// Direct callers that override `encode` with a table lookup make those direct
+/// calls timing-sensitive with respect to the selected 6-bit value. Public
+/// [`Engine`](crate::Engine) encoding does not call this overridable method:
+/// [`Alphabet::ENCODE`] is its sole output definition for const, scalar, SIMD,
+/// wrapped, and in-place surfaces.
 ///
 /// The normal strict decode path calls [`Alphabet::decode`] and is not a
 /// constant-time decoder. The [`ct`](crate::ct) module does not call
@@ -243,11 +240,10 @@ pub trait Alphabet {
     /// The default implementation scans the alphabet table instead of using a
     /// secret-indexed table lookup. Built-in alphabets override this with the
     /// branch-minimized ASCII arithmetic mapper. Custom alphabets that keep the
-    /// default method prioritize timing posture over throughput: every emitted
-    /// Base64 byte performs a fixed 64-entry scan. For massive payloads with
-    /// user-defined alphabets, profile this cost and consider an audited custom
-    /// override only if the alphabet has a structure that can be mapped without
-    /// secret-indexed table access.
+    /// default method prioritize timing posture over throughput for direct
+    /// calls. This method is retained as a public low-level mapping helper for
+    /// API compatibility; [`Engine`](crate::Engine) uses [`Self::ENCODE`]
+    /// directly and is unaffected by overrides.
     #[must_use]
     fn encode(value: u8) -> u8 {
         encode_alphabet_value(value, &Self::ENCODE)
@@ -358,20 +354,43 @@ pub(crate) const fn encode_base64_value<A: Alphabet>(value: u8) -> u8 {
     encode_alphabet_value(value, &A::ENCODE)
 }
 
-#[inline]
-pub(crate) fn encode_base64_value_runtime<A: Alphabet>(value: u8) -> u8 {
-    A::encode(value)
+#[derive(Clone, Copy)]
+pub(crate) enum RuntimeEncodeMapper {
+    StandardFamily { value_62: u8, value_63: u8 },
+    ScannedTable,
 }
 
-pub(crate) fn encode_contract_holds<A: Alphabet>() -> bool {
-    let mut value = 0u8;
-    while value < 64 {
-        if A::encode(value) != A::ENCODE[value as usize] {
-            return false;
+impl RuntimeEncodeMapper {
+    pub(crate) fn for_alphabet<A: Alphabet>() -> Self {
+        const STANDARD_PREFIX: [u8; 62] =
+            *b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+        let mut index = 0;
+        while index < STANDARD_PREFIX.len() {
+            if A::ENCODE[index] != STANDARD_PREFIX[index] {
+                return Self::ScannedTable;
+            }
+            index += 1;
         }
-        value += 1;
+
+        let value_62 = A::ENCODE[62];
+        let value_63 = A::ENCODE[63];
+        if (value_62 == b'+' && value_63 == b'/') || (value_62 == b'-' && value_63 == b'_') {
+            Self::StandardFamily { value_62, value_63 }
+        } else {
+            Self::ScannedTable
+        }
     }
-    true
+
+    #[inline]
+    pub(crate) fn encode<A: Alphabet>(self, value: u8) -> u8 {
+        match self {
+            Self::StandardFamily { value_62, value_63 } => {
+                encode_ascii_base64(value, value_62, value_63)
+            }
+            Self::ScannedTable => encode_alphabet_value(value, &A::ENCODE),
+        }
+    }
 }
 
 #[inline]

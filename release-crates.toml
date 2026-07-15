@@ -7,7 +7,7 @@ previous_version = "1.3.7"
 version = "1.3.8"
 change = "code"
 publish = true
-reason = "Publishes the 1.3.8 security-hardening patch with guarded Tokio read-all growth, runtime-only browser wasm evidence, consistent custom alphabet encoding, and scheduled advisory monitoring; the stronger RISC-V RVV review moves to 1.3.9."
+reason = "Publishes the 1.3.8 security-hardening patch with guarded Tokio read-all growth, runtime-only browser wasm evidence, table-authoritative custom alphabet encoding, and scheduled advisory monitoring; the stronger RISC-V RVV review moves to 1.3.9."
 
 [crates."base64-ng-sanitization"]
 previous_version = "1.3.7"

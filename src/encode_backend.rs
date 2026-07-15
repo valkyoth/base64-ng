@@ -8,7 +8,7 @@
 //! stack staging before entering admitted encode backends so output writes do
 //! not overwrite unread input bytes.
 
-use crate::{Alphabet, EncodeError, encode_contract_holds, scalar, scalar_encode_in_place};
+use crate::{Alphabet, EncodeError, scalar, scalar_encode_in_place};
 #[cfg(any(
     all(
         feature = "simd",
@@ -125,10 +125,6 @@ pub(crate) fn encode_slice<A, const PAD: bool>(
 where
     A: Alphabet,
 {
-    if !encode_contract_holds::<A>() {
-        return Err(EncodeError::InvalidAlphabet);
-    }
-
     if input.len() < MIN_SIMD_ENCODE_BLOCK {
         return scalar::encode_slice::<A, PAD>(input, output);
     }
@@ -203,10 +199,6 @@ pub(crate) fn encode_in_place<A, const PAD: bool>(
 where
     A: Alphabet,
 {
-    if !encode_contract_holds::<A>() {
-        return Err(EncodeError::InvalidAlphabet);
-    }
-
     match active_encode_backend() {
         EncodeBackend::Scalar => {
             scalar_encode_in_place::encode_in_place::<A, PAD>(buffer, input_len)

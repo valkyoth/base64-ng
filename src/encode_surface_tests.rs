@@ -1,4 +1,5 @@
 use super::*;
+use core::sync::atomic::{AtomicUsize, Ordering};
 
 struct DispatchFallbackAlphabet;
 
@@ -17,6 +18,27 @@ impl Alphabet for InconsistentEncodeAlphabet {
 
     fn encode(_value: u8) -> u8 {
         b'!'
+    }
+
+    fn decode(byte: u8) -> Option<u8> {
+        Standard::decode(byte)
+    }
+}
+
+static STATEFUL_ENCODE_CALLS: AtomicUsize = AtomicUsize::new(0);
+
+struct StatefulEncodeAlphabet;
+
+impl Alphabet for StatefulEncodeAlphabet {
+    const ENCODE: [u8; 64] = Standard::ENCODE;
+
+    fn encode(value: u8) -> u8 {
+        let call = STATEFUL_ENCODE_CALLS.fetch_add(1, Ordering::SeqCst);
+        if call < 64 {
+            Standard::ENCODE[value as usize]
+        } else {
+            b'!'
+        }
     }
 
     fn decode(byte: u8) -> Option<u8> {
@@ -126,62 +148,87 @@ fn encode_in_place_backend_matches_scalar_reference() {
 }
 
 #[test]
-fn inconsistent_encode_override_fails_before_runtime_output_writes() {
+fn runtime_encode_uses_table_instead_of_overridable_mapper() {
     const TABLE_OUTPUT: [u8; 4] =
         Engine::<InconsistentEncodeAlphabet, true>::new().encode_array(&[0, 0, 0]);
     assert_eq!(TABLE_OUTPUT, *b"AAAA");
+    assert_eq!(InconsistentEncodeAlphabet::encode(0), b'!');
 
     let engine = Engine::<InconsistentEncodeAlphabet, true>::new();
     let input = [0u8; 49];
 
-    for input_len in [1, 12, 49] {
+    for input_len in [0, 1, 12, 49] {
         let input = &input[..input_len];
+        let mut expected = [0u8; 128];
+        let expected_len = STANDARD.encode_slice(input, &mut expected).unwrap();
+
         let mut output = [0x55; 128];
-        assert_eq!(
-            engine.encode_slice(input, &mut output),
-            Err(EncodeError::InvalidAlphabet)
-        );
-        assert!(output.iter().all(|byte| *byte == 0x55));
+        let written = engine.encode_slice(input, &mut output).unwrap();
+        assert_eq!(written, expected_len);
+        assert_eq!(&output[..written], &expected[..expected_len]);
 
         let mut wrapped = [0x66; 160];
+        let mut expected_wrapped = [0u8; 160];
+        let wrap = LineWrap::new(16, LineEnding::CrLf);
+        let wrapped_len = engine
+            .encode_slice_wrapped(input, &mut wrapped, wrap)
+            .unwrap();
+        let expected_wrapped_len = STANDARD
+            .encode_slice_wrapped(input, &mut expected_wrapped, wrap)
+            .unwrap();
+        assert_eq!(wrapped_len, expected_wrapped_len);
         assert_eq!(
-            engine.encode_slice_wrapped(input, &mut wrapped, LineWrap::new(16, LineEnding::CrLf),),
-            Err(EncodeError::InvalidAlphabet)
+            &wrapped[..wrapped_len],
+            &expected_wrapped[..expected_wrapped_len]
         );
-        assert!(wrapped.iter().all(|byte| *byte == 0x66));
 
         let mut clear_tail = [0x77; 128];
-        assert_eq!(
-            engine.encode_slice_clear_tail(input, &mut clear_tail),
-            Err(EncodeError::InvalidAlphabet)
-        );
-        assert!(clear_tail.iter().all(|byte| *byte == 0));
+        let clear_tail_len = engine
+            .encode_slice_clear_tail(input, &mut clear_tail)
+            .unwrap();
+        assert_eq!(&clear_tail[..clear_tail_len], &expected[..expected_len]);
+        assert!(clear_tail[clear_tail_len..].iter().all(|byte| *byte == 0));
 
         let mut in_place = [0x88; 128];
+        let mut expected_in_place = [0x99; 128];
         in_place[..input_len].copy_from_slice(input);
-        let original = in_place;
+        expected_in_place[..input_len].copy_from_slice(input);
+        let in_place_len = engine
+            .encode_in_place(&mut in_place, input_len)
+            .unwrap()
+            .len();
+        let expected_in_place_len = STANDARD
+            .encode_in_place(&mut expected_in_place, input_len)
+            .unwrap()
+            .len();
+        assert_eq!(in_place_len, expected_in_place_len);
         assert_eq!(
-            engine
-                .encode_in_place(&mut in_place, input_len)
-                .unwrap_err(),
-            EncodeError::InvalidAlphabet
+            &in_place[..in_place_len],
+            &expected_in_place[..expected_in_place_len]
         );
-        assert_eq!(in_place, original);
 
-        assert_eq!(
-            engine.encode_buffer::<128>(input).unwrap_err(),
-            EncodeError::InvalidAlphabet
-        );
+        let buffer = engine.encode_buffer::<128>(input).unwrap();
+        assert_eq!(buffer.as_bytes(), &expected[..expected_len]);
 
         #[cfg(feature = "alloc")]
         {
-            assert_eq!(engine.encode_vec(input), Err(EncodeError::InvalidAlphabet));
+            assert_eq!(engine.encode_vec(input).unwrap(), &expected[..expected_len]);
             assert_eq!(
-                engine.encode_string(input),
-                Err(EncodeError::InvalidAlphabet)
+                engine.encode_string(input).unwrap().as_bytes(),
+                &expected[..expected_len]
             );
         }
     }
+
+    STATEFUL_ENCODE_CALLS.store(0, Ordering::SeqCst);
+    let mut stateful_output = [0u8; 128];
+    let stateful_len = Engine::<StatefulEncodeAlphabet, true>::new()
+        .encode_slice(&input, &mut stateful_output)
+        .unwrap();
+    let mut expected = [0u8; 128];
+    let expected_len = STANDARD.encode_slice(&input, &mut expected).unwrap();
+    assert_eq!(&stateful_output[..stateful_len], &expected[..expected_len]);
+    assert_eq!(STATEFUL_ENCODE_CALLS.load(Ordering::SeqCst), 0);
 }
 
 #[test]

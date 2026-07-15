@@ -12,8 +12,8 @@ the `base64-ng` workspace.
   coverage above the 8 KiB eager capacity.
 - Hardened Chromium-family wasm runtime evidence so success requires a
   runtime-created DOM attribute that is absent from the static HTML source.
-- Added a runtime alphabet-contract check that rejects hand-written
-  `Alphabet::encode` overrides when they disagree with `Alphabet::ENCODE`.
+- Made `Alphabet::ENCODE` the sole output definition used by `Engine`, so
+  hand-written or stateful `Alphabet::encode` overrides cannot alter output.
 - Added daily and manually dispatchable RustSec and cargo-deny monitoring for
   the workspace and isolated tool lockfiles.
 - Updated async cleanup, release evidence, migration, and dependency examples.
