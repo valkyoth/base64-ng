@@ -126,6 +126,8 @@ At minimum, evidence must include:
 - `cargo tree` for the affected feature set.
 - `cargo deny check`.
 - `cargo audit`.
+- `scripts/check_scheduled_advisories.sh` through the daily and manually
+  dispatchable security-audit workflow.
 - `cargo license --json`.
 - Updated release notes and migration/security documentation when the public
   API or threat model changes.

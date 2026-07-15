@@ -142,6 +142,8 @@ The release gate runs:
 - all-features and no-default-features doctests plus documentation builds
 - `cargo deny check`
 - `cargo audit`
+- daily and manually dispatchable RustSec plus cargo-deny advisory monitoring
+  for the workspace and isolated fuzz, dudect, and performance lockfiles
 - `cargo license --json`
 - async admission documentation packaged while the `tokio` feature remains
   inert and dependency-free

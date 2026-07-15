@@ -221,7 +221,12 @@ pub const fn decode_alphabet_byte(byte: u8, encode: &[u8; 64]) -> Option<u8> {
 /// it scans all 64 alphabet entries instead of using `ENCODE[value as usize]`.
 /// If an implementation overrides `encode` with a direct table lookup, normal
 /// [`Engine`](crate::Engine) encoding becomes timing-sensitive with respect to
-/// the emitted 6-bit value.
+/// the emitted 6-bit value. An override must return exactly the byte stored at
+/// the corresponding [`Alphabet::ENCODE`] index for every value from 0 through
+/// 63. Runtime encode APIs verify this fixed contract before dispatch and
+/// return [`EncodeError::InvalidAlphabet`](crate::EncodeError::InvalidAlphabet)
+/// without writing output when it is violated. Const array encoding uses
+/// [`Alphabet::ENCODE`] directly.
 ///
 /// The normal strict decode path calls [`Alphabet::decode`] and is not a
 /// constant-time decoder. The [`ct`](crate::ct) module does not call
@@ -356,6 +361,17 @@ pub(crate) const fn encode_base64_value<A: Alphabet>(value: u8) -> u8 {
 #[inline]
 pub(crate) fn encode_base64_value_runtime<A: Alphabet>(value: u8) -> u8 {
     A::encode(value)
+}
+
+pub(crate) fn encode_contract_holds<A: Alphabet>() -> bool {
+    let mut value = 0u8;
+    while value < 64 {
+        if A::encode(value) != A::ENCODE[value as usize] {
+            return false;
+        }
+        value += 1;
+    }
+    true
 }
 
 #[inline]

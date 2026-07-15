@@ -28,6 +28,7 @@ Required for release:
 - `cargo +nightly miri test --no-default-features` when nightly Miri is installed
 - `cargo deny check`
 - `cargo audit`
+- daily and manually dispatchable RustSec and cargo-deny advisory monitoring
 - `cargo license --json`
 - SBOM generation
 - Reproducible build check

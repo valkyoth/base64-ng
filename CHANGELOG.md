@@ -11,6 +11,11 @@
   attribute created only after successful JavaScript and wasm execution.
 - Added a fail-closed assertion that the browser success attribute is absent
   from the static smoke-test document.
+- Added a runtime alphabet-contract check that rejects hand-written
+  `Alphabet::encode` overrides when they disagree with `Alphabet::ENCODE`,
+  preventing API-, input-length-, or backend-dependent output.
+- Added daily and manually dispatchable RustSec and cargo-deny advisory checks
+  for the workspace and isolated dudect, fuzz, and performance lockfiles.
 - Updated async cleanup and release-evidence documentation.
 - Moved the stronger RISC-V RVV proof and backend-admission review to `1.3.9`.
 - No core encode/decode logic, SIMD admission scope, unsafe boundary, or core

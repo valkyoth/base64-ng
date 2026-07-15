@@ -88,6 +88,7 @@ test -s docs/SIMD_ADMISSION.md
 test -s docs/SIMD_ENCODE_ADMISSION_DRAFT.md
 test -s docs/TRUST.md
 test -s docs/UNSAFE.md
+test -s .github/workflows/security-audit.yml
 test -x scripts/release_crates.py
 test -x scripts/generate_release_history.py
 test -x scripts/validate-release-readiness.sh
@@ -116,6 +117,7 @@ for required_script in \
     "scripts/cargo-deny-check.sh" \
     "scripts/check_riscv_qemu.sh" \
     "scripts/check_riscv_intrinsics_status.sh" \
+    "scripts/check_scheduled_advisories.sh" \
     "scripts/validate-api-audit.sh" \
     "scripts/validate-big-endian-posture.sh" \
     "scripts/validate-riscv-posture.sh" \
@@ -157,6 +159,17 @@ do
 
     if [ "$(sed -n '1p' "$required_script")" != "#!/usr/bin/env sh" ]; then
         echo "release metadata: $required_script must use #!/usr/bin/env sh" >&2
+        exit 1
+    fi
+done
+
+for required_scheduled_audit_text in \
+    'cron: "17 3 * * *"' \
+    "workflow_dispatch:" \
+    "scripts/check_scheduled_advisories.sh"
+do
+    if ! grep -F -q "$required_scheduled_audit_text" .github/workflows/security-audit.yml; then
+        echo "release metadata: scheduled security audit is missing $required_scheduled_audit_text" >&2
         exit 1
     fi
 done

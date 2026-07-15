@@ -59,6 +59,9 @@ versions aligned and closes two low-severity evidence and cleanup gaps. Tokio
 read-all helpers now wipe replaced vector allocations before deallocation, and
 the Chromium wasm smoke gate requires a success attribute created only by
 runtime execution rather than matching a token present in static HTML.
+Runtime encoding also rejects custom `Alphabet::encode` overrides that
+disagree with their authoritative `Alphabet::ENCODE` table, and a dedicated
+daily workflow checks all maintained lockfiles for newly published advisories.
 The stronger RISC-V RVV proof and admission review is scheduled for `1.3.9`;
 until then, RISC-V remains QEMU-tested scalar/fallback-only. The workspace
 crate family stays version-aligned at `1.3.8`.

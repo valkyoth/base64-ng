@@ -24,7 +24,7 @@ stable release.
 | Miri | Release gate runs Miri when nightly Miri is installed and writes evidence artifacts | `scripts/check_miri.sh`, `target/release-evidence/miri/` |
 | Kani | 18 bounded no-default-features harnesses verify cleanly with the Rust `1.90.0` Kani toolchain and `cargo-kani 0.67.0`; incompatible future verifier/toolchain pairs must skip explicitly rather than pretending to prove. | `scripts/check_kani.sh`, `docs/KANI.md` |
 | Bounds invariants | Remaining internal indexing is grouped by documented local invariants | `docs/INVARIANTS.md` |
-| Audit | RustSec check required | `cargo audit`, `scripts/checks.sh` |
+| Audit | RustSec and cargo-deny advisory checks required on every change and daily while the repository is dormant | `cargo audit`, `scripts/checks.sh`, `scripts/check_scheduled_advisories.sh`, scheduled security-audit workflow |
 | License policy | `cargo deny` and `cargo license --json` required | `deny.toml`, `scripts/checks.sh` |
 | SBOM | SPDX and CycloneDX SBOM generation in release evidence | `scripts/generate-sbom.sh` |
 | Reproducibility | Package/build reproducibility check in release gate | `scripts/stable_release_gate.sh` |

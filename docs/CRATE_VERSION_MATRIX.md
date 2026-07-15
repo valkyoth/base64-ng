@@ -12,7 +12,9 @@ shipping two low-severity hardening fixes. The Tokio companion now performs
 guarded read-all vector growth and wipes every replaced allocation before
 deallocation. The Chromium-family wasm evidence gate now requires a
 runtime-created DOM success attribute that is proven absent from the static
-HTML source. Core encode/decode behavior, SIMD admission scope, unsafe
+HTML source. Runtime encoding now rejects custom `Alphabet::encode` overrides
+that disagree with their `Alphabet::ENCODE` table, and scheduled advisory
+monitoring covers all maintained lockfiles. SIMD admission scope, unsafe
 boundaries, and the zero-dependency core posture remain unchanged. The
 stronger RISC-V RVV proof and backend-admission review moves to `1.3.9`.
 
