@@ -188,6 +188,26 @@ def test_publish_sequence_dry_runs_dependents_after_index_wait() -> None:
     ]
 
 
+def test_post_tag_full_gate_uses_check_mode() -> None:
+    calls: list[tuple[str, ...]] = []
+    original_run = release_crates.run
+    try:
+        release_crates.run = lambda command, dry_run: calls.append(tuple(command))
+        release_crates.run_preflight(
+            SimpleNamespace(
+                skip_checks=False,
+                version="1.0.10",
+                full_gate=True,
+                dry_run=False,
+            ),
+            ("base64-ng",),
+        )
+    finally:
+        release_crates.run = original_run
+
+    assert calls == [("scripts/stable_release_gate.sh", "check")]
+
+
 def test_release_tag_check_requires_valid_signature() -> None:
     calls: list[tuple[str, ...]] = []
 
@@ -247,6 +267,7 @@ def run_tests() -> None:
         test_unchanged_crates_are_not_published,
         test_publish_plan_skips_unchanged_crates,
         test_publish_sequence_dry_runs_dependents_after_index_wait,
+        test_post_tag_full_gate_uses_check_mode,
         test_release_tag_check_requires_valid_signature,
         test_release_tag_check_rejects_unverified_required_tag,
     )

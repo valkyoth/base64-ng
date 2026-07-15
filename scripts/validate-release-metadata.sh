@@ -230,13 +230,19 @@ for required_release_gate_command in \
     "scripts/check_kani.sh" \
     "scripts/generate_ct_asm_evidence.sh" \
     "scripts/generate-sbom.sh" \
-    "scripts/reproducible_build_check.sh"
+    "scripts/reproducible_build_check.sh" \
+    'scripts/validate-release-readiness.sh "v${cargo_version}"'
 do
     if ! grep -F -q "$required_release_gate_command" scripts/stable_release_gate.sh; then
         echo "release metadata: stable release gate is missing $required_release_gate_command" >&2
         exit 1
     fi
 done
+
+if ! grep -F -q '["scripts/stable_release_gate.sh", "check"]' scripts/release_crates.py; then
+    echo "release metadata: post-tag full gate must use stable release check mode" >&2
+    exit 1
+fi
 
 for required_trust_text in \
 	"Runtime dependencies | Zero external crates" \

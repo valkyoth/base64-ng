@@ -250,7 +250,9 @@ For every release candidate:
 6. Delete root `PENTEST.md`.
 7. Run the local gates again.
 8. Commit one permanent report at `security/pentest/vX.Y.Z.md`.
-9. Run `scripts/validate-release-readiness.sh vX.Y.Z`.
+9. Run `scripts/stable_release_gate.sh release`. Release mode invokes
+   `scripts/validate-release-readiness.sh vX.Y.Z` and fails unless the report
+   is the only change in the final candidate commit.
 
 The permanent pentest report commit must only change the report file. The
 report must contain `Status: PASS`, `Reviewed-Commit:`, `Tester:`, `Scope:`,
@@ -267,7 +269,9 @@ scripts/stable_release_gate.sh release
 
 This is the expensive pre-tag gate. It includes Miri, Kani, generated assembly
 evidence, SBOM generation, reproducibility checks, and the standard local gate.
-If this fails, fix the release candidate before tagging.
+It also enforces the permanent pentest-report metadata, reviewed-parent, and
+report-only final-commit rules. If this fails, fix the release candidate before
+tagging.
 
 After the full release gate passes, push the commit, wait for GitHub to become
 green, then create and push the immutable signed release tag:
@@ -302,6 +306,10 @@ rerun the expensive gate immediately before publishing, use:
 ```sh
 scripts/release_crates.py --full-gate
 ```
+
+This post-tag rerun uses `scripts/stable_release_gate.sh check`. Candidate-only
+pentest readiness is intentionally enforced by release mode before the
+immutable tag exists.
 
 For manual fallback, publish the core package first, wait until crates.io serves
 the new `base64-ng` version, then verify and publish the companion package:

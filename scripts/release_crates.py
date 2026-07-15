@@ -270,7 +270,9 @@ def run_preflight(args: argparse.Namespace, steps: tuple[str, ...]) -> None:
 
     parse_version(args.version)
     if args.full_gate:
-        run(["scripts/stable_release_gate.sh", "release"], dry_run=args.dry_run)
+        # Publishing is post-tag. Candidate-only pentest readiness is enforced
+        # by stable_release_gate.sh release before the immutable tag is made.
+        run(["scripts/stable_release_gate.sh", "check"], dry_run=args.dry_run)
         return
 
     run(["scripts/checks.sh"], dry_run=args.dry_run)
@@ -369,9 +371,9 @@ def main() -> int:
         "--full-gate",
         action="store_true",
         help=(
-            "Run scripts/stable_release_gate.sh release before publishing. "
+            "Run scripts/stable_release_gate.sh check before publishing. "
             "By default, the publish helper assumes the full gate, including "
-            "Kani, already passed before tagging."
+            "Kani and final pentest readiness, already passed before tagging."
         ),
     )
     parser.add_argument(

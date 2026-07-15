@@ -80,4 +80,9 @@ scripts/generate-sbom.sh
 echo "stable release gate: reproducible package/build"
 scripts/reproducible_build_check.sh
 
+if [ "$mode" = "release" ]; then
+    echo "stable release gate: final pentest report"
+    scripts/validate-release-readiness.sh "v${cargo_version}"
+fi
+
 echo "stable release gate: ok ($mode)"
