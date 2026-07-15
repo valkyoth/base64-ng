@@ -23,5 +23,8 @@ the `base64-ng` workspace.
 
 ## Notes
 
-This patch does not change core Base64 encode/decode behavior, SIMD admission,
-unsafe boundaries, or the zero-runtime-dependency posture of `base64-ng`.
+Encoded output is unchanged for valid table-defined alphabets. Hand-written
+`Alphabet::encode` overrides no longer affect `Engine` output; callers that
+invoked those overrides directly retain their existing behavior. This patch
+does not change SIMD admission, unsafe boundaries, or the
+zero-runtime-dependency posture of `base64-ng`.

@@ -22,8 +22,10 @@
   for the workspace and isolated dudect, fuzz, and performance lockfiles.
 - Updated async cleanup and release-evidence documentation.
 - Moved the stronger RISC-V RVV proof and backend-admission review to `1.3.9`.
-- No core encode/decode logic, SIMD admission scope, unsafe boundary, or core
-  zero-dependency posture changes.
+- Preserved encoded output for valid table-defined alphabets and left SIMD
+  admission scope, unsafe boundaries, and the core zero-dependency posture
+  unchanged. Hand-written `Alphabet::encode` overrides no longer affect
+  `Engine` output; `Alphabet::ENCODE` is authoritative.
 
 ## 1.3.7 - 2026-07-10
 

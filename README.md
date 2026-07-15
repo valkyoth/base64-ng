@@ -55,10 +55,11 @@ and normal strict decode when the binary is compiled with
 `allow-wasm32-best-effort-wipe` feature.
 
 The latest patch in this line is `1.3.8`, which keeps all workspace crate
-versions aligned and closes two low-severity evidence and cleanup gaps. Tokio
-read-all helpers now wipe replaced vector allocations before deallocation, and
-the Chromium wasm smoke gate requires a success attribute created only by
-runtime execution rather than matching a token present in static HTML.
+versions aligned and closes low-severity evidence, cleanup, and custom alphabet
+consistency gaps. Tokio read-all helpers now wipe replaced vector allocations
+before deallocation, and the Chromium wasm smoke gate requires a success
+attribute created only by runtime execution rather than matching a token
+present in static HTML.
 Runtime encoding also treats `Alphabet::ENCODE` as its sole output definition,
 so custom `Alphabet::encode` overrides cannot create API-, input-length-, or
 backend-dependent output. Standard-family mapper selection is compile-time and

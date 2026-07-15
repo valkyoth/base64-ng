@@ -81,6 +81,17 @@ output.truncate(written);
 assert_eq!(output, b"aGVsbG8=");
 ```
 
+### Custom Alphabet Encoding In 1.3.8
+
+`Alphabet::ENCODE` is the authoritative encoding table for every `Engine`
+surface. A hand-written `Alphabet::encode` override remains callable directly
+for API compatibility, but `Engine` no longer invokes it. Applications that
+previously relied on an override for custom encoding output or performance
+must move that behavior into the `ENCODE` table or use their own explicit
+low-level helper. Standard and URL-safe table families use crate-owned
+compile-time-selected arithmetic mappers; other custom tables retain the
+conservative fixed-scan mapper.
+
 ## Decoding
 
 `base64`:
