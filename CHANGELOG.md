@@ -9,6 +9,8 @@
   `taiki-e/install-action` to `v2.83.4` after an upstream release audit.
 - Preserved the fixed locked decode generation-error signature and added an
   explicit fill-error method for sanitization 2.0 integrity-aware callers.
+- Added an explicit public return-type regression test for the compatibility
+  and integrity-aware fixed locked decode methods.
 - Added `LockedSanitizationCtEqExt` so locked fixed and dynamic containers can
   return canary-integrity failures while retaining `Choice` composition and
   reason-bearing declassification.

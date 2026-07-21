@@ -10,6 +10,8 @@ aligned.
 - Exact-pinned `base64-ng-sanitization` to `sanitization` `2.0.2`.
 - Preserved the existing fixed locked decode return type and added a separate
   fill-error method for sanitization 2.0 integrity-aware initialization.
+- Added a direct return-type regression test because trait-method signature
+  changes are not reliably detected by ordinary semver tooling.
 - Added fallible integrity-checked comparison helpers for locked fixed and
   dynamic containers.
 - Made checked fixed-size locked decode establish required memory-lock, dump,

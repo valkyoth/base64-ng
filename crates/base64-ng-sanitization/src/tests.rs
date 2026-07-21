@@ -207,6 +207,39 @@ fn fill_decode_exposes_sanitization_2_integrity_errors() {
     )
 ))]
 #[test]
+fn locked_fixed_decode_return_types_remain_compatible() {
+    let legacy: Result<
+        sanitization::LockedSecretBytes<5>,
+        LockedSecretBytesGenerateError<SanitizationDecodeError>,
+    > = ct::STANDARD.decode_locked_secret_bytes(b"aGVsbG8=");
+    drop(legacy);
+
+    let fill: Result<
+        sanitization::LockedSecretBytes<5>,
+        LockedSecretBytesFillError<SanitizationDecodeError>,
+    > = ct::STANDARD.decode_locked_secret_bytes_fill(b"aGVsbG8=");
+    drop(fill);
+}
+
+#[cfg(all(
+    feature = "memory-lock",
+    any(
+        all(
+            target_os = "linux",
+            any(target_arch = "x86_64", target_arch = "aarch64")
+        ),
+        target_os = "macos",
+        target_os = "ios",
+        target_os = "android",
+        target_os = "windows",
+        target_os = "freebsd",
+        target_os = "openbsd",
+        target_os = "netbsd",
+        target_os = "dragonfly",
+        all(target_arch = "wasm32", feature = "wasm-compat"),
+    )
+))]
+#[test]
 fn checked_locked_fixed_decode_rejects_degraded_protection() {
     match ct::STANDARD.decode_locked_secret_bytes_checked::<5>(b"aGVsbG8=") {
         Ok(secret) => assert!(!secret.protection_report().is_degraded()),
