@@ -3,14 +3,18 @@
 ## 1.3.9 - 2026-07-21
 
 - Synchronized all workspace crate package versions to `1.3.9`.
-- Updated `base64-ng-sanitization` to exact-pinned `sanitization` `2.0.1`.
-- Adopted sanitization 2.0's `LockedSecretBytesFillError` for fixed locked
-  decode and its fallible mapped-storage exposure APIs in tests and examples.
+- Updated `base64-ng-sanitization` to exact-pinned `sanitization` `2.0.2`.
+- Updated the active release toolchain to Rust `1.97.1`, Serde to `1.0.229`,
+  Tokio to `1.53.1`, `actions/checkout` to `v7.0.1`, and
+  `taiki-e/install-action` to `v2.83.4` after an upstream release audit.
+- Preserved the fixed locked decode generation-error signature and added an
+  explicit fill-error method for sanitization 2.0 integrity-aware callers.
 - Added `LockedSanitizationCtEqExt` so locked fixed and dynamic containers can
   return canary-integrity failures while retaining `Choice` composition and
   reason-bearing declassification.
-- Added fail-closed checked locked decode helpers that clear and reject secrets
-  when the achieved runtime protection report is degraded.
+- Made checked fixed locked decode establish required memory-lock, dump, and
+  fork controls before plaintext materialization, and added deterministic
+  rejection/drop tests for post-fill dynamic admission.
 - Strengthened the companion `high-assurance` feature with strict random
   canaries and strict assembly comparison.
 - Added `strict-compare` and retained `strict-ct` as a compatibility alias for

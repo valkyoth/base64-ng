@@ -244,7 +244,7 @@ The release gate runs:
 - LTO symbol-presence checks for non-inlined wipe boundaries and the
   `constant_time_eq_public_len` equal-length comparison helper; the parser
   accepts both legacy Rust symbols and the v0 symbols enabled by default in
-  Rust `1.97.0`
+  Rust `1.97.1`
 - Kani proofs through `scripts/check_kani.sh`; current local evidence is the
   full no-default-features harness set on the Rust `1.90.0` Kani toolchain
   with `cargo-kani 0.67.0`

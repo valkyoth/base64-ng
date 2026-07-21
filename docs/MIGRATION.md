@@ -42,10 +42,11 @@ base64-ng = { version = "1.3.9", default-features = false }
 ### Sanitization Companion In 1.3.9
 
 `base64-ng-sanitization` `1.3.9` migrates from `sanitization` 1.x to exact-pinned
-`sanitization` `2.0.1`. Fixed locked decode now returns
-`LockedSecretBytesFillError<SanitizationDecodeError>`, so callers matching
-`LockedSecretBytesGenerateError` must update the error type and handle the new
-`Integrity` variant.
+`sanitization` `2.0.2`. The existing `decode_locked_secret_bytes` method keeps
+its `LockedSecretBytesGenerateError<SanitizationDecodeError>` return type for
+source compatibility. Use the additive `decode_locked_secret_bytes_fill`
+method when the sanitization 2.0 `LockedSecretBytesFillError` integrity variant
+must be propagated explicitly.
 
 Mapped storage exposure is checked in sanitization 2.0. Replace
 `LockedSecretBytes::with_secret` with `try_expose_secret` and
@@ -60,10 +61,12 @@ source migration. The companion's `high-assurance` profile now includes strict
 comparison and strict random canaries and is intended for supported x86_64 and
 AArch64 native deployments.
 
-For fail-closed locked-storage admission, use
-`decode_locked_secret_bytes_checked` or `decode_locked_secret_vec_checked`.
-These helpers clear and reject the decoded secret when sanitization reports a
-degraded preferred protection control. Existing non-checked helpers preserve
+For fail-closed fixed locked-storage admission, use
+`decode_locked_secret_bytes_checked`. It requires memory locking, dump
+exclusion, and fork exclusion before decoding plaintext directly into the
+protected mapping. `decode_locked_secret_vec_checked` rejects degraded dynamic
+storage after fill because sanitization 2.0.2 does not expose a dynamic
+protected-capacity fill constructor. Existing non-checked helpers preserve
 their API and require callers to inspect `protection_report()` before relying
 on dump or fork exclusion.
 
@@ -259,7 +262,7 @@ Tokio applications, use the optional `base64-ng-tokio` companion crate instead:
 [dependencies]
 base64-ng = "1.3.9"
 base64-ng-tokio = "1.3.9"
-tokio = { version = "1.52.3", features = ["io-util"] }
+tokio = { version = "1.53.1", features = ["io-util"] }
 ```
 
 ```rust

@@ -8,10 +8,11 @@ sets.
 ## 1.3.9 Release Plan
 
 The `1.3.9` release keeps the workspace crate family synchronized while
-migrating `base64-ng-sanitization` to exact-pinned `sanitization` `2.0.1`.
-The companion adopts the 2.0 locked fill-error model, adds fallible
-integrity-checked comparison helpers for locked containers, and strengthens
-its `high-assurance` feature with strict random-canary and assembly-comparison
+migrating `base64-ng-sanitization` to exact-pinned `sanitization` `2.0.2`.
+The companion preserves its locked generation-error API, adds an explicit 2.0
+fill-error method, adds fallible integrity-checked comparison helpers, and
+establishes required controls before checked fixed-size plaintext decode. Its
+`high-assurance` feature includes strict random-canary and assembly-comparison
 controls. Core encode/decode behavior, SIMD admission, unsafe boundaries, and
 the core zero-dependency posture remain unchanged. The RISC-V RVV proof and
 backend-admission review moves to `1.3.10`.

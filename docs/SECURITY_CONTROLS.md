@@ -113,15 +113,17 @@ certification claim.
   drop-time cleanup by default.
 - For long-lived decoded key material on supported native targets, consider
   `base64-ng-sanitization` with its `high-assurance` feature. That path uses
-  exact-pinned `sanitization` `=2.0.1` hardened native controls, including
+  exact-pinned `sanitization` `=2.0.2` hardened native controls, including
   memory locking, strict random canaries, and strict assembly comparison, and
   exposes helpers that decode directly into
   `LockedSecretBytes` or `LockedSecretVec` without first landing in a normal
   `Vec`. The feature selects compiled controls; it does not prove every
-  preferred platform operation succeeded. Use
-  `decode_locked_secret_bytes_checked` or `decode_locked_secret_vec_checked`
-  to reject degraded protection reports, or inspect `protection_report()`
-  before admitting a value returned by a non-checked compatibility helper.
+  preferred platform operation succeeded. For fixed-size secrets,
+  `decode_locked_secret_bytes_checked` establishes required memory-lock, dump,
+  and fork controls before plaintext decode. Dynamic
+  `decode_locked_secret_vec_checked` performs post-fill report admission due to
+  the upstream dynamic-fill API boundary. Inspect `protection_report()` before
+  admitting a value returned by a non-checked compatibility helper.
 - Keep dependency review split by package. The core `base64-ng` crate has zero
   runtime dependencies; optional companion crates such as `base64-ng-serde`,
   `base64-ng-bytes`, `base64-ng-subtle`, and `base64-ng-tokio` intentionally

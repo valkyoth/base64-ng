@@ -41,7 +41,7 @@ QEMU evidence is not accepted for:
 
 ## Stable Rust Toolchain Blocker
 
-The active release toolchain is Rust `1.97.0`. On that toolchain:
+The active release toolchain is Rust `1.97.1`. On that toolchain:
 
 - `core::arch::s390x` is gated by the unstable `stdarch_s390x` feature.
 - `core::arch::powerpc64` is gated by the unstable `stdarch_powerpc` feature.

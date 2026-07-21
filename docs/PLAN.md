@@ -9,7 +9,7 @@ Build `base64-ng` as a modern, secure, `no_std`-first Base64 implementation for 
 ## Current Baseline
 
 - Rust MSRV: `1.90.0`.
-- Active release toolchain: `1.97.0`.
+- Active release toolchain: `1.97.1`.
 - License: `MIT OR Apache-2.0`.
 - Project name: `base64-ng`.
 - Runtime and dev dependency graph: zero external crates.
@@ -1192,9 +1192,12 @@ inside the `1.3.x` line if they remain evidence-gated and do not weaken the
 `1.3.9`: sanitization 2.0 companion migration.
 
 - Keep all workspace crates version-aligned for the dependency migration.
-- Update `base64-ng-sanitization` to exact-pinned `sanitization` `2.0.1`.
-- Adopt the 2.0 locked fixed-size fill-error API and mapped-storage checked
-  exposure semantics.
+- Update `base64-ng-sanitization` to exact-pinned `sanitization` `2.0.2`.
+- Preserve the existing locked generation-error method, add an explicit 2.0
+  fill-error method, and adopt mapped-storage checked exposure semantics.
+- Establish required memory-lock, dump, and fork controls before checked
+  fixed-size plaintext decode; document dynamic checked decode as post-fill
+  admission until upstream exposes a protected-capacity fill constructor.
 - Add integrity-checked locked comparison helpers while retaining the existing
   comparison trait as a source-compatible fail-stop path.
 - Map the companion's `high-assurance` feature to strict random-canary and

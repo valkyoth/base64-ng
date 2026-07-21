@@ -59,7 +59,7 @@ base64-ng-sanitization = { version = "1.3.9", features = ["alloc"] }
 
 For high-assurance x86_64 or AArch64 native deployments, enable locked storage
 helpers. This
-uses `sanitization` 2.0.1's hardened native controls, including memory locking,
+uses `sanitization` 2.0.2's hardened native controls, including memory locking,
 strict random canaries, and strict assembly comparison, and decodes directly
 into locked memory:
 
@@ -97,12 +97,16 @@ key.try_with_secret(|bytes| assert_eq!(bytes, b"hello"))?;
 # Ok::<(), Box<dyn std::error::Error>>(())
 ```
 
-The `high-assurance` feature selects compiled protection mechanisms. Dump and
-fork exclusion are platform controls whose achieved state is exposed by
-`protection_report()`. The `_checked` methods above fail closed with
-`LockedDecodeError::DegradedProtection` if a requested preferred control was
-not established. Non-checked methods remain available when callers must apply
-a deployment-specific policy to the complete report.
+The fixed-size `_checked` method establishes required memory-lock, dump, and
+fork controls before decoding plaintext into the mapping. The dynamic checked
+method must fill before inspecting `protection_report()` because sanitization
+2.0.2 does not expose a protected-capacity dynamic fill constructor; use the
+fixed-size checked method when allocation-time fail-closed protection is a
+hard requirement. Non-checked methods remain available when callers apply a
+deployment-specific policy to the complete report. The additive
+`decode_locked_secret_bytes_fill` method exposes sanitization 2.0's integrity
+aware fill error while the original method retains its generation-error return
+type for source compatibility.
 
 The integration intentionally targets `base64_ng::ct::CtEngine`. Strict
 non-CT decoders remain available in `base64-ng`, but this crate keeps the
@@ -110,7 +114,7 @@ secret-container API pointed at the constant-time-oriented decode path.
 
 `base64-ng-sanitization` also re-exports `sanitization::ct` and adds
 `SanitizationCtEqExt` for comparing decoded `SecretBytes` and `SecretVec`
-values through `sanitization` 2.0.1's native `Choice` API. This gives projects
+values through `sanitization` 2.0.2's native `Choice` API. This gives projects
 that already admit `sanitization` a dependency-free alternative to external
 `subtle` integration:
 

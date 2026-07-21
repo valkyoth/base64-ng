@@ -22,7 +22,7 @@ use base64_ng::{DecodeError, ct};
         all(target_arch = "wasm32", feature = "wasm-compat"),
     )
 ))]
-use sanitization::LockedSecretBytesFillError;
+use sanitization::{LockedSecretBytesFillError, LockedSecretBytesGenerateError};
 
 #[cfg(all(
     feature = "memory-lock",
@@ -143,7 +143,7 @@ fn fixed_secret_bytes_reports_decode_error() {
 fn decodes_fixed_secret_bytes_into_locked_memory() {
     let secret = match ct::STANDARD.decode_locked_secret_bytes::<5>(b"aGVsbG8=") {
         Ok(secret) => secret,
-        Err(LockedSecretBytesFillError::Memory(_)) => return,
+        Err(LockedSecretBytesGenerateError::Memory(_)) => return,
         Err(error) => panic!("unexpected locked fixed decode error: {error:?}"),
     };
 
@@ -176,13 +176,41 @@ fn decodes_fixed_secret_bytes_into_locked_memory() {
     )
 ))]
 #[test]
+fn fill_decode_exposes_sanitization_2_integrity_errors() {
+    let secret = match ct::STANDARD.decode_locked_secret_bytes_fill::<5>(b"aGVsbG8=") {
+        Ok(secret) => secret,
+        Err(LockedSecretBytesFillError::Memory(_)) => return,
+        Err(error) => panic!("unexpected locked fixed fill error: {error:?}"),
+    };
+
+    secret
+        .try_expose_secret(|bytes| assert_eq!(bytes, b"hello"))
+        .unwrap();
+}
+
+#[cfg(all(
+    feature = "memory-lock",
+    any(
+        all(
+            target_os = "linux",
+            any(target_arch = "x86_64", target_arch = "aarch64")
+        ),
+        target_os = "macos",
+        target_os = "ios",
+        target_os = "android",
+        target_os = "windows",
+        target_os = "freebsd",
+        target_os = "openbsd",
+        target_os = "netbsd",
+        target_os = "dragonfly",
+        all(target_arch = "wasm32", feature = "wasm-compat"),
+    )
+))]
+#[test]
 fn checked_locked_fixed_decode_rejects_degraded_protection() {
     match ct::STANDARD.decode_locked_secret_bytes_checked::<5>(b"aGVsbG8=") {
         Ok(secret) => assert!(!secret.protection_report().is_degraded()),
-        Err(
-            LockedDecodeError::DegradedProtection
-            | LockedDecodeError::Operation(LockedSecretBytesFillError::Memory(_)),
-        ) => {}
+        Err(LockedDecodeError::DegradedProtection) => {}
         Err(error) => panic!("unexpected checked locked fixed decode error: {error:?}"),
     }
 }
@@ -209,7 +237,7 @@ fn checked_locked_fixed_decode_rejects_degraded_protection() {
 fn locked_fixed_secret_bytes_reject_length_mismatch() {
     assert!(matches!(
         ct::STANDARD.decode_locked_secret_bytes::<4>(b"aGVsbG8="),
-        Err(LockedSecretBytesFillError::Generate(
+        Err(LockedSecretBytesGenerateError::Generate(
             SanitizationDecodeError::LengthMismatch {
                 expected: 4,
                 actual: 5,
@@ -240,7 +268,7 @@ fn locked_fixed_secret_bytes_reject_length_mismatch() {
 fn locked_fixed_secret_bytes_reports_decode_error() {
     assert!(matches!(
         ct::STANDARD.decode_locked_secret_bytes::<5>(b"aGVsbG8!"),
-        Err(LockedSecretBytesFillError::Generate(
+        Err(LockedSecretBytesGenerateError::Generate(
             SanitizationDecodeError::Decode(DecodeError::InvalidInput)
         ))
     ));
@@ -266,14 +294,15 @@ fn locked_fixed_secret_bytes_reports_decode_error() {
 ))]
 #[test]
 fn checked_locked_fixed_decode_preserves_decode_errors() {
-    assert!(matches!(
-        ct::STANDARD.decode_locked_secret_bytes_checked::<5>(b"aGVsbG8!"),
-        Err(LockedDecodeError::Operation(
-            LockedSecretBytesFillError::Generate(SanitizationDecodeError::Decode(
-                DecodeError::InvalidInput
+    match ct::STANDARD.decode_locked_secret_bytes_checked::<5>(b"aGVsbG8!") {
+        Err(
+            LockedDecodeError::Operation(LockedSecretBytesGenerateError::Generate(
+                SanitizationDecodeError::Decode(DecodeError::InvalidInput),
             ))
-        ))
-    ));
+            | LockedDecodeError::DegradedProtection,
+        ) => {}
+        result => panic!("unexpected checked locked decode result: {result:?}"),
+    }
 }
 
 #[cfg(feature = "alloc")]

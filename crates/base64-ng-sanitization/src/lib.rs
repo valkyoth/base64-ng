@@ -12,7 +12,7 @@
 //! secret-bearing Base64 directly into `sanitization` secret containers.
 //!
 //! The extension trait targets [`base64_ng::ct::CtEngine`] rather than the
-//! ordinary strict decoder. `sanitization` 2.0.1's native [`ct`] primitives are
+//! ordinary strict decoder. `sanitization` 2.0.2's native [`ct`] primitives are
 //! re-exported for callers that want `Choice`-based verification after decode.
 //! Enable `memory-lock` or `high-assurance` for locked secret containers on
 //! supported native targets.
@@ -31,12 +31,14 @@
 extern crate alloc;
 
 mod compare;
+mod decode_impl;
 mod error;
+#[cfg(feature = "memory-lock")]
+mod locked;
 
-use base64_ng::{Alphabet, ct::CtEngine};
 pub use compare::{LockedSanitizationCtEqExt, SanitizationCtEqExt, sanitization_ct_eq_public_len};
 pub use error::{LockedDecodeError, SanitizationDecodeError};
-use sanitization::{SecretBytes, SecureSanitize};
+use sanitization::SecretBytes;
 
 #[cfg(any(feature = "alloc", feature = "memory-lock"))]
 use base64_ng::DecodeError;
@@ -62,7 +64,7 @@ use sanitization::SecretVec;
         all(target_arch = "wasm32", feature = "wasm-compat"),
     )
 ))]
-use sanitization::{LockedSecretBytes, LockedSecretBytesFillError};
+use sanitization::{LockedSecretBytes, LockedSecretBytesFillError, LockedSecretBytesGenerateError};
 
 #[cfg(all(
     feature = "memory-lock",
@@ -121,7 +123,7 @@ pub trait CtDecodeSanitizationExt {
     ///
     /// The decoded length must exactly match `N`. A length mismatch returns
     /// [`SanitizationDecodeError::LengthMismatch`] inside the
-    /// `sanitization` fill error.
+    /// `sanitization` generation error.
     ///
     /// # Errors
     ///
@@ -156,20 +158,81 @@ pub trait CtDecodeSanitizationExt {
     fn decode_locked_secret_bytes<const N: usize>(
         &self,
         input: &[u8],
-    ) -> Result<LockedSecretBytes<N>, LockedSecretBytesFillError<SanitizationDecodeError>>;
+    ) -> Result<LockedSecretBytes<N>, LockedSecretBytesGenerateError<SanitizationDecodeError>>;
 
-    /// Decode into fixed-size locked storage and reject degraded protection.
+    /// Decode through stack staging and initialize fixed-size locked storage
+    /// through sanitization's integrity-checked fill API.
     ///
-    /// Unlike [`Self::decode_locked_secret_bytes`], this fail-closed helper
-    /// requires [`sanitization::ProtectionReport::is_degraded`] to be false.
-    /// The secret is cleared on drop before a degraded-protection error is
-    /// returned.
+    /// This additive method exposes `sanitization` 2.0's fill error without
+    /// changing the return type of [`Self::decode_locked_secret_bytes`]. The
+    /// provided [`base64_ng::ct::CtEngine`] implementation uses the
+    /// integrity-checked fill API directly. The compatibility default for
+    /// external trait implementations maps the older generation error; custom
+    /// implementations that need integrity-aware initialization must override
+    /// this method.
+    ///
+    /// For allocation-time fail-closed protection, use
+    /// [`Self::decode_locked_secret_bytes_checked`].
     ///
     /// # Errors
     ///
-    /// Returns [`LockedDecodeError::Operation`] for allocation, integrity, or
-    /// decode failures. Returns [`LockedDecodeError::DegradedProtection`] when
-    /// a preferred dump- or fork-exclusion control was not established.
+    /// Returns a `sanitization` memory or integrity error when locked storage
+    /// cannot be initialized. Decode and exact-length failures are returned in
+    /// the fill error's generator branch.
+    #[cfg(all(
+        feature = "memory-lock",
+        any(
+            all(
+                target_os = "linux",
+                any(target_arch = "x86_64", target_arch = "aarch64")
+            ),
+            target_os = "macos",
+            target_os = "ios",
+            target_os = "android",
+            target_os = "windows",
+            target_os = "freebsd",
+            target_os = "openbsd",
+            target_os = "netbsd",
+            target_os = "dragonfly",
+            all(target_arch = "wasm32", feature = "wasm-compat"),
+        )
+    ))]
+    fn decode_locked_secret_bytes_fill<const N: usize>(
+        &self,
+        input: &[u8],
+    ) -> Result<LockedSecretBytes<N>, LockedSecretBytesFillError<SanitizationDecodeError>> {
+        self.decode_locked_secret_bytes(input)
+            .map_err(|error| match error {
+                LockedSecretBytesGenerateError::Memory(error) => {
+                    LockedSecretBytesFillError::Memory(error)
+                }
+                LockedSecretBytesGenerateError::Generate(error) => {
+                    LockedSecretBytesFillError::Generate(error)
+                }
+            })
+    }
+
+    /// Decode into fixed-size locked storage and reject degraded protection.
+    ///
+    /// In the provided [`base64_ng::ct::CtEngine`] implementation, this
+    /// fail-closed helper requires memory locking, dump exclusion, and fork
+    /// exclusion before the decoder receives the destination mapping. When
+    /// canaries are enabled, they are required too. Plaintext is decoded
+    /// directly into the already protected mapping, without an ordinary stack
+    /// plaintext buffer.
+    ///
+    /// The compatibility default for external trait implementations performs
+    /// post-construction report admission. Custom implementations that require
+    /// the same pre-decode guarantee must override this method and establish
+    /// the requested protections before decoding.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`LockedDecodeError::DegradedProtection`] when a required
+    /// control cannot be established before decoding or integrity validation
+    /// fails. This intentionally preserves the existing public error shape.
+    /// Returns [`LockedDecodeError::Operation`] for decode or exact-length
+    /// failures.
     #[cfg(all(
         feature = "memory-lock",
         any(
@@ -193,15 +256,13 @@ pub trait CtDecodeSanitizationExt {
         input: &[u8],
     ) -> Result<
         LockedSecretBytes<N>,
-        LockedDecodeError<LockedSecretBytesFillError<SanitizationDecodeError>>,
+        LockedDecodeError<LockedSecretBytesGenerateError<SanitizationDecodeError>>,
     > {
         let secret = self
             .decode_locked_secret_bytes(input)
             .map_err(LockedDecodeError::Operation)?;
-        if secret.protection_report().is_degraded() {
-            return Err(LockedDecodeError::DegradedProtection);
-        }
-        Ok(secret)
+        let degraded = secret.protection_report().is_degraded();
+        locked::admit_locked(secret, degraded)
     }
 
     /// Decode `input` into a heap-backed clear-on-drop secret vector.
@@ -283,6 +344,15 @@ pub trait CtDecodeSanitizationExt {
     /// Returns [`LockedDecodeError::Operation`] for allocation, integrity, or
     /// decode failures. Returns [`LockedDecodeError::DegradedProtection`] when
     /// a preferred dump- or fork-exclusion control was not established.
+    ///
+    /// # Security
+    ///
+    /// The current upstream dynamic API establishes the default locked policy,
+    /// fills the mapping, and only then exposes its report. This helper rejects
+    /// degradation before returning the value, but cannot prevent plaintext
+    /// materialization in a mapping whose preferred controls failed. Use
+    /// [`Self::decode_locked_secret_bytes_checked`] with a fixed protocol size
+    /// when controls must be required before decode begins.
     #[cfg(all(
         feature = "memory-lock",
         any(
@@ -308,174 +378,8 @@ pub trait CtDecodeSanitizationExt {
         let secret = self
             .decode_locked_secret_vec(input)
             .map_err(LockedDecodeError::Operation)?;
-        if secret.protection_report().is_degraded() {
-            return Err(LockedDecodeError::DegradedProtection);
-        }
-        Ok(secret)
-    }
-}
-
-impl<A, const PAD: bool> CtDecodeSanitizationExt for CtEngine<A, PAD>
-where
-    A: Alphabet,
-{
-    fn decode_secret_bytes<const N: usize>(
-        &self,
-        input: &[u8],
-    ) -> Result<SecretBytes<N>, SanitizationDecodeError> {
-        let required = self.decoded_len(input)?;
-        if required != N {
-            return Err(SanitizationDecodeError::LengthMismatch {
-                expected: N,
-                actual: required,
-            });
-        }
-
-        let mut output = [0u8; N];
-        let mut staging = [0u8; N];
-        let written = match self.decode_slice_staged_clear_tail(input, &mut output, &mut staging) {
-            Ok(written) => written,
-            Err(error) => {
-                output.secure_sanitize();
-                staging.secure_sanitize();
-                return Err(error.into());
-            }
-        };
-
-        if written != N {
-            output.secure_sanitize();
-            staging.secure_sanitize();
-            return Err(SanitizationDecodeError::LengthMismatch {
-                expected: N,
-                actual: written,
-            });
-        }
-
-        let secret = SecretBytes::from_fn(|index| output[index]);
-        output.secure_sanitize();
-        staging.secure_sanitize();
-        Ok(secret)
-    }
-
-    #[cfg(all(
-        feature = "memory-lock",
-        any(
-            all(
-                target_os = "linux",
-                any(target_arch = "x86_64", target_arch = "aarch64")
-            ),
-            target_os = "macos",
-            target_os = "ios",
-            target_os = "android",
-            target_os = "windows",
-            target_os = "freebsd",
-            target_os = "openbsd",
-            target_os = "netbsd",
-            target_os = "dragonfly",
-            all(target_arch = "wasm32", feature = "wasm-compat"),
-        )
-    ))]
-    fn decode_locked_secret_bytes<const N: usize>(
-        &self,
-        input: &[u8],
-    ) -> Result<LockedSecretBytes<N>, LockedSecretBytesFillError<SanitizationDecodeError>> {
-        let required = self
-            .decoded_len(input)
-            .map_err(|error| LockedSecretBytesFillError::Generate(error.into()))?;
-        if required != N {
-            return Err(LockedSecretBytesFillError::Generate(
-                SanitizationDecodeError::LengthMismatch {
-                    expected: N,
-                    actual: required,
-                },
-            ));
-        }
-
-        let mut output = [0u8; N];
-        let mut staging = [0u8; N];
-        let written = match self.decode_slice_staged_clear_tail(input, &mut output, &mut staging) {
-            Ok(written) => written,
-            Err(error) => {
-                output.secure_sanitize();
-                staging.secure_sanitize();
-                return Err(LockedSecretBytesFillError::Generate(error.into()));
-            }
-        };
-        staging.secure_sanitize();
-
-        let result = LockedSecretBytes::try_from_fill(|locked| {
-            if written != N {
-                return Err(SanitizationDecodeError::LengthMismatch {
-                    expected: N,
-                    actual: written,
-                });
-            }
-
-            locked.copy_from_slice(&output);
-            Ok(())
-        });
-        output.secure_sanitize();
-        result
-    }
-
-    #[cfg(feature = "alloc")]
-    fn decode_secret_vec(&self, input: &[u8]) -> Result<SecretVec, DecodeError> {
-        let required = self.decoded_len(input)?;
-        let mut output = alloc::vec![0; required];
-        let written = self.decode_slice_clear_tail(input, &mut output)?;
-        output.truncate(written);
-        Ok(SecretVec::from_vec(output))
-    }
-
-    #[cfg(feature = "alloc")]
-    fn decode_secret_vec_staged<const STAGE: usize>(
-        &self,
-        input: &[u8],
-    ) -> Result<SecretVec, DecodeError> {
-        let required = self.decoded_len(input)?;
-        let mut output = alloc::vec![0; required];
-        let mut staging = [0u8; STAGE];
-        let written = match self.decode_slice_staged_clear_tail(input, &mut output, &mut staging) {
-            Ok(written) => written,
-            Err(error) => {
-                output.secure_sanitize();
-                staging.secure_sanitize();
-                return Err(error);
-            }
-        };
-        output.truncate(written);
-        staging.secure_sanitize();
-        Ok(SecretVec::from_vec(output))
-    }
-
-    #[cfg(all(
-        feature = "memory-lock",
-        any(
-            all(
-                target_os = "linux",
-                any(target_arch = "x86_64", target_arch = "aarch64")
-            ),
-            target_os = "macos",
-            target_os = "ios",
-            target_os = "android",
-            target_os = "windows",
-            target_os = "freebsd",
-            target_os = "openbsd",
-            target_os = "netbsd",
-            target_os = "dragonfly",
-        ),
-        not(miri)
-    ))]
-    fn decode_locked_secret_vec(
-        &self,
-        input: &[u8],
-    ) -> Result<LockedSecretVec, LockedSecretVecFillError<DecodeError>> {
-        let required = self
-            .decoded_len(input)
-            .map_err(LockedSecretVecFillError::Fill)?;
-        LockedSecretVec::try_from_capacity(required, |output| {
-            self.decode_slice_clear_tail(input, output)
-        })
+        let degraded = secret.protection_report().is_degraded();
+        locked::admit_locked(secret, degraded)
     }
 }
 

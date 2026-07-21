@@ -44,7 +44,7 @@ Review focus:
 - Does `ct_error_gate_barrier` remain a separate non-inlined symbol in release
   and LTO artifacts before opaque malformed-input reporting?
 - Do the automated symbol checks find concrete text-section definitions for
-  the required boundaries under both legacy Rust mangling and Rust `1.97.0`'s
+  the required boundaries under both legacy Rust mangling and Rust `1.97.1`'s
   default v0 mangling?
 - Does `constant_time_eq_public_len` remain a separate non-inlined symbol in
   release and LTO artifacts, and does the equal-length loop scan all bytes

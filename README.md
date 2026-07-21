@@ -56,13 +56,13 @@ and normal strict decode when the binary is compiled with
 
 The latest patch in this line is `1.3.9`, which keeps all workspace crate
 versions aligned while migrating `base64-ng-sanitization` to exact-pinned
-`sanitization` `2.0.1`. Locked fixed-size decode now exposes the 2.0 fill-error
+`sanitization` `2.0.2`. Locked fixed-size decode adds the 2.0 fill-error
 model, locked comparisons have an integrity-checked extension API, and the
 companion's high-assurance feature includes strict random canaries and strict
 assembly comparison. The previous companion feature name `strict-ct` remains
 an alias for the renamed `strict-compare` feature during migration. New
-fail-closed locked decode helpers reject mappings whose runtime protection
-report is degraded.
+fail-closed fixed locked decode establishes required controls before plaintext
+materialization; dynamic checked decode rejects degraded mappings post-fill.
 The stronger RISC-V RVV proof and admission review is scheduled for `1.3.10`;
 until then, RISC-V remains QEMU-tested scalar/fallback-only.
 
@@ -168,7 +168,7 @@ Planned behind admission evidence:
 | --- | --- |
 | License | `MIT OR Apache-2.0` |
 | MSRV | Rust `1.90.0` |
-| Active release toolchain | Rust `1.97.0` |
+| Active release toolchain | Rust `1.97.1` |
 | Runtime dependencies | Zero external crates |
 | Unsafe policy | Scalar encode/decode remains safe Rust; audited unsafe is limited to volatile wiping, CT comparison/barrier helpers, and the reviewed SIMD boundary |
 | Active backend | Scalar by default; std x86/x86_64 AVX-512 VBMI preferred, then AVX2, then SSSE3/SSE4.1, plus little-endian std aarch64 NEON, and wasm `simd128` when the admitted feature/runtime profile is present |
@@ -185,10 +185,10 @@ and CWE mapping lives in [docs/SECURITY_CONTROLS.md](docs/SECURITY_CONTROLS.md).
 ## Rust Version Support
 
 The minimum supported Rust version is Rust `1.90.0`. New deployments should
-prefer the latest tested stable Rust; as of July 15, 2026, this project tests
-through Rust `1.97.0`.
+prefer the latest tested stable Rust; as of July 21, 2026, this project tests
+through Rust `1.97.1`.
 
-The active release toolchain is Rust `1.97.0`. MSRV remains Rust `1.90.0` and
+The active release toolchain is Rust `1.97.1`. MSRV remains Rust `1.90.0` and
 is checked separately in CI so the project can build and test with the latest
 stable compiler without dropping older supported users.
 
@@ -204,7 +204,8 @@ Compatibility evidence for the `1.3.9` workspace:
 | `1.95.0` | ✓ `cargo check --all-features` |
 | `1.96.0` | ✓ `cargo check --all-features` |
 | `1.96.1` | ✓ `cargo check --all-features` |
-| `1.97.0` | ✓ active release toolchain and `cargo check --all-features` |
+| `1.97.0` | ✓ `cargo check --all-features` |
+| `1.97.1` | ✓ active release toolchain and `cargo check --all-features` |
 
 ## Install
 
@@ -268,9 +269,13 @@ only the crates that changed instead of republishing the whole ecosystem.
 `base64_ng::ct::CtEngine` that decode directly into
 `sanitization::SecretBytes<N>` in `no_std`, with `SecretVec` helpers behind its
 own `alloc` feature. The `1.3.9` companion uses exact-pinned
-`sanitization` `=2.0.1` and exposes `sanitization::ct::Choice` comparison
+`sanitization` `=2.0.2` and exposes `sanitization::ct::Choice` comparison
 helpers through `SanitizationCtEqExt`. Locked containers additionally expose
 fallible integrity-checked comparison through `LockedSanitizationCtEqExt`.
+Checked fixed-size decode establishes required memory-lock, dump, and fork
+controls before plaintext materialization. Dynamic checked decode remains a
+post-fill report check; use fixed-size locked output when that transient
+boundary is unacceptable.
 Enable the companion's
 `high-assurance` feature to
 decode directly into `sanitization::LockedSecretBytes` or
@@ -323,11 +328,10 @@ assert!(locked
     .unwrap());
 ```
 
-`high-assurance` selects compiled hardening controls, but preferred dump and
-fork exclusion remain platform operations whose achieved state is reported at
-runtime. Use the `_checked` locked decode helpers for fail-closed admission, or
-inspect `protection_report()` before relying on non-checked compatibility
-helpers.
+`high-assurance` selects compiled hardening controls. Fixed-size checked decode
+requires memory-lock, dump, and fork controls before plaintext materialization.
+Dynamic checked decode performs post-fill report admission; inspect
+`protection_report()` before relying on non-checked compatibility helpers.
 
 `base64-ng-derive` provides a dependency-free `Base64Secret` derive for tuple
 newtypes around fixed byte arrays:
@@ -355,7 +359,7 @@ assert_eq!(key.encode_base64::<8>().unwrap().as_str(), "aGVsbG8=");
 ```toml
 [dependencies]
 base64-ng-serde = "1.3.9"
-serde = { version = "1.0.228", features = ["derive"] }
+serde = { version = "1.0.229", features = ["derive"] }
 ```
 
 ```rust
@@ -415,7 +419,7 @@ remain unread:
 [dependencies]
 base64-ng = "1.3.9"
 base64-ng-tokio = "1.3.9"
-tokio = { version = "1.52.3", features = ["io-util"] }
+tokio = { version = "1.53.1", features = ["io-util"] }
 ```
 
 ```rust
@@ -1142,8 +1146,8 @@ assert_eq!(&encoded[..written], b"aGVsbG8");
 Security commitments:
 
 - Stable Rust first. MSRV remains Rust `1.90.0`; the active release toolchain
-  is Rust `1.97.0`. New deployments should prefer the latest tested stable
-  Rust, currently Rust `1.97.0`.
+  is Rust `1.97.1`. New deployments should prefer the latest tested stable
+  Rust, currently Rust `1.97.1`.
 - `no_std` core by default.
 - Scalar encode/decode remains safe Rust.
 - Audited unsafe helpers in `src/cleanup.rs` perform volatile best-effort
