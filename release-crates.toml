@@ -14,7 +14,7 @@ previous_version = "1.3.8"
 version = "1.3.9"
 change = "code"
 publish = true
-reason = "Migrates the sanitization companion to exact-pinned sanitization 2.0.1, checked locked-secret integrity APIs, and the hardened native feature profile."
+reason = "Migrates the sanitization companion to exact-pinned sanitization 2.0.1, checked locked-secret integrity and protection-report APIs, and the hardened native feature profile."
 
 [crates."base64-ng-derive"]
 previous_version = "1.3.8"

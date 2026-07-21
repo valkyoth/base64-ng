@@ -9,12 +9,16 @@
 - Added `LockedSanitizationCtEqExt` so locked fixed and dynamic containers can
   return canary-integrity failures while retaining `Choice` composition and
   reason-bearing declassification.
+- Added fail-closed checked locked decode helpers that clear and reject secrets
+  when the achieved runtime protection report is degraded.
 - Strengthened the companion `high-assurance` feature with strict random
   canaries and strict assembly comparison.
 - Added `strict-compare` and retained `strict-ct` as a compatibility alias for
   the sanitization 2.0 feature rename.
 - Preserved core encode/decode behavior, SIMD admission, unsafe boundaries,
   and the core zero-runtime-dependency posture.
+- Documented vendored-source review as an additional control for hermetic
+  deployments that admit the optional sanitization companion.
 - Moved the stronger RISC-V RVV proof and backend-admission review to `1.3.10`.
 
 ## 1.3.8 - 2026-07-15

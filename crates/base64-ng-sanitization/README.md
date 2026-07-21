@@ -72,7 +72,7 @@ use base64_ng::ct;
 use base64_ng_sanitization::{CtDecodeSanitizationExt, LockedSanitizationCtEqExt};
 
 let key = ct::STANDARD
-    .decode_locked_secret_bytes::<5>(b"aGVsbG8=")
+    .decode_locked_secret_bytes_checked::<5>(b"aGVsbG8=")
     .unwrap();
 
 key.try_expose_secret(|bytes| assert_eq!(bytes, b"hello"))?;
@@ -90,12 +90,19 @@ use base64_ng::ct;
 use base64_ng_sanitization::CtDecodeSanitizationExt;
 
 let key = ct::STANDARD
-    .decode_locked_secret_vec(b"aGVsbG8=")
+    .decode_locked_secret_vec_checked(b"aGVsbG8=")
     .unwrap();
 
 key.try_with_secret(|bytes| assert_eq!(bytes, b"hello"))?;
 # Ok::<(), Box<dyn std::error::Error>>(())
 ```
+
+The `high-assurance` feature selects compiled protection mechanisms. Dump and
+fork exclusion are platform controls whose achieved state is exposed by
+`protection_report()`. The `_checked` methods above fail closed with
+`LockedDecodeError::DegradedProtection` if a requested preferred control was
+not established. Non-checked methods remain available when callers must apply
+a deployment-specific policy to the complete report.
 
 The integration intentionally targets `base64_ng::ct::CtEngine`. Strict
 non-CT decoders remain available in `base64-ng`, but this crate keeps the

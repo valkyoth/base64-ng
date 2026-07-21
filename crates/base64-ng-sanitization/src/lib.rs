@@ -35,7 +35,7 @@ mod error;
 
 use base64_ng::{Alphabet, ct::CtEngine};
 pub use compare::{LockedSanitizationCtEqExt, SanitizationCtEqExt, sanitization_ct_eq_public_len};
-pub use error::SanitizationDecodeError;
+pub use error::{LockedDecodeError, SanitizationDecodeError};
 use sanitization::{SecretBytes, SecureSanitize};
 
 #[cfg(any(feature = "alloc", feature = "memory-lock"))]
@@ -129,6 +129,12 @@ pub trait CtDecodeSanitizationExt {
     /// created. Returns [`SanitizationDecodeError::Decode`] if Base64 decoding
     /// fails, or [`SanitizationDecodeError::LengthMismatch`] if the decoded
     /// length does not exactly equal `N`.
+    ///
+    /// # Security
+    ///
+    /// Successful construction does not prove that preferred dump and fork
+    /// controls were established. Inspect `protection_report()` or use
+    /// [`Self::decode_locked_secret_bytes_checked`].
     #[cfg(all(
         feature = "memory-lock",
         any(
@@ -151,6 +157,52 @@ pub trait CtDecodeSanitizationExt {
         &self,
         input: &[u8],
     ) -> Result<LockedSecretBytes<N>, LockedSecretBytesFillError<SanitizationDecodeError>>;
+
+    /// Decode into fixed-size locked storage and reject degraded protection.
+    ///
+    /// Unlike [`Self::decode_locked_secret_bytes`], this fail-closed helper
+    /// requires [`sanitization::ProtectionReport::is_degraded`] to be false.
+    /// The secret is cleared on drop before a degraded-protection error is
+    /// returned.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`LockedDecodeError::Operation`] for allocation, integrity, or
+    /// decode failures. Returns [`LockedDecodeError::DegradedProtection`] when
+    /// a preferred dump- or fork-exclusion control was not established.
+    #[cfg(all(
+        feature = "memory-lock",
+        any(
+            all(
+                target_os = "linux",
+                any(target_arch = "x86_64", target_arch = "aarch64")
+            ),
+            target_os = "macos",
+            target_os = "ios",
+            target_os = "android",
+            target_os = "windows",
+            target_os = "freebsd",
+            target_os = "openbsd",
+            target_os = "netbsd",
+            target_os = "dragonfly",
+            all(target_arch = "wasm32", feature = "wasm-compat"),
+        )
+    ))]
+    fn decode_locked_secret_bytes_checked<const N: usize>(
+        &self,
+        input: &[u8],
+    ) -> Result<
+        LockedSecretBytes<N>,
+        LockedDecodeError<LockedSecretBytesFillError<SanitizationDecodeError>>,
+    > {
+        let secret = self
+            .decode_locked_secret_bytes(input)
+            .map_err(LockedDecodeError::Operation)?;
+        if secret.protection_report().is_degraded() {
+            return Err(LockedDecodeError::DegradedProtection);
+        }
+        Ok(secret)
+    }
 
     /// Decode `input` into a heap-backed clear-on-drop secret vector.
     ///
@@ -195,6 +247,12 @@ pub trait CtDecodeSanitizationExt {
     /// Returns a `sanitization` memory error if locked storage cannot be
     /// created. Returns [`DecodeError`] from the fill branch if Base64 decoding
     /// fails.
+    ///
+    /// # Security
+    ///
+    /// Successful construction does not prove that preferred dump and fork
+    /// controls were established. Inspect `protection_report()` or use
+    /// [`Self::decode_locked_secret_vec_checked`].
     #[cfg(all(
         feature = "memory-lock",
         any(
@@ -217,6 +275,44 @@ pub trait CtDecodeSanitizationExt {
         &self,
         input: &[u8],
     ) -> Result<LockedSecretVec, LockedSecretVecFillError<DecodeError>>;
+
+    /// Decode into dynamic locked storage and reject degraded protection.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`LockedDecodeError::Operation`] for allocation, integrity, or
+    /// decode failures. Returns [`LockedDecodeError::DegradedProtection`] when
+    /// a preferred dump- or fork-exclusion control was not established.
+    #[cfg(all(
+        feature = "memory-lock",
+        any(
+            all(
+                target_os = "linux",
+                any(target_arch = "x86_64", target_arch = "aarch64")
+            ),
+            target_os = "macos",
+            target_os = "ios",
+            target_os = "android",
+            target_os = "windows",
+            target_os = "freebsd",
+            target_os = "openbsd",
+            target_os = "netbsd",
+            target_os = "dragonfly",
+        ),
+        not(miri)
+    ))]
+    fn decode_locked_secret_vec_checked(
+        &self,
+        input: &[u8],
+    ) -> Result<LockedSecretVec, LockedDecodeError<LockedSecretVecFillError<DecodeError>>> {
+        let secret = self
+            .decode_locked_secret_vec(input)
+            .map_err(LockedDecodeError::Operation)?;
+        if secret.protection_report().is_degraded() {
+            return Err(LockedDecodeError::DegradedProtection);
+        }
+        Ok(secret)
+    }
 }
 
 impl<A, const PAD: bool> CtDecodeSanitizationExt for CtEngine<A, PAD>

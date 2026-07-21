@@ -60,6 +60,13 @@ source migration. The companion's `high-assurance` profile now includes strict
 comparison and strict random canaries and is intended for supported x86_64 and
 AArch64 native deployments.
 
+For fail-closed locked-storage admission, use
+`decode_locked_secret_bytes_checked` or `decode_locked_secret_vec_checked`.
+These helpers clear and reject the decoded secret when sanitization reports a
+degraded preferred protection control. Existing non-checked helpers preserve
+their API and require callers to inspect `protection_report()` before relying
+on dump or fork exclusion.
+
 ## Engine Mapping
 
 | `base64` engine | `base64-ng` engine |

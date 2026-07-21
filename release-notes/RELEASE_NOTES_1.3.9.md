@@ -11,6 +11,8 @@ aligned.
 - Updated fixed locked decode to return sanitization 2.0's fill-error type.
 - Added fallible integrity-checked comparison helpers for locked fixed and
   dynamic containers.
+- Added fail-closed checked locked decode helpers that reject degraded runtime
+  protection reports before returning decoded secrets.
 - Updated locked-container examples to use checked exposure APIs.
 - Strengthened `high-assurance` with strict random canaries and strict assembly
   comparison.
@@ -27,6 +29,9 @@ generation error must update those matches. Existing non-locked comparison
 helpers remain unchanged. Existing locked comparison helpers remain available
 as a fail-stop compatibility path, while new code should prefer
 `LockedSanitizationCtEqExt` to propagate canary-integrity failures.
+High-assurance deployments should use the new `_checked` locked decode helpers;
+the compatibility methods require explicit `protection_report()` review when
+dump or fork exclusion is part of the deployment policy.
 
 No SIMD backend, unsafe boundary, or core runtime dependency is added by this
 release.

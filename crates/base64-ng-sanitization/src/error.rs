@@ -35,3 +35,37 @@ impl From<DecodeError> for SanitizationDecodeError {
         Self::Decode(error)
     }
 }
+
+/// Error returned by fail-closed locked-secret decode helpers.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum LockedDecodeError<E> {
+    /// Locked allocation, integrity validation, or Base64 decoding failed.
+    Operation(E),
+    /// The mapping was created, but one or more requested protection controls
+    /// were not established.
+    DegradedProtection,
+}
+
+impl<E: core::fmt::Display> core::fmt::Display for LockedDecodeError<E> {
+    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Self::Operation(error) => error.fmt(formatter),
+            Self::DegradedProtection => {
+                formatter.write_str("locked secret protection report is degraded")
+            }
+        }
+    }
+}
+
+#[cfg(feature = "std")]
+impl<E> std::error::Error for LockedDecodeError<E>
+where
+    E: std::error::Error + 'static,
+{
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Operation(error) => Some(error),
+            Self::DegradedProtection => None,
+        }
+    }
+}

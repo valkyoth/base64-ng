@@ -117,7 +117,11 @@ certification claim.
   memory locking, strict random canaries, and strict assembly comparison, and
   exposes helpers that decode directly into
   `LockedSecretBytes` or `LockedSecretVec` without first landing in a normal
-  `Vec`.
+  `Vec`. The feature selects compiled controls; it does not prove every
+  preferred platform operation succeeded. Use
+  `decode_locked_secret_bytes_checked` or `decode_locked_secret_vec_checked`
+  to reject degraded protection reports, or inspect `protection_report()`
+  before admitting a value returned by a non-checked compatibility helper.
 - Keep dependency review split by package. The core `base64-ng` crate has zero
   runtime dependencies; optional companion crates such as `base64-ng-serde`,
   `base64-ng-bytes`, `base64-ng-subtle`, and `base64-ng-tokio` intentionally

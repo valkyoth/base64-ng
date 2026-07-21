@@ -60,7 +60,9 @@ versions aligned while migrating `base64-ng-sanitization` to exact-pinned
 model, locked comparisons have an integrity-checked extension API, and the
 companion's high-assurance feature includes strict random canaries and strict
 assembly comparison. The previous companion feature name `strict-ct` remains
-an alias for the renamed `strict-compare` feature during migration.
+an alias for the renamed `strict-compare` feature during migration. New
+fail-closed locked decode helpers reject mappings whose runtime protection
+report is degraded.
 The stronger RISC-V RVV proof and admission review is scheduled for `1.3.10`;
 until then, RISC-V remains QEMU-tested scalar/fallback-only.
 
@@ -307,7 +309,7 @@ use base64_ng::ct;
 use base64_ng_sanitization::{CtDecodeSanitizationExt, LockedSanitizationCtEqExt};
 
 let locked = ct::STANDARD
-    .decode_locked_secret_bytes::<5>(b"aGVsbG8=")
+    .decode_locked_secret_bytes_checked::<5>(b"aGVsbG8=")
     .unwrap();
 
 locked
@@ -320,6 +322,12 @@ assert!(locked
     )
     .unwrap());
 ```
+
+`high-assurance` selects compiled hardening controls, but preferred dump and
+fork exclusion remain platform operations whose achieved state is reported at
+runtime. Use the `_checked` locked decode helpers for fail-closed admission, or
+inspect `protection_report()` before relying on non-checked compatibility
+helpers.
 
 `base64-ng-derive` provides a dependency-free `Base64Secret` derive for tuple
 newtypes around fixed byte arrays:

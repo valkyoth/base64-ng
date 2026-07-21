@@ -42,7 +42,7 @@ use sanitization::LockedSecretBytesFillError;
         all(target_arch = "wasm32", feature = "wasm-compat"),
     )
 ))]
-use crate::LockedSanitizationCtEqExt;
+use crate::{LockedDecodeError, LockedSanitizationCtEqExt};
 
 #[cfg(all(
     feature = "memory-lock",
@@ -176,6 +176,36 @@ fn decodes_fixed_secret_bytes_into_locked_memory() {
     )
 ))]
 #[test]
+fn checked_locked_fixed_decode_rejects_degraded_protection() {
+    match ct::STANDARD.decode_locked_secret_bytes_checked::<5>(b"aGVsbG8=") {
+        Ok(secret) => assert!(!secret.protection_report().is_degraded()),
+        Err(
+            LockedDecodeError::DegradedProtection
+            | LockedDecodeError::Operation(LockedSecretBytesFillError::Memory(_)),
+        ) => {}
+        Err(error) => panic!("unexpected checked locked fixed decode error: {error:?}"),
+    }
+}
+
+#[cfg(all(
+    feature = "memory-lock",
+    any(
+        all(
+            target_os = "linux",
+            any(target_arch = "x86_64", target_arch = "aarch64")
+        ),
+        target_os = "macos",
+        target_os = "ios",
+        target_os = "android",
+        target_os = "windows",
+        target_os = "freebsd",
+        target_os = "openbsd",
+        target_os = "netbsd",
+        target_os = "dragonfly",
+        all(target_arch = "wasm32", feature = "wasm-compat"),
+    )
+))]
+#[test]
 fn locked_fixed_secret_bytes_reject_length_mismatch() {
     assert!(matches!(
         ct::STANDARD.decode_locked_secret_bytes::<4>(b"aGVsbG8="),
@@ -212,6 +242,36 @@ fn locked_fixed_secret_bytes_reports_decode_error() {
         ct::STANDARD.decode_locked_secret_bytes::<5>(b"aGVsbG8!"),
         Err(LockedSecretBytesFillError::Generate(
             SanitizationDecodeError::Decode(DecodeError::InvalidInput)
+        ))
+    ));
+}
+
+#[cfg(all(
+    feature = "memory-lock",
+    any(
+        all(
+            target_os = "linux",
+            any(target_arch = "x86_64", target_arch = "aarch64")
+        ),
+        target_os = "macos",
+        target_os = "ios",
+        target_os = "android",
+        target_os = "windows",
+        target_os = "freebsd",
+        target_os = "openbsd",
+        target_os = "netbsd",
+        target_os = "dragonfly",
+        all(target_arch = "wasm32", feature = "wasm-compat"),
+    )
+))]
+#[test]
+fn checked_locked_fixed_decode_preserves_decode_errors() {
+    assert!(matches!(
+        ct::STANDARD.decode_locked_secret_bytes_checked::<5>(b"aGVsbG8!"),
+        Err(LockedDecodeError::Operation(
+            LockedSecretBytesFillError::Generate(SanitizationDecodeError::Decode(
+                DecodeError::InvalidInput
+            ))
         ))
     ));
 }
@@ -278,4 +338,34 @@ fn decodes_secret_vec_into_locked_memory() {
             .try_sanitization_verify(b"hello", "test declassifies locked vec equality")
             .unwrap()
     );
+}
+
+#[cfg(all(
+    feature = "memory-lock",
+    any(
+        all(
+            target_os = "linux",
+            any(target_arch = "x86_64", target_arch = "aarch64")
+        ),
+        target_os = "macos",
+        target_os = "ios",
+        target_os = "android",
+        target_os = "windows",
+        target_os = "freebsd",
+        target_os = "openbsd",
+        target_os = "netbsd",
+        target_os = "dragonfly",
+    ),
+    not(miri)
+))]
+#[test]
+fn checked_locked_vec_decode_rejects_degraded_protection() {
+    match ct::STANDARD.decode_locked_secret_vec_checked(b"aGVsbG8=") {
+        Ok(secret) => assert!(!secret.protection_report().is_degraded()),
+        Err(
+            LockedDecodeError::DegradedProtection
+            | LockedDecodeError::Operation(LockedSecretVecFillError::Memory(_)),
+        ) => {}
+        Err(error) => panic!("unexpected checked locked vec decode error: {error:?}"),
+    }
 }

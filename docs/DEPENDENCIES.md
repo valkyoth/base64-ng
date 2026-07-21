@@ -36,6 +36,11 @@ new dependency expands the audit, license, advisory, and supply-chain surface.
   the crates.io owner set for `sanitization` before publishing companion
   updates because that crate sits directly in the optional secret-cleanup
   dependency chain.
+  Military, hermetic, or otherwise high-assurance deployments should vendor
+  the exact locked source, retain the registry checksum, and require an
+  independent review before updating that vendored copy. This operational
+  control is additive to Cargo's checksum, RustSec, license, and source-policy
+  checks.
 - `base64-ng-derive` is an optional companion package for fixed-size byte
   newtypes. It is dependency-free and does not add proc-macro machinery to the
   core `base64-ng` package.
