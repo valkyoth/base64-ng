@@ -327,15 +327,45 @@ fn locked_fixed_secret_bytes_reports_decode_error() {
 ))]
 #[test]
 fn checked_locked_fixed_decode_preserves_decode_errors() {
-    match ct::STANDARD.decode_locked_secret_bytes_checked::<5>(b"aGVsbG8!") {
-        Err(
-            LockedDecodeError::Operation(LockedSecretBytesGenerateError::Generate(
-                SanitizationDecodeError::Decode(DecodeError::InvalidInput),
-            ))
-            | LockedDecodeError::DegradedProtection,
-        ) => {}
-        result => panic!("unexpected checked locked decode result: {result:?}"),
-    }
+    assert!(matches!(
+        ct::STANDARD.decode_locked_secret_bytes_checked::<5>(b"aGVsbG8!"),
+        Err(LockedDecodeError::Operation(
+            LockedSecretBytesGenerateError::Generate(SanitizationDecodeError::Decode(
+                DecodeError::InvalidInput
+            ),)
+        ))
+    ));
+}
+
+#[cfg(all(
+    feature = "memory-lock",
+    any(
+        all(
+            target_os = "linux",
+            any(target_arch = "x86_64", target_arch = "aarch64")
+        ),
+        target_os = "macos",
+        target_os = "ios",
+        target_os = "android",
+        target_os = "windows",
+        target_os = "freebsd",
+        target_os = "openbsd",
+        target_os = "netbsd",
+        target_os = "dragonfly",
+        all(target_arch = "wasm32", feature = "wasm-compat"),
+    )
+))]
+#[test]
+fn checked_locked_fixed_decode_rejects_length_before_allocation() {
+    assert!(matches!(
+        ct::STANDARD.decode_locked_secret_bytes_checked::<4>(b"aGVsbG8="),
+        Err(LockedDecodeError::Operation(
+            LockedSecretBytesGenerateError::Generate(SanitizationDecodeError::LengthMismatch {
+                expected: 4,
+                actual: 5,
+            })
+        ))
+    ));
 }
 
 #[cfg(feature = "alloc")]

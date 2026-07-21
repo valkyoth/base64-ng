@@ -40,7 +40,7 @@ pub use compare::{LockedSanitizationCtEqExt, SanitizationCtEqExt, sanitization_c
 pub use error::{LockedDecodeError, SanitizationDecodeError};
 use sanitization::SecretBytes;
 
-#[cfg(any(feature = "alloc", feature = "memory-lock"))]
+#[cfg(any(feature = "alloc", all(feature = "memory-lock", not(miri))))]
 use base64_ng::DecodeError;
 
 #[cfg(feature = "alloc")]

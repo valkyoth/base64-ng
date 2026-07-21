@@ -17,6 +17,9 @@ aligned.
 - Made checked fixed-size locked decode establish required memory-lock, dump,
   and fork controls before plaintext materialization; dynamic checked decode
   remains an explicitly documented post-fill admission check.
+- Rejects malformed or wrong-length fixed input before protected mapping
+  allocation and checks the final decoded length in release builds before
+  initializing locked storage.
 - Added deterministic admission tests proving degraded dynamic containers are
   dropped instead of returned.
 - Updated the active release toolchain to Rust `1.97.1`, Serde to `1.0.229`,

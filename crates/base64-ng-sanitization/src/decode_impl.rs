@@ -2,7 +2,7 @@ use crate::{CtDecodeSanitizationExt, SanitizationDecodeError};
 use base64_ng::{Alphabet, ct::CtEngine};
 use sanitization::{SecretBytes, SecureSanitize};
 
-#[cfg(any(feature = "alloc", feature = "memory-lock"))]
+#[cfg(any(feature = "alloc", all(feature = "memory-lock", not(miri))))]
 use base64_ng::DecodeError;
 
 #[cfg(feature = "alloc")]
@@ -159,7 +159,16 @@ where
         };
         staging.secure_sanitize();
 
-        debug_assert_eq!(written, N);
+        if written != N {
+            output.secure_sanitize();
+            return Err(LockedSecretBytesGenerateError::Generate(
+                SanitizationDecodeError::LengthMismatch {
+                    expected: N,
+                    actual: written,
+                },
+            ));
+        }
+
         let result = LockedSecretBytes::try_from_fn(|index| {
             Ok::<u8, SanitizationDecodeError>(output[index])
         });
@@ -252,20 +261,31 @@ where
         LockedSecretBytes<N>,
         LockedDecodeError<LockedSecretBytesGenerateError<SanitizationDecodeError>>,
     > {
+        let required = self.decoded_len(input).map_err(|error| {
+            LockedDecodeError::Operation(LockedSecretBytesGenerateError::Generate(error.into()))
+        })?;
+        if required != N {
+            return Err(LockedDecodeError::Operation(
+                LockedSecretBytesGenerateError::Generate(SanitizationDecodeError::LengthMismatch {
+                    expected: N,
+                    actual: required,
+                }),
+            ));
+        }
+
         let secret =
             LockedSecretBytes::zeroed_with_protection(locked::required_secret_protection())
                 .map_err(|_| LockedDecodeError::DegradedProtection)?;
 
         secret
             .try_init_with(|output| {
-                let required = self.decoded_len(input)?;
-                if required != N {
+                let written = self.decode_slice_clear_tail(input, output)?;
+                if written != N {
                     return Err(SanitizationDecodeError::LengthMismatch {
                         expected: N,
-                        actual: required,
+                        actual: written,
                     });
                 }
-                self.decode_slice_clear_tail(input, output)?;
                 Ok(())
             })
             .map_err(|error| match error {

@@ -17,6 +17,9 @@
 - Made checked fixed locked decode establish required memory-lock, dump, and
   fork controls before plaintext materialization, and added deterministic
   rejection/drop tests for post-fill dynamic admission.
+- Validated malformed and wrong-length fixed inputs before protected mapping
+  allocation, and replaced a release-only decoded-length assertion with a
+  fail-closed runtime check and temporary-buffer wipe.
 - Strengthened the companion `high-assurance` feature with strict random
   canaries and strict assembly comparison.
 - Added `strict-compare` and retained `strict-ct` as a compatibility alias for
