@@ -20,6 +20,8 @@ aligned.
 - Rejects malformed or wrong-length fixed input before protected mapping
   allocation and checks the final decoded length in release builds before
   initializing locked storage.
+- Adds counter-backed allocation-boundary tests proving those rejected inputs
+  cannot invoke protected allocation.
 - Added deterministic admission tests proving degraded dynamic containers are
   dropped instead of returned.
 - Updated the active release toolchain to Rust `1.97.1`, Serde to `1.0.229`,

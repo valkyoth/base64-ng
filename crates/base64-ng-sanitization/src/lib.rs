@@ -35,6 +35,8 @@ mod decode_impl;
 mod error;
 #[cfg(feature = "memory-lock")]
 mod locked;
+#[cfg(test)]
+mod locked_tests;
 
 pub use compare::{LockedSanitizationCtEqExt, SanitizationCtEqExt, sanitization_ct_eq_public_len};
 pub use error::{LockedDecodeError, SanitizationDecodeError};

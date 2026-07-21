@@ -71,6 +71,69 @@ use sanitization::{
 ))]
 use sanitization::{LockedSecretVec, LockedSecretVecFillError};
 
+#[cfg(all(
+    feature = "memory-lock",
+    any(
+        all(
+            target_os = "linux",
+            any(target_arch = "x86_64", target_arch = "aarch64")
+        ),
+        target_os = "macos",
+        target_os = "ios",
+        target_os = "android",
+        target_os = "windows",
+        target_os = "freebsd",
+        target_os = "openbsd",
+        target_os = "netbsd",
+        target_os = "dragonfly",
+        all(target_arch = "wasm32", feature = "wasm-compat"),
+    )
+))]
+type CheckedLockedFixedResult<T> =
+    Result<T, LockedDecodeError<LockedSecretBytesGenerateError<SanitizationDecodeError>>>;
+
+#[cfg(all(
+    feature = "memory-lock",
+    any(
+        all(
+            target_os = "linux",
+            any(target_arch = "x86_64", target_arch = "aarch64")
+        ),
+        target_os = "macos",
+        target_os = "ios",
+        target_os = "android",
+        target_os = "windows",
+        target_os = "freebsd",
+        target_os = "openbsd",
+        target_os = "netbsd",
+        target_os = "dragonfly",
+        all(target_arch = "wasm32", feature = "wasm-compat"),
+    )
+))]
+pub(crate) fn validate_before_locked_fixed_allocation<A, const PAD: bool, const N: usize, T, F>(
+    engine: &CtEngine<A, PAD>,
+    input: &[u8],
+    allocate_and_decode: F,
+) -> CheckedLockedFixedResult<T>
+where
+    A: Alphabet,
+    F: FnOnce() -> CheckedLockedFixedResult<T>,
+{
+    let required = engine.decoded_len(input).map_err(|error| {
+        LockedDecodeError::Operation(LockedSecretBytesGenerateError::Generate(error.into()))
+    })?;
+    if required != N {
+        return Err(LockedDecodeError::Operation(
+            LockedSecretBytesGenerateError::Generate(SanitizationDecodeError::LengthMismatch {
+                expected: N,
+                actual: required,
+            }),
+        ));
+    }
+
+    allocate_and_decode()
+}
+
 impl<A, const PAD: bool> CtDecodeSanitizationExt for CtEngine<A, PAD>
 where
     A: Alphabet,
@@ -261,39 +324,31 @@ where
         LockedSecretBytes<N>,
         LockedDecodeError<LockedSecretBytesGenerateError<SanitizationDecodeError>>,
     > {
-        let required = self.decoded_len(input).map_err(|error| {
-            LockedDecodeError::Operation(LockedSecretBytesGenerateError::Generate(error.into()))
-        })?;
-        if required != N {
-            return Err(LockedDecodeError::Operation(
-                LockedSecretBytesGenerateError::Generate(SanitizationDecodeError::LengthMismatch {
-                    expected: N,
-                    actual: required,
-                }),
-            ));
-        }
+        validate_before_locked_fixed_allocation::<A, PAD, N, _, _>(self, input, || {
+            let secret =
+                LockedSecretBytes::zeroed_with_protection(locked::required_secret_protection())
+                    .map_err(|_| LockedDecodeError::DegradedProtection)?;
 
-        let secret =
-            LockedSecretBytes::zeroed_with_protection(locked::required_secret_protection())
-                .map_err(|_| LockedDecodeError::DegradedProtection)?;
-
-        secret
-            .try_init_with(|output| {
-                let written = self.decode_slice_clear_tail(input, output)?;
-                if written != N {
-                    return Err(SanitizationDecodeError::LengthMismatch {
-                        expected: N,
-                        actual: written,
-                    });
-                }
-                Ok(())
-            })
-            .map_err(|error| match error {
-                LockedSecretInitializeError::Integrity(_) => LockedDecodeError::DegradedProtection,
-                LockedSecretInitializeError::Generate(error) => {
-                    LockedDecodeError::Operation(LockedSecretBytesGenerateError::Generate(error))
-                }
-            })
+            secret
+                .try_init_with(|output| {
+                    let written = self.decode_slice_clear_tail(input, output)?;
+                    if written != N {
+                        return Err(SanitizationDecodeError::LengthMismatch {
+                            expected: N,
+                            actual: written,
+                        });
+                    }
+                    Ok(())
+                })
+                .map_err(|error| match error {
+                    LockedSecretInitializeError::Integrity(_) => {
+                        LockedDecodeError::DegradedProtection
+                    }
+                    LockedSecretInitializeError::Generate(error) => LockedDecodeError::Operation(
+                        LockedSecretBytesGenerateError::Generate(error),
+                    ),
+                })
+        })
     }
 
     #[cfg(feature = "alloc")]
