@@ -1189,7 +1189,23 @@ inside the `1.3.x` line if they remain evidence-gated and do not weaken the
 - Move the stronger RISC-V RVV proof and backend-admission review to `1.3.9`
   so this security patch can ship independently.
 
-`1.3.9`: RISC-V RVV proof and backend-admission review.
+`1.3.9`: sanitization 2.0 companion migration.
+
+- Keep all workspace crates version-aligned for the dependency migration.
+- Update `base64-ng-sanitization` to exact-pinned `sanitization` `2.0.1`.
+- Adopt the 2.0 locked fixed-size fill-error API and mapped-storage checked
+  exposure semantics.
+- Add integrity-checked locked comparison helpers while retaining the existing
+  comparison trait as a source-compatible fail-stop path.
+- Map the companion's `high-assurance` feature to strict random-canary and
+  strict assembly-comparison controls, and retain `strict-ct` as a migration
+  alias for the renamed `strict-compare` feature.
+- Preserve core encode/decode behavior, SIMD admission scope, unsafe
+  boundaries, and the core zero-dependency posture.
+- Move the stronger RISC-V RVV proof and backend-admission review to `1.3.10`
+  so the breaking dependency migration receives an isolated review cycle.
+
+`1.3.10`: RISC-V RVV proof and backend-admission review.
 
 - Add an RVV-specific implementation only when the active stable Rust
   toolchain exposes a reviewable intrinsic path, or when a separately audited

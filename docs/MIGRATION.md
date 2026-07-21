@@ -29,15 +29,36 @@ After:
 
 ```toml
 [dependencies]
-base64-ng = "1.3.8"
+base64-ng = "1.3.9"
 ```
 
 For embedded or freestanding use:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.3.8", default-features = false }
+base64-ng = { version = "1.3.9", default-features = false }
 ```
+
+### Sanitization Companion In 1.3.9
+
+`base64-ng-sanitization` `1.3.9` migrates from `sanitization` 1.x to exact-pinned
+`sanitization` `2.0.1`. Fixed locked decode now returns
+`LockedSecretBytesFillError<SanitizationDecodeError>`, so callers matching
+`LockedSecretBytesGenerateError` must update the error type and handle the new
+`Integrity` variant.
+
+Mapped storage exposure is checked in sanitization 2.0. Replace
+`LockedSecretBytes::with_secret` with `try_expose_secret` and
+`LockedSecretVec::with_secret` with `try_with_secret`. Prefer
+`LockedSanitizationCtEqExt::try_sanitization_ct_eq` or
+`try_sanitization_verify` so canary corruption is returned rather than routed
+through the compatibility comparison trait's explicit fail-stop behavior.
+
+The companion feature `strict-compare` replaces sanitization's old `strict-ct`
+name. `strict-ct` remains a temporary alias in `base64-ng-sanitization` for
+source migration. The companion's `high-assurance` profile now includes strict
+comparison and strict random canaries and is intended for supported x86_64 and
+AArch64 native deployments.
 
 ## Engine Mapping
 
@@ -179,7 +200,7 @@ Enable the `stream` feature for `std::io` wrappers:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.3.8", features = ["stream"] }
+base64-ng = { version = "1.3.9", features = ["stream"] }
 ```
 
 ```rust
@@ -229,8 +250,8 @@ Tokio applications, use the optional `base64-ng-tokio` companion crate instead:
 
 ```toml
 [dependencies]
-base64-ng = "1.3.8"
-base64-ng-tokio = "1.3.8"
+base64-ng = "1.3.9"
+base64-ng-tokio = "1.3.9"
 tokio = { version = "1.52.3", features = ["io-util"] }
 ```
 

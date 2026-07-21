@@ -1,6 +1,6 @@
 [package]
 name = "base64-ng-sanitization"
-version = "1.3.8"
+version = "1.3.9"
 edition = "2024"
 rust-version = "1.90"
 license = "MIT OR Apache-2.0"
@@ -26,13 +26,20 @@ asm-compare = ["sanitization/asm-compare"]
 memory-lock = ["sanitization/memory-lock"]
 canary-check = ["memory-lock", "sanitization/canary-check"]
 random-canary = ["canary-check", "sanitization/random-canary"]
-high-assurance = ["memory-lock", "canary-check", "random-canary"]
-strict-ct = ["sanitization/strict-ct"]
+high-assurance = [
+    "memory-lock",
+    "canary-check",
+    "random-canary",
+    "strict-compare",
+    "sanitization/strict-canary-check",
+]
+strict-compare = ["sanitization/strict-compare"]
+strict-ct = ["strict-compare"]
 wasm-compat = ["sanitization/wasm-compat"]
 
 [dependencies]
-base64-ng = { version = "1.3.8", path = "../..", default-features = false }
-sanitization = { version = "=1.2.4", default-features = false }
+base64-ng = { version = "1.3.9", path = "../..", default-features = false }
+sanitization = { version = "=2.0.1", default-features = false }
 
 [lints.rust]
 unsafe_code = "deny"

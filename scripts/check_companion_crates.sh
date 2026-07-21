@@ -17,6 +17,9 @@ cargo test --manifest-path "$manifest" --features alloc
 echo "companion crates: base64-ng-sanitization std"
 cargo test --manifest-path "$manifest" --features std
 
+echo "companion crates: base64-ng-sanitization all features"
+cargo test --manifest-path "$manifest" --all-features
+
 echo "companion crates: base64-ng-sanitization clippy"
 cargo clippy --manifest-path "$manifest" --all-targets --all-features -- -D warnings
 

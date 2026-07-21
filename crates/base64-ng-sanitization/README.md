@@ -33,8 +33,8 @@ constant-time-oriented Base64 decode into clear-on-drop secret containers.
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.3.8", default-features = false }
-base64-ng-sanitization = { version = "1.3.8", default-features = false }
+base64-ng = { version = "1.3.9", default-features = false }
+base64-ng-sanitization = { version = "1.3.9", default-features = false }
 ```
 
 ```rust
@@ -54,26 +54,33 @@ assert!(secret.sanitization_verify(
 Enable `alloc` for heap-backed `sanitization::SecretVec` helpers:
 
 ```toml
-base64-ng-sanitization = { version = "1.3.8", features = ["alloc"] }
+base64-ng-sanitization = { version = "1.3.9", features = ["alloc"] }
 ```
 
-For high-assurance native deployments, enable locked storage helpers. This
-uses `sanitization` 1.2.4's `memory-lock`, `canary-check`, and
-`random-canary` features and decodes directly into locked memory:
+For high-assurance x86_64 or AArch64 native deployments, enable locked storage
+helpers. This
+uses `sanitization` 2.0.1's hardened native controls, including memory locking,
+strict random canaries, and strict assembly comparison, and decodes directly
+into locked memory:
 
 ```toml
-base64-ng-sanitization = { version = "1.3.8", features = ["high-assurance"] }
+base64-ng-sanitization = { version = "1.3.9", features = ["high-assurance"] }
 ```
 
 ```rust
 use base64_ng::ct;
-use base64_ng_sanitization::CtDecodeSanitizationExt;
+use base64_ng_sanitization::{CtDecodeSanitizationExt, LockedSanitizationCtEqExt};
 
 let key = ct::STANDARD
     .decode_locked_secret_bytes::<5>(b"aGVsbG8=")
     .unwrap();
 
-key.with_secret(|bytes| assert_eq!(bytes, b"hello"));
+key.try_expose_secret(|bytes| assert_eq!(bytes, b"hello"))?;
+assert!(key.try_sanitization_verify(
+    b"hello",
+    "example authentication decision is public"
+)?);
+# Ok::<(), Box<dyn std::error::Error>>(())
 ```
 
 For dynamic output on supported native targets:
@@ -86,7 +93,8 @@ let key = ct::STANDARD
     .decode_locked_secret_vec(b"aGVsbG8=")
     .unwrap();
 
-key.with_secret(|bytes| assert_eq!(bytes, b"hello"));
+key.try_with_secret(|bytes| assert_eq!(bytes, b"hello"))?;
+# Ok::<(), Box<dyn std::error::Error>>(())
 ```
 
 The integration intentionally targets `base64_ng::ct::CtEngine`. Strict
@@ -95,7 +103,7 @@ secret-container API pointed at the constant-time-oriented decode path.
 
 `base64-ng-sanitization` also re-exports `sanitization::ct` and adds
 `SanitizationCtEqExt` for comparing decoded `SecretBytes` and `SecretVec`
-values through `sanitization` 1.2.4's native `Choice` API. This gives projects
+values through `sanitization` 2.0.1's native `Choice` API. This gives projects
 that already admit `sanitization` a dependency-free alternative to external
 `subtle` integration:
 
@@ -115,5 +123,8 @@ For deployments that want `sanitization`'s assembly-backed comparison checks,
 enable the passthrough features:
 
 ```toml
-base64-ng-sanitization = { version = "1.3.8", features = ["strict-ct"] }
+base64-ng-sanitization = { version = "1.3.9", features = ["strict-compare"] }
 ```
+
+The previous companion feature name `strict-ct` remains as an alias for
+`strict-compare` during migration.

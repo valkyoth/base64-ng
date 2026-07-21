@@ -127,7 +127,7 @@ The release gate runs:
   records that community reports from real RVV 1.0 systems are still requested
   before any RISC-V backend is upgraded from QEMU-tested to hardware-attested.
   The stronger RVV proof and backend-admission review is scheduled for
-  `1.3.9`; `1.3.8` preserves scalar active dispatch.
+  `1.3.10`; `1.3.9` preserves scalar active dispatch.
 - moved-code review for the `src/alphabet.rs` extraction, preserving root
   public exports for built-in alphabets, custom alphabet validation, and the
   `define_alphabet!` macro

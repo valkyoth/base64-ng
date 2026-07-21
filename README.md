@@ -29,9 +29,9 @@ The crate starts conservative: a small scalar implementation, strict RFC 4648 be
 
 ## Current Status
 
-The current public release is `1.3.8`.
+The current public release is `1.3.9`.
 
-`1.3.8` is a security-hardening and crate-family synchronization patch on top
+`1.3.9` is a dependency-migration and crate-family synchronization patch on top
 of the `1.3.0` implementation-completion release, the `1.3.1` Tokio
 writer patch, the `1.3.2` non-standard SIMD surface review, the `1.3.3`
 wasm SIMD runtime-dispatch and profile-ergonomics patch, the `1.3.4`
@@ -54,20 +54,15 @@ and normal strict decode when the binary is compiled with
 `target-feature=+simd128`, the `simd` feature, and the explicit
 `allow-wasm32-best-effort-wipe` feature.
 
-The latest patch in this line is `1.3.8`, which keeps all workspace crate
-versions aligned and closes low-severity evidence, cleanup, and custom alphabet
-consistency gaps. Tokio read-all helpers now wipe replaced vector allocations
-before deallocation, and the Chromium wasm smoke gate requires a success
-attribute created only by runtime execution rather than matching a token
-present in static HTML.
-Runtime encoding also treats `Alphabet::ENCODE` as its sole output definition,
-so custom `Alphabet::encode` overrides cannot create API-, input-length-, or
-backend-dependent output. Standard-family mapper selection is compile-time and
-does not add a repeated prefix scan to scalar calls. A dedicated daily workflow
-checks all maintained lockfiles for newly published advisories.
-The stronger RISC-V RVV proof and admission review is scheduled for `1.3.9`;
-until then, RISC-V remains QEMU-tested scalar/fallback-only. The workspace
-crate family stays version-aligned at `1.3.8`.
+The latest patch in this line is `1.3.9`, which keeps all workspace crate
+versions aligned while migrating `base64-ng-sanitization` to exact-pinned
+`sanitization` `2.0.1`. Locked fixed-size decode now exposes the 2.0 fill-error
+model, locked comparisons have an integrity-checked extension API, and the
+companion's high-assurance feature includes strict random canaries and strict
+assembly comparison. The previous companion feature name `strict-ct` remains
+an alias for the renamed `strict-compare` feature during migration.
+The stronger RISC-V RVV proof and admission review is scheduled for `1.3.10`;
+until then, RISC-V remains QEMU-tested scalar/fallback-only.
 
 Implemented on this branch now:
 
@@ -195,7 +190,7 @@ The active release toolchain is Rust `1.97.0`. MSRV remains Rust `1.90.0` and
 is checked separately in CI so the project can build and test with the latest
 stable compiler without dropping older supported users.
 
-Compatibility evidence for the `1.3.8` workspace:
+Compatibility evidence for the `1.3.9` workspace:
 
 | Rust | Local Evidence |
 | --- | --- |
@@ -213,7 +208,7 @@ Compatibility evidence for the `1.3.8` workspace:
 
 ```toml
 [dependencies]
-base64-ng = "1.3.8"
+base64-ng = "1.3.9"
 ```
 
 The crate is dual-licensed:
@@ -270,18 +265,22 @@ only the crates that changed instead of republishing the whole ecosystem.
 `base64-ng-sanitization` provides extension helpers for
 `base64_ng::ct::CtEngine` that decode directly into
 `sanitization::SecretBytes<N>` in `no_std`, with `SecretVec` helpers behind its
-own `alloc` feature. The `1.3.8` companion uses exact-pinned
-`sanitization` `=1.2.4` and exposes `sanitization::ct::Choice` comparison
-helpers through `SanitizationCtEqExt`. Enable the companion's
+own `alloc` feature. The `1.3.9` companion uses exact-pinned
+`sanitization` `=2.0.1` and exposes `sanitization::ct::Choice` comparison
+helpers through `SanitizationCtEqExt`. Locked containers additionally expose
+fallible integrity-checked comparison through `LockedSanitizationCtEqExt`.
+Enable the companion's
 `high-assurance` feature to
 decode directly into `sanitization::LockedSecretBytes` or
-`sanitization::LockedSecretVec` on supported native targets, using
-`sanitization` memory locking plus canary checking and random canaries:
+`sanitization::LockedSecretVec` on supported x86_64 or AArch64 native targets,
+using
+`sanitization` memory locking plus strict random-canary and assembly-comparison
+checks:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.3.8", default-features = false }
-base64-ng-sanitization = { version = "1.3.8", default-features = false }
+base64-ng = { version = "1.3.9", default-features = false }
+base64-ng-sanitization = { version = "1.3.9", default-features = false }
 ```
 
 ```rust
@@ -300,18 +299,26 @@ assert!(secret.sanitization_verify(
 
 ```toml
 [dependencies]
-base64-ng-sanitization = { version = "1.3.8", features = ["high-assurance"] }
+base64-ng-sanitization = { version = "1.3.9", features = ["high-assurance"] }
 ```
 
 ```rust
 use base64_ng::ct;
-use base64_ng_sanitization::CtDecodeSanitizationExt;
+use base64_ng_sanitization::{CtDecodeSanitizationExt, LockedSanitizationCtEqExt};
 
 let locked = ct::STANDARD
     .decode_locked_secret_bytes::<5>(b"aGVsbG8=")
     .unwrap();
 
-locked.with_secret(|bytes| assert_eq!(bytes, b"hello"));
+locked
+    .try_expose_secret(|bytes| assert_eq!(bytes, b"hello"))
+    .unwrap();
+assert!(locked
+    .try_sanitization_verify(
+        b"hello",
+        "example authentication decision is public"
+    )
+    .unwrap());
 ```
 
 `base64-ng-derive` provides a dependency-free `Base64Secret` derive for tuple
@@ -319,8 +326,8 @@ newtypes around fixed byte arrays:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.3.8", default-features = false }
-base64-ng-derive = "1.3.8"
+base64-ng = { version = "1.3.9", default-features = false }
+base64-ng-derive = "1.3.9"
 ```
 
 ```rust
@@ -339,7 +346,7 @@ assert_eq!(key.encode_base64::<8>().unwrap().as_str(), "aGVsbG8=");
 
 ```toml
 [dependencies]
-base64-ng-serde = "1.3.8"
+base64-ng-serde = "1.3.9"
 serde = { version = "1.0.228", features = ["derive"] }
 ```
 
@@ -358,8 +365,8 @@ Field-level modules are available for `standard`, `standard_no_pad`,
 
 ```toml
 [dependencies]
-base64-ng = "1.3.8"
-base64-ng-bytes = "1.3.8"
+base64-ng = "1.3.9"
+base64-ng-bytes = "1.3.9"
 bytes = "1.12.1"
 ```
 
@@ -376,8 +383,8 @@ projects that already admit `subtle`:
 
 ```toml
 [dependencies]
-base64-ng = "1.3.8"
-base64-ng-subtle = "1.3.8"
+base64-ng = "1.3.9"
+base64-ng-subtle = "1.3.9"
 ```
 
 ```rust
@@ -398,8 +405,8 @@ remain unread:
 
 ```toml
 [dependencies]
-base64-ng = "1.3.8"
-base64-ng-tokio = "1.3.8"
+base64-ng = "1.3.9"
+base64-ng-tokio = "1.3.9"
 tokio = { version = "1.52.3", features = ["io-util"] }
 ```
 
@@ -432,7 +439,7 @@ Disable defaults for embedded or freestanding use:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.3.8", default-features = false }
+base64-ng = { version = "1.3.9", default-features = false }
 ```
 
 Enable admitted encode acceleration on supported `std` targets with the
@@ -444,7 +451,7 @@ and URL-safe alphabets after whole-input scalar validation:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.3.8", features = ["simd"] }
+base64-ng = { version = "1.3.9", features = ["simd"] }
 ```
 
 ```rust

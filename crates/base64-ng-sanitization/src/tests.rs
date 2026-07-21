@@ -22,7 +22,27 @@ use base64_ng::{DecodeError, ct};
         all(target_arch = "wasm32", feature = "wasm-compat"),
     )
 ))]
-use sanitization::LockedSecretBytesGenerateError;
+use sanitization::LockedSecretBytesFillError;
+
+#[cfg(all(
+    feature = "memory-lock",
+    any(
+        all(
+            target_os = "linux",
+            any(target_arch = "x86_64", target_arch = "aarch64")
+        ),
+        target_os = "macos",
+        target_os = "ios",
+        target_os = "android",
+        target_os = "windows",
+        target_os = "freebsd",
+        target_os = "openbsd",
+        target_os = "netbsd",
+        target_os = "dragonfly",
+        all(target_arch = "wasm32", feature = "wasm-compat"),
+    )
+))]
+use crate::LockedSanitizationCtEqExt;
 
 #[cfg(all(
     feature = "memory-lock",
@@ -123,12 +143,18 @@ fn fixed_secret_bytes_reports_decode_error() {
 fn decodes_fixed_secret_bytes_into_locked_memory() {
     let secret = match ct::STANDARD.decode_locked_secret_bytes::<5>(b"aGVsbG8=") {
         Ok(secret) => secret,
-        Err(LockedSecretBytesGenerateError::Memory(_)) => return,
+        Err(LockedSecretBytesFillError::Memory(_)) => return,
         Err(error) => panic!("unexpected locked fixed decode error: {error:?}"),
     };
 
-    secret.with_secret(|bytes| assert_eq!(bytes, b"hello"));
-    assert!(secret.sanitization_verify(b"hello", "test declassifies locked fixed equality"));
+    secret
+        .try_expose_secret(|bytes| assert_eq!(bytes, b"hello"))
+        .unwrap();
+    assert!(
+        secret
+            .try_sanitization_verify(b"hello", "test declassifies locked fixed equality")
+            .unwrap()
+    );
 }
 
 #[cfg(all(
@@ -153,7 +179,7 @@ fn decodes_fixed_secret_bytes_into_locked_memory() {
 fn locked_fixed_secret_bytes_reject_length_mismatch() {
     assert!(matches!(
         ct::STANDARD.decode_locked_secret_bytes::<4>(b"aGVsbG8="),
-        Err(LockedSecretBytesGenerateError::Generate(
+        Err(LockedSecretBytesFillError::Generate(
             SanitizationDecodeError::LengthMismatch {
                 expected: 4,
                 actual: 5,
@@ -184,7 +210,7 @@ fn locked_fixed_secret_bytes_reject_length_mismatch() {
 fn locked_fixed_secret_bytes_reports_decode_error() {
     assert!(matches!(
         ct::STANDARD.decode_locked_secret_bytes::<5>(b"aGVsbG8!"),
-        Err(LockedSecretBytesGenerateError::Generate(
+        Err(LockedSecretBytesFillError::Generate(
             SanitizationDecodeError::Decode(DecodeError::InvalidInput)
         ))
     ));
@@ -244,6 +270,12 @@ fn decodes_secret_vec_into_locked_memory() {
         Err(error) => panic!("unexpected locked vec decode error: {error:?}"),
     };
 
-    secret.with_secret(|bytes| assert_eq!(bytes, b"hello"));
-    assert!(secret.sanitization_verify(b"hello", "test declassifies locked vec equality"));
+    secret
+        .try_with_secret(|bytes| assert_eq!(bytes, b"hello"))
+        .unwrap();
+    assert!(
+        secret
+            .try_sanitization_verify(b"hello", "test declassifies locked vec equality")
+            .unwrap()
+    );
 }

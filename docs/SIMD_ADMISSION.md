@@ -16,7 +16,7 @@ only for backends named in this file and the release gate.
 - Gate summary: Admitted backends: AVX-512 VBMI encode, AVX2 encode, SSSE3/SSE4.1 encode, NEON encode, AVX-512 VBMI strict decode, AVX2 strict decode, SSSE3/SSE4.1 strict decode, and NEON strict decode.
 - Gate priority: Active backend priority: AVX-512 VBMI, then AVX2, then SSSE3/SSE4.1 on x86/x86_64; NEON on little-endian aarch64.
 - Public performance claims: none without local benchmark evidence.
-- Release status: `1.3.8`; `1.2.0` admitted conservative active encode
+- Release status: `1.3.9`; `1.2.0` admitted conservative active encode
   dispatch, and `1.3.0` admitted normal strict decode dispatch for the first
   narrow decode scope. `1.3.3` admits a narrow wasm `simd128` runtime profile
   for Standard and URL-safe public encode plus normal strict decode when the
@@ -29,8 +29,9 @@ only for backends named in this file and the release gate.
   no new SIMD backend; it is a documentation and crate-family version
   synchronization patch. `1.3.7` admits no new SIMD backend. `1.3.8` is a
   Tokio cleanup and browser wasm evidence hardening patch; it admits no new
-  SIMD backend and moves the stronger RISC-V RVV proof and admission review
-  to `1.3.9`. Active encode
+  SIMD backend. `1.3.9` migrates the optional sanitization companion to
+  `sanitization` 2.0.1, admits no new SIMD backend, and moves the stronger
+  RISC-V RVV proof and admission review to `1.3.10`. Active encode
   dispatch admits AVX-512 VBMI above AVX2
   above SSSE3/SSE4.1 on x86/x86_64 and NEON on little-endian aarch64 for
   Standard and URL-safe alphabet families. AVX-512 VBMI strict decode is

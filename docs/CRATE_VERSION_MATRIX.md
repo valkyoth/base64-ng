@@ -5,6 +5,27 @@ crate remains the stable user entry point; companion crates are optional
 integration packages for applications that explicitly admit their dependency
 sets.
 
+## 1.3.9 Release Plan
+
+The `1.3.9` release keeps the workspace crate family synchronized while
+migrating `base64-ng-sanitization` to exact-pinned `sanitization` `2.0.1`.
+The companion adopts the 2.0 locked fill-error model, adds fallible
+integrity-checked comparison helpers for locked containers, and strengthens
+its `high-assurance` feature with strict random-canary and assembly-comparison
+controls. Core encode/decode behavior, SIMD admission, unsafe boundaries, and
+the core zero-dependency posture remain unchanged. The RISC-V RVV proof and
+backend-admission review moves to `1.3.10`.
+
+| Crate | Version | Publish In 1.3.9 | Cargo |
+| --- | --- | --- | --- |
+| `base64-ng` | `1.3.9` | yes | <https://crates.io/crates/base64-ng> |
+| `base64-ng-sanitization` | `1.3.9` | yes | <https://crates.io/crates/base64-ng-sanitization> |
+| `base64-ng-derive` | `1.3.9` | yes | <https://crates.io/crates/base64-ng-derive> |
+| `base64-ng-serde` | `1.3.9` | yes | <https://crates.io/crates/base64-ng-serde> |
+| `base64-ng-bytes` | `1.3.9` | yes | <https://crates.io/crates/base64-ng-bytes> |
+| `base64-ng-subtle` | `1.3.9` | yes | <https://crates.io/crates/base64-ng-subtle> |
+| `base64-ng-tokio` | `1.3.9` | yes | <https://crates.io/crates/base64-ng-tokio> |
+
 ## 1.3.8 Release Plan
 
 The `1.3.8` release keeps the workspace crate family synchronized while
