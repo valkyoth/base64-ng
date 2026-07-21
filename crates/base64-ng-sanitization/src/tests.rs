@@ -453,11 +453,40 @@ fn decodes_secret_vec_into_locked_memory() {
 #[test]
 fn checked_locked_vec_decode_rejects_degraded_protection() {
     match ct::STANDARD.decode_locked_secret_vec_checked(b"aGVsbG8=") {
-        Ok(secret) => assert!(!secret.protection_report().is_degraded()),
-        Err(
-            LockedDecodeError::DegradedProtection
-            | LockedDecodeError::Operation(LockedSecretVecFillError::Memory(_)),
-        ) => {}
+        Ok(secret) => assert!(
+            secret
+                .protection_report()
+                .satisfies(crate::locked::required_secret_protection())
+        ),
+        Err(LockedDecodeError::DegradedProtection) => {}
         Err(error) => panic!("unexpected checked locked vec decode error: {error:?}"),
     }
+}
+
+#[cfg(all(
+    feature = "memory-lock",
+    any(
+        all(
+            target_os = "linux",
+            any(target_arch = "x86_64", target_arch = "aarch64")
+        ),
+        target_os = "macos",
+        target_os = "ios",
+        target_os = "android",
+        target_os = "windows",
+        target_os = "freebsd",
+        target_os = "openbsd",
+        target_os = "netbsd",
+        target_os = "dragonfly",
+    ),
+    not(miri)
+))]
+#[test]
+fn checked_locked_vec_decode_preserves_decode_errors_before_protection_setup() {
+    assert!(matches!(
+        ct::STANDARD.decode_locked_secret_vec_checked(b"aGVsbG8!"),
+        Err(LockedDecodeError::Operation(
+            LockedSecretVecFillError::Fill(DecodeError::InvalidInput)
+        ))
+    ));
 }

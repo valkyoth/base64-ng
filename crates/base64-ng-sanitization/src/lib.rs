@@ -12,7 +12,7 @@
 //! secret-bearing Base64 directly into `sanitization` secret containers.
 //!
 //! The extension trait targets [`base64_ng::ct::CtEngine`] rather than the
-//! ordinary strict decoder. `sanitization` 2.0.2's native [`ct`] primitives are
+//! ordinary strict decoder. `sanitization` 2.0.3's native [`ct`] primitives are
 //! re-exported for callers that want `Choice`-based verification after decode.
 //! Enable `memory-lock` or `high-assurance` for locked secret containers on
 //! supported native targets.
@@ -37,6 +37,8 @@ mod error;
 mod locked;
 #[cfg(test)]
 mod locked_tests;
+#[cfg(feature = "memory-lock")]
+mod locked_vec;
 
 pub use compare::{LockedSanitizationCtEqExt, SanitizationCtEqExt, sanitization_ct_eq_public_len};
 pub use error::{LockedDecodeError, SanitizationDecodeError};
@@ -343,18 +345,24 @@ pub trait CtDecodeSanitizationExt {
     ///
     /// # Errors
     ///
-    /// Returns [`LockedDecodeError::Operation`] for allocation, integrity, or
-    /// decode failures. Returns [`LockedDecodeError::DegradedProtection`] when
-    /// a preferred dump- or fork-exclusion control was not established.
+    /// In the built-in implementation, returns
+    /// [`LockedDecodeError::Operation`] for decode or length failures and
+    /// [`LockedDecodeError::DegradedProtection`] when a required control
+    /// cannot be established or integrity validation fails. The compatibility
+    /// default also reports construction failures through `Operation`.
     ///
     /// # Security
     ///
-    /// The current upstream dynamic API establishes the default locked policy,
-    /// fills the mapping, and only then exposes its report. This helper rejects
-    /// degradation before returning the value, but cannot prevent plaintext
-    /// materialization in a mapping whose preferred controls failed. Use
-    /// [`Self::decode_locked_secret_bytes_checked`] with a fixed protocol size
-    /// when controls must be required before decode begins.
+    /// In the provided [`base64_ng::ct::CtEngine`] implementation, the
+    /// `sanitization` 2.0.3 protected-capacity constructor requires memory
+    /// locking, dump exclusion, and fork exclusion before its fill closure can
+    /// run. Canaries are required when enabled. A required-control failure
+    /// therefore returns before decoded plaintext can enter the mapping.
+    ///
+    /// The compatibility default for external trait implementations performs
+    /// post-construction report admission. Custom implementations that require
+    /// the same pre-decode guarantee must override this method and establish
+    /// the requested protections before decoding.
     #[cfg(all(
         feature = "memory-lock",
         any(

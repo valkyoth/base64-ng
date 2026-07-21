@@ -42,7 +42,7 @@ base64-ng = { version = "1.3.9", default-features = false }
 ### Sanitization Companion In 1.3.9
 
 `base64-ng-sanitization` `1.3.9` migrates from `sanitization` 1.x to exact-pinned
-`sanitization` `2.0.2`. The existing `decode_locked_secret_bytes` method keeps
+`sanitization` `2.0.3`. The existing `decode_locked_secret_bytes` method keeps
 its `LockedSecretBytesGenerateError<SanitizationDecodeError>` return type for
 source compatibility. Use the additive `decode_locked_secret_bytes_fill`
 method when the sanitization 2.0 `LockedSecretBytesFillError` integrity variant
@@ -64,11 +64,13 @@ AArch64 native deployments.
 For fail-closed fixed locked-storage admission, use
 `decode_locked_secret_bytes_checked`. It requires memory locking, dump
 exclusion, and fork exclusion before decoding plaintext directly into the
-protected mapping. `decode_locked_secret_vec_checked` rejects degraded dynamic
-storage after fill because sanitization 2.0.2 does not expose a dynamic
-protected-capacity fill constructor. Existing non-checked helpers preserve
-their API and require callers to inspect `protection_report()` before relying
-on dump or fork exclusion.
+protected mapping. The built-in `decode_locked_secret_vec_checked`
+implementation uses sanitization 2.0.3's protected-capacity constructor to
+establish the same required controls before its decode closure runs. External
+trait implementations retain a post-fill compatibility default and must
+override it for the same guarantee. Existing non-checked helpers preserve their
+API and require callers to inspect `protection_report()` before relying on dump
+or fork exclusion.
 
 ## Engine Mapping
 

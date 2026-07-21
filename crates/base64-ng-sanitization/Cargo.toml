@@ -39,7 +39,7 @@ wasm-compat = ["sanitization/wasm-compat"]
 
 [dependencies]
 base64-ng = { version = "1.3.9", path = "../..", default-features = false }
-sanitization = { version = "=2.0.2", default-features = false }
+sanitization = { version = "=2.0.3", default-features = false }
 
 [lints.rust]
 unsafe_code = "deny"

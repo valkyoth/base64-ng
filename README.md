@@ -56,13 +56,13 @@ and normal strict decode when the binary is compiled with
 
 The latest patch in this line is `1.3.9`, which keeps all workspace crate
 versions aligned while migrating `base64-ng-sanitization` to exact-pinned
-`sanitization` `2.0.2`. Locked fixed-size decode adds the 2.0 fill-error
+`sanitization` `2.0.3`. Locked fixed-size decode adds the 2.0 fill-error
 model, locked comparisons have an integrity-checked extension API, and the
 companion's high-assurance feature includes strict random canaries and strict
 assembly comparison. The previous companion feature name `strict-ct` remains
 an alias for the renamed `strict-compare` feature during migration. New
-fail-closed fixed locked decode establishes required controls before plaintext
-materialization; dynamic checked decode rejects degraded mappings post-fill.
+fail-closed fixed and dynamic locked decode establish required controls before
+plaintext materialization in the built-in `CtEngine` implementation.
 The stronger RISC-V RVV proof and admission review is scheduled for `1.3.10`;
 until then, RISC-V remains QEMU-tested scalar/fallback-only.
 
@@ -269,13 +269,13 @@ only the crates that changed instead of republishing the whole ecosystem.
 `base64_ng::ct::CtEngine` that decode directly into
 `sanitization::SecretBytes<N>` in `no_std`, with `SecretVec` helpers behind its
 own `alloc` feature. The `1.3.9` companion uses exact-pinned
-`sanitization` `=2.0.2` and exposes `sanitization::ct::Choice` comparison
+`sanitization` `=2.0.3` and exposes `sanitization::ct::Choice` comparison
 helpers through `SanitizationCtEqExt`. Locked containers additionally expose
 fallible integrity-checked comparison through `LockedSanitizationCtEqExt`.
-Checked fixed-size decode establishes required memory-lock, dump, and fork
-controls before plaintext materialization. Dynamic checked decode remains a
-post-fill report check; use fixed-size locked output when that transient
-boundary is unacceptable.
+Built-in checked fixed-size and dynamic decode establish required memory-lock,
+dump, and fork controls before plaintext materialization. External
+implementations of the public extension trait must override its compatibility
+default to provide the same pre-decode dynamic guarantee.
 Enable the companion's
 `high-assurance` feature to
 decode directly into `sanitization::LockedSecretBytes` or
@@ -329,9 +329,9 @@ assert!(locked
 ```
 
 `high-assurance` selects compiled hardening controls. Fixed-size checked decode
-requires memory-lock, dump, and fork controls before plaintext materialization.
-Dynamic checked decode performs post-fill report admission; inspect
-`protection_report()` before relying on non-checked compatibility helpers.
+and the built-in dynamic checked decode require memory-lock, dump, and fork
+controls before plaintext materialization. Inspect `protection_report()` before
+relying on non-checked compatibility helpers.
 
 `base64-ng-derive` provides a dependency-free `Base64Secret` derive for tuple
 newtypes around fixed byte arrays:

@@ -1192,12 +1192,12 @@ inside the `1.3.x` line if they remain evidence-gated and do not weaken the
 `1.3.9`: sanitization 2.0 companion migration.
 
 - Keep all workspace crates version-aligned for the dependency migration.
-- Update `base64-ng-sanitization` to exact-pinned `sanitization` `2.0.2`.
+- Update `base64-ng-sanitization` to exact-pinned `sanitization` `2.0.3`.
 - Preserve the existing locked generation-error method, add an explicit 2.0
   fill-error method, and adopt mapped-storage checked exposure semantics.
 - Establish required memory-lock, dump, and fork controls before checked
-  fixed-size plaintext decode; document dynamic checked decode as post-fill
-  admission until upstream exposes a protected-capacity fill constructor.
+  fixed-size plaintext decode and before the built-in dynamic checked decode
+  closure runs through the upstream protected-capacity constructor.
 - Add integrity-checked locked comparison helpers while retaining the existing
   comparison trait as a source-compatible fail-stop path.
 - Map the companion's `high-assurance` feature to strict random-canary and

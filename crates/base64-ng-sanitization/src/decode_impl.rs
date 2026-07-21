@@ -86,6 +86,26 @@ use sanitization::{LockedSecretVec, LockedSecretVecFillError};
         target_os = "openbsd",
         target_os = "netbsd",
         target_os = "dragonfly",
+    ),
+    not(miri)
+))]
+use crate::locked_vec::{map_protected_vec_error, validate_before_locked_vec_allocation};
+
+#[cfg(all(
+    feature = "memory-lock",
+    any(
+        all(
+            target_os = "linux",
+            any(target_arch = "x86_64", target_arch = "aarch64")
+        ),
+        target_os = "macos",
+        target_os = "ios",
+        target_os = "android",
+        target_os = "windows",
+        target_os = "freebsd",
+        target_os = "openbsd",
+        target_os = "netbsd",
+        target_os = "dragonfly",
         all(target_arch = "wasm32", feature = "wasm-compat"),
     )
 ))]
@@ -408,6 +428,38 @@ where
             .map_err(LockedSecretVecFillError::Fill)?;
         LockedSecretVec::try_from_capacity(required, |output| {
             self.decode_slice_clear_tail(input, output)
+        })
+    }
+
+    #[cfg(all(
+        feature = "memory-lock",
+        any(
+            all(
+                target_os = "linux",
+                any(target_arch = "x86_64", target_arch = "aarch64")
+            ),
+            target_os = "macos",
+            target_os = "ios",
+            target_os = "android",
+            target_os = "windows",
+            target_os = "freebsd",
+            target_os = "openbsd",
+            target_os = "netbsd",
+            target_os = "dragonfly",
+        ),
+        not(miri)
+    ))]
+    fn decode_locked_secret_vec_checked(
+        &self,
+        input: &[u8],
+    ) -> Result<LockedSecretVec, LockedDecodeError<LockedSecretVecFillError<DecodeError>>> {
+        validate_before_locked_vec_allocation(self, input, |required| {
+            LockedSecretVec::try_from_capacity_with_protection(
+                required,
+                locked::required_secret_protection(),
+                |output| self.decode_slice_clear_tail(input, output),
+            )
+            .map_err(map_protected_vec_error)
         })
     }
 }

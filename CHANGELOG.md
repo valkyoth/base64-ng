@@ -3,7 +3,7 @@
 ## 1.3.9 - 2026-07-21
 
 - Synchronized all workspace crate package versions to `1.3.9`.
-- Updated `base64-ng-sanitization` to exact-pinned `sanitization` `2.0.2`.
+- Updated `base64-ng-sanitization` to exact-pinned `sanitization` `2.0.3`.
 - Updated the active release toolchain to Rust `1.97.1`, Serde to `1.0.229`,
   Tokio to `1.53.1`, `actions/checkout` to `v7.0.1`, and
   `taiki-e/install-action` to `v2.83.4` after an upstream release audit.
@@ -15,13 +15,16 @@
   return canary-integrity failures while retaining `Choice` composition and
   reason-bearing declassification.
 - Made checked fixed locked decode establish required memory-lock, dump, and
-  fork controls before plaintext materialization, and added deterministic
-  rejection/drop tests for post-fill dynamic admission.
+  fork controls before plaintext materialization.
+- Made the built-in checked dynamic locked decode use sanitization 2.0.3's
+  protected-capacity constructor, so required controls are established before
+  its decode closure runs; retained the documented post-fill compatibility
+  default for external extension-trait implementations.
 - Validated malformed and wrong-length fixed inputs before protected mapping
   allocation, and replaced a release-only decoded-length assertion with a
   fail-closed runtime check and temporary-buffer wipe.
 - Added an injectable internal allocation boundary with deterministic tests
-  proving invalid fixed inputs cannot invoke protected allocation.
+  proving invalid fixed or dynamic inputs cannot invoke protected allocation.
 - Strengthened the companion `high-assurance` feature with strict random
   canaries and strict assembly comparison.
 - Added `strict-compare` and retained `strict-ct` as a compatibility alias for

@@ -30,7 +30,7 @@ only for backends named in this file and the release gate.
   synchronization patch. `1.3.7` admits no new SIMD backend. `1.3.8` is a
   Tokio cleanup and browser wasm evidence hardening patch; it admits no new
   SIMD backend. `1.3.9` migrates the optional sanitization companion to
-  `sanitization` 2.0.2, admits no new SIMD backend, and moves the stronger
+  `sanitization` 2.0.3, admits no new SIMD backend, and moves the stronger
   RISC-V RVV proof and admission review to `1.3.10`. Active encode
   dispatch admits AVX-512 VBMI above AVX2
   above SSSE3/SSE4.1 on x86/x86_64 and NEON on little-endian aarch64 for
