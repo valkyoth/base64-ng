@@ -31,6 +31,8 @@
 extern crate alloc;
 
 mod compare;
+#[cfg(test)]
+mod compare_tests;
 mod decode_impl;
 mod error;
 #[cfg(feature = "memory-lock")]

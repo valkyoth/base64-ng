@@ -57,6 +57,9 @@ check_file() {
             if ($0 ~ /panic!\("encoded base64 length overflows usize"\)/) {
                 allowed = 1
             }
+            if ($0 ~ /panic!\("base64-ng-sanitization locked secret integrity failure: \{error\}"\)/) {
+                allowed = 1
+            }
             if ($0 ~ /\.expect\("base64-ng encode_vec failed for byte input"\)/) {
                 allowed = 1
             }

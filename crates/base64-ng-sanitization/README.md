@@ -115,6 +115,12 @@ protection controls from canary-integrity failures. Its bounded dynamic helper
 rejects decoded capacities above the const-generic application limit before
 mapping allocation or decoder invocation.
 
+For locked comparisons, prefer `LockedSanitizationCtEqExt`: it returns
+`CanaryCorruptedError` so the application controls telemetry and termination.
+The source-compatible `SanitizationCtEqExt` implementation explicitly panics
+on checked-exposure integrity failure rather than hiding corruption as
+`Choice::FALSE`.
+
 The integration intentionally targets `base64_ng::ct::CtEngine`. Strict
 non-CT decoders remain available in `base64-ng`, but this crate keeps the
 secret-container API pointed at the constant-time-oriented decode path.

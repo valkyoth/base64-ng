@@ -14,6 +14,9 @@ aligned.
   changes are not reliably detected by ordinary semver tooling.
 - Added fallible integrity-checked comparison helpers for locked fixed and
   dynamic containers.
+- Ensured locked compatibility comparisons panic on canary corruption instead
+  of silently converting the integrity event to `Choice::FALSE`; fallible
+  comparison remains the recommended operator-controlled path.
 - Made checked fixed-size locked decode establish required memory-lock, dump,
   and fork controls before plaintext materialization.
 - Made built-in checked dynamic decode use the protected-capacity constructor,

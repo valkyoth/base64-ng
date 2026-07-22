@@ -14,6 +14,10 @@
 - Added `LockedSanitizationCtEqExt` so locked fixed and dynamic containers can
   return canary-integrity failures while retaining `Choice` composition and
   reason-bearing declassification.
+- Corrected locked compatibility comparison after sanitization 2.0.3 changed
+  its `ConstantTimeEq` failure behavior: checked exposure now reaches an
+  explicit reviewed panic boundary instead of turning canary corruption into
+  an ordinary `Choice::FALSE` mismatch.
 - Made checked fixed locked decode establish required memory-lock, dump, and
   fork controls before plaintext materialization.
 - Made the built-in checked dynamic locked decode use sanitization 2.0.3's

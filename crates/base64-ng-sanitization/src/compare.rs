@@ -3,6 +3,30 @@ use sanitization::{
     ct::{self, Choice, ConstantTimeEq},
 };
 
+#[cfg(all(
+    feature = "memory-lock",
+    any(
+        all(
+            target_os = "linux",
+            any(target_arch = "x86_64", target_arch = "aarch64")
+        ),
+        target_os = "macos",
+        target_os = "ios",
+        target_os = "android",
+        target_os = "windows",
+        target_os = "freebsd",
+        target_os = "openbsd",
+        target_os = "netbsd",
+        target_os = "dragonfly",
+        all(target_arch = "wasm32", feature = "wasm-compat"),
+    )
+))]
+#[cold]
+#[inline(never)]
+pub(crate) fn panic_on_locked_integrity_failure(error: CanaryCorruptedError) -> ! {
+    panic!("base64-ng-sanitization locked secret integrity failure: {error}")
+}
+
 #[cfg(feature = "alloc")]
 use sanitization::SecretVec;
 
@@ -51,10 +75,11 @@ use sanitization::LockedSecretVec;
 /// Length is public: mismatched lengths return [`Choice::FALSE`] immediately.
 /// Use fixed-size protocol tokens when length must not vary. Converting
 /// [`Choice`] to `bool` is declassification and requires an explicit reason.
-/// For locked containers, this compatibility trait uses sanitization's
-/// explicit panic-on-integrity-failure implementation because [`Choice`]
-/// cannot carry a canary error. Prefer [`LockedSanitizationCtEqExt`] when the
-/// application must propagate integrity failures.
+/// For locked containers, this compatibility trait explicitly panics when
+/// checked exposure reports an integrity failure because [`Choice`] cannot
+/// carry a canary error. Prefer [`LockedSanitizationCtEqExt`] when the
+/// application must propagate integrity failures and control alerting or
+/// termination itself.
 pub trait SanitizationCtEqExt {
     /// Compare this secret container with `expected` using
     /// `sanitization`'s native constant-time-oriented equality primitive.
@@ -75,8 +100,8 @@ pub trait SanitizationCtEqExt {
 ///
 /// `sanitization` 2.0 makes mapped-storage integrity checks fallible. Prefer
 /// this trait over [`SanitizationCtEqExt`] for locked values when canary
-/// corruption must be returned instead of triggering the underlying
-/// compatibility trait's explicit fail-stop behavior.
+/// corruption must be returned instead of triggering the compatibility
+/// trait's explicit panic boundary.
 pub trait LockedSanitizationCtEqExt {
     /// Compare this locked secret with `expected` after checking mapping
     /// integrity before and after access.
@@ -134,7 +159,10 @@ impl SanitizationCtEqExt for SecretVec {
 ))]
 impl<const N: usize> SanitizationCtEqExt for LockedSecretBytes<N> {
     fn sanitization_ct_eq(&self, expected: &[u8]) -> Choice {
-        <LockedSecretBytes<N> as ConstantTimeEq<[u8]>>::ct_eq(self, expected)
+        match self.try_expose_secret(|secret| ct::eq_public_len(secret, expected)) {
+            Ok(choice) => choice,
+            Err(error) => panic_on_locked_integrity_failure(error),
+        }
     }
 }
 
@@ -182,7 +210,10 @@ impl<const N: usize> LockedSanitizationCtEqExt for LockedSecretBytes<N> {
 ))]
 impl SanitizationCtEqExt for LockedSecretVec {
     fn sanitization_ct_eq(&self, expected: &[u8]) -> Choice {
-        <LockedSecretVec as ConstantTimeEq<[u8]>>::ct_eq(self, expected)
+        match self.try_with_secret(|secret| ct::eq_public_len(secret, expected)) {
+            Ok(choice) => choice,
+            Err(error) => panic_on_locked_integrity_failure(error),
+        }
     }
 }
 

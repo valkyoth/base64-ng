@@ -60,6 +60,15 @@ The current reviewed exceptions are:
   length/allocation invariant break. Do not use them for untrusted length
   metadata, constrained allocation environments, or code paths that require
   recoverable errors; use the fallible encode helpers instead.
+- `base64-ng-sanitization`'s compatibility `SanitizationCtEqExt`
+  implementations for locked containers panic when checked exposure reports
+  canary corruption. This is an explicit fail-stop compatibility boundary:
+  `Choice` cannot carry the integrity error, and returning `Choice::FALSE`
+  would hide a security signal as an ordinary mismatch. High-assurance callers
+  should use `LockedSanitizationCtEqExt` and choose their own alert, cleanup,
+  and abort policy from the returned `CanaryCorruptedError`. A panic may unwind
+  or be caught under some build and application policies, so this compatibility
+  behavior is not itself a guaranteed process termination primitive.
 - Core stream and Tokio writer `get_ref`, `get_mut`, and `into_inner` internal
   helpers use `unreachable!` if a wrapper has already consumed its inner value.
   The public API consumes `self` for `into_inner`/`finish`, so this state is not
