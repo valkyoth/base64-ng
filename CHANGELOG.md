@@ -20,6 +20,10 @@
   protected-capacity constructor, so required controls are established before
   its decode closure runs; retained the documented post-fill compatibility
   default for external extension-trait implementations.
+- Added `CtDecodeSanitizationProtectedExt` to preserve distinct protection and
+  canary-integrity failure classes for high-assurance incident handling.
+- Added bounded checked dynamic decode that rejects decoded capacities above a
+  const-generic application limit before mapping allocation or decoder entry.
 - Validated malformed and wrong-length fixed inputs before protected mapping
   allocation, and replaced a release-only decoded-length assertion with a
   fail-closed runtime check and temporary-buffer wipe.

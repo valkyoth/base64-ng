@@ -14,8 +14,10 @@ fill-error method, adds fallible integrity-checked comparison helpers, and
 establishes required controls before checked fixed-size plaintext decode. Its
 protected-capacity path also establishes required controls before the built-in
 checked dynamic decode closure runs. Its `high-assurance` feature includes
-strict random-canary and assembly-comparison controls. Core encode/decode
-behavior, SIMD admission, unsafe boundaries, and
+strict random-canary and assembly-comparison controls. A protected extension
+preserves distinct protection and canary-integrity errors and adds bounded
+dynamic decode before allocation. Core encode/decode behavior, SIMD admission,
+unsafe boundaries, and
 the core zero-dependency posture remain unchanged. The RISC-V RVV proof and
 backend-admission review moves to `1.3.10`.
 

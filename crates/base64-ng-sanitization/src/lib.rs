@@ -39,9 +39,15 @@ mod locked;
 mod locked_tests;
 #[cfg(feature = "memory-lock")]
 mod locked_vec;
+#[cfg(feature = "memory-lock")]
+mod protected_decode;
+#[cfg(test)]
+mod protected_tests;
 
 pub use compare::{LockedSanitizationCtEqExt, SanitizationCtEqExt, sanitization_ct_eq_public_len};
 pub use error::{LockedDecodeError, SanitizationDecodeError};
+#[cfg(feature = "memory-lock")]
+pub use protected_decode::CtDecodeSanitizationProtectedExt;
 use sanitization::SecretBytes;
 
 #[cfg(any(feature = "alloc", all(feature = "memory-lock", not(miri))))]
@@ -236,7 +242,10 @@ pub trait CtDecodeSanitizationExt {
     /// control cannot be established before decoding or integrity validation
     /// fails. This intentionally preserves the existing public error shape.
     /// Returns [`LockedDecodeError::Operation`] for decode or exact-length
-    /// failures.
+    /// failures. Use
+    /// [`CtDecodeSanitizationProtectedExt::decode_locked_secret_bytes_checked_detailed`]
+    /// when protection and integrity failures require distinct incident
+    /// handling.
     #[cfg(all(
         feature = "memory-lock",
         any(
@@ -349,7 +358,11 @@ pub trait CtDecodeSanitizationExt {
     /// [`LockedDecodeError::Operation`] for decode or length failures and
     /// [`LockedDecodeError::DegradedProtection`] when a required control
     /// cannot be established or integrity validation fails. The compatibility
-    /// default also reports construction failures through `Operation`.
+    /// default also reports construction failures through `Operation`. Use
+    /// [`CtDecodeSanitizationProtectedExt::decode_locked_secret_vec_checked_detailed`]
+    /// for distinct protection and integrity failures, or
+    /// [`CtDecodeSanitizationProtectedExt::decode_locked_secret_vec_checked_bounded`]
+    /// to enforce a decoded-capacity limit before allocation.
     ///
     /// # Security
     ///

@@ -1198,6 +1198,9 @@ inside the `1.3.x` line if they remain evidence-gated and do not weaken the
 - Establish required memory-lock, dump, and fork controls before checked
   fixed-size plaintext decode and before the built-in dynamic checked decode
   closure runs through the upstream protected-capacity constructor.
+- Preserve detailed protection and canary-integrity failure categories through
+  an additive protected extension API, and add pre-allocation bounded dynamic
+  decode for attacker-reachable input.
 - Add integrity-checked locked comparison helpers while retaining the existing
   comparison trait as a source-compatible fail-stop path.
 - Map the companion's `high-assurance` feature to strict random-canary and

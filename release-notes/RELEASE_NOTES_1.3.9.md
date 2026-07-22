@@ -18,6 +18,10 @@ aligned.
   and fork controls before plaintext materialization.
 - Made built-in checked dynamic decode use the protected-capacity constructor,
   which establishes required controls before invoking the decode closure.
+- Added a protected extension API that preserves distinct protection and
+  canary-integrity failures for operator alerting.
+- Added bounded checked dynamic decode that rejects decoded capacities above a
+  const-generic application limit before allocation.
 - Rejects malformed or wrong-length fixed input before protected mapping
   allocation and checks the final decoded length in release builds before
   initializing locked storage.

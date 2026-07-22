@@ -275,7 +275,10 @@ fallible integrity-checked comparison through `LockedSanitizationCtEqExt`.
 Built-in checked fixed-size and dynamic decode establish required memory-lock,
 dump, and fork controls before plaintext materialization. External
 implementations of the public extension trait must override its compatibility
-default to provide the same pre-decode dynamic guarantee.
+default to provide the same pre-decode dynamic guarantee. The protected
+extension API preserves protection versus canary-integrity failures and offers
+a bounded dynamic helper that rejects oversized decoded capacity before
+mapping allocation.
 Enable the companion's
 `high-assurance` feature to
 decode directly into `sanitization::LockedSecretBytes` or
@@ -331,7 +334,10 @@ assert!(locked
 `high-assurance` selects compiled hardening controls. Fixed-size checked decode
 and the built-in dynamic checked decode require memory-lock, dump, and fork
 controls before plaintext materialization. Inspect `protection_report()` before
-relying on non-checked compatibility helpers.
+relying on non-checked compatibility helpers. Import
+`CtDecodeSanitizationProtectedExt` when incident handling must distinguish
+protection setup from canary corruption, or when dynamic output needs a
+compile-time decoded-capacity limit.
 
 `base64-ng-derive` provides a dependency-free `Base64Secret` derive for tuple
 newtypes around fixed byte arrays:

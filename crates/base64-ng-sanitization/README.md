@@ -87,10 +87,10 @@ For dynamic output on supported native targets:
 
 ```rust
 use base64_ng::ct;
-use base64_ng_sanitization::CtDecodeSanitizationExt;
+use base64_ng_sanitization::CtDecodeSanitizationProtectedExt;
 
 let key = ct::STANDARD
-    .decode_locked_secret_vec_checked(b"aGVsbG8=")
+    .decode_locked_secret_vec_checked_bounded::<64>(b"aGVsbG8=")
     .unwrap();
 
 key.try_with_secret(|bytes| assert_eq!(bytes, b"hello"))?;
@@ -108,6 +108,12 @@ the complete report. The additive
 `decode_locked_secret_bytes_fill` method exposes sanitization 2.0's integrity
 aware fill error while the original method retains its generation-error return
 type for source compatibility.
+
+`CtDecodeSanitizationProtectedExt` preserves the upstream
+`ProtectedSecretFillError` categories so operators can distinguish unavailable
+protection controls from canary-integrity failures. Its bounded dynamic helper
+rejects decoded capacities above the const-generic application limit before
+mapping allocation or decoder invocation.
 
 The integration intentionally targets `base64_ng::ct::CtEngine`. Strict
 non-CT decoders remain available in `base64-ng`, but this crate keeps the

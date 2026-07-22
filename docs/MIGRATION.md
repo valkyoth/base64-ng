@@ -72,6 +72,12 @@ override it for the same guarantee. Existing non-checked helpers preserve their
 API and require callers to inspect `protection_report()` before relying on dump
 or fork exclusion.
 
+Import `CtDecodeSanitizationProtectedExt` when callers need
+`ProtectedSecretFillError` to distinguish required-control failures from
+canary-integrity failures. Use
+`decode_locked_secret_vec_checked_bounded::<MAX>` for untrusted runtime-size
+inputs so oversized decoded capacity is rejected before protected allocation.
+
 ## Engine Mapping
 
 | `base64` engine | `base64-ng` engine |

@@ -126,6 +126,11 @@ certification claim.
   implementations must override the compatibility default for that guarantee.
   Inspect `protection_report()` before admitting a value returned by a
   non-checked compatibility helper.
+- Use `CtDecodeSanitizationProtectedExt` where monitoring must distinguish an
+  unavailable protection control from a canary-integrity event. Prefer
+  `decode_locked_secret_vec_checked_bounded::<MAX>` for attacker-reachable
+  dynamic input so the decoded-capacity limit is enforced before mapping
+  allocation, protection setup, or decoder invocation.
 - Keep dependency review split by package. The core `base64-ng` crate has zero
   runtime dependencies; optional companion crates such as `base64-ng-serde`,
   `base64-ng-bytes`, `base64-ng-subtle`, and `base64-ng-tokio` intentionally
