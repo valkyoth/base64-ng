@@ -1,6 +1,6 @@
 <p align="center">
   <b>Secure, no_std-first Base64 for Rust.</b><br>
-  Strict decoding, caller-owned buffers, zero runtime dependencies, and release-gated security evidence.
+  Strict RFC 4648 decoding, caller-owned buffers, zero runtime dependencies, and release-gated security evidence.
 </p>
 
 <div align="center">
@@ -26,6 +26,21 @@
 `base64-ng` is a `no_std`-first Base64 crate focused on correctness, strict decoding, caller-owned buffers, and a security-heavy release process. The long-term goal is to provide modern hardware acceleration without making unsafe SIMD the foundation of trust.
 
 The crate starts conservative: a small scalar implementation, strict RFC 4648 behavior, and a test/release system modeled after hardened Rust service projects. Streaming is available behind an explicit feature, fuzz harnesses are isolated from the published crate, and SIMD and broader Kani work remain gated until they have evidence.
+
+## RFC 4648 Conformance
+
+The current `STANDARD`, `STANDARD_NO_PAD`, `URL_SAFE`, and
+`URL_SAFE_NO_PAD` engines implement strict RFC 4648 Base64 behavior.
+`STANDARD` and `URL_SAFE` require and emit canonical padding;
+the explicitly named `_NO_PAD` engines reject padding and emit none. Strict
+decoders reject whitespace, mixed alphabets, impossible lengths, malformed or
+forbidden padding, trailing data after padding, and non-canonical unused
+trailing bits. Legacy whitespace and MIME/PEM-style line handling are available
+only through separately named opt-in APIs.
+
+The test suite includes the RFC 4648 Section 10 vectors. The 2.0 plan also
+requires the exact RFC Editor text, checksum, reviewed errata, and normative
+requirements mapping to be locked in the repository and verified offline.
 
 ## Current Status
 
@@ -172,7 +187,7 @@ Planned behind admission evidence:
 | Runtime dependencies | Zero external crates |
 | Unsafe policy | Scalar encode/decode remains safe Rust; audited unsafe is limited to volatile wiping, CT comparison/barrier helpers, and the reviewed SIMD boundary |
 | Active backend | Scalar by default; std x86/x86_64 AVX-512 VBMI preferred, then AVX2, then SSSE3/SSE4.1, plus little-endian std aarch64 NEON, and wasm `simd128` when the admitted feature/runtime profile is present |
-| Strict decoding | Default, canonical, no whitespace |
+| Strict RFC 4648 decoding | Default, canonical, no whitespace |
 | Legacy compatibility | Explicit opt-in APIs |
 | Constant-time posture | Constant-time-oriented scalar validation/decode with isolated dudect-style timing evidence; no formal cryptographic guarantee |
 | Cleanup posture | Best-effort initialized-byte cleanup and redacted secret wrappers |

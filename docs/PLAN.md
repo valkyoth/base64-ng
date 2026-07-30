@@ -127,7 +127,7 @@ Any dependency addition must answer:
 - Stable Rust only for public APIs.
 - No `generic_const_exprs` or unstable const-generic tricks in the public surface.
 - Use zero-sized engines and trait-based alphabets.
-- Strict decoding is default.
+- Strict RFC 4648 decoding is default.
 - Legacy behavior must be opt-in and named.
 - Canonical decoding is default.
 - Panicking convenience APIs are avoided in favor of checked APIs for

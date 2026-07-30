@@ -7,7 +7,7 @@ The mapping is practical adoption guidance, not a certification claim.
 
 | Weakness Class | Relevant Risk | `base64-ng` Control |
 | --- | --- | --- |
-| CWE-20 Improper Input Validation | Accepting malformed Base64, mixed alphabets, invalid padding, or non-canonical trailing bits | Strict decoding is default; validation-only APIs use the same checks as decode APIs. |
+| CWE-20 Improper Input Validation | Accepting malformed Base64, mixed alphabets, invalid padding, or non-canonical trailing bits | Strict RFC 4648 decoding is default; validation-only APIs use the same checks as decode APIs, and legacy/wrapped acceptance is explicitly named. |
 | CWE-125 Out-of-bounds Read | Decoder reads past malformed or short input | Scalar decode validates lengths and chunk shapes before reading chunk contents. |
 | CWE-787 Out-of-bounds Write | Encoder/decoder writes beyond caller output | Slice APIs check required output length before writing; in-place APIs validate buffer capacity and decode-to-front invariants. |
 | CWE-190 Integer Overflow | Encoded or wrapped length calculation wraps `usize` | Public length helpers return `Result` or `Option`; wrapped lengths use checked arithmetic. |

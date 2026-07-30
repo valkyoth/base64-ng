@@ -7,11 +7,16 @@
 
 //! `base64-ng` is a `no_std`-first Base64 encoder and decoder.
 //!
-//! The core API provides strict RFC 4648-style behavior, caller-owned output
+//! The core API provides strict RFC 4648 behavior, caller-owned output
 //! buffers, and an audited scalar fallback. The `1.3.x` line admits selected
 //! SIMD encode and strict decode acceleration for standard-family alphabets.
 //! Any accelerated backend must match the scalar module byte-for-byte and pass
 //! the documented admission evidence before dispatch can select it.
+//! [`STANDARD`] and [`URL_SAFE`] require canonical padding; the explicitly
+//! named [`STANDARD_NO_PAD`] and [`URL_SAFE_NO_PAD`] engines reject padding.
+//! Strict decode rejects whitespace, mixed alphabets, malformed input, and
+//! non-canonical unused trailing bits. Legacy whitespace and wrapped line
+//! handling remain separately named opt-in policies.
 //!
 //! # Examples
 //!
