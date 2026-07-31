@@ -6,10 +6,11 @@ use std::format;
 use super::{
     bounded::{DecodedArray, EncodedArray, SecretArray},
     const_transforms::ConstTransformError,
-    contracts::InputError,
+    contracts::{Failure, InputError, OperationError},
+    ordinary::OneShotError,
     rfc4648_oracle::{self as oracle, Profile},
     specifications::{
-        Base64, CodecBuilder, CodecSettings, DecodePadding, EncodePadding, RuntimeSpec,
+        Base64, Codec, CodecBuilder, CodecSettings, DecodePadding, EncodePadding, RuntimeSpec,
         STRICT_STANDARD_PADDED, STRICT_STANDARD_UNPADDED, STRICT_URL_SAFE_PADDED,
         STRICT_URL_SAFE_UNPADDED, TrailingBits,
     },
@@ -133,6 +134,28 @@ fn const_diagnostics_preserve_input_and_exact_size_classes() {
 }
 
 #[test]
+fn malformed_padding_errors_match_const_one_shot_and_incremental_surfaces() {
+    for (input, expected) in [
+        (b"=AAA".as_slice(), InputError::InvalidPadding { index: 0 }),
+        (b"A=AA".as_slice(), InputError::InvalidPadding { index: 1 }),
+        (b"AA=A".as_slice(), InputError::InvalidPadding { index: 2 }),
+        (
+            b"AAAA=AAA".as_slice(),
+            InputError::InvalidPadding { index: 4 },
+        ),
+        (
+            b"AAAAA=AA".as_slice(),
+            InputError::InvalidPadding { index: 5 },
+        ),
+    ] {
+        assert_strict_decode_error_consistency(&STRICT_STANDARD_PADDED, input, expected);
+        assert_strict_decode_error_consistency(&STRICT_STANDARD_UNPADDED, input, expected);
+        assert_strict_decode_error_consistency(&STRICT_URL_SAFE_PADDED, input, expected);
+        assert_strict_decode_error_consistency(&STRICT_URL_SAFE_UNPADDED, input, expected);
+    }
+}
+
+#[test]
 fn const_transforms_match_independent_oracle_at_boundaries() {
     const EMPTY_ENCODED: [u8; 0] = match STRICT_STANDARD_PADDED.encode_array(b"") {
         Ok(output) => output,
@@ -211,6 +234,25 @@ fn const_decoder_matches_oracle_for_every_single_quantum_mutation() {
             }
         }
     }
+}
+
+fn assert_strict_decode_error_consistency<S: Codec>(
+    codec: &Base64<S>,
+    input: &[u8],
+    expected: InputError,
+) {
+    assert_eq!(
+        codec.settings().decoded_len(input),
+        Err(ConstTransformError::Input(expected))
+    );
+    assert_eq!(codec.decoded_len(input), Err(OneShotError::Input(expected)));
+
+    let mut decoder = codec.decoder();
+    let mut output = [0xa5; 6];
+    assert_eq!(
+        decoder.update(input, &mut output),
+        Err(OperationError::Failed(Failure::Input(expected)))
+    );
 }
 
 #[test]

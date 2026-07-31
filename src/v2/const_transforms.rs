@@ -332,6 +332,7 @@ const fn validate_quantum(
 const fn decode_symbol(settings: CodecSettings, byte: u8, index: usize) -> Result<u8, InputError> {
     match settings.alphabet().decode_byte(byte) {
         Some(value) => Ok(value),
+        None if byte == b'=' => Err(InputError::InvalidPadding { index }),
         None => Err(InputError::InvalidByte { index, byte }),
     }
 }
