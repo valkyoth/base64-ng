@@ -14,6 +14,7 @@ pub enum BackendClass {
 
 impl BackendClass {
     /// Returns the stable lowercase reporting identifier.
+    #[must_use]
     pub const fn as_str(self) -> &'static str {
         match self {
             Self::Scalar => "scalar",
@@ -39,6 +40,7 @@ pub enum AssuranceClass {
 
 impl AssuranceClass {
     /// Returns the stable lowercase reporting identifier.
+    #[must_use]
     pub const fn as_str(self) -> &'static str {
         match self {
             Self::Ordinary => "ordinary",
@@ -63,6 +65,7 @@ pub enum ProtocolScope {
 
 impl ProtocolScope {
     /// Returns the stable lowercase reporting identifier.
+    #[must_use]
     pub const fn as_str(self) -> &'static str {
         match self {
             Self::Core => "core",
@@ -88,6 +91,7 @@ pub enum Atomicity {
 
 impl Atomicity {
     /// Returns the stable lowercase corpus/reporting identifier.
+    #[must_use]
     pub const fn as_str(self) -> &'static str {
         match self {
             Self::Unchanged => "unchanged",

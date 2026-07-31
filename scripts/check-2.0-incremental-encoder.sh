@@ -34,7 +34,7 @@ for required in \
     'planned_input_consumption' \
     'NonZeroUsize::MIN' \
     'encode_tail' \
-    'pub(crate) fn reset'
+    'pub fn reset'
 do
     if ! grep -F -q "$required" src/v2/incremental.rs; then
         echo "2.0 incremental encoder: implementation is missing: $required" >&2

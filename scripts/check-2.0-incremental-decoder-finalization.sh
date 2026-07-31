@@ -29,8 +29,7 @@ run_cargo() {
 }
 
 for required in \
-    'StrictStandardUnpadded' \
-    'StrictUrlSafeUnpadded' \
+    'impl<S: Codec> Base64<S>' \
     'DecodePadding::Forbid' \
     'decode_unpadded_tail' \
     'InputError::InvalidLength' \

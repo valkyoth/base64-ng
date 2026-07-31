@@ -1,7 +1,4 @@
-//! Private module boundaries for the 2.0 implementation.
-//!
-//! Commit 4 establishes ownership only. Production behavior remains routed
-//! through the 1.x modules until later numbered commits move each capability.
+//! Internal ownership boundaries for the emerging 2.0 implementation.
 
 // Commit 5 establishes this internal value before Commit 6 wires it into the
 // public specification model.
@@ -17,11 +14,28 @@ pub(crate) mod incremental_decoder;
 #[allow(dead_code)]
 mod lifecycle;
 mod ordinary;
+#[cfg(feature = "alloc")]
+mod ordinary_alloc;
 mod secret;
 #[allow(dead_code)]
 pub(crate) mod specifications;
 #[allow(dead_code)]
 mod wrapping;
+
+pub use alphabet::{ValidatedAlphabet, ValidatedAlphabetError};
+pub use contracts::{
+    AssuranceClass, Atomicity, BackendClass, BackendFault, Failure, InputError, InputErrorKind,
+    OperationError, OutputFull, Progress, ProtocolScope, Status, Step, TerminalError,
+};
+pub use incremental::EncoderState;
+pub use incremental_decoder::DecoderState;
+pub use ordinary::OneShotError;
+pub use specifications::{
+    Base64, Codec, CodecBuilder, CodecBuilderError, CodecSettings, DecodePadding, EncodePadding,
+    RuntimeSpec, STRICT_STANDARD_PADDED, STRICT_STANDARD_UNPADDED, STRICT_URL_SAFE_PADDED,
+    STRICT_URL_SAFE_UNPADDED, StrictStandardPadded, StrictStandardUnpadded, StrictUrlSafePadded,
+    StrictUrlSafeUnpadded, TrailingBits,
+};
 
 #[cfg(test)]
 mod alphabet_tests;
@@ -35,6 +49,8 @@ mod incremental_decoder_tests;
 mod incremental_decoder_unpadded_tests;
 #[cfg(test)]
 mod incremental_encoder_tests;
+#[cfg(test)]
+mod one_shot_tests;
 #[cfg(test)]
 mod rfc4648_oracle;
 #[cfg(test)]

@@ -27,7 +27,7 @@ scripts/validate-api-audit.sh
 echo "checks: 2.0 API migration ledger"
 scripts/validate-2.0-api-ledger.sh
 
-echo "checks: 1.3.9 public API snapshots"
+echo "checks: frozen 1.3.9 and 2.0 development public API snapshots"
 scripts/check-api-snapshots.sh
 
 echo "checks: 2.0 migration examples"
@@ -59,6 +59,9 @@ scripts/check-2.0-incremental-padded-decoder.sh
 
 echo "checks: 2.0 incremental decoder finalization"
 scripts/check-2.0-incremental-decoder-finalization.sh
+
+echo "checks: 2.0 transactional one-shot operations"
+scripts/check-2.0-one-shot.sh
 
 echo "checks: RFC 4648 source lock"
 scripts/verify-rfcs.sh

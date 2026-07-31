@@ -3,8 +3,9 @@ mod tests {
     use std::io::Write;
 
     use base64_ng::{
-        DecodeError, EncodeError, Engine, LineEnding, LineWrap, MIME, Profile, SecretBuffer,
-        STANDARD, Standard,
+        Base64, Codec, CodecSettings, DecodeError, EncodeError, Engine, LineEnding, LineWrap,
+        MIME, Profile, SecretBuffer, StrictStandardPadded, STANDARD, STRICT_STANDARD_PADDED,
+        Standard,
     };
 
     fn encode_into(input: &[u8], output: &mut [u8]) -> Result<usize, EncodeError> {
@@ -70,6 +71,12 @@ mod tests {
         base64_ng::secure_wipe(bytes);
     }
 
+    fn codec_settings(codec: &dyn Codec) -> CodecSettings {
+        codec.settings()
+    }
+
+    fn assert_send_sync<T: Send + Sync>() {}
+
     #[test]
     fn canonical_2_0_names_have_compilable_1_x_migrations() {
         let mut encoded = [0u8; 8];
@@ -109,5 +116,24 @@ mod tests {
         let mut secret = *b"hello";
         wipe_redacted(&mut secret);
         assert_eq!(secret, [0; 5]);
+    }
+
+    #[test]
+    fn transactional_2_0_surface_is_public_and_external() {
+        let codec: Base64<StrictStandardPadded> = STRICT_STANDARD_PADDED;
+        assert_send_sync::<Base64<StrictStandardPadded>>();
+        assert_eq!(codec_settings(codec.specification()), codec.settings());
+
+        let mut encoded = [0xa5; 12];
+        let written = codec.encode_into(b"hello", &mut encoded).unwrap();
+        assert_eq!(&encoded[..written], b"aGVsbG8=");
+        assert_eq!(&encoded[written..], &[0xa5; 4]);
+
+        let before = encoded;
+        assert!(codec.decode_into(b"!!!!", &mut encoded).is_err());
+        assert_eq!(encoded, before);
+
+        assert_eq!(codec.encode_to_string(b"hello").unwrap(), "aGVsbG8=");
+        assert_eq!(codec.decode_to_vec(b"aGVsbG8=").unwrap(), b"hello");
     }
 }

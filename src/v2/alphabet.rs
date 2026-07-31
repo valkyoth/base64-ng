@@ -18,7 +18,7 @@ pub(super) const URL_SAFE_ALPHABET: ValidatedAlphabet = ValidatedAlphabet {
 
 /// Failure returned while constructing a [`ValidatedAlphabet`].
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(crate) enum ValidatedAlphabetError {
+pub enum ValidatedAlphabetError {
     /// A byte slice did not contain exactly 64 bytes.
     InvalidLength {
         /// Observed byte length.
@@ -87,13 +87,13 @@ impl core::fmt::Display for ValidatedAlphabetError {
 /// executable callback or overridable mapping method.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 #[repr(transparent)]
-pub(crate) struct ValidatedAlphabet {
+pub struct ValidatedAlphabet {
     table: [u8; ALPHABET_LEN],
 }
 
 impl ValidatedAlphabet {
     /// Validates and owns a 64-byte alphabet.
-    pub(crate) const fn new(table: [u8; ALPHABET_LEN]) -> Result<Self, ValidatedAlphabetError> {
+    pub const fn new(table: [u8; ALPHABET_LEN]) -> Result<Self, ValidatedAlphabetError> {
         match validate_table(&table) {
             Ok(()) => Ok(Self { table }),
             Err(error) => Err(error),
@@ -101,7 +101,7 @@ impl ValidatedAlphabet {
     }
 
     /// Copies, validates, and owns a 64-byte alphabet slice.
-    pub(crate) const fn try_from_slice(bytes: &[u8]) -> Result<Self, ValidatedAlphabetError> {
+    pub const fn try_from_slice(bytes: &[u8]) -> Result<Self, ValidatedAlphabetError> {
         if bytes.len() != ALPHABET_LEN {
             return Err(ValidatedAlphabetError::InvalidLength {
                 actual: bytes.len(),
@@ -118,13 +118,15 @@ impl ValidatedAlphabet {
     }
 
     /// Returns the single table that defines both mappings.
-    pub(crate) const fn as_array(&self) -> &[u8; ALPHABET_LEN] {
+    #[must_use]
+    pub const fn as_array(&self) -> &[u8; ALPHABET_LEN] {
         &self.table
     }
 
     /// Returns the encoded symbol for one six-bit value.
     #[allow(clippy::cast_lossless)]
-    pub(crate) const fn encode_value(&self, value: u8) -> Option<u8> {
+    #[must_use]
+    pub const fn encode_value(&self, value: u8) -> Option<u8> {
         if value < 64 {
             Some(self.table[value as usize])
         } else {
@@ -133,7 +135,8 @@ impl ValidatedAlphabet {
     }
 
     /// Returns the six-bit value represented by `byte`.
-    pub(crate) const fn decode_byte(&self, byte: u8) -> Option<u8> {
+    #[must_use]
+    pub const fn decode_byte(&self, byte: u8) -> Option<u8> {
         let mut index = 0;
         let mut candidate = 0u8;
         while index < ALPHABET_LEN {

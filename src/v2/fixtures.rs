@@ -1,5 +1,6 @@
 use super::{
-    ordinary,
+    contracts::InputError,
+    ordinary::{self, OneShotError},
     rfc4648_oracle::{self as oracle, DecodeFailure, ErrorClass, Profile},
 };
 use crate::{DecodeError, STANDARD, STANDARD_NO_PAD, URL_SAFE, URL_SAFE_NO_PAD};
@@ -106,7 +107,7 @@ fn malformed_diagnostics_match_where_compatibility_is_intentional() {
         let emerging_error = ordinary::decode(profile, input, &mut emerging).unwrap_err();
 
         assert_eq!(normalized(legacy_error), expected);
-        assert_eq!(normalized(emerging_error), expected);
+        assert_eq!(normalized_v2(emerging_error), expected);
     }
 }
 
@@ -144,5 +145,29 @@ fn normalized(error: DecodeError) -> DecodeFailure {
             offset: Some(index),
         },
         other => panic!("unexpected compatibility error: {other:?}"),
+    }
+}
+
+fn normalized_v2(error: OneShotError) -> DecodeFailure {
+    match error {
+        OneShotError::Input(InputError::InvalidLength | InputError::TruncatedInput { .. }) => {
+            DecodeFailure {
+                class: ErrorClass::Length,
+                offset: None,
+            }
+        }
+        OneShotError::Input(InputError::InvalidByte { index, .. }) => DecodeFailure {
+            class: ErrorClass::Byte,
+            offset: Some(index),
+        },
+        OneShotError::Input(
+            InputError::InvalidPadding { index }
+            | InputError::NonCanonicalTrailingBits { index }
+            | InputError::TrailingData { index },
+        ) => DecodeFailure {
+            class: ErrorClass::Padding,
+            offset: Some(index),
+        },
+        other => panic!("unexpected 2.0 compatibility error: {other:?}"),
     }
 }

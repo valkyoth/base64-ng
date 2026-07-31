@@ -197,6 +197,20 @@ fn standard_encode_slice_returns_written_within_output() {
 
 #[kani::proof]
 #[kani::unwind(12)]
+fn one_shot_standard_encode_is_exact_and_bounded() {
+    let input = kani::any::<[u8; 3]>();
+    let input_len = usize::from(kani::any::<u8>() % 4);
+    let mut output = kani::any::<[u8; 4]>();
+    let result = STRICT_STANDARD_PADDED.encode_into(&input[..input_len], &mut output);
+
+    if let Ok(written) = result {
+        assert!(written <= output.len());
+        assert!(written == STRICT_STANDARD_PADDED.encoded_len(input_len).unwrap());
+    }
+}
+
+#[kani::proof]
+#[kani::unwind(12)]
 fn incremental_standard_encoder_progress_and_state_are_bounded() {
     let input = kani::any::<[u8; 4]>();
     let input_len = usize::from(kani::any::<u8>() % 5);

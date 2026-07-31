@@ -18,6 +18,14 @@
 //! non-canonical unused trailing bits. Legacy whitespace and wrapped line
 //! handling remain separately named opt-in policies.
 //!
+//! # Emerging 2.0 API
+//!
+//! The 2.0 development surface is available through [`Base64`] and the four
+//! explicitly named `STRICT_*` presets. Its one-shot slice methods validate
+//! and size completely before writing, so every returned error leaves the
+//! destination unchanged. The published 1.3.9 API remains available during
+//! this migration.
+//!
 //! # Examples
 //!
 //! Encode and decode with caller-owned buffers:
@@ -155,6 +163,16 @@ mod profiles;
 mod scalar;
 mod scalar_encode_in_place;
 mod v2;
+
+pub use v2::{
+    AssuranceClass, Atomicity, BackendClass, BackendFault, Base64, Codec, CodecBuilder,
+    CodecBuilderError, CodecSettings, DecodePadding, DecoderState, EncodePadding, EncoderState,
+    Failure, InputError, InputErrorKind, OneShotError, OperationError, OutputFull, Progress,
+    ProtocolScope, RuntimeSpec, STRICT_STANDARD_PADDED, STRICT_STANDARD_UNPADDED,
+    STRICT_URL_SAFE_PADDED, STRICT_URL_SAFE_UNPADDED, Status, Step, StrictStandardPadded,
+    StrictStandardUnpadded, StrictUrlSafePadded, StrictUrlSafeUnpadded, TerminalError,
+    TrailingBits, ValidatedAlphabet, ValidatedAlphabetError,
+};
 mod wrap;
 
 pub use alphabet::{

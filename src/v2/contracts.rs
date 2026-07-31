@@ -34,11 +34,13 @@ impl Progress {
     }
 
     /// Returns the input prefix accepted by this call.
+    #[must_use]
     pub const fn input_consumed(self) -> usize {
         self.input_consumed
     }
 
     /// Returns the output prefix initialized by this call.
+    #[must_use]
     pub const fn output_produced(self) -> usize {
         self.output_produced
     }
@@ -57,6 +59,7 @@ impl OutputFull {
     }
 
     /// Returns the minimum destination bytes needed by the next retry.
+    #[must_use]
     pub const fn minimum_output(self) -> NonZeroUsize {
         self.minimum_output
     }
@@ -76,6 +79,7 @@ pub enum Status {
 
 impl Status {
     /// Returns the stable lowercase identifier for this status class.
+    #[must_use]
     pub const fn as_str(&self) -> &'static str {
         match self {
             Self::NeedInput => "need-input",
@@ -98,11 +102,13 @@ impl Step {
     }
 
     /// Returns exact input and output progress for this call.
+    #[must_use]
     pub const fn progress(self) -> Progress {
         self.progress
     }
 
     /// Returns the state reached by this call.
+    #[must_use]
     pub const fn status(self) -> Status {
         self.status
     }
@@ -130,6 +136,7 @@ pub enum InputErrorKind {
 
 impl InputErrorKind {
     /// Returns the stable lowercase identifier for this error class.
+    #[must_use]
     pub const fn as_str(self) -> &'static str {
         match self {
             Self::InvalidByte => "invalid-byte",
@@ -188,6 +195,7 @@ pub enum InputError {
 
 impl InputError {
     /// Returns a redacted, stable error class.
+    #[must_use]
     pub const fn kind(self) -> InputErrorKind {
         match self {
             Self::InvalidByte { .. } => InputErrorKind::InvalidByte,
@@ -258,6 +266,7 @@ pub enum BackendFault {
 
 impl BackendFault {
     /// Returns the stable lowercase identifier for this fault class.
+    #[must_use]
     pub const fn as_str(self) -> &'static str {
         match self {
             Self::SelfTestFailed => "backend-self-test-failed",
@@ -284,6 +293,7 @@ pub enum Failure {
 
 impl Failure {
     /// Returns the stable lowercase identifier for this failure class.
+    #[must_use]
     pub const fn as_str(self) -> &'static str {
         match self {
             Self::Input(error) => error.kind().as_str(),
@@ -306,6 +316,7 @@ pub enum TerminalError {
 
 impl TerminalError {
     /// Returns the stable lowercase identifier for this terminal call error.
+    #[must_use]
     pub const fn as_str(self) -> &'static str {
         match self {
             Self::InputAfterFinish => "input-after-finish",
@@ -326,6 +337,7 @@ pub enum OperationError {
 
 impl OperationError {
     /// Returns the stable lowercase identifier for this error class.
+    #[must_use]
     pub const fn as_str(self) -> &'static str {
         match self {
             Self::Failed(failure) => failure.as_str(),

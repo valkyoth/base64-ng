@@ -36,7 +36,7 @@ for required in \
     'InputError::TrailingData' \
     'InputError::NonCanonicalTrailingBits' \
     'InputError::TruncatedInput' \
-    'pub(crate) fn reset'
+    'pub fn reset'
 do
     if ! grep -F -q "$required" src/v2/incremental_decoder.rs; then
         echo "2.0 padded decoder: implementation is missing: $required" >&2

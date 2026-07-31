@@ -6,10 +6,7 @@ use super::{
     contracts::{
         BackendFault, Failure, InputError, Lifecycle, OperationError, Progress, SourceSpan, Step,
     },
-    specifications::{
-        Base64, CodecSettings, DecodePadding, StrictStandardPadded, StrictStandardUnpadded,
-        StrictUrlSafePadded, StrictUrlSafeUnpadded,
-    },
+    specifications::{Base64, Codec, CodecSettings, DecodePadding, TrailingBits},
 };
 
 const INPUT_QUANTUM: usize = 4;
@@ -21,7 +18,7 @@ const OUTPUT_QUANTUM: usize = 3;
 /// exclusive. This keeps retry state bounded while allowing one-byte output
 /// destinations without asking the caller to replay accepted input.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub(crate) struct DecoderState {
+pub struct DecoderState {
     settings: CodecSettings,
     quantum: [u8; INPUT_QUANTUM],
     quantum_indexes: [usize; INPUT_QUANTUM],
@@ -55,11 +52,7 @@ impl DecoderState {
     }
 
     /// Accepts a strict padded input prefix and writes decoded output that fits.
-    pub(crate) fn update(
-        &mut self,
-        input: &[u8],
-        output: &mut [u8],
-    ) -> Result<Step, OperationError> {
+    pub fn update(&mut self, input: &[u8], output: &mut [u8]) -> Result<Step, OperationError> {
         let span = self.lifecycle.reserve_input(input.len())?;
         let consumed = match self.plan_update(input, output.len(), span) {
             Ok(consumed) => consumed,
@@ -101,7 +94,7 @@ impl DecoderState {
     }
 
     /// Declares end of input and resolves the selected padding policy.
-    pub(crate) fn finish(&mut self, output: &mut [u8]) -> Result<Step, OperationError> {
+    pub fn finish(&mut self, output: &mut [u8]) -> Result<Step, OperationError> {
         if self.lifecycle.begin_finish()? {
             return self.lifecycle.finish(Progress::ZERO);
         }
@@ -120,8 +113,8 @@ impl DecoderState {
                     });
                     return Err(self.lifecycle.fail(failure));
                 }
-                DecodePadding::Forbid => {
-                    match decode_unpadded_tail(
+                DecodePadding::Forbid | DecodePadding::Indifferent => {
+                    match decode_final_tail(
                         self.settings,
                         &self.quantum[..self.quantum_len],
                         &self.quantum_indexes[..self.quantum_len],
@@ -129,11 +122,6 @@ impl DecoderState {
                         Ok(decoded) => decoded,
                         Err(error) => return Err(self.lifecycle.fail(Failure::Input(error))),
                     }
-                }
-                DecodePadding::Indifferent => {
-                    return Err(self
-                        .lifecycle
-                        .fail(Failure::Backend(BackendFault::ImpossibleState)));
                 }
             };
             self.pending = decoded.bytes;
@@ -151,7 +139,7 @@ impl DecoderState {
     }
 
     /// Resets the state for one unrelated ordinary message.
-    pub(crate) fn reset(&mut self) {
+    pub fn reset(&mut self) {
         self.quantum = [0; INPUT_QUANTUM];
         self.quantum_indexes = [0; INPUT_QUANTUM];
         self.quantum_len = 0;
@@ -162,7 +150,9 @@ impl DecoderState {
         self.lifecycle.reset();
     }
 
-    pub(crate) const fn source_position(&self) -> usize {
+    /// Returns the absolute number of input bytes accepted since reset.
+    #[must_use]
+    pub const fn source_position(&self) -> usize {
         self.lifecycle.source_position()
     }
 
@@ -172,9 +162,6 @@ impl DecoderState {
         output_len: usize,
         span: SourceSpan,
     ) -> Result<usize, Failure> {
-        if matches!(self.settings.decode_padding(), DecodePadding::Indifferent) {
-            return Err(Failure::Backend(BackendFault::ImpossibleState));
-        }
         let pending_written = self.pending_len.min(output_len);
         let mut pending = self.pending_len - pending_written;
         if pending != 0 {
@@ -247,38 +234,22 @@ impl DecoderState {
             && !(self.quantum_len != 0 && self.pending_len != 0)
             && matches!(
                 self.settings.decode_padding(),
-                DecodePadding::RequireCanonical | DecodePadding::Forbid
+                DecodePadding::RequireCanonical
+                    | DecodePadding::Forbid
+                    | DecodePadding::Indifferent
             )
-            && self.settings.trailing_bits()
-                == super::specifications::TrailingBits::RequireCanonical
     }
 }
 
-impl Base64<StrictStandardPadded> {
-    /// Constructs a fresh strict Standard padded decoder.
-    pub(crate) fn decoder(self) -> DecoderState {
-        DecoderState::new_padded(self.settings())
-    }
-}
-
-impl Base64<StrictUrlSafePadded> {
-    /// Constructs a fresh strict URL-safe padded decoder.
-    pub(crate) fn decoder(self) -> DecoderState {
-        DecoderState::new_padded(self.settings())
-    }
-}
-
-impl Base64<StrictStandardUnpadded> {
-    /// Constructs a fresh strict Standard unpadded decoder.
-    pub(crate) fn decoder(self) -> DecoderState {
-        DecoderState::new_unpadded(self.settings())
-    }
-}
-
-impl Base64<StrictUrlSafeUnpadded> {
-    /// Constructs a fresh strict URL-safe unpadded decoder.
-    pub(crate) fn decoder(self) -> DecoderState {
-        DecoderState::new_unpadded(self.settings())
+impl<S: Codec> Base64<S> {
+    /// Constructs a fresh heapless ordinary decoder.
+    pub fn decoder(&self) -> DecoderState {
+        match self.settings().decode_padding() {
+            DecodePadding::RequireCanonical => DecoderState::new_padded(self.settings()),
+            DecodePadding::Forbid | DecodePadding::Indifferent => {
+                DecoderState::new_unpadded(self.settings())
+            }
+        }
     }
 }
 
@@ -347,7 +318,7 @@ fn decode_quantum(
 
     match (input[2], input[3]) {
         (b'=', b'=') => {
-            if second & 0x0f != 0 {
+            if second & 0x0f != 0 && settings.trailing_bits() == TrailingBits::RequireCanonical {
                 return Err(InputError::NonCanonicalTrailingBits { index: indexes[1] });
             }
             Ok(DecodedQuantum {
@@ -359,7 +330,7 @@ fn decode_quantum(
         (b'=', _) => Err(InputError::InvalidPadding { index: indexes[2] }),
         (third, b'=') => {
             let third = decode_symbol(settings, third, indexes[2])?;
-            if third & 0x03 != 0 {
+            if third & 0x03 != 0 && settings.trailing_bits() == TrailingBits::RequireCanonical {
                 return Err(InputError::NonCanonicalTrailingBits { index: indexes[2] });
             }
             Ok(DecodedQuantum {
@@ -397,7 +368,7 @@ fn decode_unpadded_tail(
         [first, second] => {
             let first = decode_symbol(settings, *first, indexes[0])?;
             let second = decode_symbol(settings, *second, indexes[1])?;
-            if second & 0x0f != 0 {
+            if second & 0x0f != 0 && settings.trailing_bits() == TrailingBits::RequireCanonical {
                 return Err(InputError::NonCanonicalTrailingBits { index: indexes[1] });
             }
             Ok(DecodedQuantum {
@@ -410,7 +381,7 @@ fn decode_unpadded_tail(
             let first = decode_symbol(settings, *first, indexes[0])?;
             let second = decode_symbol(settings, *second, indexes[1])?;
             let third = decode_symbol(settings, *third, indexes[2])?;
-            if third & 0x03 != 0 {
+            if third & 0x03 != 0 && settings.trailing_bits() == TrailingBits::RequireCanonical {
                 return Err(InputError::NonCanonicalTrailingBits { index: indexes[2] });
             }
             Ok(DecodedQuantum {
@@ -425,6 +396,28 @@ fn decode_unpadded_tail(
         }
         _ => Err(InputError::InvalidLength),
     }
+}
+
+fn decode_final_tail(
+    settings: CodecSettings,
+    input: &[u8],
+    indexes: &[usize],
+) -> Result<DecodedQuantum, InputError> {
+    if settings.decode_padding() == DecodePadding::Indifferent
+        && let [first, second, b'='] = input
+    {
+        let first = decode_symbol(settings, *first, indexes[0])?;
+        let second = decode_symbol(settings, *second, indexes[1])?;
+        if second & 0x0f != 0 && settings.trailing_bits() == TrailingBits::RequireCanonical {
+            return Err(InputError::NonCanonicalTrailingBits { index: indexes[1] });
+        }
+        return Ok(DecodedQuantum {
+            bytes: [(first << 2) | (second >> 4), 0, 0],
+            len: 1,
+            terminal_padding: true,
+        });
+    }
+    decode_unpadded_tail(settings, input, indexes)
 }
 
 fn decode_symbol(settings: CodecSettings, byte: u8, index: usize) -> Result<u8, InputError> {

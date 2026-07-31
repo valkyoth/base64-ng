@@ -406,6 +406,7 @@ for required_package_file in \
     "rust-toolchain.toml" \
     "SECURITY.md" \
     "api-snapshots/README.md" \
+    "api-snapshots/2.0-development/base64-ng.txt" \
     "api-snapshots/v1.3.9/base64-ng.txt" \
     "api-snapshots/v1.3.9/base64-ng-bytes.txt" \
     "api-snapshots/v1.3.9/base64-ng-derive.txt" \
@@ -414,6 +415,7 @@ for required_package_file in \
     "api-snapshots/v1.3.9/base64-ng-subtle.txt" \
     "api-snapshots/v1.3.9/base64-ng-tokio.txt" \
     "docs/2.0_API_MIGRATION_LEDGER.md" \
+    "docs/2.0_TRANSACTIONAL_ONE_SHOT.md" \
     "docs/2.0_PACKAGE_TOPOLOGY.md" \
     "docs/API_AUDIT.md" \
     "docs/ASYNC.md" \
@@ -444,6 +446,7 @@ for required_package_file in \
     "portability/feature_contract_smoke/src/main.rs" \
     "portability/feature_unification_smoke/src/lib.rs" \
     "scripts/check-2.0-feature-contract.sh" \
+    "scripts/check-2.0-one-shot.sh" \
     "scripts/check-2.0-migration-smoke.sh" \
     "scripts/check-api-snapshots.sh" \
     "scripts/validate-2.0-api-ledger.sh" \

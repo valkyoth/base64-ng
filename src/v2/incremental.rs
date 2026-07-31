@@ -16,7 +16,7 @@ const OUTPUT_QUANTUM: usize = 4;
 /// encoded quantum. It intentionally has no cleanup destructor; secret
 /// transforms use a separate state type.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub(crate) struct EncoderState {
+pub struct EncoderState {
     settings: CodecSettings,
     tail: [u8; INPUT_QUANTUM],
     tail_len: usize,
@@ -40,11 +40,7 @@ impl EncoderState {
     }
 
     /// Accepts an input prefix and writes as much encoded output as fits.
-    pub(crate) fn update(
-        &mut self,
-        input: &[u8],
-        output: &mut [u8],
-    ) -> Result<Step, OperationError> {
+    pub fn update(&mut self, input: &[u8], output: &mut [u8]) -> Result<Step, OperationError> {
         let span = self.lifecycle.reserve_input(input.len())?;
         let consumed =
             planned_input_consumption(self.tail_len, self.pending_len, input.len(), output.len());
@@ -75,7 +71,7 @@ impl EncoderState {
     }
 
     /// Emits the canonical final tail and completes the current message.
-    pub(crate) fn finish(&mut self, output: &mut [u8]) -> Result<Step, OperationError> {
+    pub fn finish(&mut self, output: &mut [u8]) -> Result<Step, OperationError> {
         if self.lifecycle.begin_finish()? {
             return self.lifecycle.finish(Progress::ZERO);
         }
@@ -101,7 +97,7 @@ impl EncoderState {
     }
 
     /// Resets the state for one unrelated message.
-    pub(crate) fn reset(&mut self) {
+    pub fn reset(&mut self) {
         self.tail = [0; INPUT_QUANTUM];
         self.tail_len = 0;
         self.pending = [0; OUTPUT_QUANTUM];
@@ -110,7 +106,9 @@ impl EncoderState {
         self.lifecycle.reset();
     }
 
-    pub(crate) const fn source_position(&self) -> usize {
+    /// Returns the absolute number of input bytes accepted since reset.
+    #[must_use]
+    pub const fn source_position(&self) -> usize {
         self.lifecycle.source_position()
     }
 
@@ -137,7 +135,7 @@ impl EncoderState {
 
 impl<S: Codec> Base64<S> {
     /// Constructs a fresh heapless ordinary encoder.
-    pub(crate) fn encoder(&self) -> EncoderState {
+    pub fn encoder(&self) -> EncoderState {
         EncoderState::new(self.settings())
     }
 }

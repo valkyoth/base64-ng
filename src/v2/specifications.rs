@@ -6,7 +6,7 @@ use super::alphabet::{
 
 /// Whether ordinary encoding emits canonical `=` padding.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub(crate) enum EncodePadding {
+pub enum EncodePadding {
     /// Emit canonical padding.
     Padded,
     /// Omit padding.
@@ -15,7 +15,7 @@ pub(crate) enum EncodePadding {
 
 /// Which padding forms ordinary decoding accepts.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub(crate) enum DecodePadding {
+pub enum DecodePadding {
     /// Require the canonical padding count for the decoded length.
     RequireCanonical,
     /// Reject every padding byte.
@@ -26,7 +26,7 @@ pub(crate) enum DecodePadding {
 
 /// Whether ordinary decoding enforces zero unused trailing bits.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub(crate) enum TrailingBits {
+pub enum TrailingBits {
     /// Reject noncanonical unused trailing bits.
     RequireCanonical,
     /// Ignore nonzero unused trailing bits for compatibility inputs.
@@ -35,7 +35,7 @@ pub(crate) enum TrailingBits {
 
 /// One complete, immutable ordinary codec policy.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub(crate) struct CodecSettings {
+pub struct CodecSettings {
     alphabet: ValidatedAlphabet,
     encode_padding: EncodePadding,
     decode_padding: DecodePadding,
@@ -58,22 +58,26 @@ impl CodecSettings {
     }
 
     /// Returns the validated alphabet owned by this specification.
-    pub(crate) const fn alphabet(&self) -> &ValidatedAlphabet {
+    #[must_use]
+    pub const fn alphabet(&self) -> &ValidatedAlphabet {
         &self.alphabet
     }
 
     /// Returns the encode-padding policy.
-    pub(crate) const fn encode_padding(&self) -> EncodePadding {
+    #[must_use]
+    pub const fn encode_padding(&self) -> EncodePadding {
         self.encode_padding
     }
 
     /// Returns the decode-padding policy.
-    pub(crate) const fn decode_padding(&self) -> DecodePadding {
+    #[must_use]
+    pub const fn decode_padding(&self) -> DecodePadding {
         self.decode_padding
     }
 
     /// Returns the trailing-bit policy.
-    pub(crate) const fn trailing_bits(&self) -> TrailingBits {
+    #[must_use]
+    pub const fn trailing_bits(&self) -> TrailingBits {
         self.trailing_bits
     }
 
@@ -81,7 +85,8 @@ impl CodecSettings {
     ///
     /// Runtime alphabets are eligible, but padding-indifferent and
     /// noncanonical-trailing-bit policies are deliberately excluded.
-    pub(crate) const fn permits_secret_processing(&self) -> bool {
+    #[must_use]
+    pub const fn permits_secret_processing(&self) -> bool {
         !matches!(self.decode_padding, DecodePadding::Indifferent)
             && matches!(self.trailing_bits, TrailingBits::RequireCanonical)
     }
@@ -97,29 +102,29 @@ mod sealed {
 /// paths remain generic over one whole specification type. It intentionally
 /// has no associated constants so runtime specifications and trait objects use
 /// the same contract.
-pub(crate) trait Codec: sealed::Sealed + Send + Sync {
+pub trait Codec: sealed::Sealed + Send + Sync {
     /// Returns the complete validated settings value.
     fn settings(&self) -> CodecSettings;
 }
 
 /// A codec value parameterized by one complete sealed specification.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub(crate) struct Base64<S> {
+pub struct Base64<S> {
     specification: S,
 }
 
 impl<S: Codec> Base64<S> {
     /// Constructs a codec from one sealed specification value.
-    pub(crate) const fn new(specification: S) -> Self {
+    pub const fn new(specification: S) -> Self {
         Self { specification }
     }
 
     /// Returns the owned specification value.
-    pub(crate) const fn specification(&self) -> &S {
+    pub const fn specification(&self) -> &S {
         &self.specification
     }
     /// Returns the codec's complete validated settings.
-    pub(crate) fn settings(&self) -> CodecSettings {
+    pub fn settings(&self) -> CodecSettings {
         self.specification.settings()
     }
 }
@@ -128,7 +133,7 @@ macro_rules! strict_specification {
     ($name:ident, $alphabet:expr, $encode:expr, $decode:expr) => {
         #[doc = "A sealed strict RFC 4648 built-in specification."]
         #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
-        pub(crate) struct $name;
+        pub struct $name;
 
         impl $name {
             const SETTINGS: CodecSettings =
@@ -171,21 +176,19 @@ strict_specification!(
 );
 
 /// Strict RFC 4648 Standard Base64 with canonical padding.
-pub(crate) const STRICT_STANDARD_PADDED: Base64<StrictStandardPadded> =
-    Base64::new(StrictStandardPadded);
+pub const STRICT_STANDARD_PADDED: Base64<StrictStandardPadded> = Base64::new(StrictStandardPadded);
 /// Strict RFC 4648 Standard Base64 without padding.
-pub(crate) const STRICT_STANDARD_UNPADDED: Base64<StrictStandardUnpadded> =
+pub const STRICT_STANDARD_UNPADDED: Base64<StrictStandardUnpadded> =
     Base64::new(StrictStandardUnpadded);
 /// Strict RFC 4648 URL-safe Base64 with canonical padding.
-pub(crate) const STRICT_URL_SAFE_PADDED: Base64<StrictUrlSafePadded> =
-    Base64::new(StrictUrlSafePadded);
+pub const STRICT_URL_SAFE_PADDED: Base64<StrictUrlSafePadded> = Base64::new(StrictUrlSafePadded);
 /// Strict RFC 4648 URL-safe Base64 without padding.
-pub(crate) const STRICT_URL_SAFE_UNPADDED: Base64<StrictUrlSafeUnpadded> =
+pub const STRICT_URL_SAFE_UNPADDED: Base64<StrictUrlSafeUnpadded> =
     Base64::new(StrictUrlSafeUnpadded);
 
 /// A complete owned runtime specification.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub(crate) struct RuntimeSpec {
+pub struct RuntimeSpec {
     settings: CodecSettings,
 }
 
@@ -199,7 +202,7 @@ impl Codec for RuntimeSpec {
 
 /// A policy combination that cannot form a self-consistent codec.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(crate) enum CodecBuilderError {
+pub enum CodecBuilderError {
     /// Encoding emits padding that decoding always rejects.
     EncodedPaddingRejected,
     /// Encoding omits padding that decoding requires.
@@ -221,13 +224,14 @@ impl core::fmt::Display for CodecBuilderError {
 
 /// Fallible no-allocation builder for an advanced ordinary runtime codec.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(crate) struct CodecBuilder {
+pub struct CodecBuilder {
     settings: CodecSettings,
 }
 
 impl CodecBuilder {
     /// Starts with strict canonical padded policies and an owned alphabet.
-    pub(crate) const fn new(alphabet: ValidatedAlphabet) -> Self {
+    #[must_use]
+    pub const fn new(alphabet: ValidatedAlphabet) -> Self {
         Self {
             settings: CodecSettings::new(
                 alphabet,
@@ -239,7 +243,7 @@ impl CodecBuilder {
     }
 
     /// Validates and owns an alphabet table before constructing the builder.
-    pub(crate) const fn from_table(table: [u8; 64]) -> Result<Self, ValidatedAlphabetError> {
+    pub const fn from_table(table: [u8; 64]) -> Result<Self, ValidatedAlphabetError> {
         match ValidatedAlphabet::new(table) {
             Ok(alphabet) => Ok(Self::new(alphabet)),
             Err(error) => Err(error),
@@ -247,7 +251,7 @@ impl CodecBuilder {
     }
 
     /// Copies and validates a runtime alphabet slice.
-    pub(crate) const fn from_slice(bytes: &[u8]) -> Result<Self, ValidatedAlphabetError> {
+    pub const fn from_slice(bytes: &[u8]) -> Result<Self, ValidatedAlphabetError> {
         match ValidatedAlphabet::try_from_slice(bytes) {
             Ok(alphabet) => Ok(Self::new(alphabet)),
             Err(error) => Err(error),
@@ -255,25 +259,28 @@ impl CodecBuilder {
     }
 
     /// Sets whether encoding emits padding.
-    pub(crate) const fn encode_padding(mut self, policy: EncodePadding) -> Self {
+    #[must_use]
+    pub const fn encode_padding(mut self, policy: EncodePadding) -> Self {
         self.settings.encode_padding = policy;
         self
     }
 
     /// Sets the ordinary decode-padding policy.
-    pub(crate) const fn decode_padding(mut self, policy: DecodePadding) -> Self {
+    #[must_use]
+    pub const fn decode_padding(mut self, policy: DecodePadding) -> Self {
         self.settings.decode_padding = policy;
         self
     }
 
     /// Sets the ordinary trailing-bit canonicality policy.
-    pub(crate) const fn trailing_bits(mut self, policy: TrailingBits) -> Self {
+    #[must_use]
+    pub const fn trailing_bits(mut self, policy: TrailingBits) -> Self {
         self.settings.trailing_bits = policy;
         self
     }
 
     /// Validates policy compatibility and constructs an owned runtime codec.
-    pub(crate) const fn build(self) -> Result<Base64<RuntimeSpec>, CodecBuilderError> {
+    pub const fn build(self) -> Result<Base64<RuntimeSpec>, CodecBuilderError> {
         match (self.settings.encode_padding, self.settings.decode_padding) {
             (EncodePadding::Padded, DecodePadding::Forbid) => {
                 Err(CodecBuilderError::EncodedPaddingRejected)

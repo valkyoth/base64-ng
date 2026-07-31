@@ -4,6 +4,7 @@ set -eu
 expected_tool="cargo-public-api 0.52.0"
 public_api_toolchain="nightly-2026-07-13"
 snapshot_dir="api-snapshots/v1.3.9"
+development_dir="api-snapshots/2.0-development"
 workdir="target/api-snapshot-check"
 mode="${1:---check}"
 
@@ -44,7 +45,7 @@ fi
 
 mkdir -p "$workdir"
 if [ "$mode" = "--update" ]; then
-    mkdir -p "$snapshot_dir"
+    mkdir -p "$development_dir"
 fi
 
 for package in \
@@ -67,15 +68,34 @@ do
         --omit auto-trait-impls \
         -p "$package" >"$generated"
 
-    if [ "$mode" = "--update" ]; then
-        cp "$generated" "$committed"
-    elif [ ! -f "$committed" ]; then
+    if [ ! -f "$committed" ]; then
         echo "api snapshots: missing $committed" >&2
         exit 1
+    fi
+
+    if [ "$package" = "base64-ng" ]; then
+        while IFS= read -r baseline_line; do
+            if ! grep -F -x -q "$baseline_line" "$generated"; then
+                echo "api snapshots: base64-ng removed or changed frozen v1.3.9 API:" >&2
+                echo "$baseline_line" >&2
+                exit 1
+            fi
+        done <"$committed"
+
+        development="$development_dir/$package.txt"
+        if [ "$mode" = "--update" ]; then
+            cp "$generated" "$development"
+        elif [ ! -f "$development" ]; then
+            echo "api snapshots: missing $development" >&2
+            exit 1
+        elif ! diff -u "$development" "$generated"; then
+            echo "api snapshots: base64-ng drifted from the reviewed 2.0 development API" >&2
+            exit 1
+        fi
     elif ! diff -u "$committed" "$generated"; then
         echo "api snapshots: $package drifted from the v1.3.9 inventory" >&2
         exit 1
     fi
 done
 
-echo "api snapshots: ok"
+echo "api snapshots: frozen 1.3.9 compatibility and 2.0 development API ok"
