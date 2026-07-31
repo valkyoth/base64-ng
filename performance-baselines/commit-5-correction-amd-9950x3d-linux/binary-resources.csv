@@ -1,0 +1,6 @@
+schema_version,feature_set,binary_bytes,base64_ng_symbol_count,method
+1,default,1249286,85,nm-and-file-size
+1,no-default-features,1095486,43,nm-and-file-size
+1,simd,1520874,127,nm-and-file-size
+1,secrets,1249288,85,nm-and-file-size
+1,checked-backend,1521208,127,nm-and-file-size

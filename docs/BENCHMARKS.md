@@ -93,8 +93,10 @@ was captured while the Commit 3 implementation was uncommitted and therefore
 was not bound to the source named by its environment record. See
 [`../performance-baselines/INVALIDATED_COMMIT_3.md`](../performance-baselines/INVALIDATED_COMMIT_3.md).
 It admitted no backend. No number from that campaign remains eligible for a
-release or admission claim; a clean-source replacement must be retained
-separately.
+release or admission claim. Its clean-source replacement is retained under
+[`../performance-baselines/commit-5-correction-amd-9950x3d-linux/`](../performance-baselines/commit-5-correction-amd-9950x3d-linux/)
+and is bound to the signed corrective source commit named in its environment
+record.
 
 ## Resource Interpretation
 

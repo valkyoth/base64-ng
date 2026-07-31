@@ -17,5 +17,6 @@ future admission decisions.
 
 The corrective checkpoint makes generation reject dirty trees, validates full
 commit identifiers, requires complete measurement matrices, and rejects unsafe
-CSV labels. A replacement campaign is accepted only when generated from the
-clean signed corrective commit and retained in a separate follow-up commit.
+CSV labels. The accepted replacement campaign was generated from clean, signed
+commit `9665094362c535550e3a7cb5d812bf3bccccb0b7` and is retained under
+`commit-5-correction-amd-9950x3d-linux/`.

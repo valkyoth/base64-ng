@@ -1,0 +1,20 @@
+base64-ng performance evidence schema 1
+source_commit=9665094362c535550e3a7cb5d812bf3bccccb0b7
+source_status=clean
+campaign_id=commit-5-correction-amd-9950x3d
+sample_count=5
+target_bytes_per_sample=4194304
+comparison_crates=base64=0.23.0,base64ct=1.8.3
+minimum_backend_ratio_to_scalar=0.95
+reproducibility_ratio_range=0.50..2.00
+stack_bound_method=source constants and size_of; not a dynamic call-stack measurement
+artifacts:
+bd2d2784c671371cb78c1636b97f70f0fe41eb110100ff61cb69d132383703a3  performance-baselines/commit-5-correction-amd-9950x3d-linux/admission.csv
+dff4944a61eb97aa4138e64595eb8ecbb904f6b9c2113a75c2e58a13a32066ae  performance-baselines/commit-5-correction-amd-9950x3d-linux/availability.csv
+cbcd6459e0399afcd07d5ee628b124331427556efe5566b56172c100fa56caab  performance-baselines/commit-5-correction-amd-9950x3d-linux/binary-resources.csv
+509c60041ac4338292f18b647df36b123877c893ef1daf724521e57ede8fa253  performance-baselines/commit-5-correction-amd-9950x3d-linux/raw-run-1.csv
+0c0e0bef666364b21f9f469d17b3d733ee3bbc532b34cbd2f0fa7176bb0a8b05  performance-baselines/commit-5-correction-amd-9950x3d-linux/raw-run-2.csv
+d4dff129d0d53cbefc7c5b27009da4b830febb1b9a1dd0eb015faf35c27b62e5  performance-baselines/commit-5-correction-amd-9950x3d-linux/resources-default.csv
+2bc2d405f40f68c6aeaa657a838aa3f775a65503822f03133ec948f9fc74720a  performance-baselines/commit-5-correction-amd-9950x3d-linux/resources-no-simd.csv
+dfbf604a066ef493f089e3862823d3dedd1ea30a361453e1d13f9912510f63e4  performance-baselines/commit-5-correction-amd-9950x3d-linux/summary.csv
+0a92f6e48e54436cbb53dd7a393ceab63edd85baa65ae3fdab99d25107a620aa  performance-baselines/commit-5-correction-amd-9950x3d-linux/environment.json

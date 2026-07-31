@@ -1,0 +1,11 @@
+schema_version,category,name,feature_set,value,unit,method
+1,stack-bound,in-place-input-staging,no-simd,768,bytes,source-and-size-of
+1,stack-bound,in-place-output-staging,no-simd,1024,bytes,source-and-size-of
+1,adapter-pending-memory,encoder-writer-output-capacity,no-simd,1024,bytes,source-and-size-of
+1,adapter-size,encoder-writer,no-simd,1080,bytes,source-and-size-of
+1,adapter-pending-memory,decoder-writer-output-capacity,no-simd,1024,bytes,source-and-size-of
+1,adapter-size,decoder-writer,no-simd,1080,bytes,source-and-size-of
+1,adapter-pending-memory,encoder-reader-output-capacity,no-simd,1024,bytes,source-and-size-of
+1,adapter-size,encoder-reader,no-simd,1088,bytes,source-and-size-of
+1,adapter-pending-memory,decoder-reader-output-capacity,no-simd,3,bytes,source-and-size-of
+1,adapter-size,decoder-reader,no-simd,72,bytes,source-and-size-of

@@ -1,0 +1,31 @@
+{
+  "build": {
+    "cargo_profile": "release",
+    "rustflags": "--cfg base64_ng_perf_evidence",
+    "target": "x86_64-unknown-linux-gnu"
+  },
+  "measurement": {
+    "campaign_id": "commit-5-correction-amd-9950x3d",
+    "cpu_governor": "powersave",
+    "sample_count": 5,
+    "target_bytes_per_sample": 4194304
+  },
+  "schema_version": 1,
+  "source": {
+    "commit": "9665094362c535550e3a7cb5d812bf3bccccb0b7",
+    "status": "clean"
+  },
+  "system": {
+    "architecture": "x86_64",
+    "cpu": {
+      "microcode": "0xb404035",
+      "model": "AMD Ryzen 9 9950X3D 16-Core Processor"
+    },
+    "kernel": "7.0.12-1-default",
+    "os": "Linux-7.0.12-1-default-x86_64-with-glibc2.43"
+  },
+  "toolchain": {
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6"
+  }
+}
