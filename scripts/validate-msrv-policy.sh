@@ -58,7 +58,7 @@ if ! grep -F -q 'msrv-target-build:' .github/workflows/ci.yml; then
     echo "MSRV policy: CI is missing Rust 1.90 target checks" >&2
     exit 1
 fi
-if ! grep -F -q 'No Commit 4 implementation requires a compiler newer than Rust 1.90.0.' \
+if ! grep -F -q 'No Commit 5 implementation requires a compiler newer than Rust 1.90.0.' \
     docs/2.0_TOOLCHAIN_COMPATIBILITY.md
 then
     echo "MSRV policy: 2.0 optimization fallback ledger is incomplete" >&2

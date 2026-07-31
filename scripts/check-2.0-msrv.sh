@@ -46,6 +46,8 @@ case "$mode" in
 
         cargo +"$toolchain" check --locked \
             --manifest-path semantic-corpus/runner/Cargo.toml
+        BASE64_NG_ALPHABET_TOOLCHAIN="$toolchain" \
+            scripts/check-2.0-alphabet.sh
         ;;
     --target)
         target="${2:?usage: check-2.0-msrv.sh --target TARGET}"

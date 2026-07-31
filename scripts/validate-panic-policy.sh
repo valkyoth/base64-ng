@@ -112,7 +112,11 @@ for test_file in src/*_tests.rs; do
     fi
 done
 
-for test_file in src/v2/fixtures.rs src/v2/rfc4648_oracle.rs; do
+for test_file in \
+    src/v2/alphabet_tests.rs \
+    src/v2/fixtures.rs \
+    src/v2/rfc4648_oracle.rs
+do
     module_name="$(basename "$test_file" .rs)"
     if ! awk -v module_name="$module_name" '
         /^#\[cfg\(test\)\]$/ {
@@ -140,7 +144,7 @@ done
 
 find src crates/*/src -name '*.rs' | sort | while IFS= read -r source_file; do
     case "$source_file" in
-        src/*_tests.rs|src/kani_proofs.rs|src/tests.rs|src/simd/tests.rs|src/simd/wasm.rs|src/simd/neon_decode_tests.rs|src/simd/x86_decode_tests.rs|src/v2/fixtures.rs|src/v2/rfc4648_oracle.rs|crates/*/src/tests.rs|crates/*/src/*_tests.rs)
+        src/*_tests.rs|src/kani_proofs.rs|src/tests.rs|src/simd/tests.rs|src/simd/wasm.rs|src/simd/neon_decode_tests.rs|src/simd/x86_decode_tests.rs|src/v2/alphabet_tests.rs|src/v2/fixtures.rs|src/v2/rfc4648_oracle.rs|crates/*/src/tests.rs|crates/*/src/*_tests.rs)
             continue
             ;;
     esac

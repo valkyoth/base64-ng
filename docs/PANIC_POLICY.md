@@ -19,9 +19,9 @@ panic surface.
 Root `src/*_tests.rs` files are exempt only when the validator can also prove
 that each file is declared behind `#[cfg(test)]` in `src/lib.rs`; the filename
 convention alone is not enough.
-The Commit 4 independent RFC oracle and fixtures under `src/v2/` receive the
-same structural check against `src/v2/mod.rs`, so neither can enter production
-builds under the test exemption.
+The Commit 4 independent RFC oracle and fixtures plus the Commit 5 validated
+alphabet tests under `src/v2/` receive the same structural check against
+`src/v2/mod.rs`, so none can enter production builds under the test exemption.
 Remaining bounded indexing invariants are documented in
 [INVARIANTS.md](INVARIANTS.md).
 

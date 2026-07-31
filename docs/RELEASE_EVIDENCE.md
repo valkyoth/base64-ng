@@ -26,6 +26,15 @@ independent test-only oracle, versioned cross-crate semantic corpus, and the
 complete Rust 1.90.0 capability matrix. `scripts/verify-rfcs.sh` is offline;
 network comparison is an explicit maintainer operation.
 
+Commit 5 adds an owned, allocation-free validated alphabet value whose encode
+and decode mappings derive from one immutable table. The evidence in
+`scripts/check-2.0-alphabet.sh` covers const acceptance and rejection, all
+duplicate positions, every forbidden byte and position, runtime/const mapping
+parity, the crate-owned fixed secret scan, and Rust 1.90.0 compatibility.
+Kani proves the bounded per-position constructor accesses separately from the
+exhaustive semantic tests. See
+[`2.0_VALIDATED_ALPHABETS.md`](2.0_VALIDATED_ALPHABETS.md).
+
 Run the gate with:
 
 ```sh
@@ -75,6 +84,11 @@ The release gate runs:
   tests
 - independent-oracle differential tests and the versioned semantic corpus
   across core, streaming, bytes, Tokio, serde, and sanitization surfaces
+- 2.0 validated-alphabet evidence through
+  `scripts/check-2.0-alphabet.sh`, including const compile acceptance and
+  rejection, exhaustive invalid-table diagnostics, all-value mapping parity,
+  executable-callback exclusion, fixed-scan semantic checks, and the same
+  checks under Rust 1.90.0
 - public API audit validation; stable releases fail if public API rows remain
   marked as `review pending`
 - packaged release script presence, executable-bit, and shebang validation

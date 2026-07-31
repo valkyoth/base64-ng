@@ -39,6 +39,9 @@ scripts/check-2.0-feature-contract.sh
 echo "checks: 2.0 crate skeleton"
 scripts/validate-2.0-skeleton.sh
 
+echo "checks: 2.0 validated alphabet"
+scripts/check-2.0-alphabet.sh
+
 echo "checks: RFC 4648 source lock"
 scripts/verify-rfcs.sh
 scripts/check-rfc-source-mutations.py

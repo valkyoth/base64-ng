@@ -10,7 +10,7 @@ pairing is documented rather than assumed.
 - Kani verifier toolchain: Rust `1.90.0`.
 - Locally tested Kani: `cargo-kani 0.67.0`.
 - Current result: `scripts/check_kani.sh` verifies the full current
-  no-default-features Kani harness set: 18 harnesses, 0 failures.
+  no-default-features Kani harness set: 19 harnesses, 0 failures.
 
 This is not a normal Cargo dependency-resolution issue. Kani runs are compiler-integration-sensitive because Kani is a verifier with its own compiler integration.
 Updating the active release toolchain to Rust `1.97.1`
@@ -88,6 +88,9 @@ Current harnesses cover:
   6-bit values
 - unpadded scalar tail validation and decode output bounds
 - scalar length-helper bounds
+- validated-alphabet per-position constructor bounds for an arbitrary 64-byte
+  table and arbitrary in-range constructor position, including diagnostic
+  indexes and duplicate-scan cursor bounds
 - bounded scalar encode/decode output-prefix bounds
 - strict decode backend agreement with the scalar reference for one padded
   quantum

@@ -1,6 +1,8 @@
 use super::{
     STANDARD, Standard, checked_encoded_len, ct, decode_backend, decode_byte, decode_chunk,
-    decode_tail_unpadded, decoded_capacity, scalar, validate_tail_unpadded,
+    decode_tail_unpadded, decoded_capacity, scalar,
+    v2::alphabet::{ValidatedAlphabetError, validate_position_for_proof},
+    validate_tail_unpadded,
 };
 
 #[cfg(base64_ng_kani_advanced)]
@@ -22,6 +24,31 @@ fn decoded_capacity_is_bounded_for_small_inputs() {
     let capacity = decoded_capacity(len);
 
     assert!(capacity <= len / 4 * 3 + 2);
+}
+
+#[kani::proof]
+#[kani::unwind(66)]
+fn validated_alphabet_constructor_indexing_is_bounded() {
+    let table = kani::any::<[u8; 64]>();
+    let index = usize::from(kani::any::<u8>() & 63);
+
+    match validate_position_for_proof(&table, index) {
+        Ok(()) => {}
+        Err(ValidatedAlphabetError::InvalidByte {
+            index: error_index, ..
+        })
+        | Err(ValidatedAlphabetError::PaddingByte { index: error_index }) => {
+            assert!(error_index == index);
+        }
+        Err(ValidatedAlphabetError::DuplicateByte { first, second, .. }) => {
+            assert!(first == index);
+            assert!(second > first);
+            assert!(second < 64);
+        }
+        Err(ValidatedAlphabetError::InvalidLength { .. }) => {
+            unreachable!("fixed arrays cannot produce a length error");
+        }
+    }
 }
 
 #[kani::proof]

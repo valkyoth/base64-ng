@@ -2,6 +2,7 @@
 set -eu
 
 for module in \
+    alphabet \
     backend_health \
     incremental \
     ordinary \
