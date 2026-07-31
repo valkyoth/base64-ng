@@ -120,6 +120,7 @@ for required_script in \
     "scripts/check-2.0-format-append-chunks.sh" \
     "scripts/check-2.0-in-place.sh" \
     "scripts/check-2.0-in-place-sanitizers.sh" \
+    "scripts/check-2.0-web-forgiving.sh" \
     "scripts/check-2.0-migration-smoke.sh" \
     "scripts/check-api-snapshots.sh" \
     "scripts/validate-2.0-api-ledger.sh" \

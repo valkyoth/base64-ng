@@ -192,6 +192,28 @@ Evidence:
 - integration-test global allocation counter
 - external API and compile-fail lifetime checks
 
+## 2.0 WHATWG Forgiving Decode
+
+- The WHATWG state retains at most four input symbols and three pending output
+  bytes; input and pending output quantums are never both unresolved.
+- Only WHATWG ASCII whitespace is ignored. Vertical tab is not whitespace.
+- `=` can enter only the third or fourth quantum position. Once a padded
+  quantum completes, only ignored whitespace may follow.
+- Final unpadded tails contain exactly two or three Standard symbols. Unused
+  trailing bits are deliberately discarded as required by WHATWG.
+- One-shot decode validates and measures through an independent state instance
+  before writing caller output.
+- Failure is absorbing until reset. Web content errors are opaque and cannot
+  expose source bytes or indexes.
+
+Evidence:
+
+- locked WHATWG/browser fixture corpus
+- every-split incremental tests with one-byte output
+- transactional sentinel tests and no-allocation builds
+- Node/V8, Chromium, Firefox, and Safari browser scripts
+- strict-separation and expert-policy differential tests
+
 ## Review Rule
 
 When adding new indexing in non-test code, prefer `get`, slice-pattern

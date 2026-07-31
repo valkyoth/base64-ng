@@ -15,6 +15,8 @@ import sys
 import time
 import urllib.parse
 
+from whatwg_forgiving_fixtures import load_fixtures
+
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 SMOKE_DIR = ROOT / "target" / "wasm-runtime-smoke"
@@ -85,6 +87,7 @@ def build_smoke_module(target: str) -> pathlib.Path:
 
 def write_html(browser: str, wasm_file: pathlib.Path) -> pathlib.Path:
     wasm_base64 = base64.b64encode(wasm_file.read_bytes()).decode("ascii")
+    forgiving_fixtures = json.dumps(load_fixtures(), separators=(",", ":"))
     html_file = SMOKE_DIR / f"browser-smoke-{browser}.html"
     html_file.write_text(
         f"""<!doctype html>
@@ -94,6 +97,38 @@ def write_html(browser: str, wasm_file: pathlib.Path) -> pathlib.Path:
 <pre id="result">pending</pre>
 <script>
 const wasmBase64 = "{wasm_base64}";
+const forgivingFixtures = {forgiving_fixtures};
+
+function hexToString(hex) {{
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let index = 0; index < bytes.length; index += 1) {{
+    bytes[index] = Number.parseInt(hex.slice(index * 2, index * 2 + 2), 16);
+  }}
+  return new TextDecoder("utf-8", {{fatal: true}}).decode(bytes);
+}}
+
+function bytesToHex(input) {{
+  let output = "";
+  for (let index = 0; index < input.length; index += 1) {{
+    output += input.charCodeAt(index).toString(16).padStart(2, "0");
+  }}
+  return output;
+}}
+
+function verifyForgivingFixtures() {{
+  for (const [inputHex, expected] of forgivingFixtures) {{
+    let actual = null;
+    let failed = false;
+    try {{
+      actual = bytesToHex(atob(hexToString(inputHex)));
+    }} catch (_) {{
+      failed = true;
+    }}
+    if ((expected === null) !== failed || (!failed && actual !== expected)) {{
+      throw new Error("{browser} forgiving fixture mismatch: " + inputHex);
+    }}
+  }}
+}}
 
 function decodeBase64(input) {{
   const binary = atob(input);
@@ -105,6 +140,7 @@ function decodeBase64(input) {{
 }}
 
 try {{
+  verifyForgivingFixtures();
   const module = new WebAssembly.Module(decodeBase64(wasmBase64));
   const instance = new WebAssembly.Instance(module, {{}});
   const result = instance.exports.base64_ng_wasm_runtime_smoke();

@@ -1,0 +1,26 @@
+# WHATWG Infra Standard forgiving-base64 decode fixtures.
+# Source: https://infra.spec.whatwg.org/#forgiving-base64
+# Format: UTF-8 input bytes as hex | decoded bytes as hex, or ERROR.
+|
+5a673d3d | 66
+5a67 | 66
+5a68 | 66
+5951 | 61
+5952 | 61
+5a6d383d | 666f
+5a6d38 | 666f
+5a6d3976 | 666f6f
+205a09670a3d0c3d0d20 | 66
+41413d3d | 00
+41413d3d090a0c0d20 | 00
+2b2f2f2f | fbffff
+5a | ERROR
+5a673d | ERROR
+5a673d3d3d | ERROR
+5a3d673d | ERROR
+3d5a673d | ERROR
+5a673d3d41 | ERROR
+41412d41 | ERROR
+41415f41 | ERROR
+5a67c3a9 | ERROR
+5a670b3d3d | ERROR

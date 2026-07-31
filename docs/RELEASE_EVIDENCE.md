@@ -485,6 +485,24 @@ panics. Formatter tests distinguish fully successful calls from possible
 partial mutation inside the failing call. These are bounded execution tests,
 not whole-program allocation or foreign-sink proofs.
 
+## WHATWG And Expert Compatibility Evidence
+
+Run the Commit 16 core, exact-pinned compatibility, wasm, and locally
+available browser evidence with:
+
+```sh
+scripts/check-2.0-web-forgiving.sh --browsers
+```
+
+The locked fixture corpus is executed through Rust one-shot and every-split
+incremental decoding, Rust wasm, and browser-native `atob`. Browser scripts
+cover Node/V8, Chromium/Blink, Firefox/SpiderMonkey, and Safari/WebKit when the
+corresponding runtime is installed. A skipped runtime is not execution
+evidence and must be identified as such in the release record. Expert ordinary
+policies are compared with exact-pinned `base64` 0.23.0 and an independent
+bit-level oracle. This is interoperability evidence, not a timing or secret
+processing claim.
+
 ## Constant-Time Timing Evidence
 
 The standard local gate, normal CI gate, and release gate compile the isolated

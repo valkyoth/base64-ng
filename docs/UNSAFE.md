@@ -1380,6 +1380,14 @@ Limitations:
   guarantee. wasm32 cleanup remains governed by the separate fail-closed
   best-effort wipe policy and `allow-wasm32-best-effort-wipe` opt-in.
 
+## 2.0 Web Compatibility Boundary
+
+Commit 16 adds no unsafe code. `web::FORGIVING` is a safe-Rust ordinary parser
+with fixed quantum arrays, checked source-length arithmetic, opaque malformed
+input failure, and transactional one-shot destination writes. Its browser
+evidence does not upgrade it to a constant-time, zeroizing, or secret-capable
+surface. Expert `compat` presets reuse the safe ordinary codec core.
+
 ## Admission Rule
 
 Unsafe SIMD can become an active backend only after scalar differential tests,

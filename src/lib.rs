@@ -30,6 +30,9 @@
 //! in-place decode requires byte-disjoint private staging.
 //! Allocation-free display, exact counted sinks, rollback-capable append, and
 //! synthesized encoded chunk iteration share the same validated codec values.
+//! Exact WHATWG decoding is separately named [`web::FORGIVING`]. Expert
+//! padding-indifferent and noncanonical-bit policies live under [`compat`]
+//! and never become strict or secret defaults.
 //!
 //! # Examples
 //!
@@ -180,6 +183,7 @@ pub use v2::{
     StrictStandardPadded, StrictStandardUnpadded, StrictUrlSafePadded, StrictUrlSafeUnpadded,
     TerminalError, TrailingBits, ValidatedAlphabet, ValidatedAlphabetError,
 };
+pub use v2::{compat, web};
 mod wrap;
 
 pub use alphabet::{

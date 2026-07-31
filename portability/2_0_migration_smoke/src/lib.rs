@@ -5,7 +5,7 @@ mod tests {
     use base64_ng::{
         Base64, Codec, CodecSettings, DecodeError, DecodedArray, EncodeError, EncodedArray,
         Engine, LineEnding, LineWrap, MIME, Profile, SecretArray, SecretBuffer,
-        StrictStandardPadded, STANDARD, STRICT_STANDARD_PADDED, Standard,
+        StrictStandardPadded, STANDARD, STRICT_STANDARD_PADDED, Standard, compat, web,
     };
 
     const CONST_ENCODED: [u8; 8] = match STRICT_STANDARD_PADDED.encode_array(b"hello") {
@@ -228,5 +228,17 @@ mod tests {
             .map(|chunk| chunk.as_bytes().to_vec())
             .collect::<Vec<_>>();
         assert_eq!(chunks, [b"aGVs".as_slice(), b"bG8="].map(<[u8]>::to_vec));
+    }
+
+    #[test]
+    fn web_and_expert_compatibility_surfaces_are_explicit() {
+        assert_eq!(web::FORGIVING.decode_to_vec(" Z h = = ").unwrap(), b"f");
+        assert_eq!(
+            compat::STANDARD_PADDED_PADDING_INDIFFERENT
+                .decode_to_vec(b"Zg")
+                .unwrap(),
+            b"f"
+        );
+        assert!(STRICT_STANDARD_PADDED.decode_to_vec(b"Zg").is_err());
     }
 }

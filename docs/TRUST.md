@@ -24,6 +24,7 @@ stable release.
 | Miri | Release gate runs Miri when nightly Miri is installed and writes evidence artifacts | `scripts/check_miri.sh`, `target/release-evidence/miri/` |
 | AddressSanitizer | Commit 14 in-place cursor, overlap, and staged-secret suites run under nightly AddressSanitizer | `scripts/check-2.0-in-place-sanitizers.sh`, `target/release-evidence/2.0-in-place-sanitizers/` |
 | Formatting and append | Allocation-free formatting is counter-tested; append rollback is error- and unwind-injected; formatter partial mutation is explicitly prefix-committing | `scripts/check-2.0-format-append-chunks.sh`, `docs/2.0_FORMAT_APPEND_CHUNKS.md` |
+| WHATWG compatibility | `web::FORGIVING` is an ordinary, exact WHATWG decoder with opaque content errors; expert padding/trailing-bit policies remain separately named and ineligible for secret processing | `scripts/check-2.0-web-forgiving.sh`, `docs/2.0_WEB_FORGIVING_BASE64.md` |
 | Kani | 28 bounded no-default-features harnesses verify cleanly with the Rust `1.90.0` Kani toolchain and `cargo-kani 0.67.0`; incompatible future verifier/toolchain pairs must skip explicitly rather than pretending to prove. | `scripts/check_kani.sh`, `docs/KANI.md` |
 | Bounds invariants | Remaining internal indexing is grouped by documented local invariants | `docs/INVARIANTS.md` |
 | Audit | RustSec and cargo-deny advisory checks required on every change and daily while the repository is dormant | `cargo audit`, `scripts/checks.sh`, `scripts/check_scheduled_advisories.sh`, scheduled security-audit workflow |

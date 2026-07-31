@@ -9,6 +9,7 @@ mod append;
 mod backend_health;
 mod bounded;
 mod chunks;
+pub mod compat;
 mod const_transforms;
 #[allow(dead_code)]
 pub(crate) mod contracts;
@@ -27,6 +28,7 @@ mod secret;
 mod secret_in_place;
 #[allow(dead_code)]
 pub(crate) mod specifications;
+pub mod web;
 #[allow(dead_code)]
 mod wrapping;
 
@@ -82,5 +84,9 @@ mod rfc4648_oracle;
 mod secret_in_place_tests;
 #[cfg(test)]
 mod specification_tests;
+#[cfg(test)]
+mod web_no_alloc_tests;
+#[cfg(test)]
+mod web_tests;
 #[cfg(test)]
 mod wrapping_tests;

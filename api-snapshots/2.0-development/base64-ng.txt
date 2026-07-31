@@ -1,4 +1,17 @@
 pub mod base64_ng
+pub mod base64_ng::compat
+pub const base64_ng::compat::STANDARD_PADDED_ALLOW_NONCANONICAL_TRAILING_BITS: base64_ng::Base64<base64_ng::RuntimeSpec>
+pub const base64_ng::compat::STANDARD_PADDED_FULL_COMPATIBILITY: base64_ng::Base64<base64_ng::RuntimeSpec>
+pub const base64_ng::compat::STANDARD_PADDED_PADDING_INDIFFERENT: base64_ng::Base64<base64_ng::RuntimeSpec>
+pub const base64_ng::compat::STANDARD_UNPADDED_ALLOW_NONCANONICAL_TRAILING_BITS: base64_ng::Base64<base64_ng::RuntimeSpec>
+pub const base64_ng::compat::STANDARD_UNPADDED_FULL_COMPATIBILITY: base64_ng::Base64<base64_ng::RuntimeSpec>
+pub const base64_ng::compat::STANDARD_UNPADDED_PADDING_INDIFFERENT: base64_ng::Base64<base64_ng::RuntimeSpec>
+pub const base64_ng::compat::URL_SAFE_PADDED_ALLOW_NONCANONICAL_TRAILING_BITS: base64_ng::Base64<base64_ng::RuntimeSpec>
+pub const base64_ng::compat::URL_SAFE_PADDED_FULL_COMPATIBILITY: base64_ng::Base64<base64_ng::RuntimeSpec>
+pub const base64_ng::compat::URL_SAFE_PADDED_PADDING_INDIFFERENT: base64_ng::Base64<base64_ng::RuntimeSpec>
+pub const base64_ng::compat::URL_SAFE_UNPADDED_ALLOW_NONCANONICAL_TRAILING_BITS: base64_ng::Base64<base64_ng::RuntimeSpec>
+pub const base64_ng::compat::URL_SAFE_UNPADDED_FULL_COMPATIBILITY: base64_ng::Base64<base64_ng::RuntimeSpec>
+pub const base64_ng::compat::URL_SAFE_UNPADDED_PADDING_INDIFFERENT: base64_ng::Base64<base64_ng::RuntimeSpec>
 pub mod base64_ng::ct
 pub struct base64_ng::ct::CtEngine<A, const PAD: bool>
 impl<A, const PAD: bool> base64_ng::ct::CtEngine<A, PAD> where A: base64_ng::Alphabet
@@ -332,6 +345,72 @@ impl<R, A, const PAD: bool> core::ops::drop::Drop for base64_ng::stream::Encoder
 pub fn base64_ng::stream::EncoderReader<R, A, PAD>::drop(&mut self)
 impl<R, A, const PAD: bool> std::io::Read for base64_ng::stream::EncoderReader<R, A, PAD> where R: std::io::Read, A: base64_ng::Alphabet
 pub fn base64_ng::stream::EncoderReader<R, A, PAD>::read(&mut self, &mut [u8]) -> core::io::error::Result<usize>
+pub mod base64_ng::web
+#[non_exhaustive] pub enum base64_ng::web::ForgivingError
+pub base64_ng::web::ForgivingError::AllocationFailed
+pub base64_ng::web::ForgivingError::AllocationFailed::requested: usize
+pub base64_ng::web::ForgivingError::AllocationLimitExceeded
+pub base64_ng::web::ForgivingError::AllocationLimitExceeded::limit: usize
+pub base64_ng::web::ForgivingError::AllocationLimitExceeded::required: usize
+pub base64_ng::web::ForgivingError::InputAfterComplete
+pub base64_ng::web::ForgivingError::InputAfterFinish
+pub base64_ng::web::ForgivingError::InvalidInput
+pub base64_ng::web::ForgivingError::OutputTooSmall
+pub base64_ng::web::ForgivingError::OutputTooSmall::available: usize
+pub base64_ng::web::ForgivingError::OutputTooSmall::required: usize
+pub base64_ng::web::ForgivingError::PositionOverflow
+impl core::clone::Clone for base64_ng::web::ForgivingError
+pub fn base64_ng::web::ForgivingError::clone(&self) -> base64_ng::web::ForgivingError
+impl core::cmp::Eq for base64_ng::web::ForgivingError
+impl core::cmp::PartialEq for base64_ng::web::ForgivingError
+pub fn base64_ng::web::ForgivingError::eq(&self, &base64_ng::web::ForgivingError) -> bool
+impl core::error::Error for base64_ng::web::ForgivingError
+impl core::fmt::Debug for base64_ng::web::ForgivingError
+pub fn base64_ng::web::ForgivingError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for base64_ng::web::ForgivingError
+pub fn base64_ng::web::ForgivingError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng::web::ForgivingError
+pub fn base64_ng::web::ForgivingError::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng::web::ForgivingError
+impl core::marker::StructuralPartialEq for base64_ng::web::ForgivingError
+pub struct base64_ng::web::ForgivingBase64
+impl base64_ng::web::ForgivingBase64
+pub fn base64_ng::web::ForgivingBase64::decode_into(self, &str, &mut [u8]) -> core::result::Result<usize, base64_ng::web::ForgivingError>
+pub fn base64_ng::web::ForgivingBase64::decoded_len(self, &str) -> core::result::Result<usize, base64_ng::web::ForgivingError>
+pub fn base64_ng::web::ForgivingBase64::validate(self, &str) -> core::result::Result<(), base64_ng::web::ForgivingError>
+impl base64_ng::web::ForgivingBase64
+pub fn base64_ng::web::ForgivingBase64::decode_to_vec(self, &str) -> core::result::Result<alloc::vec::Vec<u8>, base64_ng::web::ForgivingError>
+pub fn base64_ng::web::ForgivingBase64::decode_to_vec_with_limit(self, &str, usize) -> core::result::Result<alloc::vec::Vec<u8>, base64_ng::web::ForgivingError>
+impl base64_ng::web::ForgivingBase64
+pub const fn base64_ng::web::ForgivingBase64::decoder(self) -> base64_ng::web::ForgivingDecoder
+impl core::clone::Clone for base64_ng::web::ForgivingBase64
+pub fn base64_ng::web::ForgivingBase64::clone(&self) -> base64_ng::web::ForgivingBase64
+impl core::cmp::Eq for base64_ng::web::ForgivingBase64
+impl core::cmp::PartialEq for base64_ng::web::ForgivingBase64
+pub fn base64_ng::web::ForgivingBase64::eq(&self, &base64_ng::web::ForgivingBase64) -> bool
+impl core::default::Default for base64_ng::web::ForgivingBase64
+pub fn base64_ng::web::ForgivingBase64::default() -> base64_ng::web::ForgivingBase64
+impl core::fmt::Debug for base64_ng::web::ForgivingBase64
+pub fn base64_ng::web::ForgivingBase64::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng::web::ForgivingBase64
+pub fn base64_ng::web::ForgivingBase64::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng::web::ForgivingBase64
+impl core::marker::StructuralPartialEq for base64_ng::web::ForgivingBase64
+pub struct base64_ng::web::ForgivingDecoder
+impl base64_ng::web::ForgivingDecoder
+pub fn base64_ng::web::ForgivingDecoder::finish(&mut self, &mut [u8]) -> core::result::Result<base64_ng::Step, base64_ng::web::ForgivingError>
+pub fn base64_ng::web::ForgivingDecoder::reset(&mut self)
+pub const fn base64_ng::web::ForgivingDecoder::source_position(&self) -> usize
+pub fn base64_ng::web::ForgivingDecoder::update(&mut self, &str, &mut [u8]) -> core::result::Result<base64_ng::Step, base64_ng::web::ForgivingError>
+impl core::clone::Clone for base64_ng::web::ForgivingDecoder
+pub fn base64_ng::web::ForgivingDecoder::clone(&self) -> base64_ng::web::ForgivingDecoder
+impl core::cmp::Eq for base64_ng::web::ForgivingDecoder
+impl core::cmp::PartialEq for base64_ng::web::ForgivingDecoder
+pub fn base64_ng::web::ForgivingDecoder::eq(&self, &base64_ng::web::ForgivingDecoder) -> bool
+impl core::fmt::Debug for base64_ng::web::ForgivingDecoder
+pub fn base64_ng::web::ForgivingDecoder::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for base64_ng::web::ForgivingDecoder
+pub const base64_ng::web::FORGIVING: base64_ng::web::ForgivingBase64
 pub macro base64_ng::define_alphabet!
 pub enum base64_ng::AlphabetError
 pub base64_ng::AlphabetError::DuplicateByte

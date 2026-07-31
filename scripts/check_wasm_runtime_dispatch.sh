@@ -50,7 +50,7 @@ EOF
 
 cat >"$smoke_dir/src/lib.rs" <<'EOF'
 use base64_ng::runtime::{Backend, backend_report};
-use base64_ng::{STANDARD, URL_SAFE_NO_PAD};
+use base64_ng::{STANDARD, URL_SAFE_NO_PAD, web};
 
 const MAX_INPUT: usize = 200;
 const MAX_ENCODED: usize = 272;
@@ -84,7 +84,31 @@ fn run() -> Result<(), i32> {
     }
 
     check_rejects_malformed()?;
+    check_forgiving_web()?;
 
+    Ok(())
+}
+
+fn check_forgiving_web() -> Result<(), i32> {
+    let valid = [
+        ("Zg==", b"f".as_slice()),
+        ("Zg", b"f".as_slice()),
+        ("Zh", b"f".as_slice()),
+        (" Z\tg\n=\x0c=\r ", b"f".as_slice()),
+        ("Zm9v", b"foo".as_slice()),
+    ];
+    for (input, expected) in valid {
+        let mut output = [0x55u8; 8];
+        let written = web::FORGIVING.decode_into(input, &mut output).map_err(|_| 13)?;
+        if &output[..written] != expected {
+            return Err(14);
+        }
+    }
+    for input in ["Z", "Zg=", "Zg===", "Z=g=", "AA-A"] {
+        if web::FORGIVING.decode_into(input, &mut [0x55; 8]).is_ok() {
+            return Err(15);
+        }
+    }
     Ok(())
 }
 
@@ -224,10 +248,32 @@ RUSTFLAGS='-C target-feature=+simd128' \
 
 if command -v node >/dev/null 2>&1; then
     echo "wasm runtime dispatch: running Node/V8 smoke"
-    node - "$wasm_file" <<'EOF'
+    node - "$wasm_file" "tests/fixtures/whatwg-forgiving-base64.txt" <<'EOF'
 const fs = require("fs");
 const wasm = fs.readFileSync(process.argv[2]);
+const fixtureLines = fs.readFileSync(process.argv[3], "utf8").split(/\r?\n/);
+
+function verifyForgivingFixtures() {
+  for (const line of fixtureLines) {
+    if (line.startsWith("#") || !line.includes("|")) continue;
+    const [inputHex, expectedText] = line.split("|", 2);
+    const input = Buffer.from(inputHex.trim(), "hex").toString("utf8");
+    const expected = expectedText.trim() === "ERROR" ? null : expectedText.trim();
+    let actual = null;
+    let failed = false;
+    try {
+      actual = Buffer.from(atob(input), "latin1").toString("hex");
+    } catch (_) {
+      failed = true;
+    }
+    if ((expected === null) !== failed || (!failed && actual !== expected)) {
+      throw new Error(`Node/V8 forgiving fixture mismatch: ${line}`);
+    }
+  }
+}
+
 WebAssembly.instantiate(wasm, {}).then(({ instance }) => {
+  verifyForgivingFixtures();
   const result = instance.exports.base64_ng_wasm_runtime_smoke();
   if (result !== 0) {
     console.error(`Node/V8 wasm smoke failed with code ${result}`);

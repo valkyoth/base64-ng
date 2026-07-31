@@ -7,6 +7,14 @@ wasm_file="$smoke_dir/target/$wasm_target/release/base64_ng_wasm_runtime_smoke.w
 html_file="$smoke_dir/browser-smoke.html"
 browser_output="$smoke_dir/browser-smoke-output.html"
 success_marker='data-base64-ng-wasm-smoke="pass"'
+browser_profile=""
+
+cleanup() {
+    if [ -n "$browser_profile" ] && [ -d "$browser_profile" ]; then
+        rm -rf "$browser_profile"
+    fi
+}
+trap cleanup EXIT HUP INT TERM
 
 find_browser() {
     if [ -n "${BASE64_NG_BROWSER:-}" ]; then
@@ -52,6 +60,7 @@ if [ -z "$browser_bin" ]; then
 fi
 
 wasm_base64="$(base64 <"$wasm_file" | tr -d '\n')"
+forgiving_fixtures="$(python3 scripts/whatwg_forgiving_fixtures.py)"
 
 cat >"$html_file" <<EOF
 <!doctype html>
@@ -61,6 +70,38 @@ cat >"$html_file" <<EOF
 <pre id="result">pending</pre>
 <script>
 const wasmBase64 = "$wasm_base64";
+const forgivingFixtures = $forgiving_fixtures;
+
+function hexToString(hex) {
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let index = 0; index < bytes.length; index += 1) {
+    bytes[index] = Number.parseInt(hex.slice(index * 2, index * 2 + 2), 16);
+  }
+  return new TextDecoder("utf-8", {fatal: true}).decode(bytes);
+}
+
+function bytesToHex(input) {
+  let output = "";
+  for (let index = 0; index < input.length; index += 1) {
+    output += input.charCodeAt(index).toString(16).padStart(2, "0");
+  }
+  return output;
+}
+
+function verifyForgivingFixtures() {
+  for (const [inputHex, expected] of forgivingFixtures) {
+    let actual = null;
+    let failed = false;
+    try {
+      actual = bytesToHex(atob(hexToString(inputHex)));
+    } catch (_) {
+      failed = true;
+    }
+    if ((expected === null) !== failed || (!failed && actual !== expected)) {
+      throw new Error("Chromium forgiving fixture mismatch: " + inputHex);
+    }
+  }
+}
 
 function decodeBase64(input) {
   const binary = atob(input);
@@ -72,6 +113,7 @@ function decodeBase64(input) {
 }
 
 try {
+  verifyForgivingFixtures();
   const module = new WebAssembly.Module(decodeBase64(wasmBase64));
   const instance = new WebAssembly.Instance(module, {});
   const result = instance.exports.base64_ng_wasm_runtime_smoke();
@@ -102,11 +144,13 @@ case "$html_file" in
 esac
 
 echo "wasm browser dispatch: running Chromium-family browser smoke with $browser_bin"
+browser_profile="$(mktemp -d "$smoke_dir/chromium-profile.XXXXXX")"
 "$browser_bin" \
     --headless=new \
     --disable-gpu \
     --no-sandbox \
     --disable-dev-shm-usage \
+    --user-data-dir="$browser_profile" \
     --dump-dom \
     "$html_url" >"$browser_output" 2>&1
 

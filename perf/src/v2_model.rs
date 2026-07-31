@@ -11,6 +11,7 @@ mod tests {
     use base64::alphabet::Alphabet;
     use base64::engine::DecodePaddingMode;
     use base64::engine::general_purpose::{GeneralPurpose, GeneralPurposeConfig};
+    use base64_ng::{CodecSettings as PublicCodecSettings, compat};
 
     use super::specifications::{
         CodecBuilder, DecodePadding, EncodePadding, STRICT_STANDARD_PADDED,
@@ -220,6 +221,55 @@ mod tests {
         }
     }
 
+    #[test]
+    fn named_compatibility_presets_match_pinned_base64() {
+        let presets = [
+            compat::STANDARD_PADDED_PADDING_INDIFFERENT,
+            compat::STANDARD_UNPADDED_PADDING_INDIFFERENT,
+            compat::STANDARD_PADDED_ALLOW_NONCANONICAL_TRAILING_BITS,
+            compat::STANDARD_UNPADDED_ALLOW_NONCANONICAL_TRAILING_BITS,
+            compat::STANDARD_PADDED_FULL_COMPATIBILITY,
+            compat::STANDARD_UNPADDED_FULL_COMPATIBILITY,
+            compat::URL_SAFE_PADDED_PADDING_INDIFFERENT,
+            compat::URL_SAFE_UNPADDED_PADDING_INDIFFERENT,
+            compat::URL_SAFE_PADDED_ALLOW_NONCANONICAL_TRAILING_BITS,
+            compat::URL_SAFE_UNPADDED_ALLOW_NONCANONICAL_TRAILING_BITS,
+            compat::URL_SAFE_PADDED_FULL_COMPATIBILITY,
+            compat::URL_SAFE_UNPADDED_FULL_COMPATIBILITY,
+        ];
+        let corpus = [
+            &b""[..],
+            &b"Z"[..],
+            &b"Zg"[..],
+            &b"Zh"[..],
+            &b"Zg="[..],
+            &b"Zh="[..],
+            &b"Zg=="[..],
+            &b"Zh=="[..],
+            &b"Zg==="[..],
+            &b"Zm8"[..],
+            &b"Zm9"[..],
+            &b"Zm8="[..],
+            &b"Zm9="[..],
+            &b"AA-A"[..],
+            &b"AA_A"[..],
+            &b"AA+A"[..],
+            &b"AA/A"[..],
+        ];
+
+        for codec in presets {
+            let external = external_public_engine(codec.settings());
+            for input in corpus {
+                assert_eq!(
+                    codec.decode_to_vec(input).ok(),
+                    external.decode(input).ok(),
+                    "settings={:?}, input={input:?}",
+                    codec.settings()
+                );
+            }
+        }
+    }
+
     fn external_engine(settings: super::specifications::CodecSettings) -> GeneralPurpose {
         let table = core::str::from_utf8(settings.alphabet().as_array()).unwrap();
         let alphabet = Alphabet::new(table).unwrap();
@@ -232,6 +282,24 @@ mod tests {
             })
             .with_decode_allow_trailing_bits(
                 settings.trailing_bits() == TrailingBits::AllowNonCanonical,
+            );
+        GeneralPurpose::new(&alphabet, config)
+    }
+
+    fn external_public_engine(settings: PublicCodecSettings) -> GeneralPurpose {
+        let table = core::str::from_utf8(settings.alphabet().as_array()).unwrap();
+        let alphabet = Alphabet::new(table).unwrap();
+        let config = GeneralPurposeConfig::new()
+            .with_encode_padding(settings.encode_padding() == base64_ng::EncodePadding::Padded)
+            .with_decode_padding_mode(match settings.decode_padding() {
+                base64_ng::DecodePadding::RequireCanonical => {
+                    DecodePaddingMode::RequireCanonical
+                }
+                base64_ng::DecodePadding::Forbid => DecodePaddingMode::RequireNone,
+                base64_ng::DecodePadding::Indifferent => DecodePaddingMode::Indifferent,
+            })
+            .with_decode_allow_trailing_bits(
+                settings.trailing_bits() == base64_ng::TrailingBits::AllowNonCanonical,
             );
         GeneralPurpose::new(&alphabet, config)
     }
