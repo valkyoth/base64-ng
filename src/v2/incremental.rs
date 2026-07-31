@@ -76,12 +76,8 @@ impl EncoderState {
 
     /// Emits the canonical final tail and completes the current message.
     pub(crate) fn finish(&mut self, output: &mut [u8]) -> Result<Step, OperationError> {
-        match self.lifecycle.need_input(Progress::ZERO) {
-            Ok(_) => {}
-            Err(OperationError::Terminal(_)) => {
-                return self.lifecycle.finish(Progress::ZERO);
-            }
-            Err(error) => return Err(error),
+        if self.lifecycle.begin_finish()? {
+            return self.lifecycle.finish(Progress::ZERO);
         }
 
         let mut produced = self.drain_pending(output);

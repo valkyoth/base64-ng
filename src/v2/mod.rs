@@ -14,6 +14,8 @@ pub(crate) mod contracts;
 pub(crate) mod incremental;
 #[allow(dead_code)]
 pub(crate) mod incremental_decoder;
+#[allow(dead_code)]
+mod lifecycle;
 mod ordinary;
 mod secret;
 #[allow(dead_code)]
@@ -29,6 +31,8 @@ mod contract_tests;
 mod fixtures;
 #[cfg(test)]
 mod incremental_decoder_tests;
+#[cfg(test)]
+mod incremental_decoder_unpadded_tests;
 #[cfg(test)]
 mod incremental_encoder_tests;
 #[cfg(test)]

@@ -1,4 +1,4 @@
-//! Heapless strict padded incremental ordinary decoding.
+//! Heapless strict incremental ordinary decoding.
 
 use core::num::NonZeroUsize;
 
@@ -6,13 +6,16 @@ use super::{
     contracts::{
         BackendFault, Failure, InputError, Lifecycle, OperationError, Progress, SourceSpan, Step,
     },
-    specifications::{Base64, CodecSettings, StrictStandardPadded, StrictUrlSafePadded},
+    specifications::{
+        Base64, CodecSettings, DecodePadding, StrictStandardPadded, StrictStandardUnpadded,
+        StrictUrlSafePadded, StrictUrlSafeUnpadded,
+    },
 };
 
 const INPUT_QUANTUM: usize = 4;
 const OUTPUT_QUANTUM: usize = 3;
 
-/// Heapless strict padded Base64 decoder state.
+/// Heapless strict Base64 decoder state.
 ///
 /// The current input quantum and pending output quantum are mutually
 /// exclusive. This keeps retry state bounded while allowing one-byte output
@@ -44,6 +47,11 @@ impl DecoderState {
             terminal_padding: false,
             lifecycle: Lifecycle::new(),
         }
+    }
+
+    /// Constructs a decoder whose caller selected strict unpadded decoding.
+    pub(crate) const fn new_unpadded(settings: CodecSettings) -> Self {
+        Self::new_padded(settings)
     }
 
     /// Accepts a strict padded input prefix and writes decoded output that fits.
@@ -92,28 +100,54 @@ impl DecoderState {
         }
     }
 
-    /// Declares end of input and rejects an incomplete padded quantum.
+    /// Declares end of input and resolves the selected padding policy.
     pub(crate) fn finish(&mut self, output: &mut [u8]) -> Result<Step, OperationError> {
-        match self.lifecycle.need_input(Progress::ZERO) {
-            Ok(_) => {}
-            Err(OperationError::Terminal(_)) => {
-                return self.lifecycle.finish(Progress::ZERO);
-            }
-            Err(error) => return Err(error),
+        if self.lifecycle.begin_finish()? {
+            return self.lifecycle.finish(Progress::ZERO);
         }
 
-        let produced = self.drain_pending(output);
-        let progress = Progress::new(0, produced);
+        let mut produced = self.drain_pending(output);
         if self.pending_len != 0 {
-            return self.lifecycle.output_full(progress, NonZeroUsize::MIN);
+            return self
+                .lifecycle
+                .output_full(Progress::new(0, produced), NonZeroUsize::MIN);
         }
         if self.quantum_len != 0 {
-            let failure = Failure::Input(InputError::TruncatedInput {
-                index: self.lifecycle.source_position(),
-            });
-            return Err(self.lifecycle.fail(failure));
+            let decoded = match self.settings.decode_padding() {
+                DecodePadding::RequireCanonical => {
+                    let failure = Failure::Input(InputError::TruncatedInput {
+                        index: self.lifecycle.source_position(),
+                    });
+                    return Err(self.lifecycle.fail(failure));
+                }
+                DecodePadding::Forbid => {
+                    match decode_unpadded_tail(
+                        self.settings,
+                        &self.quantum[..self.quantum_len],
+                        &self.quantum_indexes[..self.quantum_len],
+                    ) {
+                        Ok(decoded) => decoded,
+                        Err(error) => return Err(self.lifecycle.fail(Failure::Input(error))),
+                    }
+                }
+                DecodePadding::Indifferent => {
+                    return Err(self
+                        .lifecycle
+                        .fail(Failure::Backend(BackendFault::ImpossibleState)));
+                }
+            };
+            self.pending = decoded.bytes;
+            self.pending_start = 0;
+            self.pending_len = decoded.len;
+            self.quantum_len = 0;
+            produced += self.drain_pending(&mut output[produced..]);
+            if self.pending_len != 0 {
+                return self
+                    .lifecycle
+                    .output_full(Progress::new(0, produced), NonZeroUsize::MIN);
+            }
         }
-        self.lifecycle.finish(progress)
+        self.lifecycle.finish(Progress::new(0, produced))
     }
 
     /// Resets the state for one unrelated ordinary message.
@@ -138,6 +172,9 @@ impl DecoderState {
         output_len: usize,
         span: SourceSpan,
     ) -> Result<usize, Failure> {
+        if matches!(self.settings.decode_padding(), DecodePadding::Indifferent) {
+            return Err(Failure::Backend(BackendFault::ImpossibleState));
+        }
         let pending_written = self.pending_len.min(output_len);
         let mut pending = self.pending_len - pending_written;
         if pending != 0 {
@@ -208,8 +245,10 @@ impl DecoderState {
             && self.pending_len <= OUTPUT_QUANTUM
             && self.pending_start + self.pending_len <= OUTPUT_QUANTUM
             && !(self.quantum_len != 0 && self.pending_len != 0)
-            && self.settings.decode_padding()
-                == super::specifications::DecodePadding::RequireCanonical
+            && matches!(
+                self.settings.decode_padding(),
+                DecodePadding::RequireCanonical | DecodePadding::Forbid
+            )
             && self.settings.trailing_bits()
                 == super::specifications::TrailingBits::RequireCanonical
     }
@@ -229,6 +268,20 @@ impl Base64<StrictUrlSafePadded> {
     }
 }
 
+impl Base64<StrictStandardUnpadded> {
+    /// Constructs a fresh strict Standard unpadded decoder.
+    pub(crate) fn decoder(self) -> DecoderState {
+        DecoderState::new_unpadded(self.settings())
+    }
+}
+
+impl Base64<StrictUrlSafeUnpadded> {
+    /// Constructs a fresh strict URL-safe unpadded decoder.
+    pub(crate) fn decoder(self) -> DecoderState {
+        DecoderState::new_unpadded(self.settings())
+    }
+}
+
 #[derive(Clone, Copy)]
 struct DecodedQuantum {
     bytes: [u8; OUTPUT_QUANTUM],
@@ -244,6 +297,9 @@ fn validate_partial_symbol(
     byte: u8,
     index: usize,
 ) -> Result<(), InputError> {
+    if matches!(settings.decode_padding(), DecodePadding::Forbid) {
+        return decode_symbol(settings, byte, index).map(|_| ());
+    }
     match position {
         0 | 1 => decode_symbol(settings, byte, index).map(|_| ()),
         2 => {
@@ -274,6 +330,20 @@ fn decode_quantum(
 ) -> Result<DecodedQuantum, InputError> {
     let first = decode_symbol(settings, input[0], indexes[0])?;
     let second = decode_symbol(settings, input[1], indexes[1])?;
+
+    if matches!(settings.decode_padding(), DecodePadding::Forbid) {
+        let third = decode_symbol(settings, input[2], indexes[2])?;
+        let fourth = decode_symbol(settings, input[3], indexes[3])?;
+        return Ok(DecodedQuantum {
+            bytes: [
+                (first << 2) | (second >> 4),
+                (second << 4) | (third >> 2),
+                (third << 6) | fourth,
+            ],
+            len: 3,
+            terminal_padding: false,
+        });
+    }
 
     match (input[2], input[3]) {
         (b'=', b'=') => {
@@ -315,6 +385,45 @@ fn decode_quantum(
                 terminal_padding: false,
             })
         }
+    }
+}
+
+fn decode_unpadded_tail(
+    settings: CodecSettings,
+    input: &[u8],
+    indexes: &[usize],
+) -> Result<DecodedQuantum, InputError> {
+    match input {
+        [first, second] => {
+            let first = decode_symbol(settings, *first, indexes[0])?;
+            let second = decode_symbol(settings, *second, indexes[1])?;
+            if second & 0x0f != 0 {
+                return Err(InputError::NonCanonicalTrailingBits { index: indexes[1] });
+            }
+            Ok(DecodedQuantum {
+                bytes: [(first << 2) | (second >> 4), 0, 0],
+                len: 1,
+                terminal_padding: false,
+            })
+        }
+        [first, second, third] => {
+            let first = decode_symbol(settings, *first, indexes[0])?;
+            let second = decode_symbol(settings, *second, indexes[1])?;
+            let third = decode_symbol(settings, *third, indexes[2])?;
+            if third & 0x03 != 0 {
+                return Err(InputError::NonCanonicalTrailingBits { index: indexes[2] });
+            }
+            Ok(DecodedQuantum {
+                bytes: [
+                    (first << 2) | (second >> 4),
+                    (second << 4) | (third >> 2),
+                    0,
+                ],
+                len: 2,
+                terminal_padding: false,
+            })
+        }
+        _ => Err(InputError::InvalidLength),
     }
 }
 

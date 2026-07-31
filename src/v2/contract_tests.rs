@@ -85,6 +85,31 @@ fn output_full_is_retryable_and_finish_is_idempotent() {
 }
 
 #[test]
+fn beginning_finish_closes_input_while_output_remains_retryable() {
+    let mut state = Lifecycle::new();
+    let span = state.reserve_input(2).unwrap();
+    state.commit_input(span, 2).unwrap();
+    assert!(!state.begin_finish().unwrap());
+    assert!(!state.begin_finish().unwrap());
+    assert_eq!(
+        state.reserve_input(0),
+        Err(OperationError::Terminal(TerminalError::InputAfterFinish))
+    );
+    assert_eq!(
+        state
+            .output_full(Progress::ZERO, NonZeroUsize::MIN)
+            .unwrap()
+            .status(),
+        Status::OutputFull(super::contracts::OutputFull::new(NonZeroUsize::MIN))
+    );
+    assert_eq!(
+        state.finish(Progress::ZERO).unwrap().status(),
+        Status::Complete
+    );
+    assert!(state.begin_finish().unwrap());
+}
+
+#[test]
 fn malformed_and_backend_failures_are_absorbing_until_reset() {
     let malformed = Failure::Input(InputError::InvalidByte {
         index: 7,

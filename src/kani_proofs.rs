@@ -4,7 +4,7 @@ use super::{
     v2::{
         alphabet::{ValidatedAlphabetError, validate_position_for_proof},
         contracts::Status,
-        specifications::STRICT_STANDARD_PADDED,
+        specifications::{STRICT_STANDARD_PADDED, STRICT_STANDARD_UNPADDED},
     },
     validate_tail_unpadded,
 };
@@ -267,6 +267,38 @@ fn incremental_padded_decoder_progress_and_retry_are_bounded() {
     assert!(retry.progress().input_consumed() == 0);
     assert!(retry.progress().output_produced() == 1);
     assert!(retry_decoder.proof_invariants());
+}
+
+#[kani::proof]
+#[kani::unwind(12)]
+fn incremental_unpadded_decoder_finish_and_retry_are_bounded() {
+    let input = *b"AAA";
+    let input_len = 2 + usize::from(kani::any::<u8>() % 2);
+    let mut decoder = STRICT_STANDARD_UNPADDED.decoder();
+    let update = decoder
+        .update(&input[..input_len], &mut [])
+        .expect("a partial canonical unpadded tail cannot fail before finish");
+    assert!(update.progress().input_consumed() == input_len);
+    assert!(update.progress().output_produced() == 0);
+
+    let mut output = kani::any::<[u8; 2]>();
+    let output_len = usize::from(kani::any::<u8>() % 3);
+    let finish = decoder
+        .finish(&mut output[..output_len])
+        .expect("zero-valued tail symbols are canonical");
+    assert!(finish.progress().input_consumed() == 0);
+    assert!(finish.progress().output_produced() <= output_len);
+    assert!(decoder.proof_invariants());
+
+    if matches!(finish.status(), Status::OutputFull(_)) {
+        let mut retry_output = [0_u8; 1];
+        let retry = decoder
+            .finish(&mut retry_output)
+            .expect("one byte must drain pending final output");
+        assert!(retry.progress().input_consumed() == 0);
+        assert!(retry.progress().output_produced() == 1);
+        assert!(decoder.proof_invariants());
+    }
 }
 
 #[kani::proof]

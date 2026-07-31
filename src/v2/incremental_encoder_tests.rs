@@ -123,6 +123,24 @@ fn final_tails_retry_one_byte_at_a_time_for_padded_and_unpadded_codecs() {
 }
 
 #[test]
+fn finish_closes_encoder_input_before_pending_output_drains() {
+    let mut state = STRICT_STANDARD_PADDED.encoder();
+    state.update(b"f", &mut []).unwrap();
+    let finishing = state.finish(&mut []).unwrap();
+    assert_output_full(finishing.status());
+    assert_eq!(
+        state.update(b"x", &mut []),
+        Err(OperationError::Terminal(TerminalError::InputAfterFinish))
+    );
+    let mut output = [0_u8; 4];
+    assert_eq!(
+        state.finish(&mut output).unwrap().status(),
+        Status::Complete
+    );
+    assert_eq!(&output, b"Zg==");
+}
+
+#[test]
 fn runtime_custom_alphabet_uses_the_validated_owned_table() {
     const CUSTOM: [u8; 64] = *b"./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     let codec = CodecBuilder::from_table(CUSTOM)

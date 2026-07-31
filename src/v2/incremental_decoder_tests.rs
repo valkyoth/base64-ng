@@ -177,6 +177,24 @@ fn one_byte_destinations_drain_pending_output_without_reconsuming_input() {
 }
 
 #[test]
+fn finish_closes_padded_decoder_input_before_pending_output_drains() {
+    let mut state = STRICT_STANDARD_PADDED.decoder();
+    state.update(b"Zm9v", &mut []).unwrap();
+    let finishing = state.finish(&mut []).unwrap();
+    assert_output_full(finishing.status());
+    assert_eq!(
+        state.update(b"A", &mut []),
+        Err(OperationError::Terminal(TerminalError::InputAfterFinish))
+    );
+    let mut output = [0_u8; 3];
+    assert_eq!(
+        state.finish(&mut output).unwrap().status(),
+        Status::Complete
+    );
+    assert_eq!(&output, b"foo");
+}
+
+#[test]
 fn validated_runtime_alphabet_decodes_strict_padded_input() {
     const CUSTOM: [u8; 64] = *b"./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     let codec = CodecBuilder::from_table(CUSTOM).unwrap().build().unwrap();

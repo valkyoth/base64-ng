@@ -6,6 +6,7 @@ for module in \
     backend_health \
     incremental \
     incremental_decoder \
+    lifecycle \
     ordinary \
     secret \
     specifications
@@ -19,7 +20,7 @@ awk '
         gated = 1
         next
     }
-    gated && /^mod (fixtures|incremental_decoder_tests|incremental_encoder_tests|rfc4648_oracle);$/ {
+    gated && /^mod (fixtures|incremental_decoder_tests|incremental_decoder_unpadded_tests|incremental_encoder_tests|rfc4648_oracle);$/ {
         found[$2] = 1
         gated = 0
         next
@@ -28,7 +29,7 @@ awk '
         gated = 0
     }
     END {
-        exit !(found["fixtures;"] && found["incremental_decoder_tests;"] && found["incremental_encoder_tests;"] && found["rfc4648_oracle;"])
+        exit !(found["fixtures;"] && found["incremental_decoder_tests;"] && found["incremental_decoder_unpadded_tests;"] && found["incremental_encoder_tests;"] && found["rfc4648_oracle;"])
     }
 ' src/v2/mod.rs
 
@@ -36,6 +37,7 @@ if rg -n 'rfc4648_oracle' src \
     --glob '!src/v2/mod.rs' \
     --glob '!src/v2/fixtures.rs' \
     --glob '!src/v2/incremental_decoder_tests.rs' \
+    --glob '!src/v2/incremental_decoder_unpadded_tests.rs' \
     --glob '!src/v2/incremental_encoder_tests.rs' \
     --glob '!src/v2/ordinary.rs' \
     --glob '!src/v2/rfc4648_oracle.rs'

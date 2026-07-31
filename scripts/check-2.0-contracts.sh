@@ -8,6 +8,7 @@ mkdir -p "$workdir"
 test -s docs/2.0_OPERATION_CONTRACTS.md
 for required in \
     'Failure is absorbing.' \
+    '`input-after-finish`' \
     '`OutputFull` is a retryable status, not a failure.' \
     'original absolute byte index' \
     'never saturates different positions to' \
@@ -47,6 +48,8 @@ run_rustc() {
 cat >"$workdir/model.rs" <<'RS'
 #[path = "../../src/v2/contracts.rs"]
 mod contracts;
+#[path = "../../src/v2/lifecycle.rs"]
+mod lifecycle;
 
 pub use contracts::*;
 RS
@@ -154,7 +157,7 @@ if rg -n -F \
     -e '.unwrap(' \
     -e '.expect(' \
     -e 'panic!' \
-    src/v2/contracts.rs src/v2/contracts/reporting.rs
+    src/v2/contracts.rs src/v2/contracts/reporting.rs src/v2/lifecycle.rs
 then
     echo "2.0 contracts: model gained a forbidden dependency or panic site" >&2
     exit 1
