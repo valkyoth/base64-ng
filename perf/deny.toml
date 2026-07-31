@@ -1,8 +1,8 @@
 # Performance-tool dependency policy.
 #
 # The published base64-ng crate remains zero-dependency. This isolated package
-# may depend on the established base64 crate only to provide comparison
-# measurements for release evidence.
+# may depend on exact-pinned established Base64 crates only to provide
+# semantically matched comparison measurements for release evidence.
 
 [graph]
 all-features = true

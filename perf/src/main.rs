@@ -1,211 +1,263 @@
+mod allocation;
+mod codec;
+mod resources;
+
 use std::hint::black_box;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
-use base64::Engine as _;
-use base64::engine::general_purpose;
-use base64_ng::{STANDARD, checked_encoded_len, decoded_capacity};
-use base64_ng::runtime::{BackendSnapshot, backend_report};
+use allocation::{allocation_count, reset_allocation_count};
+use base64_ng::perf_evidence::EvidenceBackend;
+use base64_ng::runtime::backend_report;
+use codec::{Profile, decode, encode};
 
-const CASES: &[usize] = &[1, 2, 3, 32, 1024, 64 * 1024, 1024 * 1024];
-const TARGET_BYTES: usize = 64 * 1024 * 1024;
+const CASES: &[usize] = &[
+    1,
+    2,
+    3,
+    11,
+    12,
+    15,
+    16,
+    23,
+    24,
+    31,
+    32,
+    47,
+    48,
+    63,
+    64,
+    1024,
+    64 * 1024,
+];
+const DEFAULT_SAMPLES: usize = 5;
+const DEFAULT_TARGET_BYTES: usize = 4 * 1024 * 1024;
+const SCHEMA_VERSION: &str = "1";
 
-struct BackendContext {
-    snapshot: BackendSnapshot,
-    active_decode: &'static str,
+#[derive(Clone, Copy)]
+enum Engine {
+    Base64Ng(EvidenceBackend),
+    Base64,
+    Base64Ct,
+}
+
+impl Engine {
+    fn name(self) -> &'static str {
+        match self {
+            Self::Base64Ng(_) => "base64-ng",
+            Self::Base64 => "base64-0.23.0",
+            Self::Base64Ct => "base64ct-1.8.3",
+        }
+    }
+
+    fn backend(self) -> &'static str {
+        match self {
+            Self::Base64Ng(backend) => backend.as_str(),
+            Self::Base64 | Self::Base64Ct => "external",
+        }
+    }
+}
+
+struct Config {
+    campaign_id: String,
+    run_id: String,
+    samples: usize,
+    target_bytes: usize,
 }
 
 fn main() {
+    match std::env::args().nth(1).as_deref() {
+        Some("availability") => print_availability(),
+        Some("resources") => resources::print(),
+        Some("correctness") => verify_correctness(),
+        None | Some("benchmark") => run_benchmark(),
+        Some(mode) => panic!("unknown performance harness mode: {mode}"),
+    }
+}
+
+fn run_benchmark() {
+    let config = Config {
+        campaign_id: env_string("BASE64_NG_PERF_CAMPAIGN_ID", "manual"),
+        run_id: env_string("BASE64_NG_PERF_RUN_ID", "run-1"),
+        samples: env_usize("BASE64_NG_PERF_SAMPLES", DEFAULT_SAMPLES),
+        target_bytes: env_usize("BASE64_NG_PERF_TARGET_BYTES", DEFAULT_TARGET_BYTES),
+    };
+    assert!(config.samples > 0, "sample count must be non-zero");
+    assert!(config.target_bytes > 0, "target bytes must be non-zero");
+
+    verify_correctness();
     let report = backend_report();
-    let backend = BackendContext {
-        snapshot: report.snapshot(),
-        active_decode: report.active_decode_backend().as_str(),
-    };
+    let snapshot = report.snapshot();
     println!(
-        "engine,operation,input_len,iterations,elapsed_ms,throughput_mib_s,effective_backend,active_backend,active_decode_backend,candidate_backend,detection_mode,target_arch,target_os"
+        "schema_version,campaign_id,run_id,sample_index,engine,operation,alphabet,padding,input_len,encoded_len,iterations,elapsed_ns,throughput_mib_s,backend,active_encode_backend,active_decode_backend,target_arch,target_os,allocation_count"
     );
-    for &len in CASES {
-        let input = make_input(len);
-        let encoded_len = checked_encoded_len(input.len(), true).expect("encoded length fits");
-        let iterations = (TARGET_BYTES / input.len()).max(1);
 
-        let mut ng_encoded = vec![0u8; encoded_len];
-        let ng_written = STANDARD
-            .encode_slice(&input, &mut ng_encoded)
-            .expect("base64-ng encode succeeds");
-        ng_encoded.truncate(ng_written);
-
-        let mut reference_encoded = vec![0u8; encoded_len];
-        let reference_written = general_purpose::STANDARD
-            .encode_slice(&input, &mut reference_encoded)
-            .expect("base64 encode succeeds");
-        reference_encoded.truncate(reference_written);
-        assert_eq!(ng_encoded, reference_encoded);
-
-        let mut decoded = vec![0u8; input.len()];
-        let decoded_len = STANDARD
-            .decode_slice(&ng_encoded, &mut decoded)
-            .expect("base64-ng decode succeeds");
-        assert_eq!(&decoded[..decoded_len], input.as_slice());
-
-        let mut base64_ng_encode_output = vec![0u8; encoded_len];
-        let base64_ng_encode = measure(iterations, input.len(), || {
-            let written = STANDARD.encode_slice(
-                black_box(&input),
-                black_box(&mut base64_ng_encode_output),
-            )?;
-            black_box(written);
-            Ok::<(), base64_ng::EncodeError>(())
-        })
-        .expect("base64-ng encode benchmark succeeds");
-
-        let mut base64_encode_output = vec![0u8; encoded_len];
-        let base64_encode = measure(iterations, input.len(), || {
-            let written = general_purpose::STANDARD
-                .encode_slice(black_box(&input), black_box(&mut base64_encode_output))
-                .expect("base64 encode succeeds");
-            black_box(written);
-            Ok::<(), ()>(())
-        });
-
-        let decode_capacity = decoded_capacity(ng_encoded.len());
-        let mut base64_ng_decode_output = vec![0u8; decode_capacity];
-        let base64_ng_decode = measure(iterations, input.len(), || {
-            let written = STANDARD.decode_slice(
-                black_box(&ng_encoded),
-                black_box(&mut base64_ng_decode_output),
-            )?;
-            black_box(written);
-            Ok::<(), base64_ng::DecodeError>(())
-        })
-        .expect("base64-ng decode benchmark succeeds");
-
-        let mut base64_decode_output = vec![0u8; decode_capacity];
-        let base64_decode = measure(iterations, input.len(), || {
-            let written = general_purpose::STANDARD
-                .decode_slice(black_box(&ng_encoded), black_box(&mut base64_decode_output))
-                .expect("base64 decode succeeds");
-            black_box(written);
-            Ok::<(), ()>(())
-        });
-
-        print_result(
-            &backend,
-            "base64-ng",
-            "encode",
-            effective_backend(&backend, "base64-ng", "encode", len),
-            len,
-            iterations,
-            base64_ng_encode,
-        );
-        print_result(
-            &backend,
-            "base64",
-            "encode",
-            effective_backend(&backend, "base64", "encode", len),
-            len,
-            iterations,
-            base64_encode.expect("base64 encode benchmark succeeds"),
-        );
-        print_result(
-            &backend,
-            "base64-ng",
-            "decode",
-            effective_backend(&backend, "base64-ng", "decode", ng_encoded.len()),
-            len,
-            iterations,
-            base64_ng_decode,
-        );
-        print_result(
-            &backend,
-            "base64",
-            "decode",
-            effective_backend(&backend, "base64", "decode", len),
-            len,
-            iterations,
-            base64_decode.expect("base64 decode benchmark succeeds"),
-        );
-    }
-}
-
-fn make_input(len: usize) -> Vec<u8> {
-    let mut output = vec![0u8; len];
-    for (index, byte) in output.iter_mut().enumerate() {
-        *byte = index.wrapping_mul(37).wrapping_add(len) as u8;
-    }
-    output
-}
-
-fn measure<E>(
-    iterations: usize,
-    input_len: usize,
-    mut operation: impl FnMut() -> Result<(), E>,
-) -> Result<Duration, E> {
-    let start = Instant::now();
-    for _ in 0..iterations {
-        operation()?;
-    }
-    let elapsed = start.elapsed();
-    black_box(input_len);
-    Ok(elapsed)
-}
-
-fn print_result(
-    backend: &BackendContext,
-    engine: &str,
-    operation: &str,
-    effective_backend: &str,
-    len: usize,
-    iterations: usize,
-    elapsed: Duration,
-) {
-    let mib = len as f64 * iterations as f64 / 1024.0 / 1024.0;
-    let seconds = elapsed.as_secs_f64();
-    let throughput = if seconds == 0.0 {
-        f64::INFINITY
-    } else {
-        mib / seconds
-    };
-    println!(
-        "{engine},{operation},{len},{iterations},{:.3},{throughput:.2},{effective_backend},{},{},{},{},{},{}",
-        elapsed.as_secs_f64() * 1000.0,
-        backend.snapshot.active,
-        backend.active_decode,
-        backend.snapshot.candidate,
-        backend.snapshot.candidate_detection_mode,
-        std::env::consts::ARCH,
-        std::env::consts::OS,
-    );
-}
-
-fn effective_backend(
-    backend: &BackendContext,
-    engine: &str,
-    operation: &str,
-    operation_input_len: usize,
-) -> &'static str {
-    if engine != "base64-ng" {
-        return "external";
-    }
-
-    if operation == "decode" {
-        return match backend.active_decode {
-            "avx512-vbmi" if operation_input_len >= 64 => "avx512-vbmi",
-            "avx512-vbmi" | "avx2" if operation_input_len >= 32 => "avx2",
-            "avx512-vbmi" | "avx2" | "ssse3-sse4.1" if operation_input_len >= 16 => {
-                "ssse3-sse4.1"
+    for profile in Profile::ALL {
+        for &input_len in CASES {
+            let input = codec::make_input(input_len);
+            let encoded = codec::canonical_encoded(profile, &input);
+            for engine in engines() {
+                benchmark_operation(
+                    &config,
+                    profile,
+                    engine,
+                    "encode",
+                    &input,
+                    input_len,
+                    snapshot.active,
+                    report.active_decode_backend().as_str(),
+                );
+                benchmark_operation(
+                    &config,
+                    profile,
+                    engine,
+                    "decode",
+                    &encoded,
+                    input_len,
+                    snapshot.active,
+                    report.active_decode_backend().as_str(),
+                );
             }
-            "neon" if operation_input_len >= 16 => "neon",
-            _ => "scalar",
-        };
+        }
+    }
+    verify_correctness();
+}
+
+#[allow(clippy::too_many_arguments)]
+fn benchmark_operation(
+    config: &Config,
+    profile: Profile,
+    engine: Engine,
+    operation: &'static str,
+    operation_input: &[u8],
+    raw_input_len: usize,
+    active_encode: &'static str,
+    active_decode: &'static str,
+) {
+    let iterations = (config.target_bytes / raw_input_len.max(1)).max(1);
+    let output_len = if operation == "encode" {
+        profile.encoded_len(raw_input_len)
+    } else {
+        raw_input_len
+    };
+    let mut output = vec![0u8; output_len];
+
+    run_once(engine, profile, operation, operation_input, &mut output);
+    reset_allocation_count();
+    run_once(engine, profile, operation, operation_input, &mut output);
+    let allocations = allocation_count();
+
+    let warmup = (iterations / 10).max(1);
+    for _ in 0..warmup {
+        run_once(engine, profile, operation, operation_input, &mut output);
     }
 
-    match backend.snapshot.active {
-        "avx512-vbmi" if operation_input_len >= 48 => "avx512-vbmi",
-        "avx512-vbmi" | "avx2" if operation_input_len >= 24 => "avx2",
-        "avx512-vbmi" | "avx2" | "ssse3-sse4.1" if operation_input_len >= 12 => {
-            "ssse3-sse4.1"
+    for sample_index in 0..config.samples {
+        let start = Instant::now();
+        for _ in 0..iterations {
+            run_once(
+                engine,
+                profile,
+                operation,
+                black_box(operation_input),
+                black_box(&mut output),
+            );
         }
-        "neon" if operation_input_len >= 12 => "neon",
-        _ => "scalar",
+        let elapsed = start.elapsed();
+        let elapsed_ns = elapsed.as_nanos();
+        let throughput =
+            raw_input_len as f64 * iterations as f64 / (1024.0 * 1024.0) / elapsed.as_secs_f64();
+        println!(
+            "{SCHEMA_VERSION},{},{},{sample_index},{},{operation},{},{},{raw_input_len},{},{iterations},{elapsed_ns},{throughput:.6},{},{active_encode},{active_decode},{},{},{allocations}",
+            config.campaign_id,
+            config.run_id,
+            engine.name(),
+            profile.alphabet(),
+            profile.padding(),
+            profile.encoded_len(raw_input_len),
+            engine.backend(),
+            std::env::consts::ARCH,
+            std::env::consts::OS,
+        );
     }
+}
+
+fn run_once(engine: Engine, profile: Profile, operation: &str, input: &[u8], output: &mut [u8]) {
+    let written = if operation == "encode" {
+        encode(engine.name(), backend(engine), profile, input, output)
+    } else {
+        decode(engine.name(), backend(engine), profile, input, output)
+    };
+    black_box(written);
+}
+
+fn backend(engine: Engine) -> Option<EvidenceBackend> {
+    match engine {
+        Engine::Base64Ng(backend) => Some(backend),
+        Engine::Base64 | Engine::Base64Ct => None,
+    }
+}
+
+fn engines() -> Vec<Engine> {
+    let mut engines = vec![Engine::Base64Ng(EvidenceBackend::Auto)];
+    for backend in EvidenceBackend::ALL {
+        if backend != EvidenceBackend::Auto && backend.is_available() {
+            engines.push(Engine::Base64Ng(backend));
+        }
+    }
+    engines.push(Engine::Base64);
+    engines.push(Engine::Base64Ct);
+    engines
+}
+
+fn print_availability() {
+    println!("schema_version,backend,available,target_arch,target_os");
+    for backend in EvidenceBackend::ALL {
+        println!(
+            "{SCHEMA_VERSION},{},{},{},{}",
+            backend.as_str(),
+            backend.is_available(),
+            std::env::consts::ARCH,
+            std::env::consts::OS
+        );
+    }
+}
+
+fn verify_correctness() {
+    for profile in Profile::ALL {
+        for &len in CASES {
+            let input = codec::make_input(len);
+            let expected = codec::canonical_encoded(profile, &input);
+            for engine in engines() {
+                let mut encoded = vec![0u8; expected.len()];
+                let written = encode(
+                    engine.name(),
+                    backend(engine),
+                    profile,
+                    &input,
+                    &mut encoded,
+                );
+                assert_eq!(&encoded[..written], expected);
+
+                let mut decoded = vec![0u8; input.len()];
+                let written = decode(
+                    engine.name(),
+                    backend(engine),
+                    profile,
+                    &expected,
+                    &mut decoded,
+                );
+                assert_eq!(&decoded[..written], input);
+            }
+        }
+    }
+}
+
+fn env_string(name: &str, default: &str) -> String {
+    std::env::var(name).unwrap_or_else(|_| default.to_owned())
+}
+
+fn env_usize(name: &str, default: usize) -> usize {
+    std::env::var(name)
+        .map(|value| value.parse().expect("performance integer is valid"))
+        .unwrap_or(default)
 }

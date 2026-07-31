@@ -1,0 +1,8 @@
+schema_version,backend,available,target_arch,target_os
+1,auto,true,x86_64,linux
+1,scalar,true,x86_64,linux
+1,ssse3-sse4.1,true,x86_64,linux
+1,avx2,true,x86_64,linux
+1,avx512-vbmi,true,x86_64,linux
+1,neon,false,x86_64,linux
+1,wasm-simd128,false,x86_64,linux

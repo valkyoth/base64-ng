@@ -190,6 +190,10 @@ pub(crate) use wrap::{
     write_wrapped_byte, write_wrapped_bytes,
 };
 
+#[cfg(all(base64_ng_perf_evidence, feature = "std"))]
+#[doc(hidden)]
+pub mod perf_evidence;
+
 #[cfg(feature = "simd")]
 mod simd;
 

@@ -489,42 +489,27 @@ check directly while iterating on benchmark code with:
 scripts/check_perf.sh
 ```
 
-Run local default measurements with:
-
-```sh
-cargo run --release --manifest-path perf/Cargo.toml
-```
-
-The default perf build enables the `base64-ng` `simd` feature. Run the scalar
-baseline explicitly with:
-
-```sh
-cargo run --release --manifest-path perf/Cargo.toml --no-default-features
-```
-
-Capture benchmark output and a manifest with:
+Capture the complete two-run benchmark campaign with:
 
 ```sh
 BASE64_NG_RUN_PERF=1 scripts/check_perf.sh
 ```
 
-This writes `target/release-evidence/perf/perf-output.csv` and
-`target/release-evidence/perf/perf-scalar-output.csv`, plus
-`target/release-evidence/perf/MANIFEST.txt`.
+This writes raw runs, a statistical summary, exact-backend availability and
+scalar-ratio admission tables, resource measurements, environment JSON, and a
+checksum manifest under `target/release-evidence/perf/`. The harness measures
+production auto dispatch, scalar, and each exact backend available on the host.
+It compares exact-pinned `base64 0.23.0` and `base64ct 1.8.3` only where
+canonical caller-owned slice semantics match.
 
-Every CSV row records `effective_backend`, `active_backend`,
-`active_decode_backend`, `candidate_backend`, `detection_mode`, `target_arch`,
-and `target_os` so release notes can tie throughput numbers to the exact
-selected backend and the backend that actually executed for that row.
-`active_backend` is the primary encode backend reported by
-`runtime::backend_report()`. `active_decode_backend` is the normal strict
-decode backend reported by `BackendReport::active_decode_backend()`.
-`effective_backend` is `scalar` or a smaller fallback backend for encode or
-decode inputs too small to fill the selected SIMD block; rows from the
-comparison `base64` crate use `external`.
-
-Performance numbers are release notes evidence only when paired with hardware,
-OS, Rust version, CPU governor, and the exact command output.
+The retained schema and community submission contract are documented in
+[`BENCHMARKS.md`](BENCHMARKS.md) and
+[`../performance-baselines/README.md`](../performance-baselines/README.md).
+Performance numbers are release-note evidence only when paired with the source
+commit, raw samples, hardware, microcode, OS, Rust version, flags, CPU governor,
+and manifest.
+Performance numbers are release notes evidence only; they do not independently
+admit or preserve a runtime backend.
 
 ## Reproducibility
 

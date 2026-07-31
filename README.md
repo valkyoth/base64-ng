@@ -1402,18 +1402,17 @@ Compile and audit the isolated performance harness directly:
 scripts/check_perf.sh
 ```
 
-Run the default benchmark. The perf crate enables `base64-ng` SIMD by default
-and records the active backend in each CSV row:
+Run the complete reproducible campaign. The perf crate measures production
+auto dispatch, scalar, and every exact backend available on the host:
 
 ```sh
-cargo run --release --manifest-path perf/Cargo.toml
+BASE64_NG_RUN_PERF=1 scripts/check_perf.sh
 ```
 
-Run the base64-ng scalar baseline explicitly:
-
-```sh
-cargo run --release --manifest-path perf/Cargo.toml --no-default-features
-```
+The campaign runs correctness before and after measurement, captures two raw
+sample sets, validates reproducibility, and records exact-pinned
+`base64 0.23.0` and `base64ct 1.8.3` comparisons only for matching canonical
+slice semantics. See [docs/BENCHMARKS.md](docs/BENCHMARKS.md).
 
 Run a target with `cargo-fuzz`:
 

@@ -1,87 +1,120 @@
-# Benchmarks
+# Benchmarks And Performance Evidence
 
-`base64-ng` keeps benchmark tooling isolated from the published crate so the
-runtime crate remains zero-dependency.
+`base64-ng` keeps performance tooling isolated in `perf/` so the published core
+crate remains zero-dependency. Commit 3 of the 2.0 plan replaces one-shot
+timings with retained schema-versioned evidence.
 
-The lightweight benchmark harness lives in `perf/` and compares `base64-ng`
-standard padded encode/decode against the established `base64` crate using
-deterministic input buffers. It deliberately uses `std::time` and
-`std::hint::black_box` instead of a benchmark framework to keep the comparison
-dependency graph small.
+## Comparison Scope
 
-Compile and audit the benchmark harness:
+The harness measures caller-owned slice encode and strict decode for:
+
+- Standard and URL-safe alphabets.
+- Required canonical padding and explicitly unpadded forms.
+- Boundary lengths around 12/16, 24/32, and 48/64-byte SIMD blocks, plus 1 KiB
+  and 64 KiB throughput cases.
+- Production auto dispatch, scalar, and each admitted backend that the current
+  processor can execute safely.
+- Exact-pinned `base64 0.23.0` and `base64ct 1.8.3`.
+
+Comparison crates are included only for canonical valid inputs where alphabet,
+padding, input, output, and caller-owned-buffer semantics match. Results do not
+claim equivalence for malformed diagnostics, constant-time behavior, secret
+retention, wrapping, streaming, or allocation helpers.
+
+## Standard Check
+
+Compile, test correctness with and without SIMD, audit dependencies, and check
+the harness without running a timing campaign:
 
 ```sh
 scripts/check_perf.sh
 ```
 
-Run the benchmark locally:
-
-```sh
-cargo run --release --manifest-path perf/Cargo.toml
-```
-
-The default perf build enables `base64-ng`'s `simd` feature. To force the
-base64-ng scalar baseline, run:
-
-```sh
-cargo run --release --manifest-path perf/Cargo.toml --no-default-features
-```
-
-Capture benchmark output and a release-evidence manifest:
+Run a complete campaign:
 
 ```sh
 BASE64_NG_RUN_PERF=1 scripts/check_perf.sh
 ```
 
-This writes:
+Useful controls:
 
-- `target/release-evidence/perf/perf-output.csv` from the default perf build,
-  which enables `simd` and records the active encode backend, active strict
-  decode backend, and effective backend for each measured operation.
-- `target/release-evidence/perf/perf-scalar-output.csv` from
-  `--no-default-features`, which disables `simd` for the base64-ng scalar
-  baseline.
-- `target/release-evidence/perf/MANIFEST.txt` with toolchain metadata, command
-  status, and artifact checksums.
-
-Output is CSV:
-
-```text
-engine,operation,input_len,iterations,elapsed_ms,throughput_mib_s,effective_backend,active_backend,active_decode_backend,candidate_backend,detection_mode,target_arch,target_os
+```sh
+BASE64_NG_RUN_PERF=1 \
+BASE64_NG_PERF_CAMPAIGN_ID=my-host-commit \
+BASE64_NG_PERF_SAMPLES=5 \
+BASE64_NG_PERF_TARGET_BYTES=4194304 \
+BASE64_NG_PERF_EVIDENCE_DIR=target/release-evidence/perf \
+scripts/check_perf.sh
 ```
 
-`active_backend` records the runtime backend selected by
-`runtime::backend_report()` for the primary encode dispatch boundary.
-`active_decode_backend` records
-`runtime::backend_report().active_decode_backend()` for the normal strict
-decode boundary. `effective_backend` records what the measured row actually
-used: small encode or decode inputs that cannot fill the selected SIMD block
-report the smaller fallback backend or `scalar`; rows for the external
-`base64` crate report `external`.
+The exact-backend entry points exist only under the build cfg
+`base64_ng_perf_evidence`. They check CPU availability before invoking an
+implementation and are absent from normal crate builds. This prevents a
+benchmark from claiming that a tier ran merely because a higher tier was
+selected by production dispatch.
 
-Benchmark numbers are machine-local evidence, not portable guarantees. Release
-notes should cite hardware, OS, Rust version, CPU governor, and command output
-when publishing performance claims.
+## Artifact Contract
 
-For a future SIMD encode admission release, use the benchmark record template in
-[`SIMD_ENCODE_ADMISSION_DRAFT.md`](SIMD_ENCODE_ADMISSION_DRAFT.md). A speed
-claim is not complete unless it names the active backend, target triple, CPU
-model, command, scalar baseline, SIMD throughput, and raw artifact.
+The generated directory contains:
 
-## Interpreting Results
+| Artifact | Contents |
+|---|---|
+| `environment.json` | CPU model, microcode, OS, kernel, Rust/Cargo versions, target, flags, governor, sample count, campaign size |
+| `availability.csv` | Complete backend inventory and host availability |
+| `raw-run-1.csv`, `raw-run-2.csv` | Raw sample durations and throughput |
+| `summary.csv` | Median, minimum, and maximum throughput |
+| `admission.csv` | Exact-backend ratio to scalar and admission status |
+| `resources-default.csv` | Fixed staging bounds, adapter sizes, pending memory |
+| `resources-no-simd.csv` | Same resource schema without the SIMD feature |
+| `binary-resources.csv` | Release library bytes and symbol counts across feature sets |
+| `MANIFEST.txt` | Thresholds, interpretation notes, and checksums |
 
-The current scalar decoder uses arithmetic alphabet mapping instead of a large
-decode lookup table. That keeps the default implementation aligned with the
-side-channel hardening roadmap, but it is expected to trail highly optimized
-table-based decoders on large buffers.
+`scripts/validate_perf_evidence.py` rejects changed headers, unknown or
+unpinned engines, missing profiles/operations, duplicate samples, non-finite
+measurements, and allocations in measured slice operations. It also requires
+two same-host runs to contain the same matrix and remain within a deliberately
+wide `0.50..2.00` ratio envelope. The wide envelope detects broken campaigns;
+it is not a precision-performance claim.
 
-Treat scalar decode throughput as an optimization target for the current
-development cycle, not as a release claim. Any future fast scalar or SIMD path
-must preserve strict error indexes, canonical padding rejection, Miri
-cleanliness, and scalar/SIMD differential test evidence.
+Exact-backend rows below `0.95` of the matching scalar median are marked
+`non-admissible-below-scalar`. That label is evidence for review, not an
+automatic change to production dispatch. Backend admission or removal remains
+a separate security and correctness decision.
 
-The `1.3.0` release admits normal strict decode SIMD only for
-Standard and URL-safe alphabet families. Wrapped, legacy, in-place,
-custom-alphabet, and `ct` secret decode surfaces remain scalar and must not be
-described by benchmark rows for the strict decode boundary.
+The backend-specific review checklist remains
+[`SIMD_ENCODE_ADMISSION_DRAFT.md`](SIMD_ENCODE_ADMISSION_DRAFT.md). Benchmark
+evidence satisfies only its performance portion.
+
+The retained Commit 3 AMD Ryzen 9 9950X3D campaign found that 1.x auto dispatch
+and all three available x86 SIMD tiers were below scalar for the large ordinary
+encode and strict-decode rows. They are therefore non-admissible as inherited
+2.0 performance claims. Later 2.0 backend rebuild commits must produce new
+correctness, cleanup, and performance evidence before any tier is admitted.
+
+## Resource Interpretation
+
+Allocation counts are observed around one prepared caller-owned slice
+operation and must remain zero. Binary size and demangled `base64-ng` symbol
+counts are recorded for default, no-default, `secrets`, and `checked-backend`
+feature sets.
+
+Stack records are reviewed source bounds for fixed internal staging arrays:
+768 bytes of input staging and 1024 bytes of output staging. Adapter object
+sizes and maximum pending output capacities are measured with `size_of` and
+public capacity methods. These values do not claim to measure the complete
+dynamic call-chain stack, which depends on compiler, target, inlining, and
+caller composition.
+
+## Retained And Community Evidence
+
+The archive contract is documented in
+[`../performance-baselines/README.md`](../performance-baselines/README.md).
+Every submission is local to its exact hardware and software environment.
+Release notes may cite a result only with its source commit, environment,
+commands, raw samples, and manifest.
+
+Performance numbers are release notes evidence only when all retained
+environment, correctness, reproducibility, and admission records are present.
+Correctness runs before and after every timing campaign. A performance result
+never substitutes for differential, Miri, Kani, fuzz, assembly, or backend
+admission evidence.

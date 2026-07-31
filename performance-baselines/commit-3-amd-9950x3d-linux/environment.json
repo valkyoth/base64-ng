@@ -1,0 +1,31 @@
+{
+  "build": {
+    "cargo_profile": "release",
+    "rustflags": "--cfg base64_ng_perf_evidence",
+    "target": "x86_64-unknown-linux-gnu"
+  },
+  "measurement": {
+    "campaign_id": "commit-3-amd-9950x3d",
+    "cpu_governor": "powersave",
+    "sample_count": 5,
+    "target_bytes_per_sample": 4194304
+  },
+  "schema_version": 1,
+  "source": {
+    "commit": "fa7ac3f18bf189cf6b452775b4b48765351e3bdb",
+    "status": "M Cargo.toml\n M docs/BENCHMARKS.md\n M perf/Cargo.lock\n M perf/Cargo.toml\n M perf/src/main.rs\n M scripts/check_perf.sh\n M src/lib.rs\n?? perf/src/allocation.rs\n?? perf/src/codec.rs\n?? perf/src/resources.rs\n?? performance-baselines/\n?? scripts/capture_perf_environment.py\n?? scripts/validate_perf_evidence.py\n?? src/perf_evidence.rs"
+  },
+  "system": {
+    "architecture": "x86_64",
+    "cpu": {
+      "microcode": "0xb404035",
+      "model": "AMD Ryzen 9 9950X3D 16-Core Processor"
+    },
+    "kernel": "7.0.12-1-default",
+    "os": "Linux-7.0.12-1-default-x86_64-with-glibc2.43"
+  },
+  "toolchain": {
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6"
+  }
+}
