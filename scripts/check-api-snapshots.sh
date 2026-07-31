@@ -2,6 +2,7 @@
 set -eu
 
 expected_tool="cargo-public-api 0.52.0"
+public_api_toolchain="nightly-2026-07-13"
 snapshot_dir="api-snapshots/v1.3.9"
 workdir="target/api-snapshot-check"
 mode="${1:---check}"
@@ -25,6 +26,12 @@ if [ "$actual_tool" != "$expected_tool" ]; then
     exit 1
 fi
 
+if ! rustup run "$public_api_toolchain" rustc --version >/dev/null 2>&1; then
+    echo "api snapshots: Rust $public_api_toolchain is required" >&2
+    echo "api snapshots: install it with: rustup toolchain install $public_api_toolchain --profile minimal" >&2
+    exit 1
+fi
+
 mkdir -p "$workdir"
 if [ "$mode" = "--update" ]; then
     mkdir -p "$snapshot_dir"
@@ -43,7 +50,7 @@ do
     committed="$snapshot_dir/$package.txt"
 
     echo "api snapshots: generating $package"
-    LC_ALL=C cargo public-api \
+    LC_ALL=C rustup run "$public_api_toolchain" cargo public-api \
         --color=never \
         --all-features \
         --omit blanket-impls \

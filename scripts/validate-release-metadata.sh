@@ -183,6 +183,18 @@ do
     fi
 done
 
+for required_public_api_text in \
+    'public_api_toolchain="nightly-2026-07-13"' \
+    'rustup toolchain install nightly-2026-07-13 --profile minimal'
+do
+    if ! grep -F -q "$required_public_api_text" \
+        scripts/check-api-snapshots.sh .github/workflows/ci.yml
+    then
+        echo "release metadata: public API toolchain pin is missing $required_public_api_text" >&2
+        exit 1
+    fi
+done
+
 if [ "$(sed -n '1p' scripts/validate-release-readiness.sh)" != "#!/usr/bin/env sh" ]; then
     echo "release metadata: scripts/validate-release-readiness.sh must use #!/usr/bin/env sh" >&2
     exit 1
