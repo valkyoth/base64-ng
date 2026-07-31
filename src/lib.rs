@@ -26,6 +26,8 @@
 //! destination unchanged. The published 1.3.9 API remains available during
 //! this migration. Exact const transforms and bounded ordinary or redacted
 //! stack storage are also available through the same validated codec values.
+//! Finite-buffer in-place transforms use explicit input lengths, while secret
+//! in-place decode requires byte-disjoint private staging.
 //!
 //! # Examples
 //!
@@ -168,9 +170,9 @@ mod v2;
 pub use v2::{
     AssuranceClass, Atomicity, BackendClass, BackendFault, Base64, BufferLengthError, Codec,
     CodecBuilder, CodecBuilderError, CodecSettings, ConstTransformError, DecodePadding,
-    DecodedArray, DecoderState, EncodePadding, EncodedArray, EncoderState, Failure, InputError,
-    InputErrorKind, OneShotError, OperationError, OutputFull, Progress, ProtocolScope, RuntimeSpec,
-    STRICT_STANDARD_PADDED, STRICT_STANDARD_UNPADDED, STRICT_URL_SAFE_PADDED,
+    DecodedArray, DecoderState, EncodePadding, EncodedArray, EncoderState, Failure, InPlaceError,
+    InputError, InputErrorKind, OneShotError, OperationError, OutputFull, Progress, ProtocolScope,
+    RuntimeSpec, STRICT_STANDARD_PADDED, STRICT_STANDARD_UNPADDED, STRICT_URL_SAFE_PADDED,
     STRICT_URL_SAFE_UNPADDED, SecretArray, Status, Step, StrictStandardPadded,
     StrictStandardUnpadded, StrictUrlSafePadded, StrictUrlSafeUnpadded, TerminalError,
     TrailingBits, ValidatedAlphabet, ValidatedAlphabetError,
@@ -189,7 +191,8 @@ pub(crate) use cleanup::{wipe_bytes, wipe_tail};
 #[cfg(feature = "alloc")]
 pub(crate) use cleanup::{wipe_vec_all, wipe_vec_spare_capacity};
 pub(crate) use ct::{
-    constant_time_eq_fixed_width_array, constant_time_eq_public_len, ct_mask_eq_u8, ct_mask_lt_u8,
+    constant_time_eq_fixed_width_array, constant_time_eq_public_len, ct_accumulate_u8,
+    ct_error_gate_barrier, ct_mask_eq_u8, ct_mask_lt_u8, ct_mask_nonzero_u8,
 };
 #[cfg(test)]
 pub(crate) use ct::{ct_padded_final_quantum, report_ct_error};
@@ -445,6 +448,8 @@ pub fn clear_bytes(bytes: &mut [u8]) {
     wipe_bytes(bytes);
 }
 
+#[cfg(kani)]
+mod kani_in_place_proofs;
 #[cfg(kani)]
 mod kani_proofs;
 

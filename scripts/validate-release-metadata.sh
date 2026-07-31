@@ -117,6 +117,8 @@ fi
 for required_script in \
     "scripts/check-2.0-feature-contract.sh" \
     "scripts/check-2.0-const-buffers.sh" \
+    "scripts/check-2.0-in-place.sh" \
+    "scripts/check-2.0-in-place-sanitizers.sh" \
     "scripts/check-2.0-migration-smoke.sh" \
     "scripts/check-api-snapshots.sh" \
     "scripts/validate-2.0-api-ledger.sh" \
@@ -243,6 +245,7 @@ for required_release_gate_command in \
     "scripts/checks.sh" \
     "cargo nextest run --all-features" \
     "scripts/check_miri.sh" \
+    "scripts/check-2.0-in-place-sanitizers.sh" \
     "cargo +nightly fuzz build" \
     "scripts/check_targets.sh" \
     "scripts/check_big_endian_qemu.sh" \
@@ -417,6 +420,7 @@ for required_package_file in \
     "api-snapshots/v1.3.9/base64-ng-tokio.txt" \
     "docs/2.0_API_MIGRATION_LEDGER.md" \
     "docs/2.0_CONST_AND_BOUNDED_BUFFERS.md" \
+    "docs/2.0_IN_PLACE_OPERATIONS.md" \
     "docs/2.0_TRANSACTIONAL_ONE_SHOT.md" \
     "docs/2.0_PACKAGE_TOPOLOGY.md" \
     "docs/API_AUDIT.md" \
@@ -449,6 +453,8 @@ for required_package_file in \
     "portability/feature_unification_smoke/src/lib.rs" \
     "scripts/check-2.0-feature-contract.sh" \
     "scripts/check-2.0-const-buffers.sh" \
+    "scripts/check-2.0-in-place.sh" \
+    "scripts/check-2.0-in-place-sanitizers.sh" \
     "scripts/check-2.0-one-shot.sh" \
     "scripts/check-2.0-migration-smoke.sh" \
     "scripts/check-api-snapshots.sh" \

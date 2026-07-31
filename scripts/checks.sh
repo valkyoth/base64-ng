@@ -66,6 +66,9 @@ scripts/check-2.0-one-shot.sh
 echo "checks: 2.0 const transforms and bounded buffers"
 scripts/check-2.0-const-buffers.sh
 
+echo "checks: 2.0 in-place transforms"
+scripts/check-2.0-in-place.sh
+
 echo "checks: RFC 4648 source lock"
 scripts/verify-rfcs.sh
 scripts/check-rfc-source-mutations.py

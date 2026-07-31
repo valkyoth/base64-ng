@@ -62,6 +62,7 @@ cargo install --locked kani-verifier --version 0.67.0
 
 ```sh
 rustup toolchain install nightly --component miri
+rustup component add rust-src --toolchain nightly
 cargo +nightly miri setup
 ```
 
@@ -452,6 +453,21 @@ all-features test surfaces and writes
 `all-features.txt`. This evidence is useful for release review of the
 dependency-free scalar core, alloc helpers, stream wrappers, and cleanup
 helpers. It remains tool-backed undefined-behavior evidence, not a formal proof.
+
+## In-Place AddressSanitizer Evidence
+
+Run the Commit 14 cursor, overlap, and staged-secret suites under nightly
+AddressSanitizer with:
+
+```sh
+scripts/check-2.0-in-place-sanitizers.sh
+```
+
+The script requires nightly `rust-src`, rebuilds the standard library with
+AddressSanitizer, and writes a manifest and complete log under
+`target/release-evidence/2.0-in-place-sanitizers/`. It detects observable
+out-of-bounds and lifetime defects in those executions; it does not prove the
+logical fixed-work or cleanup contracts by itself.
 
 ## Constant-Time Timing Evidence
 

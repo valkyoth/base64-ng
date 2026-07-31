@@ -8,9 +8,11 @@ for module in \
     const_transforms \
     incremental \
     incremental_decoder \
+    in_place \
     lifecycle \
     ordinary \
     secret \
+    secret_in_place \
     specifications
 do
     test -s "src/v2/$module.rs"
@@ -25,7 +27,7 @@ awk '
         gated = 1
         next
     }
-    gated && /^mod (const_buffer_tests|fixtures|incremental_decoder_tests|incremental_decoder_unpadded_tests|incremental_encoder_tests|one_shot_tests|rfc4648_oracle);$/ {
+    gated && /^mod (const_buffer_tests|fixtures|incremental_decoder_tests|incremental_decoder_unpadded_tests|incremental_encoder_tests|in_place_tests|one_shot_tests|rfc4648_oracle|secret_in_place_tests);$/ {
         found[$2] = 1
         gated = 0
         next
@@ -34,7 +36,7 @@ awk '
         gated = 0
     }
     END {
-        exit !(found["const_buffer_tests;"] && found["fixtures;"] && found["incremental_decoder_tests;"] && found["incremental_decoder_unpadded_tests;"] && found["incremental_encoder_tests;"] && found["one_shot_tests;"] && found["rfc4648_oracle;"])
+        exit !(found["const_buffer_tests;"] && found["fixtures;"] && found["incremental_decoder_tests;"] && found["incremental_decoder_unpadded_tests;"] && found["incremental_encoder_tests;"] && found["in_place_tests;"] && found["one_shot_tests;"] && found["rfc4648_oracle;"] && found["secret_in_place_tests;"])
     }
 ' src/v2/mod.rs
 

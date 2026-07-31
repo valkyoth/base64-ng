@@ -201,6 +201,8 @@ Purpose:
   comparison and alphabet-scan loops do not expose the OR reduction as a simple
   in-loop optimizer pattern.
 - Keep each accumulator update observable through a volatile read.
+- Serve the Commit 14 staged secret decoder without duplicating another unsafe
+  optimizer-boundary implementation outside `src/ct/`.
 
 Preconditions:
 
@@ -235,6 +237,8 @@ Purpose:
   across a non-inlined boundary before the public success/failure branch.
 - Emit an architecture-specific speculation or ordering barrier where stable
   Rust supports one locally.
+- Bound Commit 14 staged secret processing before its public validity and
+  success-only plaintext-release branch; Commit 20 owns final timing admission.
 
 Preconditions:
 

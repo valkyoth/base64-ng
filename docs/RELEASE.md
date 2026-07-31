@@ -148,6 +148,7 @@ Miri is a nightly Rust component. Install it with:
 
 ```sh
 rustup toolchain install nightly --component miri
+rustup component add rust-src --toolchain nightly
 cargo +nightly miri setup
 ```
 
@@ -173,6 +174,7 @@ benchmarks. The local release gate also runs:
 
 ```sh
 scripts/check_miri.sh
+scripts/check-2.0-in-place-sanitizers.sh
 ```
 
 If nightly Miri is not installed, the gate prints an explicit skip message.
@@ -180,6 +182,8 @@ If nightly Miri is not installed, the gate prints an explicit skip message.
 all-features alloc/stream surface. The large deterministic sweep tests remain
 part of the normal stable test suite, but are ignored under Miri because Miri
 interprets code and those sweeps are not practical there.
+The sanitizer command requires nightly `rust-src` and records the in-place
+AddressSanitizer result under `target/release-evidence/`.
 
 ## Evidence
 

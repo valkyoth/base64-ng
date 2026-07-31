@@ -169,4 +169,26 @@ mod tests {
         assert_eq!(secret.expose_secret(), b"key");
         assert_eq!(format!("{secret}"), "<redacted secret array>");
     }
+
+    #[test]
+    fn in_place_2_0_surface_is_public_and_external() {
+        let mut ordinary = [0u8; 16];
+        ordinary[..6].copy_from_slice(b"secret");
+        let encoded_len = STRICT_STANDARD_PADDED
+            .encode_in_place(&mut ordinary, 6)
+            .unwrap();
+        assert_eq!(&ordinary[..encoded_len], b"c2VjcmV0");
+        let decoded_len = STRICT_STANDARD_PADDED
+            .decode_in_place(&mut ordinary, encoded_len)
+            .unwrap();
+        assert_eq!(&ordinary[..decoded_len], b"secret");
+
+        ordinary[..8].copy_from_slice(b"c2VjcmV0");
+        let mut staging = [0xa5; 8];
+        let decoded_len = STRICT_STANDARD_PADDED
+            .decode_in_place_staged(&mut ordinary, 8, &mut staging)
+            .unwrap();
+        assert_eq!(&ordinary[..decoded_len], b"secret");
+        assert!(staging.iter().all(|byte| *byte == 0));
+    }
 }

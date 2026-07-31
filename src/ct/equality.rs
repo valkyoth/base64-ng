@@ -58,7 +58,7 @@ fn constant_time_eq_same_len(left: &[u8], right: &[u8]) -> bool {
 
 #[inline(never)]
 #[allow(unsafe_code)]
-pub(super) fn ct_accumulate_u8(accumulator: u8, value: u8) -> u8 {
+pub(crate) fn ct_accumulate_u8(accumulator: u8, value: u8) -> u8 {
     let result = core::hint::black_box(accumulator) | core::hint::black_box(value);
     // SAFETY: `result` is an initialized local `u8`; the volatile read is a
     // dependency-free optimizer barrier for the accumulation value and does not
@@ -68,7 +68,7 @@ pub(super) fn ct_accumulate_u8(accumulator: u8, value: u8) -> u8 {
 
 #[inline(never)]
 #[allow(unsafe_code)]
-pub(super) fn ct_error_gate_barrier(invalid_byte: u8, invalid_padding: u8) {
+pub(crate) fn ct_error_gate_barrier(invalid_byte: u8, invalid_padding: u8) {
     core::hint::black_box(invalid_byte | invalid_padding);
     core::sync::atomic::compiler_fence(core::sync::atomic::Ordering::SeqCst);
 

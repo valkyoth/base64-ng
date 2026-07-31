@@ -256,3 +256,22 @@ jobs:
 
       - name: Run Miri tests
         run: scripts/check_miri.sh
+
+  in-place-sanitizers:
+    name: In-place AddressSanitizer
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install Rust toolchain
+        shell: bash
+        run: scripts/ci_install_rust.sh
+
+      - name: Install nightly sanitizer support
+        run: rustup toolchain install nightly --component rust-src
+
+      - name: Run in-place sanitizer suite
+        run: scripts/check-2.0-in-place-sanitizers.sh

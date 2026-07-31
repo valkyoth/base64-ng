@@ -35,7 +35,9 @@ for test_filter in \
     "tests::rejects_non_canonical_padding_bits" \
     "tests::supports_unpadded_url_safe" \
     "decode_backend::tests::boundary_uses_only_admitted_backends" \
-    "errors::tests::index_offsets_saturate_on_overflow"
+    "errors::tests::index_offsets_saturate_on_overflow" \
+    "v2::in_place_tests::checked_byte_ranges_define_every_overlap_boundary" \
+    "v2::secret_in_place_tests::staged_secret_decode_miri_overlap_contract"
 do
     if [ "$no_default_status" -eq 0 ]; then
         run_miri_case "$no_default_output" "--no-default-features" "$test_filter" || no_default_status="$?"
@@ -60,7 +62,9 @@ else
         "ct_decode_slice_staged_clear_tail_copies_only_after_success" \
         "stream_encoder_direct_write_buffers_tail_bytes" \
         "stream_decoder_direct_write_processes_multiple_quads" \
-        "stream_decoder_fails_closed_after_malformed_input"
+        "stream_decoder_fails_closed_after_malformed_input" \
+        "v2::in_place_tests::ordinary_preflight_and_input_errors_do_not_mutate" \
+        "v2::secret_in_place_tests::staged_secret_decode_miri_overlap_contract"
     do
         if [ "$all_features_status" -eq 0 ]; then
             run_miri_case "$all_features_output" "--all-features" "$test_filter" || all_features_status="$?"

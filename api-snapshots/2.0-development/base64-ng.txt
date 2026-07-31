@@ -580,6 +580,36 @@ impl core::hash::Hash for base64_ng::Failure
 pub fn base64_ng::Failure::hash<__H: core::hash::Hasher>(&self, &mut __H)
 impl core::marker::Copy for base64_ng::Failure
 impl core::marker::StructuralPartialEq for base64_ng::Failure
+#[non_exhaustive] pub enum base64_ng::InPlaceError
+pub base64_ng::InPlaceError::AddressRangeOverflow
+pub base64_ng::InPlaceError::Backend(base64_ng::BackendFault)
+pub base64_ng::InPlaceError::Input(base64_ng::InputError)
+pub base64_ng::InPlaceError::InputLengthExceedsBuffer
+pub base64_ng::InPlaceError::InputLengthExceedsBuffer::buffer_len: usize
+pub base64_ng::InPlaceError::InputLengthExceedsBuffer::input_len: usize
+pub base64_ng::InPlaceError::InvalidSecretInput
+pub base64_ng::InPlaceError::LengthOverflow
+pub base64_ng::InPlaceError::OutputTooSmall
+pub base64_ng::InPlaceError::OutputTooSmall::available: usize
+pub base64_ng::InPlaceError::OutputTooSmall::required: usize
+pub base64_ng::InPlaceError::OverlappingBuffers
+pub base64_ng::InPlaceError::PositionOverflow
+pub base64_ng::InPlaceError::SecretPolicyUnsupported
+pub base64_ng::InPlaceError::StagingTooSmall
+pub base64_ng::InPlaceError::StagingTooSmall::available: usize
+pub base64_ng::InPlaceError::StagingTooSmall::required: usize
+impl core::clone::Clone for base64_ng::InPlaceError
+pub fn base64_ng::InPlaceError::clone(&self) -> base64_ng::InPlaceError
+impl core::cmp::Eq for base64_ng::InPlaceError
+impl core::cmp::PartialEq for base64_ng::InPlaceError
+pub fn base64_ng::InPlaceError::eq(&self, &base64_ng::InPlaceError) -> bool
+impl core::error::Error for base64_ng::InPlaceError
+impl core::fmt::Debug for base64_ng::InPlaceError
+pub fn base64_ng::InPlaceError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for base64_ng::InPlaceError
+pub fn base64_ng::InPlaceError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng::InPlaceError
+impl core::marker::StructuralPartialEq for base64_ng::InPlaceError
 #[non_exhaustive] pub enum base64_ng::InputError
 pub base64_ng::InputError::InvalidByte
 pub base64_ng::InputError::InvalidByte::byte: u8
@@ -802,6 +832,12 @@ pub const fn base64_ng::Base64<base64_ng::StrictUrlSafeUnpadded>::encode_array<c
 impl<S: base64_ng::Codec> base64_ng::Base64<S>
 pub fn base64_ng::Base64<S>::decode_bounded<const CAP: usize>(&self, &[u8]) -> core::result::Result<base64_ng::DecodedArray<CAP>, base64_ng::OneShotError>
 pub fn base64_ng::Base64<S>::encode_bounded<const CAP: usize>(&self, &[u8]) -> core::result::Result<base64_ng::EncodedArray<CAP>, base64_ng::OneShotError>
+impl<S: base64_ng::Codec> base64_ng::Base64<S>
+pub fn base64_ng::Base64<S>::decode_in_place(&self, &mut [u8], usize) -> core::result::Result<usize, base64_ng::InPlaceError>
+pub fn base64_ng::Base64<S>::encode_in_place(&self, &mut [u8], usize) -> core::result::Result<usize, base64_ng::InPlaceError>
+impl<S: base64_ng::Codec> base64_ng::Base64<S>
+pub fn base64_ng::Base64<S>::decode_in_place_staged(&self, &mut [u8], usize, &mut [u8]) -> core::result::Result<usize, base64_ng::InPlaceError>
+pub fn base64_ng::Base64<S>::secret_decode_staging_len(&self, usize) -> core::result::Result<usize, base64_ng::InPlaceError>
 impl<S: base64_ng::Codec> base64_ng::Base64<S>
 pub fn base64_ng::Base64<S>::decode_into(&self, &[u8], &mut [u8]) -> core::result::Result<usize, base64_ng::OneShotError>
 pub fn base64_ng::Base64<S>::decoded_len(&self, &[u8]) -> core::result::Result<usize, base64_ng::OneShotError>

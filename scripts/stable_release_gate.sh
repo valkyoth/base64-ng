@@ -38,6 +38,9 @@ fi
 echo "stable release gate: Miri"
 scripts/check_miri.sh
 
+echo "stable release gate: in-place AddressSanitizer"
+scripts/check-2.0-in-place-sanitizers.sh
+
 if cargo fuzz --version >/dev/null 2>&1 && [ -d fuzz ]; then
     echo "stable release gate: fuzz target compile check"
     cargo +nightly fuzz build

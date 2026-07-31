@@ -341,6 +341,13 @@ success/failure gate; it does not make the ct decoder a formally verified
 hardware side-channel resistant primitive and does not change the transient
 output window described above.
 
+The emerging 2.0 `Base64::decode_in_place_staged` path reuses the same
+accumulator and result-gate barrier while keeping candidate plaintext in
+byte-disjoint private staging. Its Commit 14 claim covers fixed symbol work
+before the gate only. Final validity and the success-only copy are public, and
+Commit 20 must provide optimizer, assembly, and timing evidence before the
+complete 2.0 secret codec receives stronger admission wording.
+
 For shared-memory or in-process sandbox threat models where even that transient
 output window is unacceptable, use
 `CtEngine::decode_slice_staged_clear_tail` with a private staging buffer. That

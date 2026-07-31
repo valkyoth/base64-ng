@@ -9,6 +9,7 @@ mod bounded;
 mod const_transforms;
 #[allow(dead_code)]
 pub(crate) mod contracts;
+mod in_place;
 #[allow(dead_code)]
 pub(crate) mod incremental;
 #[allow(dead_code)]
@@ -19,6 +20,7 @@ mod ordinary;
 #[cfg(feature = "alloc")]
 mod ordinary_alloc;
 mod secret;
+mod secret_in_place;
 #[allow(dead_code)]
 pub(crate) mod specifications;
 #[allow(dead_code)]
@@ -31,6 +33,7 @@ pub use contracts::{
     AssuranceClass, Atomicity, BackendClass, BackendFault, Failure, InputError, InputErrorKind,
     OperationError, OutputFull, Progress, ProtocolScope, Status, Step, TerminalError,
 };
+pub use in_place::InPlaceError;
 pub use incremental::EncoderState;
 pub use incremental_decoder::DecoderState;
 pub use ordinary::OneShotError;
@@ -50,6 +53,8 @@ mod contract_tests;
 #[cfg(test)]
 mod fixtures;
 #[cfg(test)]
+mod in_place_tests;
+#[cfg(test)]
 mod incremental_decoder_tests;
 #[cfg(test)]
 mod incremental_decoder_unpadded_tests;
@@ -59,6 +64,8 @@ mod incremental_encoder_tests;
 mod one_shot_tests;
 #[cfg(test)]
 mod rfc4648_oracle;
+#[cfg(test)]
+mod secret_in_place_tests;
 #[cfg(test)]
 mod specification_tests;
 #[cfg(test)]

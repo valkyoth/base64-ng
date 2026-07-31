@@ -146,6 +146,29 @@ Evidence:
 - bounded-array Kani constructor invariant harness
 - secret redaction, tail cleanup, clear, and structural Drop policy tests
 
+## 2.0 In-Place Transforms
+
+- Reverse encode copies each source group before writing its expanded group;
+  every destination cursor remains at or after the unread source cursor.
+- Forward decode validates before mutation and maintains `write <= read` after
+  every consumed quantum or tail.
+- Ordinary in-place preflight and input errors leave the complete buffer
+  unchanged; no recoverable error exists after mutation begins.
+- Secret staged decode checks complete byte-range disjointness and capacity
+  before scanning input. Preflight errors leave both ranges unchanged.
+- Invalid secret input leaves caller-visible encoded bytes unchanged and wipes
+  complete staging. Internal faults wipe both complete ranges.
+- The fixed-work secret claim ends at the result gate; successful plaintext
+  release is an explicitly public, success-only copy.
+
+Evidence:
+
+- exhaustive bounded ordinary in-place differential tests
+- strict secret mutation differential tests and work counters
+- checked overlap/address geometry tests
+- injected backend-fault cleanup tests
+- Kani cursor proofs, Miri tests, and AddressSanitizer tests
+
 ## Review Rule
 
 When adding new indexing in non-test code, prefer `get`, slice-pattern
