@@ -9,9 +9,11 @@
 pub(crate) mod alphabet;
 mod backend_health;
 #[allow(dead_code)]
-mod contracts;
+pub(crate) mod contracts;
 #[allow(dead_code)]
 pub(crate) mod incremental;
+#[allow(dead_code)]
+pub(crate) mod incremental_decoder;
 mod ordinary;
 mod secret;
 #[allow(dead_code)]
@@ -25,6 +27,8 @@ mod alphabet_tests;
 mod contract_tests;
 #[cfg(test)]
 mod fixtures;
+#[cfg(test)]
+mod incremental_decoder_tests;
 #[cfg(test)]
 mod incremental_encoder_tests;
 #[cfg(test)]

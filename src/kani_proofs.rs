@@ -3,6 +3,7 @@ use super::{
     decode_tail_unpadded, decoded_capacity, scalar,
     v2::{
         alphabet::{ValidatedAlphabetError, validate_position_for_proof},
+        contracts::Status,
         specifications::STRICT_STANDARD_PADDED,
     },
     validate_tail_unpadded,
@@ -234,6 +235,38 @@ fn incremental_standard_encoder_finish_is_bounded() {
     assert!(finish.progress().input_consumed() == 0);
     assert!(finish.progress().output_produced() <= output_len);
     assert!(encoder.proof_invariants());
+}
+
+#[kani::proof]
+#[kani::unwind(12)]
+fn incremental_padded_decoder_progress_and_retry_are_bounded() {
+    let input = *b"AAAA";
+    let input_len = usize::from(kani::any::<u8>() % 4);
+    let mut output = kani::any::<[u8; 3]>();
+    let output_len = usize::from(kani::any::<u8>() % 4);
+    let mut decoder = STRICT_STANDARD_PADDED.decoder();
+
+    let step = decoder
+        .update(&input[..input_len], &mut output[..output_len])
+        .expect("a partial canonical quantum cannot fail");
+    assert!(step.progress().input_consumed() == input_len);
+    assert!(step.progress().output_produced() == 0);
+    assert!(decoder.source_position() == input_len);
+    assert!(decoder.proof_invariants());
+
+    let mut retry_decoder = STRICT_STANDARD_PADDED.decoder();
+    let full = retry_decoder
+        .update(&input, &mut [])
+        .expect("a canonical quantum cannot fail");
+    assert!(matches!(full.status(), Status::OutputFull(_)));
+    assert!(full.progress().input_consumed() == input.len());
+    let mut retry_output = [0_u8; 1];
+    let retry = retry_decoder
+        .update(&[], &mut retry_output)
+        .expect("one output byte must drain pending decoder state");
+    assert!(retry.progress().input_consumed() == 0);
+    assert!(retry.progress().output_produced() == 1);
+    assert!(retry_decoder.proof_invariants());
 }
 
 #[kani::proof]
