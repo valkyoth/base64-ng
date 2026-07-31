@@ -1,10 +1,7 @@
 extern crate std;
 
-use core::mem::{align_of, needs_drop, size_of};
-use std::format;
-
 use super::{
-    bounded::{DecodedArray, EncodedArray, SecretArray},
+    bounded::{DecodedArray, EncodedArray},
     const_transforms::ConstTransformError,
     contracts::{Failure, InputError, OperationError},
     ordinary::OneShotError,
@@ -15,6 +12,7 @@ use super::{
         STRICT_URL_SAFE_UNPADDED, TrailingBits,
     },
 };
+use core::mem::{align_of, needs_drop, size_of};
 
 const CUSTOM_TABLE: [u8; 64] = *b"./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 const CUSTOM: Base64<RuntimeSpec> = match CodecBuilder::from_table(CUSTOM_TABLE) {
@@ -306,28 +304,12 @@ fn bounded_arrays_cover_zero_exact_capacity_and_rejection() {
 }
 
 #[test]
-fn ordinary_and_secret_storage_have_distinct_cleanup_contracts() {
+fn ordinary_storage_remains_copy_and_non_wiping() {
     fn assert_copy<T: Copy>() {}
     assert_copy::<EncodedArray<64>>();
     assert_copy::<DecodedArray<64>>();
     assert!(!needs_drop::<EncodedArray<64>>());
     assert!(!needs_drop::<DecodedArray<64>>());
-    assert!(needs_drop::<SecretArray<64>>());
-
-    let mut bytes = [0xa5; 8];
-    bytes[..3].copy_from_slice(b"key");
-    let mut secret = SecretArray::from_array(bytes, 3).unwrap();
-    assert_eq!(secret.expose_secret(), b"key");
-    assert_eq!(&secret.backing_for_test()[3..], &[0; 5]);
-    assert_eq!(
-        format!("{secret:?}"),
-        "SecretArray { bytes: \"<redacted>\", len: 3, capacity: 8 }"
-    );
-    assert_eq!(format!("{secret}"), "<redacted secret array>");
-
-    secret.clear();
-    assert!(secret.is_empty());
-    assert_eq!(secret.backing_for_test(), &[0; 8]);
 }
 
 #[test]
@@ -335,7 +317,6 @@ fn representative_stack_object_sizes_are_capacity_plus_length_metadata() {
     assert_eq!(align_of::<EncodedArray<64>>(), align_of::<usize>());
     assert_eq!(size_of::<EncodedArray<64>>(), 64 + size_of::<usize>());
     assert_eq!(size_of::<DecodedArray<256>>(), 256 + size_of::<usize>());
-    assert_eq!(size_of::<SecretArray<1024>>(), 1024 + size_of::<usize>());
 }
 
 const fn settings(profile: Profile) -> CodecSettings {

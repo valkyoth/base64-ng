@@ -1,4 +1,4 @@
-//! Bounded stack storage with explicit ordinary and secret contracts.
+//! Ordinary bounded stack storage.
 
 use super::{
     ordinary::OneShotError,
@@ -13,6 +13,10 @@ pub struct BufferLengthError {
 }
 
 impl BufferLengthError {
+    pub(super) const fn new(length: usize, capacity: usize) -> Self {
+        Self { length, capacity }
+    }
+
     /// Returns the rejected visible length.
     #[must_use]
     pub const fn length(self) -> usize {
@@ -42,7 +46,7 @@ impl std::error::Error for BufferLengthError {}
 /// Ordinary bounded bytes intended to contain encoded text.
 ///
 /// This ordinary value is `Copy`, has visible formatting, and performs no
-/// drop-time cleanup. Use [`SecretArray`] for secret-bearing storage.
+/// drop-time cleanup. Use `secret::SecretArray` for secret-bearing storage.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct EncodedArray<const CAP: usize> {
     bytes: [u8; CAP],
@@ -68,10 +72,7 @@ macro_rules! ordinary_array {
                 len: usize,
             ) -> Result<Self, BufferLengthError> {
                 if len > CAP {
-                    Err(BufferLengthError {
-                        length: len,
-                        capacity: CAP,
-                    })
+                    Err(BufferLengthError::new(len, CAP))
                 } else {
                     Ok(Self { bytes, len })
                 }
@@ -153,92 +154,5 @@ impl<S: Codec> Base64<S> {
         let len = self.decode_into(input, &mut bytes)?;
         DecodedArray::from_initialized(bytes, len)
             .map_err(|_| OneShotError::Backend(super::contracts::BackendFault::ImpossibleState))
-    }
-}
-
-/// Non-Clone bounded secret bytes with mandatory full-capacity cleanup.
-///
-/// `Debug` and `Display` are redacted. The initialized prefix is available
-/// only through the explicitly named [`Self::expose_secret`] method. Cleanup
-/// is best effort under the crate's documented wipe boundary and cannot erase
-/// historical compiler, register, swap, or snapshot copies.
-pub struct SecretArray<const CAP: usize> {
-    bytes: [u8; CAP],
-    len: usize,
-}
-
-impl<const CAP: usize> SecretArray<CAP> {
-    /// Takes ownership of secret bytes and checks their visible prefix length.
-    ///
-    /// Bytes after `len` are wiped before construction. If `len` exceeds
-    /// `CAP`, the complete supplied array is wiped before returning an error.
-    pub fn from_array(mut bytes: [u8; CAP], len: usize) -> Result<Self, BufferLengthError> {
-        if len > CAP {
-            crate::wipe_bytes(&mut bytes);
-            return Err(BufferLengthError {
-                length: len,
-                capacity: CAP,
-            });
-        }
-        crate::wipe_tail(&mut bytes, len);
-        Ok(Self { bytes, len })
-    }
-
-    /// Explicitly exposes the initialized secret prefix.
-    #[must_use]
-    pub fn expose_secret(&self) -> &[u8] {
-        &self.bytes[..self.len]
-    }
-
-    /// Returns the public initialized length.
-    #[must_use]
-    pub const fn len(&self) -> usize {
-        self.len
-    }
-
-    /// Returns whether the public initialized length is zero.
-    #[must_use]
-    pub const fn is_empty(&self) -> bool {
-        self.len == 0
-    }
-
-    /// Returns the public fixed capacity.
-    #[must_use]
-    pub const fn capacity(&self) -> usize {
-        CAP
-    }
-
-    /// Wipes the complete backing array and resets the visible length.
-    pub fn clear(&mut self) {
-        crate::wipe_bytes(&mut self.bytes);
-        self.len = 0;
-    }
-
-    #[cfg(test)]
-    pub(super) const fn backing_for_test(&self) -> &[u8; CAP] {
-        &self.bytes
-    }
-}
-
-impl<const CAP: usize> core::fmt::Debug for SecretArray<CAP> {
-    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        formatter
-            .debug_struct("SecretArray")
-            .field("bytes", &"<redacted>")
-            .field("len", &self.len)
-            .field("capacity", &CAP)
-            .finish()
-    }
-}
-
-impl<const CAP: usize> core::fmt::Display for SecretArray<CAP> {
-    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        formatter.write_str("<redacted secret array>")
-    }
-}
-
-impl<const CAP: usize> Drop for SecretArray<CAP> {
-    fn drop(&mut self) {
-        self.clear();
     }
 }

@@ -35,6 +35,12 @@ Kani proves the bounded per-position constructor accesses separately from the
 exhaustive semantic tests. See
 [`2.0_VALIDATED_ALPHABETS.md`](2.0_VALIDATED_ALPHABETS.md).
 
+Commit 18 activates the dependency-free `secrets` storage boundary. Its gate
+proves that secret owners require explicit exposure, generated secret newtypes
+have no implicit `AsRef<[u8]>`, formatting is redacted, and borrowed, fixed,
+and heap storage follow their documented cleanup and declassification rules.
+See [`2.0_SECRET_STORAGE_AND_EXPOSURE.md`](2.0_SECRET_STORAGE_AND_EXPOSURE.md).
+
 Run the gate with:
 
 ```sh

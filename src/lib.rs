@@ -24,8 +24,11 @@
 //! explicitly named `STRICT_*` presets. Its one-shot slice methods validate
 //! and size completely before writing, so every returned error leaves the
 //! destination unchanged. The published 1.3.9 API remains available during
-//! this migration. Exact const transforms and bounded ordinary or redacted
-//! stack storage are also available through the same validated codec values.
+//! this migration. Exact const transforms and bounded ordinary storage are
+//! also available through the same validated codec values. The optional
+//! `secrets` capability publishes separate redacted storage under
+//! `base64_ng::secret`; its constant-time-oriented codecs arrive in later 2.0
+//! checkpoints.
 //! Finite-buffer in-place transforms use explicit input lengths, while secret
 //! in-place decode requires byte-disjoint private staging.
 //! Allocation-free display, exact counted sinks, rollback-capable append, and
@@ -175,6 +178,8 @@ mod scalar;
 mod scalar_encode_in_place;
 mod v2;
 
+#[cfg(feature = "secrets")]
+pub use v2::secret;
 pub use v2::{
     AssuranceClass, Atomicity, BCRYPT_ALPHABET_NO_PAD, BINHEX_ALPHABET, BackendClass, BackendFault,
     Base64, BodyCodec, BodyLineEnding, BodyWrap, BodyWrapError, BufferLengthError,
@@ -185,9 +190,9 @@ pub use v2::{
     InputErrorKind, MIME_BODY_STRICT, OneShotError, OperationError, OutputFull,
     PBKDF2_ALPHABET_NO_PAD, PEM_BODY_CRLF, PEM_BODY_LF, Progress, ProtocolScope, RuntimeSpec,
     STRICT_STANDARD_PADDED, STRICT_STANDARD_UNPADDED, STRICT_URL_SAFE_PADDED,
-    STRICT_URL_SAFE_UNPADDED, SecretArray, Status, Step, StrictStandardPadded,
-    StrictStandardUnpadded, StrictUrlSafePadded, StrictUrlSafeUnpadded, TerminalError,
-    TrailingBits, ValidatedAlphabet, ValidatedAlphabetError,
+    STRICT_URL_SAFE_UNPADDED, Status, Step, StrictStandardPadded, StrictStandardUnpadded,
+    StrictUrlSafePadded, StrictUrlSafeUnpadded, TerminalError, TrailingBits, ValidatedAlphabet,
+    ValidatedAlphabetError,
 };
 pub use v2::{compat, legacy, web};
 mod wrap;

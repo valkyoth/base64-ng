@@ -99,9 +99,13 @@ require_text "$topology" \
     "High assurance is an attested build/runtime policy, not a Cargo feature."
 
 if ! grep -q '^secrets = \[\]$' Cargo.toml; then
-    echo "2.0 API ledger: secrets must remain an inert reservation at Commit 2" >&2
+    echo "2.0 API ledger: secrets must remain dependency-free" >&2
     exit 1
 fi
+
+require_text "$ledger" \
+    "Commit 18 activates \`base64_ng::secret\` as the canonical storage and exposure"
+require_text src/v2/mod.rs "pub mod secret;"
 
 if ! grep -q '^checked-backend = \["simd"\]$' Cargo.toml; then
     echo "2.0 API ledger: checked-backend must imply simd exactly" >&2

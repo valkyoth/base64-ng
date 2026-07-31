@@ -6,8 +6,9 @@ mod tests {
         BCRYPT_ALPHABET_NO_PAD, BINHEX_ALPHABET, Base64, BodyLineEnding, BodyWrap, Codec,
         CodecBuilder, CodecSettings, DecodeError, DecodedArray, EncodeError, EncodedArray, Engine,
         IMAP_MUTF7_ALPHABET_NO_PAD, LineEnding, LineWrap, MIME, MIME_BODY_STRICT,
-        PBKDF2_ALPHABET_NO_PAD, PEM_BODY_CRLF, PEM_BODY_LF, Profile, SecretArray, SecretBuffer,
-        Standard, StrictStandardPadded, compat, legacy, web, STANDARD, STRICT_STANDARD_PADDED,
+        PBKDF2_ALPHABET_NO_PAD, PEM_BODY_CRLF, PEM_BODY_LF, Profile, SecretBuffer, Standard,
+        StrictStandardPadded, compat, legacy, secret::SecretArray, web, STANDARD,
+        STRICT_STANDARD_PADDED,
     };
 
     const CONST_ENCODED: [u8; 8] = match STRICT_STANDARD_PADDED.encode_array(b"hello") {
@@ -168,7 +169,7 @@ mod tests {
         assert_eq!(decoded.as_bytes(), b"hello");
 
         let secret = SecretArray::<8>::from_array(*b"keyxxxxx", 3).unwrap();
-        assert_eq!(secret.expose_secret(), b"key");
+        assert_eq!(secret.expose_secret().as_bytes(), b"key");
         assert_eq!(format!("{secret}"), "<redacted secret array>");
     }
 

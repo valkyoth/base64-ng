@@ -8,6 +8,8 @@
 //! This proc-macro crate is intentionally narrow and dependency-free. The
 //! [`Base64Secret`] derive supports tuple structs with exactly one `[u8; N]`
 //! field and generates Base64 parsing/encoding helpers around that field.
+//! Secret bytes require an explicitly named exposure method and never gain an
+//! implicit `AsRef<[u8]>` conversion.
 
 use proc_macro::{Delimiter, Group, TokenStream, TokenTree};
 
@@ -27,7 +29,7 @@ use proc_macro::{Delimiter, Group, TokenStream, TokenTree};
 /// - `from_base64(&[u8])` and `from_base64_str(&str)` decode with
 ///   `base64_ng::ct::STANDARD.decode_slice_staged_clear_tail`.
 /// - `encode_base64::<CAP>()` encodes with `base64_ng::STANDARD`.
-/// - `Debug` is redacted.
+/// - `Debug` and `Display` are redacted.
 /// - `Drop` clears the wrapped bytes with `base64_ng::clear_bytes`.
 #[proc_macro_derive(Base64Secret)]
 pub fn derive_base64_secret(input: TokenStream) -> TokenStream {
@@ -92,17 +94,17 @@ impl {name} {{
         ::base64_ng::STANDARD.encode_buffer::<CAP>(&self.0)
     }}
 
-    /// Returns the wrapped bytes.
+    /// Explicitly exposes the wrapped secret bytes.
     #[must_use]
-    pub fn as_bytes(&self) -> &[u8] {{
+    pub fn expose_secret(&self) -> &[u8] {{
         &self.0
     }}
 
-    /// Returns the wrapped bytes mutably.
+    /// Explicitly exposes the wrapped secret bytes mutably.
     ///
     /// Callers that mutate secret bytes are responsible for preserving any
     /// application-level invariants attached to this newtype.
-    pub fn as_mut_bytes(&mut self) -> &mut [u8] {{
+    pub fn expose_secret_mut(&mut self) -> &mut [u8] {{
         &mut self.0
     }}
 
@@ -146,12 +148,6 @@ impl ::core::convert::From<[u8; {length}]> for {name} {{
     }}
 }}
 
-impl ::core::convert::AsRef<[u8]> for {name} {{
-    fn as_ref(&self) -> &[u8] {{
-        self.as_bytes()
-    }}
-}}
-
 impl ::core::fmt::Debug for {name} {{
     fn fmt(&self, formatter: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {{
         formatter
@@ -159,6 +155,12 @@ impl ::core::fmt::Debug for {name} {{
             .field("bytes", &"<redacted>")
             .field("len", &{length})
             .finish()
+    }}
+}}
+
+impl ::core::fmt::Display for {name} {{
+    fn fmt(&self, formatter: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {{
+        formatter.write_str("<redacted secret>")
     }}
 }}
 

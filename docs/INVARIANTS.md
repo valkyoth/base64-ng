@@ -133,7 +133,7 @@ Evidence:
   caller-supplied tail but never exposes it through `as_bytes`.
 - Ordinary arrays are `Copy` and have no cleanup destructor. They make no
   secrecy claim.
-- `SecretArray<CAP>` is non-Clone and non-Copy, wipes caller-supplied tail
+- `secret::SecretArray<CAP>` is non-Clone and non-Copy, wipes caller-supplied tail
   capacity during construction, and wipes the complete backing array on
   invalid construction, explicit clear, and drop.
 - Const transforms validate malformed input before exact output-length
@@ -145,6 +145,8 @@ Evidence:
 - external const compile and compile-fail fixtures
 - bounded-array Kani constructor invariant harness
 - secret redaction, tail cleanup, clear, and structural Drop policy tests
+- Commit 18 compile-fail tests for implicit coercion and runtime drop, unwind,
+  rejection, declassification, and vector spare-capacity cleanup tests
 
 ## 2.0 In-Place Transforms
 

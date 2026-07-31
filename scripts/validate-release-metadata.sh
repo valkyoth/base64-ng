@@ -70,6 +70,7 @@ test -s docs/API_AUDIT.md
 test -s docs/2.0_GOVERNANCE.md
 test -s docs/2.0_API_MIGRATION_LEDGER.md
 test -s docs/2.0_PACKAGE_TOPOLOGY.md
+test -s docs/2.0_SECRET_STORAGE_AND_EXPOSURE.md
 test -s api-snapshots/README.md
 test -s docs/ASYNC.md
 test -s docs/BENCHMARKS.md
@@ -121,6 +122,7 @@ for required_script in \
     "scripts/check-2.0-in-place.sh" \
     "scripts/check-2.0-in-place-sanitizers.sh" \
     "scripts/check-2.0-profiles.sh" \
+    "scripts/check-2.0-secret-storage.sh" \
     "scripts/check-2.0-web-forgiving.sh" \
     "scripts/check-2.0-migration-smoke.sh" \
     "scripts/check-api-snapshots.sh" \
@@ -427,6 +429,7 @@ for required_package_file in \
     "docs/2.0_IN_PLACE_OPERATIONS.md" \
     "docs/2.0_DEVICE_VERIFICATION_QUEUE.md" \
     "docs/2.0_PROFILES_AND_TERMINOLOGY.md" \
+    "docs/2.0_SECRET_STORAGE_AND_EXPOSURE.md" \
     "docs/2.0_TRANSACTIONAL_ONE_SHOT.md" \
     "docs/2.0_PACKAGE_TOPOLOGY.md" \
     "docs/API_AUDIT.md" \
@@ -464,6 +467,7 @@ for required_package_file in \
     "scripts/check-2.0-in-place-sanitizers.sh" \
     "scripts/check-2.0-one-shot.sh" \
     "scripts/check-2.0-profiles.sh" \
+    "scripts/check-2.0-secret-storage.sh" \
     "scripts/check-2.0-migration-smoke.sh" \
     "scripts/check-api-snapshots.sh" \
     "scripts/validate-2.0-api-ledger.sh" \

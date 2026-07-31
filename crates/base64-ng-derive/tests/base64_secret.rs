@@ -10,11 +10,12 @@ struct ApiKey([u8; 5]);
 fn decodes_fixed_secret_newtype() {
     let key = ApiKey::from_base64(b"aGVsbG8=").unwrap();
 
-    assert_eq!(key.as_bytes(), b"hello");
+    assert_eq!(key.expose_secret(), b"hello");
     assert_eq!(
         format!("{key:?}"),
         r#"ApiKey { bytes: "<redacted>", len: 5 }"#
     );
+    assert_eq!(format!("{key}"), "<redacted secret>");
 }
 
 #[test]
@@ -41,5 +42,5 @@ fn implements_standard_conversion_traits() {
 
     assert!(from_str.constant_time_eq(&from_str_try));
     assert!(from_str.constant_time_eq(&from_bytes_try));
-    assert_eq!(AsRef::<[u8]>::as_ref(&from_str), b"hello");
+    assert_eq!(from_str.expose_secret(), b"hello");
 }

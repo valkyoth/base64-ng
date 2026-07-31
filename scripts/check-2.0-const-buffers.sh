@@ -29,7 +29,7 @@ for required in \
     'exact output length' \
     '`ConstTransformError`' \
     '`EncodedArray<CAP>`' \
-    '`SecretArray<CAP>` is non-Clone' \
+    '`secret::SecretArray<CAP>` is available' \
     'footprints, not measurements of the complete dynamic call chain' \
     'best-effort wipe limitations'
 do
@@ -53,14 +53,22 @@ done
 
 for required in \
     'pub struct EncodedArray' \
-    'pub struct DecodedArray' \
+    'pub struct DecodedArray'
+do
+    if ! grep -F -q "$required" src/v2/bounded.rs; then
+        echo "2.0 const buffers: bounded implementation is missing: $required" >&2
+        exit 1
+    fi
+done
+
+for required in \
     'pub struct SecretArray' \
     'impl<const CAP: usize> Drop for SecretArray' \
     'crate::wipe_tail(&mut bytes, len)' \
     'crate::wipe_bytes(&mut self.bytes)'
 do
-    if ! grep -F -q "$required" src/v2/bounded.rs; then
-        echo "2.0 const buffers: bounded implementation is missing: $required" >&2
+    if ! grep -F -q "$required" src/v2/secret/owned.rs; then
+        echo "2.0 const buffers: secret implementation is missing: $required" >&2
         exit 1
     fi
 done
@@ -92,13 +100,13 @@ publish = false
 [workspace]
 
 [dependencies]
-base64-ng = { path = "../..", default-features = false }
+base64-ng = { path = "../..", default-features = false, features = ["secrets"] }
 TOML
 
 cat >"$case_dir/valid.rs" <<'RS'
 use base64_ng::{
-    CodecBuilder, DecodePadding, DecodedArray, EncodePadding, EncodedArray, SecretArray,
-    STRICT_STANDARD_PADDED,
+    CodecBuilder, DecodePadding, DecodedArray, EncodePadding, EncodedArray,
+    STRICT_STANDARD_PADDED, secret::SecretArray,
 };
 
 const TABLE: [u8; 64] =
@@ -200,7 +208,7 @@ fn main() {}
 RS
 
 cat >"$case_dir/secret-clone.rs" <<'RS'
-use base64_ng::SecretArray;
+use base64_ng::secret::SecretArray;
 
 fn main() {
     let secret = SecretArray::<3>::from_array(*b"key", 3).unwrap();

@@ -1396,6 +1396,17 @@ an explicit input mode and retains original source indexes before compaction.
 It is ordinary, non-wiping, detailed-error behavior and is excluded from all
 secret modules.
 
+## 2.0 Secret Storage And Exposure Boundary
+
+Commit 18 adds no new unsafe code. `SecretOutput` and `SecretArray` reuse the
+reviewed volatile wipe boundary for complete borrowed or fixed-capacity
+storage. `SecretVec` additionally reuses `wipe_vec_spare_capacity`, whose raw
+pointer safety argument is documented above. Secret owners do not implement
+implicit slice coercions; explicit exposure views retain their owner's cleanup
+responsibility, while declassification deliberately transfers that
+responsibility to ordinary non-wiping storage. Drop cleanup excludes abort,
+forgotten values, process death, and historical hardware or allocator copies.
+
 ## Admission Rule
 
 Unsafe SIMD can become an active backend only after scalar differential tests,

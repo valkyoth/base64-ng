@@ -267,6 +267,131 @@ impl core::marker::Copy for base64_ng::runtime::BackendSnapshot
 impl core::marker::StructuralPartialEq for base64_ng::runtime::BackendSnapshot
 pub fn base64_ng::runtime::backend_report() -> base64_ng::runtime::BackendReport
 pub fn base64_ng::runtime::require_backend_policy(base64_ng::runtime::BackendPolicy) -> core::result::Result<(), base64_ng::runtime::BackendPolicyError>
+pub mod base64_ng::secret
+pub struct base64_ng::secret::DeclassifiedArray<const CAP: usize>
+impl<const CAP: usize> base64_ng::secret::DeclassifiedArray<CAP>
+pub fn base64_ng::secret::DeclassifiedArray<CAP>::as_bytes(&self) -> &[u8]
+pub const fn base64_ng::secret::DeclassifiedArray<CAP>::capacity(&self) -> usize
+pub const fn base64_ng::secret::DeclassifiedArray<CAP>::into_parts(self) -> ([u8; CAP], usize)
+pub const fn base64_ng::secret::DeclassifiedArray<CAP>::is_empty(&self) -> bool
+pub const fn base64_ng::secret::DeclassifiedArray<CAP>::len(&self) -> usize
+impl<const CAP: usize> core::clone::Clone for base64_ng::secret::DeclassifiedArray<CAP>
+pub fn base64_ng::secret::DeclassifiedArray<CAP>::clone(&self) -> base64_ng::secret::DeclassifiedArray<CAP>
+impl<const CAP: usize> core::cmp::Eq for base64_ng::secret::DeclassifiedArray<CAP>
+impl<const CAP: usize> core::cmp::PartialEq for base64_ng::secret::DeclassifiedArray<CAP>
+pub fn base64_ng::secret::DeclassifiedArray<CAP>::eq(&self, &base64_ng::secret::DeclassifiedArray<CAP>) -> bool
+impl<const CAP: usize> core::convert::AsRef<[u8]> for base64_ng::secret::DeclassifiedArray<CAP>
+pub fn base64_ng::secret::DeclassifiedArray<CAP>::as_ref(&self) -> &[u8]
+impl<const CAP: usize> core::fmt::Debug for base64_ng::secret::DeclassifiedArray<CAP>
+pub fn base64_ng::secret::DeclassifiedArray<CAP>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<const CAP: usize> core::hash::Hash for base64_ng::secret::DeclassifiedArray<CAP>
+pub fn base64_ng::secret::DeclassifiedArray<CAP>::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl<const CAP: usize> core::marker::Copy for base64_ng::secret::DeclassifiedArray<CAP>
+impl<const CAP: usize> core::marker::StructuralPartialEq for base64_ng::secret::DeclassifiedArray<CAP>
+pub struct base64_ng::secret::DeclassifiedOutput<'a>
+impl<'a> base64_ng::secret::DeclassifiedOutput<'a>
+pub fn base64_ng::secret::DeclassifiedOutput<'a>::as_bytes(&self) -> &[u8]
+pub fn base64_ng::secret::DeclassifiedOutput<'a>::as_bytes_mut(&mut self) -> &mut [u8]
+pub fn base64_ng::secret::DeclassifiedOutput<'a>::into_parts(self) -> (&'a mut [u8], usize)
+pub const fn base64_ng::secret::DeclassifiedOutput<'a>::is_empty(&self) -> bool
+pub const fn base64_ng::secret::DeclassifiedOutput<'a>::len(&self) -> usize
+impl core::convert::AsMut<[u8]> for base64_ng::secret::DeclassifiedOutput<'_>
+pub fn base64_ng::secret::DeclassifiedOutput<'_>::as_mut(&mut self) -> &mut [u8]
+impl core::convert::AsRef<[u8]> for base64_ng::secret::DeclassifiedOutput<'_>
+pub fn base64_ng::secret::DeclassifiedOutput<'_>::as_ref(&self) -> &[u8]
+pub struct base64_ng::secret::ExposedSecret<'a>
+impl<'a> base64_ng::secret::ExposedSecret<'a>
+pub const fn base64_ng::secret::ExposedSecret<'a>::as_bytes(&self) -> &[u8]
+pub const fn base64_ng::secret::ExposedSecret<'a>::is_empty(&self) -> bool
+pub const fn base64_ng::secret::ExposedSecret<'a>::len(&self) -> usize
+impl core::convert::AsRef<[u8]> for base64_ng::secret::ExposedSecret<'_>
+pub fn base64_ng::secret::ExposedSecret<'_>::as_ref(&self) -> &[u8]
+impl core::fmt::Debug for base64_ng::secret::ExposedSecret<'_>
+pub fn base64_ng::secret::ExposedSecret<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for base64_ng::secret::ExposedSecret<'_>
+pub fn base64_ng::secret::ExposedSecret<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::ops::deref::Deref for base64_ng::secret::ExposedSecret<'_>
+pub type base64_ng::secret::ExposedSecret<'_>::Target = [u8]
+pub fn base64_ng::secret::ExposedSecret<'_>::deref(&self) -> &Self::Target
+pub struct base64_ng::secret::ExposedSecretMut<'a>
+impl base64_ng::secret::ExposedSecretMut<'_>
+pub fn base64_ng::secret::ExposedSecretMut<'_>::as_bytes(&self) -> &[u8]
+pub fn base64_ng::secret::ExposedSecretMut<'_>::as_bytes_mut(&mut self) -> &mut [u8]
+pub fn base64_ng::secret::ExposedSecretMut<'_>::is_empty(&self) -> bool
+pub fn base64_ng::secret::ExposedSecretMut<'_>::len(&self) -> usize
+impl core::convert::AsMut<[u8]> for base64_ng::secret::ExposedSecretMut<'_>
+pub fn base64_ng::secret::ExposedSecretMut<'_>::as_mut(&mut self) -> &mut [u8]
+impl core::convert::AsRef<[u8]> for base64_ng::secret::ExposedSecretMut<'_>
+pub fn base64_ng::secret::ExposedSecretMut<'_>::as_ref(&self) -> &[u8]
+impl core::fmt::Debug for base64_ng::secret::ExposedSecretMut<'_>
+pub fn base64_ng::secret::ExposedSecretMut<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for base64_ng::secret::ExposedSecretMut<'_>
+pub fn base64_ng::secret::ExposedSecretMut<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::ops::deref::Deref for base64_ng::secret::ExposedSecretMut<'_>
+pub type base64_ng::secret::ExposedSecretMut<'_>::Target = [u8]
+pub fn base64_ng::secret::ExposedSecretMut<'_>::deref(&self) -> &Self::Target
+impl core::ops::deref::DerefMut for base64_ng::secret::ExposedSecretMut<'_>
+pub fn base64_ng::secret::ExposedSecretMut<'_>::deref_mut(&mut self) -> &mut Self::Target
+pub struct base64_ng::secret::SecretArray<const CAP: usize>
+impl<const CAP: usize> base64_ng::secret::SecretArray<CAP>
+pub const fn base64_ng::secret::SecretArray<CAP>::capacity(&self) -> usize
+pub fn base64_ng::secret::SecretArray<CAP>::clear(&mut self)
+pub fn base64_ng::secret::SecretArray<CAP>::declassify(self) -> base64_ng::secret::DeclassifiedArray<CAP>
+pub fn base64_ng::secret::SecretArray<CAP>::expose_secret(&self) -> base64_ng::secret::ExposedSecret<'_>
+pub fn base64_ng::secret::SecretArray<CAP>::expose_secret_mut(&mut self) -> base64_ng::secret::ExposedSecretMut<'_>
+pub fn base64_ng::secret::SecretArray<CAP>::from_array([u8; CAP], usize) -> core::result::Result<Self, base64_ng::BufferLengthError>
+pub const fn base64_ng::secret::SecretArray<CAP>::is_empty(&self) -> bool
+pub const fn base64_ng::secret::SecretArray<CAP>::len(&self) -> usize
+impl<const CAP: usize> core::fmt::Debug for base64_ng::secret::SecretArray<CAP>
+pub fn base64_ng::secret::SecretArray<CAP>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<const CAP: usize> core::fmt::Display for base64_ng::secret::SecretArray<CAP>
+pub fn base64_ng::secret::SecretArray<CAP>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<const CAP: usize> core::ops::drop::Drop for base64_ng::secret::SecretArray<CAP>
+pub fn base64_ng::secret::SecretArray<CAP>::drop(&mut self)
+pub struct base64_ng::secret::SecretInput<'a>
+impl<'a> base64_ng::secret::SecretInput<'a>
+pub const fn base64_ng::secret::SecretInput<'a>::expose_secret(&self) -> base64_ng::secret::ExposedSecret<'_>
+pub const fn base64_ng::secret::SecretInput<'a>::is_empty(&self) -> bool
+pub const fn base64_ng::secret::SecretInput<'a>::len(&self) -> usize
+pub const fn base64_ng::secret::SecretInput<'a>::new(&'a [u8]) -> Self
+impl core::fmt::Debug for base64_ng::secret::SecretInput<'_>
+pub fn base64_ng::secret::SecretInput<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for base64_ng::secret::SecretInput<'_>
+pub fn base64_ng::secret::SecretInput<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+pub struct base64_ng::secret::SecretOutput<'a>
+impl<'a> base64_ng::secret::SecretOutput<'a>
+pub fn base64_ng::secret::SecretOutput<'a>::capacity(&self) -> usize
+pub fn base64_ng::secret::SecretOutput<'a>::clear(&mut self)
+pub fn base64_ng::secret::SecretOutput<'a>::declassify(self) -> base64_ng::secret::DeclassifiedOutput<'a>
+pub fn base64_ng::secret::SecretOutput<'a>::empty(&'a mut [u8]) -> Self
+pub fn base64_ng::secret::SecretOutput<'a>::expose_secret(&self) -> base64_ng::secret::ExposedSecret<'_>
+pub fn base64_ng::secret::SecretOutput<'a>::expose_secret_mut(&mut self) -> base64_ng::secret::ExposedSecretMut<'_>
+pub fn base64_ng::secret::SecretOutput<'a>::from_initialized(&'a mut [u8], usize) -> core::result::Result<Self, base64_ng::BufferLengthError>
+pub const fn base64_ng::secret::SecretOutput<'a>::is_empty(&self) -> bool
+pub const fn base64_ng::secret::SecretOutput<'a>::len(&self) -> usize
+impl core::fmt::Debug for base64_ng::secret::SecretOutput<'_>
+pub fn base64_ng::secret::SecretOutput<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for base64_ng::secret::SecretOutput<'_>
+pub fn base64_ng::secret::SecretOutput<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::ops::drop::Drop for base64_ng::secret::SecretOutput<'_>
+pub fn base64_ng::secret::SecretOutput<'_>::drop(&mut self)
+pub struct base64_ng::secret::SecretVec
+impl base64_ng::secret::SecretVec
+pub fn base64_ng::secret::SecretVec::capacity(&self) -> usize
+pub fn base64_ng::secret::SecretVec::clear(&mut self)
+pub fn base64_ng::secret::SecretVec::declassify_into_unprotected_vec(self) -> alloc::vec::Vec<u8>
+pub fn base64_ng::secret::SecretVec::expose_secret(&self) -> base64_ng::secret::ExposedSecret<'_>
+pub fn base64_ng::secret::SecretVec::expose_secret_mut(&mut self) -> base64_ng::secret::ExposedSecretMut<'_>
+pub fn base64_ng::secret::SecretVec::from_slice(&[u8]) -> Self
+pub fn base64_ng::secret::SecretVec::from_vec(alloc::vec::Vec<u8>) -> Self
+pub fn base64_ng::secret::SecretVec::is_empty(&self) -> bool
+pub fn base64_ng::secret::SecretVec::len(&self) -> usize
+impl core::fmt::Debug for base64_ng::secret::SecretVec
+pub fn base64_ng::secret::SecretVec::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for base64_ng::secret::SecretVec
+pub fn base64_ng::secret::SecretVec::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::ops::drop::Drop for base64_ng::secret::SecretVec
+pub fn base64_ng::secret::SecretVec::drop(&mut self)
 pub mod base64_ng::stream
 pub struct base64_ng::stream::Decoder<W, A, const PAD: bool> where A: base64_ng::Alphabet
 impl<W, A, const PAD: bool> base64_ng::stream::Decoder<W, A, PAD> where A: base64_ng::Alphabet
@@ -1627,20 +1752,6 @@ impl core::hash::Hash for base64_ng::RuntimeSpec
 pub fn base64_ng::RuntimeSpec::hash<__H: core::hash::Hasher>(&self, &mut __H)
 impl core::marker::Copy for base64_ng::RuntimeSpec
 impl core::marker::StructuralPartialEq for base64_ng::RuntimeSpec
-pub struct base64_ng::SecretArray<const CAP: usize>
-impl<const CAP: usize> base64_ng::SecretArray<CAP>
-pub const fn base64_ng::SecretArray<CAP>::capacity(&self) -> usize
-pub fn base64_ng::SecretArray<CAP>::clear(&mut self)
-pub fn base64_ng::SecretArray<CAP>::expose_secret(&self) -> &[u8]
-pub fn base64_ng::SecretArray<CAP>::from_array([u8; CAP], usize) -> core::result::Result<Self, base64_ng::BufferLengthError>
-pub const fn base64_ng::SecretArray<CAP>::is_empty(&self) -> bool
-pub const fn base64_ng::SecretArray<CAP>::len(&self) -> usize
-impl<const CAP: usize> core::fmt::Debug for base64_ng::SecretArray<CAP>
-pub fn base64_ng::SecretArray<CAP>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
-impl<const CAP: usize> core::fmt::Display for base64_ng::SecretArray<CAP>
-pub fn base64_ng::SecretArray<CAP>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
-impl<const CAP: usize> core::ops::drop::Drop for base64_ng::SecretArray<CAP>
-pub fn base64_ng::SecretArray<CAP>::drop(&mut self)
 pub struct base64_ng::SecretBuffer
 impl base64_ng::SecretBuffer
 pub fn base64_ng::SecretBuffer::clear(&mut self)

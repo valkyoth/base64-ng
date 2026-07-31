@@ -26,7 +26,10 @@ mod ordinary;
 #[cfg(feature = "alloc")]
 mod ordinary_alloc;
 mod profiles;
-mod secret;
+#[cfg(not(feature = "secrets"))]
+pub(crate) mod secret;
+#[cfg(feature = "secrets")]
+pub mod secret;
 mod secret_in_place;
 #[allow(dead_code)]
 pub(crate) mod specifications;
@@ -35,7 +38,7 @@ pub mod web;
 mod wrapping;
 
 pub use alphabet::{BINHEX_ALPHABET, ValidatedAlphabet, ValidatedAlphabetError};
-pub use bounded::{BufferLengthError, DecodedArray, EncodedArray, SecretArray};
+pub use bounded::{BufferLengthError, DecodedArray, EncodedArray};
 pub use chunks::{EncodedChunk, EncodedChunks};
 pub use const_transforms::ConstTransformError;
 pub use contracts::{
@@ -95,6 +98,8 @@ mod profile_tests;
 mod rfc4648_oracle;
 #[cfg(test)]
 mod secret_in_place_tests;
+#[cfg(test)]
+mod secret_storage_tests;
 #[cfg(test)]
 mod specification_tests;
 #[cfg(test)]

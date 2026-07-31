@@ -5,7 +5,7 @@ check_reserved_feature() {
     name="$1"
     features="$2"
 
-    echo "reserved features: $name remains dependency-free and placeholder-only"
+    echo "reserved features: checking dependency boundary for $name"
     cargo check --no-default-features --features "$features" --lib
 
     tree_output="$(
@@ -22,12 +22,21 @@ check_reserved_feature() {
     fi
 }
 
-for inert_feature in tokio kani fuzzing secrets; do
+for inert_feature in tokio kani fuzzing; do
     if ! grep -q "^$inert_feature = \\[\\]$" Cargo.toml; then
         echo "reserved features: $inert_feature must remain an inert Cargo feature" >&2
         exit 1
     fi
 done
+
+if ! grep -q '^secrets = \[\]$' Cargo.toml; then
+    echo "reserved features: secrets must remain dependency-free" >&2
+    exit 1
+fi
+if ! grep -F -q 'pub mod secret;' src/v2/mod.rs; then
+    echo "reserved features: secrets storage capability is not public" >&2
+    exit 1
+fi
 
 for deferred_feature in serde bytes zeroize subtle criterion; do
     if grep -q "^$deferred_feature =" Cargo.toml; then
@@ -39,7 +48,7 @@ done
 check_reserved_feature "tokio" "tokio"
 check_reserved_feature "kani" "kani"
 check_reserved_feature "fuzzing" "fuzzing"
-check_reserved_feature "secrets capability reservation" "secrets"
+check_reserved_feature "secrets storage capability" "secrets"
 
 if ! grep -q '^checked-backend = \["simd"\]$' Cargo.toml; then
     echo "reserved features: checked-backend must imply simd exactly" >&2

@@ -1,7 +1,47 @@
-//! Secret codec and high-assurance policy ownership boundary.
+//! Redacted secret storage and explicit exposure.
+//!
+//! Secret owners require deliberately named exposure or declassification
+//! operations. Constant-time-oriented computation is introduced separately by
+//! later 2.0 checkpoints; storage alone does not make an ordinary codec safe
+//! for secret-bearing input.
 
 use super::alphabet::{ALPHABET_LEN, ValidatedAlphabet};
 use crate::ct_mask_eq_u8;
+
+#[cfg(feature = "secrets")]
+macro_rules! redacted_formatting {
+    ($name:ty, $label:literal) => {
+        impl core::fmt::Debug for $name {
+            fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+                formatter
+                    .debug_struct($label)
+                    .field("bytes", &"<redacted>")
+                    .field("len", &self.len())
+                    .finish()
+            }
+        }
+
+        impl core::fmt::Display for $name {
+            fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+                formatter.write_str("<redacted secret>")
+            }
+        }
+    };
+}
+
+#[cfg(feature = "secrets")]
+mod exposure;
+#[cfg(feature = "secrets")]
+mod owned;
+
+#[cfg(feature = "secrets")]
+pub use exposure::{
+    DeclassifiedOutput, ExposedSecret, ExposedSecretMut, SecretInput, SecretOutput,
+};
+#[cfg(all(feature = "secrets", feature = "alloc"))]
+pub use owned::SecretVec;
+#[cfg(feature = "secrets")]
+pub use owned::{DeclassifiedArray, SecretArray};
 
 /// Maps one encoded symbol through a crate-owned fixed 64-entry scan.
 ///

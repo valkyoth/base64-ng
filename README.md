@@ -252,7 +252,7 @@ license = "MIT OR Apache-2.0"
 | `std` | yes | `std::error::Error` support and feature base for I/O. |
 | `simd` | no | Admitted std runtime-dispatched encode and normal strict decode acceleration for Standard and URL-safe alphabets, with scalar fallback for unsupported surfaces. |
 | `stream` | no | `std::io` streaming wrappers. |
-| `secrets` | no | Inert 2.0 development reservation. Production secret capability behavior is not exposed through this feature until the numbered 2.0 commits implement it. |
+| `secrets` | no | Dependency-free 2.0 secret storage, explicit exposure, and declassification. Constant-time-oriented secret codecs arrive in later numbered 2.0 commits. |
 | `checked-backend` | no | Inert 2.0 development reservation that enables `simd`; redundant backend checking is implemented later in the 2.0 plan. |
 | `allow-wasm32-best-effort-wipe` | no | Explicitly allow `wasm32` builds with compiler-fence-only cleanup. |
 | `allow-compiler-fence-only-wipe` | no | Explicitly allow unsupported native architectures to build with compiler-fence-only cleanup after platform review. |
@@ -381,7 +381,7 @@ use base64_ng_derive::Base64Secret;
 struct ApiKey([u8; 5]);
 
 let key = ApiKey::from_base64(b"aGVsbG8=").unwrap();
-assert_eq!(key.as_bytes(), b"hello");
+assert_eq!(key.expose_secret(), b"hello");
 assert_eq!(key.encode_base64::<8>().unwrap().as_str(), "aGVsbG8=");
 ```
 

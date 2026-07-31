@@ -42,7 +42,8 @@ The generated impls provide:
 - `from_base64(&[u8])` and `from_base64_str(&str)` using
   `base64_ng::ct::STANDARD.decode_slice_staged_clear_tail`.
 - `encode_base64::<CAP>()` using strict standard padded Base64.
-- `as_bytes()`, `as_mut_bytes()`, and `constant_time_eq(&Self)`.
+- `expose_secret()`, `expose_secret_mut()`, and `constant_time_eq(&Self)`.
+- no implicit `AsRef<[u8]>` conversion for secret-bearing values.
 - redacted `Debug`.
 - drop-time cleanup through `base64_ng::clear_bytes`.
 
