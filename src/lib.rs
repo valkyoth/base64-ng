@@ -32,7 +32,10 @@
 //! synthesized encoded chunk iteration share the same validated codec values.
 //! Exact WHATWG decoding is separately named [`web::FORGIVING`]. Expert
 //! padding-indifferent and noncanonical-bit policies live under [`compat`]
-//! and never become strict or secret defaults.
+//! and never become strict or secret defaults. Accurately scoped body and
+//! alphabet presets include [`MIME_BODY_STRICT`], [`PEM_BODY_LF`],
+//! [`BCRYPT_ALPHABET_NO_PAD`], and [`PBKDF2_ALPHABET_NO_PAD`]. The sole generic
+//! legacy transport-whitespace policy is [`legacy::ASCII_WHITESPACE`].
 //!
 //! # Examples
 //!
@@ -173,17 +176,20 @@ mod scalar_encode_in_place;
 mod v2;
 
 pub use v2::{
-    AssuranceClass, Atomicity, BackendClass, BackendFault, Base64, BufferLengthError, Codec,
-    CodecBuilder, CodecBuilderError, CodecSettings, ConstTransformError, CountedSink,
-    CountedWriteError, DecodePadding, DecodedArray, DecoderState, EncodePadding, EncodedArray,
-    EncodedChunk, EncodedChunks, EncodedDisplay, EncoderState, Failure, FormatWriteError,
-    InPlaceError, InputError, InputErrorKind, OneShotError, OperationError, OutputFull, Progress,
-    ProtocolScope, RuntimeSpec, STRICT_STANDARD_PADDED, STRICT_STANDARD_UNPADDED,
-    STRICT_URL_SAFE_PADDED, STRICT_URL_SAFE_UNPADDED, SecretArray, Status, Step,
-    StrictStandardPadded, StrictStandardUnpadded, StrictUrlSafePadded, StrictUrlSafeUnpadded,
-    TerminalError, TrailingBits, ValidatedAlphabet, ValidatedAlphabetError,
+    AssuranceClass, Atomicity, BCRYPT_ALPHABET_NO_PAD, BINHEX_ALPHABET, BackendClass, BackendFault,
+    Base64, BodyCodec, BodyLineEnding, BodyWrap, BodyWrapError, BufferLengthError,
+    CRYPT_ALPHABET_NO_PAD, Codec, CodecBuilder, CodecBuilderError, CodecSettings,
+    ConstTransformError, CountedSink, CountedWriteError, DecodePadding, DecodedArray, DecoderState,
+    EncodePadding, EncodedArray, EncodedChunk, EncodedChunks, EncodedDisplay, EncoderState,
+    Failure, FormatWriteError, IMAP_MUTF7_ALPHABET_NO_PAD, InPlaceError, InputError,
+    InputErrorKind, MIME_BODY_STRICT, OneShotError, OperationError, OutputFull,
+    PBKDF2_ALPHABET_NO_PAD, PEM_BODY_CRLF, PEM_BODY_LF, Progress, ProtocolScope, RuntimeSpec,
+    STRICT_STANDARD_PADDED, STRICT_STANDARD_UNPADDED, STRICT_URL_SAFE_PADDED,
+    STRICT_URL_SAFE_UNPADDED, SecretArray, Status, Step, StrictStandardPadded,
+    StrictStandardUnpadded, StrictUrlSafePadded, StrictUrlSafeUnpadded, TerminalError,
+    TrailingBits, ValidatedAlphabet, ValidatedAlphabetError,
 };
-pub use v2::{compat, web};
+pub use v2::{compat, legacy, web};
 mod wrap;
 
 pub use alphabet::{

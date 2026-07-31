@@ -11,7 +11,13 @@ mod tests {
     use base64::alphabet::Alphabet;
     use base64::engine::DecodePaddingMode;
     use base64::engine::general_purpose::{GeneralPurpose, GeneralPurposeConfig};
-    use base64_ng::{CodecSettings as PublicCodecSettings, compat};
+    use base64_ng::{
+        BINHEX_ALPHABET, CodecBuilder as PublicCodecBuilder,
+        CodecSettings as PublicCodecSettings, DecodePadding as PublicDecodePadding,
+        EncodePadding as PublicEncodePadding, IMAP_MUTF7_ALPHABET_NO_PAD,
+        PBKDF2_ALPHABET_NO_PAD, compat,
+    };
+    use base64ct::{Base64Pbkdf2, Encoding as _};
 
     use super::specifications::{
         CodecBuilder, DecodePadding, EncodePadding, STRICT_STANDARD_PADDED,
@@ -270,6 +276,53 @@ mod tests {
         }
     }
 
+    #[test]
+    fn pbkdf2_alphabet_profile_matches_pinned_base64ct() {
+        for len in 0..=96 {
+            let input = patterned_input(len);
+            let mut actual = [0u8; 128];
+            let actual_len = PBKDF2_ALPHABET_NO_PAD
+                .encode_into(&input, &mut actual)
+                .unwrap();
+            let mut expected = [0u8; 128];
+            let expected = Base64Pbkdf2::encode(&input, &mut expected).unwrap();
+            assert_eq!(&actual[..actual_len], expected.as_bytes());
+
+            let mut decoded = [0u8; 96];
+            let decoded_len = PBKDF2_ALPHABET_NO_PAD
+                .decode_into(&actual[..actual_len], &mut decoded)
+                .unwrap();
+            assert_eq!(&decoded[..decoded_len], input);
+        }
+    }
+
+    #[test]
+    fn binhex_and_imap_alphabet_profiles_match_pinned_base64() {
+        let binhex = PublicCodecBuilder::new(BINHEX_ALPHABET)
+            .encode_padding(PublicEncodePadding::Unpadded)
+            .decode_padding(PublicDecodePadding::Forbid)
+            .build()
+            .unwrap();
+        let external_binhex = GeneralPurpose::new(
+            &base64::alphabet::BIN_HEX,
+            GeneralPurposeConfig::new().with_encode_padding(false),
+        );
+        let external_imap = GeneralPurpose::new(
+            &base64::alphabet::IMAP_MUTF7,
+            GeneralPurposeConfig::new().with_encode_padding(false),
+        );
+
+        for len in 0..=96 {
+            let input = patterned_input(len);
+            assert_public_codec_matches_external(&binhex, &external_binhex, &input);
+            assert_public_codec_matches_external(
+                &IMAP_MUTF7_ALPHABET_NO_PAD,
+                &external_imap,
+                &input,
+            );
+        }
+    }
+
     fn external_engine(settings: super::specifications::CodecSettings) -> GeneralPurpose {
         let table = core::str::from_utf8(settings.alphabet().as_array()).unwrap();
         let alphabet = Alphabet::new(table).unwrap();
@@ -317,5 +370,25 @@ mod tests {
 
     fn assert_decode(engine: &GeneralPurpose, input: &[u8], accepted: bool) {
         assert_eq!(engine.decode(input).is_ok(), accepted, "{input:?}");
+    }
+
+    fn patterned_input(len: usize) -> Vec<u8> {
+        (0..len)
+            .map(|index| index.wrapping_mul(73).wrapping_add(len) as u8)
+            .collect()
+    }
+
+    fn assert_public_codec_matches_external(
+        codec: &base64_ng::Base64<base64_ng::RuntimeSpec>,
+        external: &GeneralPurpose,
+        input: &[u8],
+    ) {
+        let expected = external.encode(input);
+        let mut actual = vec![0u8; expected.len()];
+        let written = codec.encode_into(input, &mut actual).unwrap();
+        assert_eq!(&actual[..written], expected.as_bytes());
+        let mut decoded = vec![0u8; input.len()];
+        let decoded_len = codec.decode_into(&actual, &mut decoded).unwrap();
+        assert_eq!(&decoded[..decoded_len], input);
     }
 }

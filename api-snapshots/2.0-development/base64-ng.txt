@@ -44,6 +44,41 @@ pub const base64_ng::ct::STANDARD: base64_ng::ct::CtEngine<base64_ng::Standard, 
 pub const base64_ng::ct::STANDARD_NO_PAD: base64_ng::ct::CtEngine<base64_ng::Standard, false>
 pub const base64_ng::ct::URL_SAFE: base64_ng::ct::CtEngine<base64_ng::UrlSafe, true>
 pub const base64_ng::ct::URL_SAFE_NO_PAD: base64_ng::ct::CtEngine<base64_ng::UrlSafe, false>
+pub mod base64_ng::legacy
+pub struct base64_ng::legacy::LegacyAsciiWhitespace
+impl base64_ng::legacy::LegacyAsciiWhitespace
+pub fn base64_ng::legacy::LegacyAsciiWhitespace::decode_into<S: base64_ng::Codec>(&self, &base64_ng::Base64<S>, &[u8], &mut [u8]) -> core::result::Result<usize, base64_ng::OneShotError>
+pub fn base64_ng::legacy::LegacyAsciiWhitespace::decoded_len<S: base64_ng::Codec>(&self, &base64_ng::Base64<S>, &[u8]) -> core::result::Result<usize, base64_ng::OneShotError>
+pub fn base64_ng::legacy::LegacyAsciiWhitespace::decoder<S: base64_ng::Codec>(&self, &base64_ng::Base64<S>) -> base64_ng::legacy::LegacyWhitespaceDecoder
+pub fn base64_ng::legacy::LegacyAsciiWhitespace::validate<S: base64_ng::Codec>(&self, &base64_ng::Base64<S>, &[u8]) -> core::result::Result<(), base64_ng::OneShotError>
+impl core::clone::Clone for base64_ng::legacy::LegacyAsciiWhitespace
+pub fn base64_ng::legacy::LegacyAsciiWhitespace::clone(&self) -> base64_ng::legacy::LegacyAsciiWhitespace
+impl core::cmp::Eq for base64_ng::legacy::LegacyAsciiWhitespace
+impl core::cmp::PartialEq for base64_ng::legacy::LegacyAsciiWhitespace
+pub fn base64_ng::legacy::LegacyAsciiWhitespace::eq(&self, &base64_ng::legacy::LegacyAsciiWhitespace) -> bool
+impl core::default::Default for base64_ng::legacy::LegacyAsciiWhitespace
+pub fn base64_ng::legacy::LegacyAsciiWhitespace::default() -> base64_ng::legacy::LegacyAsciiWhitespace
+impl core::fmt::Debug for base64_ng::legacy::LegacyAsciiWhitespace
+pub fn base64_ng::legacy::LegacyAsciiWhitespace::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng::legacy::LegacyAsciiWhitespace
+pub fn base64_ng::legacy::LegacyAsciiWhitespace::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng::legacy::LegacyAsciiWhitespace
+impl core::marker::StructuralPartialEq for base64_ng::legacy::LegacyAsciiWhitespace
+pub struct base64_ng::legacy::LegacyWhitespaceDecoder
+impl base64_ng::legacy::LegacyWhitespaceDecoder
+pub fn base64_ng::legacy::LegacyWhitespaceDecoder::finish(&mut self, &mut [u8]) -> core::result::Result<base64_ng::Step, base64_ng::OperationError>
+pub fn base64_ng::legacy::LegacyWhitespaceDecoder::reset(&mut self)
+pub const fn base64_ng::legacy::LegacyWhitespaceDecoder::source_position(&self) -> usize
+pub fn base64_ng::legacy::LegacyWhitespaceDecoder::update(&mut self, &[u8], &mut [u8]) -> core::result::Result<base64_ng::Step, base64_ng::OperationError>
+impl core::clone::Clone for base64_ng::legacy::LegacyWhitespaceDecoder
+pub fn base64_ng::legacy::LegacyWhitespaceDecoder::clone(&self) -> base64_ng::legacy::LegacyWhitespaceDecoder
+impl core::cmp::Eq for base64_ng::legacy::LegacyWhitespaceDecoder
+impl core::cmp::PartialEq for base64_ng::legacy::LegacyWhitespaceDecoder
+pub fn base64_ng::legacy::LegacyWhitespaceDecoder::eq(&self, &base64_ng::legacy::LegacyWhitespaceDecoder) -> bool
+impl core::fmt::Debug for base64_ng::legacy::LegacyWhitespaceDecoder
+pub fn base64_ng::legacy::LegacyWhitespaceDecoder::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for base64_ng::legacy::LegacyWhitespaceDecoder
+pub const base64_ng::legacy::ASCII_WHITESPACE: base64_ng::legacy::LegacyAsciiWhitespace
 pub mod base64_ng::runtime
 #[non_exhaustive] pub enum base64_ng::runtime::Backend
 pub base64_ng::runtime::Backend::Avx2
@@ -505,6 +540,37 @@ impl core::hash::Hash for base64_ng::BackendFault
 pub fn base64_ng::BackendFault::hash<__H: core::hash::Hasher>(&self, &mut __H)
 impl core::marker::Copy for base64_ng::BackendFault
 impl core::marker::StructuralPartialEq for base64_ng::BackendFault
+pub enum base64_ng::BodyLineEnding
+pub base64_ng::BodyLineEnding::CrLf
+pub base64_ng::BodyLineEnding::Lf
+impl base64_ng::BodyLineEnding
+pub const fn base64_ng::BodyLineEnding::as_bytes(self) -> &'static [u8]
+pub const fn base64_ng::BodyLineEnding::byte_len(self) -> usize
+impl core::clone::Clone for base64_ng::BodyLineEnding
+pub fn base64_ng::BodyLineEnding::clone(&self) -> base64_ng::BodyLineEnding
+impl core::cmp::Eq for base64_ng::BodyLineEnding
+impl core::cmp::PartialEq for base64_ng::BodyLineEnding
+pub fn base64_ng::BodyLineEnding::eq(&self, &base64_ng::BodyLineEnding) -> bool
+impl core::fmt::Debug for base64_ng::BodyLineEnding
+pub fn base64_ng::BodyLineEnding::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng::BodyLineEnding
+pub fn base64_ng::BodyLineEnding::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng::BodyLineEnding
+impl core::marker::StructuralPartialEq for base64_ng::BodyLineEnding
+#[non_exhaustive] pub enum base64_ng::BodyWrapError
+pub base64_ng::BodyWrapError::ZeroWidth
+impl core::clone::Clone for base64_ng::BodyWrapError
+pub fn base64_ng::BodyWrapError::clone(&self) -> base64_ng::BodyWrapError
+impl core::cmp::Eq for base64_ng::BodyWrapError
+impl core::cmp::PartialEq for base64_ng::BodyWrapError
+pub fn base64_ng::BodyWrapError::eq(&self, &base64_ng::BodyWrapError) -> bool
+impl core::error::Error for base64_ng::BodyWrapError
+impl core::fmt::Debug for base64_ng::BodyWrapError
+pub fn base64_ng::BodyWrapError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for base64_ng::BodyWrapError
+pub fn base64_ng::BodyWrapError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng::BodyWrapError
+impl core::marker::StructuralPartialEq for base64_ng::BodyWrapError
 pub enum base64_ng::CodecBuilderError
 pub base64_ng::CodecBuilderError::EncodedPaddingRejected
 pub base64_ng::CodecBuilderError::EncodedPaddingRequired
@@ -1016,6 +1082,41 @@ impl core::fmt::Debug for base64_ng::Bcrypt
 pub fn base64_ng::Bcrypt::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for base64_ng::Bcrypt
 impl core::marker::StructuralPartialEq for base64_ng::Bcrypt
+pub struct base64_ng::BodyCodec<S>
+impl<S> base64_ng::BodyCodec<S>
+pub const fn base64_ng::BodyCodec<S>::codec(&self) -> &base64_ng::Base64<S>
+pub const fn base64_ng::BodyCodec<S>::wrapping(&self) -> base64_ng::BodyWrap
+impl<S: core::clone::Clone> core::clone::Clone for base64_ng::BodyCodec<S>
+pub fn base64_ng::BodyCodec<S>::clone(&self) -> base64_ng::BodyCodec<S>
+impl<S: core::cmp::Eq> core::cmp::Eq for base64_ng::BodyCodec<S>
+impl<S: core::cmp::PartialEq> core::cmp::PartialEq for base64_ng::BodyCodec<S>
+pub fn base64_ng::BodyCodec<S>::eq(&self, &base64_ng::BodyCodec<S>) -> bool
+impl<S: core::cmp::PartialEq> core::marker::StructuralPartialEq for base64_ng::BodyCodec<S>
+impl<S: core::fmt::Debug> core::fmt::Debug for base64_ng::BodyCodec<S>
+pub fn base64_ng::BodyCodec<S>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<S: core::hash::Hash> core::hash::Hash for base64_ng::BodyCodec<S>
+pub fn base64_ng::BodyCodec<S>::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl<S: core::marker::Copy> core::marker::Copy for base64_ng::BodyCodec<S>
+pub struct base64_ng::BodyWrap
+impl base64_ng::BodyWrap
+pub const fn base64_ng::BodyWrap::checked_output_len(self, usize) -> core::option::Option<usize>
+pub fn base64_ng::BodyWrap::copy_payload_into(self, &[u8], &mut [u8]) -> core::option::Option<usize>
+pub fn base64_ng::BodyWrap::insert_into(self, &[u8], &mut [u8]) -> core::option::Option<usize>
+pub const fn base64_ng::BodyWrap::line_ending(self) -> base64_ng::BodyLineEnding
+pub const fn base64_ng::BodyWrap::line_width(self) -> core::num::nonzero::NonZeroUsize
+pub fn base64_ng::BodyWrap::payload_len(self, &[u8]) -> core::option::Option<usize>
+pub const fn base64_ng::BodyWrap::try_new(usize, base64_ng::BodyLineEnding) -> core::result::Result<Self, base64_ng::BodyWrapError>
+impl core::clone::Clone for base64_ng::BodyWrap
+pub fn base64_ng::BodyWrap::clone(&self) -> base64_ng::BodyWrap
+impl core::cmp::Eq for base64_ng::BodyWrap
+impl core::cmp::PartialEq for base64_ng::BodyWrap
+pub fn base64_ng::BodyWrap::eq(&self, &base64_ng::BodyWrap) -> bool
+impl core::fmt::Debug for base64_ng::BodyWrap
+pub fn base64_ng::BodyWrap::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng::BodyWrap
+pub fn base64_ng::BodyWrap::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng::BodyWrap
+impl core::marker::StructuralPartialEq for base64_ng::BodyWrap
 pub struct base64_ng::BufferLengthError
 impl base64_ng::BufferLengthError
 pub const fn base64_ng::BufferLengthError::capacity(self) -> usize
@@ -1715,11 +1816,19 @@ pub fn base64_ng::ValidatedAlphabet::hash<__H: core::hash::Hasher>(&self, &mut _
 impl core::marker::Copy for base64_ng::ValidatedAlphabet
 impl core::marker::StructuralPartialEq for base64_ng::ValidatedAlphabet
 pub const base64_ng::BCRYPT: base64_ng::Profile<base64_ng::Bcrypt, false>
+pub const base64_ng::BCRYPT_ALPHABET_NO_PAD: base64_ng::Base64<base64_ng::RuntimeSpec>
 pub const base64_ng::BCRYPT_NO_PAD: base64_ng::Engine<base64_ng::Bcrypt, false>
+pub const base64_ng::BINHEX_ALPHABET: base64_ng::ValidatedAlphabet
 pub const base64_ng::CRYPT: base64_ng::Profile<base64_ng::Crypt, false>
+pub const base64_ng::CRYPT_ALPHABET_NO_PAD: base64_ng::Base64<base64_ng::RuntimeSpec>
 pub const base64_ng::CRYPT_NO_PAD: base64_ng::Engine<base64_ng::Crypt, false>
+pub const base64_ng::IMAP_MUTF7_ALPHABET_NO_PAD: base64_ng::Base64<base64_ng::RuntimeSpec>
 pub const base64_ng::MIME: base64_ng::Profile<base64_ng::Standard, true>
+pub const base64_ng::MIME_BODY_STRICT: base64_ng::BodyCodec<base64_ng::StrictStandardPadded>
+pub const base64_ng::PBKDF2_ALPHABET_NO_PAD: base64_ng::Base64<base64_ng::RuntimeSpec>
 pub const base64_ng::PEM: base64_ng::Profile<base64_ng::Standard, true>
+pub const base64_ng::PEM_BODY_CRLF: base64_ng::BodyCodec<base64_ng::StrictStandardPadded>
+pub const base64_ng::PEM_BODY_LF: base64_ng::BodyCodec<base64_ng::StrictStandardPadded>
 pub const base64_ng::PEM_CRLF: base64_ng::Profile<base64_ng::Standard, true>
 pub const base64_ng::STANDARD: base64_ng::Engine<base64_ng::Standard, true>
 pub const base64_ng::STANDARD_NO_PAD: base64_ng::Engine<base64_ng::Standard, false>

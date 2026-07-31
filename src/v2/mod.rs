@@ -19,11 +19,13 @@ mod in_place;
 pub(crate) mod incremental;
 #[allow(dead_code)]
 pub(crate) mod incremental_decoder;
+pub mod legacy;
 #[allow(dead_code)]
 mod lifecycle;
 mod ordinary;
 #[cfg(feature = "alloc")]
 mod ordinary_alloc;
+mod profiles;
 mod secret;
 mod secret_in_place;
 #[allow(dead_code)]
@@ -32,7 +34,7 @@ pub mod web;
 #[allow(dead_code)]
 mod wrapping;
 
-pub use alphabet::{ValidatedAlphabet, ValidatedAlphabetError};
+pub use alphabet::{BINHEX_ALPHABET, ValidatedAlphabet, ValidatedAlphabetError};
 pub use bounded::{BufferLengthError, DecodedArray, EncodedArray, SecretArray};
 pub use chunks::{EncodedChunk, EncodedChunks};
 pub use const_transforms::ConstTransformError;
@@ -47,11 +49,18 @@ pub(crate) use in_place::{encoded_tail_len, quantum_decoded_len, tail_decoded_le
 pub use incremental::EncoderState;
 pub use incremental_decoder::DecoderState;
 pub use ordinary::OneShotError;
+pub use profiles::{
+    BCRYPT_ALPHABET_NO_PAD, BodyCodec, CRYPT_ALPHABET_NO_PAD, IMAP_MUTF7_ALPHABET_NO_PAD,
+    MIME_BODY_STRICT, PBKDF2_ALPHABET_NO_PAD, PEM_BODY_CRLF, PEM_BODY_LF,
+};
 pub use specifications::{
     Base64, Codec, CodecBuilder, CodecBuilderError, CodecSettings, DecodePadding, EncodePadding,
     RuntimeSpec, STRICT_STANDARD_PADDED, STRICT_STANDARD_UNPADDED, STRICT_URL_SAFE_PADDED,
     STRICT_URL_SAFE_UNPADDED, StrictStandardPadded, StrictStandardUnpadded, StrictUrlSafePadded,
     StrictUrlSafeUnpadded, TrailingBits,
+};
+pub use wrapping::{
+    LineEnding as BodyLineEnding, LineWrap as BodyWrap, LineWrapError as BodyWrapError,
 };
 
 #[cfg(test)]
@@ -77,7 +86,11 @@ mod incremental_decoder_unpadded_tests;
 #[cfg(test)]
 mod incremental_encoder_tests;
 #[cfg(test)]
+mod legacy_tests;
+#[cfg(test)]
 mod one_shot_tests;
+#[cfg(test)]
+mod profile_tests;
 #[cfg(test)]
 mod rfc4648_oracle;
 #[cfg(test)]

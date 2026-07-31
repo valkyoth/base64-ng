@@ -174,7 +174,7 @@ fn validate_and_measure<S: Codec>(codec: &Base64<S>, input: &[u8]) -> Result<usi
     }
 }
 
-fn map_operation_error(error: OperationError) -> OneShotError {
+pub(super) fn map_operation_error(error: OperationError) -> OneShotError {
     match error {
         OperationError::Failed(Failure::Input(error)) => OneShotError::Input(error),
         OperationError::Failed(Failure::PositionOverflow) => OneShotError::PositionOverflow,

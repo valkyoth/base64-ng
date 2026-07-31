@@ -1388,6 +1388,14 @@ input failure, and transactional one-shot destination writes. Its browser
 evidence does not upgrade it to a constant-time, zeroizing, or secret-capable
 surface. Expert `compat` presets reuse the safe ordinary codec core.
 
+## 2.0 Profile And Legacy Compatibility Boundary
+
+Commit 17 adds no unsafe code. Body and alphabet presets are immutable values.
+The legacy ASCII-whitespace decoder reuses the safe strict state machine with
+an explicit input mode and retains original source indexes before compaction.
+It is ordinary, non-wiping, detailed-error behavior and is excluded from all
+secret modules.
+
 ## Admission Rule
 
 Unsafe SIMD can become an active backend only after scalar differential tests,

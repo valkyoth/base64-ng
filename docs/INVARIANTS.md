@@ -214,6 +214,18 @@ Evidence:
 - Node/V8, Chromium, Firefox, and Safari browser scripts
 - strict-separation and expert-policy differential tests
 
+## 2.0 Legacy Compatibility Profiles
+
+- `legacy::ASCII_WHITESPACE` ignores only space, tab, carriage return, and
+  line feed. Every other byte is semantically significant.
+- Legacy progress and diagnostics count original source bytes, never compacted
+  positions. Position overflow is checked before compaction and is absorbing.
+- Legacy and protocol-body compatibility is ordinary, detailed-error,
+  non-wiping behavior and is unreachable from `secret::*`.
+- Named `*_ALPHABET_*` values provide alphabet-level Base64 only. Named
+  `*_BODY_*` values provide encoded-body layout only. Neither naming family
+  claims complete container or record parsing.
+
 ## Review Rule
 
 When adding new indexing in non-test code, prefer `get`, slice-pattern

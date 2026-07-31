@@ -9,6 +9,9 @@ test -s docs/2.0_LINE_WRAPPING.md
 for required in \
     'line width is a `NonZeroUsize`' \
     '`LineWrap::try_new` is the only runtime constructor' \
+    '`BodyWrap`' \
+    '`BodyLineEnding`' \
+    '`BodyWrapError`' \
     'there is no `is_valid` method' \
     'MIME content-transfer body layout only' \
     'PEM body layout only' \
@@ -119,7 +122,6 @@ compile_failure zero-width 'zero-width wrapping rejected'
 
 if rg -n -F \
     -e unsafe \
-    -e 'std::' \
     -e 'alloc::' \
     -e 'Box<' \
     -e 'pub(crate) fn new' \
@@ -131,6 +133,24 @@ then
     echo "2.0 line wrapping: invariant model gained forbidden state or API" >&2
     exit 1
 fi
+
+if [ "$(grep -F -c 'std::' src/v2/wrapping.rs)" -ne 1 ] ||
+    ! grep -F -q 'impl std::error::Error for LineWrapError {}' src/v2/wrapping.rs
+then
+    echo "2.0 line wrapping: unexpected std-only surface" >&2
+    exit 1
+fi
+
+for public_alias in \
+    'LineEnding as BodyLineEnding' \
+    'LineWrap as BodyWrap' \
+    'LineWrapError as BodyWrapError'
+do
+    if ! grep -F -q "$public_alias" src/v2/mod.rs; then
+        echo "2.0 line wrapping: missing public body alias: $public_alias" >&2
+        exit 1
+    fi
+done
 
 if ! grep -F -q 'line_width: NonZeroUsize' src/v2/wrapping.rs; then
     echo "2.0 line wrapping: width is no longer stored as NonZeroUsize" >&2

@@ -75,6 +75,9 @@ scripts/check-2.0-format-append-chunks.sh
 echo "checks: 2.0 WHATWG forgiving Base64"
 scripts/check-2.0-web-forgiving.sh
 
+echo "checks: 2.0 profiles and protocol terminology"
+scripts/check-2.0-profiles.sh
+
 echo "checks: RFC 4648 source lock"
 scripts/verify-rfcs.sh
 scripts/check-rfc-source-mutations.py

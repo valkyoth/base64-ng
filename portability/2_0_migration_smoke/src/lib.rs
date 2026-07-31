@@ -3,9 +3,11 @@ mod tests {
     use std::io::Write;
 
     use base64_ng::{
-        Base64, Codec, CodecSettings, DecodeError, DecodedArray, EncodeError, EncodedArray,
-        Engine, LineEnding, LineWrap, MIME, Profile, SecretArray, SecretBuffer,
-        StrictStandardPadded, STANDARD, STRICT_STANDARD_PADDED, Standard, compat, web,
+        BCRYPT_ALPHABET_NO_PAD, BINHEX_ALPHABET, Base64, BodyLineEnding, BodyWrap, Codec,
+        CodecBuilder, CodecSettings, DecodeError, DecodedArray, EncodeError, EncodedArray, Engine,
+        IMAP_MUTF7_ALPHABET_NO_PAD, LineEnding, LineWrap, MIME, MIME_BODY_STRICT,
+        PBKDF2_ALPHABET_NO_PAD, PEM_BODY_CRLF, PEM_BODY_LF, Profile, SecretArray, SecretBuffer,
+        Standard, StrictStandardPadded, compat, legacy, web, STANDARD, STRICT_STANDARD_PADDED,
     };
 
     const CONST_ENCODED: [u8; 8] = match STRICT_STANDARD_PADDED.encode_array(b"hello") {
@@ -240,5 +242,42 @@ mod tests {
             b"f"
         );
         assert!(STRICT_STANDARD_PADDED.decode_to_vec(b"Zg").is_err());
+    }
+
+    #[test]
+    fn accurately_scoped_profile_names_are_public_and_composable() {
+        assert_eq!(MIME_BODY_STRICT.wrapping().line_width().get(), 76);
+        assert_eq!(PEM_BODY_LF.wrapping().line_ending(), BodyLineEnding::Lf);
+        assert_eq!(
+            PEM_BODY_CRLF.wrapping().line_ending(),
+            BodyLineEnding::CrLf
+        );
+        assert_eq!(BodyWrap::try_new(0, BodyLineEnding::Lf), Err(base64_ng::BodyWrapError::ZeroWidth));
+
+        assert_eq!(
+            BCRYPT_ALPHABET_NO_PAD.encode_to_string(b"test").unwrap(),
+            "bETxb."
+        );
+        assert_eq!(
+            PBKDF2_ALPHABET_NO_PAD
+                .encode_to_string(b"\xff\xef\xfe")
+                .unwrap(),
+            "/./."
+        );
+        assert_eq!(
+            IMAP_MUTF7_ALPHABET_NO_PAD
+                .encode_to_string(b"\xfb\xff")
+                .unwrap(),
+            "+,8"
+        );
+
+        let binhex = CodecBuilder::new(BINHEX_ALPHABET).build().unwrap();
+        assert_eq!(binhex.settings().alphabet(), &BINHEX_ALPHABET);
+        assert_eq!(
+            legacy::ASCII_WHITESPACE
+                .decode_into(&STRICT_STANDARD_PADDED, b" Z\tg\r=\n=", &mut [0u8; 1])
+                .unwrap(),
+            1
+        );
     }
 }

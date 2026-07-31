@@ -202,7 +202,7 @@ impl RuntimeSpec {
     }
 }
 
-pub(crate) const fn compatibility_codec(
+pub(crate) const fn runtime_codec(
     alphabet: ValidatedAlphabet,
     encode_padding: EncodePadding,
     decode_padding: DecodePadding,
@@ -211,6 +211,15 @@ pub(crate) const fn compatibility_codec(
     Base64::new(RuntimeSpec {
         settings: CodecSettings::new(alphabet, encode_padding, decode_padding, trailing_bits),
     })
+}
+
+pub(crate) const fn compatibility_codec(
+    alphabet: ValidatedAlphabet,
+    encode_padding: EncodePadding,
+    decode_padding: DecodePadding,
+    trailing_bits: TrailingBits,
+) -> Base64<RuntimeSpec> {
+    runtime_codec(alphabet, encode_padding, decode_padding, trailing_bits)
 }
 
 impl sealed::Sealed for RuntimeSpec {}

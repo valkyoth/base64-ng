@@ -20,6 +20,7 @@ const OUTPUT_QUANTUM: usize = 3;
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct DecoderState {
     settings: CodecSettings,
+    input_mode: InputMode,
     quantum: [u8; INPUT_QUANTUM],
     quantum_indexes: [usize; INPUT_QUANTUM],
     quantum_len: usize,
@@ -30,11 +31,18 @@ pub struct DecoderState {
     lifecycle: Lifecycle,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum InputMode {
+    Strict,
+    IgnoreLegacyAsciiWhitespace,
+}
+
 impl DecoderState {
     /// Constructs a decoder whose caller selected canonical padded decoding.
     pub(crate) const fn new_padded(settings: CodecSettings) -> Self {
         Self {
             settings,
+            input_mode: InputMode::Strict,
             quantum: [0; INPUT_QUANTUM],
             quantum_indexes: [0; INPUT_QUANTUM],
             quantum_len: 0,
@@ -51,6 +59,12 @@ impl DecoderState {
         Self::new_padded(settings)
     }
 
+    pub(crate) const fn new_legacy_ascii_whitespace(settings: CodecSettings) -> Self {
+        let mut state = Self::new_padded(settings);
+        state.input_mode = InputMode::IgnoreLegacyAsciiWhitespace;
+        state
+    }
+
     /// Accepts a strict padded input prefix and writes decoded output that fits.
     pub fn update(&mut self, input: &[u8], output: &mut [u8]) -> Result<Step, OperationError> {
         let span = self.lifecycle.reserve_input(input.len())?;
@@ -64,6 +78,10 @@ impl DecoderState {
         let source_start = self.lifecycle.source_position() - consumed;
         let mut input_offset = 0;
         while input_offset < consumed {
+            if self.ignores(input[input_offset]) {
+                input_offset += 1;
+                continue;
+            }
             self.quantum[self.quantum_len] = input[input_offset];
             self.quantum_indexes[self.quantum_len] = source_start + input_offset;
             self.quantum_len += 1;
@@ -179,6 +197,10 @@ impl DecoderState {
             let index = span
                 .index(consumed)
                 .ok_or(Failure::Backend(BackendFault::ImpossibleState))?;
+            if self.ignores(input[consumed]) {
+                consumed += 1;
+                continue;
+            }
             if terminal_padding {
                 return Err(Failure::Input(InputError::TrailingData { index }));
             }
@@ -213,6 +235,11 @@ impl DecoderState {
         Ok(consumed)
     }
 
+    const fn ignores(&self, byte: u8) -> bool {
+        matches!(self.input_mode, InputMode::IgnoreLegacyAsciiWhitespace)
+            && is_legacy_ascii_whitespace(byte)
+    }
+
     fn drain_pending(&mut self, output: &mut [u8]) -> usize {
         let written = self.pending_len.min(output.len());
         let pending_end = self.pending_start + written;
@@ -238,6 +265,11 @@ impl DecoderState {
                     | DecodePadding::Forbid
                     | DecodePadding::Indifferent
             )
+    }
+
+    #[cfg(test)]
+    pub(crate) fn set_source_position_for_test(&mut self, source_position: usize) {
+        self.lifecycle = Lifecycle::at_source_position(source_position);
     }
 }
 
@@ -426,4 +458,8 @@ fn decode_symbol(settings: CodecSettings, byte: u8, index: usize) -> Result<u8, 
         None if byte == b'=' => Err(InputError::InvalidPadding { index }),
         None => Err(InputError::InvalidByte { index, byte }),
     }
+}
+
+pub(crate) const fn is_legacy_ascii_whitespace(byte: u8) -> bool {
+    matches!(byte, b' ' | b'\t' | b'\r' | b'\n')
 }

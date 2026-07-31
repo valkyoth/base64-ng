@@ -15,6 +15,24 @@ pub(super) const STANDARD_ALPHABET: ValidatedAlphabet = ValidatedAlphabet {
 pub(super) const URL_SAFE_ALPHABET: ValidatedAlphabet = ValidatedAlphabet {
     table: *b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_",
 };
+pub(super) const BCRYPT_ALPHABET: ValidatedAlphabet = ValidatedAlphabet {
+    table: *b"./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",
+};
+pub(super) const CRYPT_ALPHABET: ValidatedAlphabet = ValidatedAlphabet {
+    table: *b"./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+};
+pub(super) const PBKDF2_ALPHABET: ValidatedAlphabet = ValidatedAlphabet {
+    table: *b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789./",
+};
+/// The 64-character `BinHex` 4.0 alphabet.
+///
+/// This value does not select padding and does not parse a `BinHex` container.
+pub const BINHEX_ALPHABET: ValidatedAlphabet = ValidatedAlphabet {
+    table: *b"!\"#$%&'()*+,-012345689@ABCDEFGHIJKLMNPQRSTUVXYZ[`abcdefhijklmpqr",
+};
+pub(super) const IMAP_MUTF7_ALPHABET: ValidatedAlphabet = ValidatedAlphabet {
+    table: *b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+,",
+};
 
 /// Failure returned while constructing a [`ValidatedAlphabet`].
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

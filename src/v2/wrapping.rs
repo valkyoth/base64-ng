@@ -4,7 +4,7 @@ use core::num::NonZeroUsize;
 
 /// Line ending inserted between encoded body lines.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub(crate) enum LineEnding {
+pub enum LineEnding {
     /// Line feed (`\n`).
     Lf,
     /// Carriage return followed by line feed (`\r\n`).
@@ -13,7 +13,8 @@ pub(crate) enum LineEnding {
 
 impl LineEnding {
     /// Returns the exact line-ending bytes.
-    pub(crate) const fn as_bytes(self) -> &'static [u8] {
+    #[must_use]
+    pub const fn as_bytes(self) -> &'static [u8] {
         match self {
             Self::Lf => b"\n",
             Self::CrLf => b"\r\n",
@@ -21,14 +22,16 @@ impl LineEnding {
     }
 
     /// Returns the line-ending width in bytes.
-    pub(crate) const fn byte_len(self) -> usize {
+    #[must_use]
+    pub const fn byte_len(self) -> usize {
         self.as_bytes().len()
     }
 }
 
 /// Failure constructing a line-wrapping policy.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(crate) enum LineWrapError {
+#[non_exhaustive]
+pub enum LineWrapError {
     /// A zero-width line would prevent encoder progress.
     ZeroWidth,
 }
@@ -41,9 +44,12 @@ impl core::fmt::Display for LineWrapError {
     }
 }
 
+#[cfg(feature = "std")]
+impl std::error::Error for LineWrapError {}
+
 /// Immutable, always-progressing Base64 body wrapping policy.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub(crate) struct LineWrap {
+pub struct LineWrap {
     line_width: NonZeroUsize,
     line_ending: LineEnding,
 }
@@ -74,7 +80,7 @@ impl LineWrap {
     };
 
     /// Constructs a validated wrapping policy.
-    pub(crate) const fn try_new(
+    pub const fn try_new(
         line_width: usize,
         line_ending: LineEnding,
     ) -> Result<Self, LineWrapError> {
@@ -88,17 +94,20 @@ impl LineWrap {
     }
 
     /// Returns the non-zero encoded body width.
-    pub(crate) const fn line_width(self) -> NonZeroUsize {
+    #[must_use]
+    pub const fn line_width(self) -> NonZeroUsize {
         self.line_width
     }
 
     /// Returns the separator inserted between body lines.
-    pub(crate) const fn line_ending(self) -> LineEnding {
+    #[must_use]
+    pub const fn line_ending(self) -> LineEnding {
         self.line_ending
     }
 
     /// Returns the exact wrapped size without a trailing line ending.
-    pub(crate) const fn checked_output_len(self, payload_len: usize) -> Option<usize> {
+    #[must_use]
+    pub const fn checked_output_len(self, payload_len: usize) -> Option<usize> {
         if payload_len == 0 {
             return Some(0);
         }
@@ -114,7 +123,7 @@ impl LineWrap {
     ///
     /// The destination is unchanged when it is too small or length arithmetic
     /// overflows. Successful output never has a trailing line ending.
-    pub(crate) fn insert_into(self, payload: &[u8], output: &mut [u8]) -> Option<usize> {
+    pub fn insert_into(self, payload: &[u8], output: &mut [u8]) -> Option<usize> {
         let required = self.checked_output_len(payload.len())?;
         if output.len() < required {
             return None;
@@ -145,7 +154,8 @@ impl LineWrap {
     /// Interior lines must have exactly the configured width. A final line may
     /// be shorter, and one final line ending is accepted for compatibility
     /// with body formats that terminate their last line.
-    pub(crate) fn payload_len(self, input: &[u8]) -> Option<usize> {
+    #[must_use]
+    pub fn payload_len(self, input: &[u8]) -> Option<usize> {
         let separator = self.line_ending.as_bytes();
         let width = self.line_width.get();
         let mut index = 0usize;
@@ -182,7 +192,7 @@ impl LineWrap {
     ///
     /// The destination is unchanged when layout validation fails or the
     /// destination is too small.
-    pub(crate) fn copy_payload_into(self, input: &[u8], output: &mut [u8]) -> Option<usize> {
+    pub fn copy_payload_into(self, input: &[u8], output: &mut [u8]) -> Option<usize> {
         let payload_len = self.payload_len(input)?;
         if output.len() < payload_len {
             return None;

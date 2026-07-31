@@ -579,6 +579,17 @@ production auto dispatch, scalar, and each exact backend available on the host.
 It compares exact-pinned `base64 0.23.0` and `base64ct 1.8.3` only where
 canonical caller-owned slice semantics match.
 
+Commit 17 adds `scripts/check-2.0-profiles.sh`. It differentially checks
+PBKDF2 alphabet behavior against exact-pinned `base64ct 1.8.3`, BinHex and
+IMAP alphabets against exact-pinned `base64 0.23.0`, and renamed 1.x body and
+alphabet behavior against its explicit 2.0 equivalent. Exhaustive ASCII,
+chunking, original-index, overflow, transactional-output, and secret-exclusion
+checks cover the retained legacy-whitespace policy.
+
+`docs/2.0_DEVICE_VERIFICATION_QUEUE.md` records the macOS/AArch64, Linux
+AArch64, x86-64, and browser commands planned for the consolidated Commit 20
+checkpoint. Pending rows are not evidence and must never be reported as pass.
+
 Campaign generation fails closed unless the worktree is clean and `HEAD`
 resolves to one full commit identifier that remains unchanged through
 measurement and manifest creation. Validation reconstructs the complete
