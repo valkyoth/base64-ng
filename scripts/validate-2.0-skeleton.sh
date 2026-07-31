@@ -18,7 +18,7 @@ awk '
         gated = 1
         next
     }
-    gated && /^mod (fixtures|rfc4648_oracle);$/ {
+    gated && /^mod (fixtures|incremental_encoder_tests|rfc4648_oracle);$/ {
         found[$2] = 1
         gated = 0
         next
@@ -27,13 +27,14 @@ awk '
         gated = 0
     }
     END {
-        exit !(found["fixtures;"] && found["rfc4648_oracle;"])
+        exit !(found["fixtures;"] && found["incremental_encoder_tests;"] && found["rfc4648_oracle;"])
     }
 ' src/v2/mod.rs
 
 if rg -n 'rfc4648_oracle' src \
     --glob '!src/v2/mod.rs' \
     --glob '!src/v2/fixtures.rs' \
+    --glob '!src/v2/incremental_encoder_tests.rs' \
     --glob '!src/v2/ordinary.rs' \
     --glob '!src/v2/rfc4648_oracle.rs'
 then

@@ -51,6 +51,9 @@ scripts/check-2.0-line-wrapping.sh
 echo "checks: 2.0 operation contracts"
 scripts/check-2.0-contracts.sh
 
+echo "checks: 2.0 incremental encoder"
+scripts/check-2.0-incremental-encoder.sh
+
 echo "checks: RFC 4648 source lock"
 scripts/verify-rfcs.sh
 scripts/check-rfc-source-mutations.py

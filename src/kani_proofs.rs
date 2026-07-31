@@ -1,7 +1,10 @@
 use super::{
     STANDARD, Standard, checked_encoded_len, ct, decode_backend, decode_byte, decode_chunk,
     decode_tail_unpadded, decoded_capacity, scalar,
-    v2::alphabet::{ValidatedAlphabetError, validate_position_for_proof},
+    v2::{
+        alphabet::{ValidatedAlphabetError, validate_position_for_proof},
+        specifications::STRICT_STANDARD_PADDED,
+    },
     validate_tail_unpadded,
 };
 
@@ -189,6 +192,48 @@ fn standard_encode_slice_returns_written_within_output() {
     if let Ok(written) = result {
         assert!(written <= output.len());
     }
+}
+
+#[kani::proof]
+#[kani::unwind(12)]
+fn incremental_standard_encoder_progress_and_state_are_bounded() {
+    let input = kani::any::<[u8; 4]>();
+    let input_len = usize::from(kani::any::<u8>() % 5);
+    let mut output = kani::any::<[u8; 4]>();
+    let output_len = usize::from(kani::any::<u8>() % 5);
+    let mut encoder = STRICT_STANDARD_PADDED.encoder();
+
+    let step = encoder
+        .update(&input[..input_len], &mut output[..output_len])
+        .expect("bounded source positions cannot fail");
+
+    assert!(step.progress().input_consumed() <= input_len);
+    assert!(step.progress().output_produced() <= output_len);
+    assert!(encoder.source_position() == step.progress().input_consumed());
+    assert!(encoder.proof_invariants());
+}
+
+#[kani::proof]
+#[kani::unwind(12)]
+fn incremental_standard_encoder_finish_is_bounded() {
+    let input = kani::any::<[u8; 2]>();
+    let input_len = usize::from(kani::any::<u8>() % 3);
+    let mut encoder = STRICT_STANDARD_PADDED.encoder();
+    let mut update_output = [0_u8; 4];
+    let update = encoder
+        .update(&input[..input_len], &mut update_output)
+        .expect("bounded source positions cannot fail");
+    assert!(update.progress().input_consumed() == input_len);
+
+    let mut output = kani::any::<[u8; 4]>();
+    let output_len = usize::from(kani::any::<u8>() % 5);
+    let finish = encoder
+        .finish(&mut output[..output_len])
+        .expect("ordinary encoding cannot reject byte input");
+
+    assert!(finish.progress().input_consumed() == 0);
+    assert!(finish.progress().output_produced() <= output_len);
+    assert!(encoder.proof_invariants());
 }
 
 #[kani::proof]
