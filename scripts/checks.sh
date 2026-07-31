@@ -45,6 +45,9 @@ scripts/check-2.0-alphabet.sh
 echo "checks: 2.0 codec specifications"
 scripts/check-2.0-specifications.sh
 
+echo "checks: 2.0 line wrapping"
+scripts/check-2.0-line-wrapping.sh
+
 echo "checks: RFC 4648 source lock"
 scripts/verify-rfcs.sh
 scripts/check-rfc-source-mutations.py

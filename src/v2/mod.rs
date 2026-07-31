@@ -13,6 +13,8 @@ mod ordinary;
 mod secret;
 #[allow(dead_code)]
 mod specifications;
+#[allow(dead_code)]
+mod wrapping;
 
 #[cfg(test)]
 mod alphabet_tests;
@@ -22,3 +24,5 @@ mod fixtures;
 mod rfc4648_oracle;
 #[cfg(test)]
 mod specification_tests;
+#[cfg(test)]
+mod wrapping_tests;
