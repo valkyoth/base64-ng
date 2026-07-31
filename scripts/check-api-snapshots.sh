@@ -32,6 +32,16 @@ if ! rustup run "$public_api_toolchain" rustc --version >/dev/null 2>&1; then
     exit 1
 fi
 
+if ! public_api_cargo="$(rustup which --toolchain "$public_api_toolchain" cargo)"; then
+    echo "api snapshots: cannot resolve Cargo for $public_api_toolchain" >&2
+    exit 1
+fi
+public_api_path="$(dirname "$public_api_cargo")"
+if ! "$public_api_cargo" --version | grep -F -q nightly; then
+    echo "api snapshots: $public_api_cargo is not a nightly Cargo binary" >&2
+    exit 1
+fi
+
 mkdir -p "$workdir"
 if [ "$mode" = "--update" ]; then
     mkdir -p "$snapshot_dir"
@@ -50,7 +60,7 @@ do
     committed="$snapshot_dir/$package.txt"
 
     echo "api snapshots: generating $package"
-    LC_ALL=C rustup run "$public_api_toolchain" cargo public-api \
+    PATH="$public_api_path:$PATH" LC_ALL=C "$public_api_cargo" public-api \
         --color=never \
         --all-features \
         --omit blanket-impls \

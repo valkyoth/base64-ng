@@ -185,7 +185,9 @@ done
 
 for required_public_api_text in \
     'public_api_toolchain="nightly-2026-07-13"' \
-    'rustup toolchain install nightly-2026-07-13 --profile minimal'
+    'rustup toolchain install nightly-2026-07-13 --profile minimal' \
+    'rustup which --toolchain "$public_api_toolchain" cargo' \
+    'PATH="$public_api_path:$PATH"'
 do
     if ! grep -F -q "$required_public_api_text" \
         scripts/check-api-snapshots.sh .github/workflows/ci.yml
