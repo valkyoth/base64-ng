@@ -32,7 +32,12 @@ Each submission contains:
 Generation is permitted only from a clean committed tree. `environment.json`
 and `MANIFEST.txt` must identify the same full source commit and a clean source
 status. The runner binds that commit before building and rejects observable
-`HEAD` or worktree changes after measurement and before manifest creation.
+`HEAD` or worktree changes after measurement and around atomic manifest
+finalization. The validator reconciles manifest metadata with
+`environment.json`, requires the exact artifact inventory, and verifies every
+digest. Hostile-concurrency collection additionally requires an immutable or
+access-controlled detached checkout because ordinary worktree checks cannot
+exclude a privileged concurrent writer.
 Evidence artifacts are committed separately after capture; the artifact
 commit is not substituted for the recorded measurement-source commit.
 
@@ -50,10 +55,12 @@ Campaign, run, feature-set, target, and other machine labels use the restricted
 Cartesian product of fixed lengths, operations, profiles, comparison engines,
 and every backend marked available, with exact sample indexes
 `0..sample_count`. It rejects surplus CSV cells and unsafe textual fields.
-Comparison, summary, and admission commands accept only a complete evidence
-directory. Retained summaries and admission tables must exactly recompute from
-the raw runs, and binary resource evidence must contain the complete fixed
-feature-set inventory.
+Timing rows must reconcile iterations with the campaign target, encoded
+lengths with the selected Base64 profile, and throughput with the raw timing
+fields. Comparison, summary, and admission commands accept only a complete
+evidence directory. Retained summaries and admission tables must exactly
+recompute from the raw runs, and resource and binary-resource evidence must
+contain their complete fixed inventories.
 
 Transient compilation directories remain under `target/release-evidence/` and
 must not be copied into a retained or submitted evidence directory.

@@ -99,6 +99,38 @@ RESOURCE_CATEGORIES = {
     "adapter-pending-memory",
     "adapter-size",
 }
+RESOURCE_CONTRACT = {
+    ("stack-bound", "in-place-input-staging", "bytes", "source-and-size-of"),
+    ("stack-bound", "in-place-output-staging", "bytes", "source-and-size-of"),
+    (
+        "adapter-pending-memory",
+        "encoder-writer-output-capacity",
+        "bytes",
+        "source-and-size-of",
+    ),
+    ("adapter-size", "encoder-writer", "bytes", "source-and-size-of"),
+    (
+        "adapter-pending-memory",
+        "decoder-writer-output-capacity",
+        "bytes",
+        "source-and-size-of",
+    ),
+    ("adapter-size", "decoder-writer", "bytes", "source-and-size-of"),
+    (
+        "adapter-pending-memory",
+        "encoder-reader-output-capacity",
+        "bytes",
+        "source-and-size-of",
+    ),
+    ("adapter-size", "encoder-reader", "bytes", "source-and-size-of"),
+    (
+        "adapter-pending-memory",
+        "decoder-reader-output-capacity",
+        "bytes",
+        "source-and-size-of",
+    ),
+    ("adapter-size", "decoder-reader", "bytes", "source-and-size-of"),
+}
 BINARY_FEATURE_SETS = {
     "default",
     "no-default-features",
@@ -127,3 +159,22 @@ EXPECTED_LENGTHS = {
 }
 EVIDENCE_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}\Z")
 COMMIT_ID = re.compile(r"[0-9a-f]{40}\Z")
+MANIFEST_ARTIFACTS = {
+    "admission.csv",
+    "availability.csv",
+    "binary-resources.csv",
+    "environment.json",
+    "raw-run-1.csv",
+    "raw-run-2.csv",
+    "resources-default.csv",
+    "resources-no-simd.csv",
+    "summary.csv",
+}
+MANIFEST_STATIC_METADATA = {
+    "comparison_crates": "base64=0.23.0,base64ct=1.8.3",
+    "minimum_backend_ratio_to_scalar": "0.95",
+    "reproducibility_ratio_range": "0.50..2.00",
+    "stack_bound_method": (
+        "source constants and size_of; not a dynamic call-stack measurement"
+    ),
+}

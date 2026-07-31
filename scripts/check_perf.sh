@@ -90,7 +90,6 @@ for baseline in performance-baselines/commit-*; do
         --expected-feature-set no-simd
     scripts/validate_perf_evidence.py compare "$baseline"
     scripts/validate_perf_evidence.py validate-derived "$baseline"
-    sed -n '/^[0-9a-f][0-9a-f]*  /p' "$baseline/MANIFEST.txt" | sha256sum -c -
 done
 
 if [ "${BASE64_NG_RUN_PERF:-0}" != "1" ]; then
@@ -180,8 +179,9 @@ done
 echo "perf checks: correctness after evidence"
 run_perf run --quiet --release --manifest-path perf/Cargo.toml -- correctness
 verify_source_unchanged
-scripts/validate_perf_evidence.py validate-derived "$evidence_dir"
 
+manifest_tmp="$evidence_dir/MANIFEST.txt.tmp"
+verify_source_unchanged
 {
     echo "base64-ng performance evidence schema 1"
     echo "source_commit=$source_commit"
@@ -195,6 +195,11 @@ scripts/validate_perf_evidence.py validate-derived "$evidence_dir"
     echo "stack_bound_method=source constants and size_of; not a dynamic call-stack measurement"
     echo "artifacts:"
     sha256sum "$evidence_dir"/*.csv "$evidence_dir/environment.json"
-} >"$evidence_dir/MANIFEST.txt"
+} >"$manifest_tmp"
+verify_source_unchanged
+mv "$manifest_tmp" "$evidence_dir/MANIFEST.txt"
+verify_source_unchanged
+scripts/validate_perf_evidence.py validate-derived "$evidence_dir"
+verify_source_unchanged
 
 echo "perf checks: wrote $evidence_dir"

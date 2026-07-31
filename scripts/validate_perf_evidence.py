@@ -16,6 +16,7 @@ from perf_evidence_derived import (
     grouped_medians,
     summary_rows,
 )
+from perf_evidence_manifest import validate_manifest as validate_manifest_file
 from perf_evidence_schema import (
     ADMISSION_FIELDS,
     AVAILABILITY_FIELDS,
@@ -27,9 +28,12 @@ from perf_evidence_schema import (
     ENGINES,
     EVIDENCE_ID,
     EXPECTED_LENGTHS,
+    MANIFEST_ARTIFACTS,
+    MANIFEST_STATIC_METADATA,
     OPERATIONS,
     PROFILES,
     RESOURCE_CATEGORIES,
+    RESOURCE_CONTRACT,
     RESOURCE_FIELDS,
     SUMMARY_FIELDS,
 )
@@ -142,6 +146,32 @@ def validate_benchmark(
             fail(f"{path}: non-positive benchmark dimension")
         if sample < 0 or not math.isfinite(throughput) or throughput <= 0:
             fail(f"{path}: invalid sample or throughput")
+        measurement = environment.get("measurement")
+        if not isinstance(measurement, dict):
+            fail("environment measurement contract disappeared")
+        target_bytes = measurement.get("target_bytes_per_sample")
+        if not isinstance(target_bytes, int):
+            fail("environment target bytes contract is invalid")
+        expected_iterations = max(target_bytes // input_len, 1)
+        if iterations != expected_iterations:
+            fail(f"{path}: iterations do not match campaign target")
+        expected_encoded_len = (
+            ((input_len + 2) // 3) * 4
+            if row["padding"] == "padded"
+            else (input_len * 4 + 2) // 3
+        )
+        if encoded_len != expected_encoded_len:
+            fail(f"{path}: incorrect encoded length")
+        expected_throughput = (
+            input_len
+            * iterations
+            * 1_000_000_000.0
+            / (1024.0 * 1024.0 * elapsed_ns)
+        )
+        if not math.isclose(
+            throughput, expected_throughput, rel_tol=1e-9, abs_tol=1e-6
+        ):
+            fail(f"{path}: throughput does not match raw timing fields")
         if allocations != 0:
             fail(f"{path}: slice operation allocated {allocations} times")
         if row["input_len"] not in EXPECTED_LENGTHS:
@@ -285,6 +315,14 @@ def validate_auxiliary(
             fail(f"{resources}: invalid resource value: {error}")
         if value < 0:
             fail(f"{resources}: negative resource value")
+    observed_contract = {
+        (row["category"], row["name"], row["unit"], row["method"])
+        for row in resource_rows
+    }
+    if observed_contract != RESOURCE_CONTRACT or len(resource_rows) != len(
+        RESOURCE_CONTRACT
+    ):
+        fail(f"{resources}: incomplete or unexpected resource inventory")
     return availability_rows
 
 
@@ -391,6 +429,15 @@ def validate_derived(directory: Path) -> None:
     if row_values(admitted, ADMISSION_FIELDS) != expected_admission:
         fail(f"{directory / 'admission.csv'}: does not match raw evidence")
     validate_binary_resources(directory / "binary-resources.csv")
+    validate_manifest(directory)
+
+
+def validate_manifest(directory: Path) -> None:
+    environment = read_environment(directory / "environment.json")
+    try:
+        validate_manifest_file(directory, environment)
+    except ValueError as error:
+        fail(str(error))
 
 
 def fail(message: str) -> None:
@@ -424,6 +471,9 @@ def main() -> None:
     derived_parser = subparsers.add_parser("validate-derived")
     derived_parser.add_argument("directory", type=Path)
 
+    manifest_parser = subparsers.add_parser("validate-manifest")
+    manifest_parser.add_argument("directory", type=Path)
+
     args = parser.parse_args()
     if args.command == "validate":
         environment = read_environment(args.environment)
@@ -446,6 +496,9 @@ def main() -> None:
     elif args.command == "validate-derived":
         validate_derived(args.directory)
         print("performance evidence: derived artifacts ok")
+    elif args.command == "validate-manifest":
+        validate_manifest(args.directory)
+        print("performance evidence: manifest and checksums ok")
 
 
 if __name__ == "__main__":

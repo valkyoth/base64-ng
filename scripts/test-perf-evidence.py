@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import importlib.util
 import json
 import os
@@ -62,17 +63,13 @@ def resource_rows(feature_set: str = "simd") -> list[dict[str, str]]:
         {
             "schema_version": "1",
             "category": category,
-            "name": f"{category}-value",
+            "name": name,
             "feature_set": feature_set,
             "value": "1",
-            "unit": "bytes",
-            "method": "test",
+            "unit": unit,
+            "method": method,
         }
-        for category in (
-            "stack-bound",
-            "adapter-pending-memory",
-            "adapter-size",
-        )
+        for category, name, unit, method in sorted(VALIDATOR.RESOURCE_CONTRACT)
     ]
 
 
@@ -87,6 +84,20 @@ def benchmark_rows() -> list[dict[str, str]]:
     for operation in sorted(VALIDATOR.OPERATIONS):
         for alphabet, padding in sorted(VALIDATOR.PROFILES):
             for input_len in sorted(VALIDATOR.EXPECTED_LENGTHS, key=int):
+                raw_len = int(input_len)
+                encoded_len = (
+                    ((raw_len + 2) // 3) * 4
+                    if padding == "padded"
+                    else (raw_len * 4 + 2) // 3
+                )
+                iterations = max(1024 // raw_len, 1)
+                elapsed_ns = 1_000_000_000
+                throughput = (
+                    raw_len
+                    * iterations
+                    * 1_000_000_000.0
+                    / (1024.0 * 1024.0 * elapsed_ns)
+                )
                 for engine, backend in engines:
                     for sample_index in range(2):
                         rows.append(
@@ -100,10 +111,10 @@ def benchmark_rows() -> list[dict[str, str]]:
                                 "alphabet": alphabet,
                                 "padding": padding,
                                 "input_len": input_len,
-                                "encoded_len": input_len,
-                                "iterations": "1",
-                                "elapsed_ns": "1",
-                                "throughput_mib_s": "1.0",
+                                "encoded_len": str(encoded_len),
+                                "iterations": str(iterations),
+                                "elapsed_ns": str(elapsed_ns),
+                                "throughput_mib_s": f"{throughput:.6f}",
                                 "backend": backend,
                                 "active_encode_backend": "scalar",
                                 "active_decode_backend": "scalar",
@@ -301,6 +312,31 @@ def write_bundle(directory: Path) -> None:
         VALIDATOR.BINARY_RESOURCE_FIELDS,
         binary,
     )
+    write_manifest(directory, env)
+
+
+def write_manifest(directory: Path, env: dict[str, object]) -> None:
+    source = env["source"]
+    measurement = env["measurement"]
+    if not isinstance(source, dict) or not isinstance(measurement, dict):
+        raise SystemExit("performance evidence tests: invalid manifest fixture")
+    metadata = {
+        "source_commit": source["commit"],
+        "source_status": source["status"],
+        "campaign_id": measurement["campaign_id"],
+        "sample_count": measurement["sample_count"],
+        "target_bytes_per_sample": measurement["target_bytes_per_sample"],
+        **VALIDATOR.MANIFEST_STATIC_METADATA,
+    }
+    lines = ["base64-ng performance evidence schema 1"]
+    lines.extend(f"{key}={value}" for key, value in metadata.items())
+    lines.append("artifacts:")
+    for artifact in sorted(VALIDATOR.MANIFEST_ARTIFACTS):
+        digest = hashlib.sha256((directory / artifact).read_bytes()).hexdigest()
+        lines.append(f"{digest}  {artifact}")
+    (directory / "MANIFEST.txt").write_text(
+        "\n".join(lines) + "\n", encoding="utf-8"
+    )
 
 
 def test_exact_csv_and_complete_bundle() -> None:
@@ -309,6 +345,7 @@ def test_exact_csv_and_complete_bundle() -> None:
         write_bundle(directory)
         VALIDATOR.load_validated_bundle(directory)
         VALIDATOR.validate_derived(directory)
+        VALIDATOR.validate_manifest(directory)
 
         raw = directory / "raw-run-1.csv"
         lines = raw.read_text(encoding="utf-8").splitlines()
@@ -351,6 +388,71 @@ def test_exact_csv_and_complete_bundle() -> None:
         else:
             raise SystemExit(
                 "performance evidence tests: formula-like derived field was accepted"
+            )
+
+
+def test_manifest_contract() -> None:
+    with tempfile.TemporaryDirectory(prefix="base64-ng-perf-manifest-") as temporary:
+        directory = Path(temporary)
+        manifest = directory / "MANIFEST.txt"
+        metadata_mutations = {
+            "source_commit": "f" * 40,
+            "source_status": "dirty",
+            "campaign_id": "other-campaign",
+            "sample_count": "999",
+            "target_bytes_per_sample": "999",
+        }
+        for key, value in metadata_mutations.items():
+            write_bundle(directory)
+            lines = manifest.read_text(encoding="utf-8").splitlines()
+            manifest.write_text(
+                "\n".join(
+                    f"{key}={value}" if line.startswith(f"{key}=") else line
+                    for line in lines
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            try:
+                VALIDATOR.validate_derived(directory)
+            except SystemExit as error:
+                if "metadata mismatch" not in str(error):
+                    raise
+            else:
+                raise SystemExit(
+                    f"performance evidence tests: mismatched {key} was accepted"
+                )
+
+        write_bundle(directory)
+        lines = manifest.read_text(encoding="utf-8").splitlines()
+        manifest.write_text(
+            "\n".join(line for line in lines if not line.endswith("  summary.csv"))
+            + "\n",
+            encoding="utf-8",
+        )
+        try:
+            VALIDATOR.validate_derived(directory)
+        except SystemExit as error:
+            if "artifact inventory mismatch" not in str(error):
+                raise
+        else:
+            raise SystemExit(
+                "performance evidence tests: incomplete manifest was accepted"
+            )
+
+        write_bundle(directory)
+        environment_path = directory / "environment.json"
+        environment_path.write_text(
+            environment_path.read_text(encoding="utf-8") + "\n", encoding="utf-8"
+        )
+        try:
+            VALIDATOR.validate_derived(directory)
+        except SystemExit as error:
+            if "checksum mismatch" not in str(error):
+                raise
+        else:
+            raise SystemExit(
+                "performance evidence tests: changed artifact was accepted"
             )
 
 
@@ -408,8 +510,31 @@ def main() -> None:
         ),
         "name must match",
     )
+    expect_failure(
+        lambda _env, _availability, resources, _benchmarks: resources.pop(),
+        "incomplete or unexpected resource inventory",
+    )
+    expect_failure(
+        lambda _env, _availability, _resources, benchmarks: benchmarks[0].update(
+            {"iterations": "1"}
+        ),
+        "iterations do not match campaign target",
+    )
+    expect_failure(
+        lambda _env, _availability, _resources, benchmarks: benchmarks[0].update(
+            {"encoded_len": "999"}
+        ),
+        "incorrect encoded length",
+    )
+    expect_failure(
+        lambda _env, _availability, _resources, benchmarks: benchmarks[0].update(
+            {"throughput_mib_s": "999999999999.000000"}
+        ),
+        "throughput does not match raw timing fields",
+    )
     test_capture_requires_clean_commit()
     test_exact_csv_and_complete_bundle()
+    test_manifest_contract()
     print("performance evidence mutation tests: ok")
 
 
