@@ -67,6 +67,7 @@ test -s SECURITY.md
 test -d release-notes
 test -s security/pentest/README.md
 test -s docs/API_AUDIT.md
+test -s docs/2.0_GOVERNANCE.md
 test -s docs/ASYNC.md
 test -s docs/BENCHMARKS.md
 test -s docs/BIG_ENDIAN_QEMU_REVIEW.md
@@ -119,6 +120,7 @@ for required_script in \
     "scripts/check_riscv_intrinsics_status.sh" \
     "scripts/check_scheduled_advisories.sh" \
     "scripts/validate-api-audit.sh" \
+    "scripts/validate-2.0-governance.sh" \
     "scripts/validate-big-endian-posture.sh" \
     "scripts/validate-riscv-posture.sh" \
     "scripts/check_dudect.sh" \

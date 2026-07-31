@@ -41,6 +41,10 @@ only through separately named opt-in APIs.
 The test suite includes the RFC 4648 Section 10 vectors. The 2.0 plan also
 requires the exact RFC Editor text, checksum, reviewed errata, and normative
 requirements mapping to be locked in the repository and verified offline.
+The authoritative [2.0 commit plan](2.0.0-release-plan.md) and supporting
+[governance decision](docs/2.0_GOVERNANCE.md) define the numbered,
+pentest-gated path from the signed 1.3.9 baseline to the single final 2.0.0
+release.
 
 ## Current Status
 

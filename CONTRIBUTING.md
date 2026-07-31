@@ -79,3 +79,11 @@ For future SIMD work, every fast path must prove equivalence to the scalar path 
 ## Commit Policy
 
 Commit completed, verified units of work. Leave pushing to maintainers.
+
+The 2.0 implementation follows the exact numbered subjects in
+[`2.0.0-release-plan.md`](2.0.0-release-plan.md). One commit implements one
+checkpoint. Pentest remediations use the same number plus a letter suffix;
+pushed or reviewed checkpoints are never amended. Work does not advance to the
+next number until the previous checkpoint's full range has an external PASS.
+See [`docs/2.0_GOVERNANCE.md`](docs/2.0_GOVERNANCE.md) for the frozen
+acceptance and evidence rules.

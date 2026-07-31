@@ -4,6 +4,14 @@
 local habit. The release gate generates and verifies evidence that downstream
 users can inspect before adopting a version.
 
+The 2.0 checkpoint program is governed by
+[`2.0_GOVERNANCE.md`](2.0_GOVERNANCE.md). Each numbered checkpoint records
+its exact commit, verification commands, tool and target identity, skips, and
+external pentest disposition in the authoritative
+[`2.0.0-release-plan.md`](../2.0.0-release-plan.md). Generated artifacts remain
+under `target/release-evidence/`; Commit 55 retains checksums or immutable
+workflow/artifact references for evidence too large to commit.
+
 Run the gate with:
 
 ```sh

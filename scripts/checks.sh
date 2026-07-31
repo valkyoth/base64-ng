@@ -18,6 +18,9 @@ scripts/validate-msrv-policy.sh
 echo "checks: documentation versions"
 scripts/validate-doc-versions.sh
 
+echo "checks: 2.0 governance"
+scripts/validate-2.0-governance.sh
+
 echo "checks: public API audit"
 scripts/validate-api-audit.sh
 
