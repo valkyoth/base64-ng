@@ -5,8 +5,7 @@ use base64_ng::STANDARD;
 use base64_ng::stream::{Decoder, DecoderReader, Encoder, EncoderReader};
 
 pub fn print() {
-    let feature_set =
-        std::env::var("BASE64_NG_PERF_FEATURE_SET").unwrap_or_else(|_| "default".to_owned());
+    let feature_set = crate::evidence::env_id("BASE64_NG_PERF_FEATURE_SET", "default");
     println!("schema_version,category,name,feature_set,value,unit,method");
     row(
         &feature_set,

@@ -5,65 +5,68 @@ from __future__ import annotations
 
 import argparse
 import csv
+import json
 import math
 import statistics
 import sys
 from collections import defaultdict
 from pathlib import Path
 
-BENCHMARK_FIELDS = [
-    "schema_version",
-    "campaign_id",
-    "run_id",
-    "sample_index",
-    "engine",
-    "operation",
-    "alphabet",
-    "padding",
-    "input_len",
-    "encoded_len",
-    "iterations",
-    "elapsed_ns",
-    "throughput_mib_s",
-    "backend",
-    "active_encode_backend",
-    "active_decode_backend",
-    "target_arch",
-    "target_os",
-    "allocation_count",
-]
-AVAILABILITY_FIELDS = [
-    "schema_version",
-    "backend",
-    "available",
-    "target_arch",
-    "target_os",
-]
-RESOURCE_FIELDS = [
-    "schema_version",
-    "category",
-    "name",
-    "feature_set",
-    "value",
-    "unit",
-    "method",
-]
-PROFILES = {
-    ("standard", "padded"),
-    ("standard", "unpadded"),
-    ("url-safe", "padded"),
-    ("url-safe", "unpadded"),
-}
-OPERATIONS = {"encode", "decode"}
-ENGINES = {"base64-ng", "base64-0.23.0", "base64ct-1.8.3"}
-BACKEND_MINIMUM = {
-    "auto": {"encode": 1, "decode": 1},
-    "ssse3-sse4.1": {"encode": 12, "decode": 12},
-    "avx2": {"encode": 24, "decode": 24},
-    "avx512-vbmi": {"encode": 48, "decode": 48},
-    "neon": {"encode": 12, "decode": 12},
-    "wasm-simd128": {"encode": 12, "decode": 12},
-}
+from perf_evidence_schema import (
+    AVAILABILITY_FIELDS,
+    BACKEND_MINIMUM,
+    BACKENDS,
+    BENCHMARK_FIELDS,
+    COMMIT_ID,
+    ENGINES,
+    EVIDENCE_ID,
+    EXPECTED_LENGTHS,
+    OPERATIONS,
+    PROFILES,
+    RESOURCE_FIELDS,
+)
+
+
+def require_evidence_id(value: str, field: str) -> None:
+    if not EVIDENCE_ID.fullmatch(value):
+        fail(f"{field} must match [A-Za-z0-9][A-Za-z0-9._-]{{0,63}}")
+
+
+def read_environment(path: Path) -> dict[str, object]:
+    try:
+        environment = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        fail(f"{path}: invalid environment JSON: {error}")
+    if not isinstance(environment, dict) or environment.get("schema_version") != 1:
+        fail(f"{path}: unsupported environment schema")
+
+    source = environment.get("source")
+    if not isinstance(source, dict):
+        fail(f"{path}: missing source provenance")
+    if source.get("status") != "clean":
+        fail(f"{path}: performance evidence was not captured from a clean tree")
+    commit = source.get("commit")
+    if not isinstance(commit, str) or not COMMIT_ID.fullmatch(commit):
+        fail(f"{path}: performance evidence has no full source commit")
+
+    measurement = environment.get("measurement")
+    if not isinstance(measurement, dict):
+        fail(f"{path}: missing measurement contract")
+    campaign_id = measurement.get("campaign_id")
+    if not isinstance(campaign_id, str):
+        fail(f"{path}: missing campaign identifier")
+    require_evidence_id(campaign_id, "campaign_id")
+    sample_count = measurement.get("sample_count")
+    if not isinstance(sample_count, int) or isinstance(sample_count, bool):
+        fail(f"{path}: invalid sample count")
+    if sample_count < 2:
+        fail(f"{path}: sample count must be at least two")
+    target_bytes = measurement.get("target_bytes_per_sample")
+    if not isinstance(target_bytes, int) or isinstance(target_bytes, bool):
+        fail(f"{path}: invalid target bytes")
+    if target_bytes <= 0:
+        fail(f"{path}: target bytes must be positive")
+    return environment
 
 
 def read_csv(path: Path, fields: list[str]) -> list[dict[str, str]]:
@@ -77,16 +80,26 @@ def read_csv(path: Path, fields: list[str]) -> list[dict[str, str]]:
     return rows
 
 
-def validate_benchmark(path: Path) -> list[dict[str, str]]:
+def validate_benchmark(
+    path: Path,
+    *,
+    availability_rows: list[dict[str, str]] | None = None,
+    environment: dict[str, object] | None = None,
+    expected_run_id: str | None = None,
+) -> list[dict[str, str]]:
     rows = read_csv(path, BENCHMARK_FIELDS)
-    seen_profiles: set[tuple[str, str]] = set()
-    seen_operations: set[str] = set()
-    seen_engines: set[str] = set()
     samples: dict[tuple[str, ...], set[int]] = defaultdict(set)
+
+    if expected_run_id is not None:
+        require_evidence_id(expected_run_id, "expected run_id")
 
     for row in rows:
         if row["schema_version"] != "1":
             fail(f"{path}: unsupported schema version")
+        require_evidence_id(row["campaign_id"], "campaign_id")
+        require_evidence_id(row["run_id"], "run_id")
+        require_evidence_id(row["target_arch"], "target_arch")
+        require_evidence_id(row["target_os"], "target_os")
         profile = (row["alphabet"], row["padding"])
         if profile not in PROFILES:
             fail(f"{path}: unsupported profile {profile!r}")
@@ -110,6 +123,18 @@ def validate_benchmark(path: Path) -> list[dict[str, str]]:
             fail(f"{path}: invalid sample or throughput")
         if allocations != 0:
             fail(f"{path}: slice operation allocated {allocations} times")
+        if row["input_len"] not in EXPECTED_LENGTHS:
+            fail(f"{path}: unexpected input length {row['input_len']!r}")
+        if row["backend"] != "external" and row["backend"] not in BACKENDS:
+            fail(f"{path}: unknown backend {row['backend']!r}")
+        if row["engine"] == "base64-ng" and row["backend"] == "external":
+            fail(f"{path}: base64-ng row uses external backend")
+        if row["engine"] != "base64-ng" and row["backend"] != "external":
+            fail(f"{path}: comparison engine uses internal backend")
+        if row["active_encode_backend"] not in BACKENDS:
+            fail(f"{path}: unknown active encode backend")
+        if row["active_decode_backend"] not in BACKENDS:
+            fail(f"{path}: unknown active decode backend")
 
         key = tuple(
             row[field]
@@ -125,44 +150,113 @@ def validate_benchmark(path: Path) -> list[dict[str, str]]:
         if sample in samples[key]:
             fail(f"{path}: duplicate sample for {key!r}")
         samples[key].add(sample)
-        seen_profiles.add(profile)
-        seen_operations.add(row["operation"])
-        seen_engines.add(row["engine"])
 
-    if seen_profiles != PROFILES:
-        fail(f"{path}: incomplete profile matrix")
-    if seen_operations != OPERATIONS or seen_engines != ENGINES:
-        fail(f"{path}: incomplete engine or operation matrix")
-    sample_counts = {len(value) for value in samples.values()}
-    if len(sample_counts) != 1 or min(sample_counts) < 2:
-        fail(f"{path}: inconsistent or insufficient sample counts")
+    if availability_rows is None or environment is None or expected_run_id is None:
+        sample_counts = {len(value) for value in samples.values()}
+        if len(sample_counts) != 1 or min(sample_counts) < 2:
+            fail(f"{path}: inconsistent or insufficient sample counts")
+        return rows
+
+    measurement = environment.get("measurement")
+    if not isinstance(measurement, dict):
+        fail("environment measurement contract disappeared")
+    campaign_id = measurement.get("campaign_id")
+    sample_count = measurement.get("sample_count")
+    if not isinstance(campaign_id, str) or not isinstance(sample_count, int):
+        fail("environment measurement contract is invalid")
+
+    availability_target = {
+        (row["target_arch"], row["target_os"]) for row in availability_rows
+    }
+    if len(availability_target) != 1:
+        fail("availability does not identify exactly one target")
+    target_arch, target_os = next(iter(availability_target))
+    available_ng = {
+        row["backend"] for row in availability_rows if row["available"] == "true"
+    }
+    expected_groups = {
+        (
+            "base64-ng",
+            operation,
+            alphabet,
+            padding,
+            length,
+            backend,
+        )
+        for operation in OPERATIONS
+        for alphabet, padding in PROFILES
+        for length in EXPECTED_LENGTHS
+        for backend in available_ng
+    }
+    expected_groups |= {
+        (engine, operation, alphabet, padding, length, "external")
+        for engine in ENGINES - {"base64-ng"}
+        for operation in OPERATIONS
+        for alphabet, padding in PROFILES
+        for length in EXPECTED_LENGTHS
+    }
+    observed_groups = set(samples)
+    if observed_groups != expected_groups:
+        missing = sorted(expected_groups - observed_groups)
+        extra = sorted(observed_groups - expected_groups)
+        fail(f"{path}: incomplete matrix: missing={missing[:10]}, extra={extra[:10]}")
+
+    expected_samples = set(range(sample_count))
+    for key, observed_samples in samples.items():
+        if observed_samples != expected_samples:
+            fail(
+                f"{path}: sample indexes for {key!r} are {sorted(observed_samples)!r}; "
+                f"expected {sorted(expected_samples)!r}"
+            )
+    for row in rows:
+        if row["campaign_id"] != campaign_id:
+            fail(f"{path}: campaign identifier does not match environment")
+        if row["run_id"] != expected_run_id:
+            fail(f"{path}: unexpected run identifier")
+        if (row["target_arch"], row["target_os"]) != (target_arch, target_os):
+            fail(f"{path}: benchmark target does not match availability")
     return rows
 
 
-def validate_auxiliary(availability: Path, resources: Path) -> None:
+def validate_auxiliary(
+    availability: Path, resources: Path, expected_feature_set: str
+) -> list[dict[str, str]]:
+    require_evidence_id(expected_feature_set, "expected feature_set")
     availability_rows = read_csv(availability, AVAILABILITY_FIELDS)
     names = {row["backend"] for row in availability_rows}
-    required = {
-        "auto",
-        "scalar",
-        "ssse3-sse4.1",
-        "avx2",
-        "avx512-vbmi",
-        "neon",
-        "wasm-simd128",
-    }
-    if names != required:
+    if names != BACKENDS or len(availability_rows) != len(BACKENDS):
         fail(f"{availability}: incomplete backend inventory")
     if any(row["available"] not in {"true", "false"} for row in availability_rows):
         fail(f"{availability}: invalid availability value")
+    if any(row["backend"] not in BACKENDS for row in availability_rows):
+        fail(f"{availability}: invalid backend")
+    if any(
+        not EVIDENCE_ID.fullmatch(row["target_arch"])
+        or not EVIDENCE_ID.fullmatch(row["target_os"])
+        for row in availability_rows
+    ):
+        fail(f"{availability}: invalid target identifier")
+    if len(
+        {(row["target_arch"], row["target_os"]) for row in availability_rows}
+    ) != 1:
+        fail(f"{availability}: inconsistent target")
+    available = {
+        row["backend"] for row in availability_rows if row["available"] == "true"
+    }
+    if not {"auto", "scalar"} <= available:
+        fail(f"{availability}: auto and scalar must be available")
 
     resource_rows = read_csv(resources, RESOURCE_FIELDS)
     categories = {row["category"] for row in resource_rows}
     if not {"stack-bound", "adapter-pending-memory", "adapter-size"} <= categories:
         fail(f"{resources}: incomplete resource categories")
     for row in resource_rows:
+        require_evidence_id(row["feature_set"], "feature_set")
+        if row["feature_set"] != expected_feature_set:
+            fail(f"{resources}: unexpected feature set")
         if int(row["value"]) < 0:
             fail(f"{resources}: negative resource value")
+    return availability_rows
 
 
 def measurement_key(row: dict[str, str]) -> tuple[str, ...]:
@@ -318,6 +412,9 @@ def main() -> None:
     validate_parser.add_argument("benchmark", type=Path)
     validate_parser.add_argument("availability", type=Path)
     validate_parser.add_argument("resources", type=Path)
+    validate_parser.add_argument("environment", type=Path)
+    validate_parser.add_argument("--expected-run-id", required=True)
+    validate_parser.add_argument("--expected-feature-set", required=True)
 
     compare_parser = subparsers.add_parser("compare")
     compare_parser.add_argument("first", type=Path)
@@ -336,8 +433,16 @@ def main() -> None:
 
     args = parser.parse_args()
     if args.command == "validate":
-        validate_benchmark(args.benchmark)
-        validate_auxiliary(args.availability, args.resources)
+        environment = read_environment(args.environment)
+        availability_rows = validate_auxiliary(
+            args.availability, args.resources, args.expected_feature_set
+        )
+        validate_benchmark(
+            args.benchmark,
+            availability_rows=availability_rows,
+            environment=environment,
+            expected_run_id=args.expected_run_id,
+        )
         print("performance evidence: schema and matrix ok")
     elif args.command == "compare":
         compare(args.first, args.second, args.lower, args.upper)

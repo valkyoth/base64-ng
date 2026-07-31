@@ -529,6 +529,13 @@ production auto dispatch, scalar, and each exact backend available on the host.
 It compares exact-pinned `base64 0.23.0` and `base64ct 1.8.3` only where
 canonical caller-owned slice semantics match.
 
+Campaign generation fails closed unless the worktree is clean and `HEAD`
+resolves to a full commit identifier. Validation reconstructs the complete
+expected matrix from backend availability, requires every fixed length and
+exact sample index, and rejects environment-controlled labels outside
+`[A-Za-z0-9][A-Za-z0-9._-]{0,63}`. The original dirty-tree Commit 3 campaign
+is invalidated and cannot support a release or backend-admission claim.
+
 The retained schema and community submission contract are documented in
 [`BENCHMARKS.md`](BENCHMARKS.md) and
 [`../performance-baselines/README.md`](../performance-baselines/README.md).

@@ -1,5 +1,6 @@
 mod allocation;
 mod codec;
+mod evidence;
 mod resources;
 
 use std::hint::black_box;
@@ -76,8 +77,8 @@ fn main() {
 
 fn run_benchmark() {
     let config = Config {
-        campaign_id: env_string("BASE64_NG_PERF_CAMPAIGN_ID", "manual"),
-        run_id: env_string("BASE64_NG_PERF_RUN_ID", "run-1"),
+        campaign_id: evidence::env_id("BASE64_NG_PERF_CAMPAIGN_ID", "manual"),
+        run_id: evidence::env_id("BASE64_NG_PERF_RUN_ID", "run-1"),
         samples: env_usize("BASE64_NG_PERF_SAMPLES", DEFAULT_SAMPLES),
         target_bytes: env_usize("BASE64_NG_PERF_TARGET_BYTES", DEFAULT_TARGET_BYTES),
     };
@@ -250,10 +251,6 @@ fn verify_correctness() {
             }
         }
     }
-}
-
-fn env_string(name: &str, default: &str) -> String {
-    std::env::var(name).unwrap_or_else(|_| default.to_owned())
 }
 
 fn env_usize(name: &str, default: usize) -> usize {

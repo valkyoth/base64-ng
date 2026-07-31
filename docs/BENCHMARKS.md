@@ -70,11 +70,14 @@ The generated directory contains:
 | `MANIFEST.txt` | Thresholds, interpretation notes, and checksums |
 
 `scripts/validate_perf_evidence.py` rejects changed headers, unknown or
-unpinned engines, missing profiles/operations, duplicate samples, non-finite
-measurements, and allocations in measured slice operations. It also requires
-two same-host runs to contain the same matrix and remain within a deliberately
-wide `0.50..2.00` ratio envelope. The wide envelope detects broken campaigns;
-it is not a precision-performance claim.
+unpinned engines, dirty or incomplete Git provenance, missing
+backend/profile/operation/length combinations, missing or extra sample
+indexes, unsafe evidence identifiers, non-finite measurements, and allocations
+in measured slice operations. It derives the exact expected matrix from the
+complete backend-availability inventory and the fixed benchmark lengths. It
+also requires two same-host runs to contain the same matrix and remain within
+a deliberately wide `0.50..2.00` ratio envelope. The wide envelope detects
+broken campaigns; it is not a precision-performance claim.
 
 Exact-backend rows below `0.95` of the matching scalar median are marked
 `non-admissible-below-scalar`. That label is evidence for review, not an
@@ -85,11 +88,13 @@ The backend-specific review checklist remains
 [`SIMD_ENCODE_ADMISSION_DRAFT.md`](SIMD_ENCODE_ADMISSION_DRAFT.md). Benchmark
 evidence satisfies only its performance portion.
 
-The retained Commit 3 AMD Ryzen 9 9950X3D campaign found that 1.x auto dispatch
-and all three available x86 SIMD tiers were below scalar for the large ordinary
-encode and strict-decode rows. They are therefore non-admissible as inherited
-2.0 performance claims. Later 2.0 backend rebuild commits must produce new
-correctness, cleanup, and performance evidence before any tier is admitted.
+The original Commit 3 AMD Ryzen 9 9950X3D campaign was invalidated because it
+was captured while the Commit 3 implementation was uncommitted and therefore
+was not bound to the source named by its environment record. See
+[`../performance-baselines/INVALIDATED_COMMIT_3.md`](../performance-baselines/INVALIDATED_COMMIT_3.md).
+It admitted no backend. No number from that campaign remains eligible for a
+release or admission claim; a clean-source replacement must be retained
+separately.
 
 ## Resource Interpretation
 
@@ -112,6 +117,12 @@ The archive contract is documented in
 Every submission is local to its exact hardware and software environment.
 Release notes may cite a result only with its source commit, environment,
 commands, raw samples, and manifest.
+
+Generation fails before measurement unless `git status --porcelain=v1
+--untracked-files=all` is empty. The environment and manifest record the full
+`HEAD^{commit}` identifier and `source_status=clean`. Retained evidence is
+committed only in a later commit so its recorded source remains the exact clean
+tree that executed the campaign.
 
 Performance numbers are release notes evidence only when all retained
 environment, correctness, reproducibility, and admission records are present.

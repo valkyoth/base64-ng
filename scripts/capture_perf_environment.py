@@ -6,9 +6,12 @@ from __future__ import annotations
 import json
 import os
 import platform
+import re
 import subprocess
 import sys
 from pathlib import Path
+
+EVIDENCE_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}\Z")
 
 
 def command(*args: str) -> str:
@@ -21,6 +24,39 @@ def command(*args: str) -> str:
         ).stdout.strip()
     except (FileNotFoundError, subprocess.CalledProcessError):
         return "unavailable"
+
+
+def required_command(*args: str) -> str:
+    try:
+        return subprocess.run(
+            args,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+    except FileNotFoundError as error:
+        raise SystemExit(f"required command is unavailable: {args[0]}") from error
+    except subprocess.CalledProcessError as error:
+        raise SystemExit(f"required command failed: {' '.join(args)}") from error
+
+
+def evidence_id(name: str, default: str) -> str:
+    value = os.environ.get(name, default)
+    if not EVIDENCE_ID.fullmatch(value):
+        raise SystemExit(f"{name} must match [A-Za-z0-9][A-Za-z0-9._-]{{0,63}}")
+    return value
+
+
+def clean_source() -> dict[str, str]:
+    status = required_command(
+        "git", "status", "--porcelain=v1", "--untracked-files=all"
+    )
+    if status:
+        raise SystemExit("refusing to generate performance evidence from a dirty tree")
+    commit = required_command("git", "rev-parse", "HEAD^{commit}")
+    if not re.fullmatch(r"[0-9a-f]{40}", commit):
+        raise SystemExit("performance evidence source is not a full Git commit")
+    return {"commit": commit, "status": "clean"}
 
 
 def cpu_fields() -> dict[str, str]:
@@ -67,12 +103,9 @@ def main() -> None:
             "cargo_profile": "release",
             "target": command("rustc", "-vV").split("host: ")[-1].splitlines()[0],
         },
-        "source": {
-            "commit": command("git", "rev-parse", "HEAD"),
-            "status": command("git", "status", "--short") or "clean",
-        },
+        "source": clean_source(),
         "measurement": {
-            "campaign_id": os.environ.get("BASE64_NG_PERF_CAMPAIGN_ID", "manual"),
+            "campaign_id": evidence_id("BASE64_NG_PERF_CAMPAIGN_ID", "manual"),
             "sample_count": int(os.environ.get("BASE64_NG_PERF_SAMPLES", "5")),
             "target_bytes_per_sample": int(
                 os.environ.get("BASE64_NG_PERF_TARGET_BYTES", str(4 * 1024 * 1024))

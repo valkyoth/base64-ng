@@ -29,6 +29,12 @@ Each submission contains:
   sets.
 - `MANIFEST.txt`: policy values and artifact checksums.
 
+Generation is permitted only from a clean committed tree. `environment.json`
+and `MANIFEST.txt` must identify the same full source commit and a clean source
+status. Evidence artifacts are committed separately after capture; the
+artifact commit is not substituted for the recorded measurement-source
+commit.
+
 Only canonical valid Standard and URL-safe padded/unpadded slice operations are
 compared with exact-pinned `base64 0.23.0` and `base64ct 1.8.3`. The archive
 does not present malformed-input, constant-time, wrapped, streaming, or secret
@@ -38,6 +44,11 @@ The recorded stack values are reviewed source bounds for fixed staging arrays,
 not dynamic whole-call-chain stack measurements. Allocation counts cover the
 measured caller-owned slice operations. Community submissions must preserve
 the generated files without hand editing and identify the source commit.
+Campaign, run, feature-set, target, and other machine labels use the restricted
+`[A-Za-z0-9][A-Za-z0-9._-]{0,63}` grammar. The validator requires the complete
+Cartesian product of fixed lengths, operations, profiles, comparison engines,
+and every backend marked available, with exact sample indexes
+`0..sample_count`.
 
 Transient compilation directories remain under `target/release-evidence/` and
 must not be copied into a retained or submitted evidence directory.
