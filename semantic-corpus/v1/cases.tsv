@@ -1,0 +1,17 @@
+id	profile	operation	input_hex	encoded	decision	error_class	error_offset	eof	partitions	committed_prefix_hex	core_one_shot	core_stream	bytes	tokio	serde	sanitization
+rfc-empty	standard-pad	round-trip			canonical	-	-	complete	0		byte-identical	byte-identical	byte-identical	byte-identical	byte-identical	byte-identical
+rfc-f	standard-pad	round-trip	66	Zg==	canonical	-	-	complete	1,1,2		byte-identical	byte-identical	byte-identical	byte-identical	byte-identical	byte-identical
+rfc-fo	standard-pad	round-trip	666f	Zm8=	canonical	-	-	complete	1,2,1		byte-identical	byte-identical	byte-identical	byte-identical	byte-identical	byte-identical
+rfc-foo	standard-pad	round-trip	666f6f	Zm9v	canonical	-	-	complete	2,1,1		byte-identical	byte-identical	byte-identical	byte-identical	byte-identical	byte-identical
+rfc-foob	standard-pad	round-trip	666f6f62	Zm9vYg==	canonical	-	-	complete	1,3,1,3		byte-identical	byte-identical	byte-identical	byte-identical	byte-identical	byte-identical
+rfc-fooba	standard-pad	round-trip	666f6f6261	Zm9vYmE=	canonical	-	-	complete	3,1,4		byte-identical	byte-identical	byte-identical	byte-identical	byte-identical	byte-identical
+rfc-foobar	standard-pad	round-trip	666f6f626172	Zm9vYmFy	canonical	-	-	complete	1,1,2,4		byte-identical	byte-identical	byte-identical	byte-identical	byte-identical	byte-identical
+url-safe-pad	url-safe-pad	round-trip	fbff	-_8=	canonical	-	-	complete	1,1,2		byte-identical	byte-identical	byte-identical	byte-identical	not-applicable	not-applicable
+url-safe-no-pad	url-safe-no-pad	round-trip	fbff	-_8	canonical	-	-	complete	1,2		byte-identical	byte-identical	byte-identical	byte-identical	byte-identical	byte-identical
+invalid-byte	standard-pad	decode-error		Zm!v	reject	invalid-byte	2	malformed	1,2,1		committed-prefix	irrevocable-sink-progress	atomic-unchanged	atomic-unchanged	atomic-unchanged	opaque-reject
+valid-prefix-invalid-byte	standard-pad	decode-error		Zm9v!g==	reject	invalid-byte	4	malformed	4,1,3	666f6f	committed-prefix	irrevocable-sink-progress	atomic-unchanged	atomic-unchanged	atomic-unchanged	opaque-reject
+invalid-padded-length	standard-pad	decode-error		Zg=	reject	invalid-length	-	incomplete	1,2		atomic-unchanged	irrevocable-sink-progress	atomic-unchanged	atomic-unchanged	atomic-unchanged	opaque-reject
+noncanonical-one-byte	standard-pad	decode-error		Zh==	reject	invalid-padding	1	malformed	2,2		committed-prefix	irrevocable-sink-progress	atomic-unchanged	atomic-unchanged	atomic-unchanged	opaque-reject
+unpadded-length-one	standard-no-pad	decode-error		Z	reject	invalid-length	-	incomplete	1		atomic-unchanged	irrevocable-sink-progress	atomic-unchanged	atomic-unchanged	not-applicable	not-applicable
+unpadded-padding	standard-no-pad	decode-error		Zg==	reject	invalid-padding	2	malformed	1,3		committed-prefix	irrevocable-sink-progress	atomic-unchanged	atomic-unchanged	not-applicable	not-applicable
+url-mixed-symbol	url-safe-pad	decode-error		AA/A	reject	invalid-byte	2	malformed	1,1,2		committed-prefix	irrevocable-sink-progress	atomic-unchanged	atomic-unchanged	not-applicable	not-applicable

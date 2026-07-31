@@ -154,6 +154,7 @@ mod length;
 mod profiles;
 mod scalar;
 mod scalar_encode_in_place;
+mod v2;
 mod wrap;
 
 pub use alphabet::{

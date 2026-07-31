@@ -1,0 +1,149 @@
+{
+  "schema_version": 1,
+  "rfc": 4648,
+  "scope": "Base64 Sections 3 through 5 plus official Base64 vectors",
+  "reviewed": "2026-07-31",
+  "alphabets": {
+    "standard": "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/",
+    "url_safe": "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_",
+    "padding": "="
+  },
+  "discrepancy_policy": {
+    "line_feeds": "reject unless an explicitly named wrapping profile is selected",
+    "padding": "required by padded codecs and rejected by explicitly unpadded codecs",
+    "non_alphabet": "reject in strict codecs; legacy whitespace is a separately named opt-in surface",
+    "trailing_bits": "reject non-zero unused trailing bits",
+    "alphabet": "never accept mixed Standard and URL-safe symbols"
+  },
+  "requirements": [
+    {
+      "id": "RFC4648-3.1-MUST-NO-UNSOLICITED-LINES",
+      "section": "3.1",
+      "normative": "MUST NOT",
+      "decision": "Strict codecs neither insert nor accept line feeds. MIME and PEM wrapping are separately named profiles.",
+      "implementation": ["src/engine/encode.rs", "src/wrap.rs"],
+      "tests": ["src/non_standard_surface_tests.rs", "tests/rfc4648.rs"]
+    },
+    {
+      "id": "RFC4648-3.2-MUST-PAD-BY-DEFAULT",
+      "section": "3.2",
+      "normative": "MUST",
+      "decision": "STANDARD and URL_SAFE require canonical padding; *_NO_PAD is the explicit referring-policy exception.",
+      "implementation": ["src/length.rs", "src/scalar.rs"],
+      "tests": ["tests/rfc4648.rs", "src/v2/fixtures.rs"]
+    },
+    {
+      "id": "RFC4648-3.3-MUST-REJECT-NON-ALPHABET",
+      "section": "3.3",
+      "normative": "MUST",
+      "decision": "Strict decode rejects every byte outside the selected alphabet and legal terminal padding.",
+      "implementation": ["src/scalar.rs", "src/alphabet.rs"],
+      "tests": ["tests/rfc4648.rs", "src/v2/fixtures.rs"]
+    },
+    {
+      "id": "RFC4648-3.3-MAY-IGNORE-BY-REFERRING-SPEC",
+      "section": "3.3",
+      "normative": "MAY",
+      "decision": "Only explicitly named legacy or wrapped profiles ignore or consume permitted transport separators.",
+      "implementation": ["src/wrap.rs", "src/profiles.rs"],
+      "tests": ["src/non_standard_surface_tests.rs", "tests/rfc4648.rs"]
+    },
+    {
+      "id": "RFC4648-3.3-MAY-IGNORE-EARLY-PADDING",
+      "section": "3.3",
+      "normative": "MAY",
+      "decision": "Strict codecs do not exercise this option and reject a pad character before its canonical terminal position.",
+      "implementation": ["src/scalar.rs"],
+      "tests": ["src/v2/fixtures.rs", "tests/rfc4648.rs"]
+    },
+    {
+      "id": "RFC4648-3.3-MAY-IGNORE-EXCESS-PADDING",
+      "section": "3.3",
+      "normative": "MAY",
+      "decision": "Strict codecs do not exercise this option and reject excess terminal pad characters.",
+      "implementation": ["src/length.rs", "src/scalar.rs"],
+      "tests": ["tests/rfc4648.rs"]
+    },
+    {
+      "id": "RFC4648-3.4-DEFAULT-NO-GLYPH-FOLDING",
+      "section": "3.4",
+      "normative": "DEFAULT",
+      "decision": "No strict Base64 decoder folds visually similar glyphs or alphabet cases.",
+      "implementation": ["src/alphabet.rs"],
+      "tests": ["tests/rfc4648.rs"]
+    },
+    {
+      "id": "RFC4648-3.5-MUST-ZERO-PAD-BITS",
+      "section": "3.5",
+      "normative": "MUST",
+      "decision": "All encoders set unused trailing bits to zero.",
+      "implementation": ["src/scalar.rs"],
+      "tests": ["src/v2/fixtures.rs", "tests/rfc4648.rs"]
+    },
+    {
+      "id": "RFC4648-3.5-MAY-REJECT-NONCANONICAL",
+      "section": "3.5",
+      "normative": "MAY",
+      "decision": "Strict decoders exercise this option and reject non-zero unused trailing bits.",
+      "implementation": ["src/scalar.rs"],
+      "tests": ["src/v2/fixtures.rs", "tests/rfc4648.rs"]
+    },
+    {
+      "id": "RFC4648-4-24-TO-4X6",
+      "section": "4",
+      "normative": "ALGORITHM",
+      "decision": "Three input octets are interpreted most-significant-bit first as four six-bit indexes.",
+      "implementation": ["src/scalar.rs"],
+      "tests": ["src/v2/rfc4648_oracle.rs", "src/v2/fixtures.rs"]
+    },
+    {
+      "id": "RFC4648-4-STANDARD-ALPHABET",
+      "section": "4",
+      "normative": "TABLE 1",
+      "decision": "Standard uses the exact 64-symbol Table 1 alphabet.",
+      "implementation": ["src/alphabet.rs"],
+      "tests": ["src/v2/rfc4648_oracle.rs", "tests/rfc4648.rs"]
+    },
+    {
+      "id": "RFC4648-4-PADDING-CASES",
+      "section": "4",
+      "normative": "ALGORITHM",
+      "decision": "Padded output uses no pad, one pad, or two pads according to the final input quantum.",
+      "implementation": ["src/scalar.rs", "src/length.rs"],
+      "tests": ["src/v2/fixtures.rs", "tests/rfc4648.rs"]
+    },
+    {
+      "id": "RFC4648-5-DISTINCT-NAME",
+      "section": "5",
+      "normative": "SHOULD",
+      "decision": "The URL-safe codec is named URL_SAFE and documented as distinct from Standard Base64.",
+      "implementation": ["src/lib.rs", "src/alphabet.rs"],
+      "tests": ["tests/rfc4648.rs"]
+    },
+    {
+      "id": "RFC4648-5-URL-SAFE-ALPHABET",
+      "section": "5",
+      "normative": "TABLE 2",
+      "decision": "URL-safe uses '-' and '_' at indexes 62 and 63 and otherwise matches Table 1.",
+      "implementation": ["src/alphabet.rs"],
+      "tests": ["src/v2/fixtures.rs", "tests/rfc4648.rs"]
+    },
+    {
+      "id": "RFC4648-5-EXPLICIT-PADDING-OMISSION",
+      "section": "5",
+      "normative": "POLICY",
+      "decision": "URL_SAFE remains padded; URL_SAFE_NO_PAD explicitly selects omission when framing supplies length.",
+      "implementation": ["src/lib.rs", "src/length.rs"],
+      "tests": ["src/v2/fixtures.rs", "tests/rfc4648.rs"]
+    }
+  ],
+  "official_base64_vectors": [
+    {"input_hex": "", "encoded": ""},
+    {"input_hex": "66", "encoded": "Zg=="},
+    {"input_hex": "666f", "encoded": "Zm8="},
+    {"input_hex": "666f6f", "encoded": "Zm9v"},
+    {"input_hex": "666f6f62", "encoded": "Zm9vYg=="},
+    {"input_hex": "666f6f6261", "encoded": "Zm9vYmE="},
+    {"input_hex": "666f6f626172", "encoded": "Zm9vYmFy"}
+  ]
+}

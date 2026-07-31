@@ -21,6 +21,11 @@ Commit 2 freezes the machine-generated `v1.3.9` public API snapshots and the
 `scripts/check-2.0-feature-contract.sh` prevent accidental inventory,
 canonical-name, and Cargo feature-unification drift.
 
+Commit 4 adds the exact RFC 4648 source lock, errata and requirements ledgers,
+independent test-only oracle, versioned cross-crate semantic corpus, and the
+complete Rust 1.90.0 capability matrix. `scripts/verify-rfcs.sh` is offline;
+network comparison is an explicit maintainer operation.
+
 Run the gate with:
 
 ```sh
@@ -62,6 +67,14 @@ The release gate runs:
 - MSRV/toolchain policy validation for `Cargo.toml`, `rust-toolchain.toml`,
   docs.rs metadata, CI install paths, target matrices, and release-evidence
   tooling
+- Rust 1.90.0 host and target capability checks through
+  `scripts/check-2.0-msrv.sh`, with newer-only optimizations required to retain
+  a documented MSRV implementation or scalar fallback
+- offline RFC 4648 byte, checksum, source, errata, requirements, Git
+  normalization, and package-exclusion validation plus fail-closed mutation
+  tests
+- independent-oracle differential tests and the versioned semantic corpus
+  across core, streaming, bytes, Tokio, serde, and sanitization surfaces
 - public API audit validation; stable releases fail if public API rows remain
   marked as `review pending`
 - packaged release script presence, executable-bit, and shebang validation

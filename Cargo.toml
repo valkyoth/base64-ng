@@ -28,7 +28,7 @@ include = [
     "release-crates.toml",
     "rust-toolchain.toml",
     "deny.toml",
-    "README.md",
+    "/README.md",
     "CONTRIBUTING.md",
     "CHANGELOG.md",
     "SECURITY.md",
@@ -50,6 +50,7 @@ exclude = [
     "dudect",
     "fuzz",
     "perf",
+    "semantic-corpus/runner",
 ]
 resolver = "2"
 

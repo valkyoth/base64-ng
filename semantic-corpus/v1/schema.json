@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "format": "tab-separated UTF-8 with one header row",
+  "columns": {
+    "id": "stable unique case identifier",
+    "profile": "standard-pad, standard-no-pad, url-safe-pad, or url-safe-no-pad",
+    "operation": "round-trip or decode-error",
+    "input_hex": "plain input bytes for successful round trips",
+    "encoded": "encoded input or expected encoding",
+    "decision": "canonical or reject",
+    "error_class": "normalized ordinary error class or '-'",
+    "error_offset": "zero-based ordinary input offset or '-'",
+    "eof": "complete, malformed, or incomplete",
+    "partitions": "comma-separated input partition sizes",
+    "committed_prefix_hex": "exact decoded prefix permitted before a later failure",
+    "core_one_shot": "byte-identical, committed-prefix, or atomic-unchanged",
+    "core_stream": "byte-identical or irrevocable-sink-progress",
+    "bytes": "byte-identical or atomic-unchanged",
+    "tokio": "byte-identical or atomic-unchanged",
+    "serde": "byte-identical, atomic-unchanged, or not-applicable",
+    "sanitization": "byte-identical, opaque-reject, or not-applicable"
+  },
+  "failure_contract": "Each surface is checked against its own declared mutation and diagnostic contract. Failure rows do not imply universal transactionality.",
+  "secret_error_policy": "Sanitization uses the constant-time-oriented decoder and therefore records opaque-reject without an ordinary error offset."
+}

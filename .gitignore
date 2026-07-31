@@ -1,4 +1,5 @@
 /target/
+/semantic-corpus/runner/target/
 /.idea/
 /.vscode/
 *.swp

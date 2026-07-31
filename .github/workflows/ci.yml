@@ -115,6 +115,42 @@ jobs:
       - name: Check no-default-features library
         run: cargo +${{ matrix.toolchain }} check --no-default-features --lib
 
+      - name: Check complete 2.0 MSRV host matrix
+        if: matrix.toolchain == '1.90.0'
+        run: scripts/check-2.0-msrv.sh --host
+
+  msrv-target-build:
+    name: Rust 1.90 target contract (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - x86_64-unknown-linux-gnu
+          - aarch64-unknown-linux-gnu
+          - x86_64-unknown-freebsd
+          - wasm32-unknown-unknown
+          - thumbv7em-none-eabihf
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install Rust 1.90 target
+        run: |
+          rustup toolchain install 1.90.0
+          rustup target add --toolchain 1.90.0 ${{ matrix.target }}
+
+      - name: Cache Rust build output
+        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
+        with:
+          cache-on-failure: true
+          key: msrv-target-${{ matrix.target }}
+
+      - name: Check 2.0 MSRV target contract
+        run: scripts/check-2.0-msrv.sh --target ${{ matrix.target }}
+
   platform:
     name: Platform tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}

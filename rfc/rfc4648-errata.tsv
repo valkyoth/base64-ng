@@ -1,0 +1,7 @@
+id	status	type	section	reported	source	reviewed	disposition	implementation_decision	security_effect
+2837	Verified	Editorial	16.2	2011-06-15	https://www.rfc-editor.org/errata/eid2837	2026-07-31	accepted-editorial	Reference-link correction only; immutable RFC text remains unchanged.	none
+5855	Verified	Editorial	10	2019-09-06	https://www.rfc-editor.org/errata/eid5855	2026-07-31	accepted-clarification	Official vector inputs are represented as their ASCII octets in the independent oracle and ledger.	Prevents host-character-set ambiguity in test evidence.
+7514	Verified	Editorial	3.5	2023-05-09	https://www.rfc-editor.org/errata/eid7514	2026-07-31	accepted-editorial	Grammar correction only; canonical trailing-bit behavior is unchanged.	none
+4889	Reported	Technical	6	2016-12-14	https://www.rfc-editor.org/errata/eid4889	2026-07-31	not-applicable	Base32 is outside the base64-ng core scope; no RFC text or Base64 behavior changes.	none for Base64
+8669	Reported	Technical	4	2025-12-03	https://www.rfc-editor.org/errata/eid8669	2026-07-31	accepted-clarification	Base64 octets are processed most-significant-bit first as shown by the RFC tables and independent vectors.	Prevents an incompatible bit-order interpretation.
+9030	Verified	Editorial	5	2026-07-18	https://www.rfc-editor.org/errata/eid9030	2026-07-31	accepted-editorial	Indefinite-article grammar correction only; URL-safe padding policy is unchanged.	none
