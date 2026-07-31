@@ -7,10 +7,13 @@ users can inspect before adopting a version.
 The 2.0 checkpoint program is governed by
 [`2.0_GOVERNANCE.md`](2.0_GOVERNANCE.md). Each numbered checkpoint records
 its exact commit, verification commands, tool and target identity, skips, and
-external pentest disposition in the authoritative
+external pentest coverage in the authoritative
 [`2.0.0-release-plan.md`](../2.0.0-release-plan.md). Generated artifacts remain
 under `target/release-evidence/`; Commit 55 retains checksums or immutable
-workflow/artifact references for evidence too large to commit.
+workflow/artifact references for evidence too large to commit. Intermediate
+pentests may cover contiguous checkpoint batches and remain working evidence;
+the normalized permanent GitHub pentest report is added for the final 2.0.0
+candidate.
 
 Run the gate with:
 

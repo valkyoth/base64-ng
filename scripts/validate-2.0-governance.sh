@@ -28,6 +28,9 @@ require_text "$plan" '[base64ct 1.8.3][base64ct-1.8.3]'
 require_text "$plan" 'the final signed `v2.0.0` tag'
 require_text "$plan" 'Architecture reviews and gap analyses are source material, not'
 require_text "$plan" 'Strict RFC 4648 encoding and decoding remains the ordinary default'
+require_text "$plan" "External pentests may cover one checkpoint or"
+require_text "$plan" "Intermediate batches do not create permanent GitHub pentest reports."
+require_text "$plan" "Locally verified checkpoints may remain pentest-pending"
 require_text "$plan" "## Checkpoint Record"
 
 commit_count="$(grep -E -c '^### Commit [0-9]+:' "$plan")"
@@ -60,8 +63,11 @@ require_text "$decision" 'Rust `1.97.1`'
 require_text "$decision" 'Rust `1.90.0`'
 require_text "$decision" '`cargo-kani 0.67.0`'
 require_text "$decision" '`base64` `0.23.0` and `base64ct` `1.8.3`'
-require_text "$decision" "The checkpoint table in the authoritative plan is updated by the following"
+require_text "$decision" "pentests may cover one checkpoint or a contiguous batch of checkpoints at"
+require_text "$decision" "A checkpoint is development-complete when all of the following are true:"
+require_text "$decision" "One report may satisfy multiple contiguous checkpoints"
 require_text "$decision" 'Root `PENTEST.md` remains temporary scratch input'
+require_text "$decision" "Intermediate pentest batches are working review gates and do not"
 require_text "$decision" "QEMU, compiler/codegen, runtime smoke, and"
 require_text "$decision" 'The 1.x `STANDARD`, `STANDARD_NO_PAD`, `URL_SAFE`, and `URL_SAFE_NO_PAD`'
 require_text "$decision" "obtain the exact unmodified RFC 4648 bytes"
