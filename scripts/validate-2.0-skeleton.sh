@@ -4,6 +4,8 @@ set -eu
 for module in \
     alphabet \
     backend_health \
+    bounded \
+    const_transforms \
     incremental \
     incremental_decoder \
     lifecycle \
@@ -23,7 +25,7 @@ awk '
         gated = 1
         next
     }
-    gated && /^mod (fixtures|incremental_decoder_tests|incremental_decoder_unpadded_tests|incremental_encoder_tests|one_shot_tests|rfc4648_oracle);$/ {
+    gated && /^mod (const_buffer_tests|fixtures|incremental_decoder_tests|incremental_decoder_unpadded_tests|incremental_encoder_tests|one_shot_tests|rfc4648_oracle);$/ {
         found[$2] = 1
         gated = 0
         next
@@ -32,12 +34,13 @@ awk '
         gated = 0
     }
     END {
-        exit !(found["fixtures;"] && found["incremental_decoder_tests;"] && found["incremental_decoder_unpadded_tests;"] && found["incremental_encoder_tests;"] && found["one_shot_tests;"] && found["rfc4648_oracle;"])
+        exit !(found["const_buffer_tests;"] && found["fixtures;"] && found["incremental_decoder_tests;"] && found["incremental_decoder_unpadded_tests;"] && found["incremental_encoder_tests;"] && found["one_shot_tests;"] && found["rfc4648_oracle;"])
     }
 ' src/v2/mod.rs
 
 if rg -n 'rfc4648_oracle' src \
     --glob '!src/v2/mod.rs' \
+    --glob '!src/v2/const_buffer_tests.rs' \
     --glob '!src/v2/fixtures.rs' \
     --glob '!src/v2/incremental_decoder_tests.rs' \
     --glob '!src/v2/incremental_decoder_unpadded_tests.rs' \

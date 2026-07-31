@@ -138,6 +138,10 @@ macro_rules! strict_specification {
         impl $name {
             const SETTINGS: CodecSettings =
                 CodecSettings::new($alphabet, $encode, $decode, TrailingBits::RequireCanonical);
+
+            pub(crate) const fn const_settings() -> CodecSettings {
+                Self::SETTINGS
+            }
         }
 
         impl sealed::Sealed for $name {}
@@ -190,6 +194,12 @@ pub const STRICT_URL_SAFE_UNPADDED: Base64<StrictUrlSafeUnpadded> =
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct RuntimeSpec {
     settings: CodecSettings,
+}
+
+impl RuntimeSpec {
+    pub(crate) const fn const_settings(&self) -> CodecSettings {
+        self.settings
+    }
 }
 
 impl sealed::Sealed for RuntimeSpec {}

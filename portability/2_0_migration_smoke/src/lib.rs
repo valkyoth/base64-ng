@@ -3,9 +3,18 @@ mod tests {
     use std::io::Write;
 
     use base64_ng::{
-        Base64, Codec, CodecSettings, DecodeError, EncodeError, Engine, LineEnding, LineWrap,
-        MIME, Profile, SecretBuffer, StrictStandardPadded, STANDARD, STRICT_STANDARD_PADDED,
-        Standard,
+        Base64, Codec, CodecSettings, DecodeError, DecodedArray, EncodeError, EncodedArray,
+        Engine, LineEnding, LineWrap, MIME, Profile, SecretArray, SecretBuffer,
+        StrictStandardPadded, STANDARD, STRICT_STANDARD_PADDED, Standard,
+    };
+
+    const CONST_ENCODED: [u8; 8] = match STRICT_STANDARD_PADDED.encode_array(b"hello") {
+        Ok(output) => output,
+        Err(_) => panic!("reviewed const encode failed"),
+    };
+    const CONST_DECODED: [u8; 5] = match STRICT_STANDARD_PADDED.decode_array(&CONST_ENCODED) {
+        Ok(output) => output,
+        Err(_) => panic!("reviewed const decode failed"),
     };
 
     fn encode_into(input: &[u8], output: &mut [u8]) -> Result<usize, EncodeError> {
@@ -135,5 +144,29 @@ mod tests {
 
         assert_eq!(codec.encode_to_string(b"hello").unwrap(), "aGVsbG8=");
         assert_eq!(codec.decode_to_vec(b"aGVsbG8=").unwrap(), b"hello");
+    }
+
+    #[test]
+    fn const_and_bounded_2_0_surface_is_public_and_external() {
+        fn assert_copy<T: Copy>() {}
+        assert_copy::<EncodedArray<16>>();
+        assert_copy::<DecodedArray<16>>();
+        assert!(!core::mem::needs_drop::<EncodedArray<16>>());
+        assert!(core::mem::needs_drop::<SecretArray<16>>());
+        assert_eq!(CONST_ENCODED, *b"aGVsbG8=");
+        assert_eq!(CONST_DECODED, *b"hello");
+
+        let encoded = STRICT_STANDARD_PADDED
+            .encode_bounded::<16>(b"hello")
+            .unwrap();
+        assert_eq!(encoded.as_bytes(), b"aGVsbG8=");
+        let decoded = STRICT_STANDARD_PADDED
+            .decode_bounded::<16>(encoded.as_bytes())
+            .unwrap();
+        assert_eq!(decoded.as_bytes(), b"hello");
+
+        let secret = SecretArray::<8>::from_array(*b"keyxxxxx", 3).unwrap();
+        assert_eq!(secret.expose_secret(), b"key");
+        assert_eq!(format!("{secret}"), "<redacted secret array>");
     }
 }

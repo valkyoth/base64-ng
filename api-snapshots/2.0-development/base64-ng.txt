@@ -440,6 +440,24 @@ impl core::fmt::Display for base64_ng::CodecBuilderError
 pub fn base64_ng::CodecBuilderError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for base64_ng::CodecBuilderError
 impl core::marker::StructuralPartialEq for base64_ng::CodecBuilderError
+#[non_exhaustive] pub enum base64_ng::ConstTransformError
+pub base64_ng::ConstTransformError::Input(base64_ng::InputError)
+pub base64_ng::ConstTransformError::LengthOverflow
+pub base64_ng::ConstTransformError::OutputLengthMismatch
+pub base64_ng::ConstTransformError::OutputLengthMismatch::actual: usize
+pub base64_ng::ConstTransformError::OutputLengthMismatch::required: usize
+impl core::clone::Clone for base64_ng::ConstTransformError
+pub fn base64_ng::ConstTransformError::clone(&self) -> base64_ng::ConstTransformError
+impl core::cmp::Eq for base64_ng::ConstTransformError
+impl core::cmp::PartialEq for base64_ng::ConstTransformError
+pub fn base64_ng::ConstTransformError::eq(&self, &base64_ng::ConstTransformError) -> bool
+impl core::error::Error for base64_ng::ConstTransformError
+impl core::fmt::Debug for base64_ng::ConstTransformError
+pub fn base64_ng::ConstTransformError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for base64_ng::ConstTransformError
+pub fn base64_ng::ConstTransformError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng::ConstTransformError
+impl core::marker::StructuralPartialEq for base64_ng::ConstTransformError
 pub enum base64_ng::DecodeError
 pub base64_ng::DecodeError::InvalidByte
 pub base64_ng::DecodeError::InvalidByte::byte: u8
@@ -761,6 +779,29 @@ pub fn base64_ng::ValidatedAlphabetError::fmt(&self, &mut core::fmt::Formatter<'
 impl core::marker::Copy for base64_ng::ValidatedAlphabetError
 impl core::marker::StructuralPartialEq for base64_ng::ValidatedAlphabetError
 pub struct base64_ng::Base64<S>
+impl base64_ng::Base64<base64_ng::RuntimeSpec>
+pub const fn base64_ng::Base64<base64_ng::RuntimeSpec>::const_settings(&self) -> base64_ng::CodecSettings
+pub const fn base64_ng::Base64<base64_ng::RuntimeSpec>::decode_array<const INPUT: usize, const OUTPUT: usize>(&self, &[u8; INPUT]) -> core::result::Result<[u8; OUTPUT], base64_ng::ConstTransformError>
+pub const fn base64_ng::Base64<base64_ng::RuntimeSpec>::encode_array<const INPUT: usize, const OUTPUT: usize>(&self, &[u8; INPUT]) -> core::result::Result<[u8; OUTPUT], base64_ng::ConstTransformError>
+impl base64_ng::Base64<base64_ng::StrictStandardPadded>
+pub const fn base64_ng::Base64<base64_ng::StrictStandardPadded>::const_settings(&self) -> base64_ng::CodecSettings
+pub const fn base64_ng::Base64<base64_ng::StrictStandardPadded>::decode_array<const INPUT: usize, const OUTPUT: usize>(&self, &[u8; INPUT]) -> core::result::Result<[u8; OUTPUT], base64_ng::ConstTransformError>
+pub const fn base64_ng::Base64<base64_ng::StrictStandardPadded>::encode_array<const INPUT: usize, const OUTPUT: usize>(&self, &[u8; INPUT]) -> core::result::Result<[u8; OUTPUT], base64_ng::ConstTransformError>
+impl base64_ng::Base64<base64_ng::StrictStandardUnpadded>
+pub const fn base64_ng::Base64<base64_ng::StrictStandardUnpadded>::const_settings(&self) -> base64_ng::CodecSettings
+pub const fn base64_ng::Base64<base64_ng::StrictStandardUnpadded>::decode_array<const INPUT: usize, const OUTPUT: usize>(&self, &[u8; INPUT]) -> core::result::Result<[u8; OUTPUT], base64_ng::ConstTransformError>
+pub const fn base64_ng::Base64<base64_ng::StrictStandardUnpadded>::encode_array<const INPUT: usize, const OUTPUT: usize>(&self, &[u8; INPUT]) -> core::result::Result<[u8; OUTPUT], base64_ng::ConstTransformError>
+impl base64_ng::Base64<base64_ng::StrictUrlSafePadded>
+pub const fn base64_ng::Base64<base64_ng::StrictUrlSafePadded>::const_settings(&self) -> base64_ng::CodecSettings
+pub const fn base64_ng::Base64<base64_ng::StrictUrlSafePadded>::decode_array<const INPUT: usize, const OUTPUT: usize>(&self, &[u8; INPUT]) -> core::result::Result<[u8; OUTPUT], base64_ng::ConstTransformError>
+pub const fn base64_ng::Base64<base64_ng::StrictUrlSafePadded>::encode_array<const INPUT: usize, const OUTPUT: usize>(&self, &[u8; INPUT]) -> core::result::Result<[u8; OUTPUT], base64_ng::ConstTransformError>
+impl base64_ng::Base64<base64_ng::StrictUrlSafeUnpadded>
+pub const fn base64_ng::Base64<base64_ng::StrictUrlSafeUnpadded>::const_settings(&self) -> base64_ng::CodecSettings
+pub const fn base64_ng::Base64<base64_ng::StrictUrlSafeUnpadded>::decode_array<const INPUT: usize, const OUTPUT: usize>(&self, &[u8; INPUT]) -> core::result::Result<[u8; OUTPUT], base64_ng::ConstTransformError>
+pub const fn base64_ng::Base64<base64_ng::StrictUrlSafeUnpadded>::encode_array<const INPUT: usize, const OUTPUT: usize>(&self, &[u8; INPUT]) -> core::result::Result<[u8; OUTPUT], base64_ng::ConstTransformError>
+impl<S: base64_ng::Codec> base64_ng::Base64<S>
+pub fn base64_ng::Base64<S>::decode_bounded<const CAP: usize>(&self, &[u8]) -> core::result::Result<base64_ng::DecodedArray<CAP>, base64_ng::OneShotError>
+pub fn base64_ng::Base64<S>::encode_bounded<const CAP: usize>(&self, &[u8]) -> core::result::Result<base64_ng::EncodedArray<CAP>, base64_ng::OneShotError>
 impl<S: base64_ng::Codec> base64_ng::Base64<S>
 pub fn base64_ng::Base64<S>::decode_into(&self, &[u8], &mut [u8]) -> core::result::Result<usize, base64_ng::OneShotError>
 pub fn base64_ng::Base64<S>::decoded_len(&self, &[u8]) -> core::result::Result<usize, base64_ng::OneShotError>
@@ -807,6 +848,22 @@ impl core::fmt::Debug for base64_ng::Bcrypt
 pub fn base64_ng::Bcrypt::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for base64_ng::Bcrypt
 impl core::marker::StructuralPartialEq for base64_ng::Bcrypt
+pub struct base64_ng::BufferLengthError
+impl base64_ng::BufferLengthError
+pub const fn base64_ng::BufferLengthError::capacity(self) -> usize
+pub const fn base64_ng::BufferLengthError::length(self) -> usize
+impl core::clone::Clone for base64_ng::BufferLengthError
+pub fn base64_ng::BufferLengthError::clone(&self) -> base64_ng::BufferLengthError
+impl core::cmp::Eq for base64_ng::BufferLengthError
+impl core::cmp::PartialEq for base64_ng::BufferLengthError
+pub fn base64_ng::BufferLengthError::eq(&self, &base64_ng::BufferLengthError) -> bool
+impl core::error::Error for base64_ng::BufferLengthError
+impl core::fmt::Debug for base64_ng::BufferLengthError
+pub fn base64_ng::BufferLengthError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for base64_ng::BufferLengthError
+pub fn base64_ng::BufferLengthError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng::BufferLengthError
+impl core::marker::StructuralPartialEq for base64_ng::BufferLengthError
 pub struct base64_ng::CodecBuilder
 impl base64_ng::CodecBuilder
 pub const fn base64_ng::CodecBuilder::build(self) -> core::result::Result<base64_ng::Base64<base64_ng::RuntimeSpec>, base64_ng::CodecBuilderError>
@@ -832,6 +889,11 @@ pub const fn base64_ng::CodecSettings::decode_padding(&self) -> base64_ng::Decod
 pub const fn base64_ng::CodecSettings::encode_padding(&self) -> base64_ng::EncodePadding
 pub const fn base64_ng::CodecSettings::permits_secret_processing(&self) -> bool
 pub const fn base64_ng::CodecSettings::trailing_bits(&self) -> base64_ng::TrailingBits
+impl base64_ng::CodecSettings
+pub const fn base64_ng::CodecSettings::decode_array<const INPUT: usize, const OUTPUT: usize>(self, &[u8; INPUT]) -> core::result::Result<[u8; OUTPUT], base64_ng::ConstTransformError>
+pub const fn base64_ng::CodecSettings::decoded_len(self, &[u8]) -> core::result::Result<usize, base64_ng::ConstTransformError>
+pub const fn base64_ng::CodecSettings::encode_array<const INPUT: usize, const OUTPUT: usize>(self, &[u8; INPUT]) -> core::result::Result<[u8; OUTPUT], base64_ng::ConstTransformError>
+pub const fn base64_ng::CodecSettings::encoded_len(self, usize) -> core::result::Result<usize, base64_ng::ConstTransformError>
 impl core::clone::Clone for base64_ng::CodecSettings
 pub fn base64_ng::CodecSettings::clone(&self) -> base64_ng::CodecSettings
 impl core::cmp::Eq for base64_ng::CodecSettings
@@ -859,6 +921,26 @@ impl core::fmt::Debug for base64_ng::Crypt
 pub fn base64_ng::Crypt::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for base64_ng::Crypt
 impl core::marker::StructuralPartialEq for base64_ng::Crypt
+pub struct base64_ng::DecodedArray<const CAP: usize>
+impl<const CAP: usize> base64_ng::DecodedArray<CAP>
+pub fn base64_ng::DecodedArray<CAP>::as_bytes(&self) -> &[u8]
+pub const fn base64_ng::DecodedArray<CAP>::capacity(&self) -> usize
+pub const fn base64_ng::DecodedArray<CAP>::from_array([u8; CAP], usize) -> core::result::Result<Self, base64_ng::BufferLengthError>
+pub const fn base64_ng::DecodedArray<CAP>::into_parts(self) -> ([u8; CAP], usize)
+pub const fn base64_ng::DecodedArray<CAP>::is_empty(&self) -> bool
+pub const fn base64_ng::DecodedArray<CAP>::len(&self) -> usize
+pub const fn base64_ng::DecodedArray<CAP>::remaining_capacity(&self) -> usize
+impl<const CAP: usize> core::clone::Clone for base64_ng::DecodedArray<CAP>
+pub fn base64_ng::DecodedArray<CAP>::clone(&self) -> base64_ng::DecodedArray<CAP>
+impl<const CAP: usize> core::cmp::Eq for base64_ng::DecodedArray<CAP>
+impl<const CAP: usize> core::cmp::PartialEq for base64_ng::DecodedArray<CAP>
+pub fn base64_ng::DecodedArray<CAP>::eq(&self, &base64_ng::DecodedArray<CAP>) -> bool
+impl<const CAP: usize> core::fmt::Debug for base64_ng::DecodedArray<CAP>
+pub fn base64_ng::DecodedArray<CAP>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<const CAP: usize> core::hash::Hash for base64_ng::DecodedArray<CAP>
+pub fn base64_ng::DecodedArray<CAP>::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl<const CAP: usize> core::marker::Copy for base64_ng::DecodedArray<CAP>
+impl<const CAP: usize> core::marker::StructuralPartialEq for base64_ng::DecodedArray<CAP>
 pub struct base64_ng::DecodedBuffer<const CAP: usize>
 impl<const CAP: usize> base64_ng::DecodedBuffer<CAP>
 pub fn base64_ng::DecodedBuffer<CAP>::as_bytes(&self) -> &[u8]
@@ -911,6 +993,26 @@ pub fn base64_ng::DecoderState::eq(&self, &base64_ng::DecoderState) -> bool
 impl core::fmt::Debug for base64_ng::DecoderState
 pub fn base64_ng::DecoderState::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::StructuralPartialEq for base64_ng::DecoderState
+pub struct base64_ng::EncodedArray<const CAP: usize>
+impl<const CAP: usize> base64_ng::EncodedArray<CAP>
+pub fn base64_ng::EncodedArray<CAP>::as_bytes(&self) -> &[u8]
+pub const fn base64_ng::EncodedArray<CAP>::capacity(&self) -> usize
+pub const fn base64_ng::EncodedArray<CAP>::from_array([u8; CAP], usize) -> core::result::Result<Self, base64_ng::BufferLengthError>
+pub const fn base64_ng::EncodedArray<CAP>::into_parts(self) -> ([u8; CAP], usize)
+pub const fn base64_ng::EncodedArray<CAP>::is_empty(&self) -> bool
+pub const fn base64_ng::EncodedArray<CAP>::len(&self) -> usize
+pub const fn base64_ng::EncodedArray<CAP>::remaining_capacity(&self) -> usize
+impl<const CAP: usize> core::clone::Clone for base64_ng::EncodedArray<CAP>
+pub fn base64_ng::EncodedArray<CAP>::clone(&self) -> base64_ng::EncodedArray<CAP>
+impl<const CAP: usize> core::cmp::Eq for base64_ng::EncodedArray<CAP>
+impl<const CAP: usize> core::cmp::PartialEq for base64_ng::EncodedArray<CAP>
+pub fn base64_ng::EncodedArray<CAP>::eq(&self, &base64_ng::EncodedArray<CAP>) -> bool
+impl<const CAP: usize> core::fmt::Debug for base64_ng::EncodedArray<CAP>
+pub fn base64_ng::EncodedArray<CAP>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<const CAP: usize> core::hash::Hash for base64_ng::EncodedArray<CAP>
+pub fn base64_ng::EncodedArray<CAP>::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl<const CAP: usize> core::marker::Copy for base64_ng::EncodedArray<CAP>
+impl<const CAP: usize> core::marker::StructuralPartialEq for base64_ng::EncodedArray<CAP>
 pub struct base64_ng::EncodedBuffer<const CAP: usize>
 impl<const CAP: usize> base64_ng::EncodedBuffer<CAP>
 pub fn base64_ng::EncodedBuffer<CAP>::as_bytes(&self) -> &[u8]
@@ -1221,6 +1323,20 @@ impl core::hash::Hash for base64_ng::RuntimeSpec
 pub fn base64_ng::RuntimeSpec::hash<__H: core::hash::Hasher>(&self, &mut __H)
 impl core::marker::Copy for base64_ng::RuntimeSpec
 impl core::marker::StructuralPartialEq for base64_ng::RuntimeSpec
+pub struct base64_ng::SecretArray<const CAP: usize>
+impl<const CAP: usize> base64_ng::SecretArray<CAP>
+pub const fn base64_ng::SecretArray<CAP>::capacity(&self) -> usize
+pub fn base64_ng::SecretArray<CAP>::clear(&mut self)
+pub fn base64_ng::SecretArray<CAP>::expose_secret(&self) -> &[u8]
+pub fn base64_ng::SecretArray<CAP>::from_array([u8; CAP], usize) -> core::result::Result<Self, base64_ng::BufferLengthError>
+pub const fn base64_ng::SecretArray<CAP>::is_empty(&self) -> bool
+pub const fn base64_ng::SecretArray<CAP>::len(&self) -> usize
+impl<const CAP: usize> core::fmt::Debug for base64_ng::SecretArray<CAP>
+pub fn base64_ng::SecretArray<CAP>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<const CAP: usize> core::fmt::Display for base64_ng::SecretArray<CAP>
+pub fn base64_ng::SecretArray<CAP>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<const CAP: usize> core::ops::drop::Drop for base64_ng::SecretArray<CAP>
+pub fn base64_ng::SecretArray<CAP>::drop(&mut self)
 pub struct base64_ng::SecretBuffer
 impl base64_ng::SecretBuffer
 pub fn base64_ng::SecretBuffer::clear(&mut self)

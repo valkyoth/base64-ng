@@ -123,6 +123,29 @@ Evidence:
 - stream trailing-input-after-padding tests
 - stream retry/fail-closed tests
 
+## 2.0 Bounded Arrays
+
+- `EncodedArray<CAP>` and `DecodedArray<CAP>` construct only when their private
+  visible length is at most `CAP`; `remaining_capacity` therefore cannot
+  underflow.
+- Codec-produced ordinary arrays initialize the complete backing array to zero
+  before writing the visible prefix. Public `from_array` preserves the
+  caller-supplied tail but never exposes it through `as_bytes`.
+- Ordinary arrays are `Copy` and have no cleanup destructor. They make no
+  secrecy claim.
+- `SecretArray<CAP>` is non-Clone and non-Copy, wipes caller-supplied tail
+  capacity during construction, and wipes the complete backing array on
+  invalid construction, explicit clear, and drop.
+- Const transforms validate malformed input before exact output-length
+  comparison and never partially return an output array.
+
+Evidence:
+
+- exhaustive const single-quantum differential tests
+- external const compile and compile-fail fixtures
+- bounded-array Kani constructor invariant harness
+- secret redaction, tail cleanup, clear, and structural Drop policy tests
+
 ## Review Rule
 
 When adding new indexing in non-test code, prefer `get`, slice-pattern

@@ -2,6 +2,7 @@ use super::{
     STANDARD, Standard, checked_encoded_len, ct, decode_backend, decode_byte, decode_chunk,
     decode_tail_unpadded, decoded_capacity, scalar,
     v2::{
+        DecodedArray,
         alphabet::{ValidatedAlphabetError, validate_position_for_proof},
         contracts::Status,
         specifications::{STRICT_STANDARD_PADDED, STRICT_STANDARD_UNPADDED},
@@ -207,6 +208,41 @@ fn one_shot_standard_encode_is_exact_and_bounded() {
         assert!(written <= output.len());
         assert!(written == STRICT_STANDARD_PADDED.encoded_len(input_len).unwrap());
     }
+}
+
+#[kani::proof]
+fn bounded_array_visible_length_is_checked() {
+    let bytes = kani::any::<[u8; 8]>();
+    let len = usize::from(kani::any::<u8>() & 15);
+
+    match DecodedArray::from_array(bytes, len) {
+        Ok(buffer) => {
+            assert!(len <= 8);
+            assert!(buffer.len() == len);
+            assert!(buffer.remaining_capacity() == 8 - len);
+        }
+        Err(error) => {
+            assert!(len > 8);
+            assert!(error.length() == len);
+            assert!(error.capacity() == 8);
+        }
+    }
+}
+
+#[kani::proof]
+fn const_standard_encode_is_exact_and_bounded() {
+    let input = kani::any::<[u8; 3]>();
+    let output = match STRICT_STANDARD_PADDED.encode_array::<3, 4>(&input) {
+        Ok(output) => output,
+        Err(_) => unreachable!("three input bytes always encode into four output bytes"),
+    };
+    let alphabet = STRICT_STANDARD_PADDED.const_settings();
+    let table = alphabet.alphabet().as_array();
+
+    assert!(output[0] == table[usize::from(input[0] >> 2)]);
+    assert!(output[1] == table[usize::from(((input[0] & 3) << 4) | (input[1] >> 4))]);
+    assert!(output[2] == table[usize::from(((input[1] & 15) << 2) | (input[2] >> 6))]);
+    assert!(output[3] == table[usize::from(input[2] & 63)]);
 }
 
 #[kani::proof]

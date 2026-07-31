@@ -24,7 +24,8 @@
 //! explicitly named `STRICT_*` presets. Its one-shot slice methods validate
 //! and size completely before writing, so every returned error leaves the
 //! destination unchanged. The published 1.3.9 API remains available during
-//! this migration.
+//! this migration. Exact const transforms and bounded ordinary or redacted
+//! stack storage are also available through the same validated codec values.
 //!
 //! # Examples
 //!
@@ -165,11 +166,12 @@ mod scalar_encode_in_place;
 mod v2;
 
 pub use v2::{
-    AssuranceClass, Atomicity, BackendClass, BackendFault, Base64, Codec, CodecBuilder,
-    CodecBuilderError, CodecSettings, DecodePadding, DecoderState, EncodePadding, EncoderState,
-    Failure, InputError, InputErrorKind, OneShotError, OperationError, OutputFull, Progress,
-    ProtocolScope, RuntimeSpec, STRICT_STANDARD_PADDED, STRICT_STANDARD_UNPADDED,
-    STRICT_URL_SAFE_PADDED, STRICT_URL_SAFE_UNPADDED, Status, Step, StrictStandardPadded,
+    AssuranceClass, Atomicity, BackendClass, BackendFault, Base64, BufferLengthError, Codec,
+    CodecBuilder, CodecBuilderError, CodecSettings, ConstTransformError, DecodePadding,
+    DecodedArray, DecoderState, EncodePadding, EncodedArray, EncoderState, Failure, InputError,
+    InputErrorKind, OneShotError, OperationError, OutputFull, Progress, ProtocolScope, RuntimeSpec,
+    STRICT_STANDARD_PADDED, STRICT_STANDARD_UNPADDED, STRICT_URL_SAFE_PADDED,
+    STRICT_URL_SAFE_UNPADDED, SecretArray, Status, Step, StrictStandardPadded,
     StrictStandardUnpadded, StrictUrlSafePadded, StrictUrlSafeUnpadded, TerminalError,
     TrailingBits, ValidatedAlphabet, ValidatedAlphabetError,
 };

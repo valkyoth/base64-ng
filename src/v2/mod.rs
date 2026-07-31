@@ -5,6 +5,8 @@
 #[allow(dead_code)]
 pub(crate) mod alphabet;
 mod backend_health;
+mod bounded;
+mod const_transforms;
 #[allow(dead_code)]
 pub(crate) mod contracts;
 #[allow(dead_code)]
@@ -23,6 +25,8 @@ pub(crate) mod specifications;
 mod wrapping;
 
 pub use alphabet::{ValidatedAlphabet, ValidatedAlphabetError};
+pub use bounded::{BufferLengthError, DecodedArray, EncodedArray, SecretArray};
+pub use const_transforms::ConstTransformError;
 pub use contracts::{
     AssuranceClass, Atomicity, BackendClass, BackendFault, Failure, InputError, InputErrorKind,
     OperationError, OutputFull, Progress, ProtocolScope, Status, Step, TerminalError,
@@ -39,6 +43,8 @@ pub use specifications::{
 
 #[cfg(test)]
 mod alphabet_tests;
+#[cfg(test)]
+mod const_buffer_tests;
 #[cfg(test)]
 mod contract_tests;
 #[cfg(test)]
