@@ -218,11 +218,7 @@ fn encode_reverse(settings: CodecSettings, buffer: &mut [u8], input_len: usize, 
         read -= tail;
         let first = buffer[read];
         let second = if tail == 2 { buffer[read + 1] } else { 0 };
-        let tail_len = if settings.encode_padding() == EncodePadding::Padded {
-            4
-        } else {
-            tail + 1
-        };
+        let tail_len = encoded_tail_len(tail, settings.encode_padding() == EncodePadding::Padded);
         write -= tail_len;
         buffer[write] = alphabet[usize::from(first >> 2)];
         buffer[write + 1] = alphabet[usize::from(((first & 3) << 4) | (second >> 4))];
@@ -258,28 +254,56 @@ fn decode_forward(settings: CodecSettings, buffer: &mut [u8], input_len: usize) 
         let second = decode_value(settings, buffer[read + 1]);
         let third_byte = buffer[read + 2];
         let fourth_byte = buffer[read + 3];
+        let produced = quantum_decoded_len(third_byte == b'=', fourth_byte == b'=');
         buffer[write] = (first << 2) | (second >> 4);
-        write += 1;
-        if third_byte != b'=' {
+        if produced >= 2 {
             let third = decode_value(settings, third_byte);
-            buffer[write] = (second << 4) | (third >> 2);
-            write += 1;
-            if fourth_byte != b'=' {
-                buffer[write] = (third << 6) | decode_value(settings, fourth_byte);
-                write += 1;
+            buffer[write + 1] = (second << 4) | (third >> 2);
+            if produced == 3 {
+                buffer[write + 2] = (third << 6) | decode_value(settings, fourth_byte);
             }
         }
+        write += produced;
         read += 4;
     }
 
-    if input_len - read >= 2 {
+    let tail = input_len - read;
+    let produced = tail_decoded_len(tail);
+    if produced != 0 {
         let first = decode_value(settings, buffer[read]);
         let second = decode_value(settings, buffer[read + 1]);
         buffer[write] = (first << 2) | (second >> 4);
-        if input_len - read == 3 {
+        if produced == 2 {
             buffer[write + 1] = (second << 4) | (decode_value(settings, buffer[read + 2]) >> 2);
         }
     }
+}
+
+/// Returns encoded tail bytes for a remainder known to be in `0..=2`.
+pub(crate) const fn encoded_tail_len(remainder: usize, padded: bool) -> usize {
+    if remainder == 0 {
+        0
+    } else if padded {
+        4
+    } else {
+        remainder + 1
+    }
+}
+
+/// Returns decoded bytes for one validated four-byte quantum.
+pub(crate) const fn quantum_decoded_len(third_is_padding: bool, fourth_is_padding: bool) -> usize {
+    if third_is_padding {
+        1
+    } else if fourth_is_padding {
+        2
+    } else {
+        3
+    }
+}
+
+/// Returns decoded bytes for a validated remainder known to be in `0..=3`.
+pub(crate) const fn tail_decoded_len(remainder: usize) -> usize {
+    if remainder >= 2 { remainder - 1 } else { 0 }
 }
 
 fn decode_value(settings: CodecSettings, byte: u8) -> u8 {

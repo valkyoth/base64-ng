@@ -40,6 +40,8 @@ pub use contracts::{
 };
 pub use formatting::{CountedSink, CountedWriteError, EncodedDisplay, FormatWriteError};
 pub use in_place::InPlaceError;
+#[cfg(kani)]
+pub(crate) use in_place::{encoded_tail_len, quantum_decoded_len, tail_decoded_len};
 pub use incremental::EncoderState;
 pub use incremental_decoder::DecoderState;
 pub use ordinary::OneShotError;

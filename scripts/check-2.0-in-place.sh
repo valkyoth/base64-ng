@@ -19,6 +19,7 @@ for required in \
     'byte-disjoint' \
     'fixed-work claim ends at the result gate' \
     'leaves both ranges byte-for-byte unchanged' \
+    'shared cursor-length helpers' \
     'Commit 40'
 do
     if ! grep -F -q "$required" docs/2.0_IN_PLACE_OPERATIONS.md; then
@@ -33,11 +34,29 @@ for required in \
     'pub fn decode_in_place' \
     'checked_add(left_len)' \
     'checked_add(right_len)' \
+    'encoded_tail_len(' \
+    'quantum_decoded_len(' \
+    'tail_decoded_len(' \
     'fn encode_reverse' \
     'fn decode_forward'
 do
     if ! grep -F -q "$required" src/v2/in_place.rs; then
         echo "2.0 in-place: ordinary implementation is missing: $required" >&2
+        exit 1
+    fi
+done
+
+for helper in \
+    'encoded_tail_len' \
+    'quantum_decoded_len' \
+    'tail_decoded_len'
+do
+    runtime_occurrences=$(grep -F -c "$helper(" src/v2/in_place.rs)
+    if [ "$runtime_occurrences" -lt 2 ] \
+        || ! grep -F -q "$helper(" src/kani_in_place_proofs.rs \
+        || ! grep -F -q "$helper(" src/v2/in_place_tests.rs
+    then
+        echo "2.0 in-place: runtime, tests, and Kani must share $helper" >&2
         exit 1
     fi
 done

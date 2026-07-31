@@ -168,6 +168,8 @@ Evidence:
 - checked overlap/address geometry tests
 - injected backend-fault cleanup tests
 - Kani cursor proofs, Miri tests, and AddressSanitizer tests
+- production and Kani cursors share the same tail and quantum length helpers,
+  guarded by source-coupling and exhaustive helper-domain tests
 
 ## 2.0 Formatting, Append, And Chunks
 

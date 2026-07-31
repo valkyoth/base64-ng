@@ -102,7 +102,9 @@ Current harnesses cover:
 - reverse in-place encode cursor ordering over every bounded length and both
   padding shapes
 - forward in-place decode cursor ordering across bounded complete quanta and
-  tails
+  tails; the proof and production kernel call the same encoded-tail,
+  decoded-quantum, and decoded-tail length helpers so their arithmetic cannot
+  drift independently
 
 The default advanced opt-in script additionally checks code generation for:
 

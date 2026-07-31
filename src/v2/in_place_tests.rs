@@ -1,6 +1,8 @@
 use super::{
     CodecBuilder, InPlaceError, ValidatedAlphabet,
-    in_place::require_disjoint_ranges_for_test,
+    in_place::{
+        encoded_tail_len, quantum_decoded_len, require_disjoint_ranges_for_test, tail_decoded_len,
+    },
     specifications::{
         Base64, Codec, STRICT_STANDARD_PADDED, STRICT_STANDARD_UNPADDED, STRICT_URL_SAFE_PADDED,
         STRICT_URL_SAFE_UNPADDED,
@@ -8,6 +10,26 @@ use super::{
 };
 
 const SENTINEL: u8 = 0xa5;
+
+#[test]
+fn shared_cursor_helpers_cover_every_runtime_and_proof_decision() {
+    assert_eq!(encoded_tail_len(0, false), 0);
+    assert_eq!(encoded_tail_len(0, true), 0);
+    assert_eq!(encoded_tail_len(1, false), 2);
+    assert_eq!(encoded_tail_len(1, true), 4);
+    assert_eq!(encoded_tail_len(2, false), 3);
+    assert_eq!(encoded_tail_len(2, true), 4);
+
+    assert_eq!(quantum_decoded_len(false, false), 3);
+    assert_eq!(quantum_decoded_len(false, true), 2);
+    assert_eq!(quantum_decoded_len(true, false), 1);
+    assert_eq!(quantum_decoded_len(true, true), 1);
+
+    assert_eq!(tail_decoded_len(0), 0);
+    assert_eq!(tail_decoded_len(1), 0);
+    assert_eq!(tail_decoded_len(2), 1);
+    assert_eq!(tail_decoded_len(3), 2);
+}
 
 #[test]
 fn ordinary_in_place_matches_transactional_one_shot_for_all_bounded_lengths() {
