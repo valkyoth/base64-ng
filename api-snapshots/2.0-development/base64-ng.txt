@@ -458,6 +458,28 @@ impl core::fmt::Display for base64_ng::ConstTransformError
 pub fn base64_ng::ConstTransformError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for base64_ng::ConstTransformError
 impl core::marker::StructuralPartialEq for base64_ng::ConstTransformError
+#[non_exhaustive] pub enum base64_ng::CountedWriteError<E>
+pub base64_ng::CountedWriteError::Backend
+pub base64_ng::CountedWriteError::Backend::committed: usize
+pub base64_ng::CountedWriteError::Backend::fault: base64_ng::BackendFault
+pub base64_ng::CountedWriteError::Encoding(base64_ng::OneShotError)
+pub base64_ng::CountedWriteError::InvalidCount
+pub base64_ng::CountedWriteError::InvalidCount::committed: usize
+pub base64_ng::CountedWriteError::InvalidCount::offered: usize
+pub base64_ng::CountedWriteError::InvalidCount::reported: usize
+pub base64_ng::CountedWriteError::Sink
+pub base64_ng::CountedWriteError::Sink::committed: usize
+pub base64_ng::CountedWriteError::Sink::error: E
+pub base64_ng::CountedWriteError::WriteZero
+pub base64_ng::CountedWriteError::WriteZero::committed: usize
+impl<E> base64_ng::CountedWriteError<E>
+pub const fn base64_ng::CountedWriteError<E>::committed(&self) -> usize
+impl<E: core::error::Error + 'static> core::error::Error for base64_ng::CountedWriteError<E>
+pub fn base64_ng::CountedWriteError<E>::source(&self) -> core::option::Option<&(dyn core::error::Error + 'static)>
+impl<E: core::fmt::Debug> core::fmt::Debug for base64_ng::CountedWriteError<E>
+pub fn base64_ng::CountedWriteError<E>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<E: core::fmt::Display> core::fmt::Display for base64_ng::CountedWriteError<E>
+pub fn base64_ng::CountedWriteError<E>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub enum base64_ng::DecodeError
 pub base64_ng::DecodeError::InvalidByte
 pub base64_ng::DecodeError::InvalidByte::byte: u8
@@ -580,6 +602,28 @@ impl core::hash::Hash for base64_ng::Failure
 pub fn base64_ng::Failure::hash<__H: core::hash::Hasher>(&self, &mut __H)
 impl core::marker::Copy for base64_ng::Failure
 impl core::marker::StructuralPartialEq for base64_ng::Failure
+#[non_exhaustive] pub enum base64_ng::FormatWriteError
+pub base64_ng::FormatWriteError::Backend
+pub base64_ng::FormatWriteError::Backend::confirmed: usize
+pub base64_ng::FormatWriteError::Backend::fault: base64_ng::BackendFault
+pub base64_ng::FormatWriteError::Encoding(base64_ng::OneShotError)
+pub base64_ng::FormatWriteError::Formatter
+pub base64_ng::FormatWriteError::Formatter::confirmed: usize
+impl base64_ng::FormatWriteError
+pub const fn base64_ng::FormatWriteError::confirmed(&self) -> usize
+impl core::clone::Clone for base64_ng::FormatWriteError
+pub fn base64_ng::FormatWriteError::clone(&self) -> base64_ng::FormatWriteError
+impl core::cmp::Eq for base64_ng::FormatWriteError
+impl core::cmp::PartialEq for base64_ng::FormatWriteError
+pub fn base64_ng::FormatWriteError::eq(&self, &base64_ng::FormatWriteError) -> bool
+impl core::error::Error for base64_ng::FormatWriteError
+pub fn base64_ng::FormatWriteError::source(&self) -> core::option::Option<&(dyn core::error::Error + 'static)>
+impl core::fmt::Debug for base64_ng::FormatWriteError
+pub fn base64_ng::FormatWriteError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for base64_ng::FormatWriteError
+pub fn base64_ng::FormatWriteError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng::FormatWriteError
+impl core::marker::StructuralPartialEq for base64_ng::FormatWriteError
 #[non_exhaustive] pub enum base64_ng::InPlaceError
 pub base64_ng::InPlaceError::AddressRangeOverflow
 pub base64_ng::InPlaceError::Backend(base64_ng::BackendFault)
@@ -830,6 +874,9 @@ pub const fn base64_ng::Base64<base64_ng::StrictUrlSafeUnpadded>::const_settings
 pub const fn base64_ng::Base64<base64_ng::StrictUrlSafeUnpadded>::decode_array<const INPUT: usize, const OUTPUT: usize>(&self, &[u8; INPUT]) -> core::result::Result<[u8; OUTPUT], base64_ng::ConstTransformError>
 pub const fn base64_ng::Base64<base64_ng::StrictUrlSafeUnpadded>::encode_array<const INPUT: usize, const OUTPUT: usize>(&self, &[u8; INPUT]) -> core::result::Result<[u8; OUTPUT], base64_ng::ConstTransformError>
 impl<S: base64_ng::Codec> base64_ng::Base64<S>
+pub fn base64_ng::Base64<S>::decode_append(&self, &[u8], &mut alloc::vec::Vec<u8>) -> core::result::Result<usize, base64_ng::OneShotError>
+pub fn base64_ng::Base64<S>::encode_append(&self, &[u8], &mut alloc::string::String) -> core::result::Result<usize, base64_ng::OneShotError>
+impl<S: base64_ng::Codec> base64_ng::Base64<S>
 pub fn base64_ng::Base64<S>::decode_bounded<const CAP: usize>(&self, &[u8]) -> core::result::Result<base64_ng::DecodedArray<CAP>, base64_ng::OneShotError>
 pub fn base64_ng::Base64<S>::encode_bounded<const CAP: usize>(&self, &[u8]) -> core::result::Result<base64_ng::EncodedArray<CAP>, base64_ng::OneShotError>
 impl<S: base64_ng::Codec> base64_ng::Base64<S>
@@ -851,6 +898,12 @@ pub fn base64_ng::Base64<S>::encode_to_string(&self, &[u8]) -> core::result::Res
 pub fn base64_ng::Base64<S>::encode_to_string_with_limit(&self, &[u8], usize) -> core::result::Result<alloc::string::String, base64_ng::OneShotError>
 impl<S: base64_ng::Codec> base64_ng::Base64<S>
 pub fn base64_ng::Base64<S>::decoder(&self) -> base64_ng::DecoderState
+impl<S: base64_ng::Codec> base64_ng::Base64<S>
+pub fn base64_ng::Base64<S>::display<'a>(&self, &'a [u8]) -> core::result::Result<base64_ng::EncodedDisplay<'a>, base64_ng::OneShotError>
+pub fn base64_ng::Base64<S>::encode_to_counted<W: base64_ng::CountedSink + ?core::marker::Sized>(&self, &[u8], &mut W) -> core::result::Result<usize, base64_ng::CountedWriteError<<W as base64_ng::CountedSink>::Error>>
+pub fn base64_ng::Base64<S>::encode_to_fmt<W: core::fmt::Write + ?core::marker::Sized>(&self, &[u8], &mut W) -> core::result::Result<usize, base64_ng::FormatWriteError>
+impl<S: base64_ng::Codec> base64_ng::Base64<S>
+pub fn base64_ng::Base64<S>::encoded_chunks<'a>(&self, &'a [u8]) -> core::result::Result<base64_ng::EncodedChunks<'a>, base64_ng::OneShotError>
 impl<S: base64_ng::Codec> base64_ng::Base64<S>
 pub fn base64_ng::Base64<S>::encoder(&self) -> base64_ng::EncoderState
 impl<S: base64_ng::Codec> base64_ng::Base64<S>
@@ -1087,6 +1140,41 @@ impl<const CAP: usize> core::fmt::Display for base64_ng::EncodedBuffer<CAP>
 pub fn base64_ng::EncodedBuffer<CAP>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl<const CAP: usize> core::ops::drop::Drop for base64_ng::EncodedBuffer<CAP>
 pub fn base64_ng::EncodedBuffer<CAP>::drop(&mut self)
+pub struct base64_ng::EncodedChunk
+impl base64_ng::EncodedChunk
+pub fn base64_ng::EncodedChunk::as_bytes(&self) -> &[u8]
+pub fn base64_ng::EncodedChunk::as_str(&self) -> core::result::Result<&str, core::str::error::Utf8Error>
+impl core::clone::Clone for base64_ng::EncodedChunk
+pub fn base64_ng::EncodedChunk::clone(&self) -> base64_ng::EncodedChunk
+impl core::cmp::Eq for base64_ng::EncodedChunk
+impl core::cmp::PartialEq for base64_ng::EncodedChunk
+pub fn base64_ng::EncodedChunk::eq(&self, &base64_ng::EncodedChunk) -> bool
+impl core::fmt::Debug for base64_ng::EncodedChunk
+pub fn base64_ng::EncodedChunk::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for base64_ng::EncodedChunk
+pub fn base64_ng::EncodedChunk::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng::EncodedChunk
+impl core::marker::StructuralPartialEq for base64_ng::EncodedChunk
+pub struct base64_ng::EncodedChunks<'a>
+impl core::fmt::Debug for base64_ng::EncodedChunks<'_>
+pub fn base64_ng::EncodedChunks<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::iter::traits::exact_size::ExactSizeIterator for base64_ng::EncodedChunks<'_>
+pub fn base64_ng::EncodedChunks<'_>::len(&self) -> usize
+impl core::iter::traits::iterator::Iterator for base64_ng::EncodedChunks<'_>
+pub type base64_ng::EncodedChunks<'_>::Item = base64_ng::EncodedChunk
+pub fn base64_ng::EncodedChunks<'_>::next(&mut self) -> core::option::Option<Self::Item>
+pub fn base64_ng::EncodedChunks<'_>::size_hint(&self) -> (usize, core::option::Option<usize>)
+impl core::iter::traits::marker::FusedIterator for base64_ng::EncodedChunks<'_>
+impl<'a> core::clone::Clone for base64_ng::EncodedChunks<'a>
+pub fn base64_ng::EncodedChunks<'a>::clone(&self) -> base64_ng::EncodedChunks<'a>
+pub struct base64_ng::EncodedDisplay<'a>
+impl core::fmt::Debug for base64_ng::EncodedDisplay<'_>
+pub fn base64_ng::EncodedDisplay<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for base64_ng::EncodedDisplay<'_>
+pub fn base64_ng::EncodedDisplay<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<'a> core::clone::Clone for base64_ng::EncodedDisplay<'a>
+pub fn base64_ng::EncodedDisplay<'a>::clone(&self) -> base64_ng::EncodedDisplay<'a>
+impl<'a> core::marker::Copy for base64_ng::EncodedDisplay<'a>
 pub struct base64_ng::EncoderState
 impl base64_ng::EncoderState
 pub fn base64_ng::EncoderState::finish(&mut self, &mut [u8]) -> core::result::Result<base64_ng::Step, base64_ng::OperationError>
@@ -1594,6 +1682,9 @@ impl base64_ng::Codec for base64_ng::StrictUrlSafePadded
 pub fn base64_ng::StrictUrlSafePadded::settings(&self) -> base64_ng::CodecSettings
 impl base64_ng::Codec for base64_ng::StrictUrlSafeUnpadded
 pub fn base64_ng::StrictUrlSafeUnpadded::settings(&self) -> base64_ng::CodecSettings
+pub trait base64_ng::CountedSink
+pub type base64_ng::CountedSink::Error
+pub fn base64_ng::CountedSink::write(&mut self, &[u8]) -> core::result::Result<usize, Self::Error>
 pub const fn base64_ng::checked_encoded_len(usize, bool) -> core::option::Option<usize>
 pub const fn base64_ng::checked_wrapped_encoded_len(usize, bool, base64_ng::LineWrap) -> core::option::Option<usize>
 pub fn base64_ng::clear_bytes(&mut [u8])

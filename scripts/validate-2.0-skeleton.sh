@@ -5,7 +5,9 @@ for module in \
     alphabet \
     backend_health \
     bounded \
+    chunks \
     const_transforms \
+    formatting \
     incremental \
     incremental_decoder \
     in_place \
@@ -21,13 +23,15 @@ done
 
 test -s src/v2/ordinary_alloc.rs
 grep -F -q 'mod ordinary_alloc;' src/v2/mod.rs
+test -s src/v2/append.rs
+grep -F -q 'mod append;' src/v2/mod.rs
 
 awk '
     /^#\[cfg\(test\)\]$/ {
         gated = 1
         next
     }
-    gated && /^mod (const_buffer_tests|fixtures|incremental_decoder_tests|incremental_decoder_unpadded_tests|incremental_encoder_tests|in_place_tests|one_shot_tests|rfc4648_oracle|secret_in_place_tests);$/ {
+    gated && /^mod (append_tests|chunk_tests|const_buffer_tests|fixtures|formatting_tests|incremental_decoder_tests|incremental_decoder_unpadded_tests|incremental_encoder_tests|in_place_tests|one_shot_tests|rfc4648_oracle|secret_in_place_tests);$/ {
         found[$2] = 1
         gated = 0
         next
@@ -36,7 +40,7 @@ awk '
         gated = 0
     }
     END {
-        exit !(found["const_buffer_tests;"] && found["fixtures;"] && found["incremental_decoder_tests;"] && found["incremental_decoder_unpadded_tests;"] && found["incremental_encoder_tests;"] && found["in_place_tests;"] && found["one_shot_tests;"] && found["rfc4648_oracle;"] && found["secret_in_place_tests;"])
+        exit !(found["append_tests;"] && found["chunk_tests;"] && found["const_buffer_tests;"] && found["fixtures;"] && found["formatting_tests;"] && found["incremental_decoder_tests;"] && found["incremental_decoder_unpadded_tests;"] && found["incremental_encoder_tests;"] && found["in_place_tests;"] && found["one_shot_tests;"] && found["rfc4648_oracle;"] && found["secret_in_place_tests;"])
     }
 ' src/v2/mod.rs
 

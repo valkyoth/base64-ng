@@ -28,6 +28,8 @@
 //! stack storage are also available through the same validated codec values.
 //! Finite-buffer in-place transforms use explicit input lengths, while secret
 //! in-place decode requires byte-disjoint private staging.
+//! Allocation-free display, exact counted sinks, rollback-capable append, and
+//! synthesized encoded chunk iteration share the same validated codec values.
 //!
 //! # Examples
 //!
@@ -169,13 +171,14 @@ mod v2;
 
 pub use v2::{
     AssuranceClass, Atomicity, BackendClass, BackendFault, Base64, BufferLengthError, Codec,
-    CodecBuilder, CodecBuilderError, CodecSettings, ConstTransformError, DecodePadding,
-    DecodedArray, DecoderState, EncodePadding, EncodedArray, EncoderState, Failure, InPlaceError,
-    InputError, InputErrorKind, OneShotError, OperationError, OutputFull, Progress, ProtocolScope,
-    RuntimeSpec, STRICT_STANDARD_PADDED, STRICT_STANDARD_UNPADDED, STRICT_URL_SAFE_PADDED,
-    STRICT_URL_SAFE_UNPADDED, SecretArray, Status, Step, StrictStandardPadded,
-    StrictStandardUnpadded, StrictUrlSafePadded, StrictUrlSafeUnpadded, TerminalError,
-    TrailingBits, ValidatedAlphabet, ValidatedAlphabetError,
+    CodecBuilder, CodecBuilderError, CodecSettings, ConstTransformError, CountedSink,
+    CountedWriteError, DecodePadding, DecodedArray, DecoderState, EncodePadding, EncodedArray,
+    EncodedChunk, EncodedChunks, EncodedDisplay, EncoderState, Failure, FormatWriteError,
+    InPlaceError, InputError, InputErrorKind, OneShotError, OperationError, OutputFull, Progress,
+    ProtocolScope, RuntimeSpec, STRICT_STANDARD_PADDED, STRICT_STANDARD_UNPADDED,
+    STRICT_URL_SAFE_PADDED, STRICT_URL_SAFE_UNPADDED, SecretArray, Status, Step,
+    StrictStandardPadded, StrictStandardUnpadded, StrictUrlSafePadded, StrictUrlSafeUnpadded,
+    TerminalError, TrailingBits, ValidatedAlphabet, ValidatedAlphabetError,
 };
 mod wrap;
 

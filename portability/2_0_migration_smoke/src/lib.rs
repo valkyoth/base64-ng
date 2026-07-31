@@ -191,4 +191,42 @@ mod tests {
         assert_eq!(&ordinary[..decoded_len], b"secret");
         assert!(staging.iter().all(|byte| *byte == 0));
     }
+
+    #[test]
+    fn format_append_and_chunks_2_0_surface_is_public_and_external() {
+        let display = STRICT_STANDARD_PADDED.display(b"hello").unwrap();
+        assert_eq!(format!("{display}"), "aGVsbG8=");
+
+        let mut formatted = String::from("prefix:");
+        assert_eq!(
+            STRICT_STANDARD_PADDED
+                .encode_to_fmt(b"hello", &mut formatted)
+                .unwrap(),
+            8
+        );
+        assert_eq!(formatted, "prefix:aGVsbG8=");
+
+        let mut appended = String::from("prefix:");
+        assert_eq!(
+            STRICT_STANDARD_PADDED
+                .encode_append(b"hello", &mut appended)
+                .unwrap(),
+            8
+        );
+        let mut decoded = Vec::from(&b"prefix:"[..]);
+        assert_eq!(
+            STRICT_STANDARD_PADDED
+                .decode_append(b"aGVsbG8=", &mut decoded)
+                .unwrap(),
+            5
+        );
+        assert_eq!(decoded, b"prefix:hello");
+
+        let chunks = STRICT_STANDARD_PADDED
+            .encoded_chunks(b"hello")
+            .unwrap()
+            .map(|chunk| chunk.as_bytes().to_vec())
+            .collect::<Vec<_>>();
+        assert_eq!(chunks, [b"aGVs".as_slice(), b"bG8="].map(<[u8]>::to_vec));
+    }
 }

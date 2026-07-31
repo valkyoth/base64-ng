@@ -24,6 +24,11 @@ block must be added here before an accelerated backend can be admitted.
   feature detection, or `target_feature` gates appear outside the reviewed
   cleanup, constant-time gate, and SIMD boundaries.
 - Every unsafe function and unsafe block must have a local safety explanation.
+
+The integration test `tests/v2_formatting_alloc.rs` contains a test-only global
+allocator wrapper. Its `unsafe impl GlobalAlloc` delegates every pointer and
+layout unchanged to `std::alloc::System`; atomics only count calls while the
+test enables observation. It is not linked into the library artifact.
 - Prototype functions are not eligible for runtime dispatch.
 
 ## Current Unsafe Sites

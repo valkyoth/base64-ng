@@ -469,6 +469,22 @@ AddressSanitizer, and writes a manifest and complete log under
 out-of-bounds and lifetime defects in those executions; it does not prove the
 logical fixed-work or cleanup contracts by itself.
 
+## Formatting And Append Evidence
+
+Run the Commit 15 allocation, formatter, counted-sink, rollback, chunk, and
+lifetime evidence with:
+
+```sh
+scripts/check-2.0-format-append-chunks.sh
+```
+
+The allocation test uses an isolated integration-test global allocator and
+counts heap allocation calls only around `display` and `encode_to_fmt`. Append
+tests inject reserve failures, returned errors after mutation, and unwinding
+panics. Formatter tests distinguish fully successful calls from possible
+partial mutation inside the failing call. These are bounded execution tests,
+not whole-program allocation or foreign-sink proofs.
+
 ## Constant-Time Timing Evidence
 
 The standard local gate, normal CI gate, and release gate compile the isolated

@@ -69,6 +69,9 @@ scripts/check-2.0-const-buffers.sh
 echo "checks: 2.0 in-place transforms"
 scripts/check-2.0-in-place.sh
 
+echo "checks: 2.0 formatting, append, and chunks"
+scripts/check-2.0-format-append-chunks.sh
+
 echo "checks: RFC 4648 source lock"
 scripts/verify-rfcs.sh
 scripts/check-rfc-source-mutations.py

@@ -169,6 +169,27 @@ Evidence:
 - injected backend-fault cleanup tests
 - Kani cursor proofs, Miri tests, and AddressSanitizer tests
 
+## 2.0 Formatting, Append, And Chunks
+
+- Lazy display and formatter encoding synthesize at most one four-byte quantum
+  at a time and allocate no heap storage.
+- Formatter progress counts only bytes from fully successful `write_str`
+  calls; a failing call may have performed unobservable partial mutation.
+- A counted sink reports exact accepted bytes and accepts zero bytes on `Err`;
+  zero progress and over-reported counts are contract failures.
+- Append guards preserve the original prefix and restore entry length on every
+  returned crate error and unwinding panic.
+- Encoded chunk items own synthesized output. The iterator borrows plaintext
+  input and copies validated codec settings.
+
+Evidence:
+
+- bounded chunk differential tests for built-in and runtime codecs
+- adversarial formatter and counted-sink tests
+- injected reserve, crate-error, and unwind rollback tests
+- integration-test global allocation counter
+- external API and compile-fail lifetime checks
+
 ## Review Rule
 
 When adding new indexing in non-test code, prefer `get`, slice-pattern
