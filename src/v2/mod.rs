@@ -11,6 +11,7 @@ mod backend_health;
 mod incremental;
 mod ordinary;
 mod secret;
+#[allow(dead_code)]
 mod specifications;
 
 #[cfg(test)]
@@ -19,3 +20,5 @@ mod alphabet_tests;
 mod fixtures;
 #[cfg(test)]
 mod rfc4648_oracle;
+#[cfg(test)]
+mod specification_tests;

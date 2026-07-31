@@ -2,6 +2,8 @@ mod allocation;
 mod codec;
 mod evidence;
 mod resources;
+#[cfg(test)]
+mod v2_model;
 
 use std::hint::black_box;
 use std::time::Instant;

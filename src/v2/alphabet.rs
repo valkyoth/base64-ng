@@ -7,6 +7,15 @@
 /// The number of symbols in every Base64 alphabet.
 pub(crate) const ALPHABET_LEN: usize = 64;
 
+/// The source-locked RFC 4648 Standard alphabet.
+pub(super) const STANDARD_ALPHABET: ValidatedAlphabet = ValidatedAlphabet {
+    table: *b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/",
+};
+/// The source-locked RFC 4648 URL-safe alphabet.
+pub(super) const URL_SAFE_ALPHABET: ValidatedAlphabet = ValidatedAlphabet {
+    table: *b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_",
+};
+
 /// Failure returned while constructing a [`ValidatedAlphabet`].
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum ValidatedAlphabetError {
