@@ -31,9 +31,10 @@ Each submission contains:
 
 Generation is permitted only from a clean committed tree. `environment.json`
 and `MANIFEST.txt` must identify the same full source commit and a clean source
-status. Evidence artifacts are committed separately after capture; the
-artifact commit is not substituted for the recorded measurement-source
-commit.
+status. The runner binds that commit before building and rejects observable
+`HEAD` or worktree changes after measurement and before manifest creation.
+Evidence artifacts are committed separately after capture; the artifact
+commit is not substituted for the recorded measurement-source commit.
 
 Only canonical valid Standard and URL-safe padded/unpadded slice operations are
 compared with exact-pinned `base64 0.23.0` and `base64ct 1.8.3`. The archive
@@ -48,7 +49,11 @@ Campaign, run, feature-set, target, and other machine labels use the restricted
 `[A-Za-z0-9][A-Za-z0-9._-]{0,63}` grammar. The validator requires the complete
 Cartesian product of fixed lengths, operations, profiles, comparison engines,
 and every backend marked available, with exact sample indexes
-`0..sample_count`.
+`0..sample_count`. It rejects surplus CSV cells and unsafe textual fields.
+Comparison, summary, and admission commands accept only a complete evidence
+directory. Retained summaries and admission tables must exactly recompute from
+the raw runs, and binary resource evidence must contain the complete fixed
+feature-set inventory.
 
 Transient compilation directories remain under `target/release-evidence/` and
 must not be copied into a retained or submitted evidence directory.

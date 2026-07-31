@@ -7,23 +7,31 @@ import argparse
 import csv
 import json
 import math
-import statistics
 import sys
 from collections import defaultdict
 from pathlib import Path
 
+from perf_evidence_derived import (
+    admission_rows,
+    grouped_medians,
+    summary_rows,
+)
 from perf_evidence_schema import (
+    ADMISSION_FIELDS,
     AVAILABILITY_FIELDS,
-    BACKEND_MINIMUM,
     BACKENDS,
     BENCHMARK_FIELDS,
+    BINARY_FEATURE_SETS,
+    BINARY_RESOURCE_FIELDS,
     COMMIT_ID,
     ENGINES,
     EVIDENCE_ID,
     EXPECTED_LENGTHS,
     OPERATIONS,
     PROFILES,
+    RESOURCE_CATEGORIES,
     RESOURCE_FIELDS,
+    SUMMARY_FIELDS,
 )
 
 
@@ -70,11 +78,25 @@ def read_environment(path: Path) -> dict[str, object]:
 
 
 def read_csv(path: Path, fields: list[str]) -> list[dict[str, str]]:
-    with path.open(newline="", encoding="utf-8") as handle:
-        reader = csv.DictReader(handle)
-        if reader.fieldnames != fields:
-            fail(f"{path}: unexpected header {reader.fieldnames!r}")
-        rows = list(reader)
+    try:
+        with path.open(newline="", encoding="utf-8") as handle:
+            reader = csv.reader(handle)
+            try:
+                header = next(reader)
+            except StopIteration:
+                fail(f"{path}: empty CSV")
+            if header != fields:
+                fail(f"{path}: unexpected header {header!r}")
+            rows = []
+            for line_number, values in enumerate(reader, start=2):
+                if len(values) != len(fields):
+                    fail(
+                        f"{path}:{line_number}: expected {len(fields)} fields, "
+                        f"found {len(values)}"
+                    )
+                rows.append(dict(zip(fields, values, strict=True)))
+    except (OSError, csv.Error) as error:
+        fail(f"{path}: invalid CSV: {error}")
     if not rows:
         fail(f"{path}: no rows")
     return rows
@@ -83,15 +105,14 @@ def read_csv(path: Path, fields: list[str]) -> list[dict[str, str]]:
 def validate_benchmark(
     path: Path,
     *,
-    availability_rows: list[dict[str, str]] | None = None,
-    environment: dict[str, object] | None = None,
-    expected_run_id: str | None = None,
+    availability_rows: list[dict[str, str]],
+    environment: dict[str, object],
+    expected_run_id: str,
 ) -> list[dict[str, str]]:
     rows = read_csv(path, BENCHMARK_FIELDS)
     samples: dict[tuple[str, ...], set[int]] = defaultdict(set)
 
-    if expected_run_id is not None:
-        require_evidence_id(expected_run_id, "expected run_id")
+    require_evidence_id(expected_run_id, "expected run_id")
 
     for row in rows:
         if row["schema_version"] != "1":
@@ -150,12 +171,6 @@ def validate_benchmark(
         if sample in samples[key]:
             fail(f"{path}: duplicate sample for {key!r}")
         samples[key].add(sample)
-
-    if availability_rows is None or environment is None or expected_run_id is None:
-        sample_counts = {len(value) for value in samples.values()}
-        if len(sample_counts) != 1 or min(sample_counts) < 2:
-            fail(f"{path}: inconsistent or insufficient sample counts")
-        return rows
 
     measurement = environment.get("measurement")
     if not isinstance(measurement, dict):
@@ -226,16 +241,16 @@ def validate_auxiliary(
     names = {row["backend"] for row in availability_rows}
     if names != BACKENDS or len(availability_rows) != len(BACKENDS):
         fail(f"{availability}: incomplete backend inventory")
-    if any(row["available"] not in {"true", "false"} for row in availability_rows):
-        fail(f"{availability}: invalid availability value")
-    if any(row["backend"] not in BACKENDS for row in availability_rows):
-        fail(f"{availability}: invalid backend")
-    if any(
-        not EVIDENCE_ID.fullmatch(row["target_arch"])
-        or not EVIDENCE_ID.fullmatch(row["target_os"])
-        for row in availability_rows
-    ):
-        fail(f"{availability}: invalid target identifier")
+    for row in availability_rows:
+        if row["schema_version"] != "1":
+            fail(f"{availability}: unsupported schema version")
+        if row["available"] not in {"true", "false"}:
+            fail(f"{availability}: invalid availability value")
+        if row["backend"] not in BACKENDS:
+            fail(f"{availability}: invalid backend")
+        require_evidence_id(row["backend"], "backend")
+        require_evidence_id(row["target_arch"], "target_arch")
+        require_evidence_id(row["target_os"], "target_os")
     if len(
         {(row["target_arch"], row["target_os"]) for row in availability_rows}
     ) != 1:
@@ -248,43 +263,59 @@ def validate_auxiliary(
 
     resource_rows = read_csv(resources, RESOURCE_FIELDS)
     categories = {row["category"] for row in resource_rows}
-    if not {"stack-bound", "adapter-pending-memory", "adapter-size"} <= categories:
+    if not RESOURCE_CATEGORIES <= categories:
         fail(f"{resources}: incomplete resource categories")
+    resource_keys = {
+        (row["category"], row["name"], row["feature_set"]) for row in resource_rows
+    }
+    if len(resource_keys) != len(resource_rows):
+        fail(f"{resources}: duplicate resource row")
     for row in resource_rows:
-        require_evidence_id(row["feature_set"], "feature_set")
+        if row["schema_version"] != "1":
+            fail(f"{resources}: unsupported schema version")
+        for field in ("category", "name", "feature_set", "unit", "method"):
+            require_evidence_id(row[field], field)
+        if row["category"] not in RESOURCE_CATEGORIES:
+            fail(f"{resources}: unsupported resource category")
         if row["feature_set"] != expected_feature_set:
             fail(f"{resources}: unexpected feature set")
-        if int(row["value"]) < 0:
+        try:
+            value = int(row["value"])
+        except ValueError as error:
+            fail(f"{resources}: invalid resource value: {error}")
+        if value < 0:
             fail(f"{resources}: negative resource value")
     return availability_rows
 
 
-def measurement_key(row: dict[str, str]) -> tuple[str, ...]:
-    return tuple(
-        row[field]
-        for field in (
-            "engine",
-            "operation",
-            "alphabet",
-            "padding",
-            "input_len",
-            "backend",
-            "target_arch",
-            "target_os",
-        )
+def load_validated_bundle(
+    directory: Path,
+) -> tuple[list[dict[str, str]], list[dict[str, str]]]:
+    environment = read_environment(directory / "environment.json")
+    availability = directory / "availability.csv"
+    first_availability = validate_auxiliary(
+        availability, directory / "resources-default.csv", "simd"
     )
+    second_availability = validate_auxiliary(
+        availability, directory / "resources-no-simd.csv", "no-simd"
+    )
+    first_rows = validate_benchmark(
+        directory / "raw-run-1.csv",
+        availability_rows=first_availability,
+        environment=environment,
+        expected_run_id="run-1",
+    )
+    second_rows = validate_benchmark(
+        directory / "raw-run-2.csv",
+        availability_rows=second_availability,
+        environment=environment,
+        expected_run_id="run-2",
+    )
+    return first_rows, second_rows
 
 
-def grouped_medians(rows: list[dict[str, str]]) -> dict[tuple[str, ...], float]:
-    grouped: dict[tuple[str, ...], list[float]] = defaultdict(list)
-    for row in rows:
-        grouped[measurement_key(row)].append(float(row["throughput_mib_s"]))
-    return {key: statistics.median(values) for key, values in grouped.items()}
-
-
-def compare(first: Path, second: Path, lower: float, upper: float) -> None:
-    first_rows = validate_benchmark(first)
-    second_rows = validate_benchmark(second)
+def compare(directory: Path, lower: float, upper: float) -> None:
+    first_rows, second_rows = load_validated_bundle(directory)
     first_medians = grouped_medians(first_rows)
     second_medians = grouped_medians(second_rows)
     if first_medians.keys() != second_medians.keys():
@@ -305,99 +336,61 @@ def compare(first: Path, second: Path, lower: float, upper: float) -> None:
     )
 
 
-def summarize(first: Path, second: Path) -> None:
-    rows = validate_benchmark(first) + validate_benchmark(second)
-    grouped: dict[tuple[str, ...], list[float]] = defaultdict(list)
+def write_rows(fields: list[str], rows: list[list[str]]) -> None:
+    writer = csv.writer(sys.stdout, lineterminator="\n")
+    writer.writerow(fields)
+    writer.writerows(rows)
+
+
+def summarize(directory: Path) -> None:
+    first_rows, second_rows = load_validated_bundle(directory)
+    write_rows(SUMMARY_FIELDS, summary_rows(first_rows, second_rows))
+
+
+def admission(directory: Path, minimum_ratio: float) -> None:
+    first_rows, second_rows = load_validated_bundle(directory)
+    write_rows(
+        ADMISSION_FIELDS,
+        admission_rows(first_rows, second_rows, minimum_ratio),
+    )
+
+
+def row_values(rows: list[dict[str, str]], fields: list[str]) -> list[list[str]]:
+    return [[row[field] for field in fields] for row in rows]
+
+
+def validate_binary_resources(path: Path) -> None:
+    rows = read_csv(path, BINARY_RESOURCE_FIELDS)
+    feature_sets = {row["feature_set"] for row in rows}
+    if feature_sets != BINARY_FEATURE_SETS or len(rows) != len(BINARY_FEATURE_SETS):
+        fail(f"{path}: incomplete binary feature-set inventory")
     for row in rows:
-        grouped[measurement_key(row)].append(float(row["throughput_mib_s"]))
-    writer = csv.writer(sys.stdout, lineterminator="\n")
-    writer.writerow(
-        [
-            "schema_version",
-            "engine",
-            "operation",
-            "alphabet",
-            "padding",
-            "input_len",
-            "backend",
-            "target_arch",
-            "target_os",
-            "sample_count",
-            "median_throughput_mib_s",
-            "minimum_throughput_mib_s",
-            "maximum_throughput_mib_s",
-        ]
-    )
-    for key in sorted(grouped):
-        values = grouped[key]
-        writer.writerow(
-            [
-                "1",
-                *key,
-                len(values),
-                f"{statistics.median(values):.6f}",
-                f"{min(values):.6f}",
-                f"{max(values):.6f}",
-            ]
-        )
+        if row["schema_version"] != "1":
+            fail(f"{path}: unsupported schema version")
+        require_evidence_id(row["feature_set"], "feature_set")
+        require_evidence_id(row["method"], "method")
+        if row["method"] != "nm-and-file-size":
+            fail(f"{path}: unsupported measurement method")
+        try:
+            binary_bytes = int(row["binary_bytes"])
+            symbol_count = int(row["base64_ng_symbol_count"])
+        except ValueError as error:
+            fail(f"{path}: invalid numeric field: {error}")
+        if binary_bytes <= 0 or symbol_count < 0:
+            fail(f"{path}: invalid binary resource value")
 
 
-def admission(first: Path, second: Path, minimum_ratio: float) -> None:
-    rows = validate_benchmark(first) + validate_benchmark(second)
-    medians = grouped_medians(rows)
-    scalar: dict[tuple[str, ...], float] = {}
-    for key, value in medians.items():
-        engine, operation, alphabet, padding, length, backend, arch, os_name = key
-        if engine == "base64-ng" and backend == "scalar":
-            scalar[(operation, alphabet, padding, length, arch, os_name)] = value
-
-    writer = csv.writer(sys.stdout, lineterminator="\n")
-    writer.writerow(
-        [
-            "schema_version",
-            "backend",
-            "operation",
-            "alphabet",
-            "padding",
-            "input_len",
-            "target_arch",
-            "target_os",
-            "median_throughput_mib_s",
-            "scalar_median_throughput_mib_s",
-            "ratio_to_scalar",
-            "status",
-        ]
-    )
-    for key, value in sorted(medians.items()):
-        engine, operation, alphabet, padding, length, backend, arch, os_name = key
-        if engine != "base64-ng" or backend == "scalar":
-            continue
-        minimum = BACKEND_MINIMUM.get(backend, {}).get(operation)
-        if minimum is None or int(length) < minimum:
-            continue
-        scalar_value = scalar[(operation, alphabet, padding, length, arch, os_name)]
-        ratio = value / scalar_value
-        status = (
-            "admissible"
-            if ratio >= minimum_ratio
-            else "non-admissible-below-scalar"
-        )
-        writer.writerow(
-            [
-                "1",
-                backend,
-                operation,
-                alphabet,
-                padding,
-                length,
-                arch,
-                os_name,
-                f"{value:.6f}",
-                f"{scalar_value:.6f}",
-                f"{ratio:.6f}",
-                status,
-            ]
-        )
+def validate_derived(directory: Path) -> None:
+    first_rows, second_rows = load_validated_bundle(directory)
+    summary = read_csv(directory / "summary.csv", SUMMARY_FIELDS)
+    expected_summary = summary_rows(first_rows, second_rows)
+    if row_values(summary, SUMMARY_FIELDS) != expected_summary:
+        fail(f"{directory / 'summary.csv'}: does not match raw evidence")
+    admitted = read_csv(directory / "admission.csv", ADMISSION_FIELDS)
+    expected_admission = admission_rows(first_rows, second_rows, 0.95)
+    if row_values(admitted, ADMISSION_FIELDS) != expected_admission:
+        fail(f"{directory / 'admission.csv'}: does not match raw evidence")
+    validate_binary_resources(directory / "binary-resources.csv")
 
 
 def fail(message: str) -> None:
@@ -417,19 +410,19 @@ def main() -> None:
     validate_parser.add_argument("--expected-feature-set", required=True)
 
     compare_parser = subparsers.add_parser("compare")
-    compare_parser.add_argument("first", type=Path)
-    compare_parser.add_argument("second", type=Path)
+    compare_parser.add_argument("directory", type=Path)
     compare_parser.add_argument("--lower", type=float, default=0.50)
     compare_parser.add_argument("--upper", type=float, default=2.00)
 
     summarize_parser = subparsers.add_parser("summarize")
-    summarize_parser.add_argument("first", type=Path)
-    summarize_parser.add_argument("second", type=Path)
+    summarize_parser.add_argument("directory", type=Path)
 
     admission_parser = subparsers.add_parser("admission")
-    admission_parser.add_argument("first", type=Path)
-    admission_parser.add_argument("second", type=Path)
+    admission_parser.add_argument("directory", type=Path)
     admission_parser.add_argument("--minimum-ratio", type=float, default=0.95)
+
+    derived_parser = subparsers.add_parser("validate-derived")
+    derived_parser.add_argument("directory", type=Path)
 
     args = parser.parse_args()
     if args.command == "validate":
@@ -445,11 +438,14 @@ def main() -> None:
         )
         print("performance evidence: schema and matrix ok")
     elif args.command == "compare":
-        compare(args.first, args.second, args.lower, args.upper)
+        compare(args.directory, args.lower, args.upper)
     elif args.command == "summarize":
-        summarize(args.first, args.second)
+        summarize(args.directory)
     elif args.command == "admission":
-        admission(args.first, args.second, args.minimum_ratio)
+        admission(args.directory, args.minimum_ratio)
+    elif args.command == "validate-derived":
+        validate_derived(args.directory)
+        print("performance evidence: derived artifacts ok")
 
 
 if __name__ == "__main__":

@@ -41,6 +41,42 @@ RESOURCE_FIELDS = [
     "unit",
     "method",
 ]
+SUMMARY_FIELDS = [
+    "schema_version",
+    "engine",
+    "operation",
+    "alphabet",
+    "padding",
+    "input_len",
+    "backend",
+    "target_arch",
+    "target_os",
+    "sample_count",
+    "median_throughput_mib_s",
+    "minimum_throughput_mib_s",
+    "maximum_throughput_mib_s",
+]
+ADMISSION_FIELDS = [
+    "schema_version",
+    "backend",
+    "operation",
+    "alphabet",
+    "padding",
+    "input_len",
+    "target_arch",
+    "target_os",
+    "median_throughput_mib_s",
+    "scalar_median_throughput_mib_s",
+    "ratio_to_scalar",
+    "status",
+]
+BINARY_RESOURCE_FIELDS = [
+    "schema_version",
+    "feature_set",
+    "binary_bytes",
+    "base64_ng_symbol_count",
+    "method",
+]
 PROFILES = {
     ("standard", "padded"),
     ("standard", "unpadded"),
@@ -58,6 +94,18 @@ BACKEND_MINIMUM = {
     "wasm-simd128": {"encode": 12, "decode": 12},
 }
 BACKENDS = set(BACKEND_MINIMUM) | {"scalar"}
+RESOURCE_CATEGORIES = {
+    "stack-bound",
+    "adapter-pending-memory",
+    "adapter-size",
+}
+BINARY_FEATURE_SETS = {
+    "default",
+    "no-default-features",
+    "simd",
+    "secrets",
+    "checked-backend",
+}
 EXPECTED_LENGTHS = {
     "1",
     "2",

@@ -530,12 +530,15 @@ It compares exact-pinned `base64 0.23.0` and `base64ct 1.8.3` only where
 canonical caller-owned slice semantics match.
 
 Campaign generation fails closed unless the worktree is clean and `HEAD`
-resolves to a full commit identifier. Validation reconstructs the complete
+resolves to one full commit identifier that remains unchanged through
+measurement and manifest creation. Validation reconstructs the complete
 expected matrix from backend availability, requires every fixed length and
-exact sample index, and rejects environment-controlled labels outside
-`[A-Za-z0-9][A-Za-z0-9._-]{0,63}`. The original dirty-tree Commit 3 campaign
-is invalidated and cannot support a release or backend-admission claim. The
-replacement campaign is retained under
+exact sample index, rejects surplus CSV cells, and restricts every textual
+evidence field to its schema or
+`[A-Za-z0-9][A-Za-z0-9._-]{0,63}`. Comparison and derivation commands require
+the complete bundle, while retained derived rows must exactly match the raw
+runs. The original dirty-tree Commit 3 campaign is invalidated and cannot
+support a release or backend-admission claim. The replacement is retained under
 `performance-baselines/commit-5-correction-amd-9950x3d-linux/` and records
 clean source commit `9665094362c535550e3a7cb5d812bf3bccccb0b7`.
 

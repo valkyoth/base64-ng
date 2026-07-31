@@ -48,6 +48,11 @@ def evidence_id(name: str, default: str) -> str:
 
 
 def clean_source() -> dict[str, str]:
+    expected = os.environ.get("BASE64_NG_PERF_SOURCE_COMMIT")
+    if expected is None or not re.fullmatch(r"[0-9a-f]{40}", expected):
+        raise SystemExit(
+            "BASE64_NG_PERF_SOURCE_COMMIT must name the full campaign source commit"
+        )
     status = required_command(
         "git", "status", "--porcelain=v1", "--untracked-files=all"
     )
@@ -56,6 +61,8 @@ def clean_source() -> dict[str, str]:
     commit = required_command("git", "rev-parse", "HEAD^{commit}")
     if not re.fullmatch(r"[0-9a-f]{40}", commit):
         raise SystemExit("performance evidence source is not a full Git commit")
+    if commit != expected:
+        raise SystemExit("performance evidence source commit changed before capture")
     return {"commit": commit, "status": "clean"}
 
 

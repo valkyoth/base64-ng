@@ -6,12 +6,21 @@ if [ ! -d perf ]; then
     exit 0
 fi
 
-if [ "${BASE64_NG_RUN_PERF:-0}" = "1" ]; then
-    source_status="$(git status --porcelain=v1 --untracked-files=all)"
-    if [ -n "$source_status" ]; then
-        echo "perf checks: refusing to generate evidence from a dirty tree" >&2
+source_commit=""
+
+verify_source_unchanged() {
+    current_commit="$(git rev-parse 'HEAD^{commit}')"
+    current_status="$(git status --porcelain=v1 --untracked-files=all)"
+    if [ "$current_commit" != "$source_commit" ] || [ -n "$current_status" ]; then
+        echo "perf checks: source changed during performance campaign" >&2
         exit 1
     fi
+}
+
+if [ "${BASE64_NG_RUN_PERF:-0}" = "1" ]; then
+    source_commit="$(git rev-parse 'HEAD^{commit}')"
+    verify_source_unchanged
+    export BASE64_NG_PERF_SOURCE_COMMIT="$source_commit"
 fi
 
 perf_rustflags="${RUSTFLAGS:-}"
@@ -55,6 +64,9 @@ for baseline in performance-baselines/commit-*; do
         raw-run-2.csv \
         resources-default.csv \
         resources-no-simd.csv \
+        summary.csv \
+        admission.csv \
+        binary-resources.csv \
         MANIFEST.txt
     do
         if [ ! -s "$baseline/$artifact" ]; then
@@ -76,8 +88,8 @@ for baseline in performance-baselines/commit-*; do
         "$baseline/environment.json" \
         --expected-run-id run-2 \
         --expected-feature-set no-simd
-    scripts/validate_perf_evidence.py compare \
-        "$baseline/raw-run-1.csv" "$baseline/raw-run-2.csv"
+    scripts/validate_perf_evidence.py compare "$baseline"
+    scripts/validate_perf_evidence.py validate-derived "$baseline"
     sed -n '/^[0-9a-f][0-9a-f]*  /p' "$baseline/MANIFEST.txt" | sha256sum -c -
 done
 
@@ -112,6 +124,7 @@ BASE64_NG_PERF_RUN_ID=run-1 run_perf run --quiet --release \
 echo "perf checks: run reproducibility campaign 2"
 BASE64_NG_PERF_RUN_ID=run-2 run_perf run --quiet --release \
     --manifest-path perf/Cargo.toml -- benchmark >"$evidence_dir/raw-run-2.csv"
+verify_source_unchanged
 
 echo "perf checks: validate and summarize evidence"
 scripts/validate_perf_evidence.py validate \
@@ -128,13 +141,10 @@ scripts/validate_perf_evidence.py validate \
     "$evidence_dir/environment.json" \
     --expected-run-id run-2 \
     --expected-feature-set no-simd
-scripts/validate_perf_evidence.py compare \
-    "$evidence_dir/raw-run-1.csv" "$evidence_dir/raw-run-2.csv"
-scripts/validate_perf_evidence.py summarize \
-    "$evidence_dir/raw-run-1.csv" "$evidence_dir/raw-run-2.csv" \
+scripts/validate_perf_evidence.py compare "$evidence_dir"
+scripts/validate_perf_evidence.py summarize "$evidence_dir" \
     >"$evidence_dir/summary.csv"
-scripts/validate_perf_evidence.py admission \
-    "$evidence_dir/raw-run-1.csv" "$evidence_dir/raw-run-2.csv" \
+scripts/validate_perf_evidence.py admission "$evidence_dir" \
     >"$evidence_dir/admission.csv"
 
 echo "perf checks: binary size and monomorphization evidence"
@@ -169,9 +179,10 @@ done
 
 echo "perf checks: correctness after evidence"
 run_perf run --quiet --release --manifest-path perf/Cargo.toml -- correctness
+verify_source_unchanged
+scripts/validate_perf_evidence.py validate-derived "$evidence_dir"
 
 {
-    source_commit="$(git rev-parse 'HEAD^{commit}')"
     echo "base64-ng performance evidence schema 1"
     echo "source_commit=$source_commit"
     echo "source_status=clean"

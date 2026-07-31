@@ -69,15 +69,24 @@ The generated directory contains:
 | `binary-resources.csv` | Release library bytes and symbol counts across feature sets |
 | `MANIFEST.txt` | Thresholds, interpretation notes, and checksums |
 
-`scripts/validate_perf_evidence.py` rejects changed headers, unknown or
-unpinned engines, dirty or incomplete Git provenance, missing
+`scripts/validate_perf_evidence.py` rejects changed headers, surplus CSV
+cells, unknown or unpinned engines, dirty or incomplete Git provenance, missing
 backend/profile/operation/length combinations, missing or extra sample
-indexes, unsafe evidence identifiers, non-finite measurements, and allocations
-in measured slice operations. It derives the exact expected matrix from the
-complete backend-availability inventory and the fixed benchmark lengths. It
-also requires two same-host runs to contain the same matrix and remain within
-a deliberately wide `0.50..2.00` ratio envelope. The wide envelope detects
-broken campaigns; it is not a precision-performance claim.
+indexes, unsafe textual cells, non-finite measurements, and allocations in
+measured slice operations. Standalone comparison and derivation commands load
+the complete evidence bundle; there is no partial-matrix mode. Retained
+summary and admission rows must recompute exactly from the raw runs, and binary
+resource rows have a complete fixed feature-set inventory. The validator
+derives the exact expected matrix from the complete backend-availability
+inventory and fixed benchmark lengths. It also requires two same-host runs to
+contain the same matrix and remain within a deliberately wide `0.50..2.00`
+ratio envelope. The wide envelope detects broken campaigns; it is not a
+precision-performance claim.
+
+Campaign generation records the full clean source commit before any build,
+requires environment capture to observe that same commit, and rechecks both
+`HEAD` and worktree cleanliness after measurement and before writing the
+manifest. Any observed source drift aborts the campaign.
 
 Exact-backend rows below `0.95` of the matching scalar median are marked
 `non-admissible-below-scalar`. That label is evidence for review, not an
