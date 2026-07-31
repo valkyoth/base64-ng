@@ -22,7 +22,7 @@ check_reserved_feature() {
     fi
 }
 
-for inert_feature in tokio kani fuzzing; do
+for inert_feature in tokio kani fuzzing secrets; do
     if ! grep -q "^$inert_feature = \\[\\]$" Cargo.toml; then
         echo "reserved features: $inert_feature must remain an inert Cargo feature" >&2
         exit 1
@@ -39,6 +39,16 @@ done
 check_reserved_feature "tokio" "tokio"
 check_reserved_feature "kani" "kani"
 check_reserved_feature "fuzzing" "fuzzing"
-check_reserved_feature "all reserved features together" "tokio,kani,fuzzing"
+check_reserved_feature "secrets capability reservation" "secrets"
+
+if ! grep -q '^checked-backend = \["simd"\]$' Cargo.toml; then
+    echo "reserved features: checked-backend must imply simd exactly" >&2
+    exit 1
+fi
+
+check_reserved_feature "checked-backend capability reservation" "checked-backend"
+check_reserved_feature \
+    "all reserved features together" \
+    "tokio,kani,fuzzing,secrets,checked-backend"
 
 echo "reserved features: ok"

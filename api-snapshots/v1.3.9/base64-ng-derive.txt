@@ -1,0 +1,2 @@
+pub mod base64_ng_derive
+pub proc macro base64_ng_derive::#[derive(Base64Secret)]

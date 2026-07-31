@@ -1,0 +1,55 @@
+pub mod base64_ng_serde
+pub mod base64_ng_serde::mime
+pub fn base64_ng_serde::mime::deserialize<'de, D>(D) -> core::result::Result<alloc::vec::Vec<u8>, <D as serde_core::de::Deserializer>::Error> where D: serde_core::de::Deserializer<'de>
+pub fn base64_ng_serde::mime::serialize<S>(impl core::convert::AsRef<[u8]>, S) -> core::result::Result<<S as serde_core::ser::Serializer>::Ok, <S as serde_core::ser::Serializer>::Error> where S: serde_core::ser::Serializer
+pub mod base64_ng_serde::pem
+pub fn base64_ng_serde::pem::deserialize<'de, D>(D) -> core::result::Result<alloc::vec::Vec<u8>, <D as serde_core::de::Deserializer>::Error> where D: serde_core::de::Deserializer<'de>
+pub fn base64_ng_serde::pem::serialize<S>(impl core::convert::AsRef<[u8]>, S) -> core::result::Result<<S as serde_core::ser::Serializer>::Ok, <S as serde_core::ser::Serializer>::Error> where S: serde_core::ser::Serializer
+pub mod base64_ng_serde::standard
+pub fn base64_ng_serde::standard::deserialize<'de, D>(D) -> core::result::Result<alloc::vec::Vec<u8>, <D as serde_core::de::Deserializer>::Error> where D: serde_core::de::Deserializer<'de>
+pub fn base64_ng_serde::standard::serialize<S>(impl core::convert::AsRef<[u8]>, S) -> core::result::Result<<S as serde_core::ser::Serializer>::Ok, <S as serde_core::ser::Serializer>::Error> where S: serde_core::ser::Serializer
+pub mod base64_ng_serde::standard_no_pad
+pub fn base64_ng_serde::standard_no_pad::deserialize<'de, D>(D) -> core::result::Result<alloc::vec::Vec<u8>, <D as serde_core::de::Deserializer>::Error> where D: serde_core::de::Deserializer<'de>
+pub fn base64_ng_serde::standard_no_pad::serialize<S>(impl core::convert::AsRef<[u8]>, S) -> core::result::Result<<S as serde_core::ser::Serializer>::Ok, <S as serde_core::ser::Serializer>::Error> where S: serde_core::ser::Serializer
+pub mod base64_ng_serde::url_safe
+pub fn base64_ng_serde::url_safe::deserialize<'de, D>(D) -> core::result::Result<alloc::vec::Vec<u8>, <D as serde_core::de::Deserializer>::Error> where D: serde_core::de::Deserializer<'de>
+pub fn base64_ng_serde::url_safe::serialize<S>(impl core::convert::AsRef<[u8]>, S) -> core::result::Result<<S as serde_core::ser::Serializer>::Ok, <S as serde_core::ser::Serializer>::Error> where S: serde_core::ser::Serializer
+pub mod base64_ng_serde::url_safe_no_pad
+pub fn base64_ng_serde::url_safe_no_pad::deserialize<'de, D>(D) -> core::result::Result<alloc::vec::Vec<u8>, <D as serde_core::de::Deserializer>::Error> where D: serde_core::de::Deserializer<'de>
+pub fn base64_ng_serde::url_safe_no_pad::serialize<S>(impl core::convert::AsRef<[u8]>, S) -> core::result::Result<<S as serde_core::ser::Serializer>::Ok, <S as serde_core::ser::Serializer>::Error> where S: serde_core::ser::Serializer
+pub struct base64_ng_serde::Base64Standard(_)
+impl base64_ng_serde::Base64Standard
+pub fn base64_ng_serde::Base64Standard::as_bytes(&self) -> &[u8]
+pub fn base64_ng_serde::Base64Standard::into_inner(self) -> alloc::vec::Vec<u8>
+pub const fn base64_ng_serde::Base64Standard::new(alloc::vec::Vec<u8>) -> Self
+impl core::clone::Clone for base64_ng_serde::Base64Standard
+pub fn base64_ng_serde::Base64Standard::clone(&self) -> base64_ng_serde::Base64Standard
+impl core::cmp::Eq for base64_ng_serde::Base64Standard
+impl core::cmp::PartialEq for base64_ng_serde::Base64Standard
+pub fn base64_ng_serde::Base64Standard::eq(&self, &Self) -> bool
+impl core::fmt::Debug for base64_ng_serde::Base64Standard
+pub fn base64_ng_serde::Base64Standard::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::ops::drop::Drop for base64_ng_serde::Base64Standard
+pub fn base64_ng_serde::Base64Standard::drop(&mut self)
+impl serde_core::ser::Serialize for base64_ng_serde::Base64Standard
+pub fn base64_ng_serde::Base64Standard::serialize<S>(&self, S) -> core::result::Result<<S as serde_core::ser::Serializer>::Ok, <S as serde_core::ser::Serializer>::Error> where S: serde_core::ser::Serializer
+impl<'de> serde_core::de::Deserialize<'de> for base64_ng_serde::Base64Standard
+pub fn base64_ng_serde::Base64Standard::deserialize<D>(D) -> core::result::Result<Self, <D as serde_core::de::Deserializer>::Error> where D: serde_core::de::Deserializer<'de>
+pub struct base64_ng_serde::Base64UrlSafeNoPad(_)
+impl base64_ng_serde::Base64UrlSafeNoPad
+pub fn base64_ng_serde::Base64UrlSafeNoPad::as_bytes(&self) -> &[u8]
+pub fn base64_ng_serde::Base64UrlSafeNoPad::into_inner(self) -> alloc::vec::Vec<u8>
+pub const fn base64_ng_serde::Base64UrlSafeNoPad::new(alloc::vec::Vec<u8>) -> Self
+impl core::clone::Clone for base64_ng_serde::Base64UrlSafeNoPad
+pub fn base64_ng_serde::Base64UrlSafeNoPad::clone(&self) -> base64_ng_serde::Base64UrlSafeNoPad
+impl core::cmp::Eq for base64_ng_serde::Base64UrlSafeNoPad
+impl core::cmp::PartialEq for base64_ng_serde::Base64UrlSafeNoPad
+pub fn base64_ng_serde::Base64UrlSafeNoPad::eq(&self, &Self) -> bool
+impl core::fmt::Debug for base64_ng_serde::Base64UrlSafeNoPad
+pub fn base64_ng_serde::Base64UrlSafeNoPad::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::ops::drop::Drop for base64_ng_serde::Base64UrlSafeNoPad
+pub fn base64_ng_serde::Base64UrlSafeNoPad::drop(&mut self)
+impl serde_core::ser::Serialize for base64_ng_serde::Base64UrlSafeNoPad
+pub fn base64_ng_serde::Base64UrlSafeNoPad::serialize<S>(&self, S) -> core::result::Result<<S as serde_core::ser::Serializer>::Ok, <S as serde_core::ser::Serializer>::Error> where S: serde_core::ser::Serializer
+impl<'de> serde_core::de::Deserialize<'de> for base64_ng_serde::Base64UrlSafeNoPad
+pub fn base64_ng_serde::Base64UrlSafeNoPad::deserialize<D>(D) -> core::result::Result<Self, <D as serde_core::de::Deserializer>::Error> where D: serde_core::de::Deserializer<'de>

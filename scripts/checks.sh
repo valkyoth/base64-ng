@@ -24,6 +24,18 @@ scripts/validate-2.0-governance.sh
 echo "checks: public API audit"
 scripts/validate-api-audit.sh
 
+echo "checks: 2.0 API migration ledger"
+scripts/validate-2.0-api-ledger.sh
+
+echo "checks: 1.3.9 public API snapshots"
+scripts/check-api-snapshots.sh
+
+echo "checks: 2.0 migration examples"
+scripts/check-2.0-migration-smoke.sh
+
+echo "checks: 2.0 feature contract"
+scripts/check-2.0-feature-contract.sh
+
 echo "checks: file line budget"
 scripts/validate-file-line-budget.sh
 

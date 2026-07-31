@@ -68,6 +68,9 @@ test -d release-notes
 test -s security/pentest/README.md
 test -s docs/API_AUDIT.md
 test -s docs/2.0_GOVERNANCE.md
+test -s docs/2.0_API_MIGRATION_LEDGER.md
+test -s docs/2.0_PACKAGE_TOPOLOGY.md
+test -s api-snapshots/README.md
 test -s docs/ASYNC.md
 test -s docs/BENCHMARKS.md
 test -s docs/BIG_ENDIAN_QEMU_REVIEW.md
@@ -112,6 +115,10 @@ if ! grep -F -q "version = \"$cargo_version\"" release-crates.toml; then
 fi
 
 for required_script in \
+    "scripts/check-2.0-feature-contract.sh" \
+    "scripts/check-2.0-migration-smoke.sh" \
+    "scripts/check-api-snapshots.sh" \
+    "scripts/validate-2.0-api-ledger.sh" \
     "scripts/check_backend_evidence.sh" \
     "scripts/check_big_endian_qemu.sh" \
     "scripts/check_big_endian_intrinsics_status.sh" \
@@ -384,6 +391,16 @@ for required_package_file in \
     "README.md" \
     "rust-toolchain.toml" \
     "SECURITY.md" \
+    "api-snapshots/README.md" \
+    "api-snapshots/v1.3.9/base64-ng.txt" \
+    "api-snapshots/v1.3.9/base64-ng-bytes.txt" \
+    "api-snapshots/v1.3.9/base64-ng-derive.txt" \
+    "api-snapshots/v1.3.9/base64-ng-sanitization.txt" \
+    "api-snapshots/v1.3.9/base64-ng-serde.txt" \
+    "api-snapshots/v1.3.9/base64-ng-subtle.txt" \
+    "api-snapshots/v1.3.9/base64-ng-tokio.txt" \
+    "docs/2.0_API_MIGRATION_LEDGER.md" \
+    "docs/2.0_PACKAGE_TOPOLOGY.md" \
     "docs/API_AUDIT.md" \
     "docs/ASYNC.md" \
     "docs/BENCHMARKS.md" \
@@ -409,6 +426,13 @@ for required_package_file in \
     "docs/UNSAFE.md" \
     "portability/no_alloc_smoke/src/lib.rs" \
     "portability/migration_smoke/src/lib.rs" \
+    "portability/2_0_migration_smoke/src/lib.rs" \
+    "portability/feature_contract_smoke/src/main.rs" \
+    "portability/feature_unification_smoke/src/lib.rs" \
+    "scripts/check-2.0-feature-contract.sh" \
+    "scripts/check-2.0-migration-smoke.sh" \
+    "scripts/check-api-snapshots.sh" \
+    "scripts/validate-2.0-api-ledger.sh" \
     "scripts/check_backend_evidence.sh" \
     "scripts/check_big_endian_qemu.sh" \
     "scripts/check_big_endian_intrinsics_status.sh" \

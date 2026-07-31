@@ -16,6 +16,10 @@ include = [
     "tests/**",
     "benches/**",
     "docs/**",
+    "api-snapshots/**",
+    "portability/2_0_migration_smoke/src/**",
+    "portability/feature_contract_smoke/src/**",
+    "portability/feature_unification_smoke/src/**",
     "portability/no_alloc_smoke/src/**",
     "portability/migration_smoke/src/**",
     "scripts/*.py",
@@ -55,6 +59,12 @@ alloc = []
 std = ["alloc"]
 simd = []
 stream = ["std"]
+# Reserved 2.0 capability boundary. Production secret APIs remain on their
+# 1.x paths until Commits 18-21 move them behind this feature.
+secrets = []
+# Reserved 2.0 redundant-verification mode. Commit 24 supplies behavior; the
+# dependency edge is frozen now so Cargo feature unification can be tested.
+checked-backend = ["simd"]
 allow-wasm32-best-effort-wipe = []
 allow-compiler-fence-only-wipe = []
 # Placeholder for future async Tokio integration; currently no-op,

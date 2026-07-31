@@ -45,6 +45,9 @@ The authoritative [2.0 commit plan](2.0.0-release-plan.md) and supporting
 [governance decision](docs/2.0_GOVERNANCE.md) define the numbered,
 pentest-gated path from the signed 1.3.9 baseline to the single final 2.0.0
 release.
+The [2.0 API migration ledger](docs/2.0_API_MIGRATION_LEDGER.md) and
+[package topology](docs/2.0_PACKAGE_TOPOLOGY.md) freeze public renames,
+removals, capability edges, and companion boundaries before implementation.
 
 ## Current Status
 
@@ -247,6 +250,8 @@ license = "MIT OR Apache-2.0"
 | `std` | yes | `std::error::Error` support and feature base for I/O. |
 | `simd` | no | Admitted std runtime-dispatched encode and normal strict decode acceleration for Standard and URL-safe alphabets, with scalar fallback for unsupported surfaces. |
 | `stream` | no | `std::io` streaming wrappers. |
+| `secrets` | no | Inert 2.0 development reservation. Production secret capability behavior is not exposed through this feature until the numbered 2.0 commits implement it. |
+| `checked-backend` | no | Inert 2.0 development reservation that enables `simd`; redundant backend checking is implemented later in the 2.0 plan. |
 | `allow-wasm32-best-effort-wipe` | no | Explicitly allow `wasm32` builds with compiler-fence-only cleanup. |
 | `allow-compiler-fence-only-wipe` | no | Explicitly allow unsupported native architectures to build with compiler-fence-only cleanup after platform review. |
 | `tokio` | no | Reserved placeholder in the core crate; currently inert and dependency-free. Use `base64-ng-tokio` for the admitted async helper and streaming adapter surface. |

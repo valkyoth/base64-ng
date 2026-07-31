@@ -1,0 +1,56 @@
+pub mod base64_ng_tokio
+pub struct base64_ng_tokio::DecoderReader<R, A, const PAD: bool> where A: base64_ng::alphabet::Alphabet
+impl<R, A, const PAD: bool> base64_ng_tokio::DecoderReader<R, A, PAD> where A: base64_ng::alphabet::Alphabet
+pub const fn base64_ng_tokio::DecoderReader<R, A, PAD>::is_failed(&self) -> bool
+pub fn base64_ng_tokio::DecoderReader<R, A, PAD>::new(R, base64_ng::engine::Engine<A, PAD>) -> Self
+impl<R, A, const PAD: bool> core::ops::drop::Drop for base64_ng_tokio::DecoderReader<R, A, PAD> where A: base64_ng::alphabet::Alphabet
+pub fn base64_ng_tokio::DecoderReader<R, A, PAD>::drop(&mut self)
+impl<R, A, const PAD: bool> tokio::io::async_read::AsyncRead for base64_ng_tokio::DecoderReader<R, A, PAD> where R: tokio::io::async_read::AsyncRead + core::marker::Unpin, A: base64_ng::alphabet::Alphabet + core::marker::Unpin
+pub fn base64_ng_tokio::DecoderReader<R, A, PAD>::poll_read(core::pin::Pin<&mut Self>, &mut core::task::wake::Context<'_>, &mut tokio::io::read_buf::ReadBuf<'_>) -> core::task::poll::Poll<core::io::error::Result<()>>
+pub struct base64_ng_tokio::DecoderWriter<W, A, const PAD: bool> where A: base64_ng::alphabet::Alphabet
+impl<W, A, const PAD: bool> base64_ng_tokio::DecoderWriter<W, A, PAD> where A: base64_ng::alphabet::Alphabet
+pub const fn base64_ng_tokio::DecoderWriter<W, A, PAD>::buffered_output_len(&self) -> usize
+pub fn base64_ng_tokio::DecoderWriter<W, A, PAD>::get_mut(&mut self) -> &mut W
+pub fn base64_ng_tokio::DecoderWriter<W, A, PAD>::get_ref(&self) -> &W
+pub const fn base64_ng_tokio::DecoderWriter<W, A, PAD>::has_terminal_padding(&self) -> bool
+pub fn base64_ng_tokio::DecoderWriter<W, A, PAD>::into_inner(self) -> W
+pub const fn base64_ng_tokio::DecoderWriter<W, A, PAD>::is_failed(&self) -> bool
+pub const fn base64_ng_tokio::DecoderWriter<W, A, PAD>::is_finalized(&self) -> bool
+pub fn base64_ng_tokio::DecoderWriter<W, A, PAD>::new(W, base64_ng::engine::Engine<A, PAD>) -> Self
+pub const fn base64_ng_tokio::DecoderWriter<W, A, PAD>::pending_len(&self) -> usize
+impl<W, A, const PAD: bool> core::ops::drop::Drop for base64_ng_tokio::DecoderWriter<W, A, PAD> where A: base64_ng::alphabet::Alphabet
+pub fn base64_ng_tokio::DecoderWriter<W, A, PAD>::drop(&mut self)
+impl<W, A, const PAD: bool> tokio::io::async_write::AsyncWrite for base64_ng_tokio::DecoderWriter<W, A, PAD> where W: tokio::io::async_write::AsyncWrite + core::marker::Unpin, A: base64_ng::alphabet::Alphabet + core::marker::Unpin
+pub fn base64_ng_tokio::DecoderWriter<W, A, PAD>::poll_flush(core::pin::Pin<&mut Self>, &mut core::task::wake::Context<'_>) -> core::task::poll::Poll<core::io::error::Result<()>>
+pub fn base64_ng_tokio::DecoderWriter<W, A, PAD>::poll_shutdown(core::pin::Pin<&mut Self>, &mut core::task::wake::Context<'_>) -> core::task::poll::Poll<core::io::error::Result<()>>
+pub fn base64_ng_tokio::DecoderWriter<W, A, PAD>::poll_write(core::pin::Pin<&mut Self>, &mut core::task::wake::Context<'_>, &[u8]) -> core::task::poll::Poll<core::io::error::Result<usize>>
+pub struct base64_ng_tokio::EncoderReader<R, A, const PAD: bool> where A: base64_ng::alphabet::Alphabet
+impl<R, A, const PAD: bool> base64_ng_tokio::EncoderReader<R, A, PAD> where A: base64_ng::alphabet::Alphabet
+pub const fn base64_ng_tokio::EncoderReader<R, A, PAD>::is_failed(&self) -> bool
+pub fn base64_ng_tokio::EncoderReader<R, A, PAD>::new(R, base64_ng::engine::Engine<A, PAD>) -> Self
+impl<R, A, const PAD: bool> core::ops::drop::Drop for base64_ng_tokio::EncoderReader<R, A, PAD> where A: base64_ng::alphabet::Alphabet
+pub fn base64_ng_tokio::EncoderReader<R, A, PAD>::drop(&mut self)
+impl<R, A, const PAD: bool> tokio::io::async_read::AsyncRead for base64_ng_tokio::EncoderReader<R, A, PAD> where R: tokio::io::async_read::AsyncRead + core::marker::Unpin, A: base64_ng::alphabet::Alphabet + core::marker::Unpin
+pub fn base64_ng_tokio::EncoderReader<R, A, PAD>::poll_read(core::pin::Pin<&mut Self>, &mut core::task::wake::Context<'_>, &mut tokio::io::read_buf::ReadBuf<'_>) -> core::task::poll::Poll<core::io::error::Result<()>>
+pub struct base64_ng_tokio::EncoderWriter<W, A, const PAD: bool> where A: base64_ng::alphabet::Alphabet
+impl<W, A, const PAD: bool> base64_ng_tokio::EncoderWriter<W, A, PAD> where A: base64_ng::alphabet::Alphabet
+pub const fn base64_ng_tokio::EncoderWriter<W, A, PAD>::buffered_output_len(&self) -> usize
+pub fn base64_ng_tokio::EncoderWriter<W, A, PAD>::get_mut(&mut self) -> &mut W
+pub fn base64_ng_tokio::EncoderWriter<W, A, PAD>::get_ref(&self) -> &W
+pub fn base64_ng_tokio::EncoderWriter<W, A, PAD>::into_inner(self) -> W
+pub const fn base64_ng_tokio::EncoderWriter<W, A, PAD>::is_failed(&self) -> bool
+pub const fn base64_ng_tokio::EncoderWriter<W, A, PAD>::is_finalized(&self) -> bool
+pub fn base64_ng_tokio::EncoderWriter<W, A, PAD>::new(W, base64_ng::engine::Engine<A, PAD>) -> Self
+pub const fn base64_ng_tokio::EncoderWriter<W, A, PAD>::pending_len(&self) -> usize
+impl<W, A, const PAD: bool> core::ops::drop::Drop for base64_ng_tokio::EncoderWriter<W, A, PAD> where A: base64_ng::alphabet::Alphabet
+pub fn base64_ng_tokio::EncoderWriter<W, A, PAD>::drop(&mut self)
+impl<W, A, const PAD: bool> tokio::io::async_write::AsyncWrite for base64_ng_tokio::EncoderWriter<W, A, PAD> where W: tokio::io::async_write::AsyncWrite + core::marker::Unpin, A: base64_ng::alphabet::Alphabet + core::marker::Unpin
+pub fn base64_ng_tokio::EncoderWriter<W, A, PAD>::poll_flush(core::pin::Pin<&mut Self>, &mut core::task::wake::Context<'_>) -> core::task::poll::Poll<core::io::error::Result<()>>
+pub fn base64_ng_tokio::EncoderWriter<W, A, PAD>::poll_shutdown(core::pin::Pin<&mut Self>, &mut core::task::wake::Context<'_>) -> core::task::poll::Poll<core::io::error::Result<()>>
+pub fn base64_ng_tokio::EncoderWriter<W, A, PAD>::poll_write(core::pin::Pin<&mut Self>, &mut core::task::wake::Context<'_>, &[u8]) -> core::task::poll::Poll<core::io::error::Result<usize>>
+pub async fn base64_ng_tokio::decode_reader_to_writer<A, const PAD: bool, R, W>(&base64_ng::engine::Engine<A, PAD>, &mut R, &mut W) -> core::io::error::Result<u64> where A: base64_ng::alphabet::Alphabet, R: tokio::io::async_read::AsyncRead + core::marker::Unpin + ?core::marker::Sized, W: tokio::io::async_write::AsyncWrite + core::marker::Unpin + ?core::marker::Sized
+pub async fn base64_ng_tokio::decode_reader_to_writer_limited<A, const PAD: bool, R, W>(&base64_ng::engine::Engine<A, PAD>, &mut R, &mut W, usize) -> core::io::error::Result<u64> where A: base64_ng::alphabet::Alphabet, R: tokio::io::async_read::AsyncRead + core::marker::Unpin + ?core::marker::Sized, W: tokio::io::async_write::AsyncWrite + core::marker::Unpin + ?core::marker::Sized
+pub fn base64_ng_tokio::decode_to_vec<A, const PAD: bool>(&base64_ng::engine::Engine<A, PAD>, impl core::convert::AsRef<[u8]>) -> core::io::error::Result<alloc::vec::Vec<u8>> where A: base64_ng::alphabet::Alphabet
+pub async fn base64_ng_tokio::encode_reader_to_writer<A, const PAD: bool, R, W>(&base64_ng::engine::Engine<A, PAD>, &mut R, &mut W) -> core::io::error::Result<u64> where A: base64_ng::alphabet::Alphabet, R: tokio::io::async_read::AsyncRead + core::marker::Unpin + ?core::marker::Sized, W: tokio::io::async_write::AsyncWrite + core::marker::Unpin + ?core::marker::Sized
+pub async fn base64_ng_tokio::encode_reader_to_writer_limited<A, const PAD: bool, R, W>(&base64_ng::engine::Engine<A, PAD>, &mut R, &mut W, usize) -> core::io::error::Result<u64> where A: base64_ng::alphabet::Alphabet, R: tokio::io::async_read::AsyncRead + core::marker::Unpin + ?core::marker::Sized, W: tokio::io::async_write::AsyncWrite + core::marker::Unpin + ?core::marker::Sized
+pub fn base64_ng_tokio::encode_to_vec<A, const PAD: bool>(&base64_ng::engine::Engine<A, PAD>, impl core::convert::AsRef<[u8]>) -> core::io::error::Result<alloc::vec::Vec<u8>> where A: base64_ng::alphabet::Alphabet

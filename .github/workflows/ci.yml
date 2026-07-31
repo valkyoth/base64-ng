@@ -42,6 +42,7 @@ jobs:
 
       - name: Install crates.io release tools
         run: |
+          cargo install --locked cargo-public-api --version 0.52.0
           cargo install --locked cargo-deny --version 0.20.2
           cargo install --locked cargo-license --version 0.7.0
           cargo install --locked cargo-sbom --version 0.10.0

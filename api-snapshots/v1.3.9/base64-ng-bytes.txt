@@ -1,0 +1,63 @@
+pub mod base64_ng_bytes
+pub enum base64_ng_bytes::BytesDecodeError
+pub base64_ng_bytes::BytesDecodeError::Decode(base64_ng::errors::DecodeError)
+pub base64_ng_bytes::BytesDecodeError::InputTooLarge
+pub base64_ng_bytes::BytesDecodeError::InputTooLarge::input_len: usize
+pub base64_ng_bytes::BytesDecodeError::InputTooLarge::max_input_len: usize
+impl core::clone::Clone for base64_ng_bytes::BytesDecodeError
+pub fn base64_ng_bytes::BytesDecodeError::clone(&self) -> base64_ng_bytes::BytesDecodeError
+impl core::cmp::Eq for base64_ng_bytes::BytesDecodeError
+impl core::cmp::PartialEq for base64_ng_bytes::BytesDecodeError
+pub fn base64_ng_bytes::BytesDecodeError::eq(&self, &base64_ng_bytes::BytesDecodeError) -> bool
+impl core::convert::From<base64_ng::errors::DecodeError> for base64_ng_bytes::BytesDecodeError
+pub fn base64_ng_bytes::BytesDecodeError::from(base64_ng::errors::DecodeError) -> Self
+impl core::error::Error for base64_ng_bytes::BytesDecodeError
+pub fn base64_ng_bytes::BytesDecodeError::source(&self) -> core::option::Option<&(dyn core::error::Error + 'static)>
+impl core::fmt::Debug for base64_ng_bytes::BytesDecodeError
+pub fn base64_ng_bytes::BytesDecodeError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for base64_ng_bytes::BytesDecodeError
+pub fn base64_ng_bytes::BytesDecodeError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng_bytes::BytesDecodeError
+impl core::marker::StructuralPartialEq for base64_ng_bytes::BytesDecodeError
+pub enum base64_ng_bytes::BytesEncodeError
+pub base64_ng_bytes::BytesEncodeError::Encode(base64_ng::errors::EncodeError)
+pub base64_ng_bytes::BytesEncodeError::InputTooLarge
+pub base64_ng_bytes::BytesEncodeError::InputTooLarge::input_len: usize
+pub base64_ng_bytes::BytesEncodeError::InputTooLarge::max_input_len: usize
+impl core::clone::Clone for base64_ng_bytes::BytesEncodeError
+pub fn base64_ng_bytes::BytesEncodeError::clone(&self) -> base64_ng_bytes::BytesEncodeError
+impl core::cmp::Eq for base64_ng_bytes::BytesEncodeError
+impl core::cmp::PartialEq for base64_ng_bytes::BytesEncodeError
+pub fn base64_ng_bytes::BytesEncodeError::eq(&self, &base64_ng_bytes::BytesEncodeError) -> bool
+impl core::convert::From<base64_ng::errors::EncodeError> for base64_ng_bytes::BytesEncodeError
+pub fn base64_ng_bytes::BytesEncodeError::from(base64_ng::errors::EncodeError) -> Self
+impl core::error::Error for base64_ng_bytes::BytesEncodeError
+pub fn base64_ng_bytes::BytesEncodeError::source(&self) -> core::option::Option<&(dyn core::error::Error + 'static)>
+impl core::fmt::Debug for base64_ng_bytes::BytesEncodeError
+pub fn base64_ng_bytes::BytesEncodeError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for base64_ng_bytes::BytesEncodeError
+pub fn base64_ng_bytes::BytesEncodeError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng_bytes::BytesEncodeError
+impl core::marker::StructuralPartialEq for base64_ng_bytes::BytesEncodeError
+pub trait base64_ng_bytes::EngineBytesExt<A, const PAD: bool> where A: base64_ng::alphabet::Alphabet
+pub fn base64_ng_bytes::EngineBytesExt::decode_buf<B>(&self, B) -> core::result::Result<bytes::bytes::Bytes, base64_ng::errors::DecodeError> where B: bytes::buf::buf_impl::Buf
+pub fn base64_ng_bytes::EngineBytesExt::decode_buf_limited<B>(&self, B, usize) -> core::result::Result<bytes::bytes::Bytes, base64_ng_bytes::BytesDecodeError> where B: bytes::buf::buf_impl::Buf
+pub fn base64_ng_bytes::EngineBytesExt::decode_buf_to_mut<B, M>(&self, B, &mut M) -> core::result::Result<usize, base64_ng::errors::DecodeError> where B: bytes::buf::buf_impl::Buf, M: bytes::buf::buf_mut::BufMut
+pub fn base64_ng_bytes::EngineBytesExt::decode_buf_to_mut_limited<B, M>(&self, B, &mut M, usize) -> core::result::Result<usize, base64_ng_bytes::BytesDecodeError> where B: bytes::buf::buf_impl::Buf, M: bytes::buf::buf_mut::BufMut
+pub fn base64_ng_bytes::EngineBytesExt::decode_bytes(&self, impl core::convert::AsRef<[u8]>) -> core::result::Result<bytes::bytes::Bytes, base64_ng::errors::DecodeError>
+pub fn base64_ng_bytes::EngineBytesExt::encode_buf<B>(&self, B) -> core::result::Result<bytes::bytes::Bytes, base64_ng::errors::EncodeError> where B: bytes::buf::buf_impl::Buf
+pub fn base64_ng_bytes::EngineBytesExt::encode_buf_limited<B>(&self, B, usize) -> core::result::Result<bytes::bytes::Bytes, base64_ng_bytes::BytesEncodeError> where B: bytes::buf::buf_impl::Buf
+pub fn base64_ng_bytes::EngineBytesExt::encode_buf_to_mut<B, M>(&self, B, &mut M) -> core::result::Result<usize, base64_ng::errors::EncodeError> where B: bytes::buf::buf_impl::Buf, M: bytes::buf::buf_mut::BufMut
+pub fn base64_ng_bytes::EngineBytesExt::encode_buf_to_mut_limited<B, M>(&self, B, &mut M, usize) -> core::result::Result<usize, base64_ng_bytes::BytesEncodeError> where B: bytes::buf::buf_impl::Buf, M: bytes::buf::buf_mut::BufMut
+pub fn base64_ng_bytes::EngineBytesExt::encode_bytes(&self, impl core::convert::AsRef<[u8]>) -> core::result::Result<bytes::bytes::Bytes, base64_ng::errors::EncodeError>
+impl<A, const PAD: bool> base64_ng_bytes::EngineBytesExt<A, PAD> for base64_ng::engine::Engine<A, PAD> where A: base64_ng::alphabet::Alphabet
+pub fn base64_ng::engine::Engine<A, PAD>::decode_buf<B>(&self, B) -> core::result::Result<bytes::bytes::Bytes, base64_ng::errors::DecodeError> where B: bytes::buf::buf_impl::Buf
+pub fn base64_ng::engine::Engine<A, PAD>::decode_buf_limited<B>(&self, B, usize) -> core::result::Result<bytes::bytes::Bytes, base64_ng_bytes::BytesDecodeError> where B: bytes::buf::buf_impl::Buf
+pub fn base64_ng::engine::Engine<A, PAD>::decode_buf_to_mut<B, M>(&self, B, &mut M) -> core::result::Result<usize, base64_ng::errors::DecodeError> where B: bytes::buf::buf_impl::Buf, M: bytes::buf::buf_mut::BufMut
+pub fn base64_ng::engine::Engine<A, PAD>::decode_buf_to_mut_limited<B, M>(&self, B, &mut M, usize) -> core::result::Result<usize, base64_ng_bytes::BytesDecodeError> where B: bytes::buf::buf_impl::Buf, M: bytes::buf::buf_mut::BufMut
+pub fn base64_ng::engine::Engine<A, PAD>::decode_bytes(&self, impl core::convert::AsRef<[u8]>) -> core::result::Result<bytes::bytes::Bytes, base64_ng::errors::DecodeError>
+pub fn base64_ng::engine::Engine<A, PAD>::encode_buf<B>(&self, B) -> core::result::Result<bytes::bytes::Bytes, base64_ng::errors::EncodeError> where B: bytes::buf::buf_impl::Buf
+pub fn base64_ng::engine::Engine<A, PAD>::encode_buf_limited<B>(&self, B, usize) -> core::result::Result<bytes::bytes::Bytes, base64_ng_bytes::BytesEncodeError> where B: bytes::buf::buf_impl::Buf
+pub fn base64_ng::engine::Engine<A, PAD>::encode_buf_to_mut<B, M>(&self, B, &mut M) -> core::result::Result<usize, base64_ng::errors::EncodeError> where B: bytes::buf::buf_impl::Buf, M: bytes::buf::buf_mut::BufMut
+pub fn base64_ng::engine::Engine<A, PAD>::encode_buf_to_mut_limited<B, M>(&self, B, &mut M, usize) -> core::result::Result<usize, base64_ng_bytes::BytesEncodeError> where B: bytes::buf::buf_impl::Buf, M: bytes::buf::buf_mut::BufMut
+pub fn base64_ng::engine::Engine<A, PAD>::encode_bytes(&self, impl core::convert::AsRef<[u8]>) -> core::result::Result<bytes::bytes::Bytes, base64_ng::errors::EncodeError>

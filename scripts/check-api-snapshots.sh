@@ -1,0 +1,64 @@
+#!/usr/bin/env sh
+set -eu
+
+expected_tool="cargo-public-api 0.52.0"
+snapshot_dir="api-snapshots/v1.3.9"
+workdir="target/api-snapshot-check"
+mode="${1:---check}"
+
+case "$mode" in
+    --check | --update)
+        ;;
+    *)
+        echo "api snapshots: usage: $0 [--check|--update]" >&2
+        exit 2
+        ;;
+esac
+
+if ! actual_tool="$(cargo public-api --version 2>/dev/null)"; then
+    echo "api snapshots: cargo-public-api 0.52.0 is required" >&2
+    exit 1
+fi
+
+if [ "$actual_tool" != "$expected_tool" ]; then
+    echo "api snapshots: expected $expected_tool, found $actual_tool" >&2
+    exit 1
+fi
+
+mkdir -p "$workdir"
+if [ "$mode" = "--update" ]; then
+    mkdir -p "$snapshot_dir"
+fi
+
+for package in \
+    base64-ng \
+    base64-ng-derive \
+    base64-ng-sanitization \
+    base64-ng-serde \
+    base64-ng-bytes \
+    base64-ng-subtle \
+    base64-ng-tokio
+do
+    generated="$workdir/$package.txt"
+    committed="$snapshot_dir/$package.txt"
+
+    echo "api snapshots: generating $package"
+    LC_ALL=C cargo public-api \
+        --color=never \
+        --all-features \
+        --omit blanket-impls \
+        --omit auto-trait-impls \
+        -p "$package" >"$generated"
+
+    if [ "$mode" = "--update" ]; then
+        cp "$generated" "$committed"
+    elif [ ! -f "$committed" ]; then
+        echo "api snapshots: missing $committed" >&2
+        exit 1
+    elif ! diff -u "$committed" "$generated"; then
+        echo "api snapshots: $package drifted from the v1.3.9 inventory" >&2
+        exit 1
+    fi
+done
+
+echo "api snapshots: ok"

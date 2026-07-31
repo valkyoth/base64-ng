@@ -1,0 +1,20 @@
+pub mod base64_ng_subtle
+pub trait base64_ng_subtle::SubtleEqExt
+pub fn base64_ng_subtle::SubtleEqExt::subtle_ct_eq(&self, &[u8]) -> subtle::Choice
+pub fn base64_ng_subtle::SubtleEqExt::subtle_verify(&self, &[u8]) -> bool
+impl base64_ng_subtle::SubtleEqExt for &[u8]
+pub fn &[u8]::subtle_ct_eq(&self, &[u8]) -> subtle::Choice
+pub fn &[u8]::subtle_verify(&self, &[u8]) -> bool
+impl base64_ng_subtle::SubtleEqExt for [u8]
+pub fn [u8]::subtle_ct_eq(&self, &[u8]) -> subtle::Choice
+pub fn [u8]::subtle_verify(&self, &[u8]) -> bool
+impl base64_ng_subtle::SubtleEqExt for base64_ng::buffers::secret::SecretBuffer
+pub fn base64_ng::buffers::secret::SecretBuffer::subtle_ct_eq(&self, &[u8]) -> subtle::Choice
+pub fn base64_ng::buffers::secret::SecretBuffer::subtle_verify(&self, &[u8]) -> bool
+impl<const CAP: usize> base64_ng_subtle::SubtleEqExt for base64_ng::buffers::decoded::DecodedBuffer<CAP>
+pub fn base64_ng::buffers::decoded::DecodedBuffer<CAP>::subtle_ct_eq(&self, &[u8]) -> subtle::Choice
+pub fn base64_ng::buffers::decoded::DecodedBuffer<CAP>::subtle_verify(&self, &[u8]) -> bool
+impl<const CAP: usize> base64_ng_subtle::SubtleEqExt for base64_ng::buffers::encoded::EncodedBuffer<CAP>
+pub fn base64_ng::buffers::encoded::EncodedBuffer<CAP>::subtle_ct_eq(&self, &[u8]) -> subtle::Choice
+pub fn base64_ng::buffers::encoded::EncodedBuffer<CAP>::subtle_verify(&self, &[u8]) -> bool
+pub fn base64_ng_subtle::subtle_ct_eq_public_len(&[u8], &[u8]) -> subtle::Choice

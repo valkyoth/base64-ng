@@ -1,0 +1,88 @@
+pub mod base64_ng_sanitization
+pub use base64_ng_sanitization::ct
+pub enum base64_ng_sanitization::LockedDecodeError<E>
+pub base64_ng_sanitization::LockedDecodeError::DegradedProtection
+pub base64_ng_sanitization::LockedDecodeError::Operation(E)
+impl<E: core::clone::Clone> core::clone::Clone for base64_ng_sanitization::LockedDecodeError<E>
+pub fn base64_ng_sanitization::LockedDecodeError<E>::clone(&self) -> base64_ng_sanitization::LockedDecodeError<E>
+impl<E: core::cmp::Eq> core::cmp::Eq for base64_ng_sanitization::LockedDecodeError<E>
+impl<E: core::cmp::PartialEq> core::cmp::PartialEq for base64_ng_sanitization::LockedDecodeError<E>
+pub fn base64_ng_sanitization::LockedDecodeError<E>::eq(&self, &base64_ng_sanitization::LockedDecodeError<E>) -> bool
+impl<E: core::cmp::PartialEq> core::marker::StructuralPartialEq for base64_ng_sanitization::LockedDecodeError<E>
+impl<E: core::fmt::Debug> core::fmt::Debug for base64_ng_sanitization::LockedDecodeError<E>
+pub fn base64_ng_sanitization::LockedDecodeError<E>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<E: core::fmt::Display> core::fmt::Display for base64_ng_sanitization::LockedDecodeError<E>
+pub fn base64_ng_sanitization::LockedDecodeError<E>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<E: core::marker::Copy> core::marker::Copy for base64_ng_sanitization::LockedDecodeError<E>
+impl<E> core::error::Error for base64_ng_sanitization::LockedDecodeError<E> where E: core::error::Error + 'static
+pub fn base64_ng_sanitization::LockedDecodeError<E>::source(&self) -> core::option::Option<&(dyn core::error::Error + 'static)>
+pub enum base64_ng_sanitization::SanitizationDecodeError
+pub base64_ng_sanitization::SanitizationDecodeError::Decode(base64_ng::errors::DecodeError)
+pub base64_ng_sanitization::SanitizationDecodeError::LengthMismatch
+pub base64_ng_sanitization::SanitizationDecodeError::LengthMismatch::actual: usize
+pub base64_ng_sanitization::SanitizationDecodeError::LengthMismatch::expected: usize
+impl core::clone::Clone for base64_ng_sanitization::SanitizationDecodeError
+pub fn base64_ng_sanitization::SanitizationDecodeError::clone(&self) -> base64_ng_sanitization::SanitizationDecodeError
+impl core::cmp::Eq for base64_ng_sanitization::SanitizationDecodeError
+impl core::cmp::PartialEq for base64_ng_sanitization::SanitizationDecodeError
+pub fn base64_ng_sanitization::SanitizationDecodeError::eq(&self, &base64_ng_sanitization::SanitizationDecodeError) -> bool
+impl core::convert::From<base64_ng::errors::DecodeError> for base64_ng_sanitization::SanitizationDecodeError
+pub fn base64_ng_sanitization::SanitizationDecodeError::from(base64_ng::errors::DecodeError) -> Self
+impl core::error::Error for base64_ng_sanitization::SanitizationDecodeError
+impl core::fmt::Debug for base64_ng_sanitization::SanitizationDecodeError
+pub fn base64_ng_sanitization::SanitizationDecodeError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for base64_ng_sanitization::SanitizationDecodeError
+pub fn base64_ng_sanitization::SanitizationDecodeError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng_sanitization::SanitizationDecodeError
+impl core::marker::StructuralPartialEq for base64_ng_sanitization::SanitizationDecodeError
+pub trait base64_ng_sanitization::CtDecodeSanitizationExt
+pub fn base64_ng_sanitization::CtDecodeSanitizationExt::decode_locked_secret_bytes<const N: usize>(&self, &[u8]) -> core::result::Result<sanitization::mapped::memory_lock::LockedSecretBytes<N>, sanitization::mapped::memory_lock::LockedSecretBytesGenerateError<base64_ng_sanitization::SanitizationDecodeError>>
+pub fn base64_ng_sanitization::CtDecodeSanitizationExt::decode_locked_secret_bytes_checked<const N: usize>(&self, &[u8]) -> core::result::Result<sanitization::mapped::memory_lock::LockedSecretBytes<N>, base64_ng_sanitization::LockedDecodeError<sanitization::mapped::memory_lock::LockedSecretBytesGenerateError<base64_ng_sanitization::SanitizationDecodeError>>>
+pub fn base64_ng_sanitization::CtDecodeSanitizationExt::decode_locked_secret_bytes_fill<const N: usize>(&self, &[u8]) -> core::result::Result<sanitization::mapped::memory_lock::LockedSecretBytes<N>, sanitization::mapped::memory_lock::LockedSecretBytesFillError<base64_ng_sanitization::SanitizationDecodeError>>
+pub fn base64_ng_sanitization::CtDecodeSanitizationExt::decode_locked_secret_vec(&self, &[u8]) -> core::result::Result<sanitization::mapped::memory_lock::LockedSecretVec, sanitization::mapped::memory_lock::LockedSecretVecFillError<base64_ng::errors::DecodeError>>
+pub fn base64_ng_sanitization::CtDecodeSanitizationExt::decode_locked_secret_vec_checked(&self, &[u8]) -> core::result::Result<sanitization::mapped::memory_lock::LockedSecretVec, base64_ng_sanitization::LockedDecodeError<sanitization::mapped::memory_lock::LockedSecretVecFillError<base64_ng::errors::DecodeError>>>
+pub fn base64_ng_sanitization::CtDecodeSanitizationExt::decode_secret_bytes<const N: usize>(&self, &[u8]) -> core::result::Result<sanitization::owned::SecretBytes<N>, base64_ng_sanitization::SanitizationDecodeError>
+pub fn base64_ng_sanitization::CtDecodeSanitizationExt::decode_secret_vec(&self, &[u8]) -> core::result::Result<sanitization::owned::SecretVec, base64_ng::errors::DecodeError>
+pub fn base64_ng_sanitization::CtDecodeSanitizationExt::decode_secret_vec_staged<const STAGE: usize>(&self, &[u8]) -> core::result::Result<sanitization::owned::SecretVec, base64_ng::errors::DecodeError>
+impl<A, const PAD: bool> base64_ng_sanitization::CtDecodeSanitizationExt for base64_ng::ct::CtEngine<A, PAD> where A: base64_ng::alphabet::Alphabet
+pub fn base64_ng::ct::CtEngine<A, PAD>::decode_locked_secret_bytes<const N: usize>(&self, &[u8]) -> core::result::Result<sanitization::mapped::memory_lock::LockedSecretBytes<N>, sanitization::mapped::memory_lock::LockedSecretBytesGenerateError<base64_ng_sanitization::SanitizationDecodeError>>
+pub fn base64_ng::ct::CtEngine<A, PAD>::decode_locked_secret_bytes_checked<const N: usize>(&self, &[u8]) -> core::result::Result<sanitization::mapped::memory_lock::LockedSecretBytes<N>, base64_ng_sanitization::LockedDecodeError<sanitization::mapped::memory_lock::LockedSecretBytesGenerateError<base64_ng_sanitization::SanitizationDecodeError>>>
+pub fn base64_ng::ct::CtEngine<A, PAD>::decode_locked_secret_bytes_fill<const N: usize>(&self, &[u8]) -> core::result::Result<sanitization::mapped::memory_lock::LockedSecretBytes<N>, sanitization::mapped::memory_lock::LockedSecretBytesFillError<base64_ng_sanitization::SanitizationDecodeError>>
+pub fn base64_ng::ct::CtEngine<A, PAD>::decode_locked_secret_vec(&self, &[u8]) -> core::result::Result<sanitization::mapped::memory_lock::LockedSecretVec, sanitization::mapped::memory_lock::LockedSecretVecFillError<base64_ng::errors::DecodeError>>
+pub fn base64_ng::ct::CtEngine<A, PAD>::decode_locked_secret_vec_checked(&self, &[u8]) -> core::result::Result<sanitization::mapped::memory_lock::LockedSecretVec, base64_ng_sanitization::LockedDecodeError<sanitization::mapped::memory_lock::LockedSecretVecFillError<base64_ng::errors::DecodeError>>>
+pub fn base64_ng::ct::CtEngine<A, PAD>::decode_secret_bytes<const N: usize>(&self, &[u8]) -> core::result::Result<sanitization::owned::SecretBytes<N>, base64_ng_sanitization::SanitizationDecodeError>
+pub fn base64_ng::ct::CtEngine<A, PAD>::decode_secret_vec(&self, &[u8]) -> core::result::Result<sanitization::owned::SecretVec, base64_ng::errors::DecodeError>
+pub fn base64_ng::ct::CtEngine<A, PAD>::decode_secret_vec_staged<const STAGE: usize>(&self, &[u8]) -> core::result::Result<sanitization::owned::SecretVec, base64_ng::errors::DecodeError>
+pub trait base64_ng_sanitization::CtDecodeSanitizationProtectedExt
+pub fn base64_ng_sanitization::CtDecodeSanitizationProtectedExt::decode_locked_secret_bytes_checked_detailed<const N: usize>(&self, &[u8]) -> core::result::Result<sanitization::mapped::memory_lock::LockedSecretBytes<N>, sanitization::mapped::protection::ProtectedSecretFillError<base64_ng_sanitization::SanitizationDecodeError>>
+pub fn base64_ng_sanitization::CtDecodeSanitizationProtectedExt::decode_locked_secret_vec_checked_bounded<const MAX: usize>(&self, &[u8]) -> core::result::Result<sanitization::mapped::memory_lock::LockedSecretVec, sanitization::mapped::protection::ProtectedSecretFillError<base64_ng::errors::DecodeError>>
+pub fn base64_ng_sanitization::CtDecodeSanitizationProtectedExt::decode_locked_secret_vec_checked_detailed(&self, &[u8]) -> core::result::Result<sanitization::mapped::memory_lock::LockedSecretVec, sanitization::mapped::protection::ProtectedSecretFillError<base64_ng::errors::DecodeError>>
+impl<A, const PAD: bool> base64_ng_sanitization::CtDecodeSanitizationProtectedExt for base64_ng::ct::CtEngine<A, PAD> where A: base64_ng::alphabet::Alphabet
+pub fn base64_ng::ct::CtEngine<A, PAD>::decode_locked_secret_bytes_checked_detailed<const N: usize>(&self, &[u8]) -> core::result::Result<sanitization::mapped::memory_lock::LockedSecretBytes<N>, sanitization::mapped::protection::ProtectedSecretFillError<base64_ng_sanitization::SanitizationDecodeError>>
+pub fn base64_ng::ct::CtEngine<A, PAD>::decode_locked_secret_vec_checked_bounded<const MAX: usize>(&self, &[u8]) -> core::result::Result<sanitization::mapped::memory_lock::LockedSecretVec, sanitization::mapped::protection::ProtectedSecretFillError<base64_ng::errors::DecodeError>>
+pub fn base64_ng::ct::CtEngine<A, PAD>::decode_locked_secret_vec_checked_detailed(&self, &[u8]) -> core::result::Result<sanitization::mapped::memory_lock::LockedSecretVec, sanitization::mapped::protection::ProtectedSecretFillError<base64_ng::errors::DecodeError>>
+pub trait base64_ng_sanitization::LockedSanitizationCtEqExt
+pub fn base64_ng_sanitization::LockedSanitizationCtEqExt::try_sanitization_ct_eq(&self, &[u8]) -> core::result::Result<sanitization::ct::Choice, sanitization::mapped::protection::CanaryCorruptedError>
+pub fn base64_ng_sanitization::LockedSanitizationCtEqExt::try_sanitization_verify(&self, &[u8], &'static str) -> core::result::Result<bool, sanitization::mapped::protection::CanaryCorruptedError>
+impl base64_ng_sanitization::LockedSanitizationCtEqExt for sanitization::mapped::memory_lock::LockedSecretVec
+pub fn sanitization::mapped::memory_lock::LockedSecretVec::try_sanitization_ct_eq(&self, &[u8]) -> core::result::Result<sanitization::ct::Choice, sanitization::mapped::protection::CanaryCorruptedError>
+pub fn sanitization::mapped::memory_lock::LockedSecretVec::try_sanitization_verify(&self, &[u8], &'static str) -> core::result::Result<bool, sanitization::mapped::protection::CanaryCorruptedError>
+impl<const N: usize> base64_ng_sanitization::LockedSanitizationCtEqExt for sanitization::mapped::memory_lock::LockedSecretBytes<N>
+pub fn sanitization::mapped::memory_lock::LockedSecretBytes<N>::try_sanitization_ct_eq(&self, &[u8]) -> core::result::Result<sanitization::ct::Choice, sanitization::mapped::protection::CanaryCorruptedError>
+pub fn sanitization::mapped::memory_lock::LockedSecretBytes<N>::try_sanitization_verify(&self, &[u8], &'static str) -> core::result::Result<bool, sanitization::mapped::protection::CanaryCorruptedError>
+pub trait base64_ng_sanitization::SanitizationCtEqExt
+pub fn base64_ng_sanitization::SanitizationCtEqExt::sanitization_ct_eq(&self, &[u8]) -> sanitization::ct::Choice
+pub fn base64_ng_sanitization::SanitizationCtEqExt::sanitization_verify(&self, &[u8], &'static str) -> bool
+impl base64_ng_sanitization::SanitizationCtEqExt for sanitization::mapped::memory_lock::LockedSecretVec
+pub fn sanitization::mapped::memory_lock::LockedSecretVec::sanitization_ct_eq(&self, &[u8]) -> sanitization::ct::Choice
+pub fn sanitization::mapped::memory_lock::LockedSecretVec::sanitization_verify(&self, &[u8], &'static str) -> bool
+impl base64_ng_sanitization::SanitizationCtEqExt for sanitization::owned::SecretVec
+pub fn sanitization::owned::SecretVec::sanitization_ct_eq(&self, &[u8]) -> sanitization::ct::Choice
+pub fn sanitization::owned::SecretVec::sanitization_verify(&self, &[u8], &'static str) -> bool
+impl<const N: usize> base64_ng_sanitization::SanitizationCtEqExt for sanitization::mapped::memory_lock::LockedSecretBytes<N>
+pub fn sanitization::mapped::memory_lock::LockedSecretBytes<N>::sanitization_ct_eq(&self, &[u8]) -> sanitization::ct::Choice
+pub fn sanitization::mapped::memory_lock::LockedSecretBytes<N>::sanitization_verify(&self, &[u8], &'static str) -> bool
+impl<const N: usize> base64_ng_sanitization::SanitizationCtEqExt for sanitization::owned::SecretBytes<N>
+pub fn sanitization::owned::SecretBytes<N>::sanitization_ct_eq(&self, &[u8]) -> sanitization::ct::Choice
+pub fn sanitization::owned::SecretBytes<N>::sanitization_verify(&self, &[u8], &'static str) -> bool
+pub fn base64_ng_sanitization::sanitization_ct_eq_public_len(&[u8], &[u8]) -> sanitization::ct::Choice

@@ -15,6 +15,12 @@ pentests may cover contiguous checkpoint batches and remain working evidence;
 the normalized permanent GitHub pentest report is added for the final 2.0.0
 candidate.
 
+Commit 2 freezes the machine-generated `v1.3.9` public API snapshots and the
+[`2.0_API_MIGRATION_LEDGER.md`](2.0_API_MIGRATION_LEDGER.md) disposition rules.
+`scripts/check-api-snapshots.sh`, `scripts/check-2.0-migration-smoke.sh`, and
+`scripts/check-2.0-feature-contract.sh` prevent accidental inventory,
+canonical-name, and Cargo feature-unification drift.
+
 Run the gate with:
 
 ```sh
