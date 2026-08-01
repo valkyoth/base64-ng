@@ -41,6 +41,12 @@ have no implicit `AsRef<[u8]>`, formatting is redacted, and borrowed, fixed,
 and heap storage follow their documented cleanup and declassification rules.
 See [`2.0_SECRET_STORAGE_AND_EXPOSURE.md`](2.0_SECRET_STORAGE_AND_EXPOSURE.md).
 
+Commit 19 adds bounded secret decode frames. Their dedicated gate covers
+fixed-work symbol scans, delayed final output, opaque malformed input,
+capacity/overlap preflight, cleanup, stack-limit compile failures, and optional
+Kani frame proofs. See
+[`2.0_SECRET_DECODING.md`](2.0_SECRET_DECODING.md).
+
 Run the gate with:
 
 ```sh

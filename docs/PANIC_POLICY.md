@@ -29,6 +29,12 @@ Remaining bounded indexing invariants are documented in
 
 The current reviewed exceptions are:
 
+- `SecretArrayFrame<N>::new` evaluates an associated const assertion and an
+  inline const assertion that reject `N > 1024`. Because `N` is a type-level
+  constant, every code-generated construction path fails compilation rather
+  than accepting attacker-controlled runtime sizing. Merely naming an
+  oversized generic type may still compile on stable Rust when no constructor
+  is instantiated.
 - `Engine::encode_array` may panic during const evaluation when the caller
   supplies an output array length that does not match the compile-time encoded
   length, or when that const length calculation overflows. This is documented

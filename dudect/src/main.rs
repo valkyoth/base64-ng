@@ -8,6 +8,36 @@ const OUTPUT_LEN: usize = 48;
 const ALPHABET: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 #[derive(Clone, Copy)]
+enum TimingCase {
+    ValidContents,
+    MalformedPosition,
+    MalformedClass,
+    PreGateContents,
+}
+
+impl TimingCase {
+    const ALL: [Self; 4] = [
+        Self::ValidContents,
+        Self::MalformedPosition,
+        Self::MalformedClass,
+        Self::PreGateContents,
+    ];
+
+    const fn label(self) -> &'static str {
+        match self {
+            Self::ValidContents => "valid-contents-whole-call",
+            Self::MalformedPosition => "malformed-position-whole-call",
+            Self::MalformedClass => "malformed-class-whole-call",
+            Self::PreGateContents => "valid-contents-pre-gate",
+        }
+    }
+
+    const fn stops_before_gate(self) -> bool {
+        matches!(self, Self::PreGateContents)
+    }
+}
+
+#[derive(Clone, Copy)]
 struct Config {
     samples: usize,
     iterations: usize,
@@ -94,25 +124,34 @@ fn run() -> Result<(), String> {
     validate_config(config)?;
 
     let mut rng = XorShift64::new(0x6261_7365_3634_6e67);
-    let fixed = [b'A'; INPUT_LEN];
-    let mut random = [0u8; INPUT_LEN];
-    let mut output = [0u8; OUTPUT_LEN];
+    for case in TimingCase::ALL {
+        run_case(config, case, &mut rng)?;
+    }
+    Ok(())
+}
 
-    for _ in 0..config.warmup {
-        fill_random_base64(&mut random, &mut rng);
-        let class = rng.next() & 1;
-        let input = if class == 0 { &fixed } else { &random };
-        measure_decode(input, &mut output, config.iterations)?;
+fn run_case(config: Config, case: TimingCase, rng: &mut XorShift64) -> Result<(), String> {
+    let mut left = [b'A'; INPUT_LEN];
+    let mut right = [b'A'; INPUT_LEN];
+    prepare_classes(case, &mut left, &mut right, rng);
+
+    let warmup_first = usize::from((rng.next() & 1) != 0);
+    for index in 0..config.warmup {
+        refresh_random_class(case, &mut right, rng);
+        let class = (index & 1) ^ warmup_first;
+        let input = if class == 0 { &left } else { &right };
+        measure_decode(input, config.iterations, case.stops_before_gate())?;
     }
 
     let mut fixed_stats = Accumulator::new();
     let mut random_stats = Accumulator::new();
 
-    for _ in 0..config.samples {
-        fill_random_base64(&mut random, &mut rng);
-        let class = rng.next() & 1;
-        let input = if class == 0 { &fixed } else { &random };
-        let elapsed = measure_decode(input, &mut output, config.iterations)?;
+    let sample_first = usize::from((rng.next() & 1) != 0);
+    for index in 0..config.samples {
+        refresh_random_class(case, &mut right, rng);
+        let class = (index & 1) ^ sample_first;
+        let input = if class == 0 { &left } else { &right };
+        let elapsed = measure_decode(input, config.iterations, case.stops_before_gate())?;
 
         if class == 0 {
             fixed_stats.push(elapsed);
@@ -127,7 +166,8 @@ fn run() -> Result<(), String> {
 
     let t = welch_t(fixed_stats, random_stats);
     println!(
-        "dudect: samples={} iterations={} fixed_n={} random_n={} fixed_mean_ns={:.3} random_mean_ns={:.3} t={:.3} threshold={:.3}",
+        "dudect: case={} samples={} iterations={} fixed_n={} random_n={} fixed_mean_ns={:.3} random_mean_ns={:.3} t={:.3} threshold={:.3}",
+        case.label(),
         config.samples,
         config.iterations,
         fixed_stats.count,
@@ -140,7 +180,8 @@ fn run() -> Result<(), String> {
 
     if t.abs() > config.threshold {
         Err(format!(
-            "absolute Welch t-statistic {:.3} exceeded threshold {:.3}",
+            "{} absolute Welch t-statistic {:.3} exceeded threshold {:.3}",
+            case.label(),
             t.abs(),
             config.threshold
         ))
@@ -151,19 +192,60 @@ fn run() -> Result<(), String> {
 
 fn measure_decode(
     input: &[u8; INPUT_LEN],
-    output: &mut [u8; OUTPUT_LEN],
     iterations: usize,
+    stop_before_gate: bool,
 ) -> Result<f64, String> {
     let start = Instant::now();
     for _ in 0..iterations {
-        let written = base64_ng::ct::STANDARD_NO_PAD
-            .decode_slice_clear_tail(black_box(input), black_box(output))
-            .map_err(|error| format!("constant-time decode failed: {error}"))?;
-        black_box(written);
-        black_box(&*output);
+        let mut frame = base64_ng::secret::SecretArrayFrame::<OUTPUT_LEN>::new(
+            &base64_ng::STRICT_STANDARD_UNPADDED,
+        )
+        .map_err(|error| format!("secret frame construction failed: {error}"))?;
+        frame
+            .update(&base64_ng::secret::SecretInput::new(black_box(input)))
+            .map_err(|error| format!("secret frame update failed: {error}"))?;
+        if stop_before_gate {
+            black_box(frame.state().input_len());
+        } else {
+            black_box(frame.finish().is_ok());
+        }
     }
     let nanos = start.elapsed().as_nanos() as f64;
     Ok(nanos / iterations as f64)
+}
+
+fn prepare_classes(
+    case: TimingCase,
+    left: &mut [u8; INPUT_LEN],
+    right: &mut [u8; INPUT_LEN],
+    rng: &mut XorShift64,
+) {
+    match case {
+        TimingCase::ValidContents | TimingCase::PreGateContents => {
+            fill_random_base64(right, rng);
+        }
+        TimingCase::MalformedPosition => {
+            left[0] = b'!';
+            right[INPUT_LEN - 1] = b'!';
+        }
+        TimingCase::MalformedClass => {
+            left[INPUT_LEN / 2] = b'!';
+            right[INPUT_LEN / 2] = b'=';
+        }
+    }
+}
+
+fn refresh_random_class(
+    case: TimingCase,
+    right: &mut [u8; INPUT_LEN],
+    rng: &mut XorShift64,
+) {
+    if matches!(
+        case,
+        TimingCase::ValidContents | TimingCase::PreGateContents
+    ) {
+        fill_random_base64(right, rng);
+    }
 }
 
 fn fill_random_base64(output: &mut [u8; INPUT_LEN], rng: &mut XorShift64) {
@@ -238,7 +320,8 @@ fn print_help() {
     println!(
         "Usage: base64-ng-dudect [--samples N] [--iters N] [--threshold T] [--warmup N]\n\
          \n\
-         Measures fixed-vs-random valid Base64 inputs for ct::STANDARD_NO_PAD\n\
-         with a dudect-style Welch t-test. This is empirical evidence only."
+         Measures bounded 2.0 secret frames across valid contents, malformed\n\
+         positions, malformed classes, and the pre-gate core with dudect-style\n\
+         Welch t-tests. This is empirical evidence only."
     );
 }

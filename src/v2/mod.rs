@@ -30,6 +30,8 @@ mod profiles;
 pub(crate) mod secret;
 #[cfg(feature = "secrets")]
 pub mod secret;
+#[cfg(feature = "secrets")]
+mod secret_decoder;
 mod secret_in_place;
 #[allow(dead_code)]
 pub(crate) mod specifications;
@@ -96,6 +98,8 @@ mod one_shot_tests;
 mod profile_tests;
 #[cfg(test)]
 mod rfc4648_oracle;
+#[cfg(test)]
+mod secret_decoder_tests;
 #[cfg(test)]
 mod secret_in_place_tests;
 #[cfg(test)]

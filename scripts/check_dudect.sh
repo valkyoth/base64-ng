@@ -73,7 +73,8 @@ if [ "${BASE64_NG_RUN_DUDECT:-0}" = "1" ]; then
         fi
         echo
         echo "interpretation:"
-        echo "This is empirical timing evidence for this binary and machine only."
+        echo "This is empirical 2.0 secret-frame timing evidence for this binary and machine only."
+        echo "It compares valid contents, malformed positions/classes, and the pre-gate core."
         echo "It does not replace generated-code review, Kani, Miri, fuzzing, or deterministic tests."
     } >"$manifest"
 

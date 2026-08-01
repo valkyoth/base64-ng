@@ -81,6 +81,9 @@ scripts/check-2.0-profiles.sh
 echo "checks: 2.0 secret storage and explicit exposure"
 scripts/check-2.0-secret-storage.sh
 
+echo "checks: 2.0 bounded secret decoder"
+scripts/check-2.0-secret-decoder.sh
+
 echo "checks: RFC 4648 source lock"
 scripts/verify-rfcs.sh
 scripts/check-rfc-source-mutations.py

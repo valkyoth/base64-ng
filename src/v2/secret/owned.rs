@@ -10,6 +10,11 @@ pub struct SecretArray<const CAP: usize> {
 }
 
 impl<const CAP: usize> SecretArray<CAP> {
+    pub(super) fn from_frame(bytes: [u8; CAP], len: usize) -> Self {
+        debug_assert!(len <= CAP);
+        Self { bytes, len }
+    }
+
     /// Takes ownership, checks the visible prefix, and wipes unused capacity.
     pub fn from_array(mut bytes: [u8; CAP], len: usize) -> Result<Self, BufferLengthError> {
         if len > CAP {
@@ -69,6 +74,11 @@ impl<const CAP: usize> SecretArray<CAP> {
 
     #[cfg(test)]
     pub(crate) const fn backing_for_test(&self) -> &[u8; CAP] {
+        &self.bytes
+    }
+
+    #[cfg(kani)]
+    pub(crate) const fn backing_for_proof(&self) -> &[u8; CAP] {
         &self.bytes
     }
 }
@@ -160,6 +170,13 @@ pub struct SecretVec {
 
 #[cfg(feature = "alloc")]
 impl SecretVec {
+    pub(super) fn from_frame(mut bytes: alloc::vec::Vec<u8>, len: usize) -> Self {
+        debug_assert!(len <= bytes.len());
+        bytes.truncate(len);
+        crate::wipe_vec_spare_capacity(&mut bytes);
+        Self { bytes }
+    }
+
     /// Takes ownership and wipes the vector's spare capacity.
     #[must_use]
     pub fn from_vec(mut bytes: alloc::vec::Vec<u8>) -> Self {

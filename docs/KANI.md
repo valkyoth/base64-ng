@@ -58,9 +58,23 @@ scripts/check_kani_advanced.sh
 ```
 
 The advanced script enables `--cfg base64_ng_kani_advanced`, prints each stage
-before it starts, and runs advanced harness code generation by default. This
-keeps the default advanced check bounded and verifies that the opt-in harnesses
-still compile through Kani.
+before it starts, enables the `secrets` feature, and runs advanced harness code
+generation by default. This keeps the default advanced check bounded and
+verifies that the opt-in harnesses still compile through Kani.
+
+To prove the three bounded secret-frame properties added for the `2.0`
+development API, use:
+
+```sh
+BASE64_NG_KANI_PROVE_SECRET_FRAMES=1 scripts/check_kani_advanced.sh
+```
+
+These proofs establish that a stack-backed frame never releases more than its
+declared decoded bound, oversized public input is rejected before the
+fixed-work scanner runs, and borrowed public output is written only after a
+valid final gate. They are opt-in because the arbitrary-input release-gate
+proof expands the fixed 64-entry scans and volatile cleanup loops into a much
+larger SAT instance than the mandatory 28-harness baseline.
 
 To run the broad public strict-decode no-panic proof, use:
 
@@ -108,6 +122,8 @@ Current harnesses cover:
 
 The default advanced opt-in script additionally checks code generation for:
 
+- bounded secret-frame release, pre-scan oversize rejection, and borrowed
+  output release-gate properties
 - broad no-panic exercise of selected public strict decode surfaces for an
   8-byte symbolic input
 - strict wrapped decode output-prefix bounds for an 8-byte symbolic input
@@ -117,6 +133,15 @@ The `BASE64_NG_KANI_PROVE_PUBLIC_SURFACE=1` harness additionally proves:
 
 - broad no-panic exercise of selected public strict decode surfaces for an
   8-byte symbolic input
+
+The `BASE64_NG_KANI_PROVE_SECRET_FRAMES=1` harness set additionally proves:
+
+- stack-backed decoded output length remains within its declared bound and its
+  unused tail remains cleared
+- oversized public input is rejected before scanning and leaves the state
+  absorbing
+- borrowed public output remains unavailable until the final validity gate,
+  while both staging and public storage are cleared after release or rejection
 
 The `BASE64_NG_KANI_EXPENSIVE_WRAPPED=1` harness set additionally proves:
 

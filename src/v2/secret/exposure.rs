@@ -145,6 +145,10 @@ impl<'a> SecretInput<'a> {
     pub const fn is_empty(&self) -> bool {
         self.bytes.is_empty()
     }
+
+    pub(super) const fn classified_bytes(&self) -> &[u8] {
+        self.bytes
+    }
 }
 
 redacted_formatting!(SecretInput<'_>, "SecretInput");

@@ -54,7 +54,28 @@ run_kani() {
 }
 
 echo "Advanced Kani checks: using Rust toolchain $kani_toolchain"
-run_kani "advanced harness codegen" --no-default-features --only-codegen
+run_kani "advanced harness codegen" --no-default-features --features secrets --only-codegen
+
+if [ "${BASE64_NG_KANI_PROVE_SECRET_FRAMES:-0}" = "1" ]; then
+    run_kani \
+        "secret_frame_never_releases_more_than_its_bound" \
+        --no-default-features \
+        --features secrets \
+        --harness "secret_frame_never_releases_more_than_its_bound"
+    run_kani \
+        "secret_frame_rejects_oversized_input_before_scanning" \
+        --no-default-features \
+        --features secrets \
+        --harness "secret_frame_rejects_oversized_input_before_scanning"
+    run_kani \
+        "borrowed_secret_frame_writes_public_output_only_after_valid_gate" \
+        --no-default-features \
+        --features secrets \
+        --harness "borrowed_secret_frame_writes_public_output_only_after_valid_gate"
+else
+    echo "Advanced Kani checks: skipped secret-frame proofs"
+    echo "Advanced Kani checks: set BASE64_NG_KANI_PROVE_SECRET_FRAMES=1 to run them"
+fi
 
 if [ "${BASE64_NG_KANI_PROVE_PUBLIC_SURFACE:-0}" = "1" ]; then
     run_kani \

@@ -4,10 +4,12 @@
 under `dudect/`. The harness is not included in the published crate and does
 not add dependencies to the root package.
 
-The harness measures fixed-vs-random valid Base64 inputs of the same public
-length through `ct::STANDARD_NO_PAD.decode_slice_clear_tail()` and reports a Welch
-t-statistic. It is empirical evidence for review, not a formal proof and not a
-standalone cryptographic constant-time claim.
+The harness measures equal-public-length inputs through the 2.0 bounded
+`SecretArrayFrame`. It reports separate Welch t-statistics for distinct valid
+contents, first-versus-last malformed positions, malformed byte classes, and
+the pre-gate core without successful declassification. It is empirical
+evidence for review, not a formal proof or standalone cryptographic
+constant-time claim.
 
 ## Compile the Harness
 
@@ -39,8 +41,10 @@ scripts/check_dudect.sh
 
 The default threshold is `10`, matching the usual dudect convention that large
 absolute t-statistics require investigation. A passing run means this specific
-binary, on this machine, did not show a strong fixed-vs-random timing signal
-for the measured path. It does not prove all targets or compiler modes.
+binary, on this machine, did not show a strong timing signal for the measured
+class pairs. It does not prove all targets or compiler modes. Whole-call valid
+versus invalid timing is deliberately not compared because successful release
+performs a documented post-gate copy.
 
 Opt-in timing runs write release evidence under:
 

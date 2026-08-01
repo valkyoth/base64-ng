@@ -294,11 +294,12 @@ scripts/validate-constant-time-policy.sh
 
 ## dudect-Style Timing Evidence
 
-`dudect/` contains an isolated, dependency-free timing harness for the scalar
-constant-time-oriented decoder. Normal CI and the release gate compile the
-harness and check its dependency policy. Local timing runs are opt-in because
-virtualized CI runners and busy developer machines can produce noisy
-measurements:
+`dudect/` contains an isolated, dependency-free timing harness for the bounded
+2.0 secret decoder. It separates valid contents, malformed positions,
+malformed classes, and the pre-gate core. Normal CI and the release gate
+compile the harness and check its dependency policy. Local timing runs are
+opt-in because virtualized CI runners and busy developer machines can produce
+noisy measurements:
 
 ```sh
 BASE64_NG_RUN_DUDECT=1 scripts/check_dudect.sh
@@ -341,12 +342,13 @@ success/failure gate; it does not make the ct decoder a formally verified
 hardware side-channel resistant primitive and does not change the transient
 output window described above.
 
-The emerging 2.0 `Base64::decode_in_place_staged` path reuses the same
-accumulator and result-gate barrier while keeping candidate plaintext in
-byte-disjoint private staging. Its Commit 14 claim covers fixed symbol work
-before the gate only. Final validity and the success-only copy are public, and
-Commit 20 must provide optimizer, assembly, and timing evidence before the
-complete 2.0 secret codec receives stronger admission wording.
+The 2.0 `SecretArrayFrame`, `SecretFrame`, and `SecretVecFrame` paths use a
+separate scalar `SecretDecoderState`, the same accumulator and result-gate
+barrier, and byte-disjoint private staging. Commit 19 covers fixed symbol work
+before the gate. Final validity and the success-only copy are public. The
+bounded frame contract and retained evidence are documented in
+`2.0_SECRET_DECODING.md`; this still does not constitute a formally verified
+hardware constant-time claim.
 
 For shared-memory or in-process sandbox threat models where even that transient
 output window is unacceptable, use

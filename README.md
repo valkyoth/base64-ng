@@ -198,7 +198,7 @@ Planned behind admission evidence:
 | Active backend | Scalar by default; std x86/x86_64 AVX-512 VBMI preferred, then AVX2, then SSSE3/SSE4.1, plus little-endian std aarch64 NEON, and wasm `simd128` when the admitted feature/runtime profile is present |
 | Strict RFC 4648 decoding | Default, canonical, no whitespace |
 | Legacy compatibility | Explicit opt-in APIs |
-| Constant-time posture | Constant-time-oriented scalar validation/decode with isolated dudect-style timing evidence; no formal cryptographic guarantee |
+| Constant-time posture | Constant-time-oriented scalar validation/decode plus bounded 2.0 secret frames with private staging and isolated timing evidence; no formal cryptographic guarantee |
 | Cleanup posture | Best-effort initialized-byte cleanup and redacted secret wrappers |
 | Kani | 28 bounded no-default-features harnesses verified with the Rust `1.90.0` Kani toolchain and `cargo-kani 0.67.0`; not a whole-crate formal-verification claim |
 | Release evidence | fmt, clippy, tests, docs, deny, audit, license, SBOM, reproducibility |
@@ -252,7 +252,7 @@ license = "MIT OR Apache-2.0"
 | `std` | yes | `std::error::Error` support and feature base for I/O. |
 | `simd` | no | Admitted std runtime-dispatched encode and normal strict decode acceleration for Standard and URL-safe alphabets, with scalar fallback for unsupported surfaces. |
 | `stream` | no | `std::io` streaming wrappers. |
-| `secrets` | no | Dependency-free 2.0 secret storage, explicit exposure, and declassification. Constant-time-oriented secret codecs arrive in later numbered 2.0 commits. |
+| `secrets` | no | Dependency-free 2.0 secret storage, explicit exposure/declassification, and bounded constant-time-oriented secret decoding. Secret encoding arrives in Commit 20. |
 | `checked-backend` | no | Inert 2.0 development reservation that enables `simd`; redundant backend checking is implemented later in the 2.0 plan. |
 | `allow-wasm32-best-effort-wipe` | no | Explicitly allow `wasm32` builds with compiler-fence-only cleanup. |
 | `allow-compiler-fence-only-wipe` | no | Explicitly allow unsupported native architectures to build with compiler-fence-only cleanup after platform review. |

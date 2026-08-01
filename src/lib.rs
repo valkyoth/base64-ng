@@ -470,6 +470,8 @@ pub fn clear_bytes(bytes: &mut [u8]) {
 mod kani_in_place_proofs;
 #[cfg(kani)]
 mod kani_proofs;
+#[cfg(all(kani, feature = "secrets"))]
+mod kani_secret_proofs;
 
 #[cfg(test)]
 mod decode_surface_tests;
