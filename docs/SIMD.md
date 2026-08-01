@@ -126,9 +126,11 @@ runtime behavior for that line.
   separate operation-specific health latch. All unsupported candidates still
   execute scalar code.
 - Admitted SIMD encode paths run only when the current input can fill at least
-  one block for the selected backend: 48 bytes for AVX-512 VBMI, 24 bytes for
-  AVX2, and 12 bytes for SSSE3/SSE4.1 or NEON. Shorter inputs use scalar encode
-  before SIMD dispatch, and non-block tails remain scalar.
+  one block. On an AVX-512/VBMI x86 CPU, automatic encode uses SSSE3/SSE4.1 for
+  12–23 bytes, AVX2 for 24–191 bytes, and AVX-512 from 192 bytes; exact static and
+  evidence APIs may request AVX-512 from its 48-byte block boundary. Other x86
+  candidates use their native 24-byte AVX2 or 12-byte SSSE3/SSE4.1 boundary,
+  while NEON starts at 12 bytes. Shorter inputs and non-block tails use scalar.
 - Public slice, clear-tail, alloc, and wrapped encode helpers route through the
   admitted encode boundary. For wrapped encode, SIMD applies only to the
   unwrapped Base64 staging step; line-ending insertion remains scalar.
@@ -146,9 +148,9 @@ runtime behavior for that line.
   only after stack staging. CT secret decode, custom alphabets, and big-endian
   AArch64 remain scalar.
 - AVX-512 VBMI encode is admitted for `x86`/`x86_64` Standard and URL-safe
-  alphabet families. It uses AVX-512 lane-local byte shuffling, vector
-  shifts/masks, and VBMI byte permutes over the alphabet table for fixed
-  48-byte input blocks, then clears ZMM/YMM state before returning. Runtime
+  alphabet families. It uses an exact 48-byte masked load, VBMI byte expansion,
+  vector shifts/masks, and direct VBMI alphabet lookup for fixed 48-byte input
+  blocks, then clears all ZMM state once after the block loop. Runtime
   dispatch uses `std::is_x86_feature_detected!` and requires `avx512f`,
   `avx512bw`, `avx512vl`, and `avx512vbmi`; unsupported CPUs fall back to
   AVX2, SSSE3/SSE4.1, or scalar. Final tail and padding completion use scalar

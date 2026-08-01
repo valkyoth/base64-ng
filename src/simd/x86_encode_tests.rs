@@ -1,5 +1,6 @@
 use super::{
-    avx2_available, encode_12_bytes_ssse3_sse41, encode_24_bytes_avx2, encode_slice_avx2,
+    avx2_available, avx512_vbmi_base64_available, encode_12_bytes_ssse3_sse41,
+    encode_24_bytes_avx2, encode_48_bytes_avx512, encode_slice_avx2, encode_slice_avx512,
     encode_slice_ssse3_sse41, ssse3_sse41_available,
 };
 use crate::runtime::Backend;
@@ -50,6 +51,25 @@ where
             // SAFETY: The test checks AVX2 availability before it invokes
             // this target-feature block primitive.
             unsafe { encode_24_bytes_avx2::<A>(&input, &mut actual) };
+            assert_eq!(actual, expected, "position={position}, byte={byte}");
+        }
+        input[position] = 0xa5;
+    }
+}
+
+fn verify_avx512_byte_positions<A>()
+where
+    A: Alphabet,
+{
+    let mut input = [0xa5; 48];
+    for position in 0..input.len() {
+        for byte in u8::MIN..=u8::MAX {
+            input[position] = byte;
+            let expected = scalar_block::<A, 48, 64>(&input);
+            let mut actual = [0x5a; 64];
+            // SAFETY: The test checks the complete AVX-512 Base64 feature
+            // bundle before invoking this target-feature block primitive.
+            unsafe { encode_48_bytes_avx512::<A>(&input, &mut actual) };
             assert_eq!(actual, expected, "position={position}, byte={byte}");
         }
         input[position] = 0xa5;
@@ -147,4 +167,47 @@ fn avx2_encode_is_exhaustive_per_byte_and_matches_scalar_for_tails() {
     verify_slice::<UrlSafe, true>(encode_slice_avx2::<UrlSafe, true>);
     verify_slice::<UrlSafe, false>(encode_slice_avx2::<UrlSafe, false>);
     verify_static_token(Backend::Avx2);
+}
+
+#[test]
+fn avx512_encode_is_exhaustive_per_byte_and_matches_scalar_for_tails() {
+    if !std::is_x86_feature_detected!("avx512f")
+        || !std::is_x86_feature_detected!("avx512bw")
+        || !std::is_x86_feature_detected!("avx512vl")
+        || !std::is_x86_feature_detected!("avx512vbmi")
+        || !avx512_vbmi_base64_available()
+    {
+        return;
+    }
+    verify_avx512_byte_positions::<Standard>();
+    verify_avx512_byte_positions::<UrlSafe>();
+    verify_slice::<Standard, true>(encode_slice_avx512::<Standard, true>);
+    verify_slice::<Standard, false>(encode_slice_avx512::<Standard, false>);
+    verify_slice::<UrlSafe, true>(encode_slice_avx512::<UrlSafe, true>);
+    verify_slice::<UrlSafe, false>(encode_slice_avx512::<UrlSafe, false>);
+    verify_static_token(Backend::Avx512Vbmi);
+}
+
+#[test]
+fn avx512_automatic_policy_uses_narrower_backends_below_crossover() {
+    assert!(!crate::encode_backend::avx512_auto_preferred(191));
+    assert!(crate::encode_backend::avx512_auto_preferred(192));
+
+    if crate::encode_backend::candidate_encode_backend()
+        != crate::encode_backend::EncodeBackend::Avx512Vbmi
+    {
+        return;
+    }
+    assert_eq!(
+        crate::encode_backend::active_encode_backend_for_input(12),
+        crate::encode_backend::EncodeBackend::Ssse3Sse41
+    );
+    assert_eq!(
+        crate::encode_backend::active_encode_backend_for_input(48),
+        crate::encode_backend::EncodeBackend::Avx2
+    );
+    assert_eq!(
+        crate::encode_backend::active_encode_backend_for_input(192),
+        crate::encode_backend::EncodeBackend::Avx512Vbmi
+    );
 }

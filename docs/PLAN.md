@@ -1262,6 +1262,17 @@ SIMD admission rules for all post-`1.0` work:
 
 ## Current 2.0 Development Checkpoint
 
+Commit 26 replaces the AVX-512 encode staging prototype with an exact 48-byte
+masked load, direct VBMI lane expansion and alphabet lookup, a batched block
+loop, and one call-boundary ZMM cleanup. Static `no_std` tokens now execute the
+AVX-512 kernel after complete feature proof and direct KAT admission. Automatic
+x86 encode uses SSSE3/SSE4.1 for 12–23 bytes, AVX2 for 24–191 bytes, and AVX-512
+from 192 bytes; exact static/evidence AVX-512 calls retain the 48-byte minimum.
+Exhaustive byte-position, tail, fuzz, static-token, assembly, and focused
+performance gates cover the implementation. The first retained benchmark is
+from an AMD Ryzen 9 9950X3D; a second AVX-512 microarchitecture remains required
+before 2.0 release performance wording can generalize the crossover.
+
 Commit 25 rewrites SSSE3/SSE4.1 and AVX2 ordinary encode with exact-width
 direct loads, byte-shuffle alphabet mapping, batched block loops, and static
 `no_std` token operations. Exhaustive byte-position and tail differential

@@ -6,6 +6,8 @@ for required in \
     'encode_backend' \
     'strict_decode_backend' \
     'secret_decode_backend' \
+    'capability-oriented reports' \
+    'AVX-512 from 192 bytes' \
     'scalar-constant-time-oriented' \
     'wasm-simd128-artifact' \
     'wasm-host-runtime-unidentified' \

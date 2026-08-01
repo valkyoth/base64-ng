@@ -13,7 +13,11 @@ for required in \
     'core::ptr::read_unaligned(input.as_ptr().add(8)' \
     'encode_full_blocks_ssse3_sse41' \
     '_mm256_shuffle_epi8(lookup, lookup_index)' \
-    '_mm_shuffle_epi8(lookup, lookup_index)'
+    '_mm_shuffle_epi8(lookup, lookup_index)' \
+    'encode_48_bytes_avx512_inner' \
+    '_mm512_maskz_loadu_epi8(INPUT_BYTES' \
+    '_mm512_permutexvar_epi8(expand, packed)' \
+    'encode_full_blocks_avx512'
 do
     if ! grep -F -q "$required" "$source_file"; then
         echo "2.0 x86 encode: production hot path is missing: $required" >&2
@@ -21,7 +25,7 @@ do
     fi
 done
 
-for function in encode_24_bytes_avx2_inner encode_12_bytes_ssse3_sse41_inner; do
+for function in encode_48_bytes_avx512_inner encode_24_bytes_avx2_inner encode_12_bytes_ssse3_sse41_inner; do
     body="$(sed -n "/unsafe fn $function/,/^}/p" "$source_file")"
     for forbidden in staged wipe_bytes clear_xmm_registers clear_ymm_registers; do
         if printf '%s\n' "$body" | grep -F -q "$forbidden"; then
@@ -31,7 +35,13 @@ for function in encode_24_bytes_avx2_inner encode_12_bytes_ssse3_sse41_inner; do
     done
 done
 
-for required in 'encode_standard' 'encode_url_safe' 'encode_slice_avx2' 'encode_slice_ssse3_sse41' 'encode_backend::encode_checked'; do
+avx512_loop="$(sed -n '/unsafe fn encode_full_blocks_avx512/,/^}/p' "$source_file")"
+if ! printf '%s\n' "$avx512_loop" | grep -F -q 'clear_zmm_registers_after_encode_block()'; then
+    echo "2.0 x86 encode: AVX-512 full-block loop must clear ZMM state once before return" >&2
+    exit 1
+fi
+
+for required in 'encode_standard' 'encode_url_safe' 'encode_slice_avx512' 'encode_slice_avx2' 'encode_slice_ssse3_sse41' 'encode_backend::encode_checked'; do
     if ! grep -F -q "$required" "$token_file"; then
         echo "2.0 x86 encode: static token contract is missing: $required" >&2
         exit 1
@@ -46,6 +56,7 @@ echo "2.0 x86 encode: forced-backend fuzz and Miri wrapper contracts"
 grep -F -q 'name = "x86_encode"' fuzz/Cargo.toml
 grep -F -q 'compare_backend(Backend::Ssse3Sse41' fuzz/fuzz_targets/x86_encode.rs
 grep -F -q 'compare_backend(Backend::Avx2' fuzz/fuzz_targets/x86_encode.rs
+grep -F -q 'compare_backend(Backend::Avx512Vbmi' fuzz/fuzz_targets/x86_encode.rs
 grep -F -q 'tests::encode_backend_boundary_uses_only_admitted_backends' scripts/check_miri.sh
 cargo check --manifest-path fuzz/Cargo.toml --bin x86_encode
 
@@ -75,6 +86,20 @@ MANIFEST
         echo "2.0 x86 encode: no_std static AVX2 execution"
         RUSTFLAGS='-C target-feature=+avx2' \
             cargo run --quiet --offline --manifest-path "$smoke_dir/Cargo.toml"
+        host_flags=""
+        if [ -r /proc/cpuinfo ]; then
+            host_flags="$(sed -n 's/^flags[[:space:]]*: / /p' /proc/cpuinfo | sed -n '1p')"
+        fi
+        case "$host_flags" in
+            *' avx512f '*avx512bw*avx512vl*avx512vbmi*)
+                echo "2.0 x86 encode: no_std static AVX-512 VBMI execution"
+                RUSTFLAGS='-C target-feature=+avx512f,+avx512bw,+avx512vl,+avx512vbmi' \
+                    cargo run --quiet --offline --manifest-path "$smoke_dir/Cargo.toml"
+                ;;
+            *)
+                echo "2.0 x86 encode: skipping static AVX-512 execution; matching Linux hardware not detected"
+                ;;
+        esac
         echo "2.0 x86 encode: checked no_std static SSSE3/SSE4.1 execution"
         RUSTFLAGS='-C target-feature=+ssse3,+sse4.1' \
             cargo run --quiet --offline --manifest-path "$smoke_dir/Cargo.toml" \
@@ -83,18 +108,26 @@ MANIFEST
         RUSTFLAGS='-C target-feature=+avx2' \
             cargo run --quiet --offline --manifest-path "$smoke_dir/Cargo.toml" \
             --features checked-backend
+        case "$host_flags" in
+            *' avx512f '*avx512bw*avx512vl*avx512vbmi*)
+                echo "2.0 x86 encode: checked no_std static AVX-512 VBMI execution"
+                RUSTFLAGS='-C target-feature=+avx512f,+avx512bw,+avx512vl,+avx512vbmi' \
+                    cargo run --quiet --offline --manifest-path "$smoke_dir/Cargo.toml" \
+                    --features checked-backend
+                ;;
+        esac
         ;;
 esac
 
-if [ "${BASE64_NG_RUN_COMMIT25_PERF:-0}" = "1" ]; then
-    evidence="${BASE64_NG_COMMIT25_PERF_FILE:-target/release-evidence/commit-25-x86-encode.csv}"
+if [ "${BASE64_NG_RUN_COMMIT26_PERF:-${BASE64_NG_RUN_COMMIT25_PERF:-0}}" = "1" ]; then
+    evidence="${BASE64_NG_COMMIT26_PERF_FILE:-target/release-evidence/commit-26-x86-encode.csv}"
     mkdir -p "$(dirname "$evidence")"
     echo "2.0 x86 encode: focused exact-backend performance campaign"
     RUSTFLAGS='--cfg base64_ng_perf_evidence' \
         cargo run --quiet --release --manifest-path perf/Cargo.toml -- x86-encode >"$evidence"
     scripts/validate-x86-encode-performance.py "$evidence"
 else
-    echo "2.0 x86 encode: performance run skipped; set BASE64_NG_RUN_COMMIT25_PERF=1"
+    echo "2.0 x86 encode: performance run skipped; set BASE64_NG_RUN_COMMIT26_PERF=1"
 fi
 
 scripts/validate-unsafe-boundary.sh

@@ -377,21 +377,21 @@ Limitations:
   outside the vector allocation. Applications with a platform-specific
   zeroization policy should still apply that policy at the ownership boundary.
 
-### `encode_48_bytes_avx512`
+### `encode_48_bytes_avx512`, `encode_48_bytes_avx512_inner`, and `encode_full_blocks_avx512`
 
 Location: `src/simd/x86/mod.rs`
 
-Status: admitted std x86/x86_64 AVX-512 VBMI encode block for Standard and
-URL-safe alphabet families. It is reachable through runtime-probed AVX-512 VBMI
-encode dispatch for fixed 48-byte blocks. In-place encode may enter only
-through stack staging. Unsupported alphabets, tails, padding, `no_std`, and
-decode use scalar fallback.
+Status: admitted x86/x86_64 AVX-512 VBMI encode implementation for Standard and
+URL-safe alphabet families. The fixed-array wrapper is test-only. Production
+runtime and static-token dispatch enter the private full-block loop. In-place
+encode may enter only through stack staging. Unsupported alphabets and tails
+use scalar fallback.
 
 Purpose:
 
-- Exercise AVX-512 target-feature plumbing.
-- Provide the fixed-block vector encode primitive for the admitted AVX-512 VBMI
-  encode backend.
+- Encode every complete 48-byte input block directly into 64 output bytes.
+- Keep exact-width loading, VBMI alphabet mapping, target-feature entry, and
+  register cleanup inside one reviewed boundary.
 
 Preconditions:
 
@@ -402,56 +402,56 @@ Preconditions:
 
 Unsafe operation:
 
-- `_mm512_loadu_si512` loads from a local 64-byte staging array that contains
-  four 12-byte input lanes plus four zero bytes per lane.
-- `_mm512_loadu_si512` loads a fixed shuffle mask and the 64-byte alphabet
+- `_mm512_maskz_loadu_epi8` activates exactly 48 byte lanes and therefore reads
+  exactly the fixed input block without a 64-byte over-read.
+- `_mm512_loadu_si512` loads a constant expansion index and the 64-byte alphabet
   table.
-- `_mm512_shuffle_epi8` reshapes each staged 128-bit lane into four 24-bit
-  groups without reading from caller memory beyond the fixed input array.
+- `_mm512_permutexvar_epi8` expands sixteen packed three-byte groups into
+  sixteen 32-bit lanes without an intermediate stack copy.
 - AVX-512 shifts, masks, and OR operations produce sixty-four 6-bit indices.
 - `_mm512_permutexvar_epi8` uses the VBMI byte-permute instruction to map those
   indices through the loaded alphabet table.
 - `_mm512_storeu_si512` stores the 64 encoded bytes into the output buffer.
+- `encode_full_blocks_avx512` advances raw pointers only after slice preflight
+  and invokes the inner block for every complete 48-byte input block.
 - `clear_zmm_registers_after_encode_block` clears ZMM state and uses
-  `vzeroupper` before return to reduce register retention and AVX/SSE
-  transition state in this encode block.
-- The local staging array is wiped with the crate cleanup primitive before the
-  function returns.
+  `vzeroupper` once after the complete production block loop, or once before
+  the test-only fixed-array wrapper returns.
 
 Safety argument:
 
 - The input and output array types provide fixed readable and writable bounds.
-- The SIMD load reads only from a local 64-byte staging array, so the encoder
-  does not over-read the 48-byte caller input.
-- The staging array is mutable and wiped after the SIMD store and register
-  cleanup, reducing stack retention of the copied caller bytes.
+- The masked load enables exactly lanes `0..48`, so inactive lanes cannot read
+  beyond the caller's fixed 48-byte input block.
+- Every expansion index is in `0..=47`, and every alphabet index is masked to
+  `0..=63` before its table lookup.
 - The load and store intrinsics are unaligned variants, so no stronger
   alignment is required.
 - The function is guarded by the full AVX-512 Base64 target-feature contract.
-- The index vector is masked to `0..=63` before the VBMI table lookup.
 - The output length is fixed by the output array type.
 - Runtime dispatch reaches this block only after `std` runtime CPU probing
-  proves the full AVX-512 VBMI feature bundle. Direct tests call it only after
-  the same feature check.
+  proves the full AVX-512 VBMI feature bundle. Static `no_std` execution requires
+  complete compile-time features or an unsafe deployment attestation, then a
+  passing direct KAT and valid thread-bound token.
 - Register-retention note: the encoder loads caller bytes into ZMM state. It
-  calls `clear_zmm_registers_after_encode_block` before return. This is
-  retention reduction for the admitted encode block, not a formal
+  calls `clear_zmm_registers_after_encode_block` after the full block loop and
+  before return. This is retention reduction for the admitted encode call, not a formal
   microarchitectural side-channel proof.
 
 ### `clear_zmm_registers_after_encode_block`
 
 Location: `src/simd/x86/cleanup.rs`
 
-Status: private helper for the admitted AVX-512 VBMI encode block and its tests.
+Status: private helper for admitted AVX-512 VBMI encode/decode calls and tests.
 
 Purpose:
 
-- Clear ZMM state before returning from the AVX-512 encode block that processes
-  caller bytes in vector registers.
+- Clear ZMM state before returning from an AVX-512 call that processes caller
+  bytes in vector registers.
 
 Preconditions:
 
-- Called only after the encode block has stored its output and no later AVX-512
+- Called only after the final block has stored its output and no later AVX-512
   value is needed by the function.
 
 Unsafe operation:
@@ -465,7 +465,7 @@ Unsafe operation:
 Safety argument:
 
 - The helper does not read or write memory.
-- The helper runs at the end of the AVX-512 encode block path.
+- The helper runs at the end of the AVX-512 call path.
 - Clobbered registers are declared to the compiler with explicit `out("zmmN")`
   operands.
 - This is best-effort register-retention reduction for encode evidence, not a

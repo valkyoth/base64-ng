@@ -5,7 +5,7 @@ use base64_ng::perf_evidence::EvidenceBackend;
 
 use crate::codec::{self, Profile};
 
-const LENGTHS: &[usize] = &[12, 24, 48, 64, 96, 1024, 64 * 1024];
+const LENGTHS: &[usize] = &[12, 24, 48, 64, 96, 192, 384, 768, 1024, 64 * 1024];
 const DEFAULT_SAMPLES: usize = 7;
 const DEFAULT_TARGET_BYTES: usize = 4 * 1024 * 1024;
 
@@ -24,6 +24,7 @@ pub fn run() {
                 EvidenceBackend::Scalar,
                 EvidenceBackend::Ssse3Sse41,
                 EvidenceBackend::Avx2,
+                EvidenceBackend::Avx512Vbmi,
             ] {
                 if !backend.is_available() || input_len < minimum_input(backend) {
                     continue;
@@ -89,6 +90,7 @@ fn encode_once(backend: EvidenceBackend, profile: Profile, input: &[u8], output:
 
 const fn minimum_input(backend: EvidenceBackend) -> usize {
     match backend {
+        EvidenceBackend::Avx512Vbmi => 48,
         EvidenceBackend::Avx2 => 24,
         EvidenceBackend::Ssse3Sse41 => 12,
         _ => 0,

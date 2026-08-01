@@ -3,7 +3,9 @@
 mod cleanup;
 mod decode;
 
-use crate::{Alphabet, EncodeError, checked_encoded_len, encode_base64_value, scalar};
+#[cfg(all(feature = "std", test))]
+use crate::encode_base64_value;
+use crate::{Alphabet, EncodeError, checked_encoded_len, scalar};
 
 use cleanup::clear_zmm_registers_after_encode_block;
 pub(crate) use decode::decode_slice_avx2;
@@ -43,6 +45,14 @@ pub(crate) fn avx2_decode_available() -> bool {
     super::avx2_available()
 }
 
+pub(crate) fn avx2_encode_available() -> bool {
+    super::avx2_available()
+}
+
+pub(crate) fn ssse3_sse41_encode_available() -> bool {
+    super::ssse3_sse41_available()
+}
+
 pub(crate) fn avx512_decode_available() -> bool {
     super::avx512_vbmi_base64_available()
 }
@@ -70,19 +80,10 @@ where
         });
     }
 
-    let mut read = 0;
-    let mut write = 0;
-    while read + 48 <= input.len() {
-        // SAFETY: Health admission proves AVX-512 VBMI support. The loop and
-        // prevalidated output length prove both fixed-size views are in bounds.
-        unsafe {
-            let block = &*(input.as_ptr().add(read).cast::<[u8; 48]>());
-            let encoded = &mut *(output.as_mut_ptr().add(write).cast::<[u8; 64]>());
-            encode_48_bytes_avx512::<A>(block, encoded);
-        }
-        read += 48;
-        write += 64;
-    }
+    // SAFETY: Health admission proves the complete AVX-512 VBMI feature
+    // bundle. The output preflight and fixed block ratio prove every masked
+    // load and direct store remains in bounds.
+    let (read, write) = unsafe { encode_full_blocks_avx512::<A>(input, output) };
 
     let tail_written = scalar::encode_slice::<A, PAD>(&input[read..], &mut output[write..])?;
     Ok(write + tail_written)
@@ -152,35 +153,32 @@ where
 
 #[cfg(target_arch = "x86")]
 use core::arch::x86::{
-    __m128i, __m256i, __m512i, _mm_add_epi8, _mm_and_si128, _mm_cmpgt_epi8, _mm_cvtsi32_si128,
-    _mm_loadl_epi64, _mm_loadu_si128, _mm_or_si128, _mm_set_epi32, _mm_set1_epi8, _mm_set1_epi32,
-    _mm_setr_epi8, _mm_shuffle_epi8, _mm_slli_epi32, _mm_slli_si128, _mm_srli_epi32,
-    _mm_srli_si128, _mm_storeu_si128, _mm_sub_epi8, _mm_subs_epu8, _mm256_add_epi8,
+    __m128i, __m256i, __m512i, __mmask64, _mm_add_epi8, _mm_and_si128, _mm_cmpgt_epi8,
+    _mm_cvtsi32_si128, _mm_loadl_epi64, _mm_loadu_si128, _mm_or_si128, _mm_set_epi32,
+    _mm_set1_epi8, _mm_set1_epi32, _mm_setr_epi8, _mm_shuffle_epi8, _mm_slli_epi32, _mm_slli_si128,
+    _mm_srli_epi32, _mm_srli_si128, _mm_storeu_si128, _mm_sub_epi8, _mm_subs_epu8, _mm256_add_epi8,
     _mm256_and_si256, _mm256_broadcastsi128_si256, _mm256_castsi128_si256, _mm256_cmpgt_epi8,
     _mm256_inserti128_si256, _mm256_or_si256, _mm256_set1_epi8, _mm256_set1_epi32,
     _mm256_setr_epi8, _mm256_shuffle_epi8, _mm256_slli_epi32, _mm256_srli_epi32,
     _mm256_storeu_si256, _mm256_sub_epi8, _mm256_subs_epu8, _mm512_and_si512, _mm512_loadu_si512,
-    _mm512_or_si512, _mm512_permutexvar_epi8, _mm512_set1_epi32, _mm512_shuffle_epi8,
+    _mm512_maskz_loadu_epi8, _mm512_or_si512, _mm512_permutexvar_epi8, _mm512_set1_epi32,
     _mm512_slli_epi32, _mm512_srli_epi32, _mm512_storeu_si512,
 };
 #[cfg(target_arch = "x86_64")]
 use core::arch::x86_64::{
-    __m128i, __m256i, __m512i, _mm_add_epi8, _mm_and_si128, _mm_cmpgt_epi8, _mm_cvtsi32_si128,
-    _mm_loadl_epi64, _mm_loadu_si128, _mm_or_si128, _mm_set_epi32, _mm_set1_epi8, _mm_set1_epi32,
-    _mm_setr_epi8, _mm_shuffle_epi8, _mm_slli_epi32, _mm_slli_si128, _mm_srli_epi32,
-    _mm_srli_si128, _mm_storeu_si128, _mm_sub_epi8, _mm_subs_epu8, _mm256_add_epi8,
+    __m128i, __m256i, __m512i, __mmask64, _mm_add_epi8, _mm_and_si128, _mm_cmpgt_epi8,
+    _mm_cvtsi32_si128, _mm_loadl_epi64, _mm_loadu_si128, _mm_or_si128, _mm_set_epi32,
+    _mm_set1_epi8, _mm_set1_epi32, _mm_setr_epi8, _mm_shuffle_epi8, _mm_slli_epi32, _mm_slli_si128,
+    _mm_srli_epi32, _mm_srli_si128, _mm_storeu_si128, _mm_sub_epi8, _mm_subs_epu8, _mm256_add_epi8,
     _mm256_and_si256, _mm256_broadcastsi128_si256, _mm256_castsi128_si256, _mm256_cmpgt_epi8,
     _mm256_inserti128_si256, _mm256_or_si256, _mm256_set1_epi8, _mm256_set1_epi32,
     _mm256_setr_epi8, _mm256_shuffle_epi8, _mm256_slli_epi32, _mm256_srli_epi32,
     _mm256_storeu_si256, _mm256_sub_epi8, _mm256_subs_epu8, _mm512_and_si512, _mm512_loadu_si512,
-    _mm512_or_si512, _mm512_permutexvar_epi8, _mm512_set1_epi32, _mm512_shuffle_epi8,
+    _mm512_maskz_loadu_epi8, _mm512_or_si512, _mm512_permutexvar_epi8, _mm512_set1_epi32,
     _mm512_slli_epi32, _mm512_srli_epi32, _mm512_storeu_si512,
 };
 
-#[expect(
-    clippy::cast_ptr_alignment,
-    reason = "_mm512_storeu_si512 accepts unaligned pointers"
-)]
+#[cfg(all(feature = "std", test))]
 #[target_feature(enable = "avx512f,avx512bw,avx512vl,avx512vbmi")]
 pub(crate) unsafe fn encode_48_bytes_avx512<A>(input: &[u8; 48], output: &mut [u8; 64])
 where
@@ -191,29 +189,40 @@ where
         return;
     }
 
-    let mut staged = [
-        input[0], input[1], input[2], input[3], input[4], input[5], input[6], input[7], input[8],
-        input[9], input[10], input[11], 0, 0, 0, 0, input[12], input[13], input[14], input[15],
-        input[16], input[17], input[18], input[19], input[20], input[21], input[22], input[23], 0,
-        0, 0, 0, input[24], input[25], input[26], input[27], input[28], input[29], input[30],
-        input[31], input[32], input[33], input[34], input[35], 0, 0, 0, 0, input[36], input[37],
-        input[38], input[39], input[40], input[41], input[42], input[43], input[44], input[45],
-        input[46], input[47], 0, 0, 0, 0,
+    // SAFETY: This function carries the complete target-feature contract and
+    // fixed arrays satisfy the exact inner block bounds.
+    unsafe {
+        encode_48_bytes_avx512_inner::<A>(input, output);
+        clear_zmm_registers_after_encode_block();
+    }
+}
+
+#[inline]
+#[expect(
+    clippy::cast_ptr_alignment,
+    reason = "AVX-512 masked load and store intrinsics accept unaligned pointers"
+)]
+#[target_feature(enable = "avx512f,avx512bw,avx512vl,avx512vbmi")]
+unsafe fn encode_48_bytes_avx512_inner<A>(input: &[u8; 48], output: &mut [u8; 64])
+where
+    A: Alphabet,
+{
+    const INPUT_BYTES: __mmask64 = 0x0000_ffff_ffff_ffff;
+    const EXPAND_TO_LANES: [u8; 64] = [
+        2, 1, 0, 0, 5, 4, 3, 0, 8, 7, 6, 0, 11, 10, 9, 0, 14, 13, 12, 0, 17, 16, 15, 0, 20, 19, 18,
+        0, 23, 22, 21, 0, 26, 25, 24, 0, 29, 28, 27, 0, 32, 31, 30, 0, 35, 34, 33, 0, 38, 37, 36,
+        0, 41, 40, 39, 0, 44, 43, 42, 0, 47, 46, 45, 0,
     ];
     let table = A::ENCODE;
-    let shuffle_mask: [i8; 64] = [
-        2, 1, 0, -128, 5, 4, 3, -128, 8, 7, 6, -128, 11, 10, 9, -128, 2, 1, 0, -128, 5, 4, 3, -128,
-        8, 7, 6, -128, 11, 10, 9, -128, 2, 1, 0, -128, 5, 4, 3, -128, 8, 7, 6, -128, 11, 10, 9,
-        -128, 2, 1, 0, -128, 5, 4, 3, -128, 8, 7, 6, -128, 11, 10, 9, -128,
-    ];
 
-    // SAFETY: Fixed arrays back every unaligned 512-bit load/store, the
-    // target-feature contract enables AVX-512/VBMI, shuffle zero lanes read
-    // only staged zeros, and VBMI indices are masked to `0..=63`.
+    // SAFETY: The mask activates exactly the 48 bytes present in `input`, so
+    // the masked load cannot read beyond the fixed array. Every byte-permute
+    // index is in `0..=47`, all extracted alphabet indices are in `0..=63`,
+    // and the fixed output array bounds the unaligned 64-byte store.
     unsafe {
-        let input_vec = _mm512_loadu_si512(staged.as_ptr().cast::<__m512i>());
-        let shuffle = _mm512_loadu_si512(shuffle_mask.as_ptr().cast::<__m512i>());
-        let lanes = _mm512_shuffle_epi8(input_vec, shuffle);
+        let packed = _mm512_maskz_loadu_epi8(INPUT_BYTES, input.as_ptr().cast::<i8>());
+        let expand = _mm512_loadu_si512(EXPAND_TO_LANES.as_ptr().cast::<__m512i>());
+        let lanes = _mm512_permutexvar_epi8(expand, packed);
 
         let index0 = _mm512_and_si512(_mm512_srli_epi32(lanes, 18), _mm512_set1_epi32(0x0000_003f));
         let index1 = _mm512_and_si512(_mm512_srli_epi32(lanes, 4), _mm512_set1_epi32(0x0000_3f00));
@@ -227,9 +236,31 @@ where
         let table_vec = _mm512_loadu_si512(table.as_ptr().cast::<__m512i>());
         let encoded = _mm512_permutexvar_epi8(indices, table_vec);
         _mm512_storeu_si512(output.as_mut_ptr().cast::<__m512i>(), encoded);
-        clear_zmm_registers_after_encode_block();
     }
-    crate::wipe_bytes(&mut staged);
+}
+
+#[target_feature(enable = "avx512f,avx512bw,avx512vl,avx512vbmi")]
+unsafe fn encode_full_blocks_avx512<A>(input: &[u8], output: &mut [u8]) -> (usize, usize)
+where
+    A: Alphabet,
+{
+    let mut read = 0;
+    let mut write = 0;
+    while read + 48 <= input.len() {
+        // SAFETY: The loop guards prove exact fixed blocks are within the
+        // preflighted slices. This function carries the complete ISA contract.
+        unsafe {
+            let block = &*(input.as_ptr().add(read).cast::<[u8; 48]>());
+            let encoded = &mut *(output.as_mut_ptr().add(write).cast::<[u8; 64]>());
+            encode_48_bytes_avx512_inner::<A>(block, encoded);
+        }
+        read += 48;
+        write += 64;
+    }
+    // SAFETY: At least one block was processed because the caller rejects
+    // inputs shorter than 48 bytes. No vector value remains live afterward.
+    unsafe { clear_zmm_registers_after_encode_block() };
+    (read, write)
 }
 
 #[cfg(all(feature = "std", test))]
@@ -408,6 +439,7 @@ where
         || (A::ENCODE[62] == b'-' && A::ENCODE[63] == b'_')
 }
 
+#[cfg(all(feature = "std", test))]
 fn scalar_encode_block<A, const IN: usize, const OUT: usize>(
     input: &[u8; IN],
     output: &mut [u8; OUT],

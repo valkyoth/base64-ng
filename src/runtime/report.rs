@@ -45,7 +45,10 @@ pub struct BackendReport {
     ///
     /// New code should use the operation-specific security postures.
     pub security_posture: SecurityPosture,
-    /// Selected ordinary encode backend.
+    /// Strongest healthy ordinary encode backend for qualifying inputs.
+    ///
+    /// Per-call length and alphabet policy can select a narrower backend or
+    /// scalar fallback without changing this capability-oriented report.
     pub encode_backend: OperationBackendReport,
     /// Selected ordinary strict-decode backend.
     pub strict_decode_backend: OperationBackendReport,

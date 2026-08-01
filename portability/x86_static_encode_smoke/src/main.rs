@@ -30,7 +30,14 @@ fn main() {
 }
 
 const fn compiled_backend() -> Backend {
-    if cfg!(target_feature = "avx2") {
+    if cfg!(all(
+        target_feature = "avx512f",
+        target_feature = "avx512bw",
+        target_feature = "avx512vl",
+        target_feature = "avx512vbmi"
+    )) {
+        Backend::Avx512Vbmi
+    } else if cfg!(target_feature = "avx2") {
         Backend::Avx2
     } else {
         Backend::Ssse3Sse41
@@ -39,6 +46,12 @@ const fn compiled_backend() -> Backend {
 
 fn runtime_supports(backend: Backend) -> bool {
     match backend {
+        Backend::Avx512Vbmi => {
+            std::is_x86_feature_detected!("avx512f")
+                && std::is_x86_feature_detected!("avx512bw")
+                && std::is_x86_feature_detected!("avx512vl")
+                && std::is_x86_feature_detected!("avx512vbmi")
+        }
         Backend::Avx2 => std::is_x86_feature_detected!("avx2"),
         Backend::Ssse3Sse41 => {
             std::is_x86_feature_detected!("ssse3") && std::is_x86_feature_detected!("sse4.1")

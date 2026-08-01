@@ -131,6 +131,28 @@ ordinary SIMD references from secret decode modules. The second follow-up
 rejects transient `NeverRun`/`Testing` scalar policy snapshots and adds an
 unwind guard plus no-std execution test that quarantines an escaping KAT panic.
 
+Commit 26 extends the same production boundary to AVX-512 VBMI. The kernel uses
+an exact 48-byte masked load, direct VBMI expansion and alphabet lookup, a
+multi-block loop, and one ZMM cleanup at the call boundary. Its gate adds
+exhaustive AVX-512 byte-position and tail comparison, forced-backend fuzz
+coverage, checked and unchecked static `no_std` execution, generated assembly,
+and exact-backend performance validation:
+
+```sh
+scripts/check-2.0-x86-encode-hot-paths.sh
+BASE64_NG_RUN_COMMIT26_PERF=1 \
+  scripts/check-2.0-x86-encode-hot-paths.sh
+```
+
+Automatic x86 encode uses AVX2 below the retained two-block AVX-512 threshold:
+SSSE3/SSE4.1 covers 12–23 bytes, AVX2 covers 24–191 bytes, and AVX-512 begins at
+192 bytes. The exact static and evidence contracts retain a 48-byte AVX-512
+minimum. Local real-hardware evidence on an AMD Ryzen 9 9950X3D shows AVX2 is
+equal or slightly faster around one AVX-512 block while AVX-512 wins from two
+blocks and widens its advantage on larger inputs. A second AVX-512
+microarchitecture remains an explicit pre-release evidence requirement; no
+portable throughput claim is made from this single host.
+
 The Commit 20 pentest follow-up also pins fail-closed forward-progress guards
 for WHATWG and legacy one-shot loops, immediate pending-state cleanup on
 secret decode failure, checked secret-array frame construction, and the

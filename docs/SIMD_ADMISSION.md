@@ -16,6 +16,10 @@ only for backends named in this file and the release gate.
   `no_std` dispatch with pointer-width atomics and passing direct KATs.
 - Gate summary: Admitted backends: AVX-512 VBMI encode, AVX2 encode, SSSE3/SSE4.1 encode, NEON encode, AVX-512 VBMI strict decode, AVX2 strict decode, SSSE3/SSE4.1 strict decode, and NEON strict decode.
 - Gate priority: Active backend priority: AVX-512 VBMI, then AVX2, then SSSE3/SSE4.1 on x86/x86_64; NEON on little-endian aarch64.
+- Automatic x86 encode length policy: SSSE3/SSE4.1 for 12–23 bytes, AVX2 for
+  24–191 bytes, and AVX-512 VBMI from 192 bytes when the complete stronger feature
+  bundles and operation-specific KATs pass. Exact static/evidence AVX-512 calls
+  retain their 48-byte minimum.
 - Public performance claims: none without local benchmark evidence.
 - Release status: `1.3.9`; `1.2.0` admitted conservative active encode
   dispatch, and `1.3.0` admitted normal strict decode dispatch for the first
@@ -36,9 +40,8 @@ only for backends named in this file and the release gate.
   RISC-V RVV proof and admission review to `1.3.10`. The 2.0 Commit 24
   checkpoint adds direct KAT, health generation, quarantine, checked-backend,
   and static `no_std` admission without expanding alphabet or secret scope.
-  Active encode
-  dispatch admits AVX-512 VBMI above AVX2
-  above SSSE3/SSE4.1 on x86/x86_64 and NEON on little-endian aarch64 for
+  Active encode dispatch uses the length policy above on x86/x86_64 and NEON
+  on little-endian aarch64 for
   Standard and URL-safe alphabet families. AVX-512 VBMI strict decode is
   admitted above AVX2 and SSSE3/SSE4.1 strict decode for std
   `x86`/`x86_64` Standard and URL-safe alphabet families when a full 64-byte
@@ -157,7 +160,7 @@ State labels are intentionally strict:
 
 | Backend | State | Required CPU features | Evidence |
 | --- | --- | --- | --- |
-| AVX-512 VBMI | admitted backend | `avx512f`, `avx512bw`, `avx512vl`, `avx512vbmi` | std x86/x86_64 runtime-dispatched encode and strict decode for Standard and URL-safe alphabet families; encode uses fixed 48-byte input blocks and completes any final tail/padding through scalar code; in-place encode may enter only through stack staging; decode uses fixed 64-byte encoded blocks only after whole-input scalar validation preserves public error shape; strict in-place decode may enter only through stack staging; wrapped and legacy decode may enter after scalar line-profile validation, line-ending compaction, or legacy-whitespace compaction; shorter inputs fall back to AVX2, SSSE3/SSE4.1, or scalar, and unsupported alphabets, CT secret decode, line-ending insertion/compaction, whitespace compaction, and `no_std` without complete static target-feature and health evidence use scalar fallback |
+| AVX-512 VBMI | admitted backend | `avx512f`, `avx512bw`, `avx512vl`, `avx512vbmi` | std x86/x86_64 runtime-dispatched encode and strict decode for Standard and URL-safe alphabet families; automatic encode selects AVX-512 at 192 bytes and above while exact static/evidence calls retain the 48-byte block minimum, and completes any final tail/padding through scalar code; in-place encode may enter only through stack staging; decode uses fixed 64-byte encoded blocks only after whole-input scalar validation preserves public error shape; strict in-place decode may enter only through stack staging; wrapped and legacy decode may enter after scalar line-profile validation, line-ending compaction, or legacy-whitespace compaction; shorter inputs fall back to AVX2, SSSE3/SSE4.1, or scalar, and unsupported alphabets, CT secret decode, line-ending insertion/compaction, whitespace compaction, and `no_std` without complete static target-feature and health evidence use scalar fallback |
 | AVX2 | admitted backend | `avx2` | std x86/x86_64 runtime-dispatched encode and strict decode for Standard and URL-safe alphabet families; encode uses fixed 24-byte input blocks and completes any final tail/padding through scalar code; in-place encode may enter only through stack staging; decode uses fixed 32-byte encoded blocks only after whole-input scalar validation preserves public error shape; strict in-place decode may enter only through stack staging; wrapped and legacy decode may enter after scalar line-profile validation, line-ending compaction, or legacy-whitespace compaction; shorter inputs fall back to SSSE3/SSE4.1 or scalar, and unsupported alphabets, CT secret decode, line-ending insertion/compaction, whitespace compaction, and `no_std` without complete static target-feature and health evidence use scalar fallback |
 | SSSE3/SSE4.1 | admitted backend | `ssse3`, `sse4.1` | std x86/x86_64 runtime-dispatched encode and strict decode for Standard and URL-safe alphabet families; encode uses fixed 12-byte input blocks and completes any final tail/padding through scalar code; in-place encode may enter only through stack staging; decode uses fixed 16-byte encoded blocks only after whole-input scalar validation preserves public error shape; strict in-place decode may enter only through stack staging; wrapped and legacy decode may enter after scalar line-profile validation, line-ending compaction, or legacy-whitespace compaction; shorter inputs, unsupported alphabets, CT secret decode, line-ending insertion/compaction, whitespace compaction, and `no_std` without complete static target-feature and health evidence use scalar fallback |
 | NEON | admitted backend | `neon` | little-endian std aarch64 runtime-dispatched encode and strict decode for Standard and URL-safe alphabet families; encode uses fixed 12-byte input blocks and completes any final tail/padding through scalar code; in-place encode may enter only through stack staging; decode uses fixed 16-byte encoded blocks only after whole-input scalar validation preserves public error shape; strict in-place decode may enter only through stack staging; wrapped and legacy decode may enter after scalar line-profile validation, line-ending compaction, or legacy-whitespace compaction; shorter inputs, unsupported alphabets, big-endian AArch64, 32-bit ARM, CT secret decode, line-ending insertion/compaction, whitespace compaction, and `no_std` without complete static target-feature and health evidence use scalar fallback |

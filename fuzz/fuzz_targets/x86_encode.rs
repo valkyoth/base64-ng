@@ -19,6 +19,13 @@ fuzz_target!(|data: &[u8]| {
         if std::is_x86_feature_detected!("avx2") {
             compare_backend(Backend::Avx2, input);
         }
+        if std::is_x86_feature_detected!("avx512f")
+            && std::is_x86_feature_detected!("avx512bw")
+            && std::is_x86_feature_detected!("avx512vl")
+            && std::is_x86_feature_detected!("avx512vbmi")
+        {
+            compare_backend(Backend::Avx512Vbmi, input);
+        }
     }
 
     #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]

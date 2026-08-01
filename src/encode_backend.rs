@@ -24,6 +24,8 @@ mod checked;
 use crate::{checked_encoded_len, wipe_bytes};
 
 const MIN_SIMD_ENCODE_BLOCK: usize = 12;
+#[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
+const AVX512_ENCODE_AUTO_MIN_INPUT: usize = 192;
 #[cfg(any(
     all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")),
     all(feature = "simd", target_arch = "aarch64", target_endian = "little"),
@@ -61,35 +63,86 @@ pub(crate) enum EncodeBackend {
 
 #[cfg(test)]
 std::thread_local! {
-    static LAST_TEST_EXECUTION: core::cell::Cell<bool> = const { core::cell::Cell::new(false) };
+    static LAST_TEST_EXECUTION: core::cell::Cell<EncodeBackend> = const {
+        core::cell::Cell::new(EncodeBackend::Scalar)
+    };
 }
 
 #[cfg(test)]
 pub(crate) fn last_test_execution() -> EncodeBackend {
-    if LAST_TEST_EXECUTION.with(core::cell::Cell::get) {
-        active_encode_backend()
-    } else {
-        EncodeBackend::Scalar
-    }
+    LAST_TEST_EXECUTION.with(core::cell::Cell::get)
 }
 
 #[cfg(test)]
-fn record_test_execution(accelerated: bool) {
-    LAST_TEST_EXECUTION.with(|observed| observed.set(accelerated));
+fn record_test_execution(backend: EncodeBackend) {
+    LAST_TEST_EXECUTION.with(|observed| observed.set(backend));
 }
 
 #[cfg(not(test))]
-const fn record_test_execution(_accelerated: bool) {}
+const fn record_test_execution(_backend: EncodeBackend) {}
 
 /// Returns the encode backend selected for this build and target.
 #[must_use]
+#[cfg(any(feature = "simd", test))]
 pub(crate) fn active_encode_backend() -> EncodeBackend {
-    let backend = candidate_encode_backend();
-    if crate::v2::backend_health::admit(crate::runtime::OperationKind::Encode, backend.reported()) {
-        backend
-    } else {
+    active_encode_backend_for_input(usize::MAX)
+}
+
+pub(crate) fn active_encode_backend_for_input(input_len: usize) -> EncodeBackend {
+    let candidate = candidate_encode_backend();
+    #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
+    {
+        if candidate == EncodeBackend::Avx512Vbmi
+            && avx512_auto_preferred(input_len)
+            && crate::v2::backend_health::admit(
+                crate::runtime::OperationKind::Encode,
+                crate::runtime::Backend::Avx512Vbmi,
+            )
+        {
+            return EncodeBackend::Avx512Vbmi;
+        }
+        if matches!(candidate, EncodeBackend::Avx512Vbmi | EncodeBackend::Avx2)
+            && input_len >= 24
+            && crate::simd::avx2_encode_available()
+            && crate::v2::backend_health::admit(
+                crate::runtime::OperationKind::Encode,
+                crate::runtime::Backend::Avx2,
+            )
+        {
+            return EncodeBackend::Avx2;
+        }
+        if matches!(
+            candidate,
+            EncodeBackend::Avx512Vbmi | EncodeBackend::Avx2 | EncodeBackend::Ssse3Sse41
+        ) && input_len >= 12
+            && crate::simd::ssse3_sse41_encode_available()
+            && crate::v2::backend_health::admit(
+                crate::runtime::OperationKind::Encode,
+                crate::runtime::Backend::Ssse3Sse41,
+            )
+        {
+            return EncodeBackend::Ssse3Sse41;
+        }
         EncodeBackend::Scalar
     }
+
+    #[cfg(not(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64"))))]
+    {
+        let _ = input_len;
+        if crate::v2::backend_health::admit(
+            crate::runtime::OperationKind::Encode,
+            candidate.reported(),
+        ) {
+            candidate
+        } else {
+            EncodeBackend::Scalar
+        }
+    }
+}
+
+#[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
+pub(crate) const fn avx512_auto_preferred(input_len: usize) -> bool {
+    input_len >= AVX512_ENCODE_AUTO_MIN_INPUT
 }
 
 /// Returns the backend selected by CPU/build policy before health admission.
@@ -140,76 +193,79 @@ where
     A: Alphabet,
 {
     if input.len() < MIN_SIMD_ENCODE_BLOCK {
-        record_test_execution(false);
+        record_test_execution(EncodeBackend::Scalar);
         return scalar::encode_slice::<A, PAD>(input, output);
     }
 
-    let backend = active_encode_backend();
+    let backend = active_encode_backend_for_input(input.len());
     #[cfg(feature = "checked-backend")]
     if backend != EncodeBackend::Scalar && backend_supports::<A>(backend, input.len()) {
-        record_test_execution(true);
+        record_test_execution(backend);
         return checked::encode::<A, PAD>(backend.reported(), input, output);
     }
 
     match backend {
         EncodeBackend::Scalar => {
-            record_test_execution(false);
+            record_test_execution(EncodeBackend::Scalar);
             scalar::encode_slice::<A, PAD>(input, output)
         }
         #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
         EncodeBackend::Avx512Vbmi => {
             if input.len() >= 48 && crate::simd::avx512_supports_alphabet::<A>() {
-                record_test_execution(true);
+                record_test_execution(backend);
                 crate::simd::encode_slice_avx512::<A, PAD>(input, output)
             } else {
-                record_test_execution(false);
+                record_test_execution(EncodeBackend::Scalar);
                 scalar::encode_slice::<A, PAD>(input, output)
             }
         }
         #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
         EncodeBackend::Avx2 => {
             if input.len() >= 24 && crate::simd::avx2_supports_alphabet::<A>() {
-                record_test_execution(true);
+                record_test_execution(backend);
                 crate::simd::encode_slice_avx2::<A, PAD>(input, output)
             } else {
-                record_test_execution(false);
+                record_test_execution(EncodeBackend::Scalar);
                 scalar::encode_slice::<A, PAD>(input, output)
             }
         }
         #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
         EncodeBackend::Ssse3Sse41 => {
             if input.len() >= 12 && crate::simd::ssse3_sse41_supports_alphabet::<A>() {
-                record_test_execution(true);
+                record_test_execution(backend);
                 crate::simd::encode_slice_ssse3_sse41::<A, PAD>(input, output)
             } else {
-                record_test_execution(false);
+                record_test_execution(EncodeBackend::Scalar);
                 scalar::encode_slice::<A, PAD>(input, output)
             }
         }
         #[cfg(all(feature = "simd", target_arch = "aarch64", target_endian = "little"))]
         EncodeBackend::Neon => {
             if input.len() >= 12 && crate::simd::neon_supports_alphabet::<A>() {
-                record_test_execution(true);
+                record_test_execution(backend);
                 crate::simd::encode_slice_neon::<A, PAD>(input, output)
             } else {
-                record_test_execution(false);
+                record_test_execution(EncodeBackend::Scalar);
                 scalar::encode_slice::<A, PAD>(input, output)
             }
         }
         #[cfg(all(feature = "simd", target_arch = "wasm32"))]
         EncodeBackend::WasmSimd128 => {
             if input.len() >= 12 && crate::simd::wasm_simd128_supports_alphabet::<A>() {
-                record_test_execution(true);
+                record_test_execution(backend);
                 crate::simd::encode_slice_wasm_simd128::<A, PAD>(input, output)
             } else {
-                record_test_execution(false);
+                record_test_execution(EncodeBackend::Scalar);
                 scalar::encode_slice::<A, PAD>(input, output)
             }
         }
     }
 }
 
-#[cfg(feature = "checked-backend")]
+#[cfg(all(
+    feature = "checked-backend",
+    any(target_arch = "x86", target_arch = "x86_64")
+))]
 pub(crate) fn encode_checked<A: Alphabet, const PAD: bool>(
     backend: crate::runtime::Backend,
     input: &[u8],
@@ -249,7 +305,7 @@ pub(crate) fn encode_in_place<A, const PAD: bool>(
 where
     A: Alphabet,
 {
-    match active_encode_backend() {
+    match active_encode_backend_for_input(input_len) {
         EncodeBackend::Scalar => {
             scalar_encode_in_place::encode_in_place::<A, PAD>(buffer, input_len)
         }

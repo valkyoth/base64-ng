@@ -234,9 +234,9 @@ pub(crate) fn detected_candidate() -> Candidate {
 
 #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
 pub(crate) use x86::{
-    avx2_decode_available, avx2_supports_alphabet, avx512_decode_available,
+    avx2_decode_available, avx2_encode_available, avx2_supports_alphabet, avx512_decode_available,
     avx512_supports_alphabet, encode_slice_avx2, encode_slice_avx512, encode_slice_ssse3_sse41,
-    ssse3_sse41_decode_available, ssse3_sse41_supports_alphabet,
+    ssse3_sse41_decode_available, ssse3_sse41_encode_available, ssse3_sse41_supports_alphabet,
 };
 
 #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]

@@ -85,8 +85,9 @@ impl StaticBackendToken {
 
     /// Encodes with the statically admitted Standard-alphabet backend.
     ///
-    /// Commit 25 enables direct SSSE3/SSE4.1 and AVX2 execution. Other token
-    /// backends, or a token invalidated by quarantine, use the scalar encoder.
+    /// Commits 25 and 26 enable direct SSSE3/SSE4.1, AVX2, and AVX-512 VBMI
+    /// execution. Other token backends, or a token invalidated by quarantine,
+    /// use the scalar encoder.
     /// The `checked-backend` feature applies the same per-call redundant
     /// scalar comparison and quarantine policy as automatic dispatch.
     pub fn encode_standard<const PAD: bool>(
@@ -99,8 +100,9 @@ impl StaticBackendToken {
 
     /// Encodes with the statically admitted URL-safe-alphabet backend.
     ///
-    /// Commit 25 enables direct SSSE3/SSE4.1 and AVX2 execution. Other token
-    /// backends, or a token invalidated by quarantine, use the scalar encoder.
+    /// Commits 25 and 26 enable direct SSSE3/SSE4.1, AVX2, and AVX-512 VBMI
+    /// execution. Other token backends, or a token invalidated by quarantine,
+    /// use the scalar encoder.
     /// The `checked-backend` feature applies the same per-call redundant
     /// scalar comparison and quarantine policy as automatic dispatch.
     pub fn encode_url_safe<const PAD: bool>(
@@ -124,7 +126,7 @@ impl StaticBackendToken {
             any(target_arch = "x86", target_arch = "x86_64")
         ))]
         match self.backend {
-            Backend::Avx2 | Backend::Ssse3Sse41 => {
+            Backend::Avx512Vbmi | Backend::Avx2 | Backend::Ssse3Sse41 => {
                 return crate::encode_backend::encode_checked::<A, PAD>(
                     self.backend,
                     input,
@@ -135,6 +137,9 @@ impl StaticBackendToken {
         }
         #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
         match self.backend {
+            Backend::Avx512Vbmi => {
+                return crate::simd::encode_slice_avx512::<A, PAD>(input, output);
+            }
             Backend::Avx2 => return crate::simd::encode_slice_avx2::<A, PAD>(input, output),
             Backend::Ssse3Sse41 => {
                 return crate::simd::encode_slice_ssse3_sse41::<A, PAD>(input, output);

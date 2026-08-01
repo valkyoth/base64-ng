@@ -160,7 +160,7 @@ evidence_verify_source "simd asm evidence"
     echo "- SSSE3/SSE4.1 admitted strict decode path contains byte shuffle, multiply-add packing, XMM operations, and XMM cleanup"
     echo "- AVX2 admitted encode path contains exact-width input reads, byte shuffle, YMM operations, and one-per-call vzeroupper"
     echo "- AVX2 admitted strict decode path contains byte shuffle, multiply-add packing, YMM operations, and vzeroupper"
-    echo "- AVX-512 admitted encode path contains VBMI byte permute, ZMM operations, ZMM cleanup, and vzeroupper"
+    echo "- AVX-512 admitted encode path contains an exact 48-lane masked load, direct VBMI expansion and alphabet permutes, ZMM operations, one-per-call ZMM cleanup, and vzeroupper"
     echo "- AVX-512 VBMI admitted strict decode path contains byte shuffle, multiply-add packing, VBMI lane compaction, ZMM operations, ZMM cleanup, and vzeroupper"
     if [ "$neon_status" = "generated" ]; then
         echo "- NEON admitted encode path contains AArch64 table lookup, bit-select mapping, and NEON cleanup"
