@@ -4,8 +4,10 @@ use super::{BackendHealthState, decode_fault, decode_state, encode_fault};
 use crate::BackendFault;
 #[cfg(feature = "simd")]
 use crate::runtime::{Backend, OperationKind};
-#[cfg(all(feature = "simd", target_has_atomic = "ptr"))]
+#[cfg(all(feature = "std", feature = "simd", target_has_atomic = "ptr"))]
 use core::sync::atomic::Ordering;
+#[cfg(all(not(feature = "std"), feature = "simd", target_has_atomic = "ptr"))]
+extern crate std;
 
 #[test]
 fn state_and_fault_encodings_are_closed() {
@@ -118,6 +120,20 @@ fn reentry_falls_back_and_initializer_panics_are_contained() {
     let snapshot = panic_cell.snapshot(OperationKind::Encode, Backend::Scalar);
     assert_eq!(snapshot.state, BackendHealthState::Quarantined);
     assert_eq!(snapshot.fault, Some(BackendFault::SelfTestFailed));
+}
+
+#[cfg(all(not(feature = "std"), feature = "simd", target_has_atomic = "ptr"))]
+#[test]
+fn no_std_unwind_quarantines_panicking_initializer() {
+    let cell = HealthCell::new();
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let _ = cell.ensure_with(|| panic!("injected no_std KAT panic"));
+    }));
+    assert!(result.is_err());
+    let snapshot = cell.snapshot(OperationKind::Encode, Backend::Avx2);
+    assert_eq!(snapshot.state, BackendHealthState::Quarantined);
+    assert_eq!(snapshot.fault, Some(BackendFault::SelfTestFailed));
+    assert!(!cell.ensure_with(|| true));
 }
 
 #[cfg(all(feature = "simd", target_has_atomic = "ptr"))]

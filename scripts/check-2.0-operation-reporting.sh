@@ -26,6 +26,7 @@ for required in \
     'pub strict_decode_backend: OperationBackendReport' \
     'pub secret_decode_backend: OperationBackendReport' \
     'OperationBackendReport::secret_decode()' \
+    'stably_scalar(self.encode_backend)' \
     'wasm_artifact_posture: wasm_artifact_posture()'
 do
     if ! grep -F -q "$required" src/runtime/report.rs; then

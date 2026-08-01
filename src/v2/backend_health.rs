@@ -107,6 +107,39 @@ struct HealthCell {
 }
 
 #[cfg(all(feature = "simd", target_has_atomic = "ptr"))]
+struct KatTransitionGuard<'a> {
+    cell: &'a HealthCell,
+    armed: bool,
+}
+
+#[cfg(all(feature = "simd", target_has_atomic = "ptr"))]
+impl<'a> KatTransitionGuard<'a> {
+    const fn new(cell: &'a HealthCell) -> Self {
+        Self { cell, armed: true }
+    }
+
+    fn complete(mut self, passed: bool) -> bool {
+        if passed {
+            self.cell.state.store(HEALTHY, Ordering::Release);
+            bump_generation(&self.cell.generation);
+        } else {
+            self.cell.quarantine(BackendFault::SelfTestFailed);
+        }
+        self.armed = false;
+        passed
+    }
+}
+
+#[cfg(all(feature = "simd", target_has_atomic = "ptr"))]
+impl Drop for KatTransitionGuard<'_> {
+    fn drop(&mut self) {
+        if self.armed {
+            self.cell.quarantine(BackendFault::SelfTestFailed);
+        }
+    }
+}
+
+#[cfg(all(feature = "simd", target_has_atomic = "ptr"))]
 impl HealthCell {
     const fn new() -> Self {
         Self {
@@ -154,18 +187,9 @@ impl HealthCell {
                         self.quarantine(BackendFault::ImpossibleState);
                         return false;
                     };
+                    let transition = KatTransitionGuard::new(self);
                     let passed = run_catching_panics(initializer);
-                    if passed {
-                        self.state.store(HEALTHY, Ordering::Release);
-                    } else {
-                        self.fault.store(
-                            encode_fault(BackendFault::SelfTestFailed),
-                            Ordering::Release,
-                        );
-                        self.state.store(QUARANTINED, Ordering::Release);
-                    }
-                    bump_generation(&self.generation);
-                    return passed;
+                    return transition.complete(passed);
                 }
                 _ => {
                     self.quarantine(BackendFault::ImpossibleState);

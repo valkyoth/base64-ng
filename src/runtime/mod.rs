@@ -261,7 +261,10 @@ impl core::fmt::Display for MemoryLockPosture {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[non_exhaustive]
 pub enum BackendPolicy {
-    /// Require encode/decode execution to use the scalar backend.
+    /// Require encode/decode execution to remain on a terminal scalar backend.
+    ///
+    /// `NeverRun` and `Testing` health states do not satisfy this policy:
+    /// their temporary scalar fallback may later transition to acceleration.
     ScalarExecutionOnly,
     /// Require the crate to be built without the `simd` feature.
     SimdFeatureDisabled,

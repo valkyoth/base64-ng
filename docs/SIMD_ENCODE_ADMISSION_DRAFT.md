@@ -71,7 +71,8 @@ admission visible and auditable:
 
 Policy tests must prove:
 
-- scalar-only builds continue to satisfy `ScalarExecutionOnly`
+- terminal scalar-only builds continue to satisfy `ScalarExecutionOnly`, while
+  transient `NeverRun` and `Testing` fallback does not
 - unsupported runtime CPUs fall back to scalar
 - SIMD-enabled builds that do not activate acceleration report candidate-only
   posture

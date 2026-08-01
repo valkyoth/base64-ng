@@ -424,6 +424,9 @@ Stable boundary:
 - Each operation/backend pair owns a monotonic process-local generation and a
   `NeverRun`, `Testing`, `Healthy`, or permanently `Quarantined` state.
   Backend integrity faults remain distinct from malformed caller input.
+- `ScalarExecutionOnly` accepts only terminal scalar health states; temporary
+  fallback during `NeverRun` or `Testing` is not treated as durable policy
+  evidence.
 - `checked-backend` redundantly evaluates bounded accelerated and scalar
   chunks, validates reported lengths before slicing, commits only matching
   bytes, and quarantines plus retries scalar on disagreement.

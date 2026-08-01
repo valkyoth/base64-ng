@@ -68,7 +68,11 @@ pub(crate) use neon::neon_supports_alphabet;
     all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64"))
 ))]
 mod x86;
-#[cfg(all(test, any(target_arch = "x86", target_arch = "x86_64")))]
+#[cfg(all(
+    feature = "std",
+    test,
+    any(target_arch = "x86", target_arch = "x86_64")
+))]
 pub(super) use x86::{
     decode_16_bytes_ssse3_sse41, decode_32_bytes_avx2, decode_64_bytes_avx512,
     encode_12_bytes_ssse3_sse41, encode_24_bytes_avx2, encode_48_bytes_avx512,
@@ -292,6 +296,9 @@ pub(crate) const fn wasm_simd128_artifact_selected() -> bool {
 
 #[cfg(all(
     test,
-    any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64")
+    any(
+        target_arch = "aarch64",
+        all(feature = "std", any(target_arch = "x86", target_arch = "x86_64"))
+    )
 ))]
 mod tests;

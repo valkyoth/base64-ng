@@ -315,28 +315,28 @@ fn ct_padded_final_quantum_fails_closed_for_invalid_padding_count() {
 fn simd_dispatch_uses_only_admitted_backends() {
     match simd::active_backend() {
         simd::ActiveBackend::Scalar => {}
-        #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
+        #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
         simd::ActiveBackend::Avx512Vbmi => {
             assert!(matches!(
                 simd::detected_candidate(),
                 simd::Candidate::Avx512Vbmi
             ));
         }
-        #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
+        #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
         simd::ActiveBackend::Avx2 => {
             assert!(matches!(
                 simd::detected_candidate(),
                 simd::Candidate::Avx2 | simd::Candidate::Avx512Vbmi
             ));
         }
-        #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
+        #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
         simd::ActiveBackend::Ssse3Sse41 => {
             assert!(matches!(
                 simd::detected_candidate(),
                 simd::Candidate::Ssse3Sse41 | simd::Candidate::Avx2 | simd::Candidate::Avx512Vbmi
             ));
         }
-        #[cfg(all(feature = "std", target_arch = "aarch64", target_endian = "little"))]
+        #[cfg(all(target_arch = "aarch64", target_endian = "little"))]
         simd::ActiveBackend::Neon => {
             assert!(matches!(simd::detected_candidate(), simd::Candidate::Neon));
         }
@@ -354,39 +354,22 @@ fn simd_dispatch_uses_only_admitted_backends() {
 fn encode_backend_boundary_uses_only_admitted_backends() {
     match encode_backend::active_encode_backend() {
         encode_backend::EncodeBackend::Scalar => {}
-        #[cfg(all(
-            feature = "simd",
-            feature = "std",
-            any(target_arch = "x86", target_arch = "x86_64")
-        ))]
+        #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
         encode_backend::EncodeBackend::Avx512Vbmi => {
             assert!(simd::avx512_supports_alphabet::<Standard>());
             assert!(simd::avx512_supports_alphabet::<UrlSafe>());
         }
-        #[cfg(all(
-            feature = "simd",
-            feature = "std",
-            any(target_arch = "x86", target_arch = "x86_64")
-        ))]
+        #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
         encode_backend::EncodeBackend::Avx2 => {
             assert!(simd::avx2_supports_alphabet::<Standard>());
             assert!(simd::avx2_supports_alphabet::<UrlSafe>());
         }
-        #[cfg(all(
-            feature = "simd",
-            feature = "std",
-            any(target_arch = "x86", target_arch = "x86_64")
-        ))]
+        #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
         encode_backend::EncodeBackend::Ssse3Sse41 => {
             assert!(simd::ssse3_sse41_supports_alphabet::<Standard>());
             assert!(simd::ssse3_sse41_supports_alphabet::<UrlSafe>());
         }
-        #[cfg(all(
-            feature = "simd",
-            feature = "std",
-            target_arch = "aarch64",
-            target_endian = "little"
-        ))]
+        #[cfg(all(feature = "simd", target_arch = "aarch64", target_endian = "little"))]
         encode_backend::EncodeBackend::Neon => {
             assert!(simd::neon_supports_alphabet::<Standard>());
             assert!(simd::neon_supports_alphabet::<UrlSafe>());

@@ -12,6 +12,8 @@ for required in \
     'StaticBackendToken::assume_supported' \
     'pointer-width atomics' \
     'Malformed caller input never changes' \
+    'panic=abort' \
+    'transient scalar fallbacks' \
     'Secret operations never'
 do
     if ! grep -F -q "$required" "$document"; then
@@ -22,8 +24,8 @@ done
 
 for required in \
     'NEVER_RUN, TESTING' \
-    'self.state.store(HEALTHY' \
-    'self.state.store(QUARANTINED' \
+    'self.cell.state.store(HEALTHY' \
+    'KatTransitionGuard' \
     'run_catching_panics' \
     'bump_generation' \
     'pub fn initialize_backends()' \
@@ -38,6 +40,7 @@ done
 for required in \
     'failed_self_test_is_permanently_quarantined' \
     'reentry_falls_back_and_initializer_panics_are_contained' \
+    'no_std_unwind_quarantines_panicking_initializer' \
     'comparison_faults_are_classified_without_trusting_backend_lengths'
 do
     if ! grep -R -F -q "$required" src/v2/backend_health src/encode_backend src/decode_backend; then
@@ -63,6 +66,9 @@ done
 
 echo "2.0 backend health: forced KAT and state tests"
 cargo test --all-features --lib 'v2::backend_health'
+echo "2.0 backend health: no_std escaping-panic quarantine"
+cargo test --no-default-features --features simd --lib \
+    'v2::backend_health::tests::no_std_unwind_quarantines_panicking_initializer'
 
 echo "2.0 backend health: checked ordinary operation tests"
 cargo test --features checked-backend --lib 'encode_backend'

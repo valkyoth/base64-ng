@@ -127,7 +127,9 @@ evidence for those instructions. The pentest follow-up expands the startup KAT
 to cover all 64 alphabet indices plus `0x00`/`0xff` in each three-byte
 position, runs static-token `checked-backend` smoke on both x86 backends,
 asserts logical output sentinels remain untouched, and structurally rejects
-ordinary SIMD references from secret decode modules.
+ordinary SIMD references from secret decode modules. The second follow-up
+rejects transient `NeverRun`/`Testing` scalar policy snapshots and adds an
+unwind guard plus no-std execution test that quarantines an escaping KAT panic.
 
 The Commit 20 pentest follow-up also pins fail-closed forward-progress guards
 for WHATWG and legacy one-shot loops, immediate pending-state cleanup on

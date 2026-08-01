@@ -1,7 +1,7 @@
 use super::{
-    Backend, BackendPolicy, CandidateDetectionMode, CtGatePosture, MemoryLockPosture,
-    OperationBackendReport, OperationKind, OperationSecurityPosture, SecurityPosture,
-    WasmArtifactPosture, WasmRuntimePosture, WipePosture,
+    Backend, BackendHealthPosture, BackendPolicy, CandidateDetectionMode, CtGatePosture,
+    MemoryLockPosture, OperationBackendReport, OperationKind, OperationSecurityPosture,
+    SecurityPosture, WasmArtifactPosture, WasmRuntimePosture, WipePosture,
     operation::{wasm_artifact_posture, wasm_runtime_posture},
 };
 
@@ -157,19 +157,15 @@ impl BackendReport {
     ///
     /// let scalar_only =
     ///     report.satisfies(base64_ng::runtime::BackendPolicy::ScalarExecutionOnly);
-    /// assert_eq!(scalar_only, !report.ordinary_acceleration_active);
+    /// assert!(!scalar_only || !report.ordinary_acceleration_active);
     /// ```
     #[must_use]
     pub const fn satisfies(self, policy: BackendPolicy) -> bool {
         match policy {
             BackendPolicy::ScalarExecutionOnly => {
-                matches!(
-                    self.encode_backend.security_posture,
-                    OperationSecurityPosture::OrdinaryScalar
-                ) && matches!(
-                    self.strict_decode_backend.security_posture,
-                    OperationSecurityPosture::OrdinaryScalar
-                ) && !self.ordinary_acceleration_active
+                stably_scalar(self.encode_backend)
+                    && stably_scalar(self.strict_decode_backend)
+                    && !self.ordinary_acceleration_active
             }
             BackendPolicy::SimdFeatureDisabled => !self.simd_feature_enabled,
             BackendPolicy::NoDetectedSimdCandidate => matches!(self.candidate, Backend::Scalar),
@@ -265,6 +261,18 @@ impl BackendReport {
             ct_gate_posture: self.ct_gate_posture.as_str(),
         }
     }
+}
+
+const fn stably_scalar(report: OperationBackendReport) -> bool {
+    matches!(
+        report.security_posture,
+        OperationSecurityPosture::OrdinaryScalar
+    ) && matches!(
+        report.health_posture,
+        BackendHealthPosture::ScalarFixed
+            | BackendHealthPosture::Quarantined
+            | BackendHealthPosture::SynchronizationUnavailable
+    )
 }
 
 /// Returns the runtime backend report for this build and target.
@@ -367,10 +375,8 @@ const fn ct_gate_posture() -> CtGatePosture {
 ///     base64_ng::runtime::BackendPolicy::ScalarExecutionOnly,
 /// );
 ///
-/// if base64_ng::runtime::backend_report().ordinary_acceleration_active {
-///     assert!(result.is_err());
-/// } else {
-///     assert!(result.is_ok());
+/// if result.is_ok() {
+///     assert!(!base64_ng::runtime::backend_report().ordinary_acceleration_active);
 /// }
 /// ```
 pub fn require_backend_policy(policy: BackendPolicy) -> Result<(), BackendPolicyError> {

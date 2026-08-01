@@ -1276,6 +1276,11 @@ CI tripwires that keep secret decode outside ordinary SIMD dispatch. Backend
 quarantine is documented as revoking future admission rather than
 synchronously cancelling an already admitted call.
 
+The second Commit 25 follow-up makes `ScalarExecutionOnly` accept only terminal
+scalar health states and adds a KAT transition guard. An initializer panic that
+unwinds through a no-std build now leaves the backend quarantined; aborting
+panic profiles terminate without claiming a recoverable state.
+
 Commit 24 added direct per-backend KATs, operation-specific health generations,
 permanent quarantine, explicit startup initialization, bounded redundant
 `checked-backend` execution, and generation-bound static `no_std` SIMD tokens.

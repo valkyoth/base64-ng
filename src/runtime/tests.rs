@@ -53,6 +53,33 @@ fn secret_decode_posture_is_fixed_outside_simd_dispatch() {
     assert_eq!(secret.backend_fault, None);
 }
 
+#[test]
+fn scalar_execution_policy_rejects_transient_scalar_fallbacks() {
+    let mut report = scalar_report(CtGatePosture::HardwareSpeculationBarrier);
+    report.simd_feature_enabled = true;
+    report.candidate = Backend::Avx2;
+
+    for posture in [
+        super::BackendHealthPosture::NeverRun,
+        super::BackendHealthPosture::Testing,
+        super::BackendHealthPosture::Healthy,
+    ] {
+        report.encode_backend.health_posture = posture;
+        report.strict_decode_backend.health_posture = posture;
+        assert!(!report.satisfies(BackendPolicy::ScalarExecutionOnly));
+    }
+
+    for posture in [
+        super::BackendHealthPosture::ScalarFixed,
+        super::BackendHealthPosture::Quarantined,
+        super::BackendHealthPosture::SynchronizationUnavailable,
+    ] {
+        report.encode_backend.health_posture = posture;
+        report.strict_decode_backend.health_posture = posture;
+        assert!(report.satisfies(BackendPolicy::ScalarExecutionOnly));
+    }
+}
+
 fn initialize_runtime_backend_health() {
     let _ = crate::initialize_backends();
     #[cfg(all(feature = "std", feature = "simd"))]

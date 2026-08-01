@@ -9,7 +9,7 @@ use cleanup::clear_zmm_registers_after_encode_block;
 pub(crate) use decode::decode_slice_avx2;
 pub(crate) use decode::decode_slice_avx512;
 pub(crate) use decode::decode_slice_ssse3_sse41;
-#[cfg(test)]
+#[cfg(all(feature = "std", test))]
 pub(crate) use decode::{
     decode_16_bytes_ssse3_sse41, decode_32_bytes_avx2, decode_64_bytes_avx512,
 };
@@ -232,7 +232,7 @@ where
     crate::wipe_bytes(&mut staged);
 }
 
-#[cfg(test)]
+#[cfg(all(feature = "std", test))]
 #[target_feature(enable = "avx2")]
 pub(crate) unsafe fn encode_24_bytes_avx2<A>(input: &[u8; 24], output: &mut [u8; 32])
 where
@@ -321,7 +321,7 @@ where
     (read, write)
 }
 
-#[cfg(test)]
+#[cfg(all(feature = "std", test))]
 #[target_feature(enable = "ssse3,sse4.1")]
 pub(crate) unsafe fn encode_12_bytes_ssse3_sse41<A>(input: &[u8; 12], output: &mut [u8; 16])
 where
