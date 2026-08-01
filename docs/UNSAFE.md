@@ -772,75 +772,61 @@ Safety argument:
 - `decode_full_blocks_ssse3_sse41` clears XMM state once after the complete
   block loop, not once per block.
 
-### `decode_64_bytes_avx512`
+### `decode_64_bytes_avx512` and `decode_full_blocks_avx512`
 
-Location: `src/simd/x86/decode.rs`
+Locations: `src/simd/x86/decode_direct.rs` and `src/simd/x86/decode.rs`
 
-Status: admitted std x86/x86_64 AVX-512 VBMI strict decode block for Standard
-and URL-safe alphabet families. It is reachable through strict decode dispatch
-for full 64-byte encoded blocks after whole-input scalar validation.
+Status: admitted x86/x86_64 AVX-512 VBMI strict decode for Standard and
+URL-safe alphabet families. Automatic dispatch uses AVX-512 only at the
+retained 16 KiB encoded-input crossover; exact static-token and evidence calls
+may use it from one complete 64-byte block.
 
-The AVX-512 wrapper retains its pre-Commit-27 staged implementation. Commit 28
-owns its direct-output rewrite and static-token decode admission.
-`decode_slice_avx512` still performs whole-input scalar validation before its
-reviewed fixed-block kernel and preserves scalar fallback for padding and
-tails.
+The safe `decode_slice_avx512` wrapper performs whole-input scalar validation,
+output preflight, alphabet checks, tail fallback, and error-index preservation
+before and after these unsafe fixed-block helpers.
 
 Purpose:
 
-- Provide the fixed-block AVX-512 VBMI decode primitive for the admitted strict
-  decode boundary without changing scalar public error behavior.
-- Exercise AVX-512 6-bit-value packing for a 64-byte encoded block that
-  decodes to at most 48 bytes.
-- Verify VBMI lane compaction, error agreement, padding behavior, canonical
-  trailing-bit rejection, and rejected-input output retention before any later
-  dispatch admission.
+- Classify sixty-four caller ASCII bytes and map them directly to 6-bit values.
+- Pack sixteen Base64 quanta and store exactly forty-eight decoded bytes.
+- Batch complete blocks and clear ZMM state once at the call boundary.
 
 Preconditions:
 
-- Caller must prove AVX-512 F, BW, VL, and VBMI are available on the current
-  CPU.
-- Input is exactly 64 encoded bytes.
-- Output is exactly 48 bytes.
-- The vectorized packing path is used only for Standard-family alphabets
-  (`A-Z`, `a-z`, `0-9`, and either `+/` or `-_`). Other alphabets use the
-  staged scalar fallback inside the prototype.
+- The caller proves AVX-512 F, BW, VL, and VBMI on the current thread.
+- Whole-input scalar validation and output sizing complete before entry.
+- Each kernel input is exactly 64 bytes and output is exactly 48 bytes.
+- The alphabet belongs to the Standard or URL-safe family.
 
 Unsafe operation:
 
-- `_mm512_loadu_si512` loads sixty-four 6-bit values from a local staging
-  array.
-- `_mm512_maddubs_epi16` and `_mm512_madd_epi16` pack groups of four 6-bit
-  values into 24-bit decoded quanta within each 128-bit lane.
-- `_mm512_shuffle_epi8` compacts the packed quanta into byte order within
-  each lane.
-- `_mm512_permutexvar_epi8` uses VBMI byte permutation to compact the four
-  lane-local 12-byte decoded chunks into a contiguous 48-byte prefix.
-- `_mm512_storeu_si512` stores the packed prototype output into a local
-  64-byte staging array.
-- `clear_zmm_registers_after_encode_block` clears ZMM state and emits
-  `vzeroupper` before return to reduce register retention in the vector decode
-  prototype.
+- `_mm512_loadu_si512` loads exactly sixty-four caller input bytes.
+- `map_ascii_to_values_avx512`, `range_mask_avx512`, and `or5_avx512` use
+  AVX-512 comparisons and masks to classify every lane before any output store.
+- `_mm512_maddubs_epi16`, `_mm512_madd_epi16`, and `_mm512_shuffle_epi8`
+  pack each 128-bit lane into twelve decoded bytes.
+- `_mm512_permutexvar_epi8` compacts the four lane-local results.
+- `_mm512_mask_storeu_epi8` writes only the low forty-eight output bytes.
+- `decode_full_blocks_avx512` derives fixed-array references from preflighted
+  slice pointers and advances them only by 64-byte/48-byte block widths.
+- `clear_zmm_registers_after_encode_block` clears ZMM state once after the
+  complete block loop and emits `vzeroupper`.
 
 Safety argument:
 
-- Scalar strict decode validation runs into a private 48-byte staging buffer
-  before any byte is copied to the caller output. If validation fails, the
-  caller output is left untouched and the staging buffer is wiped.
-- The input and output array types provide fixed readable and writable bounds.
-- The SIMD loads and store operate only on local 64-byte arrays and use
-  unaligned intrinsics, so no alignment precondition is required.
-- The AVX-512/VBMI target-feature contract enables every intrinsic used by the
-  prototype.
-- VBMI compaction indices are constants in `0..=59`, so the permute reads only
-  bytes produced by the lane-local decode shuffle.
-- The prototype copies only the validated decoded length to caller output after
-  an unconditional release-mode equality check proves the vector-packed prefix
-  matches the scalar-validation prefix. It wipes local value, packed, and
-  scalar-validation staging buffers before returning.
-- The public dispatch wrapper validates the complete input with scalar before
-  calling this block function and rebases any unexpected block error to the
-  original input offset.
+- Scalar validation is authoritative for canonicality, padding, detailed
+  errors, decoded length, and no-write-on-error behavior. Malformed input never
+  reaches the direct block loop.
+- Fixed-array references and loop guards prove every unaligned load and masked
+  store remains within the preflighted caller slices.
+- The kernel requires all sixty-four validity-mask bits before storing. A
+  classifier disagreement after scalar validation restarts with scalar decode.
+- VBMI compaction indices are constants in `0..=59` and select only bytes
+  produced by the lane-local packing sequence.
+- The complete target-feature attribute covers every intrinsic. Runtime
+  dispatch, static tokens, and exact evidence calls separately prove the same
+  feature bundle before entry.
+- All vector output is stored before the single call-boundary cleanup.
 
 ### `decode_32_bytes_avx2`
 
@@ -894,13 +880,36 @@ Safety argument:
 Location: `src/simd/x86/decode_direct.rs`
 
 `map_ascii_to_values_ssse3`, `map_ascii_to_values_avx2`,
-`range_mask_ssse3`, `range_mask_avx2`, `or5_ssse3`, `or5_avx2`, and
-`store_12_bytes` are private target-feature helpers used only by the two
+`map_ascii_to_values_avx512`, `range_mask_ssse3`, `range_mask_avx2`,
+`range_mask_avx512`, `or5_ssse3`, `or5_avx2`, `or5_avx512`, and
+`store_12_bytes` are private target-feature helpers used only by the three
 fixed-width kernels above. Their range constants are ASCII, alphabet special
 bytes come only from a previously recognized Standard/URL-safe table, every
 mask operation stays within vector lanes, and `store_12_bytes` requires the
 caller's fixed twelve-byte writable range. Exhaustive tests cover every valid
 alphabet byte and every invalid byte in every lane before admission.
+
+### Test-only direct x86 decode probes
+
+Location: `src/simd/x86/test_probes.rs`
+
+Status: test-only safe wrappers; excluded from non-test library artifacts.
+
+Purpose:
+
+- Runtime-probe SSSE3/SSE4.1, AVX2, or the complete AVX-512 VBMI bundle.
+- Invoke the raw fixed-block classifier before scalar validation so exhaustive
+  malformed-lane tests can prove rejection leaves output untouched.
+- Clear the corresponding vector register set after each test invocation.
+
+Safety argument:
+
+- Each unsafe kernel call follows a complete runtime feature probe on the same
+  thread and receives exact fixed-array input and output bounds.
+- Each cleanup call follows the kernel invocation after all output has been
+  stored or rejected and no vector result remains needed.
+- The wrappers are reachable only from `#[cfg(test)]` code and are not public
+  deployment bypasses for the scalar validation boundary.
 
 ### `clear_xmm_registers_after_encode_block`
 

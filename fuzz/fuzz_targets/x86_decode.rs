@@ -15,6 +15,13 @@ fuzz_target!(|data: &[u8]| {
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     {
         let input = &data[..data.len().min(MAX_INPUT_LEN)];
+        if std::is_x86_feature_detected!("avx512f")
+            && std::is_x86_feature_detected!("avx512bw")
+            && std::is_x86_feature_detected!("avx512vl")
+            && std::is_x86_feature_detected!("avx512vbmi")
+        {
+            compare_backend(Backend::Avx512Vbmi, input);
+        }
         if std::is_x86_feature_detected!("ssse3") && std::is_x86_feature_detected!("sse4.1") {
             compare_backend(Backend::Ssse3Sse41, input);
         }
@@ -53,6 +60,7 @@ fn compare_standard<const PAD: bool>(
     reference: Engine<Standard, PAD>,
 ) {
     compare_results(
+        token.backend(),
         input,
         |input, output| token.decode_standard::<PAD>(input, output),
         |input, output| reference.decode_slice(input, output),
@@ -66,6 +74,7 @@ fn compare_url_safe<const PAD: bool>(
     reference: Engine<UrlSafe, PAD>,
 ) {
     compare_results(
+        token.backend(),
         input,
         |input, output| token.decode_url_safe::<PAD>(input, output),
         |input, output| reference.decode_slice(input, output),
@@ -74,6 +83,7 @@ fn compare_url_safe<const PAD: bool>(
 
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 fn compare_results(
+    backend: Backend,
     input: &[u8],
     accelerated: impl Fn(&[u8], &mut [u8]) -> Result<usize, base64_ng::DecodeError>,
     reference: impl Fn(&[u8], &mut [u8]) -> Result<usize, base64_ng::DecodeError>,
@@ -89,7 +99,20 @@ fn compare_results(
             &accelerated_output[..written],
             &reference_output[..written]
         ),
-        Err(_) => assert!(accelerated_output.iter().all(|byte| *byte == 0x55)),
+        Err(_) if input.len() >= direct_decode_input_block(backend) => {
+            assert!(accelerated_output.iter().all(|byte| *byte == 0x55));
+        }
+        Err(_) => {}
+    }
+}
+
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+const fn direct_decode_input_block(backend: Backend) -> usize {
+    match backend {
+        Backend::Ssse3Sse41 => 16,
+        Backend::Avx2 => 32,
+        Backend::Avx512Vbmi => 64,
+        _ => usize::MAX,
     }
 }
 

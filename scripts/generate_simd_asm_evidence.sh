@@ -90,6 +90,8 @@ RUSTFLAGS="-C target-feature=+avx512f,+avx512bw,+avx512vl,+avx512vbmi" \
     cargo rustc --locked --release --all-features --lib -- --emit=asm --test
 copy_single_asm "$audit_root/avx512-vbmi" "$output_dir/base64_ng-avx512-vbmi-test.s"
 require_pattern "$output_dir/base64_ng-avx512-vbmi-test.s" "vpermb" "AVX-512 VBMI byte-permute instruction"
+require_pattern "$output_dir/base64_ng-avx512-vbmi-test.s" "vpmaddubsw" "AVX-512 strict-decode byte packing"
+require_pattern "$output_dir/base64_ng-avx512-vbmi-test.s" "vpmaddwd" "AVX-512 strict-decode word packing"
 require_pattern "$output_dir/base64_ng-avx512-vbmi-test.s" "zmm" "ZMM register use"
 require_pattern "$output_dir/base64_ng-avx512-vbmi-test.s" "vpxord[[:space:]]+%zmm0" "ZMM cleanup sequence"
 require_pattern "$output_dir/base64_ng-avx512-vbmi-test.s" "vzeroupper" "AVX upper-state cleanup"

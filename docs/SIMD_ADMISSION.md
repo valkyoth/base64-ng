@@ -20,6 +20,10 @@ only for backends named in this file and the release gate.
   24–191 bytes, and AVX-512 VBMI from 192 bytes when the complete stronger feature
   bundles and operation-specific KATs pass. Exact static/evidence AVX-512 calls
   retain their 48-byte minimum.
+- Automatic x86 strict-decode length policy: SSSE3/SSE4.1 for 16–31 encoded
+  bytes, AVX2 for 32 bytes through 16 KiB minus one, and AVX-512 VBMI from
+  16 KiB when the complete feature bundles and operation-specific KATs pass.
+  Exact static/evidence AVX-512 calls retain their 64-byte minimum.
 - Public performance claims: none without local benchmark evidence.
 - Release status: `1.3.9`; `1.2.0` admitted conservative active encode
   dispatch, and `1.3.0` admitted normal strict decode dispatch for the first
@@ -44,8 +48,9 @@ only for backends named in this file and the release gate.
   on little-endian aarch64 for
   Standard and URL-safe alphabet families. AVX-512 VBMI strict decode is
   admitted above AVX2 and SSSE3/SSE4.1 strict decode for std
-  `x86`/`x86_64` Standard and URL-safe alphabet families when a full 64-byte
-  encoded block is present; AVX2 covers full 32-byte encoded blocks,
+  `x86`/`x86_64` Standard and URL-safe alphabet families at the measured
+  16 KiB automatic crossover; exact static/evidence calls may use it when a
+  full 64-byte encoded block is present. AVX2 covers full 32-byte encoded blocks,
   SSSE3/SSE4.1 covers full 16-byte encoded blocks, and little-endian std
   `aarch64` NEON covers full 16-byte encoded blocks. Custom alphabets,
   big-endian AArch64 and CT secret decode remain scalar or
@@ -160,7 +165,7 @@ State labels are intentionally strict:
 
 | Backend | State | Required CPU features | Evidence |
 | --- | --- | --- | --- |
-| AVX-512 VBMI | admitted backend | `avx512f`, `avx512bw`, `avx512vl`, `avx512vbmi` | std x86/x86_64 runtime-dispatched encode and strict decode for Standard and URL-safe alphabet families; automatic encode selects AVX-512 at 192 bytes and above while exact static/evidence calls retain the 48-byte block minimum, and completes any final tail/padding through scalar code; in-place encode may enter only through stack staging; decode uses fixed 64-byte encoded blocks only after whole-input scalar validation preserves public error shape; strict in-place decode may enter only through stack staging; wrapped and legacy decode may enter after scalar line-profile validation, line-ending compaction, or legacy-whitespace compaction; shorter inputs fall back to AVX2, SSSE3/SSE4.1, or scalar, and unsupported alphabets, CT secret decode, line-ending insertion/compaction, whitespace compaction, and `no_std` without complete static target-feature and health evidence use scalar fallback |
+| AVX-512 VBMI | admitted backend | `avx512f`, `avx512bw`, `avx512vl`, `avx512vbmi` | x86/x86_64 runtime-dispatched or static-token encode and strict decode for Standard and URL-safe alphabet families; automatic encode selects AVX-512 at 192 bytes while exact calls retain the 48-byte minimum; automatic strict decode selects AVX-512 at 16 KiB while exact calls retain the 64-byte minimum; Commit 28 decode directly classifies ASCII, maps 6-bit values, multiply-add packs, VBMI-compacts, and masked-stores exact 48-byte blocks after whole-input scalar validation preserves canonicality, diagnostics, sizing, and transactional rejection; tails remain scalar; in-place operations may enter only through stack staging; wrapped and legacy decode may enter after scalar validation and compaction; unsupported alphabets, CT secret decode, line/whitespace processing, and `no_std` without complete static target-feature, KAT, generation, and health evidence use scalar fallback |
 | AVX2 | admitted backend | `avx2` | x86/x86_64 runtime-dispatched or static-token encode and strict decode for Standard and URL-safe alphabet families; encode uses fixed 24-byte input blocks; Commit 27 strict decode performs direct vector ASCII classification, 6-bit mapping, packing, and exact two-lane 24-byte stores for fixed 32-byte unpadded blocks after one whole-input scalar validation preserves canonicality, exact diagnostics, required length, and transactional rejection; final padding and short tails are scalar; in-place encode/decode may enter only through stack staging; wrapped and legacy decode may enter after scalar validation and compaction; unsupported alphabets, CT secret decode, line/whitespace processing, and `no_std` without complete static target-feature, KAT, generation, and health evidence use scalar fallback |
 | SSSE3/SSE4.1 | admitted backend | `ssse3`, `sse4.1` | x86/x86_64 runtime-dispatched or static-token encode and strict decode for Standard and URL-safe alphabet families; encode uses fixed 12-byte input blocks; Commit 27 strict decode performs direct vector ASCII classification, 6-bit mapping, packing, and an exact 12-byte store for fixed 16-byte unpadded blocks after one whole-input scalar validation preserves canonicality, exact diagnostics, required length, and transactional rejection; final padding and short tails are scalar; in-place encode/decode may enter only through stack staging; wrapped and legacy decode may enter after scalar validation and compaction; unsupported alphabets, CT secret decode, line/whitespace processing, and `no_std` without complete static target-feature, KAT, generation, and health evidence use scalar fallback |
 | NEON | admitted backend | `neon` | little-endian std aarch64 runtime-dispatched encode and strict decode for Standard and URL-safe alphabet families; encode uses fixed 12-byte input blocks and completes any final tail/padding through scalar code; in-place encode may enter only through stack staging; decode uses fixed 16-byte encoded blocks only after whole-input scalar validation preserves public error shape; strict in-place decode may enter only through stack staging; wrapped and legacy decode may enter after scalar line-profile validation, line-ending compaction, or legacy-whitespace compaction; shorter inputs, unsupported alphabets, big-endian AArch64, 32-bit ARM, CT secret decode, line-ending insertion/compaction, whitespace compaction, and `no_std` without complete static target-feature and health evidence use scalar fallback |
@@ -205,8 +210,16 @@ at the end of the block loop. Exhaustive lane tests cover all valid alphabet
 symbols and every invalid byte; forced-backend tail/error tests, fuzz, static
 `no_std` smoke, assembly review, and exact-backend performance evidence are
 release gates. `StaticBackendToken::decode_standard` and
-`StaticBackendToken::decode_url_safe` expose only SSSE3/SSE4.1 and AVX2 in this
-commit; AVX-512 static strict decode remains scalar until Commit 28.
+`StaticBackendToken::decode_url_safe` expose SSSE3/SSE4.1 and AVX2 in this
+commit.
+
+Commit 28 rewrites AVX-512 VBMI strict decode as a direct production path with
+64-byte ASCII classification, 6-bit mapping, multiply-add packing, VBMI lane
+compaction, an exact masked 48-byte caller-output store, and one call-boundary
+ZMM cleanup. Static tokens expose the exact backend from one complete block.
+Automatic dispatch retains AVX2 below the measured 16 KiB crossover. Current
+performance evidence is from one AMD Ryzen 9 9950X3D; a second, preferably
+Intel, AVX-512 VBMI run remains required before portable crossover claims.
 
 ## Release Rule
 

@@ -115,10 +115,12 @@ impl StaticBackendToken {
 
     /// Decodes strict Standard Base64 with the statically admitted backend.
     ///
-    /// Commit 27 enables direct SSSE3/SSE4.1 and AVX2 execution. AVX-512 and
-    /// non-x86 token backends remain scalar here until their own rewrite
-    /// commits admit the static decode operation. Invalid input retains the
-    /// ordinary strict decoder's exact diagnostics and does not modify output.
+    /// Commits 27 and 28 enable direct SSSE3/SSE4.1, AVX2, and AVX-512 VBMI
+    /// execution. Non-x86 token backends remain scalar here until their own
+    /// rewrite commits admit the static decode operation. Invalid input retains
+    /// the ordinary strict decoder's exact diagnostics. Direct SIMD blocks are
+    /// whole-input prevalidated, but short scalar fallbacks retain the ordinary
+    /// decoder's partial-output-on-error behavior.
     pub fn decode_standard<const PAD: bool>(
         &self,
         input: &[u8],
@@ -129,10 +131,12 @@ impl StaticBackendToken {
 
     /// Decodes strict URL-safe Base64 with the statically admitted backend.
     ///
-    /// Commit 27 enables direct SSSE3/SSE4.1 and AVX2 execution. AVX-512 and
-    /// non-x86 token backends remain scalar here until their own rewrite
-    /// commits admit the static decode operation. Invalid input retains the
-    /// ordinary strict decoder's exact diagnostics and does not modify output.
+    /// Commits 27 and 28 enable direct SSSE3/SSE4.1, AVX2, and AVX-512 VBMI
+    /// execution. Non-x86 token backends remain scalar here until their own
+    /// rewrite commits admit the static decode operation. Invalid input retains
+    /// the ordinary strict decoder's exact diagnostics. Direct SIMD blocks are
+    /// whole-input prevalidated, but short scalar fallbacks retain the ordinary
+    /// decoder's partial-output-on-error behavior.
     pub fn decode_url_safe<const PAD: bool>(
         &self,
         input: &[u8],
@@ -190,7 +194,7 @@ impl StaticBackendToken {
             any(target_arch = "x86", target_arch = "x86_64")
         ))]
         match self.backend {
-            Backend::Avx2 | Backend::Ssse3Sse41 => {
+            Backend::Avx512Vbmi | Backend::Avx2 | Backend::Ssse3Sse41 => {
                 return crate::decode_backend::decode_checked::<A, PAD>(
                     self.backend,
                     input,
@@ -201,6 +205,9 @@ impl StaticBackendToken {
         }
         #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
         match self.backend {
+            Backend::Avx512Vbmi => {
+                return crate::simd::decode_slice_avx512::<A, PAD>(input, output);
+            }
             Backend::Avx2 => return crate::simd::decode_slice_avx2::<A, PAD>(input, output),
             Backend::Ssse3Sse41 => {
                 return crate::simd::decode_slice_ssse3_sse41::<A, PAD>(input, output);

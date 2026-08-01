@@ -47,17 +47,18 @@ BASE64_NG_PERF_EVIDENCE_DIR=target/release-evidence/perf \
 scripts/check_perf.sh
 ```
 
-Commit 27 also provides a focused exact-backend SSSE3/SSE4.1 and AVX2 strict
-decode campaign and a mutation-tested validator:
+Commits 27 and 28 provide a focused exact-backend SSSE3/SSE4.1, AVX2, and
+AVX-512 VBMI strict-decode campaign and a mutation-tested validator:
 
 ```sh
-BASE64_NG_RUN_COMMIT27_PERF=1 scripts/check-2.0-x86-decode-hot-paths.sh
+BASE64_NG_RUN_COMMIT28_PERF=1 scripts/check-2.0-x86-decode-hot-paths.sh
 ```
 
 The focused matrix covers Standard and URL-safe, padded and unpadded input,
-raw payload lengths from 12 bytes through 64 KiB, exact scalar comparison, and
-a configurable median threshold (`BASE64_NG_X86_DECODE_RATIO`, default
-`1.02`). It is local hardware evidence, not a cross-microarchitecture claim.
+raw payload lengths from 12 bytes through 64 KiB, exact scalar comparison for
+SSSE3/SSE4.1 and AVX2, AVX2 comparison for AVX-512 at 16 KiB and 64 KiB, and a
+configurable median threshold (`BASE64_NG_X86_DECODE_RATIO`, default `1.02`).
+It is local hardware evidence, not a cross-microarchitecture claim.
 
 The exact-backend entry points exist only under the build cfg
 `base64_ng_perf_evidence`. They check CPU availability before invoking an

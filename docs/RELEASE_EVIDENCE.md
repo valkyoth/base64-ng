@@ -174,6 +174,30 @@ SSSE3/SSE4.1 and AVX2 size for Standard and URL-safe, padded and unpadded
 input. This is exact-host evidence; another microarchitecture remains useful
 before broad performance wording.
 
+Commit 28 replaces the AVX-512 VBMI strict-decode staging prototype with a
+direct 64-byte ASCII classifier, 6-bit mapper, multiply-add packer, VBMI lane
+compactor, and exact masked 48-byte caller-output store. The multi-block loop
+clears ZMM state once at the call boundary. Whole-input scalar validation
+remains authoritative for canonicality, detailed errors, required length,
+padding, and transactional rejection. The gate adds exhaustive 64-lane valid
+and invalid classification, malformed-position and tail tests, forced-backend
+fuzz coverage, checked and unchecked static `no_std` AVX-512 execution,
+generated assembly checks, and exact-backend performance validation:
+
+```sh
+scripts/check-2.0-x86-decode-hot-paths.sh
+BASE64_NG_RUN_COMMIT28_PERF=1 \
+  scripts/check-2.0-x86-decode-hot-paths.sh
+```
+
+Automatic x86 decode retains AVX2 below 16 KiB and selects AVX-512 from
+16 KiB. Exact static and evidence calls retain the 64-byte AVX-512 block
+minimum. Nine-sample local AMD Ryzen 9 9950X3D evidence shows every profile at
+16 KiB and 64 KiB exceeds AVX2 by at least the configured 1.02 median ratio.
+A second, preferably Intel, AVX-512 VBMI microarchitecture remains an explicit
+pre-release evidence requirement; no portable throughput or frequency claim is
+made from this host.
+
 The Commit 20 pentest follow-up also pins fail-closed forward-progress guards
 for WHATWG and legacy one-shot loops, immediate pending-state cleanup on
 secret decode failure, checked secret-array frame construction, and the

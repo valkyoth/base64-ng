@@ -1262,6 +1262,18 @@ SIMD admission rules for all post-`1.0` work:
 
 ## Current 2.0 Development Checkpoint
 
+Commit 28 replaces the AVX-512 VBMI strict-decode staging prototype with direct
+64-byte ASCII classification, 6-bit mapping, multiply-add packing, VBMI lane
+compaction, and an exact masked 48-byte output store. Whole-input scalar
+validation remains authoritative. Static `no_std` tokens expose the exact
+backend after complete feature proof, KAT, generation, and health admission.
+Automatic x86 decode retains AVX2 below the measured 16 KiB crossover; exact
+static/evidence calls retain the 64-byte minimum. Exhaustive lanes, malformed
+positions, tails, forced-backend fuzz, static execution, assembly, unsafe, and
+focused performance gates cover the rewrite. The first retained benchmark is
+from an AMD Ryzen 9 9950X3D; a second AVX-512 VBMI microarchitecture remains
+required before the 2.0 release can generalize the crossover.
+
 Commit 27 replaces the SSSE3/SSE4.1 and AVX2 strict-decode staging prototypes
 with direct vector ASCII classification, 6-bit mapping, multiply-add packing,
 and exact-width caller-output stores. One whole-input scalar validation remains

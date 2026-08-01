@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Mutation checks for the Commit 27 strict-decode performance validator."""
+"""Mutation checks for the Commit 28 strict-decode performance validator."""
 
 import csv
 import subprocess
@@ -12,16 +12,18 @@ HEADER = [
     "iterations", "elapsed_ns", "throughput_mib_s",
 ]
 LENGTHS = {
-    "scalar": (12, 24, 48, 64, 96, 192, 384, 768, 1024, 64 * 1024),
+    "scalar": (12, 24, 48, 64, 96, 192, 384, 768, 1024, 16 * 1024, 64 * 1024),
     "ssse3-sse4.1": (12, 24, 48, 64, 96, 192, 384, 768, 1024, 64 * 1024),
-    "avx2": (24, 48, 64, 96, 192, 384, 768, 1024, 64 * 1024),
+    "avx2": (24, 48, 64, 96, 192, 384, 768, 1024, 16 * 1024, 64 * 1024),
+    "avx512-vbmi": (16 * 1024, 64 * 1024),
 }
 
 
 def rows() -> list[list[object]]:
     output = []
     for backend, lengths in LENGTHS.items():
-        throughput = 100.0 if backend == "scalar" else 110.0
+        throughput = {"scalar": 100.0, "ssse3-sse4.1": 110.0, "avx2": 110.0,
+                      "avx512-vbmi": 121.0}[backend]
         for alphabet in ("standard", "url-safe"):
             for padding in ("padded", "unpadded"):
                 for input_len in lengths:
@@ -65,6 +67,13 @@ def main() -> None:
             if row[0] == "avx2" and row[1:4] == ["standard", "padded", 24]:
                 row[-1] = 99.0
         write(path, slow)
+        validate(path, False)
+
+        slow_avx512 = rows()
+        for row in slow_avx512:
+            if row[0] == "avx512-vbmi" and row[1:4] == ["url-safe", "unpadded", 16 * 1024]:
+                row[-1] = 109.0
+        write(path, slow_avx512)
         validate(path, False)
     print("x86 decode performance validator: mutation checks ok")
 

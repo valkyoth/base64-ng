@@ -1308,9 +1308,10 @@ Security commitments:
   Its `encode_standard` and `encode_url_safe` methods execute the rewritten
   SSSE3/SSE4.1, AVX2, or AVX-512 hot path when that exact token remains healthy.
   Its `decode_standard` and `decode_url_safe` methods execute direct
-  SSSE3/SSE4.1 or AVX2 strict decode; AVX-512 decode remains scalar until its
-  dedicated rewrite. Other token backends and invalidated generations use
-  scalar execution.
+  SSSE3/SSE4.1, AVX2, or AVX-512 strict decode. Automatic x86 decode retains
+  AVX2 below the measured 16 KiB AVX-512 crossover; exact static-token calls
+  may use AVX-512 from one 64-byte encoded block. Other token backends and
+  invalidated generations use scalar execution.
 - `runtime::require_backend_policy()` lets deployments assert scalar execution,
   disabled SIMD features, or no detected SIMD candidate.
 - `BackendPolicy::HighAssuranceScalarOnly` combines the scalar/no-SIMD

@@ -136,11 +136,12 @@ runtime behavior for that line.
   unwrapped Base64 staging step; line-ending insertion remains scalar.
 - Public strict `decode_slice`, `decode_slice_clear_tail`, `decode_buffer`, and
   alloc strict decode helpers route through the decode boundary. AVX-512 VBMI
-  decode applies only to full 64-byte encoded blocks after scalar whole-input
-  validation and falls back to AVX2, SSSE3/SSE4.1, or scalar for shorter
-  inputs. Commit 27 maps and packs full 32-byte AVX2 and 16-byte SSSE3/SSE4.1
-  blocks directly after that validation, with exact-width output stores and
-  one register cleanup per call; little-endian AArch64 NEON decode applies
+  automatic decode applies from the measured 16 KiB encoded-input crossover;
+  exact static/evidence calls retain the 64-byte block minimum. Commit 28 maps,
+  packs, VBMI-compacts, and masked-stores full AVX-512 blocks directly after
+  scalar whole-input validation. Commit 27 does the same for full 32-byte AVX2
+  and 16-byte SSSE3/SSE4.1 blocks, with exact-width output stores and one
+  register cleanup per call. Little-endian AArch64 NEON decode applies
   only to full 16-byte
   encoded blocks after scalar whole-input validation. Public strict decode
   supports every valid encoded length; short inputs and non-block tails are

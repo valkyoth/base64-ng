@@ -2,12 +2,17 @@ use crate::{Alphabet, Standard, UrlSafe, scalar};
 
 #[derive(Clone, Copy)]
 enum ForcedBackend {
+    Avx512Vbmi,
     Ssse3Sse41,
     Avx2,
 }
 
 #[test]
-fn ssse3_and_avx2_map_every_valid_symbol_in_every_lane() {
+fn x86_backends_map_every_valid_symbol_in_every_lane() {
+    if super::avx512_vbmi_base64_available() {
+        exhaust_valid_block::<Standard>(ForcedBackend::Avx512Vbmi, 64);
+        exhaust_valid_block::<UrlSafe>(ForcedBackend::Avx512Vbmi, 64);
+    }
     if super::ssse3_sse41_available() {
         exhaust_valid_block::<Standard>(ForcedBackend::Ssse3Sse41, 16);
         exhaust_valid_block::<UrlSafe>(ForcedBackend::Ssse3Sse41, 16);
@@ -19,7 +24,11 @@ fn ssse3_and_avx2_map_every_valid_symbol_in_every_lane() {
 }
 
 #[test]
-fn ssse3_and_avx2_reject_every_invalid_byte_in_every_lane() {
+fn x86_backends_reject_every_invalid_byte_in_every_lane() {
+    if super::avx512_vbmi_base64_available() {
+        exhaust_invalid_block::<Standard>(ForcedBackend::Avx512Vbmi, 64);
+        exhaust_invalid_block::<UrlSafe>(ForcedBackend::Avx512Vbmi, 64);
+    }
     if super::ssse3_sse41_available() {
         exhaust_invalid_block::<Standard>(ForcedBackend::Ssse3Sse41, 16);
         exhaust_invalid_block::<UrlSafe>(ForcedBackend::Ssse3Sse41, 16);
@@ -31,7 +40,11 @@ fn ssse3_and_avx2_reject_every_invalid_byte_in_every_lane() {
 }
 
 #[test]
-fn forced_ssse3_and_avx2_slices_match_scalar_for_tails_and_errors() {
+fn forced_x86_slices_match_scalar_for_tails_and_errors() {
+    if super::avx512_vbmi_base64_available() {
+        exhaust_slice_lengths(ForcedBackend::Avx512Vbmi);
+        exhaust_malformed_positions(ForcedBackend::Avx512Vbmi);
+    }
     if super::ssse3_sse41_available() {
         exhaust_slice_lengths(ForcedBackend::Ssse3Sse41);
         exhaust_malformed_positions(ForcedBackend::Ssse3Sse41);
@@ -43,7 +56,7 @@ fn forced_ssse3_and_avx2_slices_match_scalar_for_tails_and_errors() {
 }
 
 fn exhaust_valid_block<A: Alphabet>(backend: ForcedBackend, block_len: usize) {
-    let mut input = [b'A'; 32];
+    let mut input = [b'A'; 64];
     for position in 0..block_len {
         for symbol in A::ENCODE {
             input[position] = symbol;
@@ -54,17 +67,40 @@ fn exhaust_valid_block<A: Alphabet>(backend: ForcedBackend, block_len: usize) {
 }
 
 fn exhaust_invalid_block<A: Alphabet>(backend: ForcedBackend, block_len: usize) {
-    let mut input = [b'A'; 32];
+    let mut input = [b'A'; 64];
     for position in 0..block_len {
         for byte in 0u8..=u8::MAX {
             if A::decode(byte).is_some() {
                 continue;
             }
             input[position] = byte;
+            assert_direct_rejects_without_write::<A>(backend, &input[..block_len]);
             assert_forced_error_is_transactional::<A>(backend, &input[..block_len]);
         }
         input[position] = b'A';
     }
+}
+
+fn assert_direct_rejects_without_write<A: Alphabet>(backend: ForcedBackend, input: &[u8]) {
+    let mut output = [0x55; 48];
+    let classified = match backend {
+        ForcedBackend::Avx512Vbmi => {
+            let block: &[u8; 64] = input.try_into().unwrap();
+            super::x86::test_direct_decode_64::<A>(block, &mut output)
+        }
+        ForcedBackend::Avx2 => {
+            let block: &[u8; 32] = input.try_into().unwrap();
+            let decoded: &mut [u8; 24] = (&mut output[..24]).try_into().unwrap();
+            super::x86::test_direct_decode_32::<A>(block, decoded)
+        }
+        ForcedBackend::Ssse3Sse41 => {
+            let block: &[u8; 16] = input.try_into().unwrap();
+            let decoded: &mut [u8; 12] = (&mut output[..12]).try_into().unwrap();
+            super::x86::test_direct_decode_16::<A>(block, decoded)
+        }
+    };
+    assert!(!classified, "direct classifier accepted malformed input");
+    assert_eq!(output, [0x55; 48], "direct rejection changed output");
 }
 
 fn exhaust_slice_lengths(backend: ForcedBackend) {
@@ -125,6 +161,7 @@ fn forced_decode<A: Alphabet, const PAD: bool>(
     output: &mut [u8],
 ) -> Result<usize, crate::DecodeError> {
     match backend {
+        ForcedBackend::Avx512Vbmi => super::x86::decode_slice_avx512::<A, PAD>(input, output),
         ForcedBackend::Ssse3Sse41 => super::x86::decode_slice_ssse3_sse41::<A, PAD>(input, output),
         ForcedBackend::Avx2 => super::x86::decode_slice_avx2::<A, PAD>(input, output),
     }

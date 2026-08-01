@@ -3,9 +3,9 @@
 mod cleanup;
 mod decode;
 mod decode_direct;
+#[cfg(test)]
+mod test_probes;
 
-#[cfg(all(feature = "std", test))]
-use crate::encode_base64_value;
 use crate::{Alphabet, EncodeError, checked_encoded_len, scalar};
 
 use cleanup::clear_zmm_registers_after_encode_block;
@@ -15,6 +15,11 @@ pub(crate) use decode::decode_slice_ssse3_sse41;
 #[cfg(all(feature = "std", test))]
 pub(crate) use decode::{
     decode_16_bytes_ssse3_sse41, decode_32_bytes_avx2, decode_64_bytes_avx512,
+};
+
+#[cfg(test)]
+pub(in crate::simd) use test_probes::{
+    test_direct_decode_16, test_direct_decode_32, test_direct_decode_64,
 };
 
 pub(crate) fn avx512_supports_alphabet<A>() -> bool
@@ -186,7 +191,7 @@ where
     A: Alphabet,
 {
     if !is_standard_or_url_safe_family::<A>() {
-        scalar_encode_block::<A, 48, 64>(input, output);
+        test_probes::scalar_encode_block::<A, 48, 64>(input, output);
         return;
     }
 
@@ -271,7 +276,7 @@ where
     A: Alphabet,
 {
     if !is_standard_or_url_safe_family::<A>() {
-        scalar_encode_block::<A, 24, 32>(input, output);
+        test_probes::scalar_encode_block::<A, 24, 32>(input, output);
         return;
     }
 
@@ -360,7 +365,7 @@ where
     A: Alphabet,
 {
     if !is_standard_or_url_safe_family::<A>() {
-        scalar_encode_block::<A, 12, 16>(input, output);
+        test_probes::scalar_encode_block::<A, 12, 16>(input, output);
         return;
     }
     // SAFETY: This function carries the SSSE3/SSE4.1 target-feature contract
@@ -438,30 +443,6 @@ where
 
     (A::ENCODE[62] == b'+' && A::ENCODE[63] == b'/')
         || (A::ENCODE[62] == b'-' && A::ENCODE[63] == b'_')
-}
-
-#[cfg(all(feature = "std", test))]
-fn scalar_encode_block<A, const IN: usize, const OUT: usize>(
-    input: &[u8; IN],
-    output: &mut [u8; OUT],
-) where
-    A: Alphabet,
-{
-    let mut read = 0;
-    let mut write = 0;
-    while read < input.len() {
-        let b0 = input[read];
-        let b1 = input[read + 1];
-        let b2 = input[read + 2];
-
-        output[write] = encode_base64_value::<A>(b0 >> 2);
-        output[write + 1] = encode_base64_value::<A>(((b0 & 0b0000_0011) << 4) | (b1 >> 4));
-        output[write + 2] = encode_base64_value::<A>(((b1 & 0b0000_1111) << 2) | (b2 >> 6));
-        output[write + 3] = encode_base64_value::<A>(b2 & 0b0011_1111);
-
-        read += 3;
-        write += 4;
-    }
 }
 
 #[target_feature(enable = "sse4.1")]

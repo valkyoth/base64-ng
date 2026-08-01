@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate Commit 27 exact-backend strict-decode performance evidence."""
+"""Validate Commit 28 exact-backend strict-decode performance evidence."""
 
 import csv
 import math
@@ -49,9 +49,19 @@ def main() -> None:
                     ratio = statistics.median(values) / statistics.median(samples[scalar_key])
                     if ratio < minimum_ratio:
                         fail(f"{key} ratio {ratio:.3f} is below {minimum_ratio:.3f}")
+    for alphabet in ("standard", "url-safe"):
+        for padding in ("padded", "unpadded"):
+            for input_len in (16 * 1024, 64 * 1024):
+                key = ("avx512-vbmi", alphabet, padding, input_len)
+                avx2_key = ("avx2", alphabet, padding, input_len)
+                if len(samples[key]) < 3 or len(samples[avx2_key]) < 3:
+                    fail(f"missing three AVX-512/AVX2 samples for {key}")
+                ratio = statistics.median(samples[key]) / statistics.median(samples[avx2_key])
+                if ratio < minimum_ratio:
+                    fail(f"{key} AVX2 ratio {ratio:.3f} is below {minimum_ratio:.3f}")
     print(
-        "x86 decode performance: SSSE3/SSE4.1 and AVX2 admitted sizes exceed scalar by "
-        f"configured ratio {minimum_ratio:.3f}"
+        "x86 decode performance: SSSE3/SSE4.1 and AVX2 exceed scalar, and AVX-512 "
+        f"exceeds AVX2 at admitted sizes, by configured ratio {minimum_ratio:.3f}"
     )
 
 
