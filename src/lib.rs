@@ -471,6 +471,8 @@ mod kani_in_place_proofs;
 #[cfg(kani)]
 mod kani_proofs;
 #[cfg(all(kani, feature = "secrets"))]
+mod kani_secret_encode_proofs;
+#[cfg(all(kani, feature = "secrets"))]
 mod kani_secret_proofs;
 
 #[cfg(test)]

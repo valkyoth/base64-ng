@@ -76,6 +76,17 @@ valid final gate. They are opt-in because the arbitrary-input release-gate
 proof expands the fixed 64-entry scans and volatile cleanup loops into a much
 larger SAT instance than the mandatory 28-harness baseline.
 
+To prove the three bounded Commit 20 secret-encoder properties, use:
+
+```sh
+BASE64_NG_KANI_PROVE_SECRET_ENCODING=1 scripts/check_kani_advanced.sh
+```
+
+These proofs cover final-quantum output bounds, absorbing oversized-input
+failure, and overlap/address-range preflight. Whole-frame cleanup remains in
+deterministic drop/unwind tests and Miri because Kani's model of volatile wipe
+and compiler-barrier paths makes symbolic whole-frame proofs impractical.
+
 To run the broad public strict-decode no-panic proof, use:
 
 ```sh

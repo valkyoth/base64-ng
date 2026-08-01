@@ -243,7 +243,7 @@ Purpose:
 - Emit an architecture-specific speculation or ordering barrier where stable
   Rust supports one locally.
 - Bound Commit 14 staged secret processing before its public validity and
-  success-only plaintext-release branch; Commit 20 owns final timing admission.
+  success-only plaintext-release branch; Commit 19 owns its timing boundary.
 
 Preconditions:
 

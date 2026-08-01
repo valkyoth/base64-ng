@@ -216,6 +216,32 @@ Evidence:
 - Node/V8, Chromium, Firefox, and Safari browser scripts
 - strict-separation and expert-policy differential tests
 
+## 2.0 Constant-Time-Oriented Secret Encode
+
+- A secret encoder accepts no more than its public declared input bound and
+  reserves the corresponding complete output capacity before consuming secret
+  input.
+- Incremental state retains at most two secret input bytes. Every terminal,
+  error, drop, and unwind path wipes that tail and the complete owned output
+  capacity.
+- Built-in Standard and URL-safe mapping uses arithmetic and masks rather than
+  a secret-indexed table. Validated custom alphabets use exactly 64
+  public-candidate-indexed reads for every secret symbol.
+- Borrowed input and output ranges must be disjoint. Address-range overflow and
+  overlap fail before secret input is accepted.
+- Output remains in a redacted secret owner until the caller explicitly
+  declassifies it; ordinary formatters and writers are not secret-encoder
+  destinations.
+
+Evidence:
+
+- exhaustive 64-symbol mapping tests against an independent oracle
+- bounded incremental and one-shot differential, cleanup, and fault tests
+- compile-fail ordinary formatter/writer destination fixtures
+- release and LTO assembly evidence for both mapper implementations
+- Kani final-quantum, absorbing-bound, and overlap-preflight proofs
+- opt-in dudect built-in and custom-alphabet input-class harnesses
+
 ## 2.0 Legacy Compatibility Profiles
 
 - `legacy::ASCII_WHITESPACE` ignores only space, tab, carriage return, and

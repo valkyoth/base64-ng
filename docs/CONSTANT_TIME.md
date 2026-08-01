@@ -295,8 +295,9 @@ scripts/validate-constant-time-policy.sh
 ## dudect-Style Timing Evidence
 
 `dudect/` contains an isolated, dependency-free timing harness for the bounded
-2.0 secret decoder. It separates valid contents, malformed positions,
-malformed classes, and the pre-gate core. Normal CI and the release gate
+2.0 secret decoder and encoder. It separates decode valid contents, malformed
+positions, malformed classes, and the pre-gate core, then compares fixed and
+randomized encode contents for built-in and custom alphabet mapping. Normal CI and the release gate
 compile the harness and check its dependency policy. Local timing runs are
 opt-in because virtualized CI runners and busy developer machines can produce
 noisy measurements:

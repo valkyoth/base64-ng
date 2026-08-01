@@ -77,6 +77,27 @@ else
     echo "Advanced Kani checks: set BASE64_NG_KANI_PROVE_SECRET_FRAMES=1 to run them"
 fi
 
+if [ "${BASE64_NG_KANI_PROVE_SECRET_ENCODING:-0}" = "1" ]; then
+    run_kani \
+        "secret_encoder_final_quantum_output_is_bounded" \
+        --no-default-features \
+        --features secrets \
+        --harness "secret_encoder_final_quantum_output_is_bounded"
+    run_kani \
+        "secret_encoder_rejects_oversized_input_absorbingly" \
+        --no-default-features \
+        --features secrets \
+        --harness "secret_encoder_rejects_oversized_input_absorbingly"
+    run_kani \
+        "secret_encoder_overlap_preflight_fails_closed" \
+        --no-default-features \
+        --features secrets \
+        --harness "secret_encoder_overlap_preflight_fails_closed"
+else
+    echo "Advanced Kani checks: skipped secret-encoder proofs"
+    echo "Advanced Kani checks: set BASE64_NG_KANI_PROVE_SECRET_ENCODING=1 to run them"
+fi
+
 if [ "${BASE64_NG_KANI_PROVE_PUBLIC_SURFACE:-0}" = "1" ]; then
     run_kani \
         "advanced_public_strict_decode_surfaces_do_not_panic_for_bounded_inputs" \

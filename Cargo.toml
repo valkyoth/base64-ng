@@ -60,8 +60,8 @@ alloc = []
 std = ["alloc"]
 simd = []
 stream = ["std"]
-# Secret storage and explicit exposure are available from Commit 18. Secret
-# computation is admitted incrementally by Commits 19-21.
+# Secret storage and explicit exposure are available from Commit 18. Commits
+# 19 and 20 add bounded scalar secret decoding and encoding respectively.
 secrets = []
 # Reserved 2.0 redundant-verification mode. Commit 24 supplies behavior; the
 # dependency edge is frozen now so Cargo feature unification can be tested.

@@ -5,6 +5,7 @@ use std::time::Instant;
 
 const INPUT_LEN: usize = 64;
 const OUTPUT_LEN: usize = 48;
+const ENCODE_OUTPUT_LEN: usize = 88;
 const ALPHABET: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 #[derive(Clone, Copy)]
@@ -13,14 +14,18 @@ enum TimingCase {
     MalformedPosition,
     MalformedClass,
     PreGateContents,
+    EncodeBuiltinContents,
+    EncodeCustomContents,
 }
 
 impl TimingCase {
-    const ALL: [Self; 4] = [
+    const ALL: [Self; 6] = [
         Self::ValidContents,
         Self::MalformedPosition,
         Self::MalformedClass,
         Self::PreGateContents,
+        Self::EncodeBuiltinContents,
+        Self::EncodeCustomContents,
     ];
 
     const fn label(self) -> &'static str {
@@ -29,11 +34,17 @@ impl TimingCase {
             Self::MalformedPosition => "malformed-position-whole-call",
             Self::MalformedClass => "malformed-class-whole-call",
             Self::PreGateContents => "valid-contents-pre-gate",
+            Self::EncodeBuiltinContents => "encode-builtin-input-contents",
+            Self::EncodeCustomContents => "encode-custom-input-contents",
         }
     }
 
     const fn stops_before_gate(self) -> bool {
         matches!(self, Self::PreGateContents)
+    }
+
+    const fn encodes(self) -> bool {
+        matches!(self, Self::EncodeBuiltinContents | Self::EncodeCustomContents)
     }
 }
 
@@ -140,7 +151,7 @@ fn run_case(config: Config, case: TimingCase, rng: &mut XorShift64) -> Result<()
         refresh_random_class(case, &mut right, rng);
         let class = (index & 1) ^ warmup_first;
         let input = if class == 0 { &left } else { &right };
-        measure_decode(input, config.iterations, case.stops_before_gate())?;
+        measure(input, config.iterations, case)?;
     }
 
     let mut fixed_stats = Accumulator::new();
@@ -151,7 +162,7 @@ fn run_case(config: Config, case: TimingCase, rng: &mut XorShift64) -> Result<()
         refresh_random_class(case, &mut right, rng);
         let class = (index & 1) ^ sample_first;
         let input = if class == 0 { &left } else { &right };
-        let elapsed = measure_decode(input, config.iterations, case.stops_before_gate())?;
+        let elapsed = measure(input, config.iterations, case)?;
 
         if class == 0 {
             fixed_stats.push(elapsed);
@@ -190,6 +201,18 @@ fn run_case(config: Config, case: TimingCase, rng: &mut XorShift64) -> Result<()
     }
 }
 
+fn measure(
+    input: &[u8; INPUT_LEN],
+    iterations: usize,
+    case: TimingCase,
+) -> Result<f64, String> {
+    if case.encodes() {
+        measure_encode(input, iterations, case)
+    } else {
+        measure_decode(input, iterations, case.stops_before_gate())
+    }
+}
+
 fn measure_decode(
     input: &[u8; INPUT_LEN],
     iterations: usize,
@@ -214,6 +237,35 @@ fn measure_decode(
     Ok(nanos / iterations as f64)
 }
 
+fn measure_encode(
+    input: &[u8; INPUT_LEN],
+    iterations: usize,
+    case: TimingCase,
+) -> Result<f64, String> {
+    let start = Instant::now();
+    for _ in 0..iterations {
+        let encoded = match case {
+            TimingCase::EncodeBuiltinContents => {
+                base64_ng::secret::SecretArrayEncoder::<ENCODE_OUTPUT_LEN>::encode(
+                    &base64_ng::STRICT_STANDARD_PADDED,
+                    &base64_ng::secret::SecretInput::new(black_box(input)),
+                )
+            }
+            TimingCase::EncodeCustomContents => {
+                base64_ng::secret::SecretArrayEncoder::<ENCODE_OUTPUT_LEN>::encode(
+                    &base64_ng::CRYPT_ALPHABET_NO_PAD,
+                    &base64_ng::secret::SecretInput::new(black_box(input)),
+                )
+            }
+            _ => return Err("decode timing case reached encode measurement".to_owned()),
+        }
+        .map_err(|error| format!("secret encoder failed: {error}"))?;
+        black_box(encoded.len());
+    }
+    let nanos = start.elapsed().as_nanos() as f64;
+    Ok(nanos / iterations as f64)
+}
+
 fn prepare_classes(
     case: TimingCase,
     left: &mut [u8; INPUT_LEN],
@@ -232,6 +284,10 @@ fn prepare_classes(
             left[INPUT_LEN / 2] = b'!';
             right[INPUT_LEN / 2] = b'=';
         }
+        TimingCase::EncodeBuiltinContents | TimingCase::EncodeCustomContents => {
+            left.fill(0);
+            fill_random_bytes(right, rng);
+        }
     }
 }
 
@@ -240,11 +296,20 @@ fn refresh_random_class(
     right: &mut [u8; INPUT_LEN],
     rng: &mut XorShift64,
 ) {
-    if matches!(
-        case,
-        TimingCase::ValidContents | TimingCase::PreGateContents
-    ) {
-        fill_random_base64(right, rng);
+    match case {
+        TimingCase::ValidContents | TimingCase::PreGateContents => {
+            fill_random_base64(right, rng);
+        }
+        TimingCase::EncodeBuiltinContents | TimingCase::EncodeCustomContents => {
+            fill_random_bytes(right, rng);
+        }
+        TimingCase::MalformedPosition | TimingCase::MalformedClass => {}
+    }
+}
+
+fn fill_random_bytes(output: &mut [u8; INPUT_LEN], rng: &mut XorShift64) {
+    for byte in output {
+        *byte = rng.next() as u8;
     }
 }
 
@@ -320,8 +385,9 @@ fn print_help() {
     println!(
         "Usage: base64-ng-dudect [--samples N] [--iters N] [--threshold T] [--warmup N]\n\
          \n\
-         Measures bounded 2.0 secret frames across valid contents, malformed\n\
-         positions, malformed classes, and the pre-gate core with dudect-style\n\
-         Welch t-tests. This is empirical evidence only."
+         Measures bounded 2.0 secret decode frames across valid contents,\n\
+         malformed positions, malformed classes, and the pre-gate core, plus\n\
+         built-in and custom-alphabet secret encoding input classes. This is\n\
+         empirical evidence only."
     );
 }

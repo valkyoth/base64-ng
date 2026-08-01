@@ -252,7 +252,7 @@ license = "MIT OR Apache-2.0"
 | `std` | yes | `std::error::Error` support and feature base for I/O. |
 | `simd` | no | Admitted std runtime-dispatched encode and normal strict decode acceleration for Standard and URL-safe alphabets, with scalar fallback for unsupported surfaces. |
 | `stream` | no | `std::io` streaming wrappers. |
-| `secrets` | no | Dependency-free 2.0 secret storage, explicit exposure/declassification, and bounded constant-time-oriented secret decoding. Secret encoding arrives in Commit 20. |
+| `secrets` | no | Dependency-free 2.0 secret storage, explicit exposure/declassification, and bounded constant-time-oriented secret encoding and decoding. |
 | `checked-backend` | no | Inert 2.0 development reservation that enables `simd`; redundant backend checking is implemented later in the 2.0 plan. |
 | `allow-wasm32-best-effort-wipe` | no | Explicitly allow `wasm32` builds with compiler-fence-only cleanup. |
 | `allow-compiler-fence-only-wipe` | no | Explicitly allow unsupported native architectures to build with compiler-fence-only cleanup after platform review. |
@@ -705,6 +705,25 @@ assert!(profile.is_padded());
 assert!(!profile.is_wrapped());
 assert_eq!(ct_decoder.decoded_len(b"aGVsbG8=").unwrap(), 5);
 ```
+
+The 2.0 development surface also keeps classified encoding in a separate
+bounded scalar state and wiping owner:
+
+```rust
+use base64_ng::{STRICT_STANDARD_PADDED, secret::SecretInput};
+
+let input = SecretInput::new(b"secret");
+let encoded = STRICT_STANDARD_PADDED
+    .encode_secret_array::<8>(&input)
+    .unwrap();
+
+assert_eq!(encoded.expose_secret().as_bytes(), b"c2VjcmV0");
+```
+
+Built-in secret alphabets use arithmetic mapping; validated custom alphabets
+use a fixed 64-entry scan. Encoded output stays redacted and wiping until the
+caller explicitly exposes or declassifies it. See
+[`docs/2.0_SECRET_ENCODING.md`](docs/2.0_SECRET_ENCODING.md).
 
 When wrapping policy comes from configuration, prefer checked construction.
 Use `Engine::checked_profile_with_wrap` when the profile should use the same

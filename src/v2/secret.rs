@@ -30,12 +30,18 @@ macro_rules! redacted_formatting {
 }
 
 #[cfg(feature = "secrets")]
+mod encoders;
+#[cfg(feature = "secrets")]
 mod exposure;
 #[cfg(feature = "secrets")]
 mod frames;
 #[cfg(feature = "secrets")]
 mod owned;
 
+#[cfg(all(feature = "secrets", feature = "alloc"))]
+pub use encoders::SecretVecEncoder;
+#[cfg(feature = "secrets")]
+pub use encoders::{SecretArrayEncoder, SecretEncoder};
 #[cfg(feature = "secrets")]
 pub use exposure::{
     DeclassifiedOutput, ExposedSecret, ExposedSecretMut, SecretInput, SecretOutput,
@@ -51,6 +57,8 @@ pub use owned::{DeclassifiedArray, SecretArray};
 
 #[cfg(feature = "secrets")]
 pub use super::secret_decoder::{SecretDecodeError, SecretDecoderState};
+#[cfg(feature = "secrets")]
+pub use super::secret_encoder::{SecretEncodeError, SecretEncoderState};
 
 /// Maps one encoded symbol through a crate-owned fixed 64-entry scan.
 ///

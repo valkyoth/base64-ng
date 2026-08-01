@@ -47,6 +47,14 @@ capacity/overlap preflight, cleanup, stack-limit compile failures, and optional
 Kani frame proofs. See
 [`2.0_SECRET_DECODING.md`](2.0_SECRET_DECODING.md).
 
+Commit 20 adds bounded secret encode frames. Built-in alphabets use private
+arithmetic mapping, custom alphabets use one fixed 64-entry scan per output
+symbol, and every frame owns or borrows complete wiping output storage before
+accepting classified input. The dedicated gate includes compile-fail ordinary
+sink checks, exhaustive mapping and chunking tests, optional Kani proofs,
+dudect-style encode classes, and release/LTO assembly symbol evidence. See
+[`2.0_SECRET_ENCODING.md`](2.0_SECRET_ENCODING.md).
+
 Run the gate with:
 
 ```sh
@@ -298,8 +306,9 @@ The release gate runs:
 - generated constant-time assembly artifacts through
   `scripts/generate_ct_asm_evidence.sh`
 - manual generated-code review checklist in [CT_ASM_REVIEW.md](CT_ASM_REVIEW.md)
-- LTO symbol-presence checks for non-inlined wipe boundaries and the
-  `constant_time_eq_public_len` equal-length comparison helper; the parser
+- LTO symbol-presence checks for non-inlined wipe boundaries,
+  `constant_time_eq_public_len`, `secret_encode_ascii`, and
+  `secret_encode_scan`; the parser
   accepts both legacy Rust symbols and the v0 symbols enabled by default in
   Rust `1.97.1`
 - Kani proofs through `scripts/check_kani.sh`; current local evidence is the
@@ -307,6 +316,8 @@ The release gate runs:
   with `cargo-kani 0.67.0`
 - bounded Kani coverage for constant-time-oriented decode result bounds,
   clear-tail cleanup on error, and validate/decode agreement
+- opt-in bounded Kani coverage for Commit 20 final-quantum bounds, absorbing
+  failure, and overlap/address-range preflight
 - bounded-index invariant documentation in [INVARIANTS.md](INVARIANTS.md)
 - explicit Kani compatibility or verifier-exception documentation in
   [KANI.md](KANI.md) if a future installed Kani compiler cannot run the proofs

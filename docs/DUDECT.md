@@ -5,10 +5,12 @@ under `dudect/`. The harness is not included in the published crate and does
 not add dependencies to the root package.
 
 The harness measures equal-public-length inputs through the 2.0 bounded
-`SecretArrayFrame`. It reports separate Welch t-statistics for distinct valid
-contents, first-versus-last malformed positions, malformed byte classes, and
-the pre-gate core without successful declassification. It is empirical
-evidence for review, not a formal proof or standalone cryptographic
+`SecretArrayFrame` and `SecretArrayEncoder`. Decode reports separate Welch
+t-statistics for distinct valid contents, first-versus-last malformed
+positions, malformed byte classes, and the pre-gate core without successful
+declassification. Encode compares fixed and randomized classified input for
+both the built-in arithmetic mapper and one custom-alphabet fixed scan. It is
+empirical evidence for review, not a formal proof or standalone cryptographic
 constant-time claim.
 
 ## Compile the Harness

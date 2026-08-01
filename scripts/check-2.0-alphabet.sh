@@ -10,7 +10,7 @@ for required in \
     'exactly one owned `[u8; 64]`' \
     'no function pointer, trait object, callback, or overridable mapping method' \
     'all 2,016 duplicate-position pairs' \
-    'Commit 20 owns optimizer' \
+    'Secret decode and Commit 20 secret encode scan all 64 table entries' \
     'validated_alphabet_constructor_indexing_is_bounded'
 do
     if ! grep -F -q "$required" docs/2.0_VALIDATED_ALPHABETS.md; then

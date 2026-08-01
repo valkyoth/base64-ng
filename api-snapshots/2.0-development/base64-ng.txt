@@ -295,6 +295,31 @@ impl core::fmt::Display for base64_ng::secret::SecretDecodeError
 pub fn base64_ng::secret::SecretDecodeError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for base64_ng::secret::SecretDecodeError
 impl core::marker::StructuralPartialEq for base64_ng::secret::SecretDecodeError
+#[non_exhaustive] pub enum base64_ng::secret::SecretEncodeError
+pub base64_ng::secret::SecretEncodeError::AddressRangeOverflow
+pub base64_ng::secret::SecretEncodeError::AllocationFailed
+pub base64_ng::secret::SecretEncodeError::Complete
+pub base64_ng::secret::SecretEncodeError::Failed
+pub base64_ng::secret::SecretEncodeError::InputTooLarge
+pub base64_ng::secret::SecretEncodeError::InputTooLarge::input_len: usize
+pub base64_ng::secret::SecretEncodeError::InputTooLarge::maximum_input_len: usize
+pub base64_ng::secret::SecretEncodeError::LengthOverflow
+pub base64_ng::secret::SecretEncodeError::OutputFull
+pub base64_ng::secret::SecretEncodeError::OutputFull::available: usize
+pub base64_ng::secret::SecretEncodeError::OutputFull::required: usize
+pub base64_ng::secret::SecretEncodeError::OverlappingBuffers
+impl core::clone::Clone for base64_ng::secret::SecretEncodeError
+pub fn base64_ng::secret::SecretEncodeError::clone(&self) -> base64_ng::secret::SecretEncodeError
+impl core::cmp::Eq for base64_ng::secret::SecretEncodeError
+impl core::cmp::PartialEq for base64_ng::secret::SecretEncodeError
+pub fn base64_ng::secret::SecretEncodeError::eq(&self, &base64_ng::secret::SecretEncodeError) -> bool
+impl core::error::Error for base64_ng::secret::SecretEncodeError
+impl core::fmt::Debug for base64_ng::secret::SecretEncodeError
+pub fn base64_ng::secret::SecretEncodeError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for base64_ng::secret::SecretEncodeError
+pub fn base64_ng::secret::SecretEncodeError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng::secret::SecretEncodeError
+impl core::marker::StructuralPartialEq for base64_ng::secret::SecretEncodeError
 pub struct base64_ng::secret::DeclassifiedArray<const CAP: usize>
 impl<const CAP: usize> base64_ng::secret::DeclassifiedArray<CAP>
 pub fn base64_ng::secret::DeclassifiedArray<CAP>::as_bytes(&self) -> &[u8]
@@ -375,6 +400,17 @@ impl<const CAP: usize> core::fmt::Display for base64_ng::secret::SecretArray<CAP
 pub fn base64_ng::secret::SecretArray<CAP>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl<const CAP: usize> core::ops::drop::Drop for base64_ng::secret::SecretArray<CAP>
 pub fn base64_ng::secret::SecretArray<CAP>::drop(&mut self)
+pub struct base64_ng::secret::SecretArrayEncoder<const CAP: usize>
+impl<const CAP: usize> base64_ng::secret::SecretArrayEncoder<CAP>
+pub fn base64_ng::secret::SecretArrayEncoder<CAP>::encode<S: base64_ng::Codec>(&base64_ng::Base64<S>, &base64_ng::secret::SecretInput<'_>) -> core::result::Result<base64_ng::secret::SecretArray<CAP>, base64_ng::secret::SecretEncodeError>
+pub fn base64_ng::secret::SecretArrayEncoder<CAP>::finish(self) -> core::result::Result<base64_ng::secret::SecretArray<CAP>, base64_ng::secret::SecretEncodeError>
+pub fn base64_ng::secret::SecretArrayEncoder<CAP>::new<S: base64_ng::Codec>(&base64_ng::Base64<S>, usize) -> core::result::Result<Self, base64_ng::secret::SecretEncodeError>
+pub const fn base64_ng::secret::SecretArrayEncoder<CAP>::state(&self) -> &base64_ng::secret::SecretEncoderState
+pub fn base64_ng::secret::SecretArrayEncoder<CAP>::update(&mut self, &base64_ng::secret::SecretInput<'_>) -> core::result::Result<base64_ng::Progress, base64_ng::secret::SecretEncodeError>
+impl<const CAP: usize> core::fmt::Debug for base64_ng::secret::SecretArrayEncoder<CAP>
+pub fn base64_ng::secret::SecretArrayEncoder<CAP>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<const CAP: usize> core::ops::drop::Drop for base64_ng::secret::SecretArrayEncoder<CAP>
+pub fn base64_ng::secret::SecretArrayEncoder<CAP>::drop(&mut self)
 pub struct base64_ng::secret::SecretArrayFrame<const N: usize>
 impl<const N: usize> base64_ng::secret::SecretArrayFrame<N>
 pub fn base64_ng::secret::SecretArrayFrame<N>::finish(self) -> core::result::Result<base64_ng::secret::SecretArray<N>, base64_ng::secret::SecretDecodeError>
@@ -395,6 +431,27 @@ impl core::fmt::Debug for base64_ng::secret::SecretDecoderState
 pub fn base64_ng::secret::SecretDecoderState::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::ops::drop::Drop for base64_ng::secret::SecretDecoderState
 pub fn base64_ng::secret::SecretDecoderState::drop(&mut self)
+pub struct base64_ng::secret::SecretEncoder<'a>
+impl<'a> base64_ng::secret::SecretEncoder<'a>
+pub fn base64_ng::secret::SecretEncoder<'a>::finish(self) -> core::result::Result<base64_ng::secret::SecretOutput<'a>, base64_ng::secret::SecretEncodeError>
+pub fn base64_ng::secret::SecretEncoder<'a>::new<S: base64_ng::Codec>(&base64_ng::Base64<S>, usize, &'a mut [u8]) -> core::result::Result<Self, base64_ng::secret::SecretEncodeError>
+pub const fn base64_ng::secret::SecretEncoder<'a>::state(&self) -> &base64_ng::secret::SecretEncoderState
+pub fn base64_ng::secret::SecretEncoder<'a>::update(&mut self, &base64_ng::secret::SecretInput<'_>) -> core::result::Result<base64_ng::Progress, base64_ng::secret::SecretEncodeError>
+impl core::fmt::Debug for base64_ng::secret::SecretEncoder<'_>
+pub fn base64_ng::secret::SecretEncoder<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::ops::drop::Drop for base64_ng::secret::SecretEncoder<'_>
+pub fn base64_ng::secret::SecretEncoder<'_>::drop(&mut self)
+pub struct base64_ng::secret::SecretEncoderState
+impl base64_ng::secret::SecretEncoderState
+pub const fn base64_ng::secret::SecretEncoderState::input_len(&self) -> usize
+pub const fn base64_ng::secret::SecretEncoderState::is_failed(&self) -> bool
+pub const fn base64_ng::secret::SecretEncoderState::maximum_encoded_len(&self) -> usize
+pub const fn base64_ng::secret::SecretEncoderState::maximum_input_len(&self) -> usize
+pub const fn base64_ng::secret::SecretEncoderState::output_len(&self) -> usize
+impl core::fmt::Debug for base64_ng::secret::SecretEncoderState
+pub fn base64_ng::secret::SecretEncoderState::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::ops::drop::Drop for base64_ng::secret::SecretEncoderState
+pub fn base64_ng::secret::SecretEncoderState::drop(&mut self)
 pub struct base64_ng::secret::SecretFrame<'a>
 impl<'a> base64_ng::secret::SecretFrame<'a>
 pub fn base64_ng::secret::SecretFrame<'a>::finish(self) -> core::result::Result<base64_ng::secret::SecretOutput<'a>, base64_ng::secret::SecretDecodeError>
@@ -449,6 +506,17 @@ impl core::fmt::Display for base64_ng::secret::SecretVec
 pub fn base64_ng::secret::SecretVec::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::ops::drop::Drop for base64_ng::secret::SecretVec
 pub fn base64_ng::secret::SecretVec::drop(&mut self)
+pub struct base64_ng::secret::SecretVecEncoder
+impl base64_ng::secret::SecretVecEncoder
+pub fn base64_ng::secret::SecretVecEncoder::encode<S: base64_ng::Codec>(&base64_ng::Base64<S>, &base64_ng::secret::SecretInput<'_>) -> core::result::Result<base64_ng::secret::SecretVec, base64_ng::secret::SecretEncodeError>
+pub fn base64_ng::secret::SecretVecEncoder::finish(self) -> core::result::Result<base64_ng::secret::SecretVec, base64_ng::secret::SecretEncodeError>
+pub fn base64_ng::secret::SecretVecEncoder::new<S: base64_ng::Codec>(&base64_ng::Base64<S>, usize) -> core::result::Result<Self, base64_ng::secret::SecretEncodeError>
+pub const fn base64_ng::secret::SecretVecEncoder::state(&self) -> &base64_ng::secret::SecretEncoderState
+pub fn base64_ng::secret::SecretVecEncoder::update(&mut self, &base64_ng::secret::SecretInput<'_>) -> core::result::Result<base64_ng::Progress, base64_ng::secret::SecretEncodeError>
+impl core::fmt::Debug for base64_ng::secret::SecretVecEncoder
+pub fn base64_ng::secret::SecretVecEncoder::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::ops::drop::Drop for base64_ng::secret::SecretVecEncoder
+pub fn base64_ng::secret::SecretVecEncoder::drop(&mut self)
 pub struct base64_ng::secret::SecretVecFrame
 impl base64_ng::secret::SecretVecFrame
 pub fn base64_ng::secret::SecretVecFrame::finish(self) -> core::result::Result<base64_ng::secret::SecretVec, base64_ng::secret::SecretDecodeError>
@@ -1240,6 +1308,10 @@ impl<S: base64_ng::Codec> base64_ng::Base64<S>
 pub fn base64_ng::Base64<S>::display<'a>(&self, &'a [u8]) -> core::result::Result<base64_ng::EncodedDisplay<'a>, base64_ng::OneShotError>
 pub fn base64_ng::Base64<S>::encode_to_counted<W: base64_ng::CountedSink + ?core::marker::Sized>(&self, &[u8], &mut W) -> core::result::Result<usize, base64_ng::CountedWriteError<<W as base64_ng::CountedSink>::Error>>
 pub fn base64_ng::Base64<S>::encode_to_fmt<W: core::fmt::Write + ?core::marker::Sized>(&self, &[u8], &mut W) -> core::result::Result<usize, base64_ng::FormatWriteError>
+impl<S: base64_ng::Codec> base64_ng::Base64<S>
+pub fn base64_ng::Base64<S>::encode_secret_array<const CAP: usize>(&self, &base64_ng::secret::SecretInput<'_>) -> core::result::Result<base64_ng::secret::SecretArray<CAP>, base64_ng::secret::SecretEncodeError>
+pub fn base64_ng::Base64<S>::encode_secret_into<'a>(&self, &base64_ng::secret::SecretInput<'_>, &'a mut [u8]) -> core::result::Result<base64_ng::secret::SecretOutput<'a>, base64_ng::secret::SecretEncodeError>
+pub fn base64_ng::Base64<S>::encode_secret_vec(&self, &base64_ng::secret::SecretInput<'_>) -> core::result::Result<base64_ng::secret::SecretVec, base64_ng::secret::SecretEncodeError>
 impl<S: base64_ng::Codec> base64_ng::Base64<S>
 pub fn base64_ng::Base64<S>::encoded_chunks<'a>(&self, &'a [u8]) -> core::result::Result<base64_ng::EncodedChunks<'a>, base64_ng::OneShotError>
 impl<S: base64_ng::Codec> base64_ng::Base64<S>

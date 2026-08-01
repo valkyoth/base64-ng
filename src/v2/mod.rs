@@ -32,6 +32,12 @@ pub(crate) mod secret;
 pub mod secret;
 #[cfg(feature = "secrets")]
 mod secret_decoder;
+#[cfg(feature = "secrets")]
+mod secret_encoder;
+#[cfg(kani)]
+pub(crate) use secret_encoder::{
+    final_quantum_output_len_for_proof, require_disjoint_ranges_for_proof,
+};
 mod secret_in_place;
 #[allow(dead_code)]
 pub(crate) mod specifications;
@@ -100,6 +106,8 @@ mod profile_tests;
 mod rfc4648_oracle;
 #[cfg(test)]
 mod secret_decoder_tests;
+#[cfg(test)]
+mod secret_encoder_tests;
 #[cfg(test)]
 mod secret_in_place_tests;
 #[cfg(test)]

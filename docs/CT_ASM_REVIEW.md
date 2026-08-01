@@ -30,6 +30,8 @@ Review focus:
 - `ct_mask_*` helpers
 - `ct_error_gate_barrier`
 - `constant_time_eq_public_len`
+- `secret_encode_ascii`
+- `secret_encode_scan`
 - `wipe_bytes` and `wipe_barrier` cleanup call boundaries
 
 ## Review Questions
@@ -49,6 +51,10 @@ Review focus:
 - Does `constant_time_eq_public_len` remain a separate non-inlined symbol in
   release and LTO artifacts, and does the equal-length loop scan all bytes
   rather than lowering into an early-exit compare?
+- Does `secret_encode_ascii` map all five RFC 4648 ranges without branching on
+  the secret six-bit value or loading from a secret-indexed table?
+- Does `secret_encode_scan` retain exactly one fixed 64-iteration loop whose
+  alphabet load is indexed only by the public candidate counter?
 - Do `wipe_bytes` and `wipe_barrier` remain non-inlined cleanup call
   boundaries in release and LTO artifacts?
 - Are padding length, decoded length, and final success/failure still treated

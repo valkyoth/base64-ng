@@ -156,6 +156,9 @@ scripts/validate-panic-policy.sh
 echo "checks: constant-time policy"
 scripts/validate-constant-time-policy.sh
 
+echo "checks: 2.0 secret encoder"
+scripts/check-2.0-secret-encoder.sh
+
 echo "checks: dudect timing harness"
 scripts/check_dudect.sh
 
