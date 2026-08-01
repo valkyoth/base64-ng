@@ -36,8 +36,7 @@ for test_filter in \
     "tests::supports_unpadded_url_safe" \
     "decode_backend::tests::boundary_uses_only_admitted_backends" \
     "errors::tests::index_offsets_saturate_on_overflow" \
-    "v2::in_place_tests::checked_byte_ranges_define_every_overlap_boundary" \
-    "v2::secret_in_place_tests::staged_secret_decode_miri_overlap_contract"
+    "v2::in_place_tests::checked_byte_ranges_define_every_overlap_boundary"
 do
     if [ "$no_default_status" -eq 0 ]; then
         run_miri_case "$no_default_output" "--no-default-features" "$test_filter" || no_default_status="$?"

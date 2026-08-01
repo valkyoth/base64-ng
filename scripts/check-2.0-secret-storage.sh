@@ -19,6 +19,7 @@ for required in \
     'Secret owners and classified input implement no `AsRef`, `AsMut`, or `Deref`' \
     '`SecretOutput::from_initialized` wipes unused tail bytes' \
     '`declassify_into_unprotected_vec`' \
+    '`SecretVec::replace_from_vec` wipes the displaced initialized' \
     'destructors do not run after `mem::forget`'
 do
     if ! grep -F -q "$required" docs/2.0_SECRET_STORAGE_AND_EXPOSURE.md; then

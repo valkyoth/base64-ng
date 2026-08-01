@@ -10,6 +10,9 @@ use super::{
     secret::{ExposedSecret, SecretArray, SecretInput, SecretOutput},
 };
 
+#[cfg(feature = "alloc")]
+use super::secret::SecretVec;
+
 #[test]
 fn secret_wrappers_require_explicit_exposure_and_redact_formatting() {
     let input = SecretInput::new(b"classified");
@@ -123,4 +126,13 @@ fn fixed_secret_declassification_returns_ordinary_value() {
     let (bytes, len) = ordinary.into_parts();
     assert_eq!(len, 3);
     assert_eq!(bytes, *b"key\0\0\0\0\0");
+}
+
+#[cfg(feature = "alloc")]
+#[test]
+fn secret_vector_replacement_uses_the_full_allocation_wipe_boundary() {
+    let mut secret = SecretVec::from_vec(std::vec![0xa5; 32]);
+    let displaced = secret.replace_for_test(std::vec![b'n', b'e', b'w']);
+    assert_eq!(secret.expose_secret().as_bytes(), b"new");
+    assert_eq!(displaced, std::vec![0; 32]);
 }

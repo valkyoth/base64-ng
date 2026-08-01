@@ -56,12 +56,11 @@ External crates require written justification before inclusion:
   as Criterion earns admission with better measurement evidence.
 - Kani support must stay feature-gated and must not affect normal users.
 - The `allow-wasm32-best-effort-wipe` feature is allowed as a dependency-free
-  policy switch for deployments that explicitly accept compiler-fence-only
-  cleanup on `wasm32`; without it, `wasm32` builds fail closed.
+  secret-only policy acknowledgement for deployments that explicitly accept
+  compiler-fence-only cleanup on `wasm32`; ordinary codecs do not require it.
 - The `allow-compiler-fence-only-wipe` feature is allowed as a dependency-free
-  policy switch for unsupported native architectures that explicitly accept
-  compiler-fence-only cleanup after platform review; without it, those builds
-  fail closed.
+  secret-only acknowledgement for unsupported native architectures that
+  explicitly accept compiler-fence-only cleanup after platform review.
 
 Rejected by default:
 
@@ -103,8 +102,9 @@ Any dependency addition must answer:
      the required CPU-feature gate on x86/x86_64 and native no-std builds do
      not have an equivalent portable runtime probe.
    - Wasm `simd128` dispatch is admitted only when the binary is compiled with
-     `target-feature=+simd128`, the `simd` feature, and the explicit
-     `allow-wasm32-best-effort-wipe` feature.
+     `target-feature=+simd128` and the `simd` feature. Ordinary public-data
+     codecs do not require a wipe-policy acknowledgement; `secrets` builds
+     separately require `allow-wasm32-best-effort-wipe`.
    - `no_std` builds remain scalar-only unless a future API adds an explicit
      unsafe caller-side CPU contract. Compile-time target-feature reporting is
      not enough to dispatch safely on unknown hardware.

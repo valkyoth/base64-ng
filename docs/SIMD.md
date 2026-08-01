@@ -200,9 +200,8 @@ runtime behavior for that line.
   scalar because accelerated alphabet mapping has not been separately proven.
   Wrapped encode may still use the admitted unwrapped staging step, but
   line-ending insertion is scalar. `no_std` runtime dispatch remains scalar.
-- wasm `simd128` is admitted in `1.3.3` for wasm32 binaries compiled with
-  `target-feature=+simd128`, the `simd` feature, and
-  `allow-wasm32-best-effort-wipe`. The admitted scope is Standard and URL-safe
+- wasm `simd128` is admitted in `1.3.3` for ordinary wasm32 binaries compiled
+  with `target-feature=+simd128` and the `simd` feature. The admitted scope is Standard and URL-safe
   public encode plus normal strict decode. It uses wasm byte shuffling, vector
   shifts/masks, and branchless Standard-family alphabet mapping for fixed
   12-byte encode input blocks and fixed 16-byte decode input blocks after

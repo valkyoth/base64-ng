@@ -426,8 +426,9 @@ use decode::{
 #[cfg(test)]
 pub(crate) use equality::report_ct_error;
 pub(crate) use equality::{
-    constant_time_eq_fixed_width_array, constant_time_eq_public_len, ct_accumulate_u8,
-    ct_error_gate_barrier, ct_mask_eq_u8, ct_mask_lt_u8, ct_mask_nonzero_u8,
+    constant_time_eq_fixed_width_array, constant_time_eq_public_len, ct_mask_eq_u8, ct_mask_lt_u8,
 };
+#[cfg(feature = "secrets")]
+pub(crate) use equality::{ct_accumulate_u8, ct_error_gate_barrier, ct_mask_nonzero_u8};
 #[cfg(test)]
 pub(crate) use padded::ct_padded_final_quantum;

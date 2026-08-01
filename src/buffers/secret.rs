@@ -24,10 +24,10 @@ use alloc::{string::String, vec::Vec};
 ///
 /// On `wasm32` targets, the wipe barrier uses only a compiler fence. The wasm
 /// runtime JIT may still optimize or retain cleared bytes in ways this crate
-/// cannot control. `wasm32` builds fail closed by default; enable
-/// `allow-wasm32-best-effort-wipe` only when the deployment explicitly accepts
-/// this limitation and applies its own memory strategy around owned secret
-/// buffers.
+/// cannot control. This compatibility type retains best-effort cleanup in an
+/// ordinary build, but only an explicit `secrets` build requests the 2.0
+/// fail-closed policy and its `allow-wasm32-best-effort-wipe`
+/// acknowledgement.
 #[cfg(feature = "alloc")]
 pub struct SecretBuffer {
     bytes: alloc::vec::Vec<u8>,

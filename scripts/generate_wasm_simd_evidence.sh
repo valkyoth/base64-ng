@@ -40,7 +40,7 @@ CARGO_INCREMENTAL=0 \
 CARGO_TARGET_DIR="$audit_root/target" \
 RUSTFLAGS='-C target-feature=+simd128' \
     cargo rustc --locked --target "$wasm_target" --release \
-        --features simd,allow-wasm32-best-effort-wipe \
+        --features simd \
         --lib -- --emit=llvm-ir --test
 
 set -- "$audit_root"/target/*/release/deps/base64_ng-*.ll
@@ -73,7 +73,7 @@ evidence_verify_source "wasm simd evidence"
     cargo -V
     echo
     echo "command:"
-    echo "CARGO_INCREMENTAL=0 CARGO_TARGET_DIR=<fresh>/target RUSTFLAGS='-C target-feature=+simd128' cargo rustc --locked --target $wasm_target --release --features simd,allow-wasm32-best-effort-wipe --lib -- --emit=llvm-ir --test"
+    echo "CARGO_INCREMENTAL=0 CARGO_TARGET_DIR=<fresh>/target RUSTFLAGS='-C target-feature=+simd128' cargo rustc --locked --target $wasm_target --release --features simd --lib -- --emit=llvm-ir --test"
     echo
     echo "artifacts:"
     evidence_checksum_file "$artifact"

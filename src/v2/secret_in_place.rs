@@ -17,6 +17,32 @@ enum InjectedFault {
     None,
     #[cfg(test)]
     AfterDecode,
+    #[cfg(all(test, feature = "std"))]
+    PanicAfterDecode,
+}
+
+struct StagingWipeGuard<'a> {
+    bytes: &'a mut [u8],
+}
+
+impl<'a> StagingWipeGuard<'a> {
+    fn new(bytes: &'a mut [u8]) -> Self {
+        Self { bytes }
+    }
+
+    fn prefix_mut(&mut self, len: usize) -> &mut [u8] {
+        &mut self.bytes[..len]
+    }
+
+    fn prefix(&self, len: usize) -> &[u8] {
+        &self.bytes[..len]
+    }
+}
+
+impl Drop for StagingWipeGuard<'_> {
+    fn drop(&mut self) {
+        crate::wipe_bytes(self.bytes);
+    }
 }
 
 #[cfg(test)]
@@ -87,28 +113,31 @@ fn decode_in_place_staged_inner<S: Codec>(
     }
     require_disjoint_slices(buffer, private_staging)?;
 
+    let mut staging_guard = StagingWipeGuard::new(private_staging);
     let outcome = decode_secret_fixed_work(
         settings,
         &buffer[..input_len],
-        &mut private_staging[..staging_len],
+        staging_guard.prefix_mut(staging_len),
     );
+
+    #[cfg(all(test, feature = "std"))]
+    if matches!(injected_fault, InjectedFault::PanicAfterDecode) {
+        std::panic::panic_any("reviewed staged secret cleanup test");
+    }
 
     #[cfg(test)]
     if matches!(injected_fault, InjectedFault::AfterDecode) {
         crate::wipe_bytes(buffer);
-        crate::wipe_bytes(private_staging);
         return Err(InPlaceError::Backend(BackendFault::ImpossibleState));
     }
     let _ = injected_fault;
 
     crate::ct_error_gate_barrier(outcome.invalid, 0);
     if core::hint::black_box(outcome.invalid) != 0 {
-        crate::wipe_bytes(private_staging);
         return Err(InPlaceError::InvalidSecretInput);
     }
 
-    buffer[..outcome.written].copy_from_slice(&private_staging[..outcome.written]);
-    crate::wipe_bytes(private_staging);
+    buffer[..outcome.written].copy_from_slice(staging_guard.prefix(outcome.written));
     Ok(outcome.written)
 }
 
@@ -318,6 +347,22 @@ pub(super) fn decode_with_injected_fault_for_test<S: Codec>(
         private_staging,
         InjectedFault::AfterDecode,
     )
+}
+
+#[cfg(all(test, feature = "std"))]
+pub(super) fn decode_with_injected_panic_for_test<S: Codec>(
+    codec: &Base64<S>,
+    buffer: &mut [u8],
+    input_len: usize,
+    private_staging: &mut [u8],
+) {
+    let _ = decode_in_place_staged_inner(
+        codec,
+        buffer,
+        input_len,
+        private_staging,
+        InjectedFault::PanicAfterDecode,
+    );
 }
 
 #[cfg(test)]

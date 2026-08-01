@@ -128,6 +128,16 @@ fn one_shot_array_and_borrowed_outputs_remain_secret_until_exposed() {
 }
 
 #[test]
+fn dropping_partial_borrowed_encoder_models_cancellation_cleanup() {
+    let mut output = [0xa5; 16];
+    {
+        let mut encoder = SecretEncoder::new(&STRICT_STANDARD_PADDED, 6, &mut output).unwrap();
+        encoder.update(&SecretInput::new(b"sec")).unwrap();
+    }
+    assert_eq!(output, [0; 16]);
+}
+
+#[test]
 fn public_bounds_fail_before_processing_and_failure_is_absorbing() {
     assert_eq!(
         SecretArrayEncoder::<7>::new(&STRICT_STANDARD_PADDED, 6).unwrap_err(),

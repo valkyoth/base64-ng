@@ -45,7 +45,7 @@ publish = false
 crate-type = ["cdylib"]
 
 [dependencies]
-base64-ng = { path = "../..", features = ["simd", "allow-wasm32-best-effort-wipe"] }
+base64-ng = { path = "../..", features = ["simd"] }
 EOF
 
 cat >"$smoke_dir/src/lib.rs" <<'EOF'

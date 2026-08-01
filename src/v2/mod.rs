@@ -38,6 +38,7 @@ mod secret_encoder;
 pub(crate) use secret_encoder::{
     final_quantum_output_len_for_proof, require_disjoint_ranges_for_proof,
 };
+#[cfg(feature = "secrets")]
 mod secret_in_place;
 #[allow(dead_code)]
 pub(crate) mod specifications;

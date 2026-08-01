@@ -19,7 +19,7 @@ publish = false
 [workspace]
 
 [dependencies]
-base64-ng = { path = "../..", default-features = false, features = ["allow-wasm32-best-effort-wipe"] }
+base64-ng = { path = "../..", default-features = false }
 MANIFEST
 
 cargo test --manifest-path "$manifest" --offline

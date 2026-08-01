@@ -151,6 +151,7 @@ pub(super) fn require_input_prefix(
     }
 }
 
+#[cfg(feature = "secrets")]
 pub(super) fn require_disjoint_slices(left: &[u8], right: &[u8]) -> Result<(), InPlaceError> {
     require_disjoint_ranges(
         left.as_ptr() as usize,
@@ -160,6 +161,7 @@ pub(super) fn require_disjoint_slices(left: &[u8], right: &[u8]) -> Result<(), I
     )
 }
 
+#[cfg(any(feature = "secrets", test))]
 fn require_disjoint_ranges(
     left_start: usize,
     left_len: usize,

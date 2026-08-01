@@ -189,6 +189,34 @@ impl SecretVec {
         Self::from_vec(bytes.to_vec())
     }
 
+    /// Replaces the owned bytes after wiping the displaced allocation.
+    ///
+    /// The replacement's spare capacity is wiped before ownership transfers.
+    /// The previous initialized bytes and spare capacity are wiped before its
+    /// allocation is released. This remains best-effort software cleanup and
+    /// cannot remove historical copies or allocator metadata.
+    pub fn replace_from_vec(&mut self, replacement: alloc::vec::Vec<u8>) {
+        drop(self.replace_and_wipe_displaced(replacement));
+    }
+
+    fn replace_and_wipe_displaced(
+        &mut self,
+        mut replacement: alloc::vec::Vec<u8>,
+    ) -> alloc::vec::Vec<u8> {
+        crate::wipe_vec_spare_capacity(&mut replacement);
+        let mut displaced = core::mem::replace(&mut self.bytes, replacement);
+        crate::wipe_vec_all(&mut displaced);
+        displaced
+    }
+
+    #[cfg(test)]
+    pub(crate) fn replace_for_test(
+        &mut self,
+        replacement: alloc::vec::Vec<u8>,
+    ) -> alloc::vec::Vec<u8> {
+        self.replace_and_wipe_displaced(replacement)
+    }
+
     /// Creates an explicit borrowed interoperability view.
     #[must_use]
     pub fn expose_secret(&self) -> ExposedSecret<'_> {

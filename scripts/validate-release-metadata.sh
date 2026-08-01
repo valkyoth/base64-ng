@@ -134,6 +134,7 @@ for required_script in \
     "scripts/check-2.0-in-place.sh" \
     "scripts/check-2.0-in-place-sanitizers.sh" \
     "scripts/check-2.0-profiles.sh" \
+    "scripts/check-2.0-secret-capabilities.sh" \
     "scripts/check-2.0-secret-storage.sh" \
     "scripts/check-2.0-web-forgiving.sh" \
     "scripts/check-2.0-migration-smoke.sh" \
@@ -161,6 +162,7 @@ for required_script in \
     "scripts/check_reserved_features.sh" \
     "scripts/check_simd_feature_bundles.sh" \
     "scripts/check_targets.sh" \
+    "scripts/check_high_assurance_policy.sh" \
     "scripts/check_wasm_wipe_policy.sh" \
     "scripts/checks.sh" \
     "scripts/ci_install_rust.sh" \
@@ -536,7 +538,9 @@ for required_package_file in \
     "scripts/check-2.0-in-place-sanitizers.sh" \
     "scripts/check-2.0-one-shot.sh" \
     "scripts/check-2.0-profiles.sh" \
+    "scripts/check-2.0-secret-capabilities.sh" \
     "scripts/check-2.0-secret-storage.sh" \
+    "scripts/check_high_assurance_policy.sh" \
     "scripts/check-2.0-migration-smoke.sh" \
     "scripts/check-api-snapshots.sh" \
     "scripts/validate-2.0-api-ledger.sh" \

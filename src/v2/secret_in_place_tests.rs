@@ -1,3 +1,5 @@
+#![cfg(feature = "secrets")]
+
 use super::{
     CodecBuilder, DecodePadding, EncodePadding, InPlaceError, TrailingBits, ValidatedAlphabet,
     secret_in_place::{
@@ -183,6 +185,26 @@ fn exercise_internal_fault_cleanup() {
         Err(InPlaceError::Backend(super::BackendFault::ImpossibleState))
     );
     assert!(buffer.iter().all(|byte| *byte == 0));
+    assert!(staging.iter().all(|byte| *byte == 0));
+}
+
+#[cfg(feature = "std")]
+#[test]
+fn staged_secret_decode_wipes_staging_on_unwind() {
+    let mut buffer = [SENTINEL; 16];
+    buffer[..8].copy_from_slice(b"c2VjcmV0");
+    let original = buffer;
+    let mut staging = [SENTINEL; 12];
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        super::secret_in_place::decode_with_injected_panic_for_test(
+            &STRICT_STANDARD_UNPADDED,
+            &mut buffer,
+            8,
+            &mut staging,
+        );
+    }));
+    assert!(result.is_err());
+    assert_eq!(buffer, original);
     assert!(staging.iter().all(|byte| *byte == 0));
 }
 

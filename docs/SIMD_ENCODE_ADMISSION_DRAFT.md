@@ -16,8 +16,8 @@ The conservative initial activation shape is:
 - `std` x86/x86_64, little-endian std aarch64, and the admitted wasm
   `simd128` profile only. x86/x86_64 uses `std::is_x86_feature_detected!`
   runtime CPU feature probing, aarch64 NEON relies on the mandatory target
-  contract, and wasm requires a binary compiled with `target-feature=+simd128`,
-  `simd`, and `allow-wasm32-best-effort-wipe`.
+  contract, and ordinary wasm requires a binary compiled with
+  `target-feature=+simd128` and `simd`.
 - Release gate phrase: std x86/x86_64, little-endian std aarch64, and narrow wasm `simd128` dispatch only.
 - `no_std` builds remain scalar-only unless a later unsafe caller-contract API
   is designed and reviewed.

@@ -60,12 +60,14 @@ alloc = []
 std = ["alloc"]
 simd = []
 stream = ["std"]
-# Secret storage and explicit exposure are available from Commit 18. Commits
-# 19 and 20 add bounded scalar secret decoding and encoding respectively.
+# Broad best-effort secret storage, scalar processing, and cleanup capability.
+# This does not attest protected memory or platform high-assurance posture.
 secrets = []
 # Reserved 2.0 redundant-verification mode. Commit 24 supplies behavior; the
 # dependency edge is frozen now so Cargo feature unification can be tested.
 checked-backend = ["simd"]
+# Secret-only deployment acknowledgements. They are no-ops for ordinary
+# public-data builds and intentionally do not imply high assurance.
 allow-wasm32-best-effort-wipe = []
 allow-compiler-fence-only-wipe = []
 # Placeholder for future async Tokio integration; currently no-op,

@@ -86,10 +86,11 @@ Limitations:
   native architectures fall back to the compiler fence only. The Miri and Kani
   fallbacks are verifier/interpreter constraints, not deployed runtime
   postures. On `wasm32`, downstream runtime JIT behavior is outside this
-  crate's control; `wasm32` builds therefore fail closed unless
-  `allow-wasm32-best-effort-wipe` is explicitly enabled. Unsupported native
-  architectures also fail closed unless `allow-compiler-fence-only-wipe` is
-  explicitly enabled after platform review.
+  crate's control. Ordinary public-data builds require no cleanup opt-in;
+  `secrets` builds on `wasm32` fail closed unless
+  `allow-wasm32-best-effort-wipe` is explicitly enabled. Secret builds on
+  unsupported native architectures likewise require
+  `allow-compiler-fence-only-wipe` after platform review.
 - Callers with platform-specific formal zeroization requirements should apply
   their own zeroization policy to caller-owned buffers in addition to using the
   crate cleanup APIs. Applications that already admit dependencies such as
@@ -146,12 +147,12 @@ Limitations:
   zeroization guarantee.
 - `wasm32` currently uses only the final compiler fence. Wasm runtime JITs may
   apply additional optimizations or retain memory outside the Rust compiler
-  boundary. `wasm32` builds therefore fail closed unless
-  `allow-wasm32-best-effort-wipe` is explicitly enabled.
+  boundary. Ordinary codecs remain portable; `secrets` builds fail closed
+  unless `allow-wasm32-best-effort-wipe` is explicitly enabled.
 - Unsupported native architectures currently use only the final compiler fence.
-  They fail closed unless `allow-compiler-fence-only-wipe` is explicitly
-  enabled after reviewing this weaker cleanup posture and applying platform
-  memory controls.
+  Secret builds fail closed unless `allow-compiler-fence-only-wipe` is
+  explicitly enabled after reviewing this weaker cleanup posture and applying
+  platform memory controls.
 - On RISC-V, `fence rw, rw` is a store-ordering fence for wipe cleanup. It is
   reported separately from the constant-time result gate posture and should not
   be read as a Spectre-v1 speculation isolation guarantee.

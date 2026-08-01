@@ -6,8 +6,8 @@ evidence.
 ## Decision
 
 wasm `simd128` runtime dispatch is admitted in `1.3.3` for binaries compiled
-with `target-feature=+simd128`, the `simd` feature, and the explicit
-`allow-wasm32-best-effort-wipe` feature.
+with `target-feature=+simd128` and the `simd` feature. Commit 21 removes the
+secret cleanup acknowledgement from this ordinary public-data profile.
 
 The admitted runtime profile is intentionally narrow:
 
@@ -88,8 +88,8 @@ provide:
 - fallback tests proving scalar execution when `simd128` is unavailable
 - benchmark evidence that names the wasm engine, version, host CPU, operating
   system, Rust version, and exact commands
-- explicit documentation of the wasm wipe-barrier limitation and the
-  `allow-wasm32-best-effort-wipe` opt-in
+- explicit documentation that the wasm wipe-barrier acknowledgement belongs
+  only to the separate `secrets` capability
 - release notes that distinguish candidate detection from active dispatch
 
 ## Current Enforcement
@@ -120,6 +120,6 @@ provide:
   is installed.
 - `scripts/generate_wasm_simd_evidence.sh` emits release test-harness LLVM IR
   and checks for `simd128` codegen markers.
-- `scripts/check_wasm_wipe_policy.sh` keeps the wasm cleanup posture
-  fail-closed by default unless `allow-wasm32-best-effort-wipe` is explicitly
-  enabled.
+- `scripts/check_wasm_wipe_policy.sh` proves ordinary WASM portability and
+  keeps `secrets` fail-closed unless `allow-wasm32-best-effort-wipe` is
+  explicitly enabled.

@@ -20,13 +20,18 @@ ensure_target_installed() {
 
 ensure_target_installed
 
-echo "wasm wipe policy: checking fail-closed feature for $target"
+echo "wasm wipe policy: checking ordinary portable codec for $target"
+cargo check --target "$target" --no-default-features --lib
+cargo check --target "$target" --lib
+
+echo "wasm wipe policy: checking fail-closed secrets capability for $target"
 
 if cargo check \
     --target "$target" \
     --no-default-features \
+    --features secrets \
     --lib >"$output" 2>&1; then
-    echo "wasm wipe policy: expected default $target build to fail closed" >&2
+    echo "wasm wipe policy: expected secrets $target build to fail closed" >&2
     cat "$output" >&2
     exit 1
 fi
@@ -47,7 +52,22 @@ echo "wasm wipe policy: checking explicit allow feature for $target"
 cargo check \
     --target "$target" \
     --no-default-features \
-    --features allow-wasm32-best-effort-wipe \
+    --features secrets,allow-wasm32-best-effort-wipe \
     --lib
+
+echo "wasm wipe policy: checking high-assurance rejection for $target"
+if RUSTFLAGS="--cfg base64_ng_require_high_assurance" cargo check \
+    --target "$target" \
+    --no-default-features \
+    --features secrets,allow-wasm32-best-effort-wipe \
+    --lib >"$output" 2>&1; then
+    echo "wasm wipe policy: high-assurance wasm build unexpectedly compiled" >&2
+    exit 1
+fi
+if ! grep -F -q "unsupported or unattested" "$output"; then
+    echo "wasm wipe policy: high-assurance rejection was not posture-specific" >&2
+    cat "$output" >&2
+    exit 1
+fi
 
 echo "wasm wipe policy: ok"

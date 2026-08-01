@@ -119,53 +119,20 @@
 //! hibernation images, core dumps, cold-boot remanence, or OS-level memory
 //! snapshots.
 //! High-assurance applications should apply their own approved zeroization
-//! policy to caller-owned buffers at the protocol boundary. Architectures
-//! without a native wipe barrier fail closed by default unless
-//! `allow-compiler-fence-only-wipe` is enabled after platform review. On
-//! `wasm32`, the wipe barrier is compiler-fence-only and cannot constrain
-//! downstream wasm runtime JITs. For that reason, `wasm32` builds fail closed
-//! by default. Enable `allow-wasm32-best-effort-wipe` only when the deployment
-//! explicitly accepts compiler-fence-only cleanup and applies its own memory
-//! strategy.
+//! policy to caller-owned buffers at the protocol boundary. Ordinary
+//! public-data codecs do not require a wipe-policy opt-in. When the `secrets`
+//! capability is enabled, architectures without a native wipe barrier fail
+//! closed unless `allow-compiler-fence-only-wipe` is enabled after platform
+//! review. On `wasm32`, secret cleanup is compiler-fence-only and cannot
+//! constrain downstream runtime JITs, so `secrets` builds require the explicit
+//! `allow-wasm32-best-effort-wipe` acceptance feature.
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
-#[cfg(all(target_arch = "wasm32", not(feature = "allow-wasm32-best-effort-wipe")))]
-compile_error!(
-    "base64-ng: wasm32 builds use a compiler-fence-only wipe barrier that cannot \
-     constrain downstream wasm runtime JITs. Enable \
-     `allow-wasm32-best-effort-wipe` to accept this limitation and use \
-     caller-owned, platform-approved zeroization for high-assurance wasm deployments."
-);
-
-#[cfg(all(base64_ng_require_high_assurance, feature = "simd"))]
-compile_error!(
-    "base64-ng: base64_ng_require_high_assurance and the `simd` feature are \
-     mutually exclusive. Disable `simd` or remove the high-assurance build cfg."
-);
-
-#[cfg(all(
-    not(miri),
-    not(feature = "allow-compiler-fence-only-wipe"),
-    not(any(
-        target_arch = "aarch64",
-        target_arch = "arm",
-        target_arch = "riscv32",
-        target_arch = "riscv64",
-        target_arch = "wasm32",
-        target_arch = "x86",
-        target_arch = "x86_64",
-    ))
-))]
-compile_error!(
-    "base64-ng: this architecture has no native hardware wipe barrier in \
-     base64-ng. Enable `allow-compiler-fence-only-wipe` only after reviewing \
-     docs/UNSAFE.md and applying platform-approved memory hygiene controls."
-);
-
 mod alphabet;
 mod buffers;
+mod build_policy;
 mod cleanup;
 pub mod ct;
 mod decode_backend;
@@ -209,9 +176,10 @@ pub(crate) use cleanup::{wipe_bytes, wipe_tail};
 #[cfg(feature = "alloc")]
 pub(crate) use cleanup::{wipe_vec_all, wipe_vec_spare_capacity};
 pub(crate) use ct::{
-    constant_time_eq_fixed_width_array, constant_time_eq_public_len, ct_accumulate_u8,
-    ct_error_gate_barrier, ct_mask_eq_u8, ct_mask_lt_u8, ct_mask_nonzero_u8,
+    constant_time_eq_fixed_width_array, constant_time_eq_public_len, ct_mask_eq_u8, ct_mask_lt_u8,
 };
+#[cfg(feature = "secrets")]
+pub(crate) use ct::{ct_accumulate_u8, ct_error_gate_barrier, ct_mask_nonzero_u8};
 #[cfg(test)]
 pub(crate) use ct::{ct_padded_final_quantum, report_ct_error};
 pub use engine::Engine;

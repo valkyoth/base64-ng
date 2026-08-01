@@ -109,19 +109,8 @@ scripts/check_companion_crates.sh
 echo "checks: reserved feature placeholders"
 scripts/check_reserved_features.sh
 
-echo "checks: high-assurance cfg"
-RUSTFLAGS="--cfg base64_ng_require_high_assurance" cargo check --no-default-features --lib
-if RUSTFLAGS="--cfg base64_ng_require_high_assurance" cargo check --no-default-features --features simd --lib; then
-    echo "high-assurance cfg: expected simd combination to fail" >&2
-    exit 1
-fi
-echo "high-assurance cfg: ok"
-
 echo "checks: unsafe boundary"
 scripts/validate-unsafe-boundary.sh
-
-echo "checks: wasm wipe policy"
-scripts/check_wasm_wipe_policy.sh
 
 echo "checks: wasm SIMD posture"
 scripts/validate-wasm-posture.sh
@@ -164,6 +153,9 @@ scripts/validate-constant-time-policy.sh
 
 echo "checks: 2.0 secret encoder"
 scripts/check-2.0-secret-encoder.sh
+
+echo "checks: 2.0 secret capability split"
+scripts/check-2.0-secret-capabilities.sh
 
 echo "checks: dudect timing harness"
 scripts/check_dudect.sh

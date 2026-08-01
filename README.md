@@ -265,8 +265,8 @@ license = "MIT OR Apache-2.0"
 | `stream` | no | `std::io` streaming wrappers. |
 | `secrets` | no | Dependency-free 2.0 secret storage, explicit exposure/declassification, and bounded constant-time-oriented secret encoding and decoding. |
 | `checked-backend` | no | Inert 2.0 development reservation that enables `simd`; redundant backend checking is implemented later in the 2.0 plan. |
-| `allow-wasm32-best-effort-wipe` | no | Explicitly allow `wasm32` builds with compiler-fence-only cleanup. |
-| `allow-compiler-fence-only-wipe` | no | Explicitly allow unsupported native architectures to build with compiler-fence-only cleanup after platform review. |
+| `allow-wasm32-best-effort-wipe` | no | Explicitly allow `wasm32` `secrets` builds with compiler-fence-only cleanup; ordinary codecs do not need it. |
+| `allow-compiler-fence-only-wipe` | no | Explicitly allow `secrets` builds on unsupported native architectures with compiler-fence-only cleanup after platform review. |
 | `tokio` | no | Reserved placeholder in the core crate; currently inert and dependency-free. Use `base64-ng-tokio` for the admitted async helper and streaming adapter surface. |
 | `kani` | no | Reserved for verifier harnesses; normal builds do not require Kani. |
 | `fuzzing` | no | Reserved for verifier and fuzz harness integration; published crate stays dependency-free. |
@@ -971,14 +971,11 @@ cloning secret material unless the duplicate lifetime is explicitly accounted
 for.
 On `wasm32`, the wipe barrier uses only a compiler fence; the wasm runtime JIT
 may still optimize or retain cleared bytes outside the crate's control.
-For that reason, `wasm32` builds fail closed by default. Enable
-`allow-wasm32-best-effort-wipe` only when the deployment explicitly accepts the
-limitation and applies its own approved memory strategy around stack-backed
-buffers.
-Other native architectures without an implemented hardware wipe barrier also
-fail closed by default. Enable `allow-compiler-fence-only-wipe` only after
-reviewing `docs/UNSAFE.md` and applying platform memory controls appropriate
-for that deployment.
+Ordinary public-data builds require no cleanup opt-in. Enable `secrets` when
+requesting the 2.0 secret capability; on WASM that capability also requires
+`allow-wasm32-best-effort-wipe`. Secret builds on unsupported native targets
+similarly require `allow-compiler-fence-only-wipe` after platform review.
+Neither acknowledgement is a high-assurance upgrade.
 
 When an owned heap buffer is acceptable but accidental logging is not, use
 `encode_secret` and `decode_secret`:
@@ -1055,9 +1052,10 @@ boundary, for example by comparing exposed bytes with `subtle`.
 with OS memory-locking, encrypted or disabled swap, crash-dump suppression, and
 allocator isolation where those controls are required.
 On `wasm32`, the same compiler-fence-only wipe-barrier caveat applies to owned
-secret buffers. `wasm32` builds fail closed by default; enable
-`allow-wasm32-best-effort-wipe` only when the deployment explicitly accepts the
-limitation and applies its own approved cleanup strategy.
+secret buffers. This 1.x compatibility type still performs best-effort cleanup
+in ordinary builds, but only an explicit `secrets` build requests the 2.0
+fail-closed secret policy and its `allow-wasm32-best-effort-wipe`
+acknowledgement.
 `expose_secret_utf8` provides an explicit borrowed text view when the secret
 bytes are valid UTF-8.
 

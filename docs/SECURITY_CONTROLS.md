@@ -206,13 +206,14 @@ outside the wrapper, core dumps, swap, hibernation images, cold-boot
 remanence, CPU registers, cache lines, write buffers, or arbitrary process
 memory disclosure vulnerabilities.
 On `wasm32`, the wipe barrier uses only a compiler fence; downstream wasm
-runtime JIT behavior is outside this crate's control. `wasm32` builds fail
-closed by default; deployments must enable `allow-wasm32-best-effort-wipe` to
-accept compiler-fence-only cleanup. High-assurance wasm deployments should
+runtime JIT behavior is outside this crate's control. Ordinary public-data
+builds require no cleanup opt-in. Builds enabling `secrets` fail closed unless
+deployments enable `allow-wasm32-best-effort-wipe` to accept
+compiler-fence-only cleanup. High-assurance wasm deployments should
 apply their own memory strategy around `EncodedBuffer`, `DecodedBuffer`,
 `SecretBuffer`, and caller-owned output buffers.
-Unsupported native architectures without an implemented hardware wipe barrier
-also fail closed by default; deployments must enable
+Secret builds on unsupported native architectures without an implemented
+hardware wipe barrier also fail closed by default; deployments must enable
 `allow-compiler-fence-only-wipe` only after reviewing the weaker cleanup
 posture and applying platform memory controls.
 For high-assurance secret handling, use the clear-tail APIs promptly and pair

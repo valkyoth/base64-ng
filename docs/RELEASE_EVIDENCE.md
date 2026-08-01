@@ -60,6 +60,16 @@ sink checks, exhaustive mapping and chunking tests, optional Kani proofs,
 dudect-style encode classes, and release/LTO assembly symbol evidence. See
 [`2.0_SECRET_ENCODING.md`](2.0_SECRET_ENCODING.md).
 
+Commit 21 separates ordinary portability from secret cleanup policy. Ordinary
+native and WASM codecs need no cleanup acknowledgement; `secrets` enables
+separate scalar secret owners and states with explicit best-effort lifecycle
+limits. Staged in-place decode now owns staging through an unwind guard,
+partial-state drop models cancellation cleanup, and `SecretVec` replacement
+wipes the displaced allocation. The high-assurance cfg is an eligibility gate
+that requires `secrets`, rejects SIMD, and rejects unsupported or unattested
+speculation postures; it does not attest protected storage. See
+[`2.0_SECRET_CAPABILITY_POLICY.md`](2.0_SECRET_CAPABILITY_POLICY.md).
+
 The Commit 20 pentest follow-up also pins fail-closed forward-progress guards
 for WHATWG and legacy one-shot loops, immediate pending-state cleanup on
 secret decode failure, checked secret-array frame construction, and the

@@ -64,18 +64,22 @@ require_backend_policy(BackendPolicy::HighAssuranceScalarOnly)
     .expect("base64-ng posture check failed: CT gate not attested on this core");
 ```
 
-Deployments that want a compile-time fail-closed guard can also build with the
-custom cfg `base64_ng_require_high_assurance`. That cfg rejects builds where
-the `simd` feature is enabled:
+Deployments that want a compile-time fail-closed eligibility guard can build
+with `base64_ng_require_high_assurance`. It requires `secrets`, rejects SIMD,
+and rejects unsupported or unattested speculation-barrier targets:
 
 ```sh
-RUSTFLAGS="--cfg base64_ng_require_high_assurance" cargo build --no-default-features
+RUSTFLAGS="--cfg base64_ng_require_high_assurance" \
+  cargo build --no-default-features --features secrets
 ```
 
 This is a custom cfg rather than a Cargo feature so normal `--all-features`
 release evidence and docs.rs builds can continue to exercise every public
 feature. Treat the cfg as a deployment policy assertion and keep the runtime
 `require_backend_policy(BackendPolicy::HighAssuranceScalarOnly)` startup gate.
+This eligibility check does not attest protected storage. Commit 22 adds the
+allocation-specific capability required before the 2.0 API can authorize an
+assured secret operation.
 
 `HighAssuranceScalarOnly` is still a build and target posture assertion. On
 AArch64, the crate emits `isb sy` plus the CSDB hint for the CT result gate.

@@ -14,10 +14,10 @@ use crate::{EncodeError, STANDARD, constant_time_eq_public_len, wipe_bytes, wipe
 ///
 /// On `wasm32` targets, the wipe barrier uses only a compiler fence. The wasm
 /// runtime JIT may still optimize or retain cleared bytes in ways this crate
-/// cannot control. `wasm32` builds fail closed by default; enable
-/// `allow-wasm32-best-effort-wipe` only when the deployment explicitly accepts
-/// this limitation and applies its own memory strategy around stack-backed
-/// buffers.
+/// cannot control. Ordinary public-data builds remain portable without an
+/// opt-in. A deployment that enables `secrets` and treats this compatibility
+/// type as secret-bearing must explicitly accept that limitation with
+/// `allow-wasm32-best-effort-wipe` and apply its own memory strategy.
 pub struct EncodedBuffer<const CAP: usize> {
     bytes: [u8; CAP],
     len: usize,

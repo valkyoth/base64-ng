@@ -20,8 +20,9 @@ only for backends named in this file and the release gate.
   dispatch, and `1.3.0` admitted normal strict decode dispatch for the first
   narrow decode scope. `1.3.3` admits a narrow wasm `simd128` runtime profile
   for Standard and URL-safe public encode plus normal strict decode when the
-  binary is compiled with `target-feature=+simd128`, `simd`, and the explicit
-  `allow-wasm32-best-effort-wipe` feature. `1.3.4` admits no new SIMD
+  binary is compiled with `target-feature=+simd128` and `simd`. The 2.0
+  ordinary codec no longer needs a secret cleanup acknowledgement. `1.3.4`
+  admits no new SIMD
   backend; it records big-endian QEMU scalar/fallback evidence and the stable
   Rust `s390x`/PowerPC64 intrinsic blocker. `1.3.5` admits no new SIMD
   backend; RISC-V acceleration remains scalar/fallback-only under QEMU evidence
@@ -91,16 +92,15 @@ wiping on rejected input.
 
 For the `1.3.3` line, wasm `simd128` is admitted for runtime dispatch when the
 binary is compiled for `wasm32` with `target-feature=+simd128`, the `simd`
-feature, and the explicit `allow-wasm32-best-effort-wipe` feature. The
-admitted runtime profile is backed by Node/V8, Wasmtime, Chromium-family
+feature. The admitted runtime profile is backed by Node/V8, Wasmtime, Chromium-family
 browser, Firefox/SpiderMonkey, and Safari/WebKit runtime smoke evidence.
 
 This is a narrow admission, not a browser-wide or runtime-universal claim.
 Wasm execution passes through runtime/JIT engines outside the crate's control,
 so timing, register-retention, cleanup, fallback, and performance claims remain
 limited to the evidence named in this release. Broader browser claims remain
-out of scope until separately evidenced. The wasm32 wipe policy remains
-fail-closed unless callers explicitly enable `allow-wasm32-best-effort-wipe`.
+out of scope until separately evidenced. The cleanup acknowledgement applies
+only when the separate `secrets` capability is enabled.
 
 Safari/WebKit evidence is gathered with
 `scripts/check_wasm_browser_safari_dispatch.sh` on macOS with Safari remote
@@ -157,7 +157,7 @@ State labels are intentionally strict:
 | AVX2 | admitted backend | `avx2` | std x86/x86_64 runtime-dispatched encode and strict decode for Standard and URL-safe alphabet families; encode uses fixed 24-byte input blocks and completes any final tail/padding through scalar code; in-place encode may enter only through stack staging; decode uses fixed 32-byte encoded blocks only after whole-input scalar validation preserves public error shape; strict in-place decode may enter only through stack staging; wrapped and legacy decode may enter after scalar line-profile validation, line-ending compaction, or legacy-whitespace compaction; shorter inputs fall back to SSSE3/SSE4.1 or scalar, and unsupported alphabets, CT secret decode, line-ending insertion/compaction, whitespace compaction, and `no_std` use scalar fallback |
 | SSSE3/SSE4.1 | admitted backend | `ssse3`, `sse4.1` | std x86/x86_64 runtime-dispatched encode and strict decode for Standard and URL-safe alphabet families; encode uses fixed 12-byte input blocks and completes any final tail/padding through scalar code; in-place encode may enter only through stack staging; decode uses fixed 16-byte encoded blocks only after whole-input scalar validation preserves public error shape; strict in-place decode may enter only through stack staging; wrapped and legacy decode may enter after scalar line-profile validation, line-ending compaction, or legacy-whitespace compaction; shorter inputs, unsupported alphabets, CT secret decode, line-ending insertion/compaction, whitespace compaction, and `no_std` use scalar fallback |
 | NEON | admitted backend | `neon` | little-endian std aarch64 runtime-dispatched encode and strict decode for Standard and URL-safe alphabet families; encode uses fixed 12-byte input blocks and completes any final tail/padding through scalar code; in-place encode may enter only through stack staging; decode uses fixed 16-byte encoded blocks only after whole-input scalar validation preserves public error shape; strict in-place decode may enter only through stack staging; wrapped and legacy decode may enter after scalar line-profile validation, line-ending compaction, or legacy-whitespace compaction; shorter inputs, unsupported alphabets, big-endian AArch64, 32-bit ARM, CT secret decode, line-ending insertion/compaction, whitespace compaction, and `no_std` use scalar fallback |
-| wasm `simd128` | admitted backend | `simd128` | wasm32 runtime-dispatched encode and strict decode for Standard and URL-safe alphabet families when compiled with `target-feature=+simd128`, the `simd` feature, and `allow-wasm32-best-effort-wipe`; wasm encode stages vector output, compares it against scalar output before copying to caller output, completes any final tail/padding through scalar code, and may serve in-place encode only through stack staging; strict in-place decode may enter only through stack staging; wrapped and legacy decode may enter after scalar line-profile validation, line-ending compaction, or legacy-whitespace compaction; Node/V8, Wasmtime, Chromium-family browser, Firefox/SpiderMonkey, and Safari/WebKit runtime smoke evidence proves active encode/decode reporting, a deterministic length sweep, independent scalar reference encode checks, malformed-input rejection, and round trips; shorter inputs, unsupported alphabets, CT secret decode, line-ending insertion/compaction, whitespace compaction, and broader browser-specific claims remain scalar, out of scope, or separately reviewed |
+| wasm `simd128` | admitted backend | `simd128` | ordinary wasm32 runtime-dispatched encode and strict decode for Standard and URL-safe alphabet families when compiled with `target-feature=+simd128` and the `simd` feature; wasm encode stages vector output, compares it against scalar output before copying to caller output, completes any final tail/padding through scalar code, and may serve in-place encode only through stack staging; strict in-place decode may enter only through stack staging; wrapped and legacy decode may enter after scalar line-profile validation, line-ending compaction, or legacy-whitespace compaction; Node/V8, Wasmtime, Chromium-family browser, Firefox/SpiderMonkey, and Safari/WebKit runtime smoke evidence proves active encode/decode reporting, a deterministic length sweep, independent scalar reference encode checks, malformed-input rejection, and round trips; shorter inputs, unsupported alphabets, CT secret decode, line-ending insertion/compaction, whitespace compaction, and broader browser-specific claims remain scalar, out of scope, or separately reviewed |
 
 ## Encode Surface Review
 

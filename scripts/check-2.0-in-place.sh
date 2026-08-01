@@ -67,7 +67,7 @@ for required in \
     'require_disjoint_slices' \
     'ct_error_gate_barrier' \
     'InvalidSecretInput' \
-    'wipe_bytes(private_staging)' \
+    'StagingWipeGuard' \
     'wipe_bytes(buffer)'
 do
     if ! grep -F -q "$required" src/v2/secret_in_place.rs; then
@@ -87,9 +87,9 @@ do
 done
 
 run_cargo test --lib 'v2::in_place_tests'
-run_cargo test --lib 'v2::secret_in_place_tests'
+run_cargo test --features secrets --lib 'v2::secret_in_place_tests'
 run_cargo test --no-default-features --lib 'v2::in_place_tests'
-run_cargo test --no-default-features --lib 'v2::secret_in_place_tests'
+run_cargo test --no-default-features --features secrets --lib 'v2::secret_in_place_tests'
 scripts/check-2.0-migration-smoke.sh
 run_cargo test --offline --manifest-path target/2_0_migration_smoke/Cargo.toml \
     in_place_2_0_surface_is_public_and_external

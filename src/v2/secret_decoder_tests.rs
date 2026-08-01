@@ -91,6 +91,19 @@ fn borrowed_frame_withholds_output_until_the_result_gate() {
 }
 
 #[test]
+fn dropping_partial_borrowed_frame_models_cancellation_cleanup() {
+    let mut staging = [0xa5; 16];
+    let mut output = [0xa5; 16];
+    {
+        let mut frame =
+            SecretFrame::new(&STRICT_STANDARD_PADDED, 16, &mut staging, &mut output).unwrap();
+        frame.update(&SecretInput::new(b"c2Vj")).unwrap();
+    }
+    assert_eq!(staging, [0; 16]);
+    assert_eq!(output, [0; 16]);
+}
+
+#[test]
 fn borrowed_frame_rejects_unsupported_policy_before_mutating_storage() {
     let mut staging = [0xa5; 16];
     let mut output = [0x5a; 16];
