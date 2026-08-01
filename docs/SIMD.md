@@ -191,7 +191,10 @@ runtime behavior for that line.
   encode without changing the separate scalar secret contract. In
   `no_std + simd`, `StaticBackendToken::encode_standard` and
   `StaticBackendToken::encode_url_safe` expose these kernels only after KAT,
-  generation, and quarantine checks.
+  generation, and quarantine checks. `checked-backend` applies the same bounded
+  scalar comparison and quarantine path to these static-token calls as to
+  automatic dispatch. Quarantine blocks later admission but does not cancel an
+  invocation that already observed a healthy generation.
 - AArch64 NEON encode is admitted for little-endian `aarch64` Standard and
   URL-safe alphabet families. It uses NEON table lookup, vector shifts/masks,
   and byte-select alphabet mapping for fixed 12-byte input blocks, then clears

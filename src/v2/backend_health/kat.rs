@@ -4,14 +4,23 @@ use crate::runtime::{Backend, OperationKind};
 use crate::{Standard, UrlSafe};
 
 const INPUT: [u8; 48] = [
-    0xfb, 0xff, 0xef, 0x00, 0x10, 0x83, 0x7f, 0x80, 0x40, 0x55, 0xaa, 0x33, 0xfb, 0xff, 0xef, 0x00,
-    0x10, 0x83, 0x7f, 0x80, 0x40, 0x55, 0xaa, 0x33, 0xfb, 0xff, 0xef, 0x00, 0x10, 0x83, 0x7f, 0x80,
-    0x40, 0x55, 0xaa, 0x33, 0xfb, 0xff, 0xef, 0x00, 0x10, 0x83, 0x7f, 0x80, 0x40, 0x55, 0xaa, 0x33,
+    0x00, 0x10, 0x83, 0x10, 0x51, 0x87, 0x20, 0x92, 0x8b, 0x30, 0xd3, 0x8f, 0x41, 0x14, 0x93, 0x51,
+    0x55, 0x97, 0x61, 0x96, 0x9b, 0x71, 0xd7, 0x9f, 0x82, 0x18, 0xa3, 0x92, 0x59, 0xa7, 0xa2, 0x9a,
+    0xab, 0xb2, 0xdb, 0xaf, 0xc3, 0x1c, 0xb3, 0xd3, 0x5d, 0xb7, 0xe3, 0x9e, 0xbb, 0xf3, 0xdf, 0xbf,
 ];
 const STANDARD_ENCODED: &[u8; 64] =
-    b"+//vABCDf4BAVaoz+//vABCDf4BAVaoz+//vABCDf4BAVaoz+//vABCDf4BAVaoz";
+    b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 const URL_SAFE_ENCODED: &[u8; 64] =
-    b"-__vABCDf4BAVaoz-__vABCDf4BAVaoz-__vABCDf4BAVaoz-__vABCDf4BAVaoz";
+    b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+const BOUNDARY_INPUT: [u8; 48] = [
+    0x00, 0x00, 0x00, 0xff, 0x00, 0x00, 0x00, 0xff, 0x00, 0x00, 0x00, 0xff, 0x00, 0x00, 0x00, 0xff,
+    0x00, 0x00, 0x00, 0xff, 0x00, 0x00, 0x00, 0xff, 0x00, 0x00, 0x00, 0xff, 0x00, 0x00, 0x00, 0xff,
+    0x00, 0x00, 0x00, 0xff, 0x00, 0x00, 0x00, 0xff, 0x00, 0x00, 0x00, 0xff, 0x00, 0x00, 0x00, 0xff,
+];
+const BOUNDARY_STANDARD: &[u8; 64] =
+    b"AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/";
+const BOUNDARY_URL_SAFE: &[u8; 64] =
+    b"AAAA_wAAAP8AAAD_AAAA_wAAAP8AAAD_AAAA_wAAAP8AAAD_AAAA_wAAAP8AAAD_";
 
 pub(super) fn available(backend: Backend) -> bool {
     match backend {
@@ -40,21 +49,35 @@ pub(super) fn run(operation: OperationKind, backend: Backend) -> bool {
 }
 
 fn encode(backend: Backend) -> bool {
-    let mut standard = [0u8; 64];
-    let mut url_safe = [0u8; 64];
-    direct_encode::<Standard, false>(backend, &INPUT, &mut standard) == Some(64)
-        && direct_encode::<UrlSafe, false>(backend, &INPUT, &mut url_safe) == Some(64)
-        && standard == *STANDARD_ENCODED
-        && url_safe == *URL_SAFE_ENCODED
+    encode_matches::<Standard>(backend, &INPUT, STANDARD_ENCODED)
+        && encode_matches::<UrlSafe>(backend, &INPUT, URL_SAFE_ENCODED)
+        && encode_matches::<Standard>(backend, &BOUNDARY_INPUT, BOUNDARY_STANDARD)
+        && encode_matches::<UrlSafe>(backend, &BOUNDARY_INPUT, BOUNDARY_URL_SAFE)
 }
 
 fn decode(backend: Backend) -> bool {
-    let mut standard = [0u8; 48];
-    let mut url_safe = [0u8; 48];
-    direct_decode::<Standard, false>(backend, STANDARD_ENCODED, &mut standard) == Some(48)
-        && direct_decode::<UrlSafe, false>(backend, URL_SAFE_ENCODED, &mut url_safe) == Some(48)
-        && standard == INPUT
-        && url_safe == INPUT
+    decode_matches::<Standard>(backend, STANDARD_ENCODED, &INPUT)
+        && decode_matches::<UrlSafe>(backend, URL_SAFE_ENCODED, &INPUT)
+        && decode_matches::<Standard>(backend, BOUNDARY_STANDARD, &BOUNDARY_INPUT)
+        && decode_matches::<UrlSafe>(backend, BOUNDARY_URL_SAFE, &BOUNDARY_INPUT)
+}
+
+fn encode_matches<A: crate::Alphabet>(
+    backend: Backend,
+    input: &[u8; 48],
+    expected: &[u8; 64],
+) -> bool {
+    let mut output = [0u8; 64];
+    direct_encode::<A, false>(backend, input, &mut output) == Some(64) && output == *expected
+}
+
+fn decode_matches<A: crate::Alphabet>(
+    backend: Backend,
+    input: &[u8; 64],
+    expected: &[u8; 48],
+) -> bool {
+    let mut output = [0u8; 48];
+    direct_decode::<A, false>(backend, input, &mut output) == Some(48) && output == *expected
 }
 
 pub(crate) fn direct_encode<A: crate::Alphabet, const PAD: bool>(

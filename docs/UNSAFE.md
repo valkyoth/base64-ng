@@ -1478,6 +1478,12 @@ process. The token is non-forgeable through safe code, neither `Send` nor
 `Sync`, and generation-bound. It bypasses runtime probing only; bounds,
 canonicality, KAT, quarantine, and reporting remain mandatory.
 
+Generation validation is a lock-free admission snapshot. Quarantine prevents
+later admission but cannot synchronously cancel a call that already observed a
+healthy generation. With `checked-backend`, static SSSE3/SSE4.1 and AVX2 encode
+also use bounded scalar comparison before caller-visible commit; ordinary fast
+mode retains the documented one-in-flight-call revocation window.
+
 Safe static selection uses only compile-time `target_feature` evidence. A
 target without pointer-width atomics cannot maintain the required health latch
 and remains scalar. Architecture kernel methods are exposed through this token

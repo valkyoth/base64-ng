@@ -86,6 +86,10 @@ fn verify_slice<A, const PAD: bool>(
             &expected[..expected_len],
             "input length={len}"
         );
+        assert!(
+            actual[required..].iter().all(|byte| *byte == 0x5a),
+            "write exceeded required output for input length={len}"
+        );
     }
 }
 

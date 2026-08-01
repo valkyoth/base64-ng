@@ -51,7 +51,9 @@ for required in \
     'direct_encode' \
     'direct_decode' \
     'STANDARD_ENCODED' \
-    'URL_SAFE_ENCODED'
+    'URL_SAFE_ENCODED' \
+    'BOUNDARY_INPUT' \
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
 do
     if ! grep -F -qi "$required" src/v2/backend_health/kat.rs; then
         echo "2.0 backend health: direct KAT is missing: $required" >&2
@@ -65,6 +67,7 @@ cargo test --all-features --lib 'v2::backend_health'
 echo "2.0 backend health: checked ordinary operation tests"
 cargo test --features checked-backend --lib 'encode_backend'
 cargo test --features checked-backend --lib 'decode_backend'
+cargo test --all-features --lib 'simd::x86_encode_tests'
 
 echo "2.0 backend health: scalar and no_std static fallbacks"
 cargo check --no-default-features --lib

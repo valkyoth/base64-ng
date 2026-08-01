@@ -31,7 +31,7 @@ for function in encode_24_bytes_avx2_inner encode_12_bytes_ssse3_sse41_inner; do
     done
 done
 
-for required in 'encode_standard' 'encode_url_safe' 'encode_slice_avx2' 'encode_slice_ssse3_sse41'; do
+for required in 'encode_standard' 'encode_url_safe' 'encode_slice_avx2' 'encode_slice_ssse3_sse41' 'encode_backend::encode_checked'; do
     if ! grep -F -q "$required" "$token_file"; then
         echo "2.0 x86 encode: static token contract is missing: $required" >&2
         exit 1
@@ -63,6 +63,9 @@ publish = false
 
 [workspace]
 
+[features]
+checked-backend = ["base64-ng/checked-backend"]
+
 [dependencies]
 base64-ng = { path = "../..", default-features = false, features = ["simd"] }
 MANIFEST
@@ -72,6 +75,14 @@ MANIFEST
         echo "2.0 x86 encode: no_std static AVX2 execution"
         RUSTFLAGS='-C target-feature=+avx2' \
             cargo run --quiet --offline --manifest-path "$smoke_dir/Cargo.toml"
+        echo "2.0 x86 encode: checked no_std static SSSE3/SSE4.1 execution"
+        RUSTFLAGS='-C target-feature=+ssse3,+sse4.1' \
+            cargo run --quiet --offline --manifest-path "$smoke_dir/Cargo.toml" \
+            --features checked-backend
+        echo "2.0 x86 encode: checked no_std static AVX2 execution"
+        RUSTFLAGS='-C target-feature=+avx2' \
+            cargo run --quiet --offline --manifest-path "$smoke_dir/Cargo.toml" \
+            --features checked-backend
         ;;
 esac
 

@@ -69,6 +69,10 @@ impl StaticBackendToken {
     }
 
     /// Returns whether quarantine and generation state still validate it.
+    ///
+    /// This is an admission snapshot, not synchronous cancellation. An
+    /// invocation that already observed a healthy generation may finish while
+    /// another thread quarantines that backend.
     #[must_use]
     pub fn is_valid(&self) -> bool {
         let encode = crate::v2::backend_health::snapshot(OperationKind::Encode, self.backend);
@@ -83,6 +87,8 @@ impl StaticBackendToken {
     ///
     /// Commit 25 enables direct SSSE3/SSE4.1 and AVX2 execution. Other token
     /// backends, or a token invalidated by quarantine, use the scalar encoder.
+    /// The `checked-backend` feature applies the same per-call redundant
+    /// scalar comparison and quarantine policy as automatic dispatch.
     pub fn encode_standard<const PAD: bool>(
         &self,
         input: &[u8],
@@ -95,6 +101,8 @@ impl StaticBackendToken {
     ///
     /// Commit 25 enables direct SSSE3/SSE4.1 and AVX2 execution. Other token
     /// backends, or a token invalidated by quarantine, use the scalar encoder.
+    /// The `checked-backend` feature applies the same per-call redundant
+    /// scalar comparison and quarantine policy as automatic dispatch.
     pub fn encode_url_safe<const PAD: bool>(
         &self,
         input: &[u8],
@@ -110,6 +118,20 @@ impl StaticBackendToken {
     ) -> Result<usize, EncodeError> {
         if !self.is_valid() {
             return crate::scalar::encode_slice::<A, PAD>(input, output);
+        }
+        #[cfg(all(
+            feature = "checked-backend",
+            any(target_arch = "x86", target_arch = "x86_64")
+        ))]
+        match self.backend {
+            Backend::Avx2 | Backend::Ssse3Sse41 => {
+                return crate::encode_backend::encode_checked::<A, PAD>(
+                    self.backend,
+                    input,
+                    output,
+                );
+            }
+            _ => {}
         }
         #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
         match self.backend {

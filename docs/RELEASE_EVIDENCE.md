@@ -123,7 +123,11 @@ through its static token and compares Standard and URL-safe padded and unpadded
 output with the independent `base64` oracle. Miri separately exercises the
 safe automatic-dispatch wrapper and fallback boundary; Miri does not interpret
 the x86 intrinsics, so real-host tests and generated assembly remain the
-evidence for those instructions.
+evidence for those instructions. The pentest follow-up expands the startup KAT
+to cover all 64 alphabet indices plus `0x00`/`0xff` in each three-byte
+position, runs static-token `checked-backend` smoke on both x86 backends,
+asserts logical output sentinels remain untouched, and structurally rejects
+ordinary SIMD references from secret decode modules.
 
 The Commit 20 pentest follow-up also pins fail-closed forward-progress guards
 for WHATWG and legacy one-shot loops, immediate pending-state cleanup on

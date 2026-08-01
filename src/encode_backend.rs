@@ -210,6 +210,15 @@ where
 }
 
 #[cfg(feature = "checked-backend")]
+pub(crate) fn encode_checked<A: Alphabet, const PAD: bool>(
+    backend: crate::runtime::Backend,
+    input: &[u8],
+    output: &mut [u8],
+) -> Result<usize, EncodeError> {
+    checked::encode::<A, PAD>(backend, input, output)
+}
+
+#[cfg(feature = "checked-backend")]
 fn backend_supports<A: Alphabet>(backend: EncodeBackend, input_len: usize) -> bool {
     match backend {
         EncodeBackend::Scalar => false,

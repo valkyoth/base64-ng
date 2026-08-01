@@ -63,4 +63,26 @@ do
     fi
 done
 
+for secret_source in \
+    src/v2/secret_decoder.rs \
+    src/v2/secret_in_place.rs \
+    src/v2/secret/frames.rs \
+    src/v2/assurance/operations.rs
+do
+    if grep -E -q 'crate::simd|decode_backend::|encode_backend::' "$secret_source"; then
+        echo "constant-time policy: secret source references ordinary SIMD dispatch: $secret_source" >&2
+        exit 1
+    fi
+done
+
+if ! grep -F -q 'OperationKind::SecretDecode => false' src/v2/backend_health/kat.rs; then
+    echo "constant-time policy: backend KAT must reject secret decode admission" >&2
+    exit 1
+fi
+
+if ! grep -F -q 'secret_decode_posture_is_fixed_outside_simd_dispatch' src/runtime/tests.rs; then
+    echo "constant-time policy: secret decode runtime posture tripwire is missing" >&2
+    exit 1
+fi
+
 echo "constant-time policy: ok"

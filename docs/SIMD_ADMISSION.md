@@ -187,8 +187,11 @@ byte-shuffle alphabet mapping, and avoid prototype staging, scalar comparison,
 and per-block register clearing. Generated assembly must retain `vzeroupper`
 at the AVX2 return boundary. `StaticBackendToken::encode_standard` and
 `StaticBackendToken::encode_url_safe` expose these kernels to admitted
-`no_std` deployments; invalidated tokens use scalar. Ordinary encode scratch
-is public-data state and makes no secret-erasure claim.
+`no_std` deployments; invalidated tokens use scalar. With `checked-backend`,
+static-token calls retain bounded scalar comparison, suspect-output
+withholding, quarantine, and scalar retry. Quarantine blocks later admission
+but does not synchronously cancel a call already in flight. Ordinary encode
+scratch is public-data state and makes no secret-erasure claim.
 
 ## Release Rule
 

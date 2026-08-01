@@ -37,6 +37,22 @@ fn per_operation_reports_match_qualifying_dispatch_counters() {
     );
 }
 
+#[test]
+fn secret_decode_posture_is_fixed_outside_simd_dispatch() {
+    let secret = backend_report().secret_decode_backend;
+    assert_eq!(secret.operation, OperationKind::SecretDecode);
+    assert_eq!(secret.backend.as_str(), "scalar-constant-time-oriented");
+    assert_eq!(
+        secret.security_posture,
+        OperationSecurityPosture::ScalarConstantTimeOriented
+    );
+    assert_eq!(
+        secret.health_posture,
+        super::BackendHealthPosture::SecretPolicyFixed
+    );
+    assert_eq!(secret.backend_fault, None);
+}
+
 fn initialize_runtime_backend_health() {
     let _ = crate::initialize_backends();
     #[cfg(all(feature = "std", feature = "simd"))]

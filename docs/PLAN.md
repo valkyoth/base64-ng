@@ -1269,6 +1269,13 @@ tests, target-feature cross-builds, assembly review, and a focused scalar-ratio
 benchmark gate cover the hot paths. Ordinary encode vectors are public-data
 scratch; secret processing remains on the separate scalar path.
 
+The Commit 25 pentest follow-up makes static-token encode honor
+`checked-backend`, expands direct startup KATs across the complete built-in
+alphabet and byte-position boundary values, asserts output sentinels, and adds
+CI tripwires that keep secret decode outside ordinary SIMD dispatch. Backend
+quarantine is documented as revoking future admission rather than
+synchronously cancelling an already admitted call.
+
 Commit 24 added direct per-backend KATs, operation-specific health generations,
 permanent quarantine, explicit startup initialization, bounded redundant
 `checked-backend` execution, and generation-bound static `no_std` SIMD tokens.
