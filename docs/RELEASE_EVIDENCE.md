@@ -70,6 +70,19 @@ that requires `secrets`, rejects SIMD, and rejects unsupported or unattested
 speculation postures; it does not attest protected storage. See
 [`2.0_SECRET_CAPABILITY_POLICY.md`](2.0_SECRET_CAPABILITY_POLICY.md).
 
+Commit 22 adds generation-bound `BestEffort` and `Attested` assurance tokens,
+allocation-specific protected typestates, a finite volatile default provider,
+and one ordered teardown path shared by explicit close and `Drop`. Resources
+and a quarantine slot are reserved before plaintext materialization. Fault
+tests pin wipe-before-protection-before-accounting-before-disposal ordering,
+failed-wipe short-circuiting, conservative unknown-protection reporting, and
+terminal non-addressable tombstones for indeterminate disposal. Compile-fail
+tests pin token non-copyability, private typestate transitions, allocation-
+specific operation arguments, and the protected auto-trait matrix on current
+Rust and Rust 1.90.0 when installed. See
+[`2.0_ASSURANCE_AND_PROTECTED_MEMORY.md`](2.0_ASSURANCE_AND_PROTECTED_MEMORY.md)
+and `scripts/check-2.0-assurance.sh`.
+
 The Commit 20 pentest follow-up also pins fail-closed forward-progress guards
 for WHATWG and legacy one-shot loops, immediate pending-state cleanup on
 secret decode failure, checked secret-array frame construction, and the

@@ -157,6 +157,9 @@ scripts/check-2.0-secret-encoder.sh
 echo "checks: 2.0 secret capability split"
 scripts/check-2.0-secret-capabilities.sh
 
+echo "checks: 2.0 assurance and protected memory"
+scripts/check-2.0-assurance.sh
+
 echo "checks: dudect timing harness"
 scripts/check_dudect.sh
 

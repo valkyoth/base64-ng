@@ -22,6 +22,10 @@ convention alone is not enough.
 The Commit 4 independent RFC oracle and fixtures plus the Commit 5 validated
 alphabet tests under `src/v2/` receive the same structural check against
 `src/v2/mod.rs`, so none can enter production builds under the test exemption.
+Nested `src/*/*/tests.rs` modules receive the same check against their immediate
+parent module declaration; the Commit 22 assurance tests cannot inherit the
+test exemption unless `src/v2/assurance/mod.rs` keeps the explicit
+`#[cfg(test)] mod tests;` boundary.
 Remaining bounded indexing invariants are documented in
 [INVARIANTS.md](INVARIANTS.md).
 

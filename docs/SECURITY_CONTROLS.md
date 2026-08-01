@@ -166,6 +166,27 @@ certification claim.
 
 ## Control Boundaries
 
+### Assured Protected Operations
+
+The 2.0 assured operation boundary requires two independent capabilities: a
+generation-bound `AssuranceToken` and one allocation-specific
+`ProtectedSecret`. Tokens do not authorize ordinary caller slices. Protected
+typestates expose bytes only after the secret result gate succeeds.
+
+Explicit close and `Drop` use the same wipe, protection removal, accounting,
+and disposal sequence. Failed wipe invokes no later hook. Still-live failures
+transfer to a pre-reserved bounded quarantine; indeterminate disposal destroys
+addressability and leaves only a non-owning tombstone. Wipe evidence, physical
+protection, accounting, and lifecycle are reported independently so a
+conservative resource charge is never rendered as proof that memory remains
+locked.
+
+The included provider is volatile and best-effort. It provides neither OS
+memory locking nor persistent recovery. Reviewed deployments can implement the
+unsafe provider and attestation protocols only under the contracts in
+[2.0_ASSURANCE_AND_PROTECTED_MEMORY.md](2.0_ASSURANCE_AND_PROTECTED_MEMORY.md)
+and [UNSAFE.md](UNSAFE.md).
+
 ### Input Validation
 
 Strict APIs reject:

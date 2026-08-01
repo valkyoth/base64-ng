@@ -74,6 +74,7 @@ test -s docs/2.0_GOVERNANCE.md
 test -s docs/2.0_API_MIGRATION_LEDGER.md
 test -s docs/2.0_PACKAGE_TOPOLOGY.md
 test -s docs/2.0_SECRET_STORAGE_AND_EXPOSURE.md
+test -s docs/2.0_ASSURANCE_AND_PROTECTED_MEMORY.md
 test -s api-snapshots/README.md
 test -s docs/ASYNC.md
 test -s docs/BENCHMARKS.md
@@ -135,6 +136,7 @@ for required_script in \
     "scripts/check-2.0-in-place-sanitizers.sh" \
     "scripts/check-2.0-profiles.sh" \
     "scripts/check-2.0-secret-capabilities.sh" \
+    "scripts/check-2.0-assurance.sh" \
     "scripts/check-2.0-secret-storage.sh" \
     "scripts/check-2.0-web-forgiving.sh" \
     "scripts/check-2.0-migration-smoke.sh" \

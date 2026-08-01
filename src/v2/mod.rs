@@ -6,6 +6,8 @@
 pub(crate) mod alphabet;
 #[cfg(feature = "alloc")]
 mod append;
+#[cfg(feature = "secrets")]
+pub mod assurance;
 mod backend_health;
 mod bounded;
 mod chunks;

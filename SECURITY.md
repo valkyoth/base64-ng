@@ -39,8 +39,9 @@ scalar and in-place safety surface that benefits most from interpreter checks.
 
 The scalar encode/decode implementation remains safe Rust. The crate root uses
 `#![deny(unsafe_code)]`, with reviewed `allow(unsafe_code)` exceptions only for
-the volatile wipe/barrier helpers in `src/lib.rs` and the dedicated private SIMD
-admission boundary in `src/simd.rs`. The reserved `simd` feature may detect CPU
+volatile wipe/barrier helpers, constant-time gates/scans, dedicated SIMD
+admission code, and the exact 2.0 protected-provider/attestation declarations.
+The reserved `simd` feature may detect CPU
 candidates, but it does not activate an accelerated backend until the SIMD
 admission policy is satisfied. `docs/UNSAFE.md` inventories every current
 unsafe site and its safety invariants.
@@ -102,6 +103,15 @@ where available (`mlock`/`VirtualLock` or equivalent), disabled or encrypted
 swap and hibernation, crash-dump suppression, short key lifetimes, allocator
 isolation for secret buffers, and the deployment's approved zeroization
 primitive at the ownership boundary.
+
+The 2.0 `assurance` module requires both a generation-bound token and an
+allocation-specific `ProtectedSecret` for assured encode/decode. Safe code
+cannot mint attested evidence or substitute an ordinary mutable slice. The
+included `BestEffortProvider` is bounded and quarantines failed teardown, but
+does not lock pages, exclude dumps, attest hardware, or persist recovery state.
+Base 2.0 ships no persistent teardown provider. See
+`docs/2.0_ASSURANCE_AND_PROTECTED_MEMORY.md` before implementing the unsafe
+provider or platform-attestation protocols.
 
 Services that accept attacker-controlled payloads must enforce protocol-level
 size caps before calling allocation helpers or constant-time-oriented decode.

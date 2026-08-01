@@ -146,7 +146,7 @@ impl<'a> SecretInput<'a> {
         self.bytes.is_empty()
     }
 
-    pub(super) const fn classified_bytes(&self) -> &[u8] {
+    pub(crate) const fn classified_bytes(&self) -> &[u8] {
         self.bytes
     }
 }

@@ -1260,6 +1260,17 @@ SIMD admission rules for all post-`1.0` work:
   attestation outside the crate when the runtime report marks a CT gate as
   unattested.
 
+## Current 2.0 Development Checkpoint
+
+Commit 22 adds operation-specific runtime assurance and protected allocation
+ownership on top of the Commit 18-21 secret storage and scalar processing
+boundary. Assured operations require both a generation-bound token and one
+allocation-specific protected typestate. The included provider is finite,
+volatile, best-effort, and explicitly not a page-locking or persistent-
+recovery provider. Ordinary SIMD may coexist in one build but does not enter or
+authorize assured secret operations. The numbered acceptance criteria remain
+authoritative in `2.0.0-release-plan.md`.
+
 ## Release Gate
 
 The release gate must pass before every release:

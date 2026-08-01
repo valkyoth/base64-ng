@@ -146,6 +146,8 @@ mod scalar_encode_in_place;
 mod v2;
 
 #[cfg(feature = "secrets")]
+pub use v2::assurance;
+#[cfg(feature = "secrets")]
 pub use v2::secret;
 pub use v2::{
     AssuranceClass, Atomicity, BCRYPT_ALPHABET_NO_PAD, BINHEX_ALPHABET, BackendClass, BackendFault,

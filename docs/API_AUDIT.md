@@ -378,3 +378,22 @@ Stable boundary:
   `no_std` dispatch. Wrapped, legacy, and strict in-place decode are admitted
   only after scalar validation and staging; line-profile validation,
   line-ending compaction, and legacy-whitespace compaction remain scalar.
+
+## 2.0 Commit 22 Assurance Surface
+
+- `base64_ng::assurance` is available only with `secrets`.
+- `AssuranceToken` is context-borrowing, non-`Copy`, non-`Clone`, and split
+  into `BestEffort` and unsafe-evidence-backed `Attested` levels.
+- Assured encode/decode accepts only an allocation-specific
+  `ProtectedSecret<Uninitialized, Level>` and returns `Validated`; ordinary
+  mutable slices cannot enter this API.
+- Typestate fields and transitions are private. Explicit exposure remains
+  redacted and borrows the validated owner.
+- `ProtectedMemoryProvider` and `PlatformAttestation` are unsafe extension
+  protocols. Cross-thread movement requires the crate-sealed
+  `ThreadMovableProvider` proof; protected owners are never `Sync`.
+- `try_close` and `Drop` share one ordered teardown implementation with bounded
+  provider quarantine. Reports are redacted and separate wipe, physical,
+  accounting, lifecycle, retry, and health posture.
+- `BestEffortProvider` is finite, volatile, and in-process only. No persistent
+  provider or restart-recovery API is part of base 2.0.

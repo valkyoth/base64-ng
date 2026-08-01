@@ -65,8 +65,8 @@ require_backend_policy(BackendPolicy::HighAssuranceScalarOnly)
 ```
 
 Deployments that want a compile-time fail-closed eligibility guard can build
-with `base64_ng_require_high_assurance`. It requires `secrets`, rejects SIMD,
-and rejects unsupported or unattested speculation-barrier targets:
+with `base64_ng_require_high_assurance`. It requires `secrets` and rejects
+unsupported or unattested speculation-barrier targets:
 
 ```sh
 RUSTFLAGS="--cfg base64_ng_require_high_assurance" \
@@ -77,9 +77,12 @@ This is a custom cfg rather than a Cargo feature so normal `--all-features`
 release evidence and docs.rs builds can continue to exercise every public
 feature. Treat the cfg as a deployment policy assertion and keep the runtime
 `require_backend_policy(BackendPolicy::HighAssuranceScalarOnly)` startup gate.
-This eligibility check does not attest protected storage. Commit 22 adds the
-allocation-specific capability required before the 2.0 API can authorize an
-assured secret operation.
+This eligibility check does not attest protected storage. Commit 22 requires a
+runtime assurance token and allocation-specific `ProtectedSecret` before the
+2.0 API authorizes an assured operation. `secrets + simd` can coexist for
+ordinary accelerated APIs; the assured secret path remains scalar. Use the
+legacy `HighAssuranceScalarOnly` runtime policy when the complete process, not
+only assured secret operations, must reject ordinary SIMD.
 
 `HighAssuranceScalarOnly` is still a build and target posture assertion. On
 AArch64, the crate emits `isb sy` plus the CSDB hint for the CT result gate.

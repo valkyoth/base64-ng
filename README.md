@@ -263,7 +263,7 @@ license = "MIT OR Apache-2.0"
 | `std` | yes | `std::error::Error` support and feature base for I/O. |
 | `simd` | no | Admitted std runtime-dispatched encode and normal strict decode acceleration for Standard and URL-safe alphabets, with scalar fallback for unsupported surfaces. |
 | `stream` | no | `std::io` streaming wrappers. |
-| `secrets` | no | Dependency-free 2.0 secret storage, explicit exposure/declassification, and bounded constant-time-oriented secret encoding and decoding. |
+| `secrets` | no | Dependency-free 2.0 secret storage, explicit exposure/declassification, bounded constant-time-oriented transforms, and generation-bound assurance/protected-memory APIs. |
 | `checked-backend` | no | Inert 2.0 development reservation that enables `simd`; redundant backend checking is implemented later in the 2.0 plan. |
 | `allow-wasm32-best-effort-wipe` | no | Explicitly allow `wasm32` `secrets` builds with compiler-fence-only cleanup; ordinary codecs do not need it. |
 | `allow-compiler-fence-only-wipe` | no | Explicitly allow `secrets` builds on unsupported native architectures with compiler-fence-only cleanup after platform review. |
@@ -271,11 +271,14 @@ license = "MIT OR Apache-2.0"
 | `kani` | no | Reserved for verifier harnesses; normal builds do not require Kani. |
 | `fuzzing` | no | Reserved for verifier and fuzz harness integration; published crate stays dependency-free. |
 
-High-assurance deployments that must fail closed when SIMD is enabled can build
-with `RUSTFLAGS="--cfg base64_ng_require_high_assurance"`. This custom cfg is
-not a Cargo feature, so normal `--all-features` release evidence and docs.rs
-builds remain usable. When the cfg is set, `base64-ng` refuses to compile if
-the `simd` feature is enabled.
+High-assurance deployments can build with
+`RUSTFLAGS="--cfg base64_ng_require_high_assurance"`. This custom cfg is not a
+Cargo feature, so normal `--all-features` evidence and docs.rs builds remain
+usable. It establishes build eligibility only. Assured 2.0 operations also
+require a runtime assurance token and an allocation-specific protected owner.
+The `simd` feature may coexist for ordinary APIs; assured secret operations
+remain scalar. Use `BackendPolicy::HighAssuranceScalarOnly` when the entire
+process must reject ordinary SIMD.
 
 ## Companion Crates
 
@@ -735,6 +738,45 @@ Built-in secret alphabets use arithmetic mapping; validated custom alphabets
 use a fixed 64-entry scan. Encoded output stays redacted and wiping until the
 caller explicitly exposes or declassifies it. See
 [`docs/2.0_SECRET_ENCODING.md`](docs/2.0_SECRET_ENCODING.md).
+
+Commit 22 adds an allocation-specific assured path. A token and one protected
+owner are both required; an ordinary mutable slice cannot substitute for the
+owner:
+
+```rust
+use base64_ng::{
+    STRICT_STANDARD_PADDED,
+    assurance::{AssuranceContext, BestEffortProvider, ProtectedSecret, ProviderLimits},
+    secret::SecretInput,
+};
+
+let context = AssuranceContext::new();
+let token = context.best_effort_token();
+let provider = BestEffortProvider::<1>::new(ProviderLimits {
+    max_identities: 1,
+    max_logical_bytes: 8,
+    max_effective_pages: 2,
+    max_registry_entries: 1,
+    max_retry_attempts: 1,
+    max_maintenance_work: 1,
+    page_size: 8,
+})?;
+let allocation = ProtectedSecret::try_new(&provider, &token, 8)?;
+let encoded = STRICT_STANDARD_PADDED.encode_assured(
+    &token,
+    allocation,
+    &SecretInput::new(b"secret"),
+)?;
+
+assert_eq!(encoded.expose_secret().as_bytes(), b"c2VjcmV0");
+encoded.try_close()?;
+# Ok::<(), Box<dyn std::error::Error>>(())
+```
+
+The dependency-free default provider is finite, volatile, and best-effort. It
+does not lock pages or provide persistent teardown recovery. Reviewed deployed
+providers and attested tokens use an explicit unsafe extension boundary. See
+[`docs/2.0_ASSURANCE_AND_PROTECTED_MEMORY.md`](docs/2.0_ASSURANCE_AND_PROTECTED_MEMORY.md).
 
 When wrapping policy comes from configuration, prefer checked construction.
 Use `Engine::checked_profile_with_wrap` when the profile should use the same

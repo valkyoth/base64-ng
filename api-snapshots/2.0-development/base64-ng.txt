@@ -1,4 +1,612 @@
 pub mod base64_ng
+pub mod base64_ng::assurance
+#[non_exhaustive] pub enum base64_ng::assurance::AccountingPosture
+pub base64_ng::assurance::AccountingPosture::Charged
+pub base64_ng::assurance::AccountingPosture::Reconciled
+impl core::clone::Clone for base64_ng::assurance::AccountingPosture
+pub fn base64_ng::assurance::AccountingPosture::clone(&self) -> base64_ng::assurance::AccountingPosture
+impl core::cmp::Eq for base64_ng::assurance::AccountingPosture
+impl core::cmp::PartialEq for base64_ng::assurance::AccountingPosture
+pub fn base64_ng::assurance::AccountingPosture::eq(&self, &base64_ng::assurance::AccountingPosture) -> bool
+impl core::fmt::Debug for base64_ng::assurance::AccountingPosture
+pub fn base64_ng::assurance::AccountingPosture::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng::assurance::AccountingPosture
+pub fn base64_ng::assurance::AccountingPosture::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng::assurance::AccountingPosture
+impl core::marker::StructuralPartialEq for base64_ng::assurance::AccountingPosture
+#[non_exhaustive] pub enum base64_ng::assurance::AllocationPresence
+pub base64_ng::assurance::AllocationPresence::Unknown
+impl core::clone::Clone for base64_ng::assurance::AllocationPresence
+pub fn base64_ng::assurance::AllocationPresence::clone(&self) -> base64_ng::assurance::AllocationPresence
+impl core::cmp::Eq for base64_ng::assurance::AllocationPresence
+impl core::cmp::PartialEq for base64_ng::assurance::AllocationPresence
+pub fn base64_ng::assurance::AllocationPresence::eq(&self, &base64_ng::assurance::AllocationPresence) -> bool
+impl core::fmt::Debug for base64_ng::assurance::AllocationPresence
+pub fn base64_ng::assurance::AllocationPresence::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng::assurance::AllocationPresence
+pub fn base64_ng::assurance::AllocationPresence::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng::assurance::AllocationPresence
+impl core::marker::StructuralPartialEq for base64_ng::assurance::AllocationPresence
+#[non_exhaustive] pub enum base64_ng::assurance::AssuranceError
+pub base64_ng::assurance::AssuranceError::HighAssuranceBuildRequired
+pub base64_ng::assurance::AssuranceError::InsufficientPosture
+pub base64_ng::assurance::AssuranceError::MismatchedAttestation
+pub base64_ng::assurance::AssuranceError::ProviderUnavailable
+pub base64_ng::assurance::AssuranceError::StaleGeneration
+impl core::clone::Clone for base64_ng::assurance::AssuranceError
+pub fn base64_ng::assurance::AssuranceError::clone(&self) -> base64_ng::assurance::AssuranceError
+impl core::cmp::Eq for base64_ng::assurance::AssuranceError
+impl core::cmp::PartialEq for base64_ng::assurance::AssuranceError
+pub fn base64_ng::assurance::AssuranceError::eq(&self, &base64_ng::assurance::AssuranceError) -> bool
+impl core::error::Error for base64_ng::assurance::AssuranceError
+impl core::fmt::Debug for base64_ng::assurance::AssuranceError
+pub fn base64_ng::assurance::AssuranceError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for base64_ng::assurance::AssuranceError
+pub fn base64_ng::assurance::AssuranceError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng::assurance::AssuranceError
+pub fn base64_ng::assurance::AssuranceError::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng::assurance::AssuranceError
+impl core::marker::StructuralPartialEq for base64_ng::assurance::AssuranceError
+#[non_exhaustive] pub enum base64_ng::assurance::AssuredDecodeError
+pub base64_ng::assurance::AssuredDecodeError::Assurance(base64_ng::assurance::AssuranceError)
+pub base64_ng::assurance::AssuredDecodeError::Cleanup(base64_ng::assurance::CleanupError)
+pub base64_ng::assurance::AssuredDecodeError::Decode(base64_ng::secret::SecretDecodeError)
+pub base64_ng::assurance::AssuredDecodeError::Protection(base64_ng::assurance::ProtectionError)
+impl core::clone::Clone for base64_ng::assurance::AssuredDecodeError
+pub fn base64_ng::assurance::AssuredDecodeError::clone(&self) -> base64_ng::assurance::AssuredDecodeError
+impl core::cmp::Eq for base64_ng::assurance::AssuredDecodeError
+impl core::cmp::PartialEq for base64_ng::assurance::AssuredDecodeError
+pub fn base64_ng::assurance::AssuredDecodeError::eq(&self, &base64_ng::assurance::AssuredDecodeError) -> bool
+impl core::error::Error for base64_ng::assurance::AssuredDecodeError
+impl core::fmt::Debug for base64_ng::assurance::AssuredDecodeError
+pub fn base64_ng::assurance::AssuredDecodeError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for base64_ng::assurance::AssuredDecodeError
+pub fn base64_ng::assurance::AssuredDecodeError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng::assurance::AssuredDecodeError
+impl core::marker::StructuralPartialEq for base64_ng::assurance::AssuredDecodeError
+#[non_exhaustive] pub enum base64_ng::assurance::AssuredEncodeError
+pub base64_ng::assurance::AssuredEncodeError::Assurance(base64_ng::assurance::AssuranceError)
+pub base64_ng::assurance::AssuredEncodeError::Cleanup(base64_ng::assurance::CleanupError)
+pub base64_ng::assurance::AssuredEncodeError::Encode(base64_ng::secret::SecretEncodeError)
+pub base64_ng::assurance::AssuredEncodeError::Protection(base64_ng::assurance::ProtectionError)
+impl core::clone::Clone for base64_ng::assurance::AssuredEncodeError
+pub fn base64_ng::assurance::AssuredEncodeError::clone(&self) -> base64_ng::assurance::AssuredEncodeError
+impl core::cmp::Eq for base64_ng::assurance::AssuredEncodeError
+impl core::cmp::PartialEq for base64_ng::assurance::AssuredEncodeError
+pub fn base64_ng::assurance::AssuredEncodeError::eq(&self, &base64_ng::assurance::AssuredEncodeError) -> bool
+impl core::error::Error for base64_ng::assurance::AssuredEncodeError
+impl core::fmt::Debug for base64_ng::assurance::AssuredEncodeError
+pub fn base64_ng::assurance::AssuredEncodeError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for base64_ng::assurance::AssuredEncodeError
+pub fn base64_ng::assurance::AssuredEncodeError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng::assurance::AssuredEncodeError
+impl core::marker::StructuralPartialEq for base64_ng::assurance::AssuredEncodeError
+#[non_exhaustive] pub enum base64_ng::assurance::CleanupOutcome
+pub base64_ng::assurance::CleanupOutcome::Closed
+impl core::clone::Clone for base64_ng::assurance::CleanupOutcome
+pub fn base64_ng::assurance::CleanupOutcome::clone(&self) -> base64_ng::assurance::CleanupOutcome
+impl core::cmp::Eq for base64_ng::assurance::CleanupOutcome
+impl core::cmp::PartialEq for base64_ng::assurance::CleanupOutcome
+pub fn base64_ng::assurance::CleanupOutcome::eq(&self, &base64_ng::assurance::CleanupOutcome) -> bool
+impl core::fmt::Debug for base64_ng::assurance::CleanupOutcome
+pub fn base64_ng::assurance::CleanupOutcome::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng::assurance::CleanupOutcome
+pub fn base64_ng::assurance::CleanupOutcome::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng::assurance::CleanupOutcome
+impl core::marker::StructuralPartialEq for base64_ng::assurance::CleanupOutcome
+#[non_exhaustive] pub enum base64_ng::assurance::DisposalDisposition
+pub base64_ng::assurance::DisposalDisposition::AllocationPresenceUnknown
+pub base64_ng::assurance::DisposalDisposition::Applied
+pub base64_ng::assurance::DisposalDisposition::NotApplied
+impl core::clone::Clone for base64_ng::assurance::DisposalDisposition
+pub fn base64_ng::assurance::DisposalDisposition::clone(&self) -> base64_ng::assurance::DisposalDisposition
+impl core::cmp::Eq for base64_ng::assurance::DisposalDisposition
+impl core::cmp::PartialEq for base64_ng::assurance::DisposalDisposition
+pub fn base64_ng::assurance::DisposalDisposition::eq(&self, &base64_ng::assurance::DisposalDisposition) -> bool
+impl core::fmt::Debug for base64_ng::assurance::DisposalDisposition
+pub fn base64_ng::assurance::DisposalDisposition::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng::assurance::DisposalDisposition
+pub fn base64_ng::assurance::DisposalDisposition::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng::assurance::DisposalDisposition
+impl core::marker::StructuralPartialEq for base64_ng::assurance::DisposalDisposition
+pub enum base64_ng::assurance::DisposalResult<Handle>
+pub base64_ng::assurance::DisposalResult::AllocationPresenceUnknown
+pub base64_ng::assurance::DisposalResult::Applied
+pub base64_ng::assurance::DisposalResult::NotApplied(Handle)
+#[non_exhaustive] pub enum base64_ng::assurance::JournalDisposition
+pub base64_ng::assurance::JournalDisposition::Applied
+pub base64_ng::assurance::JournalDisposition::Indeterminate
+pub base64_ng::assurance::JournalDisposition::NotApplied
+impl core::clone::Clone for base64_ng::assurance::JournalDisposition
+pub fn base64_ng::assurance::JournalDisposition::clone(&self) -> base64_ng::assurance::JournalDisposition
+impl core::cmp::Eq for base64_ng::assurance::JournalDisposition
+impl core::cmp::PartialEq for base64_ng::assurance::JournalDisposition
+pub fn base64_ng::assurance::JournalDisposition::eq(&self, &base64_ng::assurance::JournalDisposition) -> bool
+impl core::fmt::Debug for base64_ng::assurance::JournalDisposition
+pub fn base64_ng::assurance::JournalDisposition::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng::assurance::JournalDisposition
+pub fn base64_ng::assurance::JournalDisposition::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng::assurance::JournalDisposition
+impl core::marker::StructuralPartialEq for base64_ng::assurance::JournalDisposition
+#[non_exhaustive] pub enum base64_ng::assurance::LifecyclePosture
+pub base64_ng::assurance::LifecyclePosture::Closed
+pub base64_ng::assurance::LifecyclePosture::Closing
+pub base64_ng::assurance::LifecyclePosture::Closing::stage: base64_ng::assurance::PendingStage
+pub base64_ng::assurance::LifecyclePosture::Live
+pub base64_ng::assurance::LifecyclePosture::PermanentlyQuarantined
+pub base64_ng::assurance::LifecyclePosture::PermanentlyQuarantined::pending_stage: base64_ng::assurance::PendingStage
+pub base64_ng::assurance::LifecyclePosture::Quarantined
+pub base64_ng::assurance::LifecyclePosture::Quarantined::pending_stage: base64_ng::assurance::PendingStage
+pub base64_ng::assurance::LifecyclePosture::Tombstoned
+pub base64_ng::assurance::LifecyclePosture::Tombstoned::disposition: base64_ng::assurance::AllocationPresence
+pub base64_ng::assurance::LifecyclePosture::Tombstoned::last_stage: base64_ng::assurance::PendingStage
+impl core::clone::Clone for base64_ng::assurance::LifecyclePosture
+pub fn base64_ng::assurance::LifecyclePosture::clone(&self) -> base64_ng::assurance::LifecyclePosture
+impl core::cmp::Eq for base64_ng::assurance::LifecyclePosture
+impl core::cmp::PartialEq for base64_ng::assurance::LifecyclePosture
+pub fn base64_ng::assurance::LifecyclePosture::eq(&self, &base64_ng::assurance::LifecyclePosture) -> bool
+impl core::fmt::Debug for base64_ng::assurance::LifecyclePosture
+pub fn base64_ng::assurance::LifecyclePosture::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng::assurance::LifecyclePosture
+pub fn base64_ng::assurance::LifecyclePosture::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng::assurance::LifecyclePosture
+impl core::marker::StructuralPartialEq for base64_ng::assurance::LifecyclePosture
+#[non_exhaustive] pub enum base64_ng::assurance::PendingStage
+pub base64_ng::assurance::PendingStage::AccountingReconciliation
+pub base64_ng::assurance::PendingStage::Disposal
+pub base64_ng::assurance::PendingStage::ProtectionRemoval
+pub base64_ng::assurance::PendingStage::Wipe
+impl core::clone::Clone for base64_ng::assurance::PendingStage
+pub fn base64_ng::assurance::PendingStage::clone(&self) -> base64_ng::assurance::PendingStage
+impl core::cmp::Eq for base64_ng::assurance::PendingStage
+impl core::cmp::PartialEq for base64_ng::assurance::PendingStage
+pub fn base64_ng::assurance::PendingStage::eq(&self, &base64_ng::assurance::PendingStage) -> bool
+impl core::fmt::Debug for base64_ng::assurance::PendingStage
+pub fn base64_ng::assurance::PendingStage::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng::assurance::PendingStage
+pub fn base64_ng::assurance::PendingStage::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng::assurance::PendingStage
+impl core::marker::StructuralPartialEq for base64_ng::assurance::PendingStage
+#[non_exhaustive] pub enum base64_ng::assurance::PhysicalProtection
+pub base64_ng::assurance::PhysicalProtection::ProtectionAttested
+pub base64_ng::assurance::PhysicalProtection::ProtectionConfirmedAbsent
+pub base64_ng::assurance::PhysicalProtection::ProtectionUnknown
+impl core::clone::Clone for base64_ng::assurance::PhysicalProtection
+pub fn base64_ng::assurance::PhysicalProtection::clone(&self) -> base64_ng::assurance::PhysicalProtection
+impl core::cmp::Eq for base64_ng::assurance::PhysicalProtection
+impl core::cmp::PartialEq for base64_ng::assurance::PhysicalProtection
+pub fn base64_ng::assurance::PhysicalProtection::eq(&self, &base64_ng::assurance::PhysicalProtection) -> bool
+impl core::fmt::Debug for base64_ng::assurance::PhysicalProtection
+pub fn base64_ng::assurance::PhysicalProtection::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng::assurance::PhysicalProtection
+pub fn base64_ng::assurance::PhysicalProtection::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng::assurance::PhysicalProtection
+impl core::marker::StructuralPartialEq for base64_ng::assurance::PhysicalProtection
+#[non_exhaustive] pub enum base64_ng::assurance::ProtectionError
+pub base64_ng::assurance::ProtectionError::ActualRangeExceededReservation
+pub base64_ng::assurance::ProtectionError::InvalidLimits
+pub base64_ng::assurance::ProtectionError::LengthOverflow
+pub base64_ng::assurance::ProtectionError::ProtectionResourceExhausted(base64_ng::assurance::ResourceKind)
+pub base64_ng::assurance::ProtectionError::ProtectionUnavailable
+pub base64_ng::assurance::ProtectionError::ProviderUnavailable
+pub base64_ng::assurance::ProtectionError::StaleAssurance
+impl core::clone::Clone for base64_ng::assurance::ProtectionError
+pub fn base64_ng::assurance::ProtectionError::clone(&self) -> base64_ng::assurance::ProtectionError
+impl core::cmp::Eq for base64_ng::assurance::ProtectionError
+impl core::cmp::PartialEq for base64_ng::assurance::ProtectionError
+pub fn base64_ng::assurance::ProtectionError::eq(&self, &base64_ng::assurance::ProtectionError) -> bool
+impl core::error::Error for base64_ng::assurance::ProtectionError
+impl core::fmt::Debug for base64_ng::assurance::ProtectionError
+pub fn base64_ng::assurance::ProtectionError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for base64_ng::assurance::ProtectionError
+pub fn base64_ng::assurance::ProtectionError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng::assurance::ProtectionError
+pub fn base64_ng::assurance::ProtectionError::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng::assurance::ProtectionError
+impl core::marker::StructuralPartialEq for base64_ng::assurance::ProtectionError
+#[non_exhaustive] pub enum base64_ng::assurance::ProviderHealth
+pub base64_ng::assurance::ProviderHealth::Degraded
+pub base64_ng::assurance::ProviderHealth::Exhausted
+pub base64_ng::assurance::ProviderHealth::Healthy
+pub base64_ng::assurance::ProviderHealth::Shutdown
+impl core::clone::Clone for base64_ng::assurance::ProviderHealth
+pub fn base64_ng::assurance::ProviderHealth::clone(&self) -> base64_ng::assurance::ProviderHealth
+impl core::cmp::Eq for base64_ng::assurance::ProviderHealth
+impl core::cmp::PartialEq for base64_ng::assurance::ProviderHealth
+pub fn base64_ng::assurance::ProviderHealth::eq(&self, &base64_ng::assurance::ProviderHealth) -> bool
+impl core::fmt::Debug for base64_ng::assurance::ProviderHealth
+pub fn base64_ng::assurance::ProviderHealth::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng::assurance::ProviderHealth
+pub fn base64_ng::assurance::ProviderHealth::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng::assurance::ProviderHealth
+impl core::marker::StructuralPartialEq for base64_ng::assurance::ProviderHealth
+#[non_exhaustive] pub enum base64_ng::assurance::ProviderOperationResult
+pub base64_ng::assurance::ProviderOperationResult::Applied
+pub base64_ng::assurance::ProviderOperationResult::Indeterminate
+pub base64_ng::assurance::ProviderOperationResult::NotApplied
+impl core::clone::Clone for base64_ng::assurance::ProviderOperationResult
+pub fn base64_ng::assurance::ProviderOperationResult::clone(&self) -> base64_ng::assurance::ProviderOperationResult
+impl core::cmp::Eq for base64_ng::assurance::ProviderOperationResult
+impl core::cmp::PartialEq for base64_ng::assurance::ProviderOperationResult
+pub fn base64_ng::assurance::ProviderOperationResult::eq(&self, &base64_ng::assurance::ProviderOperationResult) -> bool
+impl core::fmt::Debug for base64_ng::assurance::ProviderOperationResult
+pub fn base64_ng::assurance::ProviderOperationResult::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng::assurance::ProviderOperationResult
+pub fn base64_ng::assurance::ProviderOperationResult::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng::assurance::ProviderOperationResult
+impl core::marker::StructuralPartialEq for base64_ng::assurance::ProviderOperationResult
+#[non_exhaustive] pub enum base64_ng::assurance::ResourceKind
+pub base64_ng::assurance::ResourceKind::EffectivePages
+pub base64_ng::assurance::ResourceKind::Identities
+pub base64_ng::assurance::ResourceKind::LogicalBytes
+pub base64_ng::assurance::ResourceKind::MaintenanceWork
+pub base64_ng::assurance::ResourceKind::RegistryEntries
+pub base64_ng::assurance::ResourceKind::RetryAttempts
+impl core::clone::Clone for base64_ng::assurance::ResourceKind
+pub fn base64_ng::assurance::ResourceKind::clone(&self) -> base64_ng::assurance::ResourceKind
+impl core::cmp::Eq for base64_ng::assurance::ResourceKind
+impl core::cmp::PartialEq for base64_ng::assurance::ResourceKind
+pub fn base64_ng::assurance::ResourceKind::eq(&self, &base64_ng::assurance::ResourceKind) -> bool
+impl core::fmt::Debug for base64_ng::assurance::ResourceKind
+pub fn base64_ng::assurance::ResourceKind::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng::assurance::ResourceKind
+pub fn base64_ng::assurance::ResourceKind::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng::assurance::ResourceKind
+impl core::marker::StructuralPartialEq for base64_ng::assurance::ResourceKind
+#[non_exhaustive] pub enum base64_ng::assurance::TargetAttestation
+pub base64_ng::assurance::TargetAttestation::Aarch64Csdb
+pub base64_ng::assurance::TargetAttestation::ReviewedEmbedded
+pub base64_ng::assurance::TargetAttestation::X86
+pub base64_ng::assurance::TargetAttestation::X86_64
+impl core::clone::Clone for base64_ng::assurance::TargetAttestation
+pub fn base64_ng::assurance::TargetAttestation::clone(&self) -> base64_ng::assurance::TargetAttestation
+impl core::cmp::Eq for base64_ng::assurance::TargetAttestation
+impl core::cmp::PartialEq for base64_ng::assurance::TargetAttestation
+pub fn base64_ng::assurance::TargetAttestation::eq(&self, &base64_ng::assurance::TargetAttestation) -> bool
+impl core::fmt::Debug for base64_ng::assurance::TargetAttestation
+pub fn base64_ng::assurance::TargetAttestation::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng::assurance::TargetAttestation
+pub fn base64_ng::assurance::TargetAttestation::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng::assurance::TargetAttestation
+impl core::marker::StructuralPartialEq for base64_ng::assurance::TargetAttestation
+#[non_exhaustive] pub enum base64_ng::assurance::TeardownOperation
+pub base64_ng::assurance::TeardownOperation::AccountingReconciliation
+pub base64_ng::assurance::TeardownOperation::Disposal
+pub base64_ng::assurance::TeardownOperation::ProtectionRemoval
+pub base64_ng::assurance::TeardownOperation::Wipe
+impl core::clone::Clone for base64_ng::assurance::TeardownOperation
+pub fn base64_ng::assurance::TeardownOperation::clone(&self) -> base64_ng::assurance::TeardownOperation
+impl core::cmp::Eq for base64_ng::assurance::TeardownOperation
+impl core::cmp::PartialEq for base64_ng::assurance::TeardownOperation
+pub fn base64_ng::assurance::TeardownOperation::eq(&self, &base64_ng::assurance::TeardownOperation) -> bool
+impl core::fmt::Debug for base64_ng::assurance::TeardownOperation
+pub fn base64_ng::assurance::TeardownOperation::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng::assurance::TeardownOperation
+pub fn base64_ng::assurance::TeardownOperation::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng::assurance::TeardownOperation
+impl core::marker::StructuralPartialEq for base64_ng::assurance::TeardownOperation
+#[non_exhaustive] pub enum base64_ng::assurance::WipeAttestation
+pub base64_ng::assurance::WipeAttestation::VolatileBytesAndSelectedBarrier
+impl core::clone::Clone for base64_ng::assurance::WipeAttestation
+pub fn base64_ng::assurance::WipeAttestation::clone(&self) -> base64_ng::assurance::WipeAttestation
+impl core::cmp::Eq for base64_ng::assurance::WipeAttestation
+impl core::cmp::PartialEq for base64_ng::assurance::WipeAttestation
+pub fn base64_ng::assurance::WipeAttestation::eq(&self, &base64_ng::assurance::WipeAttestation) -> bool
+impl core::fmt::Debug for base64_ng::assurance::WipeAttestation
+pub fn base64_ng::assurance::WipeAttestation::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng::assurance::WipeAttestation
+pub fn base64_ng::assurance::WipeAttestation::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng::assurance::WipeAttestation
+impl core::marker::StructuralPartialEq for base64_ng::assurance::WipeAttestation
+#[non_exhaustive] pub enum base64_ng::assurance::WipeEvidence
+pub base64_ng::assurance::WipeEvidence::WipeNotCompleted
+pub base64_ng::assurance::WipeEvidence::WipedAttested
+pub base64_ng::assurance::WipeEvidence::WipedBestEffort
+impl core::clone::Clone for base64_ng::assurance::WipeEvidence
+pub fn base64_ng::assurance::WipeEvidence::clone(&self) -> base64_ng::assurance::WipeEvidence
+impl core::cmp::Eq for base64_ng::assurance::WipeEvidence
+impl core::cmp::PartialEq for base64_ng::assurance::WipeEvidence
+pub fn base64_ng::assurance::WipeEvidence::eq(&self, &base64_ng::assurance::WipeEvidence) -> bool
+impl core::fmt::Debug for base64_ng::assurance::WipeEvidence
+pub fn base64_ng::assurance::WipeEvidence::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng::assurance::WipeEvidence
+pub fn base64_ng::assurance::WipeEvidence::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng::assurance::WipeEvidence
+impl core::marker::StructuralPartialEq for base64_ng::assurance::WipeEvidence
+pub struct base64_ng::assurance::AssuranceContext
+impl base64_ng::assurance::AssuranceContext
+pub fn base64_ng::assurance::AssuranceContext::attested_token<P>(&self, &P) -> core::result::Result<base64_ng::assurance::AssuranceToken<'_, base64_ng::assurance::Attested>, base64_ng::assurance::AssuranceError> where P: base64_ng::assurance::PlatformAttestation + base64_ng::assurance::ProtectedMemoryProvider
+pub fn base64_ng::assurance::AssuranceContext::best_effort_token(&self) -> base64_ng::assurance::AssuranceToken<'_, base64_ng::assurance::BestEffort>
+pub fn base64_ng::assurance::AssuranceContext::generations(&self) -> base64_ng::assurance::AssuranceGenerations
+pub fn base64_ng::assurance::AssuranceContext::invalidate_ordinary_backend(&self)
+pub fn base64_ng::assurance::AssuranceContext::invalidate_secret_algorithm(&self)
+pub fn base64_ng::assurance::AssuranceContext::invalidate_speculation(&self)
+pub fn base64_ng::assurance::AssuranceContext::invalidate_wipe_barrier(&self)
+pub const fn base64_ng::assurance::AssuranceContext::new() -> Self
+impl core::default::Default for base64_ng::assurance::AssuranceContext
+pub fn base64_ng::assurance::AssuranceContext::default() -> Self
+pub struct base64_ng::assurance::AssuranceGenerations
+pub base64_ng::assurance::AssuranceGenerations::ordinary_backend: usize
+pub base64_ng::assurance::AssuranceGenerations::secret_algorithm: usize
+pub base64_ng::assurance::AssuranceGenerations::speculation: usize
+pub base64_ng::assurance::AssuranceGenerations::wipe_barrier: usize
+impl core::clone::Clone for base64_ng::assurance::AssuranceGenerations
+pub fn base64_ng::assurance::AssuranceGenerations::clone(&self) -> base64_ng::assurance::AssuranceGenerations
+impl core::cmp::Eq for base64_ng::assurance::AssuranceGenerations
+impl core::cmp::PartialEq for base64_ng::assurance::AssuranceGenerations
+pub fn base64_ng::assurance::AssuranceGenerations::eq(&self, &base64_ng::assurance::AssuranceGenerations) -> bool
+impl core::fmt::Debug for base64_ng::assurance::AssuranceGenerations
+pub fn base64_ng::assurance::AssuranceGenerations::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng::assurance::AssuranceGenerations
+pub fn base64_ng::assurance::AssuranceGenerations::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng::assurance::AssuranceGenerations
+impl core::marker::StructuralPartialEq for base64_ng::assurance::AssuranceGenerations
+pub struct base64_ng::assurance::AssuranceToken<'context, Level: base64_ng::assurance::AssuranceLevel>
+impl<'context, Level: base64_ng::assurance::AssuranceLevel> base64_ng::assurance::AssuranceToken<'context, Level>
+pub const fn base64_ng::assurance::AssuranceToken<'context, Level>::generations(&self) -> base64_ng::assurance::AssuranceGenerations
+pub fn base64_ng::assurance::AssuranceToken<'context, Level>::revalidate(&self) -> core::result::Result<(), base64_ng::assurance::AssuranceError>
+impl<Level: base64_ng::assurance::AssuranceLevel> core::fmt::Debug for base64_ng::assurance::AssuranceToken<'_, Level>
+pub fn base64_ng::assurance::AssuranceToken<'_, Level>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+pub struct base64_ng::assurance::AttestationEvidence
+impl base64_ng::assurance::AttestationEvidence
+pub unsafe const fn base64_ng::assurance::AttestationEvidence::new(base64_ng::assurance::TargetAttestation, base64_ng::assurance::WipeAttestation, base64_ng::runtime::WipePosture, base64_ng::runtime::CtGatePosture, usize, usize) -> Self
+impl core::clone::Clone for base64_ng::assurance::AttestationEvidence
+pub fn base64_ng::assurance::AttestationEvidence::clone(&self) -> base64_ng::assurance::AttestationEvidence
+impl core::cmp::Eq for base64_ng::assurance::AttestationEvidence
+impl core::cmp::PartialEq for base64_ng::assurance::AttestationEvidence
+pub fn base64_ng::assurance::AttestationEvidence::eq(&self, &base64_ng::assurance::AttestationEvidence) -> bool
+impl core::fmt::Debug for base64_ng::assurance::AttestationEvidence
+pub fn base64_ng::assurance::AttestationEvidence::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng::assurance::AttestationEvidence
+impl core::marker::StructuralPartialEq for base64_ng::assurance::AttestationEvidence
+pub struct base64_ng::assurance::Attested
+impl base64_ng::assurance::AssuranceLevel for base64_ng::assurance::Attested
+impl core::fmt::Debug for base64_ng::assurance::Attested
+pub fn base64_ng::assurance::Attested::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+pub struct base64_ng::assurance::BestEffort
+impl base64_ng::assurance::AssuranceLevel for base64_ng::assurance::BestEffort
+impl core::fmt::Debug for base64_ng::assurance::BestEffort
+pub fn base64_ng::assurance::BestEffort::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+pub struct base64_ng::assurance::BestEffortProvider<const SLOTS: usize>
+impl<const SLOTS: usize> base64_ng::assurance::BestEffortProvider<SLOTS>
+pub fn base64_ng::assurance::BestEffortProvider<SLOTS>::maintain(&self) -> usize
+pub fn base64_ng::assurance::BestEffortProvider<SLOTS>::new(base64_ng::assurance::ProviderLimits) -> core::result::Result<Self, base64_ng::assurance::ProtectionError>
+pub fn base64_ng::assurance::BestEffortProvider<SLOTS>::restore_health_after_self_check(&self) -> core::result::Result<(), base64_ng::assurance::ProtectionError>
+impl<const SLOTS: usize> base64_ng::assurance::ProtectedMemoryProvider for base64_ng::assurance::BestEffortProvider<SLOTS>
+pub type base64_ng::assurance::BestEffortProvider<SLOTS>::Handle = BestEffortHandle
+pub type base64_ng::assurance::BestEffortProvider<SLOTS>::Reservation = BestEffortReservation
+pub fn base64_ng::assurance::BestEffortProvider<SLOTS>::bytes<'handle>(&self, &base64_ng::assurance::ProviderAccess, &'handle Self::Handle) -> &'handle [u8]
+pub fn base64_ng::assurance::BestEffortProvider<SLOTS>::bytes_mut<'handle>(&self, &base64_ng::assurance::ProviderAccess, &'handle mut Self::Handle) -> &'handle mut [u8]
+pub fn base64_ng::assurance::BestEffortProvider<SLOTS>::confirm_wipe(&self, &base64_ng::assurance::ProviderAccess, &Self::Handle, core::option::Option<base64_ng::assurance::AttestationEvidence>, &mut base64_ng::assurance::TeardownCursor) -> base64_ng::assurance::WipeConfirmation
+pub fn base64_ng::assurance::BestEffortProvider<SLOTS>::dispose(&self, &base64_ng::assurance::ProviderAccess, Self::Handle, &mut base64_ng::assurance::TeardownCursor) -> base64_ng::assurance::DisposalResult<Self::Handle>
+pub fn base64_ng::assurance::BestEffortProvider<SLOTS>::health(&self) -> base64_ng::assurance::ProviderHealth
+pub fn base64_ng::assurance::BestEffortProvider<SLOTS>::health_generation(&self) -> usize
+pub fn base64_ng::assurance::BestEffortProvider<SLOTS>::limits(&self) -> base64_ng::assurance::ProviderLimits
+pub fn base64_ng::assurance::BestEffortProvider<SLOTS>::logical_len(&self, &base64_ng::assurance::ProviderAccess, &Self::Handle) -> usize
+pub fn base64_ng::assurance::BestEffortProvider<SLOTS>::materialize(&self, &base64_ng::assurance::ProviderAccess, Self::Reservation) -> core::result::Result<Self::Handle, base64_ng::assurance::ProtectionError>
+pub fn base64_ng::assurance::BestEffortProvider<SLOTS>::physical_protection(&self, &base64_ng::assurance::ProviderAccess, &Self::Handle) -> base64_ng::assurance::PhysicalProtection
+pub fn base64_ng::assurance::BestEffortProvider<SLOTS>::protection_generation(&self) -> usize
+pub fn base64_ng::assurance::BestEffortProvider<SLOTS>::provider_generation(&self) -> usize
+pub fn base64_ng::assurance::BestEffortProvider<SLOTS>::provider_identity(&self) -> usize
+pub fn base64_ng::assurance::BestEffortProvider<SLOTS>::quarantine(&self, &base64_ng::assurance::ProviderAccess, Self::Handle, base64_ng::assurance::QuarantineRecord)
+pub fn base64_ng::assurance::BestEffortProvider<SLOTS>::reconcile_accounting(&self, &base64_ng::assurance::ProviderAccess, &mut Self::Handle, &mut base64_ng::assurance::TeardownCursor) -> base64_ng::assurance::ProviderOperationResult
+pub fn base64_ng::assurance::BestEffortProvider<SLOTS>::remove_protection(&self, &base64_ng::assurance::ProviderAccess, &mut Self::Handle, &mut base64_ng::assurance::TeardownCursor) -> base64_ng::assurance::ProviderOperationResult
+pub fn base64_ng::assurance::BestEffortProvider<SLOTS>::report(&self) -> base64_ng::assurance::ProviderReport
+pub fn base64_ng::assurance::BestEffortProvider<SLOTS>::reserve(&self, &base64_ng::assurance::ProviderAccess, base64_ng::assurance::ProtectionRequest) -> core::result::Result<Self::Reservation, base64_ng::assurance::ProtectionError>
+pub struct base64_ng::assurance::CleanupError
+pub base64_ng::assurance::CleanupError::accounting: base64_ng::assurance::AccountingPosture
+pub base64_ng::assurance::CleanupError::lifecycle: base64_ng::assurance::LifecyclePosture
+pub base64_ng::assurance::CleanupError::pending_stage: base64_ng::assurance::PendingStage
+pub base64_ng::assurance::CleanupError::physical_protection: base64_ng::assurance::PhysicalProtection
+pub base64_ng::assurance::CleanupError::provider_health: base64_ng::assurance::ProviderHealth
+pub base64_ng::assurance::CleanupError::retry_attempt: usize
+pub base64_ng::assurance::CleanupError::wipe: base64_ng::assurance::WipeEvidence
+impl core::clone::Clone for base64_ng::assurance::CleanupError
+pub fn base64_ng::assurance::CleanupError::clone(&self) -> base64_ng::assurance::CleanupError
+impl core::cmp::Eq for base64_ng::assurance::CleanupError
+impl core::cmp::PartialEq for base64_ng::assurance::CleanupError
+pub fn base64_ng::assurance::CleanupError::eq(&self, &base64_ng::assurance::CleanupError) -> bool
+impl core::error::Error for base64_ng::assurance::CleanupError
+impl core::fmt::Debug for base64_ng::assurance::CleanupError
+pub fn base64_ng::assurance::CleanupError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for base64_ng::assurance::CleanupError
+pub fn base64_ng::assurance::CleanupError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng::assurance::CleanupError
+pub fn base64_ng::assurance::CleanupError::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng::assurance::CleanupError
+impl core::marker::StructuralPartialEq for base64_ng::assurance::CleanupError
+pub struct base64_ng::assurance::CleanupReport
+pub base64_ng::assurance::CleanupReport::accounting: base64_ng::assurance::AccountingPosture
+pub base64_ng::assurance::CleanupReport::lifecycle: base64_ng::assurance::LifecyclePosture
+pub base64_ng::assurance::CleanupReport::outcome: base64_ng::assurance::CleanupOutcome
+pub base64_ng::assurance::CleanupReport::physical_protection: base64_ng::assurance::PhysicalProtection
+pub base64_ng::assurance::CleanupReport::wipe: base64_ng::assurance::WipeEvidence
+impl core::clone::Clone for base64_ng::assurance::CleanupReport
+pub fn base64_ng::assurance::CleanupReport::clone(&self) -> base64_ng::assurance::CleanupReport
+impl core::cmp::Eq for base64_ng::assurance::CleanupReport
+impl core::cmp::PartialEq for base64_ng::assurance::CleanupReport
+pub fn base64_ng::assurance::CleanupReport::eq(&self, &base64_ng::assurance::CleanupReport) -> bool
+impl core::fmt::Debug for base64_ng::assurance::CleanupReport
+pub fn base64_ng::assurance::CleanupReport::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng::assurance::CleanupReport
+pub fn base64_ng::assurance::CleanupReport::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng::assurance::CleanupReport
+impl core::marker::StructuralPartialEq for base64_ng::assurance::CleanupReport
+pub struct base64_ng::assurance::ExposedProtectedSecret<'a>
+impl base64_ng::assurance::ExposedProtectedSecret<'_>
+pub const fn base64_ng::assurance::ExposedProtectedSecret<'_>::as_bytes(&self) -> &[u8]
+impl core::convert::AsRef<[u8]> for base64_ng::assurance::ExposedProtectedSecret<'_>
+pub fn base64_ng::assurance::ExposedProtectedSecret<'_>::as_ref(&self) -> &[u8]
+impl core::fmt::Debug for base64_ng::assurance::ExposedProtectedSecret<'_>
+pub fn base64_ng::assurance::ExposedProtectedSecret<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+pub struct base64_ng::assurance::ProtectedSecret<'provider, P, State, Level> where P: base64_ng::assurance::ProtectedMemoryProvider, Level: base64_ng::assurance::AssuranceLevel
+impl<'provider, P, Level> base64_ng::assurance::ProtectedSecret<'provider, P, base64_ng::assurance::Uninitialized, Level> where P: base64_ng::assurance::ProtectedMemoryProvider, Level: base64_ng::assurance::AssuranceLevel
+pub fn base64_ng::assurance::ProtectedSecret<'provider, P, base64_ng::assurance::Uninitialized, Level>::try_new(&'provider P, &base64_ng::assurance::AssuranceToken<'provider, Level>, usize) -> core::result::Result<Self, base64_ng::assurance::ProtectionError>
+impl<'provider, P, State, Level> base64_ng::assurance::ProtectedSecret<'provider, P, State, Level> where P: base64_ng::assurance::ProtectedMemoryProvider, Level: base64_ng::assurance::AssuranceLevel
+pub fn base64_ng::assurance::ProtectedSecret<'provider, P, State, Level>::capacity(&self) -> usize
+pub const fn base64_ng::assurance::ProtectedSecret<'provider, P, State, Level>::initialized_len(&self) -> usize
+pub fn base64_ng::assurance::ProtectedSecret<'provider, P, State, Level>::try_close(self) -> core::result::Result<base64_ng::assurance::CleanupReport, base64_ng::assurance::CleanupError>
+impl<P, Level> base64_ng::assurance::ProtectedSecret<'_, P, base64_ng::assurance::Validated, Level> where P: base64_ng::assurance::ProtectedMemoryProvider, Level: base64_ng::assurance::AssuranceLevel
+pub fn base64_ng::assurance::ProtectedSecret<'_, P, base64_ng::assurance::Validated, Level>::expose_secret(&self) -> base64_ng::assurance::ExposedProtectedSecret<'_>
+impl<P, State, Level> core::fmt::Debug for base64_ng::assurance::ProtectedSecret<'_, P, State, Level> where P: base64_ng::assurance::ProtectedMemoryProvider, Level: base64_ng::assurance::AssuranceLevel
+pub fn base64_ng::assurance::ProtectedSecret<'_, P, State, Level>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<P, State, Level> core::marker::Send for base64_ng::assurance::ProtectedSecret<'_, P, State, Level> where P: base64_ng::assurance::ThreadMovableProvider + core::marker::Sync, <P as base64_ng::assurance::ProtectedMemoryProvider>::Handle: core::marker::Send, State: core::marker::Send, Level: base64_ng::assurance::AssuranceLevel + core::marker::Send
+impl<P, State, Level> core::ops::drop::Drop for base64_ng::assurance::ProtectedSecret<'_, P, State, Level> where P: base64_ng::assurance::ProtectedMemoryProvider, Level: base64_ng::assurance::AssuranceLevel
+pub fn base64_ng::assurance::ProtectedSecret<'_, P, State, Level>::drop(&mut self)
+pub struct base64_ng::assurance::ProtectionRequest
+impl base64_ng::assurance::ProtectionRequest
+pub const fn base64_ng::assurance::ProtectionRequest::logical_bytes(self) -> usize
+pub const fn base64_ng::assurance::ProtectionRequest::requires_attestation(self) -> bool
+pub const fn base64_ng::assurance::ProtectionRequest::reserved_pages(self) -> usize
+impl core::clone::Clone for base64_ng::assurance::ProtectionRequest
+pub fn base64_ng::assurance::ProtectionRequest::clone(&self) -> base64_ng::assurance::ProtectionRequest
+impl core::cmp::Eq for base64_ng::assurance::ProtectionRequest
+impl core::cmp::PartialEq for base64_ng::assurance::ProtectionRequest
+pub fn base64_ng::assurance::ProtectionRequest::eq(&self, &base64_ng::assurance::ProtectionRequest) -> bool
+impl core::fmt::Debug for base64_ng::assurance::ProtectionRequest
+pub fn base64_ng::assurance::ProtectionRequest::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng::assurance::ProtectionRequest
+pub fn base64_ng::assurance::ProtectionRequest::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng::assurance::ProtectionRequest
+impl core::marker::StructuralPartialEq for base64_ng::assurance::ProtectionRequest
+pub struct base64_ng::assurance::ProviderAccess
+pub struct base64_ng::assurance::ProviderLimits
+pub base64_ng::assurance::ProviderLimits::max_effective_pages: usize
+pub base64_ng::assurance::ProviderLimits::max_identities: usize
+pub base64_ng::assurance::ProviderLimits::max_logical_bytes: usize
+pub base64_ng::assurance::ProviderLimits::max_maintenance_work: usize
+pub base64_ng::assurance::ProviderLimits::max_registry_entries: usize
+pub base64_ng::assurance::ProviderLimits::max_retry_attempts: usize
+pub base64_ng::assurance::ProviderLimits::page_size: usize
+impl core::clone::Clone for base64_ng::assurance::ProviderLimits
+pub fn base64_ng::assurance::ProviderLimits::clone(&self) -> base64_ng::assurance::ProviderLimits
+impl core::cmp::Eq for base64_ng::assurance::ProviderLimits
+impl core::cmp::PartialEq for base64_ng::assurance::ProviderLimits
+pub fn base64_ng::assurance::ProviderLimits::eq(&self, &base64_ng::assurance::ProviderLimits) -> bool
+impl core::fmt::Debug for base64_ng::assurance::ProviderLimits
+pub fn base64_ng::assurance::ProviderLimits::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng::assurance::ProviderLimits
+pub fn base64_ng::assurance::ProviderLimits::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng::assurance::ProviderLimits
+impl core::marker::StructuralPartialEq for base64_ng::assurance::ProviderLimits
+pub struct base64_ng::assurance::ProviderReport
+pub base64_ng::assurance::ProviderReport::active_and_reserved: usize
+pub base64_ng::assurance::ProviderReport::charged_effective_pages: usize
+pub base64_ng::assurance::ProviderReport::charged_logical_bytes: usize
+pub base64_ng::assurance::ProviderReport::health: base64_ng::assurance::ProviderHealth
+pub base64_ng::assurance::ProviderReport::health_generation: usize
+pub base64_ng::assurance::ProviderReport::protection_generation: usize
+pub base64_ng::assurance::ProviderReport::quarantined: usize
+pub base64_ng::assurance::ProviderReport::tombstoned: usize
+impl core::clone::Clone for base64_ng::assurance::ProviderReport
+pub fn base64_ng::assurance::ProviderReport::clone(&self) -> base64_ng::assurance::ProviderReport
+impl core::cmp::Eq for base64_ng::assurance::ProviderReport
+impl core::cmp::PartialEq for base64_ng::assurance::ProviderReport
+pub fn base64_ng::assurance::ProviderReport::eq(&self, &base64_ng::assurance::ProviderReport) -> bool
+impl core::fmt::Debug for base64_ng::assurance::ProviderReport
+pub fn base64_ng::assurance::ProviderReport::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng::assurance::ProviderReport
+pub fn base64_ng::assurance::ProviderReport::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng::assurance::ProviderReport
+impl core::marker::StructuralPartialEq for base64_ng::assurance::ProviderReport
+pub struct base64_ng::assurance::QuarantineRecord
+pub base64_ng::assurance::QuarantineRecord::accounting: base64_ng::assurance::AccountingPosture
+pub base64_ng::assurance::QuarantineRecord::cursor: base64_ng::assurance::TeardownCursor
+pub base64_ng::assurance::QuarantineRecord::pending_stage: base64_ng::assurance::PendingStage
+pub base64_ng::assurance::QuarantineRecord::physical_protection: base64_ng::assurance::PhysicalProtection
+pub base64_ng::assurance::QuarantineRecord::retry_attempt: usize
+pub base64_ng::assurance::QuarantineRecord::wipe: base64_ng::assurance::WipeEvidence
+impl core::clone::Clone for base64_ng::assurance::QuarantineRecord
+pub fn base64_ng::assurance::QuarantineRecord::clone(&self) -> base64_ng::assurance::QuarantineRecord
+impl core::cmp::Eq for base64_ng::assurance::QuarantineRecord
+impl core::cmp::PartialEq for base64_ng::assurance::QuarantineRecord
+pub fn base64_ng::assurance::QuarantineRecord::eq(&self, &base64_ng::assurance::QuarantineRecord) -> bool
+impl core::fmt::Debug for base64_ng::assurance::QuarantineRecord
+pub fn base64_ng::assurance::QuarantineRecord::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng::assurance::QuarantineRecord
+pub fn base64_ng::assurance::QuarantineRecord::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng::assurance::QuarantineRecord
+impl core::marker::StructuralPartialEq for base64_ng::assurance::QuarantineRecord
+pub struct base64_ng::assurance::TeardownCursor
+pub base64_ng::assurance::TeardownCursor::disposition: base64_ng::assurance::JournalDisposition
+pub base64_ng::assurance::TeardownCursor::operation: base64_ng::assurance::TeardownOperation
+pub base64_ng::assurance::TeardownCursor::progress: usize
+impl core::clone::Clone for base64_ng::assurance::TeardownCursor
+pub fn base64_ng::assurance::TeardownCursor::clone(&self) -> base64_ng::assurance::TeardownCursor
+impl core::cmp::Eq for base64_ng::assurance::TeardownCursor
+impl core::cmp::PartialEq for base64_ng::assurance::TeardownCursor
+pub fn base64_ng::assurance::TeardownCursor::eq(&self, &base64_ng::assurance::TeardownCursor) -> bool
+impl core::fmt::Debug for base64_ng::assurance::TeardownCursor
+pub fn base64_ng::assurance::TeardownCursor::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng::assurance::TeardownCursor
+pub fn base64_ng::assurance::TeardownCursor::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng::assurance::TeardownCursor
+impl core::marker::StructuralPartialEq for base64_ng::assurance::TeardownCursor
+pub struct base64_ng::assurance::Uninitialized
+pub struct base64_ng::assurance::Unvalidated
+pub struct base64_ng::assurance::Validated
+pub struct base64_ng::assurance::WipeConfirmation
+pub base64_ng::assurance::WipeConfirmation::evidence: base64_ng::assurance::WipeEvidence
+pub base64_ng::assurance::WipeConfirmation::result: base64_ng::assurance::ProviderOperationResult
+impl core::clone::Clone for base64_ng::assurance::WipeConfirmation
+pub fn base64_ng::assurance::WipeConfirmation::clone(&self) -> base64_ng::assurance::WipeConfirmation
+impl core::cmp::Eq for base64_ng::assurance::WipeConfirmation
+impl core::cmp::PartialEq for base64_ng::assurance::WipeConfirmation
+pub fn base64_ng::assurance::WipeConfirmation::eq(&self, &base64_ng::assurance::WipeConfirmation) -> bool
+impl core::fmt::Debug for base64_ng::assurance::WipeConfirmation
+pub fn base64_ng::assurance::WipeConfirmation::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng::assurance::WipeConfirmation
+pub fn base64_ng::assurance::WipeConfirmation::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng::assurance::WipeConfirmation
+impl core::marker::StructuralPartialEq for base64_ng::assurance::WipeConfirmation
+pub trait base64_ng::assurance::AssuranceLevel: base64_ng::v2::assurance::context::sealed::Level
+impl base64_ng::assurance::AssuranceLevel for base64_ng::assurance::Attested
+impl base64_ng::assurance::AssuranceLevel for base64_ng::assurance::BestEffort
+pub unsafe trait base64_ng::assurance::PlatformAttestation
+pub fn base64_ng::assurance::PlatformAttestation::attest(&self) -> core::result::Result<base64_ng::assurance::AttestationEvidence, base64_ng::assurance::AssuranceError>
+pub unsafe trait base64_ng::assurance::ProtectedMemoryProvider
+pub type base64_ng::assurance::ProtectedMemoryProvider::Handle
+pub type base64_ng::assurance::ProtectedMemoryProvider::Reservation
+pub fn base64_ng::assurance::ProtectedMemoryProvider::bytes<'handle>(&self, &base64_ng::assurance::ProviderAccess, &'handle Self::Handle) -> &'handle [u8]
+pub fn base64_ng::assurance::ProtectedMemoryProvider::bytes_mut<'handle>(&self, &base64_ng::assurance::ProviderAccess, &'handle mut Self::Handle) -> &'handle mut [u8]
+pub fn base64_ng::assurance::ProtectedMemoryProvider::confirm_wipe(&self, &base64_ng::assurance::ProviderAccess, &Self::Handle, core::option::Option<base64_ng::assurance::AttestationEvidence>, &mut base64_ng::assurance::TeardownCursor) -> base64_ng::assurance::WipeConfirmation
+pub fn base64_ng::assurance::ProtectedMemoryProvider::dispose(&self, &base64_ng::assurance::ProviderAccess, Self::Handle, &mut base64_ng::assurance::TeardownCursor) -> base64_ng::assurance::DisposalResult<Self::Handle>
+pub fn base64_ng::assurance::ProtectedMemoryProvider::health(&self) -> base64_ng::assurance::ProviderHealth
+pub fn base64_ng::assurance::ProtectedMemoryProvider::health_generation(&self) -> usize
+pub fn base64_ng::assurance::ProtectedMemoryProvider::limits(&self) -> base64_ng::assurance::ProviderLimits
+pub fn base64_ng::assurance::ProtectedMemoryProvider::logical_len(&self, &base64_ng::assurance::ProviderAccess, &Self::Handle) -> usize
+pub fn base64_ng::assurance::ProtectedMemoryProvider::materialize(&self, &base64_ng::assurance::ProviderAccess, Self::Reservation) -> core::result::Result<Self::Handle, base64_ng::assurance::ProtectionError>
+pub fn base64_ng::assurance::ProtectedMemoryProvider::physical_protection(&self, &base64_ng::assurance::ProviderAccess, &Self::Handle) -> base64_ng::assurance::PhysicalProtection
+pub fn base64_ng::assurance::ProtectedMemoryProvider::protection_generation(&self) -> usize
+pub fn base64_ng::assurance::ProtectedMemoryProvider::provider_generation(&self) -> usize
+pub fn base64_ng::assurance::ProtectedMemoryProvider::provider_identity(&self) -> usize
+pub fn base64_ng::assurance::ProtectedMemoryProvider::quarantine(&self, &base64_ng::assurance::ProviderAccess, Self::Handle, base64_ng::assurance::QuarantineRecord)
+pub fn base64_ng::assurance::ProtectedMemoryProvider::reconcile_accounting(&self, &base64_ng::assurance::ProviderAccess, &mut Self::Handle, &mut base64_ng::assurance::TeardownCursor) -> base64_ng::assurance::ProviderOperationResult
+pub fn base64_ng::assurance::ProtectedMemoryProvider::remove_protection(&self, &base64_ng::assurance::ProviderAccess, &mut Self::Handle, &mut base64_ng::assurance::TeardownCursor) -> base64_ng::assurance::ProviderOperationResult
+pub fn base64_ng::assurance::ProtectedMemoryProvider::report(&self) -> base64_ng::assurance::ProviderReport
+pub fn base64_ng::assurance::ProtectedMemoryProvider::reserve(&self, &base64_ng::assurance::ProviderAccess, base64_ng::assurance::ProtectionRequest) -> core::result::Result<Self::Reservation, base64_ng::assurance::ProtectionError>
+impl<const SLOTS: usize> base64_ng::assurance::ProtectedMemoryProvider for base64_ng::assurance::BestEffortProvider<SLOTS>
+pub type base64_ng::assurance::BestEffortProvider<SLOTS>::Handle = BestEffortHandle
+pub type base64_ng::assurance::BestEffortProvider<SLOTS>::Reservation = BestEffortReservation
+pub fn base64_ng::assurance::BestEffortProvider<SLOTS>::bytes<'handle>(&self, &base64_ng::assurance::ProviderAccess, &'handle Self::Handle) -> &'handle [u8]
+pub fn base64_ng::assurance::BestEffortProvider<SLOTS>::bytes_mut<'handle>(&self, &base64_ng::assurance::ProviderAccess, &'handle mut Self::Handle) -> &'handle mut [u8]
+pub fn base64_ng::assurance::BestEffortProvider<SLOTS>::confirm_wipe(&self, &base64_ng::assurance::ProviderAccess, &Self::Handle, core::option::Option<base64_ng::assurance::AttestationEvidence>, &mut base64_ng::assurance::TeardownCursor) -> base64_ng::assurance::WipeConfirmation
+pub fn base64_ng::assurance::BestEffortProvider<SLOTS>::dispose(&self, &base64_ng::assurance::ProviderAccess, Self::Handle, &mut base64_ng::assurance::TeardownCursor) -> base64_ng::assurance::DisposalResult<Self::Handle>
+pub fn base64_ng::assurance::BestEffortProvider<SLOTS>::health(&self) -> base64_ng::assurance::ProviderHealth
+pub fn base64_ng::assurance::BestEffortProvider<SLOTS>::health_generation(&self) -> usize
+pub fn base64_ng::assurance::BestEffortProvider<SLOTS>::limits(&self) -> base64_ng::assurance::ProviderLimits
+pub fn base64_ng::assurance::BestEffortProvider<SLOTS>::logical_len(&self, &base64_ng::assurance::ProviderAccess, &Self::Handle) -> usize
+pub fn base64_ng::assurance::BestEffortProvider<SLOTS>::materialize(&self, &base64_ng::assurance::ProviderAccess, Self::Reservation) -> core::result::Result<Self::Handle, base64_ng::assurance::ProtectionError>
+pub fn base64_ng::assurance::BestEffortProvider<SLOTS>::physical_protection(&self, &base64_ng::assurance::ProviderAccess, &Self::Handle) -> base64_ng::assurance::PhysicalProtection
+pub fn base64_ng::assurance::BestEffortProvider<SLOTS>::protection_generation(&self) -> usize
+pub fn base64_ng::assurance::BestEffortProvider<SLOTS>::provider_generation(&self) -> usize
+pub fn base64_ng::assurance::BestEffortProvider<SLOTS>::provider_identity(&self) -> usize
+pub fn base64_ng::assurance::BestEffortProvider<SLOTS>::quarantine(&self, &base64_ng::assurance::ProviderAccess, Self::Handle, base64_ng::assurance::QuarantineRecord)
+pub fn base64_ng::assurance::BestEffortProvider<SLOTS>::reconcile_accounting(&self, &base64_ng::assurance::ProviderAccess, &mut Self::Handle, &mut base64_ng::assurance::TeardownCursor) -> base64_ng::assurance::ProviderOperationResult
+pub fn base64_ng::assurance::BestEffortProvider<SLOTS>::remove_protection(&self, &base64_ng::assurance::ProviderAccess, &mut Self::Handle, &mut base64_ng::assurance::TeardownCursor) -> base64_ng::assurance::ProviderOperationResult
+pub fn base64_ng::assurance::BestEffortProvider<SLOTS>::report(&self) -> base64_ng::assurance::ProviderReport
+pub fn base64_ng::assurance::BestEffortProvider<SLOTS>::reserve(&self, &base64_ng::assurance::ProviderAccess, base64_ng::assurance::ProtectionRequest) -> core::result::Result<Self::Reservation, base64_ng::assurance::ProtectionError>
+pub trait base64_ng::assurance::ThreadMovableProvider: base64_ng::assurance::ProtectedMemoryProvider + base64_ng::v2::assurance::provider::sealed::ThreadMovable
 pub mod base64_ng::compat
 pub const base64_ng::compat::STANDARD_PADDED_ALLOW_NONCANONICAL_TRAILING_BITS: base64_ng::Base64<base64_ng::RuntimeSpec>
 pub const base64_ng::compat::STANDARD_PADDED_FULL_COMPATIBILITY: base64_ng::Base64<base64_ng::RuntimeSpec>
@@ -1286,6 +1894,9 @@ pub const fn base64_ng::Base64<base64_ng::StrictUrlSafeUnpadded>::encode_array<c
 impl<S: base64_ng::Codec> base64_ng::Base64<S>
 pub fn base64_ng::Base64<S>::decode_append(&self, &[u8], &mut alloc::vec::Vec<u8>) -> core::result::Result<usize, base64_ng::OneShotError>
 pub fn base64_ng::Base64<S>::encode_append(&self, &[u8], &mut alloc::string::String) -> core::result::Result<usize, base64_ng::OneShotError>
+impl<S: base64_ng::Codec> base64_ng::Base64<S>
+pub fn base64_ng::Base64<S>::decode_assured<'provider, P, Level>(&self, &base64_ng::assurance::AssuranceToken<'provider, Level>, base64_ng::assurance::ProtectedSecret<'provider, P, base64_ng::assurance::Uninitialized, Level>, &base64_ng::secret::SecretInput<'_>) -> core::result::Result<base64_ng::assurance::ProtectedSecret<'provider, P, base64_ng::assurance::Validated, Level>, base64_ng::assurance::AssuredDecodeError> where P: base64_ng::assurance::ProtectedMemoryProvider, Level: base64_ng::assurance::AssuranceLevel
+pub fn base64_ng::Base64<S>::encode_assured<'provider, P, Level>(&self, &base64_ng::assurance::AssuranceToken<'provider, Level>, base64_ng::assurance::ProtectedSecret<'provider, P, base64_ng::assurance::Uninitialized, Level>, &base64_ng::secret::SecretInput<'_>) -> core::result::Result<base64_ng::assurance::ProtectedSecret<'provider, P, base64_ng::assurance::Validated, Level>, base64_ng::assurance::AssuredEncodeError> where P: base64_ng::assurance::ProtectedMemoryProvider, Level: base64_ng::assurance::AssuranceLevel
 impl<S: base64_ng::Codec> base64_ng::Base64<S>
 pub fn base64_ng::Base64<S>::decode_bounded<const CAP: usize>(&self, &[u8]) -> core::result::Result<base64_ng::DecodedArray<CAP>, base64_ng::OneShotError>
 pub fn base64_ng::Base64<S>::encode_bounded<const CAP: usize>(&self, &[u8]) -> core::result::Result<base64_ng::EncodedArray<CAP>, base64_ng::OneShotError>

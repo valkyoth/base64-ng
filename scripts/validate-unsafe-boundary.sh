@@ -12,14 +12,37 @@ simd_tests_allowed='src/simd/tests.rs'
 root_allowed='src/lib.rs'
 cleanup_allowed='src/cleanup.rs'
 ct_allowed_files='src/ct/decode.rs src/ct/equality.rs'
+assurance_allowed_files='src/v2/assurance/context.rs src/v2/assurance/default_provider.rs src/v2/assurance/protected.rs src/v2/assurance/provider.rs'
 matches="$(grep -RIl 'allow(unsafe_code)' src | sort || true)"
-allowed="$(printf '%s\n' "$cleanup_allowed" src/ct/decode.rs src/ct/equality.rs $simd_allow_files | sort)"
+allowed="$(printf '%s\n' "$cleanup_allowed" src/ct/decode.rs src/ct/equality.rs $simd_allow_files $assurance_allowed_files | sort)"
 
 if [ "$matches" != "$allowed" ]; then
-    echo "unsafe boundary: allow(unsafe_code) may appear only in $cleanup_allowed, src/ct/decode.rs, src/ct/equality.rs, and src/simd/"
+    echo "unsafe boundary: allow(unsafe_code) may appear only in reviewed cleanup, CT, SIMD, and v2 assurance boundaries"
     if [ -n "$matches" ]; then
         echo "$matches"
     fi
+    exit 1
+fi
+
+assurance_allow_count="$(grep -h -c '^[[:space:]]*#\[allow(unsafe_code)\]$' $assurance_allowed_files | awk '{ total += $1 } END { print total + 0 }')"
+if [ "$assurance_allow_count" -ne 5 ]; then
+    echo "unsafe boundary: v2 assurance must have exactly five reviewed allow(unsafe_code) sites"
+    exit 1
+fi
+
+if ! awk '
+    /^[[:space:]]*#\[allow\(unsafe_code\)\]$/ {
+        allow_line = NR
+    }
+    /pub const unsafe fn new\(/ || /pub unsafe trait PlatformAttestation/ || /pub unsafe trait ProtectedMemoryProvider/ || /unsafe impl<const SLOTS: usize> ProtectedMemoryProvider/ || /unsafe impl<P, State, Level> Send/ {
+        if (allow_line != NR - 1) {
+            failed = 1
+        }
+        seen += 1
+    }
+    END { exit failed || seen != 5 }
+' $assurance_allowed_files; then
+    echo "unsafe boundary: v2 assurance allows unsafe only for evidence construction, provider protocols, the default provider, and conditional Send"
     exit 1
 fi
 
@@ -114,7 +137,7 @@ if ! awk '
         prev1 = $0
     }
     END { exit failed }
-' $ct_allowed_files "$cleanup_allowed" $simd_boundary_files; then
+' $ct_allowed_files "$cleanup_allowed" $simd_boundary_files $assurance_allowed_files; then
     echo "unsafe boundary: every unsafe block must have a nearby SAFETY explanation"
     exit 1
 fi

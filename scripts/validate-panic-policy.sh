@@ -145,9 +145,38 @@ for test_file in src/v2/*_tests.rs src/v2/fixtures.rs src/v2/rfc4648_oracle.rs; 
     fi
 done
 
+for test_file in src/*/*/tests.rs; do
+    test -e "$test_file" || continue
+    parent_module="$(dirname "$test_file")/../$(basename "$(dirname "$test_file")").rs"
+    if [ ! -f "$parent_module" ]; then
+        parent_module="$(dirname "$test_file")/mod.rs"
+    fi
+    if ! awk '
+        /^#\[cfg\(test\)\]$/ {
+            saw_cfg_test = 1
+            next
+        }
+        saw_cfg_test && /^[[:space:]]*$/ {
+            next
+        }
+        saw_cfg_test {
+            if ($0 ~ /^[[:space:]]*mod tests;/) {
+                found = 1
+            }
+            saw_cfg_test = 0
+        }
+        END {
+            exit found ? 0 : 1
+        }
+    ' "$parent_module"; then
+        echo "panic policy: $test_file must be declared behind #[cfg(test)] in $parent_module" >&2
+        exit 1
+    fi
+done
+
 find src crates/*/src -name '*.rs' | sort | while IFS= read -r source_file; do
     case "$source_file" in
-        src/*_tests.rs|src/kani_proofs.rs|src/kani_in_place_proofs.rs|src/kani_secret_proofs.rs|src/kani_secret_encode_proofs.rs|src/tests.rs|src/simd/tests.rs|src/simd/wasm.rs|src/simd/neon_decode_tests.rs|src/simd/x86_decode_tests.rs|src/v2/*_tests.rs|src/v2/fixtures.rs|src/v2/rfc4648_oracle.rs|crates/*/src/tests.rs|crates/*/src/*_tests.rs)
+        src/*_tests.rs|src/kani_proofs.rs|src/kani_in_place_proofs.rs|src/kani_secret_proofs.rs|src/kani_secret_encode_proofs.rs|src/tests.rs|src/simd/tests.rs|src/simd/wasm.rs|src/simd/neon_decode_tests.rs|src/simd/x86_decode_tests.rs|src/v2/*_tests.rs|src/v2/fixtures.rs|src/v2/rfc4648_oracle.rs|src/*/*/tests.rs|crates/*/src/tests.rs|crates/*/src/*_tests.rs)
             continue
             ;;
     esac

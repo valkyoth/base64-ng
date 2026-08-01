@@ -1408,6 +1408,73 @@ responsibility, while declassification deliberately transfers that
 responsibility to ordinary non-wiping storage. Drop cleanup excludes abort,
 forgotten values, process death, and historical hardware or allocator copies.
 
+## 2.0 Assurance And Protected-Memory Boundary
+
+Commit 22 adds five reviewed unsafe declaration or implementation sites. The
+safe codec and secret algorithms remain free of unsafe code.
+
+### `AttestationEvidence::new`
+
+Location: `src/v2/assurance/context.rs`
+
+This unsafe constructor binds a reviewed target, wipe procedure, barrier
+posture, provider identity, and provider generation. Safe callers cannot mint
+attested evidence. The caller must establish every claim for the exact running
+deployment and must not replay evidence after provider reconstruction.
+
+### `PlatformAttestation`
+
+Location: `src/v2/assurance/context.rs`
+
+This unsafe trait is the deployment evidence source used to mint an
+`Attested` token. Implementations must query or otherwise bind real platform
+evidence, return only evidence for the exact provider instance, and never
+unwind. A target name, Cargo feature, custom cfg, or requested policy is not by
+itself hardware attestation.
+
+### `ProtectedMemoryProvider`
+
+Location: `src/v2/assurance/provider.rs`
+
+This unsafe trait owns protected allocation identity, finite reservation,
+physical-protection posture, teardown journaling, quarantine, and disposal.
+Implementations must provide unique live handles, generation/ABA safety,
+complete-range byte views, allocation-free infallible quarantine transfer, and
+non-unwinding hooks. Applied, not-applied, and indeterminate outcomes must be
+truthful. Indeterminate disposal must destroy every addressable capability and
+leave only a non-owning tombstone identity.
+
+Every ownership-sensitive hook requires a `ProviderAccess` value whose private
+constructor is available only to the protected typestate implementation. This
+prevents external safe code from directly materializing a default-provider
+handle and bypassing ordered cleanup.
+
+The protocol is not a persistent-provider API. The base 2.0 package includes
+no persistent teardown provider. The default provider journal and recovery
+identity are volatile, valid only for one live provider instance, and cannot
+be imported or resumed after restart.
+
+### `BestEffortProvider` provider implementation
+
+Location: `src/v2/assurance/default_provider.rs`
+
+The default provider uses preallocated finite slots and heap allocations. It
+does not claim OS page locking, dump exclusion, crash persistence, or hardware
+wipe attestation. Its quarantine transfer moves an existing allocation into a
+reserved slot without allocating, and bounded maintenance either completes
+teardown or permanently quarantines the allocation and shuts down admission.
+
+### `ProtectedSecret` conditional `Send`
+
+Location: `src/v2/assurance/protected.rs`
+
+`ProtectedSecret` is never `Sync`. It is `Send` only when the sealed
+`ThreadMovableProvider` proof is implemented inside this crate, the provider is
+`Sync`, and the exact handle, typestate, and assurance level are `Send`. No
+external provider can opt itself into this capability. The implementation does
+not move backing bytes; it only permits moving the unique owner when the
+provider contract has been reviewed for cross-thread teardown.
+
 ## Admission Rule
 
 Unsafe SIMD can become an active backend only after scalar differential tests,

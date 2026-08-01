@@ -23,10 +23,8 @@ expect_failure \
     env RUSTFLAGS="--cfg base64_ng_require_high_assurance" \
     cargo check --no-default-features --lib
 
-echo "high-assurance policy: SIMD is excluded"
-expect_failure \
-    'mutually exclusive' \
-    env RUSTFLAGS="--cfg base64_ng_require_high_assurance" \
+echo "high-assurance policy: additive ordinary SIMD keeps scalar secret types"
+RUSTFLAGS="--cfg base64_ng_require_high_assurance" \
     cargo check --no-default-features --features secrets,simd --lib
 
 target_arch="$(rustc --print cfg | sed -n 's/^target_arch="\([^"]*\)"$/\1/p')"
