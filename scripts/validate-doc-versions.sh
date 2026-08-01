@@ -4,6 +4,9 @@ set -eu
 cargo_version="$(
     sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | sed -n '1p'
 )"
+release_policy="$(
+    sed -n 's/^policy = "\([^"]*\)"/\1/p' release-crates.toml | sed -n '1p'
+)"
 
 if [ -z "$cargo_version" ]; then
     echo "doc versions: Cargo.toml package version is missing" >&2
@@ -29,6 +32,17 @@ reject_text() {
 }
 
 require_text CHANGELOG.md "## $cargo_version "
+
+if [ "$release_policy" = "development-blocked" ]; then
+    require_text CHANGELOG.md "## $cargo_version - Unreleased"
+    require_text README.md "The current public release is \`1.3.9\`."
+    require_text README.md "The development branch reports package version \`$cargo_version\`"
+    require_text README.md '`development-blocked` policy'
+    require_text README.md 'base64-ng = { git = "https://github.com/valkyoth/base64-ng"'
+    require_text docs/SIMD_ADMISSION.md "Release status: \`1.3.9\`"
+    echo "doc versions: ok ($cargo_version development candidate, publishing blocked)"
+    exit 0
+fi
 
 case "$cargo_version" in
     *-*)

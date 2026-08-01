@@ -135,7 +135,7 @@ run_rustc \
 compile_failure unsealed 'the trait bound `External: Sealed` is not satisfied'
 compile_failure mutate 'field `decode_padding` of struct `CodecSettings` is private'
 
-if rg -n -F \
+if grep -n -F \
     -e unsafe \
     -e 'std::' \
     -e 'alloc::' \

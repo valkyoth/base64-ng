@@ -20,6 +20,7 @@ except ModuleNotFoundError:  # pragma: no cover - release host guard.
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_PLAN = ROOT / "release-crates.toml"
 CHANGE_KINDS = ("code", "dependency", "unchanged")
+RELEASE_POLICIES = ("synced-family", "development-blocked")
 
 PUBLISH_ORDER = (
     "base64-ng",
@@ -97,8 +98,14 @@ def release_plan(plan_path: Path) -> dict:
     release = plan.get("release", {})
     crates = plan.get("crates", {})
     version = release.get("version")
+    policy = release.get("policy")
     if not isinstance(version, str):
         raise RuntimeError("release-crates.toml is missing [release].version")
+    if policy not in RELEASE_POLICIES:
+        raise RuntimeError(
+            "release-crates.toml has unsupported [release].policy "
+            f"{policy!r}; expected one of {RELEASE_POLICIES}"
+        )
     if set(crates) != set(PUBLISH_ORDER):
         raise RuntimeError(
             "release-crates.toml crates are not in sync with PUBLISH_ORDER: "
@@ -106,11 +113,16 @@ def release_plan(plan_path: Path) -> dict:
         )
     parse_version(version)
     for package_name, entry in crates.items():
-        validate_plan_entry(package_name, entry, version)
-    return {"version": version, "crates": crates}
+        validate_plan_entry(package_name, entry, version, policy)
+    return {"version": version, "policy": policy, "crates": crates}
 
 
-def validate_plan_entry(package_name: str, entry: dict, release: str) -> None:
+def validate_plan_entry(
+    package_name: str,
+    entry: dict,
+    release: str,
+    policy: str = "synced-family",
+) -> None:
     previous = entry.get("previous_version")
     version = entry.get("version")
     change = entry.get("change")
@@ -126,6 +138,18 @@ def validate_plan_entry(package_name: str, entry: dict, release: str) -> None:
     previous_version = parse_version(previous)
     planned_version = parse_version(version)
     release_parts = parse_version(release)
+
+    if policy == "development-blocked":
+        if planned_version != release_parts:
+            raise RuntimeError(
+                f"{package_name} development version must be {release}"
+            )
+        if publish:
+            raise RuntimeError(
+                f"{package_name} cannot publish while the release plan is "
+                "development-blocked"
+            )
+        return
 
     if change == "code":
         if planned_version != release_parts:
@@ -424,7 +448,17 @@ def main() -> int:
     if args.check:
         print("release_crates.py publish order is up to date.")
         print(f"release_crates.py release plan is {args.version}.")
+        if plan["policy"] == "development-blocked":
+            print("release_crates.py publishing is blocked during 2.0 development.")
         return 0
+
+    if plan["policy"] == "development-blocked":
+        print(
+            "Refusing to publish: release-crates.toml policy is "
+            "development-blocked.",
+            file=sys.stderr,
+        )
+        return 1
 
     require_clean_tree(allow_dirty=args.allow_dirty or args.dry_run)
     require_tag = args.require_tag or (not args.dry_run and not args.allow_untagged)

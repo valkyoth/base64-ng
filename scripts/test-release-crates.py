@@ -149,6 +149,29 @@ def test_publish_plan_skips_unchanged_crates() -> None:
     assert release_crates.publish_plan(plan) == ("base64-ng",)
 
 
+def test_development_policy_requires_synced_unpublished_versions() -> None:
+    entry = {
+        "previous_version": "1.3.9",
+        "version": "2.0.0",
+        "change": "code",
+        "publish": False,
+        "reason": "development",
+    }
+    release_crates.validate_plan_entry(
+        "base64-ng", entry, "2.0.0", "development-blocked"
+    )
+
+    entry["publish"] = True
+    assert_fails(
+        "cannot publish",
+        release_crates.validate_plan_entry,
+        "base64-ng",
+        entry,
+        "2.0.0",
+        "development-blocked",
+    )
+
+
 def test_publish_sequence_dry_runs_dependents_after_index_wait() -> None:
     plan = base_plan()
     plan["crates"]["base64-ng"]["version"] = "1.0.10"
@@ -266,6 +289,7 @@ def run_tests() -> None:
         test_dependency_only_changes_must_patch_bump,
         test_unchanged_crates_are_not_published,
         test_publish_plan_skips_unchanged_crates,
+        test_development_policy_requires_synced_unpublished_versions,
         test_publish_sequence_dry_runs_dependents_after_index_wait,
         test_post_tag_full_gate_uses_check_mode,
         test_release_tag_check_requires_valid_signature,

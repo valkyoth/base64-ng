@@ -13,6 +13,9 @@ cargo_rust_version="$(
 toolchain_version="$(
     sed -n 's/^channel = "\([^"]*\)"/\1/p' rust-toolchain.toml | sed -n '1p'
 )"
+release_policy="$(
+    sed -n 's/^policy = "\([^"]*\)"/\1/p' release-crates.toml | sed -n '1p'
+)"
 
 if [ "$package_name" != "base64-ng" ]; then
     echo "release metadata: package name must be base64-ng" >&2
@@ -99,6 +102,8 @@ test -x scripts/generate_release_history.py
 test -x scripts/validate-release-readiness.sh
 test -s scripts/test-release-crates.py
 test -x scripts/test-release-readiness.sh
+test -s scripts/ct-asm-symbols.sh
+test -x scripts/test-ct-asm-symbols.sh
 
 if [ "$(sed -n '1p' scripts/release_crates.py)" != "#!/usr/bin/env python3" ]; then
     echo "release metadata: scripts/release_crates.py must use #!/usr/bin/env python3" >&2
@@ -113,6 +118,13 @@ fi
 if ! grep -F -q "version = \"$cargo_version\"" release-crates.toml; then
     echo "release metadata: release-crates.toml version must match Cargo.toml version $cargo_version" >&2
     exit 1
+fi
+
+if [ "$release_policy" = "development-blocked" ]; then
+    if grep -F -q 'publish = true' release-crates.toml; then
+        echo "release metadata: development plan selected a crate for publication" >&2
+        exit 1
+    fi
 fi
 
 for required_script in \
@@ -154,6 +166,7 @@ for required_script in \
     "scripts/ci_install_rust.sh" \
     "scripts/generate-sbom.sh" \
     "scripts/generate_ct_asm_evidence.sh" \
+    "scripts/test-ct-asm-symbols.sh" \
     "scripts/test-evidence-source.sh" \
     "scripts/reproducible_build_check.sh" \
     "scripts/stable_release_gate.sh" \
@@ -177,6 +190,13 @@ do
 
     if [ "$(sed -n '1p' "$required_script")" != "#!/usr/bin/env sh" ]; then
         echo "release metadata: $required_script must use #!/usr/bin/env sh" >&2
+        exit 1
+    fi
+done
+
+for shell_script in scripts/*.sh; do
+    if grep -n -E '(^|[[:space:]])rg([[:space:]]|$)' "$shell_script"; then
+        echo "release metadata: shell policy scripts must not require ripgrep: $shell_script" >&2
         exit 1
     fi
 done
@@ -525,6 +545,7 @@ for required_package_file in \
     "scripts/check_big_endian_intrinsics_status.sh" \
     "scripts/check_riscv_qemu.sh" \
     "scripts/check_riscv_intrinsics_status.sh" \
+    "scripts/ct-asm-symbols.sh" \
     "scripts/validate-api-audit.sh" \
     "scripts/validate-big-endian-posture.sh" \
     "scripts/validate-riscv-posture.sh" \
@@ -543,6 +564,7 @@ for required_package_file in \
     "scripts/ci_install_rust.sh" \
     "scripts/generate-sbom.sh" \
     "scripts/generate_ct_asm_evidence.sh" \
+    "scripts/test-ct-asm-symbols.sh" \
     "scripts/reproducible_build_check.sh" \
     "scripts/release_crates.py" \
     "scripts/stable_release_gate.sh" \

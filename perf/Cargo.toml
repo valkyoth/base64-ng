@@ -13,4 +13,4 @@ simd = ["base64-ng/simd"]
 [dependencies]
 base64 = "=0.23.0"
 base64ct = "=1.8.3"
-base64-ng = { path = "..", version = "1.3.9", default-features = false, features = ["alloc", "std", "stream"] }
+base64-ng = { path = "..", version = "2.0.0", default-features = false, features = ["alloc", "std", "stream"] }

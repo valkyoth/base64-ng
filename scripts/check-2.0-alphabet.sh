@@ -162,7 +162,7 @@ for invalid in invalid-duplicate invalid-padding invalid-byte invalid-length; do
     compile_failure "$invalid"
 done
 
-if rg -n -F \
+if grep -n -F \
     -e unsafe \
     -e 'std::' \
     -e 'alloc::' \

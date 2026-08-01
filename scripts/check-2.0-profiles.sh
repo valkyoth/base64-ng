@@ -49,13 +49,13 @@ for symbol in \
     BINHEX_ALPHABET \
     IMAP_MUTF7_ALPHABET_NO_PAD
 do
-    if ! rg -q "pub const $symbol" src/v2; then
+    if ! grep -R -q "pub const $symbol" src/v2; then
         echo "2.0 profiles: public value is missing: $symbol" >&2
         exit 1
     fi
 done
 
-if rg -n -F \
+if grep -n -F \
     -e 'LegacyWhitespaceDecoder' \
     -e 'ASCII_WHITESPACE' \
     -e 'MIME_BODY_STRICT' \

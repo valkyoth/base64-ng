@@ -1,5 +1,10 @@
 # Release Evidence
 
+Repository shell gates use baseline POSIX utilities and do not require
+`ripgrep`. Constant-time assembly symbol evidence recognizes both GNU/ELF and
+Apple/Mach-O function-definition labels; this parser is covered by
+`scripts/test-ct-asm-symbols.sh`.
+
 `base64-ng` treats release evidence as part of the artifact, not as an informal
 local habit. The release gate generates and verifies evidence that downstream
 users can inspect before adopting a version.

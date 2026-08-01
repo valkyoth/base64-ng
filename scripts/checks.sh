@@ -10,6 +10,9 @@ scripts/validate-release-metadata.sh
 echo "checks: generated-evidence source provenance"
 scripts/test-evidence-source.sh
 
+echo "checks: portable CT assembly symbol matching"
+scripts/test-ct-asm-symbols.sh
+
 echo "checks: crate publish plan"
 scripts/release_crates.py --check
 python3 scripts/test-release-crates.py

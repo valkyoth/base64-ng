@@ -120,7 +120,7 @@ run_rustc \
 compile_failure private-fields 'private field'
 compile_failure zero-width 'zero-width wrapping rejected'
 
-if rg -n -F \
+if grep -n -F \
     -e unsafe \
     -e 'alloc::' \
     -e 'Box<' \

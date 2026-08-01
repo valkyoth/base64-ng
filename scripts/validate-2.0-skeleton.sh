@@ -55,18 +55,22 @@ gated && /^mod (append_tests|chunk_tests|const_buffer_tests|fixtures|formatting_
     }
 ' src/v2/mod.rs
 
-if rg -n 'rfc4648_oracle' src \
-    --glob '!src/v2/mod.rs' \
-    --glob '!src/v2/const_buffer_tests.rs' \
-    --glob '!src/v2/fixtures.rs' \
-    --glob '!src/v2/incremental_decoder_tests.rs' \
-    --glob '!src/v2/incremental_decoder_unpadded_tests.rs' \
-    --glob '!src/v2/incremental_encoder_tests.rs' \
-    --glob '!src/v2/one_shot_tests.rs' \
-    --glob '!src/v2/ordinary.rs' \
-    --glob '!src/v2/secret_encoder_tests.rs' \
-    --glob '!src/v2/rfc4648_oracle.rs'
-then
+oracle_references="$(
+    find src -type f -name '*.rs' \
+        ! -path 'src/v2/mod.rs' \
+        ! -path 'src/v2/const_buffer_tests.rs' \
+        ! -path 'src/v2/fixtures.rs' \
+        ! -path 'src/v2/incremental_decoder_tests.rs' \
+        ! -path 'src/v2/incremental_decoder_unpadded_tests.rs' \
+        ! -path 'src/v2/incremental_encoder_tests.rs' \
+        ! -path 'src/v2/one_shot_tests.rs' \
+        ! -path 'src/v2/ordinary.rs' \
+        ! -path 'src/v2/secret_encoder_tests.rs' \
+        ! -path 'src/v2/rfc4648_oracle.rs' \
+        -exec grep -nH 'rfc4648_oracle' {} \; || exit 1
+)"
+if [ -n "$oracle_references" ]; then
+    printf '%s\n' "$oracle_references"
     echo "2.0 skeleton: test oracle referenced outside its gated boundary" >&2
     exit 1
 fi

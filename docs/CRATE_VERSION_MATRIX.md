@@ -5,6 +5,24 @@ crate remains the stable user entry point; companion crates are optional
 integration packages for applications that explicitly admit their dependency
 sets.
 
+## 2.0.0 Development Candidate
+
+`main` reports `2.0.0` for every workspace package so local builds, device
+reports, and external evidence unambiguously identify the API generation under
+test. This is not a published release. The release plan uses the
+`development-blocked` policy, every crate has `publish = false`, and the
+publish helper refuses to run until the final 2.0 acceptance checkpoint.
+
+| Crate | Development Version | Publish Now | Cargo |
+| --- | --- | --- | --- |
+| `base64-ng` | `2.0.0` | no | <https://crates.io/crates/base64-ng> |
+| `base64-ng-sanitization` | `2.0.0` | no | <https://crates.io/crates/base64-ng-sanitization> |
+| `base64-ng-derive` | `2.0.0` | no | <https://crates.io/crates/base64-ng-derive> |
+| `base64-ng-serde` | `2.0.0` | no | <https://crates.io/crates/base64-ng-serde> |
+| `base64-ng-bytes` | `2.0.0` | no | <https://crates.io/crates/base64-ng-bytes> |
+| `base64-ng-subtle` | `2.0.0` | no | <https://crates.io/crates/base64-ng-subtle> |
+| `base64-ng-tokio` | `2.0.0` | no | <https://crates.io/crates/base64-ng-tokio> |
+
 ## 1.3.9 Release Plan
 
 The `1.3.9` release keeps the workspace crate family synchronized while

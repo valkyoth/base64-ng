@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.0 - Unreleased
+
+- Development checkpoints now report the target `2.0.0` package version while
+  publication remains blocked until final API, pentest, and release evidence
+  acceptance.
+- See [`2.0.0-release-plan.md`](2.0.0-release-plan.md) for the complete ordered
+  implementation and verification program.
+
 ## 1.3.9 - 2026-07-21
 
 - Synchronized all workspace crate package versions to `1.3.9`.

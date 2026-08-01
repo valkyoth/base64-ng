@@ -1,5 +1,10 @@
 # Constant-Time Assembly Review
 
+The evidence generator recognizes Rust function-definition labels in both
+GNU/ELF assembly and Apple/Mach-O assembly. Its regression fixture rejects
+call and global-reference lines so a referenced but inlined-away cleanup or
+constant-time helper cannot satisfy the non-inlining gate.
+
 This document records the manual generated-code review expected for
 constant-time-oriented scalar decode work. It does not create a formal
 cryptographic constant-time guarantee.

@@ -33,7 +33,7 @@ if [ "$actual_fixture_sha256" != "$fixture_sha256" ]; then
     exit 1
 fi
 
-if rg -n -F -e 'web::' -e 'FORGIVING' src/v2/secret.rs src/v2/secret_in_place.rs; then
+if grep -n -F -e 'web::' -e 'FORGIVING' src/v2/secret.rs src/v2/secret_in_place.rs; then
     echo "2.0 web forgiving: web policy leaked into secret modules" >&2
     exit 1
 fi

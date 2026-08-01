@@ -55,6 +55,17 @@ removals, capability edges, and companion boundaries before implementation.
 
 The current public release is `1.3.9`.
 
+The development branch reports package version `2.0.0` so source builds and
+device evidence identify the API generation being tested. It is not
+publishable: `release-crates.toml` remains fail-closed under the
+`development-blocked` policy until the final 2.0 acceptance checkpoint. Use
+the published `1.3.9` requirement for crates.io consumers, or use an explicit
+Git dependency when testing the development branch:
+
+```toml
+base64-ng = { git = "https://github.com/valkyoth/base64-ng", rev = "<reviewed-commit>" }
+```
+
 `1.3.9` is a dependency-migration and crate-family synchronization patch on top
 of the `1.3.0` implementation-completion release, the `1.3.1` Tokio
 writer patch, the `1.3.2` non-standard SIMD surface review, the `1.3.3`

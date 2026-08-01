@@ -8,6 +8,7 @@ trap 'rm -rf "$audit_root"' EXIT INT TERM
 mkdir -p "$output_dir"
 
 . scripts/evidence-source.sh
+. scripts/ct-asm-symbols.sh
 evidence_capture_source "ct asm evidence"
 
 copy_single_asm() {
@@ -27,14 +28,11 @@ copy_single_asm() {
 require_lto_symbol() {
     symbol_len="$1"
     symbol_name="$2"
-    legacy_pattern="^[[:space:]]*\\.section[[:space:]]+\\.text\\._ZN9base64_ng.*${symbol_len}${symbol_name}17h"
-    v0_pattern="^[[:space:]]*\\.section[[:space:]]+\\.text\\._R.*9base64_ng.*${symbol_len}${symbol_name},"
-
-    if grep -E -q "$legacy_pattern" "$output_dir/base64_ng-all-features-lto.s"; then
-        return
-    fi
-
-    if grep -E -q "$v0_pattern" "$output_dir/base64_ng-all-features-lto.s"; then
+    if ct_asm_symbol_is_defined \
+        "$output_dir/base64_ng-all-features-lto.s" \
+        "$symbol_len" \
+        "$symbol_name"
+    then
         return
     fi
 
