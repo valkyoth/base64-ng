@@ -3,7 +3,7 @@
 use core::marker::PhantomData;
 
 use crate::runtime::{Backend, OperationKind};
-use crate::{Alphabet, EncodeError, Standard, UrlSafe};
+use crate::{Alphabet, DecodeError, EncodeError, Standard, UrlSafe};
 
 /// Non-forgeable, thread-bound proof that a static SIMD backend passed its KAT.
 ///
@@ -113,6 +113,34 @@ impl StaticBackendToken {
         self.encode::<UrlSafe, PAD>(input, output)
     }
 
+    /// Decodes strict Standard Base64 with the statically admitted backend.
+    ///
+    /// Commit 27 enables direct SSSE3/SSE4.1 and AVX2 execution. AVX-512 and
+    /// non-x86 token backends remain scalar here until their own rewrite
+    /// commits admit the static decode operation. Invalid input retains the
+    /// ordinary strict decoder's exact diagnostics and does not modify output.
+    pub fn decode_standard<const PAD: bool>(
+        &self,
+        input: &[u8],
+        output: &mut [u8],
+    ) -> Result<usize, DecodeError> {
+        self.decode::<Standard, PAD>(input, output)
+    }
+
+    /// Decodes strict URL-safe Base64 with the statically admitted backend.
+    ///
+    /// Commit 27 enables direct SSSE3/SSE4.1 and AVX2 execution. AVX-512 and
+    /// non-x86 token backends remain scalar here until their own rewrite
+    /// commits admit the static decode operation. Invalid input retains the
+    /// ordinary strict decoder's exact diagnostics and does not modify output.
+    pub fn decode_url_safe<const PAD: bool>(
+        &self,
+        input: &[u8],
+        output: &mut [u8],
+    ) -> Result<usize, DecodeError> {
+        self.decode::<UrlSafe, PAD>(input, output)
+    }
+
     fn encode<A: Alphabet, const PAD: bool>(
         &self,
         input: &[u8],
@@ -147,6 +175,39 @@ impl StaticBackendToken {
             _ => {}
         }
         crate::scalar::encode_slice::<A, PAD>(input, output)
+    }
+
+    fn decode<A: Alphabet, const PAD: bool>(
+        &self,
+        input: &[u8],
+        output: &mut [u8],
+    ) -> Result<usize, DecodeError> {
+        if !self.is_valid() {
+            return crate::scalar::decode_slice::<A, PAD>(input, output);
+        }
+        #[cfg(all(
+            feature = "checked-backend",
+            any(target_arch = "x86", target_arch = "x86_64")
+        ))]
+        match self.backend {
+            Backend::Avx2 | Backend::Ssse3Sse41 => {
+                return crate::decode_backend::decode_checked::<A, PAD>(
+                    self.backend,
+                    input,
+                    output,
+                );
+            }
+            _ => {}
+        }
+        #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+        match self.backend {
+            Backend::Avx2 => return crate::simd::decode_slice_avx2::<A, PAD>(input, output),
+            Backend::Ssse3Sse41 => {
+                return crate::simd::decode_slice_ssse3_sse41::<A, PAD>(input, output);
+            }
+            _ => {}
+        }
+        crate::scalar::decode_slice::<A, PAD>(input, output)
     }
 
     fn admit(backend: Backend, deployment_attested: bool) -> Option<Self> {

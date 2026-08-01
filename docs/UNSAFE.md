@@ -676,23 +676,22 @@ Safety argument:
   six-bit Base64 value.
 - The helper is private to the Standard-family SSSE3/SSE4.1 encode path.
 
-### `decode_slice_ssse3_sse41`, `decode_slice_avx2`, and `decode_slice_avx512`
+### `decode_slice_ssse3_sse41` and `decode_slice_avx2`
 
 Location: `src/simd/x86/decode.rs`
 
-Status: admitted std x86/x86_64 strict decode dispatch wrappers for Standard
-and URL-safe alphabet families. They are reachable only when the `simd` and
-`std` features are enabled and runtime CPU feature probing has selected the
-matching backend.
+Status: admitted x86/x86_64 strict decode wrappers for Standard and URL-safe
+alphabet families. `std` runtime probing or a thread-bound static `no_std`
+token must prove the selected feature bundle.
 
 Purpose:
 
 - Carve full encoded input blocks into fixed-size array references for the
   target-feature decode block functions.
-- Preserve scalar public error shape by validating the complete input before
-  any SIMD block output is copied to caller-visible buffers.
-- Fall back from AVX-512 to AVX2, from AVX2 to SSSE3/SSE4.1, and from
-  SSSE3/SSE4.1 to scalar for shorter tails or unsupported surfaces.
+- Preserve scalar public error shape and transactional rejection by validating
+  the complete input before any direct SIMD output store.
+- Fall back from AVX2 to SSSE3/SSE4.1 and from SSSE3/SSE4.1 to scalar for
+  shorter tails or unsupported surfaces.
 
 Preconditions:
 
@@ -704,24 +703,23 @@ Preconditions:
 
 Unsafe operation:
 
-- Each wrapper uses `input.as_ptr().add(read).cast::<[u8; N]>()` and
-  dereferences the result to pass a fixed-size block reference to the matching
-  target-feature decoder.
+- Each wrapper carves fixed input and output array references with pointer
+  arithmetic after scalar length and capacity preflight.
 
 Safety argument:
 
 - `read + N <= input.len()` is checked before every raw-pointer block carve.
 - `read` advances by exactly `N`, so the pointer remains within the same input
   allocation and never crosses the slice boundary.
-- The wrapper never constructs a mutable alias to input memory.
-- Output writes go through private stack staging buffers first. Bytes are
-  copied to caller output only after whole-input scalar validation and block
-  equality checks inside the target-feature decoder.
-- Any unexpected block-level error wipes the local decoded staging buffer and
-  rebases the error index to the original input. Tail fallback errors are also
-  rebased to the original input offset.
-- Unsupported alphabets, short inputs, tails, CT secret decode, and `no_std`
-  stay scalar. Strict in-place decode may enter this backend only after
+- Output offsets advance by the exact `16 -> 12` or `32 -> 24` block ratio and
+  the validated decoded length proves every fixed store is in bounds.
+- The wrapper never aliases immutable input with mutable output. In-place
+  callers reach this boundary only after separate stack staging.
+- Padding is excluded from SIMD full blocks; final padding and short tails are
+  scalar. An impossible post-validation vector classification disagreement
+  triggers a complete scalar rewrite of caller output.
+- Unsupported alphabets, short inputs, tails, and CT secret decode stay
+  scalar. Strict in-place decode may enter this backend only after
   whole-input scalar validation and stack staging. Wrapped and legacy decode
   may enter this strict backend only after scalar line-profile validation,
   line-ending compaction, or legacy-whitespace compaction. Wasm decode is
@@ -729,58 +727,50 @@ Safety argument:
 
 ### `decode_16_bytes_ssse3_sse41`
 
-Location: `src/simd/x86/decode.rs`
+Location: `src/simd/x86/decode_direct.rs`
 
-Status: admitted std x86/x86_64 SSSE3/SSE4.1 strict decode block for Standard
-and URL-safe alphabet families. It is reachable through strict decode dispatch
-for full 16-byte encoded blocks after whole-input scalar validation.
+Status: admitted x86/x86_64 SSSE3/SSE4.1 direct strict decode kernel for
+Standard and URL-safe alphabet families.
 
 Purpose:
 
 - Provide the fixed-block SSSE3/SSE4.1 decode primitive for the admitted strict
   decode boundary without changing scalar public error behavior.
-- Exercise SSSE3/SSE4.1 6-bit-value packing for a 16-byte encoded block that
-  decodes to at most 12 bytes.
-- Verify error agreement, padding behavior, canonical trailing-bit rejection,
-  and rejected-input output retention before any later dispatch admission.
+- Classify sixteen caller ASCII bytes, map them directly to 6-bit values, pack
+  four quanta, and store exactly twelve decoded bytes.
 
 Preconditions:
 
 - Caller must prove SSSE3 and SSE4.1 are available on the current CPU.
 - Input is exactly 16 encoded bytes.
 - Output is exactly 12 bytes.
-- The vectorized packing path is used only for Standard-family alphabets
-  (`A-Z`, `a-z`, `0-9`, and either `+/` or `-_`). Other alphabets use the
-  staged scalar fallback inside the prototype.
+- Whole-input scalar validation has already proved a canonical unpadded full
+  block and exact output capacity.
 
 Unsafe operation:
 
-- `_mm_loadu_si128` loads sixteen 6-bit values from a local staging array.
+- `_mm_loadu_si128` loads sixteen caller ASCII bytes.
+- Signed range comparisons and equality masks classify all alphabet ranges
+  and map them directly to 6-bit values.
 - `_mm_maddubs_epi16` and `_mm_madd_epi16` pack groups of four 6-bit values
   into 24-bit decoded quanta.
 - `_mm_shuffle_epi8` compacts the packed quanta into byte order.
-- `_mm_storeu_si128` stores the packed prototype output into a local 16-byte
-  staging array.
-- `clear_xmm_registers_after_encode_block` clears XMM registers before return
-  to reduce register retention in the vector decode block.
+- `_mm_storel_epi64` plus one unaligned four-byte store writes exactly twelve
+  bytes without an over-wide caller-output store.
 
 Safety argument:
 
-- Scalar strict decode validation runs into a private 12-byte staging buffer
-  before any byte is copied to the caller output. If validation fails, the
-  caller output is left untouched and the staging buffer is wiped.
-- The input and output array types provide fixed readable and writable bounds.
-- The SIMD load and store operate only on local 16-byte arrays and use
-  unaligned intrinsics, so no alignment precondition is required.
+- Whole-input scalar validation completes before this kernel is entered, so
+  malformed input cannot reach any direct output store and exact diagnostics
+  remain scalar-defined.
+- The input and output array types provide exact readable and writable bounds;
+  all loads and stores are explicitly unaligned.
 - The SSSE3/SSE4.1 target-feature contract enables every intrinsic used by
   the prototype.
-- The prototype copies only the validated decoded length to caller output after
-  an unconditional release-mode equality check proves the vector-packed prefix
-  matches the scalar-validation prefix. It wipes local value, packed, and
-  scalar-validation staging buffers before returning.
-- The public dispatch wrapper validates the complete input with scalar before
-  calling this block function and rebases any unexpected block error to the
-  original input offset.
+- The validity movemask must contain sixteen accepted lanes before output is
+  stored. A disagreement after scalar validation causes scalar fallback.
+- `decode_full_blocks_ssse3_sse41` clears XMM state once after the complete
+  block loop, not once per block.
 
 ### `decode_64_bytes_avx512`
 
@@ -789,6 +779,12 @@ Location: `src/simd/x86/decode.rs`
 Status: admitted std x86/x86_64 AVX-512 VBMI strict decode block for Standard
 and URL-safe alphabet families. It is reachable through strict decode dispatch
 for full 64-byte encoded blocks after whole-input scalar validation.
+
+The AVX-512 wrapper retains its pre-Commit-27 staged implementation. Commit 28
+owns its direct-output rewrite and static-token decode admission.
+`decode_slice_avx512` still performs whole-input scalar validation before its
+reviewed fixed-block kernel and preserves scalar fallback for padding and
+tails.
 
 Purpose:
 
@@ -848,72 +844,70 @@ Safety argument:
 
 ### `decode_32_bytes_avx2`
 
-Location: `src/simd/x86/decode.rs`
+Location: `src/simd/x86/decode_direct.rs`
 
-Status: admitted std x86/x86_64 AVX2 strict decode block for Standard and
-URL-safe alphabet families. It is reachable through strict decode dispatch for
-full 32-byte encoded blocks after whole-input scalar validation.
+Status: admitted x86/x86_64 AVX2 direct strict decode kernel for Standard and
+URL-safe alphabet families.
 
 Purpose:
 
 - Provide the fixed-block AVX2 decode primitive for the admitted strict decode
   boundary without changing scalar public error behavior.
-- Exercise AVX2 6-bit-value packing for a 32-byte encoded block that decodes
-  to at most 24 bytes.
-- Verify lane-boundary compaction, error agreement, padding behavior,
-  canonical trailing-bit rejection, and rejected-input output retention before
-  any later dispatch admission.
+- Classify thirty-two caller ASCII bytes, map them directly to 6-bit values,
+  pack eight quanta, and store exactly twenty-four decoded bytes.
 
 Preconditions:
 
 - Caller must prove AVX2 is available on the current CPU.
 - Input is exactly 32 encoded bytes.
 - Output is exactly 24 bytes.
-- The vectorized packing path is used only for Standard-family alphabets
-  (`A-Z`, `a-z`, `0-9`, and either `+/` or `-_`). Other alphabets use the
-  staged scalar fallback inside the prototype.
+- Whole-input scalar validation has already proved canonical unpadded full
+  blocks and exact output capacity.
 
 Unsafe operation:
 
-- `_mm256_loadu_si256` loads thirty-two 6-bit values from a local staging
-  array.
+- `_mm256_loadu_si256` loads thirty-two caller ASCII bytes.
+- AVX2 range/equality masks classify and map every byte directly.
 - `_mm256_maddubs_epi16` and `_mm256_madd_epi16` pack groups of four 6-bit
   values into 24-bit decoded quanta within each 128-bit lane.
 - `_mm256_shuffle_epi8` compacts the packed quanta into byte order within
   each lane.
-- `_mm256_storeu_si256` stores the packed prototype output into a local
-  32-byte staging array.
-- `clear_ymm_registers_after_encode_block` clears lower XMM state and upper
-  YMM state before return to reduce register retention in the vector decode
-  prototype.
+- Each 128-bit lane is extracted and stored as exactly twelve bytes, avoiding
+  the lane gap and any over-wide caller-output store.
 
 Safety argument:
 
-- Scalar strict decode validation runs into a private 24-byte staging buffer
-  before any byte is copied to the caller output. If validation fails, the
-  caller output is left untouched and the staging buffer is wiped.
-- The input and output array types provide fixed readable and writable bounds.
-- The SIMD load and store operate only on local 32-byte arrays and use
-  unaligned intrinsics, so no alignment precondition is required.
+- Whole-input scalar validation completes before this kernel is entered, so
+  malformed input cannot reach direct output and exact diagnostics remain
+  scalar-defined.
+- The input and output array types provide exact bounds and unaligned
+  intrinsics impose no alignment precondition.
 - The AVX2 target-feature contract enables every intrinsic used by the
   prototype.
-- AVX2 byte shuffle is lane-local, so the prototype explicitly compacts the
-  second 12-byte decoded lane from offsets `16..28` to `12..24` inside local
-  staging before copying to caller output.
-- The prototype copies only the validated decoded length to caller output after
-  an unconditional release-mode equality check proves the vector-packed prefix
-  matches the scalar-validation prefix. It wipes local value, packed, and
-  scalar-validation staging buffers before returning.
-- The public dispatch wrapper validates the complete input with scalar before
-  calling this block function and rebases any unexpected block error to the
-  original input offset.
+- The validity movemask must accept all thirty-two lanes before either output
+  store. A disagreement after scalar validation causes scalar fallback.
+- `decode_full_blocks_avx2` clears XMM/YMM state and executes `vzeroupper` once
+  after the complete block loop.
+
+### Direct x86 decode mapping helpers
+
+Location: `src/simd/x86/decode_direct.rs`
+
+`map_ascii_to_values_ssse3`, `map_ascii_to_values_avx2`,
+`range_mask_ssse3`, `range_mask_avx2`, `or5_ssse3`, `or5_avx2`, and
+`store_12_bytes` are private target-feature helpers used only by the two
+fixed-width kernels above. Their range constants are ASCII, alphabet special
+bytes come only from a previously recognized Standard/URL-safe table, every
+mask operation stays within vector lanes, and `store_12_bytes` requires the
+caller's fixed twelve-byte writable range. Exhaustive tests cover every valid
+alphabet byte and every invalid byte in every lane before admission.
 
 ### `clear_xmm_registers_after_encode_block`
 
 Location: `src/simd/x86/cleanup.rs`
 
-Status: private helper for admitted AVX2 and SSSE3/SSE4.1 encode and inactive
-x86 prototype tests.
+Status: private helper for admitted AVX2 and SSSE3/SSE4.1 encode and strict
+decode paths.
 
 Purpose:
 
@@ -1481,8 +1475,9 @@ canonicality, KAT, quarantine, and reporting remain mandatory.
 Generation validation is a lock-free admission snapshot. Quarantine prevents
 later admission but cannot synchronously cancel a call that already observed a
 healthy generation. With `checked-backend`, static SSSE3/SSE4.1 and AVX2 encode
-also use bounded scalar comparison before caller-visible commit; ordinary fast
-mode retains the documented one-in-flight-call revocation window.
+and strict decode also use bounded scalar comparison before caller-visible
+commit; ordinary fast mode retains the documented one-in-flight-call
+revocation window.
 
 Safe static selection uses only compile-time `target_feature` evidence. A
 target without pointer-width atomics cannot maintain the required health latch

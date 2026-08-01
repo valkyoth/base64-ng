@@ -55,3 +55,10 @@ path = "fuzz_targets/x86_encode.rs"
 test = false
 doc = false
 bench = false
+
+[[bin]]
+name = "x86_decode"
+path = "fuzz_targets/x86_decode.rs"
+test = false
+doc = false
+bench = false

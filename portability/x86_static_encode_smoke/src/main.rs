@@ -26,7 +26,18 @@ fn main() {
     let written = token.encode_url_safe::<false>(&INPUT, &mut output).unwrap();
     assert_eq!(written, URL_SAFE.len());
     assert_eq!(&output[..written], URL_SAFE);
-    println!("static no_std encode: {} ok", backend.as_str());
+    let mut decoded = [0u8; 48];
+    let written = token
+        .decode_standard::<false>(STANDARD, &mut decoded)
+        .unwrap();
+    assert_eq!(written, INPUT.len());
+    assert_eq!(decoded, INPUT);
+    let written = token
+        .decode_url_safe::<false>(URL_SAFE, &mut decoded)
+        .unwrap();
+    assert_eq!(written, INPUT.len());
+    assert_eq!(decoded, INPUT);
+    println!("static no_std encode/decode: {} ok", backend.as_str());
 }
 
 const fn compiled_backend() -> Backend {

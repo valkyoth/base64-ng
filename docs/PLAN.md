@@ -1262,6 +1262,16 @@ SIMD admission rules for all post-`1.0` work:
 
 ## Current 2.0 Development Checkpoint
 
+Commit 27 replaces the SSSE3/SSE4.1 and AVX2 strict-decode staging prototypes
+with direct vector ASCII classification, 6-bit mapping, multiply-add packing,
+and exact-width caller-output stores. One whole-input scalar validation remains
+authoritative for canonicality, detailed errors, required length, and
+transactional rejection. Padding and short tails remain scalar. Static
+`no_std` tokens now expose Standard and URL-safe strict decode for these two
+x86 backends, with optional checked comparison and quarantine. Exhaustive lane,
+malformed-position, tail, forced-backend fuzz, static execution, assembly,
+unsafe-boundary, and focused performance gates cover the rewrite.
+
 Commit 26 replaces the AVX-512 encode staging prototype with an exact 48-byte
 masked load, direct VBMI lane expansion and alphabet lookup, a batched block
 loop, and one call-boundary ZMM cleanup. Static `no_std` tokens now execute the

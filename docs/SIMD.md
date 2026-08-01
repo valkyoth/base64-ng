@@ -138,7 +138,10 @@ runtime behavior for that line.
   alloc strict decode helpers route through the decode boundary. AVX-512 VBMI
   decode applies only to full 64-byte encoded blocks after scalar whole-input
   validation and falls back to AVX2, SSSE3/SSE4.1, or scalar for shorter
-  inputs; little-endian AArch64 NEON decode applies only to full 16-byte
+  inputs. Commit 27 maps and packs full 32-byte AVX2 and 16-byte SSSE3/SSE4.1
+  blocks directly after that validation, with exact-width output stores and
+  one register cleanup per call; little-endian AArch64 NEON decode applies
+  only to full 16-byte
   encoded blocks after scalar whole-input validation. Public strict decode
   supports every valid encoded length; short inputs and non-block tails are
   decoded by scalar code. Wrapped decode may use admitted strict decode after
@@ -197,6 +200,15 @@ runtime behavior for that line.
   scalar comparison and quarantine path to these static-token calls as to
   automatic dispatch. Quarantine blocks later admission but does not cancel an
   invocation that already observed a healthy generation.
+- Commit 27 rewrites SSSE3/SSE4.1 and AVX2 strict decode as direct production
+  kernels. Vector range and equality masks classify Standard or URL-safe ASCII
+  and map it to 6-bit values before multiply-add packing; no per-block scalar
+  decode, value staging, release-mode scalar comparison, or per-block cleanup
+  remains. One whole-input scalar validation still defines exact diagnostics,
+  canonicality, required output length, and no-write-on-error behavior. Final
+  padding and short tails remain scalar. `StaticBackendToken::decode_standard`
+  and `decode_url_safe` expose these kernels to admitted `no_std` deployments;
+  `checked-backend` retains redundant scalar comparison and quarantine.
 - AArch64 NEON encode is admitted for little-endian `aarch64` Standard and
   URL-safe alphabet families. It uses NEON table lookup, vector shifts/masks,
   and byte-select alphabet mapping for fixed 12-byte input blocks, then clears

@@ -153,6 +153,27 @@ blocks and widens its advantage on larger inputs. A second AVX-512
 microarchitecture remains an explicit pre-release evidence requirement; no
 portable throughput claim is made from this single host.
 
+Commit 27 replaces SSSE3/SSE4.1 and AVX2 strict-decode staging with direct
+vector classification, mapping, packing, and exact-width stores. Whole-input
+scalar validation still runs before SIMD and remains the sole authority for
+canonicality, detailed errors, decoded length, and no-write-on-error behavior.
+The gate exhausts every valid and invalid byte in every vector lane, all tails
+through 257 raw bytes, every malformed source position in a 256-byte encoded
+frame, the static `no_std` token in checked and unchecked modes, the dedicated
+forced-backend fuzz target, unsafe boundaries, and the mutation-tested focused
+performance validator:
+
+```sh
+scripts/check-2.0-x86-decode-hot-paths.sh
+BASE64_NG_RUN_COMMIT27_PERF=1 \
+  scripts/check-2.0-x86-decode-hot-paths.sh
+```
+
+Local AMD Ryzen 9 9950X3D evidence exceeds scalar at every admitted tested
+SSSE3/SSE4.1 and AVX2 size for Standard and URL-safe, padded and unpadded
+input. This is exact-host evidence; another microarchitecture remains useful
+before broad performance wording.
+
 The Commit 20 pentest follow-up also pins fail-closed forward-progress guards
 for WHATWG and legacy one-shot loops, immediate pending-state cleanup on
 secret decode failure, checked secret-array frame construction, and the

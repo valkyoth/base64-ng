@@ -169,6 +169,9 @@ scripts/check-2.0-backend-health.sh
 echo "checks: 2.0 x86 encode hot paths"
 scripts/check-2.0-x86-encode-hot-paths.sh
 
+echo "checks: 2.0 x86 decode hot paths"
+scripts/check-2.0-x86-decode-hot-paths.sh
+
 echo "checks: dudect timing harness"
 scripts/check_dudect.sh
 

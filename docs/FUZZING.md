@@ -35,6 +35,10 @@ Current fuzz targets:
 - `x86_encode`: forced SSSE3/SSE4.1 and AVX2 Standard and URL-safe encode
   comparison against the independent `base64` oracle on hosts that report the
   complete runtime feature bundle; input is capped at 64 KiB per iteration
+- `x86_decode`: forced SSSE3/SSE4.1 and AVX2 Standard and URL-safe strict
+  decode comparison against the scalar public contract, including exact error
+  equality and rejected-output retention; canonical input is also checked
+  against the independent `base64` oracle
 
 `scripts/check_fuzz.sh` also runs the fuzz workspace supply-chain gates:
 
@@ -56,6 +60,7 @@ Committed corpus inputs are allowed only under:
 - `fuzz/corpus/stream_chunks/`
 - `fuzz/corpus/differential/`
 - `fuzz/corpus/x86_encode/`
+- `fuzz/corpus/x86_decode/`
 
 Each committed corpus input must be:
 
@@ -104,6 +109,7 @@ Expected files:
 - `differential.txt`
 - `profiles.txt`
 - `x86_encode.txt`
+- `x86_decode.txt`
 - `MANIFEST.txt`
 
 Smoke campaigns use temporary corpus and artifact directories under

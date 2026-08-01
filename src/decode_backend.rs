@@ -179,6 +179,18 @@ where
     }
 }
 
+#[cfg(all(
+    feature = "checked-backend",
+    any(target_arch = "x86", target_arch = "x86_64")
+))]
+pub(crate) fn decode_checked<A: Alphabet, const PAD: bool>(
+    backend: crate::runtime::Backend,
+    input: &[u8],
+    output: &mut [u8],
+) -> Result<usize, DecodeError> {
+    checked::decode::<A, PAD>(backend, input, output)
+}
+
 #[cfg(feature = "checked-backend")]
 fn backend_supports<A: Alphabet>(backend: DecodeBackend) -> bool {
     match backend {

@@ -91,6 +91,12 @@ mod wasm;
     test,
     any(target_arch = "x86", target_arch = "x86_64")
 ))]
+mod x86_decode_direct_tests;
+#[cfg(all(
+    feature = "std",
+    test,
+    any(target_arch = "x86", target_arch = "x86_64")
+))]
 mod x86_decode_tests;
 #[cfg(all(
     feature = "std",

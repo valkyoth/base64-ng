@@ -445,3 +445,15 @@ Stable boundary:
   backends awaiting later checkpoints execute scalar code.
 - The methods preserve ordinary `EncodeError`, output-capacity, tail, and
   padding behavior. They do not authorize secret SIMD processing.
+
+## 2.0 Commit 27 Static Strict-Decode Surface
+
+- `StaticBackendToken::decode_standard` and
+  `StaticBackendToken::decode_url_safe` expose padded or unpadded ordinary
+  strict decode without `std` runtime probing.
+- SSSE3/SSE4.1 and AVX2 tokens enter the direct Commit 27 kernels only while
+  their generation remains healthy. Invalidated tokens, AVX-512 pending its
+  Commit 28 rewrite, and non-x86 token backends execute scalar code.
+- The methods preserve ordinary detailed `DecodeError`, canonicality,
+  output-capacity, tail, padding, and no-write-on-error behavior. They do not
+  authorize constant-time-oriented secret SIMD processing.

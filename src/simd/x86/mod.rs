@@ -2,6 +2,7 @@
 
 mod cleanup;
 mod decode;
+mod decode_direct;
 
 #[cfg(all(feature = "std", test))]
 use crate::encode_base64_value;

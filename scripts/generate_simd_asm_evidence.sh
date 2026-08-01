@@ -67,6 +67,8 @@ RUSTFLAGS="-C target-feature=+ssse3,+sse4.1" \
     cargo rustc --locked --release --all-features --lib -- --emit=asm --test
 copy_single_asm "$audit_root/ssse3-sse41" "$output_dir/base64_ng-ssse3-sse41-test.s"
 require_pattern "$output_dir/base64_ng-ssse3-sse41-test.s" "vpshufb" "SSSE3 byte-shuffle instruction"
+require_pattern "$output_dir/base64_ng-ssse3-sse41-test.s" "vpmaddubsw" "SSSE3 strict-decode byte packing"
+require_pattern "$output_dir/base64_ng-ssse3-sse41-test.s" "vpmaddwd" "SSSE3 strict-decode word packing"
 require_pattern "$output_dir/base64_ng-ssse3-sse41-test.s" "xmm" "XMM register use"
 
 echo "simd asm evidence: AVX2 release test assembly"
@@ -76,6 +78,8 @@ RUSTFLAGS="-C target-feature=+avx2" \
     cargo rustc --locked --release --all-features --lib -- --emit=asm --test
 copy_single_asm "$audit_root/avx2" "$output_dir/base64_ng-avx2-test.s"
 require_pattern "$output_dir/base64_ng-avx2-test.s" "vpshufb" "AVX2 byte-shuffle instruction"
+require_pattern "$output_dir/base64_ng-avx2-test.s" "vpmaddubsw" "AVX2 strict-decode byte packing"
+require_pattern "$output_dir/base64_ng-avx2-test.s" "vpmaddwd" "AVX2 strict-decode word packing"
 require_pattern "$output_dir/base64_ng-avx2-test.s" "ymm" "YMM register use"
 require_pattern "$output_dir/base64_ng-avx2-test.s" "vzeroupper" "AVX upper-state cleanup"
 
@@ -157,9 +161,9 @@ evidence_verify_source "simd asm evidence"
     echo
     echo "review focus:"
     echo "- SSSE3/SSE4.1 admitted encode path contains exact-width input reads, byte shuffle, XMM operations, and no per-block cleanup"
-    echo "- SSSE3/SSE4.1 admitted strict decode path contains byte shuffle, multiply-add packing, XMM operations, and XMM cleanup"
+    echo "- SSSE3/SSE4.1 admitted strict decode path contains direct ASCII classification, 6-bit mapping, multiply-add packing, exact 12-byte stores, XMM operations, and one cleanup at the block-loop boundary"
     echo "- AVX2 admitted encode path contains exact-width input reads, byte shuffle, YMM operations, and one-per-call vzeroupper"
-    echo "- AVX2 admitted strict decode path contains byte shuffle, multiply-add packing, YMM operations, and vzeroupper"
+    echo "- AVX2 admitted strict decode path contains direct ASCII classification, 6-bit mapping, exact per-lane 12-byte stores, YMM operations, and one cleanup at the block-loop boundary"
     echo "- AVX-512 admitted encode path contains an exact 48-lane masked load, direct VBMI expansion and alphabet permutes, ZMM operations, one-per-call ZMM cleanup, and vzeroupper"
     echo "- AVX-512 VBMI admitted strict decode path contains byte shuffle, multiply-add packing, VBMI lane compaction, ZMM operations, ZMM cleanup, and vzeroupper"
     if [ "$neon_status" = "generated" ]; then

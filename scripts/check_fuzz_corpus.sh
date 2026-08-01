@@ -8,7 +8,7 @@ fi
 
 test -s docs/FUZZING.md
 
-for target in decode in_place stream_chunks differential x86_encode; do
+for target in decode in_place stream_chunks differential x86_encode x86_decode; do
     mkdir -p "fuzz/corpus/$target"
 done
 
@@ -19,7 +19,7 @@ done
 
 find fuzz/corpus -type f ! -name .gitkeep -print | while IFS= read -r corpus_file; do
     case "$corpus_file" in
-        fuzz/corpus/decode/* | fuzz/corpus/in_place/* | fuzz/corpus/stream_chunks/* | fuzz/corpus/differential/* | fuzz/corpus/x86_encode/*)
+        fuzz/corpus/decode/* | fuzz/corpus/in_place/* | fuzz/corpus/stream_chunks/* | fuzz/corpus/differential/* | fuzz/corpus/x86_encode/* | fuzz/corpus/x86_decode/*)
             ;;
         *)
             echo "fuzz corpus: unknown corpus target for $corpus_file" >&2

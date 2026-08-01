@@ -30,34 +30,14 @@ where
         });
     }
 
-    let mut read = 0;
-    let mut write = 0;
-    while read + SSSE3_DECODE_INPUT_BLOCK <= input.len() {
-        let mut decoded = [0u8; SSSE3_DECODE_OUTPUT_BLOCK];
-        // SAFETY: Health-gated dispatch reaches this function only after
-        // runtime probing, static target features, or the unsafe token
-        // contract proves SSSE3/SSE4.1 availability. The loop guard
-        // proves the fixed input view is in bounds. Whole-input scalar
-        // validation above preserves public error shape before any bytes are
-        // copied to caller output.
-        let written = match unsafe {
-            let block = &*(input
-                .as_ptr()
-                .add(read)
-                .cast::<[u8; SSSE3_DECODE_INPUT_BLOCK]>());
-            decode_16_bytes_ssse3_sse41::<A, PAD>(block, &mut decoded)
-        } {
-            Ok(written) => written,
-            Err(error) => {
-                crate::wipe_bytes(&mut decoded);
-                return Err(error.with_index_offset(read));
-            }
-        };
-
-        output[write..write + written].copy_from_slice(&decoded[..written]);
-        crate::wipe_bytes(&mut decoded);
-        read += SSSE3_DECODE_INPUT_BLOCK;
-        write += written;
+    let simd_input_len = unpadded_simd_prefix_len(input);
+    // SAFETY: Health-gated dispatch or the static token contract proves the
+    // target features. Validation and the output preflight above prove every
+    // full block is canonical and every direct store remains in bounds.
+    let (read, write, classified) =
+        unsafe { decode_full_blocks_ssse3_sse41::<A>(input, output, simd_input_len) };
+    if !classified {
+        return scalar::decode_slice::<A, PAD>(input, output);
     }
 
     let tail_written = scalar::decode_slice::<A, PAD>(&input[read..], &mut output[write..])
@@ -84,39 +64,26 @@ where
         });
     }
 
-    let mut read = 0;
-    let mut write = 0;
-    while read + AVX2_DECODE_INPUT_BLOCK <= input.len() {
-        let mut decoded = [0u8; AVX2_DECODE_OUTPUT_BLOCK];
-        // SAFETY: Health-gated dispatch reaches this function only after
-        // runtime probing, static target features, or the unsafe token
-        // contract proves AVX2 availability. The loop guard proves
-        // the fixed input view is in bounds. Whole-input scalar validation
-        // above preserves public error shape before any bytes are copied to
-        // caller output.
-        let written = match unsafe {
-            let block = &*(input
-                .as_ptr()
-                .add(read)
-                .cast::<[u8; AVX2_DECODE_INPUT_BLOCK]>());
-            decode_32_bytes_avx2::<A, PAD>(block, &mut decoded)
-        } {
-            Ok(written) => written,
-            Err(error) => {
-                crate::wipe_bytes(&mut decoded);
-                return Err(error.with_index_offset(read));
-            }
-        };
-
-        output[write..write + written].copy_from_slice(&decoded[..written]);
-        crate::wipe_bytes(&mut decoded);
-        read += AVX2_DECODE_INPUT_BLOCK;
-        write += written;
+    let simd_input_len = unpadded_simd_prefix_len(input);
+    // SAFETY: Health-gated dispatch or the static token contract proves AVX2.
+    // Validation and the output preflight above prove exact block bounds.
+    let (read, write, classified) =
+        unsafe { decode_full_blocks_avx2::<A>(input, output, simd_input_len) };
+    if !classified {
+        return scalar::decode_slice::<A, PAD>(input, output);
     }
 
     let tail_written = decode_slice_ssse3_sse41::<A, PAD>(&input[read..], &mut output[write..])
         .map_err(|error| error.with_index_offset(read))?;
     Ok(write + tail_written)
+}
+
+fn unpadded_simd_prefix_len(input: &[u8]) -> usize {
+    if input.last() == Some(&b'=') {
+        input.len().saturating_sub(4)
+    } else {
+        input.len()
+    }
 }
 
 pub(crate) fn decode_slice_avx512<A, const PAD: bool>(
@@ -175,25 +142,16 @@ where
 
 #[cfg(target_arch = "x86")]
 use core::arch::x86::{
-    __m128i, __m256i, __m512i, _mm_loadu_si128, _mm_madd_epi16, _mm_maddubs_epi16, _mm_set1_epi32,
-    _mm_setr_epi8, _mm_shuffle_epi8, _mm_storeu_si128, _mm256_loadu_si256, _mm256_madd_epi16,
-    _mm256_maddubs_epi16, _mm256_set1_epi32, _mm256_setr_epi8, _mm256_shuffle_epi8,
-    _mm256_storeu_si256, _mm512_loadu_si512, _mm512_madd_epi16, _mm512_maddubs_epi16,
-    _mm512_permutexvar_epi8, _mm512_set1_epi32, _mm512_shuffle_epi8, _mm512_storeu_si512,
+    __m512i, _mm512_loadu_si512, _mm512_madd_epi16, _mm512_maddubs_epi16, _mm512_permutexvar_epi8,
+    _mm512_set1_epi32, _mm512_shuffle_epi8, _mm512_storeu_si512,
 };
 #[cfg(target_arch = "x86_64")]
 use core::arch::x86_64::{
-    __m128i, __m256i, __m512i, _mm_loadu_si128, _mm_madd_epi16, _mm_maddubs_epi16, _mm_set1_epi32,
-    _mm_setr_epi8, _mm_shuffle_epi8, _mm_storeu_si128, _mm256_loadu_si256, _mm256_madd_epi16,
-    _mm256_maddubs_epi16, _mm256_set1_epi32, _mm256_setr_epi8, _mm256_shuffle_epi8,
-    _mm256_storeu_si256, _mm512_loadu_si512, _mm512_madd_epi16, _mm512_maddubs_epi16,
-    _mm512_permutexvar_epi8, _mm512_set1_epi32, _mm512_shuffle_epi8, _mm512_storeu_si512,
+    __m512i, _mm512_loadu_si512, _mm512_madd_epi16, _mm512_maddubs_epi16, _mm512_permutexvar_epi8,
+    _mm512_set1_epi32, _mm512_shuffle_epi8, _mm512_storeu_si512,
 };
 
-#[expect(
-    clippy::cast_ptr_alignment,
-    reason = "_mm_loadu_si128 and _mm_storeu_si128 accept unaligned pointers"
-)]
+#[cfg(all(feature = "std", test))]
 #[target_feature(enable = "ssse3,sse4.1")]
 pub(crate) unsafe fn decode_16_bytes_ssse3_sse41<A, const PAD: bool>(
     input: &[u8; 16],
@@ -202,51 +160,28 @@ pub(crate) unsafe fn decode_16_bytes_ssse3_sse41<A, const PAD: bool>(
 where
     A: Alphabet,
 {
-    let mut scalar_output = [0; 12];
-    let written = match scalar::decode_slice::<A, PAD>(input, &mut scalar_output) {
-        Ok(written) => written,
-        Err(error) => {
-            crate::wipe_bytes(&mut scalar_output);
-            return Err(error);
-        }
-    };
-
-    if !super::is_standard_or_url_safe_family::<A>() {
-        output[..written].copy_from_slice(&scalar_output[..written]);
-        crate::wipe_bytes(&mut scalar_output);
-        return Ok(written);
+    let written = scalar::validate_decode::<A, PAD>(input)?;
+    if written != SSSE3_DECODE_OUTPUT_BLOCK
+        || !super::is_standard_or_url_safe_family::<A>()
+        || input.contains(&b'=')
+    {
+        return scalar::decode_slice::<A, PAD>(input, output);
     }
 
-    let mut values = [0; 16];
-    fill_decode_values::<A, 16>(input, &mut values);
-    let mut packed = [0; 16];
-
-    // SAFETY: Fixed arrays back the unaligned loads and stores, the
-    // target-feature contract enables SSSE3/SSE4.1, and scalar validation
-    // above proves the 16-byte block is canonical for the selected padding
-    // policy before any bytes are copied to the caller output.
-    unsafe {
-        let values_vec = _mm_loadu_si128(values.as_ptr().cast::<__m128i>());
-        let merged_pairs = _mm_maddubs_epi16(values_vec, _mm_set1_epi32(0x0140_0140));
-        let merged_quads = _mm_madd_epi16(merged_pairs, _mm_set1_epi32(0x0001_1000));
-        let shuffle = _mm_setr_epi8(
-            2, 1, 0, 6, 5, 4, 10, 9, 8, 14, 13, 12, -128, -128, -128, -128,
-        );
-        let decoded = _mm_shuffle_epi8(merged_quads, shuffle);
-        _mm_storeu_si128(packed.as_mut_ptr().cast::<__m128i>(), decoded);
-        super::cleanup::clear_xmm_registers_after_encode_block();
+    // SAFETY: This function carries the target-feature contract. Scalar
+    // validation proves the unpadded block is canonical, and fixed arrays
+    // prove the exact 16-byte load and 12-byte store bounds.
+    let classified =
+        unsafe { super::decode_direct::decode_16_bytes_ssse3_sse41::<A>(input, output) };
+    // SAFETY: The direct block no longer needs SIMD register contents.
+    unsafe { super::cleanup::clear_xmm_registers_after_encode_block() };
+    if !classified {
+        return scalar::decode_slice::<A, PAD>(input, output);
     }
-
-    crate::wipe_bytes(&mut values);
-    copy_verified_decode_output(&mut packed, &mut scalar_output, output, written)?;
-    Ok(written)
+    Ok(SSSE3_DECODE_OUTPUT_BLOCK)
 }
 
-#[expect(
-    clippy::cast_ptr_alignment,
-    reason = "_mm256_loadu_si256 and _mm256_storeu_si256 accept unaligned pointers"
-)]
-#[cfg_attr(not(test), allow(dead_code))]
+#[cfg(all(feature = "std", test))]
 #[target_feature(enable = "avx2")]
 pub(crate) unsafe fn decode_32_bytes_avx2<A, const PAD: bool>(
     input: &[u8; 32],
@@ -255,50 +190,104 @@ pub(crate) unsafe fn decode_32_bytes_avx2<A, const PAD: bool>(
 where
     A: Alphabet,
 {
-    let mut scalar_output = [0; 24];
-    let written = match scalar::decode_slice::<A, PAD>(input, &mut scalar_output) {
-        Ok(written) => written,
-        Err(error) => {
-            crate::wipe_bytes(&mut scalar_output);
-            return Err(error);
+    let written = scalar::validate_decode::<A, PAD>(input)?;
+    if written != AVX2_DECODE_OUTPUT_BLOCK
+        || !super::is_standard_or_url_safe_family::<A>()
+        || input.contains(&b'=')
+    {
+        return scalar::decode_slice::<A, PAD>(input, output);
+    }
+
+    // SAFETY: This function carries the target-feature contract. Scalar
+    // validation proves the unpadded block is canonical, and fixed arrays
+    // prove the exact 32-byte load and two 12-byte stores remain in bounds.
+    let classified = unsafe { super::decode_direct::decode_32_bytes_avx2::<A>(input, output) };
+    // SAFETY: The direct block no longer needs SIMD register contents.
+    unsafe { super::cleanup::clear_ymm_registers_after_encode_block() };
+    if !classified {
+        return scalar::decode_slice::<A, PAD>(input, output);
+    }
+    Ok(AVX2_DECODE_OUTPUT_BLOCK)
+}
+
+#[target_feature(enable = "ssse3,sse4.1")]
+unsafe fn decode_full_blocks_ssse3_sse41<A>(
+    input: &[u8],
+    output: &mut [u8],
+    simd_input_len: usize,
+) -> (usize, usize, bool)
+where
+    A: Alphabet,
+{
+    let mut read = 0;
+    let mut write = 0;
+    let mut classified = true;
+    while read + SSSE3_DECODE_INPUT_BLOCK <= simd_input_len {
+        // SAFETY: The loop guards prove both exact fixed blocks are within the
+        // preflighted slices. This function carries the ISA contract.
+        let block_classified = unsafe {
+            let block = &*(input
+                .as_ptr()
+                .add(read)
+                .cast::<[u8; SSSE3_DECODE_INPUT_BLOCK]>());
+            let decoded = &mut *(output
+                .as_mut_ptr()
+                .add(write)
+                .cast::<[u8; SSSE3_DECODE_OUTPUT_BLOCK]>());
+            super::decode_direct::decode_16_bytes_ssse3_sse41::<A>(block, decoded)
+        };
+        if !block_classified {
+            classified = false;
+            break;
         }
-    };
-
-    if !super::is_standard_or_url_safe_family::<A>() {
-        output[..written].copy_from_slice(&scalar_output[..written]);
-        crate::wipe_bytes(&mut scalar_output);
-        return Ok(written);
+        read += SSSE3_DECODE_INPUT_BLOCK;
+        write += SSSE3_DECODE_OUTPUT_BLOCK;
     }
-
-    let mut values = [0; 32];
-    fill_decode_values::<A, 32>(input, &mut values);
-    let mut packed = [0; 32];
-
-    // SAFETY: Fixed arrays back the unaligned loads and stores, the
-    // target-feature contract enables AVX2, and scalar validation above
-    // proves the 32-byte block is canonical for the selected padding policy
-    // before any bytes are copied to the caller output.
-    unsafe {
-        let values_vec = _mm256_loadu_si256(values.as_ptr().cast::<__m256i>());
-        let merged_pairs = _mm256_maddubs_epi16(values_vec, _mm256_set1_epi32(0x0140_0140));
-        let merged_quads = _mm256_madd_epi16(merged_pairs, _mm256_set1_epi32(0x0001_1000));
-        let shuffle = _mm256_setr_epi8(
-            2, 1, 0, 6, 5, 4, 10, 9, 8, 14, 13, 12, -128, -128, -128, -128, 2, 1, 0, 6, 5, 4, 10,
-            9, 8, 14, 13, 12, -128, -128, -128, -128,
-        );
-        let decoded = _mm256_shuffle_epi8(merged_quads, shuffle);
-        _mm256_storeu_si256(packed.as_mut_ptr().cast::<__m256i>(), decoded);
-        super::cleanup::clear_ymm_registers_after_encode_block();
+    if read != 0 {
+        // SAFETY: All vector results have already been stored.
+        unsafe { super::cleanup::clear_xmm_registers_after_encode_block() };
     }
-    let upper_lane = [
-        packed[16], packed[17], packed[18], packed[19], packed[20], packed[21], packed[22],
-        packed[23], packed[24], packed[25], packed[26], packed[27],
-    ];
-    packed[12..24].copy_from_slice(&upper_lane);
+    (read, write, classified)
+}
 
-    crate::wipe_bytes(&mut values);
-    copy_verified_decode_output(&mut packed, &mut scalar_output, output, written)?;
-    Ok(written)
+#[target_feature(enable = "avx2")]
+unsafe fn decode_full_blocks_avx2<A>(
+    input: &[u8],
+    output: &mut [u8],
+    simd_input_len: usize,
+) -> (usize, usize, bool)
+where
+    A: Alphabet,
+{
+    let mut read = 0;
+    let mut write = 0;
+    let mut classified = true;
+    while read + AVX2_DECODE_INPUT_BLOCK <= simd_input_len {
+        // SAFETY: The loop guards prove both exact fixed blocks are within the
+        // preflighted slices. This function carries the ISA contract.
+        let block_classified = unsafe {
+            let block = &*(input
+                .as_ptr()
+                .add(read)
+                .cast::<[u8; AVX2_DECODE_INPUT_BLOCK]>());
+            let decoded = &mut *(output
+                .as_mut_ptr()
+                .add(write)
+                .cast::<[u8; AVX2_DECODE_OUTPUT_BLOCK]>());
+            super::decode_direct::decode_32_bytes_avx2::<A>(block, decoded)
+        };
+        if !block_classified {
+            classified = false;
+            break;
+        }
+        read += AVX2_DECODE_INPUT_BLOCK;
+        write += AVX2_DECODE_OUTPUT_BLOCK;
+    }
+    if read != 0 {
+        // SAFETY: All vector results have already been stored.
+        unsafe { super::cleanup::clear_ymm_registers_after_encode_block() };
+    }
+    (read, write, classified)
 }
 
 #[expect(

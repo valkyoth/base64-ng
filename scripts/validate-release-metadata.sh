@@ -136,6 +136,7 @@ for required_script in \
     "scripts/check-2.0-format-append-chunks.sh" \
     "scripts/check-2.0-in-place.sh" \
     "scripts/check-2.0-in-place-sanitizers.sh" \
+    "scripts/check-2.0-x86-decode-hot-paths.sh" \
     "scripts/check-2.0-profiles.sh" \
     "scripts/check-2.0-secret-capabilities.sh" \
     "scripts/check-2.0-assurance.sh" \
