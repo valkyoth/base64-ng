@@ -7,17 +7,8 @@ audit_root="$(mktemp -d "${TMPDIR:-/tmp}/base64-ng-simd-asm.XXXXXX")"
 trap 'rm -rf "$audit_root"' EXIT INT TERM
 mkdir -p "$output_dir"
 
-checksum_file() {
-    file="$1"
-
-    if command -v sha256sum >/dev/null 2>&1; then
-        sha256sum "$file"
-    elif command -v shasum >/dev/null 2>&1; then
-        shasum -a 256 "$file"
-    else
-        cksum "$file"
-    fi
-}
+. scripts/evidence-source.sh
+evidence_capture_source "simd asm evidence"
 
 copy_single_asm() {
     target_dir="$1"
@@ -56,8 +47,11 @@ host_triple="$(rustc -vV | sed -n 's/^host: //p')"
 case "$host_triple" in
     x86_64-*|i686-*|i586-*|i486-*|i386-*) ;;
     *)
+        evidence_verify_source "simd asm evidence"
         {
             echo "base64-ng SIMD assembly evidence"
+            echo
+            evidence_write_source_manifest
             echo
             echo "skipped: host $host_triple is not an x86/x86_64 target"
         } >"$manifest"
@@ -119,18 +113,12 @@ if rustup target list --installed 2>/dev/null | grep -F -x -q "aarch64-unknown-l
     require_pattern "$output_dir/base64_ng-neon-aarch64-test.s" "eor[[:space:]]+v0\\.16b" "NEON register cleanup sequence"
     neon_status="generated"
 fi
+evidence_verify_source "simd asm evidence"
 
 {
     echo "base64-ng SIMD assembly evidence"
     echo
-    echo "source:"
-    echo "commit=$(git rev-parse --verify HEAD 2>/dev/null || echo unavailable)"
-    if [ -n "$(git status --porcelain --untracked-files=all 2>/dev/null || true)" ]; then
-        echo "tree_state=dirty"
-    else
-        echo "tree_state=clean"
-    fi
-    checksum_file Cargo.lock
+    evidence_write_source_manifest
     echo
     echo "rustc:"
     rustc -Vv
@@ -160,11 +148,11 @@ fi
     fi
     echo
     echo "artifacts:"
-    checksum_file "$output_dir/base64_ng-ssse3-sse41-test.s"
-    checksum_file "$output_dir/base64_ng-avx2-test.s"
-    checksum_file "$output_dir/base64_ng-avx512-vbmi-test.s"
+    evidence_checksum_file "$output_dir/base64_ng-ssse3-sse41-test.s"
+    evidence_checksum_file "$output_dir/base64_ng-avx2-test.s"
+    evidence_checksum_file "$output_dir/base64_ng-avx512-vbmi-test.s"
     if [ "$neon_status" = "generated" ]; then
-        checksum_file "$output_dir/base64_ng-neon-aarch64-test.s"
+        evidence_checksum_file "$output_dir/base64_ng-neon-aarch64-test.s"
     fi
     echo
     echo "review focus:"

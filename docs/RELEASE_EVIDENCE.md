@@ -65,6 +65,12 @@ generated-code builds from persistent Cargo targets, rejects ambiguous
 artifact sets, disables incremental compilation, and binds manifests to the
 source and lockfile inputs.
 
+The provenance follow-up captures the Git commit, exact clean worktree state,
+and lockfile checksum before evidence compilation and verifies all three after
+compilation. Evidence generation fails closed when Git inspection is
+unavailable or the tree is dirty. The explicit dirty-tree override is only for
+development checks and cannot pass through the stable release gate.
+
 Run the gate with:
 
 ```sh
@@ -573,7 +579,9 @@ review focus, artifact checksums, the source commit and tree state, and the
 `Cargo.lock` checksum. Every assembly build uses a new isolated target
 directory with incremental compilation disabled, requires exactly one fresh
 crate artifact, and uses `--locked`; persistent Cargo caches are never an
-evidence source. The LTO artifact exists so reviewers can check that cleanup
+evidence source. Git and lockfile provenance are captured before compilation
+and rechecked afterward; release generation rejects dirty or unavailable
+state. The LTO artifact exists so reviewers can check that cleanup
 primitives such as `wipe_bytes` and `wipe_barrier` remain visible call
 boundaries under aggressive optimization.
 

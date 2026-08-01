@@ -12,6 +12,15 @@ case "$mode" in
         ;;
 esac
 
+if [ "$mode" = "release" ]; then
+    unset BASE64_NG_ALLOW_DIRTY_EVIDENCE
+    . scripts/evidence-source.sh
+    evidence_capture_source "stable release gate"
+else
+    BASE64_NG_ALLOW_DIRTY_EVIDENCE=1
+    export BASE64_NG_ALLOW_DIRTY_EVIDENCE
+fi
+
 cargo_version="$(
     sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | sed -n '1p'
 )"
@@ -77,6 +86,12 @@ scripts/check_kani.sh
 echo "stable release gate: constant-time assembly evidence"
 scripts/generate_ct_asm_evidence.sh
 
+echo "stable release gate: SIMD assembly evidence"
+scripts/generate_simd_asm_evidence.sh
+
+echo "stable release gate: wasm SIMD codegen evidence"
+scripts/generate_wasm_simd_evidence.sh
+
 echo "stable release gate: SBOM"
 scripts/generate-sbom.sh
 
@@ -84,8 +99,10 @@ echo "stable release gate: reproducible package/build"
 scripts/reproducible_build_check.sh
 
 if [ "$mode" = "release" ]; then
+    evidence_verify_source "stable release gate"
     echo "stable release gate: final pentest report"
     scripts/validate-release-readiness.sh "v${cargo_version}"
+    evidence_verify_source "stable release gate"
 fi
 
 echo "stable release gate: ok ($mode)"

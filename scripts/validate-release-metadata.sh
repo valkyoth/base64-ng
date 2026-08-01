@@ -154,6 +154,7 @@ for required_script in \
     "scripts/ci_install_rust.sh" \
     "scripts/generate-sbom.sh" \
     "scripts/generate_ct_asm_evidence.sh" \
+    "scripts/test-evidence-source.sh" \
     "scripts/reproducible_build_check.sh" \
     "scripts/stable_release_gate.sh" \
     "scripts/validate-constant-time-policy.sh" \
@@ -187,17 +188,45 @@ for evidence_generator in \
 do
     for required_evidence_text in \
         'mktemp -d' \
+        '. scripts/evidence-source.sh' \
+        'evidence_capture_source' \
+        'evidence_verify_source' \
         'CARGO_INCREMENTAL=0' \
         'cargo rustc --locked' \
-        'expected exactly one fresh' \
-        'tree_state=' \
-        'checksum_file Cargo.lock'
+        'expected exactly one fresh'
     do
         if ! grep -F -q -- "$required_evidence_text" "$evidence_generator"; then
             echo "release metadata: $evidence_generator is missing fresh evidence control: $required_evidence_text" >&2
             exit 1
         fi
     done
+done
+
+for required_provenance_text in \
+    'evidence generation requires a Git worktree' \
+    'refusing to generate release evidence from a dirty tree' \
+    'source or lockfile changed during evidence generation' \
+    'dirty-development-only' \
+    'EVIDENCE_LOCK_RECORD="$(evidence_checksum_file Cargo.lock)"'
+do
+    if ! grep -F -q -- "$required_provenance_text" scripts/evidence-source.sh; then
+        echo "release metadata: evidence source boundary is missing: $required_provenance_text" >&2
+        exit 1
+    fi
+done
+
+for required_release_provenance_text in \
+    'unset BASE64_NG_ALLOW_DIRTY_EVIDENCE' \
+    'evidence_capture_source "stable release gate"' \
+    'scripts/generate_ct_asm_evidence.sh' \
+    'scripts/generate_simd_asm_evidence.sh' \
+    'scripts/generate_wasm_simd_evidence.sh' \
+    'evidence_verify_source "stable release gate"'
+do
+    if ! grep -F -q -- "$required_release_provenance_text" scripts/stable_release_gate.sh; then
+        echo "release metadata: stable release provenance gate is missing: $required_release_provenance_text" >&2
+        exit 1
+    fi
 done
 
 for required_scheduled_audit_text in \

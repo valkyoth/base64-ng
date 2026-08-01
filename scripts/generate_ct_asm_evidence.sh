@@ -7,17 +7,8 @@ audit_root="$(mktemp -d "${TMPDIR:-/tmp}/base64-ng-ct-asm.XXXXXX")"
 trap 'rm -rf "$audit_root"' EXIT INT TERM
 mkdir -p "$output_dir"
 
-checksum_file() {
-    file="$1"
-
-    if command -v sha256sum >/dev/null 2>&1; then
-        sha256sum "$file"
-    elif command -v shasum >/dev/null 2>&1; then
-        shasum -a 256 "$file"
-    else
-        cksum "$file"
-    fi
-}
+. scripts/evidence-source.sh
+evidence_capture_source "ct asm evidence"
 
 copy_single_asm() {
     target_dir="$1"
@@ -75,18 +66,12 @@ require_lto_symbol "27" "constant_time_eq_public_len"
 require_lto_symbol "21" "ct_error_gate_barrier"
 require_lto_symbol "19" "secret_encode_ascii"
 require_lto_symbol "18" "secret_encode_scan"
+evidence_verify_source "ct asm evidence"
 
 {
     echo "base64-ng constant-time assembly evidence"
     echo
-    echo "source:"
-    echo "commit=$(git rev-parse --verify HEAD 2>/dev/null || echo unavailable)"
-    if [ -n "$(git status --porcelain --untracked-files=all 2>/dev/null || true)" ]; then
-        echo "tree_state=dirty"
-    else
-        echo "tree_state=clean"
-    fi
-    checksum_file Cargo.lock
+    evidence_write_source_manifest
     echo
     echo "rustc:"
     rustc -Vv
@@ -97,9 +82,9 @@ require_lto_symbol "18" "secret_encode_scan"
     echo "CARGO_INCREMENTAL=0 CARGO_TARGET_DIR=<fresh>/all-features-lto RUSTFLAGS=\"-C lto=fat -C embed-bitcode=yes\" cargo rustc --locked --release --lib --all-features -- --emit=asm"
     echo
     echo "artifacts:"
-    checksum_file "$output_dir/base64_ng-no-default-features.s"
-    checksum_file "$output_dir/base64_ng-all-features.s"
-    checksum_file "$output_dir/base64_ng-all-features-lto.s"
+    evidence_checksum_file "$output_dir/base64_ng-no-default-features.s"
+    evidence_checksum_file "$output_dir/base64_ng-all-features.s"
+    evidence_checksum_file "$output_dir/base64_ng-all-features-lto.s"
     echo
     echo "review focus:"
     echo "- ct::CtEngine decode entry points"

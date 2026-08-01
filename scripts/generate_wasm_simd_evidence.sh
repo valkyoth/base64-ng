@@ -8,17 +8,8 @@ audit_root="$(mktemp -d "${TMPDIR:-/tmp}/base64-ng-wasm-simd.XXXXXX")"
 trap 'rm -rf "$audit_root"' EXIT INT TERM
 mkdir -p "$output_dir"
 
-checksum_file() {
-    file="$1"
-
-    if command -v sha256sum >/dev/null 2>&1; then
-        sha256sum "$file"
-    elif command -v shasum >/dev/null 2>&1; then
-        shasum -a 256 "$file"
-    else
-        cksum "$file"
-    fi
-}
+. scripts/evidence-source.sh
+evidence_capture_source "wasm simd evidence"
 
 require_pattern() {
     file="$1"
@@ -32,8 +23,11 @@ require_pattern() {
 }
 
 if ! rustup target list --installed 2>/dev/null | grep -F -x -q "$wasm_target"; then
+    evidence_verify_source "wasm simd evidence"
     {
         echo "base64-ng wasm simd128 codegen evidence"
+        echo
+        evidence_write_source_manifest
         echo
         echo "skipped: target $wasm_target is not installed"
     } >"$manifest"
@@ -65,18 +59,12 @@ require_pattern "$artifact" "encode_12_bytes_wasm_simd128" "anchored wasm protot
 require_pattern "$artifact" "shufflevector" "vector shuffle operation"
 require_pattern "$artifact" "<16 x i8>" "128-bit byte-vector operation"
 require_pattern "$artifact" "llvm\\.wasm\\.bitselect\\.v16i8" "wasm bitselect intrinsic"
+evidence_verify_source "wasm simd evidence"
 
 {
     echo "base64-ng wasm simd128 codegen evidence"
     echo
-    echo "source:"
-    echo "commit=$(git rev-parse --verify HEAD 2>/dev/null || echo unavailable)"
-    if [ -n "$(git status --porcelain --untracked-files=all 2>/dev/null || true)" ]; then
-        echo "tree_state=dirty"
-    else
-        echo "tree_state=clean"
-    fi
-    checksum_file Cargo.lock
+    evidence_write_source_manifest
     echo
     echo "rustc:"
     rustc -Vv
@@ -88,7 +76,7 @@ require_pattern "$artifact" "llvm\\.wasm\\.bitselect\\.v16i8" "wasm bitselect in
     echo "CARGO_INCREMENTAL=0 CARGO_TARGET_DIR=<fresh>/target RUSTFLAGS='-C target-feature=+simd128' cargo rustc --locked --target $wasm_target --release --features simd,allow-wasm32-best-effort-wipe --lib -- --emit=llvm-ir --test"
     echo
     echo "artifacts:"
-    checksum_file "$artifact"
+    evidence_checksum_file "$artifact"
     echo
     echo "review focus:"
     echo "- wasm simd128 release codegen evidence for the admitted narrow runtime profile"

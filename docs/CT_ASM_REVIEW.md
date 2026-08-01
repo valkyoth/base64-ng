@@ -15,8 +15,11 @@ scripts/generate_ct_asm_evidence.sh
 The generator compiles each configuration in a fresh temporary Cargo target
 directory with incremental compilation disabled and `--locked`, and accepts
 exactly one newly produced crate assembly artifact. Its manifest records the
-source commit, whether the worktree was clean, and the `Cargo.lock` checksum;
-review evidence from a dirty tree must not be treated as release evidence.
+source commit, a clean worktree state, and the `Cargo.lock` checksum. The
+default path rejects dirty or unavailable Git state and verifies that the
+captured commit, worktree status, and lockfile remain unchanged after every
+build. `BASE64_NG_ALLOW_DIRTY_EVIDENCE=1` exists only for development checks;
+its manifest is marked `dirty-development-only` and is not release evidence.
 
 Expected artifacts:
 

@@ -7,6 +7,9 @@ cargo fmt --all --check
 echo "checks: release metadata"
 scripts/validate-release-metadata.sh
 
+echo "checks: generated-evidence source provenance"
+scripts/test-evidence-source.sh
+
 echo "checks: crate publish plan"
 scripts/release_crates.py --check
 python3 scripts/test-release-crates.py
@@ -127,7 +130,7 @@ echo "checks: RISC-V QEMU posture"
 scripts/validate-riscv-posture.sh
 
 echo "checks: wasm SIMD codegen evidence"
-scripts/generate_wasm_simd_evidence.sh
+BASE64_NG_ALLOW_DIRTY_EVIDENCE=1 scripts/generate_wasm_simd_evidence.sh
 
 echo "checks: wasm SIMD runtime dispatch"
 scripts/check_wasm_runtime_dispatch.sh
