@@ -35,6 +35,10 @@ The current reviewed exceptions are:
   than accepting attacker-controlled runtime sizing. Merely naming an
   oversized generic type may still compile on stable Rust when no constructor
   is instantiated.
+- `SecretArrayEncoder<CAP>::new` applies the same type-level policy to encoded
+  stack storage and rejects `CAP > 1368`, the padded RFC 4648 output bound for
+  1,024 input bytes. Larger encoded outputs must use caller-controlled
+  protected storage or the preallocated secret vector owner.
 - `Engine::encode_array` may panic during const evaluation when the caller
   supplies an output array length that does not match the compile-time encoded
   length, or when that const length calculation overflows. This is documented

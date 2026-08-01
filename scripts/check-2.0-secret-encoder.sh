@@ -102,6 +102,14 @@ fn main() {
 }
 RS
 
+cat >"$case_dir/oversized-array.rs" <<'RS'
+use base64_ng::{STRICT_STANDARD_PADDED, secret::SecretArrayEncoder};
+
+fn main() {
+    let _ = SecretArrayEncoder::<1369>::new(&STRICT_STANDARD_PADDED, 1024);
+}
+RS
+
 check_case() {
     cp "$case_dir/$1.rs" "$source_dir/main.rs"
     run_cargo check --quiet --offline --manifest-path "$workdir/Cargo.toml"
@@ -125,6 +133,22 @@ compile_failure() {
 check_case valid
 compile_failure ordinary-incremental
 compile_failure ordinary-formatter
+
+cp "$case_dir/oversized-array.rs" "$source_dir/main.rs"
+if run_cargo build --quiet --offline --manifest-path "$workdir/Cargo.toml" \
+    >"$workdir/oversized-array.log" 2>&1
+then
+    echo "2.0 secret encoder: oversized stack array unexpectedly compiled" >&2
+    exit 1
+fi
+if ! grep -F -q \
+    'SecretArrayEncoder encoded capacity exceeds 1368-byte stack limit' \
+    "$workdir/oversized-array.log"
+then
+    echo "2.0 secret encoder: oversized array failed for an unexpected reason" >&2
+    cat "$workdir/oversized-array.log" >&2
+    exit 1
+fi
 
 run_cargo test --no-default-features --features secrets --lib 'v2::secret_encoder_tests'
 run_cargo test --all-features --lib 'v2::secret_encoder_tests'

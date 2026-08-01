@@ -337,12 +337,15 @@ impl SecretDecoderState {
 
     fn fail(&mut self, error: SecretDecodeError) -> SecretDecodeError {
         self.phase = Phase::Failed;
+        self.clear_pending();
+        self.invalid = 0;
         error
     }
 
     pub(super) fn latch_external_failure(&mut self) {
         self.phase = Phase::Failed;
         self.clear_pending();
+        self.invalid = 0;
     }
 }
 
@@ -471,5 +474,13 @@ pub(super) fn require_disjoint_ranges_for_test(
 impl SecretDecoderState {
     pub(super) const fn symbol_scans_for_test(&self) -> usize {
         self.symbol_scans
+    }
+
+    pub(super) fn pending_is_clear_for_test(&self) -> bool {
+        self.pending_len == 0
+            && self.pending_bytes.iter().all(|byte| *byte == 0)
+            && self.pending_values.iter().all(|byte| *byte == 0)
+            && self.pending_valid.iter().all(|byte| *byte == 0)
+            && self.invalid == 0
     }
 }

@@ -10,9 +10,8 @@ pub struct SecretArray<const CAP: usize> {
 }
 
 impl<const CAP: usize> SecretArray<CAP> {
-    pub(super) fn from_frame(bytes: [u8; CAP], len: usize) -> Self {
-        debug_assert!(len <= CAP);
-        Self { bytes, len }
+    pub(super) fn from_frame(bytes: [u8; CAP], len: usize) -> Result<Self, BufferLengthError> {
+        Self::from_array(bytes, len)
     }
 
     /// Takes ownership, checks the visible prefix, and wipes unused capacity.

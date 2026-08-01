@@ -3,7 +3,7 @@
 use core::num::NonZeroUsize;
 
 use super::ForgivingBase64;
-use crate::v2::{OutputFull, Progress, Status, Step};
+use crate::v2::{BackendFault, OutputFull, Progress, Status, Step};
 
 const INPUT_QUANTUM: usize = 4;
 const OUTPUT_QUANTUM: usize = 3;
@@ -16,6 +16,8 @@ pub enum ForgivingError {
     InvalidInput,
     /// The absolute accepted source length cannot be represented by `usize`.
     PositionOverflow,
+    /// An internal state-machine progress invariant failed.
+    Backend(BackendFault),
     /// Input was supplied after finalization started.
     InputAfterFinish,
     /// Input was supplied after successful completion.
@@ -48,6 +50,11 @@ impl core::fmt::Display for ForgivingError {
             Self::PositionOverflow => {
                 formatter.write_str("forgiving Base64 source position overflows usize")
             }
+            Self::Backend(fault) => write!(
+                formatter,
+                "forgiving Base64 internal backend failure: {}",
+                fault.as_str()
+            ),
             Self::InputAfterFinish => formatter.write_str("input supplied after finish started"),
             Self::InputAfterComplete => formatter.write_str("input supplied after completion"),
             Self::OutputTooSmall {

@@ -6,6 +6,9 @@ use super::{
     specifications::{CodecSettings, EncodePadding},
 };
 
+/// Maximum encoded capacity accepted by a stack-backed secret encoder.
+pub const MAX_SECRET_STACK_ENCODED: usize = 1_368;
+
 /// Error returned by a secret encoding frame.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[non_exhaustive]

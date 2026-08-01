@@ -64,7 +64,12 @@ impl<const N: usize> SecretArrayFrame<N> {
         release(&self.staging, &final_candidate, &mut self.output);
         crate::wipe_bytes(&mut self.staging);
         let output = core::mem::replace(&mut self.output, [0; N]);
-        Ok(SecretArray::from_frame(output, final_candidate.written()))
+        SecretArray::from_frame(output, final_candidate.written()).map_err(|error| {
+            SecretDecodeError::OutputFull {
+                required: error.length(),
+                available: error.capacity(),
+            }
+        })
     }
 
     /// Returns public decoder metadata without exposing staged bytes.

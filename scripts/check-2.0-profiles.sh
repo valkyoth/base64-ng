@@ -72,6 +72,13 @@ grep -F -q 'base64 = "=0.23.0"' perf/Cargo.toml
 cargo_run test --all-features --lib 'v2::legacy_tests'
 cargo_run test --all-features --lib 'v2::profile_tests'
 cargo_run test --no-default-features --lib 'v2::legacy_tests'
+
+if [ "$(grep -F -c 'progress.input_consumed() == 0 && progress.output_produced() == 0' src/v2/legacy.rs)" -ne 2 ] ||
+    [ "$(grep -F -c 'Status::OutputFull(_) if step.progress().output_produced() != 0' src/v2/legacy.rs)" -ne 2 ]
+then
+    echo "2.0 profiles: legacy one-shot forward-progress guards drifted" >&2
+    exit 1
+fi
 cargo_run test --no-default-features --lib 'v2::profile_tests'
 
 RUSTFLAGS='--cfg base64_ng_perf_evidence' cargo_run test \

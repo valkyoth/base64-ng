@@ -38,6 +38,14 @@ if rg -n -F -e 'web::' -e 'FORGIVING' src/v2/secret.rs src/v2/secret_in_place.rs
     exit 1
 fi
 
+if [ "$(grep -F -c 'require_progress(progress)?;' src/v2/web/one_shot.rs)" -ne 2 ] ||
+    [ "$(grep -F -c 'require_output_progress(step.progress())?' src/v2/web/one_shot.rs)" -ne 2 ] ||
+    [ "$(grep -F -c 'Status::NeedInput => return Err(impossible_state())' src/v2/web/one_shot.rs)" -ne 2 ]
+then
+    echo "2.0 web forgiving: one-shot forward-progress guards drifted" >&2
+    exit 1
+fi
+
 cargo test --lib 'v2::web_tests' --all-features
 cargo check --lib --no-default-features
 RUSTFLAGS='--cfg base64_ng_perf_evidence' cargo test \

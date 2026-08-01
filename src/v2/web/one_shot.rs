@@ -1,7 +1,7 @@
 //! Transactional one-shot WHATWG forgiving decode operations.
 
 use super::{ForgivingBase64, ForgivingError};
-use crate::v2::Status;
+use crate::v2::{BackendFault, Progress, Status};
 
 impl ForgivingBase64 {
     /// Validates one web string without returning decoded bytes.
@@ -39,6 +39,7 @@ fn measure(input: &str) -> Result<usize, ForgivingError> {
     while offset < input.len() {
         let step = decoder.update(&input[offset..], &mut scratch)?;
         let progress = step.progress();
+        require_progress(progress)?;
         offset += progress.input_consumed();
         total = total
             .checked_add(progress.output_produced())
@@ -49,8 +50,10 @@ fn measure(input: &str) -> Result<usize, ForgivingError> {
         total = total
             .checked_add(step.progress().output_produced())
             .ok_or(ForgivingError::PositionOverflow)?;
-        if step.status() == Status::Complete {
-            return Ok(total);
+        match step.status() {
+            Status::Complete => return Ok(total),
+            Status::OutputFull(_) => require_output_progress(step.progress())?,
+            Status::NeedInput => return Err(impossible_state()),
         }
     }
 }
@@ -61,14 +64,38 @@ fn decode_validated(input: &str, output: &mut [u8]) -> Result<(), ForgivingError
     let mut output_offset = 0;
     while input_offset < input.len() {
         let step = decoder.update(&input[input_offset..], &mut output[output_offset..])?;
-        input_offset += step.progress().input_consumed();
-        output_offset += step.progress().output_produced();
+        let progress = step.progress();
+        require_progress(progress)?;
+        input_offset += progress.input_consumed();
+        output_offset += progress.output_produced();
     }
     loop {
         let step = decoder.finish(&mut output[output_offset..])?;
         output_offset += step.progress().output_produced();
-        if step.status() == Status::Complete {
-            return Ok(());
+        match step.status() {
+            Status::Complete => return Ok(()),
+            Status::OutputFull(_) => require_output_progress(step.progress())?,
+            Status::NeedInput => return Err(impossible_state()),
         }
     }
+}
+
+fn require_progress(progress: Progress) -> Result<(), ForgivingError> {
+    if progress.input_consumed() == 0 && progress.output_produced() == 0 {
+        Err(impossible_state())
+    } else {
+        Ok(())
+    }
+}
+
+fn require_output_progress(progress: Progress) -> Result<(), ForgivingError> {
+    if progress.output_produced() == 0 {
+        Err(impossible_state())
+    } else {
+        Ok(())
+    }
+}
+
+const fn impossible_state() -> ForgivingError {
+    ForgivingError::Backend(BackendFault::ImpossibleState)
 }

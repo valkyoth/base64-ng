@@ -18,11 +18,15 @@ pub struct SecretArrayEncoder<const CAP: usize> {
 }
 
 impl<const CAP: usize> SecretArrayEncoder<CAP> {
+    const CAPACITY_ASSERT: () = enforce_stack_capacity::<CAP>();
+
     /// Creates an empty bounded encoder over wiping stack storage.
     pub fn new<S: Codec>(
         codec: &Base64<S>,
         maximum_input_len: usize,
     ) -> Result<Self, SecretEncodeError> {
+        const { enforce_stack_capacity::<CAP>() }
+        let () = Self::CAPACITY_ASSERT;
         Ok(Self {
             state: SecretEncoderState::new(codec.settings(), maximum_input_len, CAP)?,
             output: [0; CAP],
@@ -58,7 +62,10 @@ impl<const CAP: usize> SecretArrayEncoder<CAP> {
             }
         };
         let output = core::mem::replace(&mut self.output, [0; CAP]);
-        Ok(SecretArray::from_frame(output, written))
+        SecretArray::from_frame(output, written).map_err(|error| SecretEncodeError::OutputFull {
+            required: error.length(),
+            available: error.capacity(),
+        })
     }
 
     /// Encodes one complete classified input into a secret array.
@@ -84,6 +91,13 @@ impl<const CAP: usize> SecretArrayEncoder<CAP> {
     #[cfg(test)]
     pub(crate) const fn storage_for_test(&self) -> &[u8; CAP] {
         &self.output
+    }
+}
+
+#[allow(clippy::manual_assert)]
+const fn enforce_stack_capacity<const CAP: usize>() {
+    if CAP > crate::v2::secret_encoder::MAX_SECRET_STACK_ENCODED {
+        panic!("SecretArrayEncoder encoded capacity exceeds 1368-byte stack limit");
     }
 }
 

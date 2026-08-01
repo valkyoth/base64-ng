@@ -9,7 +9,9 @@ use super::{
     STRICT_STANDARD_UNPADDED, STRICT_URL_SAFE_PADDED, STRICT_URL_SAFE_UNPADDED, TrailingBits,
     ValidatedAlphabet,
     rfc4648_oracle::{self, Profile},
-    secret::{SecretArrayEncoder, SecretEncodeError, SecretEncoder, SecretInput},
+    secret::{
+        MAX_SECRET_STACK_ENCODED, SecretArrayEncoder, SecretEncodeError, SecretEncoder, SecretInput,
+    },
     secret_encoder::{map_value_for_test, require_disjoint_ranges_for_test},
 };
 
@@ -53,6 +55,17 @@ fn built_in_arithmetic_and_custom_scan_map_every_value() {
             custom_table[index]
         );
     }
+}
+
+#[test]
+fn stack_encoder_accepts_the_documented_maximum_capacity() {
+    let encoder =
+        SecretArrayEncoder::<MAX_SECRET_STACK_ENCODED>::new(&STRICT_STANDARD_PADDED, 1_024)
+            .unwrap();
+    assert_eq!(
+        encoder.state().maximum_encoded_len(),
+        MAX_SECRET_STACK_ENCODED
+    );
 }
 
 #[test]

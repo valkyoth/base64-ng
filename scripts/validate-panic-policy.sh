@@ -60,6 +60,9 @@ check_file() {
             if ($0 ~ /panic!\("SecretArrayFrame decoded capacity exceeds 1024-byte stack limit"\)/) {
                 allowed = 1
             }
+            if ($0 ~ /panic!\("SecretArrayEncoder encoded capacity exceeds 1368-byte stack limit"\)/) {
+                allowed = 1
+            }
             if ($0 ~ /panic!\("base64-ng-sanitization locked secret integrity failure: \{error\}"\)/) {
                 allowed = 1
             }

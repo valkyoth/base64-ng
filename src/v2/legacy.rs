@@ -129,8 +129,8 @@ fn finish_measurement(
             .ok_or(OneShotError::LengthOverflow)?;
         match step.status() {
             Status::Complete => return Ok(output_len),
-            Status::OutputFull(_) => {}
-            Status::NeedInput => {
+            Status::OutputFull(_) if step.progress().output_produced() != 0 => {}
+            Status::OutputFull(_) | Status::NeedInput => {
                 return Err(OneShotError::Backend(BackendFault::ImpossibleState));
             }
         }
@@ -148,16 +148,24 @@ fn decode_validated(
         let step = decoder
             .update(&input[input_offset..], &mut output[output_offset..])
             .map_err(map_operation_error)?;
-        input_offset += step.progress().input_consumed();
-        output_offset += step.progress().output_produced();
+        let progress = step.progress();
+        if progress.input_consumed() == 0 && progress.output_produced() == 0 {
+            return Err(OneShotError::Backend(BackendFault::ImpossibleState));
+        }
+        input_offset += progress.input_consumed();
+        output_offset += progress.output_produced();
     }
     loop {
         let step = decoder
             .finish(&mut output[output_offset..])
             .map_err(map_operation_error)?;
         output_offset += step.progress().output_produced();
-        if step.status() == Status::Complete {
-            return Ok(());
+        match step.status() {
+            Status::Complete => return Ok(()),
+            Status::OutputFull(_) if step.progress().output_produced() != 0 => {}
+            Status::OutputFull(_) | Status::NeedInput => {
+                return Err(OneShotError::Backend(BackendFault::ImpossibleState));
+            }
         }
     }
 }

@@ -142,6 +142,25 @@ fn malformed_input_is_opaque_absorbing_and_wipes_borrowed_storage() {
 }
 
 #[test]
+fn oversized_later_update_wipes_pending_secret_state_immediately() {
+    let mut frame = SecretArrayFrame::<6>::new(&STRICT_STANDARD_PADDED).unwrap();
+    frame.update(&SecretInput::new(b"QUJD")).unwrap();
+
+    assert_eq!(
+        frame.update(&SecretInput::new(b"RA===")),
+        Err(SecretDecodeError::InputTooLarge {
+            input_len: 9,
+            maximum_encoded_len: 8,
+        })
+    );
+    assert!(frame.state().is_failed());
+    assert!(frame.state().pending_is_clear_for_test());
+    let (staging, output) = frame.storage_for_test();
+    assert_eq!(staging, &[0; 6]);
+    assert_eq!(output, &[0; 6]);
+}
+
+#[test]
 fn equal_public_lengths_receive_equal_symbol_scan_work() {
     for input in [b"QUJDRA==".as_slice(), b"QU!DRA==", b"====RA=="] {
         let mut frame = SecretArrayFrame::<6>::new(&STRICT_STANDARD_PADDED).unwrap();

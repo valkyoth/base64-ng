@@ -56,9 +56,9 @@ pub use owned::SecretVec;
 pub use owned::{DeclassifiedArray, SecretArray};
 
 #[cfg(feature = "secrets")]
-pub use super::secret_decoder::{SecretDecodeError, SecretDecoderState};
+pub use super::secret_decoder::{MAX_SECRET_STACK_DECODED, SecretDecodeError, SecretDecoderState};
 #[cfg(feature = "secrets")]
-pub use super::secret_encoder::{SecretEncodeError, SecretEncoderState};
+pub use super::secret_encoder::{MAX_SECRET_STACK_ENCODED, SecretEncodeError, SecretEncoderState};
 
 /// Maps one encoded symbol through a crate-owned fixed 64-entry scan.
 ///

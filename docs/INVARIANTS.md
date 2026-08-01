@@ -221,6 +221,8 @@ Evidence:
 - A secret encoder accepts no more than its public declared input bound and
   reserves the corresponding complete output capacity before consuming secret
   input.
+- Stack-backed encoded storage is capped at 1,368 bytes; larger public bounds
+  use caller-controlled protected storage or preallocated heap storage.
 - Incremental state retains at most two secret input bytes. Every terminal,
   error, drop, and unwind path wipes that tail and the complete owned output
   capacity.

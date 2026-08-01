@@ -55,6 +55,11 @@ sink checks, exhaustive mapping and chunking tests, optional Kani proofs,
 dudect-style encode classes, and release/LTO assembly symbol evidence. See
 [`2.0_SECRET_ENCODING.md`](2.0_SECRET_ENCODING.md).
 
+The Commit 20 pentest follow-up also pins fail-closed forward-progress guards
+for WHATWG and legacy one-shot loops, immediate pending-state cleanup on
+secret decode failure, checked secret-array frame construction, and the
+1,368-byte stack ceiling for `SecretArrayEncoder`.
+
 Run the gate with:
 
 ```sh

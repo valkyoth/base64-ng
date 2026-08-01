@@ -527,6 +527,8 @@ impl core::fmt::Debug for base64_ng::secret::SecretVecFrame
 pub fn base64_ng::secret::SecretVecFrame::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::ops::drop::Drop for base64_ng::secret::SecretVecFrame
 pub fn base64_ng::secret::SecretVecFrame::drop(&mut self)
+pub const base64_ng::secret::MAX_SECRET_STACK_DECODED: usize
+pub const base64_ng::secret::MAX_SECRET_STACK_ENCODED: usize
 pub mod base64_ng::stream
 pub struct base64_ng::stream::Decoder<W, A, const PAD: bool> where A: base64_ng::Alphabet
 impl<W, A, const PAD: bool> base64_ng::stream::Decoder<W, A, PAD> where A: base64_ng::Alphabet
@@ -647,6 +649,7 @@ pub base64_ng::web::ForgivingError::AllocationFailed::requested: usize
 pub base64_ng::web::ForgivingError::AllocationLimitExceeded
 pub base64_ng::web::ForgivingError::AllocationLimitExceeded::limit: usize
 pub base64_ng::web::ForgivingError::AllocationLimitExceeded::required: usize
+pub base64_ng::web::ForgivingError::Backend(base64_ng::BackendFault)
 pub base64_ng::web::ForgivingError::InputAfterComplete
 pub base64_ng::web::ForgivingError::InputAfterFinish
 pub base64_ng::web::ForgivingError::InvalidInput
