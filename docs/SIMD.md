@@ -165,9 +165,9 @@ runtime behavior for that line.
 - Runtime backend reports expose `snapshot()` for structured audit logging
   without parsing formatted strings.
 - SSSE3/SSE4.1 encode is admitted for `x86`/`x86_64` Standard and
-  URL-safe alphabet families. It uses SSSE3 byte shuffling, SSE lane
-  shifts/masks, and SSE4.1 byte blending for fixed 12-byte input blocks, then
-  clears XMM registers before returning. Runtime dispatch uses
+  URL-safe alphabet families. Commit 25 uses exact 8-byte plus 4-byte reads,
+  SSSE3 byte shuffling, SSE lane shifts/masks, and a 16-entry byte-shuffle
+  alphabet mapper for fixed 12-byte input blocks. Runtime dispatch uses
   `std::is_x86_feature_detected!`; unsupported CPUs execute scalar code.
   Custom alphabets, final tail/padding completion, line-ending
   insertion, and every decode surface outside the separate
@@ -175,15 +175,23 @@ runtime behavior for that line.
   In-place encode may enter admitted encode backends only through stack
   staging.
 - AVX2 encode is admitted for `x86`/`x86_64` Standard and URL-safe alphabet
-  families. It uses AVX2 lane-local byte shuffling, vector shifts/masks, and
-  byte blending for fixed 24-byte input blocks, then clears XMM/YMM state
-  before returning. Runtime dispatch uses `std::is_x86_feature_detected!`;
+  families. Commit 25 uses exact 16-byte plus 8-byte reads, AVX2 lane-local
+  byte shuffling, vector shifts/masks, and a duplicated 16-entry byte-shuffle
+  alphabet mapper for fixed 24-byte input blocks. LLVM emits `vzeroupper` at
+  the target-feature return boundary after the complete block loop. Runtime
+  dispatch uses `std::is_x86_feature_detected!`;
   unsupported CPUs fall back to SSSE3/SSE4.1 or scalar. Final tail and padding
   completion use scalar code. Custom alphabets, line-ending
   insertion, and every decode surface outside the separate
   AVX-512/AVX2/SSSE3/SSE4.1/NEON strict decode admission stay scalar.
   In-place encode may enter admitted encode backends only through stack
   staging.
+- Commit 25 classifies these ordinary encode vectors as public-data scratch.
+  It removes per-block staging wipes and full XMM/YMM clears from SSSE3/AVX2
+  encode without changing the separate scalar secret contract. In
+  `no_std + simd`, `StaticBackendToken::encode_standard` and
+  `StaticBackendToken::encode_url_safe` expose these kernels only after KAT,
+  generation, and quarantine checks.
 - AArch64 NEON encode is admitted for little-endian `aarch64` Standard and
   URL-safe alphabet families. It uses NEON table lookup, vector shifts/masks,
   and byte-select alphabet mapping for fixed 12-byte input blocks, then clears

@@ -156,9 +156,9 @@ evidence_verify_source "simd asm evidence"
     fi
     echo
     echo "review focus:"
-    echo "- SSSE3/SSE4.1 admitted encode path contains byte shuffle, XMM operations, and XMM cleanup"
+    echo "- SSSE3/SSE4.1 admitted encode path contains exact-width input reads, byte shuffle, XMM operations, and no per-block cleanup"
     echo "- SSSE3/SSE4.1 admitted strict decode path contains byte shuffle, multiply-add packing, XMM operations, and XMM cleanup"
-    echo "- AVX2 admitted encode path contains byte shuffle, YMM operations, and vzeroupper"
+    echo "- AVX2 admitted encode path contains exact-width input reads, byte shuffle, YMM operations, and one-per-call vzeroupper"
     echo "- AVX2 admitted strict decode path contains byte shuffle, multiply-add packing, YMM operations, and vzeroupper"
     echo "- AVX-512 admitted encode path contains VBMI byte permute, ZMM operations, ZMM cleanup, and vzeroupper"
     echo "- AVX-512 VBMI admitted strict decode path contains byte shuffle, multiply-add packing, VBMI lane compaction, ZMM operations, ZMM cleanup, and vzeroupper"

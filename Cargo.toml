@@ -21,6 +21,7 @@ include = [
     "portability/feature_contract_smoke/src/**",
     "portability/feature_unification_smoke/src/**",
     "portability/no_alloc_smoke/src/**",
+    "portability/x86_static_encode_smoke/src/**",
     "portability/migration_smoke/src/**",
     "scripts/*.py",
     "scripts/*.sh",

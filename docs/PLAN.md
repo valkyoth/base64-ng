@@ -1262,7 +1262,14 @@ SIMD admission rules for all post-`1.0` work:
 
 ## Current 2.0 Development Checkpoint
 
-Commit 24 adds direct per-backend KATs, operation-specific health generations,
+Commit 25 rewrites SSSE3/SSE4.1 and AVX2 ordinary encode with exact-width
+direct loads, byte-shuffle alphabet mapping, batched block loops, and static
+`no_std` token operations. Exhaustive byte-position and tail differential
+tests, target-feature cross-builds, assembly review, and a focused scalar-ratio
+benchmark gate cover the hot paths. Ordinary encode vectors are public-data
+scratch; secret processing remains on the separate scalar path.
+
+Commit 24 added direct per-backend KATs, operation-specific health generations,
 permanent quarantine, explicit startup initialization, bounded redundant
 `checked-backend` execution, and generation-bound static `no_std` SIMD tokens.
 Malformed input cannot alter backend health, concurrent or recursive callers

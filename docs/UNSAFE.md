@@ -472,66 +472,60 @@ Safety argument:
   guarantee that historical register, stack, cache, or microarchitectural
   copies do not exist.
 
-### `encode_24_bytes_avx2`
+### `encode_24_bytes_avx2`, `encode_24_bytes_avx2_inner`, and `encode_full_blocks_avx2`
 
 Location: `src/simd/x86/mod.rs`
 
-Status: admitted std x86/x86_64 AVX2 encode block for Standard and URL-safe
-alphabet families. It is reachable through runtime-probed AVX2 encode dispatch
-and test evidence.
+Status: admitted x86/x86_64 AVX2 encode implementation for Standard and
+URL-safe alphabet families. The fixed-array wrapper is test-only. Production
+runtime and static-token dispatch enter the private full-block loop.
 
 Purpose:
 
-- Exercise AVX2 target-feature plumbing.
-- Validate the unsafe boundary.
-- Provide the fixed-block vector encode primitive for the admitted AVX2 encode
-  backend.
+- Encode every complete 24-byte input block directly into 32 output bytes.
+- Keep target-feature entry, bounds reasoning, and AVX transition handling in
+  one reviewed boundary.
 
 Preconditions:
 
-- Caller must prove AVX2 is available on the current CPU.
-- Input is exactly 24 bytes.
-- Output is exactly 32 bytes.
+- Runtime health admission, complete static target features, or the unsafe
+  static-token contract must prove AVX2 is available on the current thread.
+- The public wrapper preflights the complete output length. Each full-block
+  loop iteration then proves 24 readable and 32 writable bytes.
 - The vectorized path is used only for Standard-family alphabets (`A-Z`,
   `a-z`, `0-9`, and either `+/` or `-_`). Other alphabets fall back to the
-  scalar prototype loop.
+  scalar loop.
 
 Unsafe operation:
 
-- `_mm256_loadu_si256` loads from a local 32-byte staging array that contains
-  two 12-byte input lanes plus four zero bytes per lane.
-- `_mm256_shuffle_epi8` reshapes each staged 128-bit lane into four 24-bit
-  groups without reading from caller memory beyond the fixed input array.
+- `_mm_loadu_si128` reads bytes `0..16`; `_mm_loadl_epi64` reads bytes `16..24`.
+  Shifts, masks, and lane insertion construct two 12-byte lanes with zeroed
+  high dwords without a staging copy or caller-memory over-read.
+- `_mm256_shuffle_epi8` reshapes each 128-bit lane into four 24-bit groups.
 - AVX2 shifts, masks, and OR operations produce thirty-two 6-bit indices.
-- `encode_standard_family_indices_avx2` maps those indices to Standard or
-  URL-safe alphabet bytes with AVX2 byte blends.
+- `encode_standard_family_indices_avx2` maps those indices with saturated
+  subtraction, a class comparison, and a lane-local 16-entry byte-shuffle
+  lookup.
 - `_mm256_storeu_si256` stores the 32 encoded bytes into the output buffer.
-- `clear_ymm_registers_after_encode_block` clears XMM lower halves and uses
-  `vzeroupper` before return to reduce register retention and AVX/SSE
-  transition state in this vector encode path.
-- The local staging array is wiped with the crate cleanup primitive before the
-  function returns.
+- LLVM emits `vzeroupper` at the AVX2 target-feature return boundary after the
+  complete block loop, not once per block; assembly evidence enforces it.
 
 Safety argument:
 
-- The input and output array types provide fixed readable and writable bounds.
-- The SIMD load reads only from a local 32-byte staging array, so the prototype
-  does not over-read the 24-byte caller input.
-- The staging array is mutable and wiped after the SIMD store and register
-  cleanup, reducing stack retention of the copied caller bytes in this inactive
-  prototype.
+- The fixed-array inner signature and full-block loop guards provide exact
+  readable and writable bounds for every raw-pointer view.
+- The two direct loads total exactly 24 bytes; no 32-byte caller load occurs.
 - The load and store intrinsics are unaligned variants, so no stronger
   alignment is required.
 - The function is guarded by an AVX2 target-feature contract.
 - The output length is fixed by the output array type.
-- Runtime dispatch is gated by `std::is_x86_feature_detected!` and the
-  Standard-family alphabet check; in-place encode may enter only through stack
-  staging. Unsupported CPUs, custom alphabets, `no_std`, line-ending
-  insertion, and decode use scalar fallback. Final tail and padding completion
-  use scalar code.
-- Register-retention note: the path loads caller bytes into YMM/XMM state. It
-  calls `clear_ymm_registers_after_encode_block` before return. This is
-  retention reduction, not a formal microarchitectural side-channel proof.
+- `std` dispatch is runtime-probed. `no_std` dispatch requires complete static
+  target features and the generation-bound `StaticBackendToken`, including a
+  passing direct KAT and non-quarantined health state.
+- Ordinary encode input is classified as public data. The path does not claim
+  secret zeroization and does not clear lower vector registers per block.
+  `vzeroupper` is retained only for ISA-transition performance. Secret encode
+  remains in the separate scalar secret API.
 
 ### `encode_standard_family_indices_avx2`
 
@@ -541,8 +535,8 @@ Status: private helper for the admitted AVX2 encode block and its tests.
 
 Purpose:
 
-- Map thirty-two 6-bit indices to Standard or URL-safe alphabet bytes with AVX2
-  blends instead of scalar per-byte table indexing.
+- Map thirty-two 6-bit indices to Standard or URL-safe alphabet bytes with a
+  branch-free arithmetic classifier and lane-local byte-shuffle lookup.
 
 Preconditions:
 
@@ -554,7 +548,8 @@ Preconditions:
 
 Unsafe operation:
 
-- AVX2 byte comparisons and blends compute the ASCII offset for each index.
+- AVX2 saturated subtraction and comparison derive a lookup class; a 16-entry
+  byte shuffle selects the ASCII offset for each index.
 
 Safety argument:
 
@@ -568,17 +563,16 @@ Safety argument:
 
 Location: `src/simd/x86/cleanup.rs`
 
-Status: private helper for admitted AVX2 encode and inactive x86 prototype
-tests.
+Status: retained private helper for the current AVX2 strict-decode path.
 
 Purpose:
 
-- Clear lower XMM state and upper YMM state before returning from the AVX2
-  encode path that processes caller bytes in vector registers.
+- Clear lower XMM state and upper YMM state before returning from the current
+  AVX2 strict-decode block.
 
 Preconditions:
 
-- Called only after the prototype has stored its output and no later AVX/SSE
+- Called only after the decoder has staged its output and no later AVX/SSE
   value is needed by the function.
 
 Unsafe operation:
@@ -590,71 +584,64 @@ Unsafe operation:
 Safety argument:
 
 - The helper does not read or write memory.
-- The helper runs at the end of the AVX2 encode block path.
+- The helper runs at the end of the current AVX2 decode block path.
 - `vzeroupper` is valid under the AVX2 target-feature precondition inherited
   from the caller.
 - This is best-effort register-retention reduction for test evidence, not a
   guarantee that historical register, stack, cache, or microarchitectural
   copies do not exist.
 
-### `encode_12_bytes_ssse3_sse41`
+### `encode_12_bytes_ssse3_sse41`, `encode_12_bytes_ssse3_sse41_inner`, and `encode_full_blocks_ssse3_sse41`
 
 Location: `src/simd/x86/mod.rs`
 
-Status: admitted std x86/x86_64 SSSE3/SSE4.1 encode block for Standard and
-URL-safe alphabet families. It is reachable through runtime-probed SSSE3/SSE4.1
-encode dispatch and test evidence.
+Status: admitted x86/x86_64 SSSE3/SSE4.1 encode implementation for Standard
+and URL-safe alphabet families. The fixed-array wrapper is test-only;
+production runtime and static-token dispatch enter the private full-block
+loop.
 
 Purpose:
 
-- Exercise lower-tier x86 target-feature plumbing.
-- Validate the unsafe boundary.
-- Provide the fixed-block vector encode primitive for the admitted SSSE3/SSE4.1
-  encode backend.
+- Encode every complete 12-byte input block directly into 16 output bytes.
+- Keep target-feature entry and exact bounds reasoning in one reviewed
+  boundary.
 
 Preconditions:
 
-- Caller must prove SSSE3 and SSE4.1 are available on the current CPU.
-- Input is exactly 12 bytes.
-- Output is exactly 16 bytes.
+- Runtime health admission, complete static target features, or the unsafe
+  static-token contract must prove SSSE3 and SSE4.1 on the current thread.
+- The public wrapper preflights the complete output length. Each full-block
+  loop iteration then proves 12 readable and 16 writable bytes.
 - The vectorized path is used only for Standard-family alphabets (`A-Z`,
   `a-z`, `0-9`, and either `+/` or `-_`). Other alphabets fall back to the
-  scalar prototype loop.
+  scalar loop.
 
 Unsafe operation:
 
-- `_mm_loadu_si128` loads from a local 16-byte staging array that contains the
-  12-byte input plus four zero bytes.
-- `_mm_shuffle_epi8` reshapes the staged bytes into four 24-bit lanes without
-  reading from caller memory beyond the fixed input array.
+- `_mm_loadl_epi64` reads bytes `0..8`; `read_unaligned::<i32>` reads bytes
+  `8..12`; shifts and OR construct the 12-byte lane with a zero high dword.
+- `_mm_shuffle_epi8` reshapes the direct input into four 24-bit lanes.
 - SSE2 shifts, masks, and OR operations produce sixteen 6-bit indices.
-- `encode_standard_family_indices_ssse3_sse41` maps those indices to Standard
-  or URL-safe alphabet bytes with SSE4.1 byte blends.
+- `encode_standard_family_indices_ssse3_sse41` maps those indices with
+  saturated subtraction, a class comparison, and a 16-entry byte-shuffle
+  lookup.
 - `_mm_storeu_si128` stores the 16 encoded bytes into the output buffer.
-- `clear_xmm_registers_after_encode_block` clears XMM registers before return
-  to reduce register retention in the vector encode path.
-- The local staging array is wiped with the crate cleanup primitive before the
-  function returns.
 
 Safety argument:
 
-- The input and output array types provide fixed readable and writable bounds.
-- The SIMD load reads only from a local 16-byte staging array, so the prototype
-  does not over-read the 12-byte caller input.
-- The staging array is mutable and wiped after the SIMD store and XMM cleanup,
-  reducing stack retention of the copied caller bytes.
+- The fixed-array inner signature and full-block loop guards provide exact
+  readable and writable bounds for every raw-pointer view.
+- The direct reads total exactly 12 bytes; no 16-byte caller load occurs.
 - The load and store intrinsics are unaligned variants, so no stronger
   alignment is required.
 - The function is guarded by an SSSE3/SSE4.1 target-feature contract.
 - The output length is fixed by the output array type.
-- Runtime dispatch is gated by `std::is_x86_feature_detected!` and the
-  Standard-family alphabet check; in-place encode may enter only through stack
-  staging. Unsupported CPUs, custom alphabets, `no_std`, line-ending
-  insertion, and decode use scalar fallback. Final tail and padding completion
-  use scalar code.
-- Register-retention note: the path loads caller bytes into XMM registers. It
-  calls `clear_xmm_registers_after_encode_block` before return. This is
-  retention reduction, not a formal microarchitectural side-channel proof.
+- `std` dispatch is runtime-probed. `no_std` dispatch requires complete static
+  target features and the generation-bound `StaticBackendToken`, including a
+  passing direct KAT and non-quarantined health state.
+- Ordinary encode input is public data. The path does not claim secret
+  zeroization and does not clear vector registers per block. Secret encode
+  remains in the separate scalar secret API.
 
 ### `encode_standard_family_indices_ssse3_sse41`
 
@@ -665,8 +652,8 @@ tests.
 
 Purpose:
 
-- Map sixteen 6-bit indices to Standard or URL-safe alphabet bytes with SSE4.1
-  blends instead of scalar per-byte table indexing.
+- Map sixteen 6-bit indices to Standard or URL-safe alphabet bytes with a
+  branch-free arithmetic classifier and byte-shuffle lookup.
 
 Preconditions:
 
@@ -678,7 +665,8 @@ Preconditions:
 
 Unsafe operation:
 
-- SSE4.1 byte comparisons and blends compute the ASCII offset for each index.
+- SSE saturated subtraction and comparison derive a lookup class; SSSE3 byte
+  shuffle selects the ASCII offset for each index.
 
 Safety argument:
 

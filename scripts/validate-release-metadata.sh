@@ -359,7 +359,8 @@ for required_trust_text in \
 	"formally verified cryptographic constant-time behavior" \
 	"Wrapped and legacy decode may enter the admitted strict decode backend only after scalar line-profile validation" \
 	"Strict in-place encode and decode may enter admitted backends only after stack staging" \
-	"custom-alphabet, CT secret, broader wasm/browser" \
+	"custom-alphabet, CT secret, or broader wasm/browser" \
+	"automatic \`no_std\` runtime probing or unattested \`no_std\` acceleration" \
 	"async/Tokio support" \
     "serde or bytes integration"
 do
@@ -536,6 +537,7 @@ for required_package_file in \
     "portability/2_0_migration_smoke/src/lib.rs" \
     "portability/feature_contract_smoke/src/main.rs" \
     "portability/feature_unification_smoke/src/lib.rs" \
+    "portability/x86_static_encode_smoke/src/main.rs" \
     "scripts/check-2.0-feature-contract.sh" \
     "scripts/check-2.0-const-buffers.sh" \
     "scripts/check-2.0-format-append-chunks.sh" \

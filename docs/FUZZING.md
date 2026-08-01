@@ -32,6 +32,9 @@ Current fuzz targets:
 - `differential`: canonical output comparison against the established Base64
   behavior used by the harness, plus static RFC 4648 ground-truth vectors so
   the differential oracle is not the only source of truth
+- `x86_encode`: forced SSSE3/SSE4.1 and AVX2 Standard and URL-safe encode
+  comparison against the independent `base64` oracle on hosts that report the
+  complete runtime feature bundle; input is capped at 64 KiB per iteration
 
 `scripts/check_fuzz.sh` also runs the fuzz workspace supply-chain gates:
 
@@ -52,6 +55,7 @@ Committed corpus inputs are allowed only under:
 - `fuzz/corpus/in_place/`
 - `fuzz/corpus/stream_chunks/`
 - `fuzz/corpus/differential/`
+- `fuzz/corpus/x86_encode/`
 
 Each committed corpus input must be:
 
@@ -99,6 +103,7 @@ Expected files:
 - `stream_chunks.txt`
 - `differential.txt`
 - `profiles.txt`
+- `x86_encode.txt`
 - `MANIFEST.txt`
 
 Smoke campaigns use temporary corpus and artifact directories under

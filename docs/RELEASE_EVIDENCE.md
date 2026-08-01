@@ -103,6 +103,28 @@ scalar retry without exposing the suspect chunk. See
 [`2.0_BACKEND_HEALTH.md`](2.0_BACKEND_HEALTH.md) and
 `scripts/check-2.0-backend-health.sh`.
 
+Commit 25 replaces SSSE3/SSE4.1 and AVX2 encode staging prototypes with direct
+exact-width loads, byte-shuffle alphabet mapping, batched block loops, and
+compiler-emitted AVX transition handling. Its gate exhausts every byte value at
+every fixed-block position, checks all tails through multiple blocks, exercises
+both alphabets, both padding modes, and static tokens, and cross-builds the
+`no_std` target-feature variants:
+
+```sh
+scripts/check-2.0-x86-encode-hot-paths.sh
+BASE64_NG_RUN_COMMIT25_PERF=1 \
+  scripts/check-2.0-x86-encode-hot-paths.sh
+```
+
+The optional focused benchmark compares exact SSSE3/AVX2 backends against
+scalar only at admitted input sizes and defaults to a `1.02` median throughput
+ratio. The `x86_encode` fuzz target forces each runtime-supported backend
+through its static token and compares Standard and URL-safe padded and unpadded
+output with the independent `base64` oracle. Miri separately exercises the
+safe automatic-dispatch wrapper and fallback boundary; Miri does not interpret
+the x86 intrinsics, so real-host tests and generated assembly remain the
+evidence for those instructions.
+
 The Commit 20 pentest follow-up also pins fail-closed forward-progress guards
 for WHATWG and legacy one-shot loops, immediate pending-state cleanup on
 secret decode failure, checked secret-array frame construction, and the
@@ -539,7 +561,9 @@ all-features test surfaces and writes
 `target/release-evidence/miri/MANIFEST.txt`, `no-default-features.txt`, and
 `all-features.txt`. This evidence is useful for release review of the
 dependency-free scalar core, alloc helpers, stream wrappers, and cleanup
-helpers. It remains tool-backed undefined-behavior evidence, not a formal proof.
+helpers. The all-features set also enters the safe encode-dispatch wrapper, but
+does not claim to execute architecture intrinsics under Miri. It remains
+tool-backed undefined-behavior evidence, not a formal proof.
 
 ## In-Place AddressSanitizer Evidence
 
@@ -641,7 +665,9 @@ scripts/generate_simd_asm_evidence.sh
 
 On x86/x86_64 hosts, the script emits release test-harness assembly for the
 admitted AVX-512 VBMI, AVX2, and SSSE3/SSE4.1 encode paths, then checks for the
-expected byte-shuffle, byte-permute, vector-register, and cleanup instructions.
+expected byte-shuffle, byte-permute, vector-register, and transition/cleanup
+instructions. Commit 25 also checks exact-width SSSE3/AVX2 loads and rejects
+per-block wipe or full-register cleanup in ordinary encode.
 When the `aarch64-unknown-linux-gnu` target is installed, it also emits AArch64
 NEON release assembly and checks for table lookup, bit-select, and
 register-cleanup instructions. Cross-host runs record NEON library assembly

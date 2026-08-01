@@ -11,7 +11,7 @@ cargo-fuzz = true
 
 [dependencies]
 base64 = "0.22.1"
-base64-ng = { path = "..", version = "2.0.0", features = ["alloc", "std", "stream"] }
+base64-ng = { path = "..", version = "2.0.0", features = ["alloc", "simd", "std", "stream"] }
 libfuzzer-sys = "0.4"
 
 [[bin]]
@@ -45,6 +45,13 @@ bench = false
 [[bin]]
 name = "profiles"
 path = "fuzz_targets/profiles.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "x86_encode"
+path = "fuzz_targets/x86_encode.rs"
 test = false
 doc = false
 bench = false

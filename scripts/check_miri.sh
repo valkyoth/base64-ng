@@ -57,6 +57,7 @@ else
     for test_filter in \
         "tests::encodes_standard_vectors" \
         "tests::decodes_standard_vectors" \
+        "tests::encode_backend_boundary_uses_only_admitted_backends" \
         "decode_slice_clear_tail_scrubs_output_on_error" \
         "ct_decode_slice_staged_clear_tail_copies_only_after_success" \
         "stream_encoder_direct_write_buffers_tail_bytes" \

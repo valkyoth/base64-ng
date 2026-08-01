@@ -431,3 +431,14 @@ Stable boundary:
   deployment-attested `no_std` SIMD capability. It is thread-bound,
   generation-bound, and cannot bypass KAT or quarantine.
 - Secret operations remain outside ordinary SIMD health and checked mode.
+
+## 2.0 Commit 25 Static Encode Surface
+
+- `StaticBackendToken::encode_standard` and
+  `StaticBackendToken::encode_url_safe` expose padded or unpadded ordinary
+  encoding without `std` runtime probing.
+- SSSE3/SSE4.1 and AVX2 tokens enter the exact rewritten kernels only while
+  their generation remains healthy. Invalidated tokens and architecture
+  backends awaiting later checkpoints execute scalar code.
+- The methods preserve ordinary `EncodeError`, output-capacity, tail, and
+  padding behavior. They do not authorize secret SIMD processing.

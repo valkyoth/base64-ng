@@ -653,7 +653,7 @@ fn runtime_backend_policy_assertions_are_explicit() {
         assert!(err.to_string().contains("high-assurance-scalar-only"));
         assert!(err.to_string().contains(&format!(
             "encode_backend={}",
-            report.encode_backend.backend.as_str()
+            err.report.encode_backend.backend.as_str()
         )));
     }
 }

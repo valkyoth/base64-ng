@@ -1305,6 +1305,9 @@ Security commitments:
   target-feature evidence plus the atomic health latch; otherwise execution is
   scalar. Unsafe deployment attestation is represented by a thread-bound,
   generation-bound `StaticBackendToken` and does not bypass KAT or quarantine.
+  Its `encode_standard` and `encode_url_safe` methods execute the rewritten
+  SSSE3/SSE4.1 or AVX2 hot path when that exact token remains healthy; other
+  token backends and invalidated generations use scalar encoding.
 - `runtime::require_backend_policy()` lets deployments assert scalar execution,
   disabled SIMD features, or no detected SIMD candidate.
 - `BackendPolicy::HighAssuranceScalarOnly` combines the scalar/no-SIMD

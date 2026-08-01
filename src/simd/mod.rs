@@ -88,6 +88,12 @@ mod wasm;
     any(target_arch = "x86", target_arch = "x86_64")
 ))]
 mod x86_decode_tests;
+#[cfg(all(
+    feature = "std",
+    test,
+    any(target_arch = "x86", target_arch = "x86_64")
+))]
+mod x86_encode_tests;
 
 /// Backend currently allowed to execute.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

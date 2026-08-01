@@ -11,7 +11,7 @@ stable release.
 | Active release toolchain | Rust `1.97.1`; MSRV remains Rust `1.90.0` | `rust-toolchain.toml`, `scripts/ci_install_rust.sh` |
 | Runtime dependencies | Zero external crates in the core package; optional companion crates are separate opt-in packages | `scripts/validate-dependencies.sh`, `scripts/check_companion_crates.sh` |
 | Default dev dependencies | Zero external crates | `Cargo.toml` |
-| Optional runtime features | `alloc`, `std`, `stream`; dependency-free `secrets` storage, scalar processing, and assurance tokens; secret-only `allow-wasm32-best-effort-wipe` and `allow-compiler-fence-only-wipe` cleanup-limit acknowledgements; reserved `simd`, `tokio`, `kani`, `fuzzing`. AArch64 CSDB attestation uses custom cfg `base64_ng_aarch64_csdb_attested`. The `base64_ng_require_high_assurance` eligibility cfg requires `secrets` and fails on unsupported or unattested targets; additive ordinary SIMD does not authorize assured secret operations. | `Cargo.toml`, `scripts/check-2.0-secret-capabilities.sh`, `scripts/check-2.0-assurance.sh` |
+| Optional runtime features | `alloc`, `std`, `stream`, and admitted ordinary `simd`; dependency-free `secrets` storage, scalar processing, and assurance tokens; secret-only `allow-wasm32-best-effort-wipe` and `allow-compiler-fence-only-wipe` cleanup-limit acknowledgements; reserved `tokio`, `kani`, `fuzzing`. AArch64 CSDB attestation uses custom cfg `base64_ng_aarch64_csdb_attested`. The `base64_ng_require_high_assurance` eligibility cfg requires `secrets` and fails on unsupported or unattested targets; additive ordinary SIMD does not authorize assured secret operations. | `Cargo.toml`, `scripts/check-2.0-secret-capabilities.sh`, `scripts/check-2.0-assurance.sh` |
 | Unsafe policy | Scalar encode/decode remains safe Rust; audited unsafe is limited to volatile wiping, constant-time comparison, CT alphabet scan and result-gate barriers, reviewed SIMD, and the exact protected-provider/attestation declarations. | `src/cleanup.rs`, `src/ct/`, `src/simd/`, `src/v2/assurance/`, `docs/UNSAFE.md` |
 | Per-operation backend | `encode_backend` and `strict_decode_backend` independently report admitted ordinary dispatch; `secret_decode_backend` is always `scalar-constant-time-oriented`. Wasm reports scalar or `simd128` artifact selection rather than native CPU probing. | `runtime::backend_report()`, `scripts/check-2.0-operation-reporting.sh` |
 | SIMD status | AVX-512 VBMI, AVX2, SSSE3/SSE4.1, NEON, and narrow wasm `simd128` encode and strict decode are admitted for Standard and URL-safe alphabet families under documented runtime or static target-feature contracts. Every ordinary backend is KAT-gated and process-quarantined independently. Wrapped and legacy decode may enter the admitted strict decode backend only after scalar line-profile validation and compaction. Strict in-place encode and decode may enter admitted backends only after stack staging. Custom-alphabet, CT secret, big-endian AArch64, RISC-V RVV, and broader wasm/browser acceleration remain prototype-only or scalar. | `docs/SIMD.md`; `docs/2.0_BACKEND_HEALTH.md` |
@@ -73,7 +73,8 @@ without `std`-equivalent runtime probing.
 
 - formally verified cryptographic constant-time behavior
 - formal zeroization of all historical memory copies
-- custom-alphabet, CT secret, broader wasm/browser, or `no_std` acceleration
+- custom-alphabet, CT secret, or broader wasm/browser acceleration
+- automatic `no_std` runtime probing or unattested `no_std` acceleration
 - async/Tokio support in the core crate's inert `tokio` feature
 - serde or bytes integration in the core crate
 - Kani-complete whole-crate formal verification

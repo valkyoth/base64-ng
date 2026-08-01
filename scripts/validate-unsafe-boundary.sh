@@ -8,7 +8,7 @@ fi
 
 simd_allow_files='src/simd/mod.rs src/simd/neon.rs src/simd/x86/cleanup.rs src/simd/x86/decode.rs src/simd/x86/mod.rs'
 simd_boundary_files='src/simd/mod.rs src/simd/neon.rs src/simd/static_token.rs src/simd/wasm.rs src/simd/x86/cleanup.rs src/simd/x86/decode.rs src/simd/x86/mod.rs'
-simd_tests_allowed='src/simd/tests.rs'
+simd_tests_allowed='src/simd/tests.rs src/simd/x86_encode_tests.rs'
 root_allowed='src/lib.rs'
 cleanup_allowed='src/cleanup.rs'
 ct_allowed_files='src/ct/decode.rs src/ct/equality.rs'
@@ -81,7 +81,7 @@ if ! awk '
 fi
 
 arch_matches="$(grep -RIl -e 'core::arch' -e 'std::arch' -e 'is_x86_feature_detected!' -e 'target_feature' src | sort || true)"
-arch_allowed="$(printf '%s\n' src/ct/equality.rs "$cleanup_allowed" $simd_boundary_files "$simd_tests_allowed" | sort)"
+arch_allowed="$(printf '%s\n' src/ct/equality.rs "$cleanup_allowed" $simd_boundary_files $simd_tests_allowed | sort)"
 
 if [ "$arch_matches" != "$arch_allowed" ]; then
     echo "unsafe boundary: architecture intrinsics may appear only in src/ct/equality.rs CT barriers, $cleanup_allowed cleanup barriers, and src/simd/"

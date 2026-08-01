@@ -2,6 +2,7 @@ mod allocation;
 mod codec;
 mod evidence;
 mod resources;
+mod x86_encode;
 #[cfg(test)]
 mod v2_model;
 
@@ -72,6 +73,7 @@ fn main() {
         Some("availability") => print_availability(),
         Some("resources") => resources::print(),
         Some("correctness") => verify_correctness(),
+        Some("x86-encode") => x86_encode::run(),
         None | Some("benchmark") => run_benchmark(),
         Some(mode) => panic!("unknown performance harness mode: {mode}"),
     }

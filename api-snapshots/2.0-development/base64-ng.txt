@@ -1282,6 +1282,8 @@ pub struct base64_ng::runtime::StaticBackendToken
 impl base64_ng::StaticBackendToken
 pub unsafe fn base64_ng::StaticBackendToken::assume_supported(base64_ng::runtime::Backend) -> core::option::Option<Self>
 pub const fn base64_ng::StaticBackendToken::backend(&self) -> base64_ng::runtime::Backend
+pub fn base64_ng::StaticBackendToken::encode_standard<const PAD: bool>(&self, &[u8], &mut [u8]) -> core::result::Result<usize, base64_ng::EncodeError>
+pub fn base64_ng::StaticBackendToken::encode_url_safe<const PAD: bool>(&self, &[u8], &mut [u8]) -> core::result::Result<usize, base64_ng::EncodeError>
 pub fn base64_ng::StaticBackendToken::for_compiled_target() -> core::option::Option<Self>
 pub const fn base64_ng::StaticBackendToken::health_generation(&self) -> usize
 pub fn base64_ng::StaticBackendToken::is_valid(&self) -> bool
@@ -3030,6 +3032,8 @@ pub struct base64_ng::StaticBackendToken
 impl base64_ng::StaticBackendToken
 pub unsafe fn base64_ng::StaticBackendToken::assume_supported(base64_ng::runtime::Backend) -> core::option::Option<Self>
 pub const fn base64_ng::StaticBackendToken::backend(&self) -> base64_ng::runtime::Backend
+pub fn base64_ng::StaticBackendToken::encode_standard<const PAD: bool>(&self, &[u8], &mut [u8]) -> core::result::Result<usize, base64_ng::EncodeError>
+pub fn base64_ng::StaticBackendToken::encode_url_safe<const PAD: bool>(&self, &[u8], &mut [u8]) -> core::result::Result<usize, base64_ng::EncodeError>
 pub fn base64_ng::StaticBackendToken::for_compiled_target() -> core::option::Option<Self>
 pub const fn base64_ng::StaticBackendToken::health_generation(&self) -> usize
 pub fn base64_ng::StaticBackendToken::is_valid(&self) -> bool

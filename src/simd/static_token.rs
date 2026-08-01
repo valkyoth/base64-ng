@@ -3,6 +3,7 @@
 use core::marker::PhantomData;
 
 use crate::runtime::{Backend, OperationKind};
+use crate::{Alphabet, EncodeError, Standard, UrlSafe};
 
 /// Non-forgeable, thread-bound proof that a static SIMD backend passed its KAT.
 ///
@@ -76,6 +77,49 @@ impl StaticBackendToken {
             && decode.state == crate::BackendHealthState::Healthy
             && encode.generation == self.generation
             && decode.generation == self.generation
+    }
+
+    /// Encodes with the statically admitted Standard-alphabet backend.
+    ///
+    /// Commit 25 enables direct SSSE3/SSE4.1 and AVX2 execution. Other token
+    /// backends, or a token invalidated by quarantine, use the scalar encoder.
+    pub fn encode_standard<const PAD: bool>(
+        &self,
+        input: &[u8],
+        output: &mut [u8],
+    ) -> Result<usize, EncodeError> {
+        self.encode::<Standard, PAD>(input, output)
+    }
+
+    /// Encodes with the statically admitted URL-safe-alphabet backend.
+    ///
+    /// Commit 25 enables direct SSSE3/SSE4.1 and AVX2 execution. Other token
+    /// backends, or a token invalidated by quarantine, use the scalar encoder.
+    pub fn encode_url_safe<const PAD: bool>(
+        &self,
+        input: &[u8],
+        output: &mut [u8],
+    ) -> Result<usize, EncodeError> {
+        self.encode::<UrlSafe, PAD>(input, output)
+    }
+
+    fn encode<A: Alphabet, const PAD: bool>(
+        &self,
+        input: &[u8],
+        output: &mut [u8],
+    ) -> Result<usize, EncodeError> {
+        if !self.is_valid() {
+            return crate::scalar::encode_slice::<A, PAD>(input, output);
+        }
+        #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+        match self.backend {
+            Backend::Avx2 => return crate::simd::encode_slice_avx2::<A, PAD>(input, output),
+            Backend::Ssse3Sse41 => {
+                return crate::simd::encode_slice_ssse3_sse41::<A, PAD>(input, output);
+            }
+            _ => {}
+        }
+        crate::scalar::encode_slice::<A, PAD>(input, output)
     }
 
     fn admit(backend: Backend, deployment_attested: bool) -> Option<Self> {
