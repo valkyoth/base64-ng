@@ -4,6 +4,8 @@ set -eu
 wasm_target="${1:-wasm32-unknown-unknown}"
 output_dir="target/release-evidence/wasm-simd"
 manifest="$output_dir/MANIFEST.txt"
+audit_root="$(mktemp -d "${TMPDIR:-/tmp}/base64-ng-wasm-simd.XXXXXX")"
+trap 'rm -rf "$audit_root"' EXIT INT TERM
 mkdir -p "$output_dir"
 
 checksum_file() {
@@ -40,25 +42,21 @@ if ! rustup target list --installed 2>/dev/null | grep -F -x -q "$wasm_target"; 
 fi
 
 echo "wasm simd evidence: release test-harness LLVM IR for $wasm_target"
-CARGO_TARGET_DIR="target/wasm-simd-evidence" \
+CARGO_INCREMENTAL=0 \
+CARGO_TARGET_DIR="$audit_root/target" \
 RUSTFLAGS='-C target-feature=+simd128' \
-    cargo rustc --target "$wasm_target" --release \
+    cargo rustc --locked --target "$wasm_target" --release \
         --features simd,allow-wasm32-best-effort-wipe \
         --lib -- --emit=llvm-ir --test
 
-ir_file="$(
-    find target/wasm-simd-evidence -path '*/release/deps/base64_ng-*.ll' -type f \
-        | sort \
-        | sed -n '1p'
-)"
-
-if [ -z "$ir_file" ]; then
-    echo "wasm simd evidence: no LLVM IR file found" >&2
+set -- "$audit_root"/target/*/release/deps/base64_ng-*.ll
+if [ "$#" -ne 1 ] || [ ! -f "$1" ]; then
+    echo "wasm simd evidence: expected exactly one fresh LLVM IR file" >&2
     exit 1
 fi
 
 artifact="$output_dir/base64_ng-wasm-simd128-test.ll"
-cp "$ir_file" "$artifact"
+cp "$1" "$artifact"
 test -s "$artifact"
 
 require_pattern "$artifact" 'target triple = "wasm32-unknown-unknown"' "wasm32 target triple"
@@ -71,6 +69,15 @@ require_pattern "$artifact" "llvm\\.wasm\\.bitselect\\.v16i8" "wasm bitselect in
 {
     echo "base64-ng wasm simd128 codegen evidence"
     echo
+    echo "source:"
+    echo "commit=$(git rev-parse --verify HEAD 2>/dev/null || echo unavailable)"
+    if [ -n "$(git status --porcelain --untracked-files=all 2>/dev/null || true)" ]; then
+        echo "tree_state=dirty"
+    else
+        echo "tree_state=clean"
+    fi
+    checksum_file Cargo.lock
+    echo
     echo "rustc:"
     rustc -Vv
     echo
@@ -78,7 +85,7 @@ require_pattern "$artifact" "llvm\\.wasm\\.bitselect\\.v16i8" "wasm bitselect in
     cargo -V
     echo
     echo "command:"
-    echo "CARGO_TARGET_DIR=target/wasm-simd-evidence RUSTFLAGS='-C target-feature=+simd128' cargo rustc --target $wasm_target --release --features simd,allow-wasm32-best-effort-wipe --lib -- --emit=llvm-ir --test"
+    echo "CARGO_INCREMENTAL=0 CARGO_TARGET_DIR=<fresh>/target RUSTFLAGS='-C target-feature=+simd128' cargo rustc --locked --target $wasm_target --release --features simd,allow-wasm32-best-effort-wipe --lib -- --emit=llvm-ir --test"
     echo
     echo "artifacts:"
     checksum_file "$artifact"

@@ -60,6 +60,11 @@ for WHATWG and legacy one-shot loops, immediate pending-state cleanup on
 secret decode failure, checked secret-array frame construction, and the
 1,368-byte stack ceiling for `SecretArrayEncoder`.
 
+The subsequent evidence-integrity follow-up isolates CT, SIMD, and wasm
+generated-code builds from persistent Cargo targets, rejects ambiguous
+artifact sets, disables incremental compilation, and binds manifests to the
+source and lockfile inputs.
+
 Run the gate with:
 
 ```sh
@@ -564,9 +569,13 @@ The script writes `target/release-evidence/asm/base64_ng-no-default-features.s`,
 `target/release-evidence/asm/base64_ng-all-features.s`, and
 `target/release-evidence/asm/base64_ng-all-features-lto.s`, plus
 `target/release-evidence/asm/MANIFEST.txt` with rustc metadata, commands,
-review focus, and artifact checksums. The LTO artifact exists so reviewers can
-check that cleanup primitives such as `wipe_bytes` and `wipe_barrier` remain
-visible call boundaries under aggressive optimization.
+review focus, artifact checksums, the source commit and tree state, and the
+`Cargo.lock` checksum. Every assembly build uses a new isolated target
+directory with incremental compilation disabled, requires exactly one fresh
+crate artifact, and uses `--locked`; persistent Cargo caches are never an
+evidence source. The LTO artifact exists so reviewers can check that cleanup
+primitives such as `wipe_bytes` and `wipe_barrier` remain visible call
+boundaries under aggressive optimization.
 
 Capture generated assembly evidence for x86 SIMD encode paths with:
 
@@ -582,7 +591,9 @@ NEON release assembly and checks for table lookup, bit-select, and
 register-cleanup instructions. Cross-host runs record NEON library assembly
 and compile evidence; real AArch64 host runs provide the matching test-harness
 execution evidence. On non-x86 hosts it records a skip manifest. The generated
-files are written to `target/release-evidence/simd-asm/`.
+files are written to `target/release-evidence/simd-asm/`. SIMD assembly and
+wasm LLVM-IR generation follow the same isolated-target, exact-artifact,
+locked-input, and source-binding policy as constant-time assembly evidence.
 
 ## Performance Evidence
 

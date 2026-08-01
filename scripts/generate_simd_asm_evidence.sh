@@ -3,6 +3,8 @@ set -eu
 
 output_dir="target/release-evidence/simd-asm"
 manifest="$output_dir/MANIFEST.txt"
+audit_root="$(mktemp -d "${TMPDIR:-/tmp}/base64-ng-simd-asm.XXXXXX")"
+trap 'rm -rf "$audit_root"' EXIT INT TERM
 mkdir -p "$output_dir"
 
 checksum_file() {
@@ -20,18 +22,22 @@ checksum_file() {
 copy_single_asm() {
     target_dir="$1"
     output_file="$2"
-    asm_file="$(
-        find "$target_dir" -path '*/release/deps/base64_ng-*.s' -type f \
-            | sort \
-            | sed -n '1p'
-    )"
+    set -- "$target_dir"/*/release/deps/base64_ng-*.s "$target_dir"/release/deps/base64_ng-*.s
+    found=""
+    count=0
+    for candidate in "$@"; do
+        if [ -f "$candidate" ]; then
+            found="$candidate"
+            count=$((count + 1))
+        fi
+    done
 
-    if [ -z "$asm_file" ]; then
-        echo "simd asm evidence: no assembly file found under $target_dir" >&2
+    if [ "$count" -ne 1 ]; then
+        echo "simd asm evidence: expected exactly one fresh assembly file under $target_dir" >&2
         exit 1
     fi
 
-    cp "$asm_file" "$output_file"
+    cp "$found" "$output_file"
     test -s "$output_file"
 }
 
@@ -61,27 +67,30 @@ case "$host_triple" in
 esac
 
 echo "simd asm evidence: SSSE3/SSE4.1 release test assembly"
-CARGO_TARGET_DIR="target/simd-asm-ssse3-sse41" \
+CARGO_INCREMENTAL=0 \
+CARGO_TARGET_DIR="$audit_root/ssse3-sse41" \
 RUSTFLAGS="-C target-feature=+ssse3,+sse4.1" \
-    cargo rustc --release --all-features --lib -- --emit=asm --test
-copy_single_asm "target/simd-asm-ssse3-sse41" "$output_dir/base64_ng-ssse3-sse41-test.s"
+    cargo rustc --locked --release --all-features --lib -- --emit=asm --test
+copy_single_asm "$audit_root/ssse3-sse41" "$output_dir/base64_ng-ssse3-sse41-test.s"
 require_pattern "$output_dir/base64_ng-ssse3-sse41-test.s" "vpshufb" "SSSE3 byte-shuffle instruction"
 require_pattern "$output_dir/base64_ng-ssse3-sse41-test.s" "xmm" "XMM register use"
 
 echo "simd asm evidence: AVX2 release test assembly"
-CARGO_TARGET_DIR="target/simd-asm-avx2" \
+CARGO_INCREMENTAL=0 \
+CARGO_TARGET_DIR="$audit_root/avx2" \
 RUSTFLAGS="-C target-feature=+avx2" \
-    cargo rustc --release --all-features --lib -- --emit=asm --test
-copy_single_asm "target/simd-asm-avx2" "$output_dir/base64_ng-avx2-test.s"
+    cargo rustc --locked --release --all-features --lib -- --emit=asm --test
+copy_single_asm "$audit_root/avx2" "$output_dir/base64_ng-avx2-test.s"
 require_pattern "$output_dir/base64_ng-avx2-test.s" "vpshufb" "AVX2 byte-shuffle instruction"
 require_pattern "$output_dir/base64_ng-avx2-test.s" "ymm" "YMM register use"
 require_pattern "$output_dir/base64_ng-avx2-test.s" "vzeroupper" "AVX upper-state cleanup"
 
 echo "simd asm evidence: AVX-512 VBMI release test assembly"
-CARGO_TARGET_DIR="target/simd-asm-avx512-vbmi" \
+CARGO_INCREMENTAL=0 \
+CARGO_TARGET_DIR="$audit_root/avx512-vbmi" \
 RUSTFLAGS="-C target-feature=+avx512f,+avx512bw,+avx512vl,+avx512vbmi" \
-    cargo rustc --release --all-features --lib -- --emit=asm --test
-copy_single_asm "target/simd-asm-avx512-vbmi" "$output_dir/base64_ng-avx512-vbmi-test.s"
+    cargo rustc --locked --release --all-features --lib -- --emit=asm --test
+copy_single_asm "$audit_root/avx512-vbmi" "$output_dir/base64_ng-avx512-vbmi-test.s"
 require_pattern "$output_dir/base64_ng-avx512-vbmi-test.s" "vpermb" "AVX-512 VBMI byte-permute instruction"
 require_pattern "$output_dir/base64_ng-avx512-vbmi-test.s" "zmm" "ZMM register use"
 require_pattern "$output_dir/base64_ng-avx512-vbmi-test.s" "vpxord[[:space:]]+%zmm0" "ZMM cleanup sequence"
@@ -93,16 +102,18 @@ if rustup target list --installed 2>/dev/null | grep -F -x -q "aarch64-unknown-l
     host_triple="$(rustc -vV | sed -n 's/^host: //p')"
     if printf '%s\n' "$host_triple" | grep -q '^aarch64-'; then
         echo "simd asm evidence: AArch64 NEON release test assembly"
-        CARGO_TARGET_DIR="target/simd-asm-neon-aarch64" \
-            cargo rustc --target aarch64-unknown-linux-gnu --release --all-features --lib -- --emit=asm --test
+        CARGO_INCREMENTAL=0 \
+        CARGO_TARGET_DIR="$audit_root/neon-aarch64" \
+            cargo rustc --locked --target aarch64-unknown-linux-gnu --release --all-features --lib -- --emit=asm --test
         neon_decode_status="generated"
     else
         echo "simd asm evidence: AArch64 NEON release library assembly"
-        CARGO_TARGET_DIR="target/simd-asm-neon-aarch64" \
-            cargo rustc --target aarch64-unknown-linux-gnu --release --all-features --lib -- --emit=asm
+        CARGO_INCREMENTAL=0 \
+        CARGO_TARGET_DIR="$audit_root/neon-aarch64" \
+            cargo rustc --locked --target aarch64-unknown-linux-gnu --release --all-features --lib -- --emit=asm
         neon_decode_status="skipped-cross-host-test-link"
     fi
-    copy_single_asm "target/simd-asm-neon-aarch64" "$output_dir/base64_ng-neon-aarch64-test.s"
+    copy_single_asm "$audit_root/neon-aarch64" "$output_dir/base64_ng-neon-aarch64-test.s"
     require_pattern "$output_dir/base64_ng-neon-aarch64-test.s" "tbl" "AArch64 NEON table lookup instruction"
     require_pattern "$output_dir/base64_ng-neon-aarch64-test.s" "bsl" "AArch64 NEON bit-select instruction"
     require_pattern "$output_dir/base64_ng-neon-aarch64-test.s" "eor[[:space:]]+v0\\.16b" "NEON register cleanup sequence"
@@ -111,6 +122,15 @@ fi
 
 {
     echo "base64-ng SIMD assembly evidence"
+    echo
+    echo "source:"
+    echo "commit=$(git rev-parse --verify HEAD 2>/dev/null || echo unavailable)"
+    if [ -n "$(git status --porcelain --untracked-files=all 2>/dev/null || true)" ]; then
+        echo "tree_state=dirty"
+    else
+        echo "tree_state=clean"
+    fi
+    checksum_file Cargo.lock
     echo
     echo "rustc:"
     rustc -Vv
@@ -126,14 +146,14 @@ fi
     fi
     echo
     echo "commands:"
-    echo "CARGO_TARGET_DIR=target/simd-asm-ssse3-sse41 RUSTFLAGS=\"-C target-feature=+ssse3,+sse4.1\" cargo rustc --release --all-features --lib -- --emit=asm --test"
-    echo "CARGO_TARGET_DIR=target/simd-asm-avx2 RUSTFLAGS=\"-C target-feature=+avx2\" cargo rustc --release --all-features --lib -- --emit=asm --test"
-    echo "CARGO_TARGET_DIR=target/simd-asm-avx512-vbmi RUSTFLAGS=\"-C target-feature=+avx512f,+avx512bw,+avx512vl,+avx512vbmi\" cargo rustc --release --all-features --lib -- --emit=asm --test"
+    echo "CARGO_INCREMENTAL=0 CARGO_TARGET_DIR=<fresh>/ssse3-sse41 RUSTFLAGS=\"-C target-feature=+ssse3,+sse4.1\" cargo rustc --locked --release --all-features --lib -- --emit=asm --test"
+    echo "CARGO_INCREMENTAL=0 CARGO_TARGET_DIR=<fresh>/avx2 RUSTFLAGS=\"-C target-feature=+avx2\" cargo rustc --locked --release --all-features --lib -- --emit=asm --test"
+    echo "CARGO_INCREMENTAL=0 CARGO_TARGET_DIR=<fresh>/avx512-vbmi RUSTFLAGS=\"-C target-feature=+avx512f,+avx512bw,+avx512vl,+avx512vbmi\" cargo rustc --locked --release --all-features --lib -- --emit=asm --test"
     if [ "$neon_status" = "generated" ]; then
         if [ "$neon_decode_status" = "generated" ]; then
-            echo "CARGO_TARGET_DIR=target/simd-asm-neon-aarch64 cargo rustc --target aarch64-unknown-linux-gnu --release --all-features --lib -- --emit=asm --test"
+            echo "CARGO_INCREMENTAL=0 CARGO_TARGET_DIR=<fresh>/neon-aarch64 cargo rustc --locked --target aarch64-unknown-linux-gnu --release --all-features --lib -- --emit=asm --test"
         else
-            echo "CARGO_TARGET_DIR=target/simd-asm-neon-aarch64 cargo rustc --target aarch64-unknown-linux-gnu --release --all-features --lib -- --emit=asm"
+            echo "CARGO_INCREMENTAL=0 CARGO_TARGET_DIR=<fresh>/neon-aarch64 cargo rustc --locked --target aarch64-unknown-linux-gnu --release --all-features --lib -- --emit=asm"
         fi
     else
         echo "AArch64 NEON assembly skipped: aarch64-unknown-linux-gnu target is not installed"

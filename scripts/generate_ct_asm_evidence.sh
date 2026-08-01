@@ -3,6 +3,8 @@ set -eu
 
 output_dir="target/release-evidence/asm"
 manifest="$output_dir/MANIFEST.txt"
+audit_root="$(mktemp -d "${TMPDIR:-/tmp}/base64-ng-ct-asm.XXXXXX")"
+trap 'rm -rf "$audit_root"' EXIT INT TERM
 mkdir -p "$output_dir"
 
 checksum_file() {
@@ -20,18 +22,14 @@ checksum_file() {
 copy_single_asm() {
     target_dir="$1"
     output_file="$2"
-    asm_file="$(
-        find "$target_dir/release/deps" -maxdepth 1 -type f -name 'base64_ng-*.s' \
-            | sort \
-            | sed -n '1p'
-    )"
+    set -- "$target_dir"/release/deps/base64_ng-*.s
 
-    if [ -z "$asm_file" ]; then
-        echo "ct asm evidence: no assembly file found under $target_dir" >&2
+    if [ "$#" -ne 1 ] || [ ! -f "$1" ]; then
+        echo "ct asm evidence: expected exactly one fresh assembly file under $target_dir" >&2
         exit 1
     fi
 
-    cp "$asm_file" "$output_file"
+    cp "$1" "$output_file"
     test -s "$output_file"
 }
 
@@ -54,20 +52,23 @@ require_lto_symbol() {
 }
 
 echo "ct asm evidence: no-default-features release assembly"
-CARGO_TARGET_DIR="target/ct-asm-no-default" \
-    cargo rustc --release --lib --no-default-features -- --emit=asm
-copy_single_asm "target/ct-asm-no-default" "$output_dir/base64_ng-no-default-features.s"
+CARGO_INCREMENTAL=0 \
+CARGO_TARGET_DIR="$audit_root/no-default" \
+    cargo rustc --locked --release --lib --no-default-features -- --emit=asm
+copy_single_asm "$audit_root/no-default" "$output_dir/base64_ng-no-default-features.s"
 
 echo "ct asm evidence: all-features release assembly"
-CARGO_TARGET_DIR="target/ct-asm-all-features" \
-    cargo rustc --release --lib --all-features -- --emit=asm
-copy_single_asm "target/ct-asm-all-features" "$output_dir/base64_ng-all-features.s"
+CARGO_INCREMENTAL=0 \
+CARGO_TARGET_DIR="$audit_root/all-features" \
+    cargo rustc --locked --release --lib --all-features -- --emit=asm
+copy_single_asm "$audit_root/all-features" "$output_dir/base64_ng-all-features.s"
 
 echo "ct asm evidence: all-features LTO release assembly"
-CARGO_TARGET_DIR="target/ct-asm-all-features-lto" \
+CARGO_INCREMENTAL=0 \
+CARGO_TARGET_DIR="$audit_root/all-features-lto" \
 RUSTFLAGS="-C lto=fat -C embed-bitcode=yes" \
-    cargo rustc --release --lib --all-features -- --emit=asm
-copy_single_asm "target/ct-asm-all-features-lto" "$output_dir/base64_ng-all-features-lto.s"
+    cargo rustc --locked --release --lib --all-features -- --emit=asm
+copy_single_asm "$audit_root/all-features-lto" "$output_dir/base64_ng-all-features-lto.s"
 require_lto_symbol "10" "wipe_bytes"
 require_lto_symbol "12" "wipe_barrier"
 require_lto_symbol "27" "constant_time_eq_public_len"
@@ -78,13 +79,22 @@ require_lto_symbol "18" "secret_encode_scan"
 {
     echo "base64-ng constant-time assembly evidence"
     echo
+    echo "source:"
+    echo "commit=$(git rev-parse --verify HEAD 2>/dev/null || echo unavailable)"
+    if [ -n "$(git status --porcelain --untracked-files=all 2>/dev/null || true)" ]; then
+        echo "tree_state=dirty"
+    else
+        echo "tree_state=clean"
+    fi
+    checksum_file Cargo.lock
+    echo
     echo "rustc:"
     rustc -Vv
     echo
     echo "commands:"
-    echo "CARGO_TARGET_DIR=target/ct-asm-no-default cargo rustc --release --lib --no-default-features -- --emit=asm"
-    echo "CARGO_TARGET_DIR=target/ct-asm-all-features cargo rustc --release --lib --all-features -- --emit=asm"
-    echo "CARGO_TARGET_DIR=target/ct-asm-all-features-lto RUSTFLAGS=\"-C lto=fat -C embed-bitcode=yes\" cargo rustc --release --lib --all-features -- --emit=asm"
+    echo "CARGO_INCREMENTAL=0 CARGO_TARGET_DIR=<fresh>/no-default cargo rustc --locked --release --lib --no-default-features -- --emit=asm"
+    echo "CARGO_INCREMENTAL=0 CARGO_TARGET_DIR=<fresh>/all-features cargo rustc --locked --release --lib --all-features -- --emit=asm"
+    echo "CARGO_INCREMENTAL=0 CARGO_TARGET_DIR=<fresh>/all-features-lto RUSTFLAGS=\"-C lto=fat -C embed-bitcode=yes\" cargo rustc --locked --release --lib --all-features -- --emit=asm"
     echo
     echo "artifacts:"
     checksum_file "$output_dir/base64_ng-no-default-features.s"

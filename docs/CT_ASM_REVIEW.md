@@ -12,6 +12,12 @@ Review these generated artifacts after running:
 scripts/generate_ct_asm_evidence.sh
 ```
 
+The generator compiles each configuration in a fresh temporary Cargo target
+directory with incremental compilation disabled and `--locked`, and accepts
+exactly one newly produced crate assembly artifact. Its manifest records the
+source commit, whether the worktree was clean, and the `Cargo.lock` checksum;
+review evidence from a dirty tree must not be treated as release evidence.
+
 Expected artifacts:
 
 - `target/release-evidence/asm/base64_ng-no-default-features.s`

@@ -180,6 +180,26 @@ do
     fi
 done
 
+for evidence_generator in \
+    scripts/generate_ct_asm_evidence.sh \
+    scripts/generate_simd_asm_evidence.sh \
+    scripts/generate_wasm_simd_evidence.sh
+do
+    for required_evidence_text in \
+        'mktemp -d' \
+        'CARGO_INCREMENTAL=0' \
+        'cargo rustc --locked' \
+        'expected exactly one fresh' \
+        'tree_state=' \
+        'checksum_file Cargo.lock'
+    do
+        if ! grep -F -q -- "$required_evidence_text" "$evidence_generator"; then
+            echo "release metadata: $evidence_generator is missing fresh evidence control: $required_evidence_text" >&2
+            exit 1
+        fi
+    done
+done
+
 for required_scheduled_audit_text in \
     'cron: "17 3 * * *"' \
     "workflow_dispatch:" \
