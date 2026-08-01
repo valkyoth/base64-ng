@@ -13,7 +13,7 @@ stable release.
 | Default dev dependencies | Zero external crates | `Cargo.toml` |
 | Optional runtime features | `alloc`, `std`, `stream`; dependency-free `secrets` storage, scalar processing, and assurance tokens; secret-only `allow-wasm32-best-effort-wipe` and `allow-compiler-fence-only-wipe` cleanup-limit acknowledgements; reserved `simd`, `tokio`, `kani`, `fuzzing`. AArch64 CSDB attestation uses custom cfg `base64_ng_aarch64_csdb_attested`. The `base64_ng_require_high_assurance` eligibility cfg requires `secrets` and fails on unsupported or unattested targets; additive ordinary SIMD does not authorize assured secret operations. | `Cargo.toml`, `scripts/check-2.0-secret-capabilities.sh`, `scripts/check-2.0-assurance.sh` |
 | Unsafe policy | Scalar encode/decode remains safe Rust; audited unsafe is limited to volatile wiping, constant-time comparison, CT alphabet scan and result-gate barriers, reviewed SIMD, and the exact protected-provider/attestation declarations. | `src/cleanup.rs`, `src/ct/`, `src/simd/`, `src/v2/assurance/`, `docs/UNSAFE.md` |
-| Active backend | Scalar by default; std x86/x86_64 AVX-512 VBMI encode preferred, then AVX2, then SSSE3/SSE4.1 encode, plus little-endian std aarch64 NEON encode, when `simd` is enabled and platform checks pass. Strict decode has a separate runtime report method and may use std x86/x86_64 AVX-512 VBMI, AVX2, SSSE3/SSE4.1, or little-endian std aarch64 NEON. Ordinary wasm32 binaries compiled with `target-feature=+simd128` and `simd` may use the admitted narrow wasm `simd128` encode and strict-decode backend. | `runtime::backend_report()` tests |
+| Per-operation backend | `encode_backend` and `strict_decode_backend` independently report admitted ordinary dispatch; `secret_decode_backend` is always `scalar-constant-time-oriented`. Wasm reports scalar or `simd128` artifact selection rather than native CPU probing. | `runtime::backend_report()`, `scripts/check-2.0-operation-reporting.sh` |
 | SIMD status | AVX-512 VBMI, AVX2, SSSE3/SSE4.1, NEON, and narrow wasm `simd128` encode admitted for Standard and URL-safe alphabet families; AVX-512 VBMI, AVX2, SSSE3/SSE4.1, NEON, and narrow wasm `simd128` strict decode admitted for the documented runtime profiles. Wrapped and legacy decode may enter the admitted strict decode backend only after scalar line-profile validation, line-ending compaction, or legacy-whitespace compaction. Strict in-place encode and decode may enter admitted backends only after stack staging. Custom-alphabet, CT secret, big-endian AArch64, RISC-V RVV, broader wasm/browser, and `no_std` acceleration remain prototype-only or scalar. | `docs/SIMD.md` |
 | Strict RFC 4648 decoding | Default behavior rejects whitespace, mixed alphabets, malformed padding, trailing data, impossible lengths, and non-canonical trailing bits; `_NO_PAD` engines explicitly reject padding | RFC 4648 Section 10 and malformed-input integration tests |
 | Legacy compatibility | Explicit opt-in APIs only | `decode_slice_legacy`, `validate_legacy` |
@@ -39,7 +39,8 @@ stable release.
 ## Deployment Checks
 
 High-assurance deployments should record `runtime::backend_report()` at process
-startup, including `candidate_detection_mode`, and consider enforcing:
+startup, including all three operation backends, `candidate_detection_mode`,
+and Wasm artifact posture, and consider enforcing:
 
 ```rust
 base64_ng::runtime::require_backend_policy(

@@ -7,15 +7,15 @@ pub(super) fn report_from_state<const SLOTS: usize>(
 ) -> ProviderReport {
     let mut active_and_reserved = 0;
     let mut quarantined = 0;
+    let mut permanently_quarantined = 0;
     let mut charged_logical_bytes = 0;
     let mut charged_effective_pages = 0;
     for slot in &state.slots {
         match slot.lifecycle {
             SlotLifecycle::Free => continue,
             SlotLifecycle::Reserved | SlotLifecycle::Active => active_and_reserved += 1,
-            SlotLifecycle::Quarantined | SlotLifecycle::PermanentlyQuarantined => {
-                quarantined += 1;
-            }
+            SlotLifecycle::Quarantined => quarantined += 1,
+            SlotLifecycle::PermanentlyQuarantined => permanently_quarantined += 1,
         }
         charged_logical_bytes += slot.logical_bytes;
         charged_effective_pages += slot.effective_pages;
@@ -26,6 +26,7 @@ pub(super) fn report_from_state<const SLOTS: usize>(
         protection_generation: state.protection_generation,
         active_and_reserved,
         quarantined,
+        permanently_quarantined,
         tombstoned: 0,
         charged_logical_bytes,
         charged_effective_pages,

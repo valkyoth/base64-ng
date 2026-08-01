@@ -6,8 +6,9 @@ use super::{
     AccountingPosture, AllocationPresence, AssuranceContext, AssuranceGenerations, AssuranceLevel,
     AssuranceToken, AttestationEvidence, CleanupError, CleanupOutcome, CleanupReport,
     DisposalResult, LifecyclePosture, PendingStage, PhysicalProtection, ProtectedMemoryProvider,
-    ProtectionError, ProtectionRequest, ProviderAccess, ProviderHealth, ProviderOperationResult,
-    QuarantineRecord, TeardownCursor, TeardownOperation, ThreadMovableProvider, WipeEvidence,
+    ProtectedOperationReport, ProtectionError, ProtectionRequest, ProviderAccess, ProviderHealth,
+    ProviderOperationResult, QuarantineRecord, SecretOperation, TeardownCursor, TeardownOperation,
+    ThreadMovableProvider, WipeEvidence,
 };
 
 /// Protected allocation has not yet accepted plaintext.
@@ -44,6 +45,7 @@ where
     health_generation: usize,
     protection_generation: usize,
     initialized_len: usize,
+    operation: SecretOperation,
     _state: PhantomData<State>,
     _level: PhantomData<Level>,
     _not_sync_or_unwind_safe: PhantomData<(UnsafeCell<()>, &'provider mut dyn FnMut())>,
@@ -111,6 +113,7 @@ where
             health_generation: provider.health_generation(),
             protection_generation: provider.protection_generation(),
             initialized_len: 0,
+            operation: SecretOperation::NotStarted,
             _state: PhantomData,
             _level: PhantomData,
             _not_sync_or_unwind_safe: PhantomData,
@@ -120,10 +123,12 @@ where
     pub(crate) fn begin_unvalidated(
         mut self,
         token: &AssuranceToken<'provider, Level>,
+        operation: SecretOperation,
     ) -> Result<ProtectedSecret<'provider, P, Unvalidated, Level>, (ProtectionError, Self)> {
         if let Err(error) = self.revalidate(token) {
             return Err((error, self));
         }
+        self.operation = operation;
         match self.transition() {
             Ok(next) => Ok(next),
             Err(error) => Err((error, self)),
@@ -202,6 +207,30 @@ where
         self.initialized_len
     }
 
+    /// Reports posture only for this exact allocation and its recorded
+    /// operation. Stale tokens fail instead of returning historical assurance.
+    pub fn operation_report(
+        &self,
+        token: &AssuranceToken<'provider, Level>,
+    ) -> Result<ProtectedOperationReport, ProtectionError> {
+        self.revalidate(token)?;
+        let physical_protection =
+            self.handle
+                .as_ref()
+                .map_or(PhysicalProtection::ProtectionUnknown, |handle| {
+                    self.provider
+                        .physical_protection(&ProviderAccess::new(), handle)
+                });
+        Ok(ProtectedOperationReport::live(
+            token.report(),
+            self.operation,
+            physical_protection,
+            self.provider.health(),
+            self.provider.health_generation(),
+            self.provider.protection_generation(),
+        ))
+    }
+
     /// Consumes the public owner and reports the ordered cleanup result.
     pub fn try_close(mut self) -> Result<CleanupReport, CleanupError> {
         self.close_inner()
@@ -224,6 +253,7 @@ where
             health_generation: self.health_generation,
             protection_generation: self.protection_generation,
             initialized_len: self.initialized_len,
+            operation: self.operation,
             _state: PhantomData,
             _level: PhantomData,
             _not_sync_or_unwind_safe: PhantomData,
@@ -344,6 +374,7 @@ where
                     last_stage: PendingStage::Disposal,
                     disposition: AllocationPresence::Unknown,
                 },
+                pending_substage: super::JournalDisposition::Indeterminate,
                 retry_attempt: 1,
                 provider_health: ProviderHealth::Shutdown,
             }),
@@ -388,6 +419,7 @@ where
             physical_protection,
             accounting: AccountingPosture::Charged,
             lifecycle: LifecyclePosture::Quarantined { pending_stage },
+            pending_substage: cursor.disposition,
             retry_attempt: 1,
             provider_health: health,
         }

@@ -392,6 +392,36 @@ fn runtime_backend_report_matches_admission_state() {
     let snapshot = report.snapshot();
 
     assert_eq!(snapshot.active, report.active.as_str());
+    assert_eq!(snapshot.active, snapshot.encode_backend.backend);
+    assert_eq!(
+        snapshot.accelerated_backend_active,
+        report.accelerated_backend_active
+    );
+    assert_eq!(
+        report.accelerated_backend_active,
+        report.active != runtime::Backend::Scalar
+    );
+    assert_eq!(snapshot.security_posture, report.security_posture.as_str());
+    assert_eq!(snapshot.encode_backend, report.encode_backend.snapshot());
+    assert_eq!(
+        snapshot.strict_decode_backend,
+        report.strict_decode_backend.snapshot()
+    );
+    assert_eq!(
+        snapshot.secret_decode_backend,
+        report.secret_decode_backend.snapshot()
+    );
+    assert_eq!(snapshot.encode_backend.operation, "encode");
+    assert_eq!(snapshot.strict_decode_backend.operation, "strict-decode");
+    assert_eq!(snapshot.secret_decode_backend.operation, "secret-decode");
+    assert_eq!(
+        snapshot.secret_decode_backend.backend,
+        "scalar-constant-time-oriented"
+    );
+    assert_eq!(
+        snapshot.secret_decode_backend.security_posture,
+        "scalar-constant-time-oriented"
+    );
     assert_eq!(snapshot.candidate, report.candidate.as_str());
     assert_eq!(
         snapshot.candidate_detection_mode,
@@ -403,12 +433,18 @@ fn runtime_backend_report_matches_admission_state() {
     );
     assert_eq!(snapshot.simd_feature_enabled, cfg!(feature = "simd"));
     assert_eq!(
-        snapshot.accelerated_backend_active,
-        report.accelerated_backend_active
+        snapshot.ordinary_acceleration_active,
+        report.ordinary_acceleration_active
     );
     assert_eq!(snapshot.unsafe_boundary_enforced, !cfg!(feature = "simd"));
-    assert_eq!(snapshot.security_posture, report.security_posture.as_str());
-    assert_eq!(report.active.to_string(), report.active.as_str());
+    assert_eq!(
+        snapshot.wasm_artifact_posture,
+        report.wasm_artifact_posture.as_str()
+    );
+    assert_eq!(
+        snapshot.wasm_runtime_posture,
+        report.wasm_runtime_posture.as_str()
+    );
     assert!(runtime::Backend::Scalar.required_cpu_features().is_empty());
     assert_eq!(
         report.candidate_required_cpu_features(),
@@ -443,28 +479,26 @@ fn runtime_backend_report_matches_admission_state() {
         runtime::CandidateDetectionMode::CompileTimeTargetFeatures.as_str(),
         "compile-time-target-features"
     );
-    if report.accelerated_backend_active {
-        assert!(display.contains("accelerated_backend_active=true"));
+    if report.ordinary_acceleration_active {
+        assert!(display.contains("ordinary_acceleration_active=true"));
     } else {
-        assert!(display.contains("accelerated_backend_active=false"));
+        assert!(display.contains("ordinary_acceleration_active=false"));
     }
     assert!(display.contains("candidate_detection_mode="));
     assert!(display.contains("candidate_required_cpu_features="));
+    assert!(display.contains("accelerated_backend_active="));
+    assert!(display.contains("security_posture="));
     assert!(display.contains("wipe_posture="));
     assert!(display.contains("ct_gate_posture="));
-    if report.accelerated_backend_active {
-        assert!(matches!(
-            report.active,
-            runtime::Backend::Avx512Vbmi
-                | runtime::Backend::Avx2
-                | runtime::Backend::Ssse3Sse41
-                | runtime::Backend::Neon
-        ));
+    if report.ordinary_acceleration_active {
         assert!(build_can_report_accelerated_backend());
     } else {
-        assert_eq!(report.active, runtime::Backend::Scalar);
-        assert!(display.contains("active=scalar"));
+        assert_eq!(snapshot.encode_backend.backend, "scalar");
+        assert_eq!(snapshot.strict_decode_backend.backend, "scalar");
     }
+    assert!(display.contains("encode_backend="));
+    assert!(display.contains("strict_decode_backend="));
+    assert!(display.contains("secret_decode_backend=scalar-constant-time-oriented"));
     assert_eq!(report.unsafe_boundary_enforced, !cfg!(feature = "simd"));
     assert_eq!(report.simd_feature_enabled, cfg!(feature = "simd"));
     assert_eq!(report.wipe_posture.as_str(), report.snapshot().wipe_posture);
@@ -537,28 +571,10 @@ fn runtime_backend_report_matches_admission_state() {
         );
     }
 
-    if report.accelerated_backend_active {
-        assert_eq!(
-            report.security_posture,
-            runtime::SecurityPosture::Accelerated
-        );
-        assert_eq!(report.security_posture.as_str(), "accelerated");
-    } else if report.candidate == runtime::Backend::Scalar {
-        assert_eq!(
-            report.security_posture,
-            runtime::SecurityPosture::ScalarOnly
-        );
-        assert_eq!(report.security_posture.as_str(), "scalar-only");
-    } else {
-        assert_eq!(
-            report.security_posture,
-            runtime::SecurityPosture::SimdCandidateScalarActive
-        );
-        assert_eq!(
-            report.security_posture.as_str(),
-            "simd-candidate-scalar-active"
-        );
-    }
+    assert_eq!(
+        report.secret_decode_backend.health_posture,
+        runtime::BackendHealthPosture::SecretPolicyFixed
+    );
 }
 
 fn build_can_report_accelerated_backend() -> bool {
@@ -581,7 +597,7 @@ fn build_can_report_accelerated_backend() -> bool {
 fn runtime_backend_policy_assertions_are_explicit() {
     let report = runtime::backend_report();
 
-    if report.accelerated_backend_active {
+    if report.ordinary_acceleration_active {
         assert!(
             runtime::require_backend_policy(runtime::BackendPolicy::ScalarExecutionOnly).is_err()
         );
@@ -601,64 +617,6 @@ fn runtime_backend_policy_assertions_are_explicit() {
         runtime::BackendPolicy::HighAssuranceScalarOnly.to_string(),
         "high-assurance-scalar-only"
     );
-    let artificial_report = runtime::BackendReport {
-        active: runtime::Backend::Scalar,
-        candidate: runtime::Backend::Avx2,
-        candidate_detection_mode: runtime::CandidateDetectionMode::CompileTimeTargetFeatures,
-        simd_feature_enabled: true,
-        accelerated_backend_active: false,
-        unsafe_boundary_enforced: false,
-        security_posture: runtime::SecurityPosture::SimdCandidateScalarActive,
-        wipe_posture: runtime::WipePosture::HardwareFence,
-        ct_gate_posture: runtime::CtGatePosture::HardwareSpeculationBarrier,
-    };
-    let artificial_error = runtime::BackendPolicyError {
-        policy: runtime::BackendPolicy::HighAssuranceScalarOnly,
-        report: artificial_report,
-    };
-    assert_eq!(
-        artificial_error.to_string(),
-        "runtime backend policy `high-assurance-scalar-only` was not satisfied (active=scalar candidate=avx2 candidate_detection_mode=compile-time-target-features candidate_required_cpu_features=[avx2] simd_feature_enabled=true accelerated_backend_active=false unsafe_boundary_enforced=false security_posture=simd-candidate-scalar-active wipe_posture=hardware-fence ct_gate_posture=hardware-speculation-barrier)"
-    );
-    let ordering_fence_report = runtime::BackendReport {
-        active: runtime::Backend::Scalar,
-        candidate: runtime::Backend::Scalar,
-        candidate_detection_mode: runtime::CandidateDetectionMode::SimdFeatureDisabled,
-        simd_feature_enabled: false,
-        accelerated_backend_active: false,
-        unsafe_boundary_enforced: true,
-        security_posture: runtime::SecurityPosture::ScalarOnly,
-        wipe_posture: runtime::WipePosture::HardwareFence,
-        ct_gate_posture: runtime::CtGatePosture::OrderingFence,
-    };
-    assert!(!ordering_fence_report.satisfies(runtime::BackendPolicy::HighAssuranceScalarOnly));
-    let unattested_barrier_report = runtime::BackendReport {
-        active: runtime::Backend::Scalar,
-        candidate: runtime::Backend::Scalar,
-        candidate_detection_mode: runtime::CandidateDetectionMode::SimdFeatureDisabled,
-        simd_feature_enabled: false,
-        accelerated_backend_active: false,
-        unsafe_boundary_enforced: true,
-        security_posture: runtime::SecurityPosture::ScalarOnly,
-        wipe_posture: runtime::WipePosture::HardwareFence,
-        ct_gate_posture: runtime::CtGatePosture::HardwareSpeculationBarrierUnattested,
-    };
-    assert!(!unattested_barrier_report.satisfies(runtime::BackendPolicy::HighAssuranceScalarOnly));
-    let build_asserted_barrier_report = runtime::BackendReport {
-        active: runtime::Backend::Scalar,
-        candidate: runtime::Backend::Scalar,
-        candidate_detection_mode: runtime::CandidateDetectionMode::SimdFeatureDisabled,
-        simd_feature_enabled: false,
-        accelerated_backend_active: false,
-        unsafe_boundary_enforced: true,
-        security_posture: runtime::SecurityPosture::ScalarOnly,
-        wipe_posture: runtime::WipePosture::HardwareFence,
-        ct_gate_posture: runtime::CtGatePosture::HardwareSpeculationBarrierBuildAsserted,
-    };
-    assert!(
-        build_asserted_barrier_report.satisfies(runtime::BackendPolicy::HighAssuranceScalarOnly)
-    );
-
     let simd_feature_policy =
         runtime::require_backend_policy(runtime::BackendPolicy::SimdFeatureDisabled);
     if cfg!(feature = "simd") {
@@ -693,10 +651,10 @@ fn runtime_backend_policy_assertions_are_explicit() {
         let err = high_assurance_policy.unwrap_err();
         assert_eq!(err.policy, runtime::BackendPolicy::HighAssuranceScalarOnly);
         assert!(err.to_string().contains("high-assurance-scalar-only"));
-        assert!(
-            err.to_string()
-                .contains(&format!("active={}", report.active.as_str()))
-        );
+        assert!(err.to_string().contains(&format!(
+            "encode_backend={}",
+            report.encode_backend.backend.as_str()
+        )));
     }
 }
 

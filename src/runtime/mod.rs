@@ -305,8 +305,16 @@ impl core::fmt::Display for BackendPolicy {
     }
 }
 
+mod operation;
 mod report;
 
+pub use operation::{
+    BackendHealthPosture, BackendIdentifier, OperationBackendReport, OperationBackendSnapshot,
+    OperationKind, OperationSecurityPosture, WasmArtifactPosture, WasmRuntimePosture,
+};
 pub use report::{
     BackendPolicyError, BackendReport, BackendSnapshot, backend_report, require_backend_policy,
 };
+
+#[cfg(test)]
+mod tests;

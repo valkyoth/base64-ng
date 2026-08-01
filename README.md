@@ -522,11 +522,11 @@ let decoded = STANDARD.decode_vec(encoded.as_bytes()).unwrap();
 assert_eq!(decoded, b"hello");
 
 let report = runtime::backend_report();
-// With `simd` enabled this reports the active admitted encode backend, or
-// scalar when the current platform/input is outside the admitted scope. The
-// strict decode backend is reported separately.
-println!("{}", report);
-println!("{}", report.active_decode_backend());
+println!("encode: {}", report.encode_backend.backend);
+println!("strict decode: {}", report.strict_decode_backend.backend);
+println!("secret decode: {}", report.secret_decode_backend.backend);
+println!("Wasm artifact: {}", report.wasm_artifact_posture.as_str());
+println!("Wasm runtime: {}", report.wasm_runtime_posture.as_str());
 ```
 
 ## Convenience API
@@ -769,7 +769,12 @@ let encoded = STRICT_STANDARD_PADDED.encode_assured(
 )?;
 
 assert_eq!(encoded.expose_secret().as_bytes(), b"c2VjcmV0");
-encoded.try_close()?;
+let operation = encoded.operation_report(&token)?;
+assert_eq!(operation.snapshot().operation, "secret-encode");
+assert_eq!(operation.snapshot().wipe, "wipe-not-completed");
+
+let cleanup = encoded.try_close()?;
+assert_eq!(cleanup.snapshot().lifecycle, "closed");
 # Ok::<(), Box<dyn std::error::Error>>(())
 ```
 
@@ -777,6 +782,8 @@ The dependency-free default provider is finite, volatile, and best-effort. It
 does not lock pages or provide persistent teardown recovery. Reviewed deployed
 providers and attested tokens use an explicit unsafe extension boundary. See
 [`docs/2.0_ASSURANCE_AND_PROTECTED_MEMORY.md`](docs/2.0_ASSURANCE_AND_PROTECTED_MEMORY.md).
+Per-operation backend, token, allocation, and teardown reporting is documented
+in [`docs/2.0_OPERATION_REPORTING.md`](docs/2.0_OPERATION_REPORTING.md).
 
 When wrapping policy comes from configuration, prefer checked construction.
 Use `Engine::checked_profile_with_wrap` when the profile should use the same

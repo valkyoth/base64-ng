@@ -47,8 +47,10 @@ admission policy is satisfied. `docs/UNSAFE.md` inventories every current
 unsafe site and its safety invariants.
 
 Security-sensitive deployments can call `runtime::backend_report()` to record
-the active backend, detected candidate, SIMD feature status, unsafe-boundary
-status, and current security posture. `runtime::require_backend_policy()` can
+independent ordinary encode, ordinary strict-decode, and scalar
+constant-time-oriented secret-decode backends, detected candidates, Wasm
+artifact posture, SIMD feature status, and unsafe-boundary status.
+`runtime::require_backend_policy()` can
 enforce scalar-only execution, no-SIMD builds, no detected SIMD candidate, or
 the combined `HighAssuranceScalarOnly` policy at process startup.
 
@@ -112,6 +114,13 @@ does not lock pages, exclude dumps, attest hardware, or persist recovery state.
 Base 2.0 ships no persistent teardown provider. See
 `docs/2.0_ASSURANCE_AND_PROTECTED_MEMORY.md` before implementing the unsafe
 provider or platform-attestation protocols.
+
+Token reports carry independent backend, secret-algorithm, wipe, and
+result-gate generations without claiming protected storage. Physical
+protection is reported only by `ProtectedSecret::operation_report` for the
+exact participating allocation. Cleanup snapshots keep wipe, protection,
+accounting, lifecycle, pending teardown, and address-free allocation presence
+separate. See `docs/2.0_OPERATION_REPORTING.md`.
 
 Services that accept attacker-controlled payloads must enforce protocol-level
 size caps before calling allocation helpers or constant-time-oriented decode.

@@ -1262,14 +1262,21 @@ SIMD admission rules for all post-`1.0` work:
 
 ## Current 2.0 Development Checkpoint
 
-Commit 22 adds operation-specific runtime assurance and protected allocation
-ownership on top of the Commit 18-21 secret storage and scalar processing
-boundary. Assured operations require both a generation-bound token and one
-allocation-specific protected typestate. The included provider is finite,
-volatile, best-effort, and explicitly not a page-locking or persistent-
-recovery provider. Ordinary SIMD may coexist in one build but does not enter or
-authorize assured secret operations. The numbered acceptance criteria remain
-authoritative in `2.0.0-release-plan.md`.
+Commit 23 adds independent encode, strict-decode, and scalar secret-decode
+backend reports plus stable token, exact-allocation, provider, and teardown
+snapshots. Wasm reports artifact selection rather than native CPU dispatch.
+Physical protection appears only on the report borrowed from the exact
+participating protected owner; global and token reports make no allocation
+claim. Commit 22 added operation-specific runtime assurance and protected
+allocation ownership; Commit 23 makes that ownership and its independent
+backend, protection, cleanup, and generation postures observable without
+exposing identities or addresses. These controls build on the Commit 18-21
+secret storage and scalar processing boundary. Assured operations require both
+a generation-bound token and one allocation-specific protected typestate. The
+included provider is finite, volatile, best-effort, and explicitly not a
+page-locking or persistent-recovery provider. Ordinary SIMD may coexist in one
+build but does not enter or authorize assured secret operations. The numbered
+acceptance criteria remain authoritative in `2.0.0-release-plan.md`.
 
 ## Release Gate
 

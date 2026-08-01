@@ -331,6 +331,8 @@ pub struct CleanupError {
     pub accounting: AccountingPosture,
     /// Provider-owned terminal lifecycle.
     pub lifecycle: LifecyclePosture,
+    /// Redacted provider journal disposition at the pending stage.
+    pub pending_substage: JournalDisposition,
     /// Retry attempt charged by the transfer.
     pub retry_attempt: usize,
     /// Provider health after the failure.
@@ -363,6 +365,8 @@ pub struct ProviderReport {
     pub active_and_reserved: usize,
     /// Quarantined identities.
     pub quarantined: usize,
+    /// Identities whose bounded retry budget is permanently exhausted.
+    pub permanently_quarantined: usize,
     /// Terminal tombstone identities.
     pub tombstoned: usize,
     /// Conservatively charged logical bytes.

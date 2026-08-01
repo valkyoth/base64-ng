@@ -140,6 +140,14 @@ impl AttestationEvidence {
     pub(crate) const fn provider_generation(self) -> usize {
         self.provider_generation
     }
+
+    pub(crate) const fn wipe_posture(self) -> WipePosture {
+        self.wipe_posture
+    }
+
+    pub(crate) const fn speculation_posture(self) -> CtGatePosture {
+        self.speculation_posture
+    }
 }
 
 /// Reviewed platform evidence source.

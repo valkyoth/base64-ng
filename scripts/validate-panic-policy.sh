@@ -122,7 +122,7 @@ for test_file in src/v2/*_tests.rs src/v2/fixtures.rs src/v2/rfc4648_oracle.rs; 
     test -e "$test_file" || continue
     module_name="$(basename "$test_file" .rs)"
     if ! awk -v module_name="$module_name" '
-        /^#\[cfg\(test\)\]$/ {
+        /^#\[cfg\(.*test.*\)\]$/ {
             saw_cfg_test = 1
             next
         }
@@ -145,15 +145,30 @@ for test_file in src/v2/*_tests.rs src/v2/fixtures.rs src/v2/rfc4648_oracle.rs; 
     fi
 done
 
-for test_file in src/*/*/tests.rs; do
+for test_file in src/*/tests.rs src/*/*/tests.rs; do
     test -e "$test_file" || continue
     parent_module="$(dirname "$test_file")/../$(basename "$(dirname "$test_file")").rs"
     if [ ! -f "$parent_module" ]; then
         parent_module="$(dirname "$test_file")/mod.rs"
     fi
     if ! awk '
-        /^#\[cfg\(test\)\]$/ {
-            saw_cfg_test = 1
+        /^#\[cfg\(/ {
+            in_cfg = 1
+            cfg_has_test = ($0 ~ /(^|[^[:alnum:]_])test([^[:alnum:]_]|$)/)
+            if ($0 ~ /\)\]$/) {
+                saw_cfg_test = cfg_has_test
+                in_cfg = 0
+            }
+            next
+        }
+        in_cfg {
+            if ($0 ~ /(^|[^[:alnum:]_])test([^[:alnum:]_]|$)/) {
+                cfg_has_test = 1
+            }
+            if ($0 ~ /\)\]$/) {
+                saw_cfg_test = cfg_has_test
+                in_cfg = 0
+            }
             next
         }
         saw_cfg_test && /^[[:space:]]*$/ {
@@ -176,7 +191,7 @@ done
 
 find src crates/*/src -name '*.rs' | sort | while IFS= read -r source_file; do
     case "$source_file" in
-        src/*_tests.rs|src/kani_proofs.rs|src/kani_in_place_proofs.rs|src/kani_secret_proofs.rs|src/kani_secret_encode_proofs.rs|src/tests.rs|src/simd/tests.rs|src/simd/wasm.rs|src/simd/neon_decode_tests.rs|src/simd/x86_decode_tests.rs|src/v2/*_tests.rs|src/v2/fixtures.rs|src/v2/rfc4648_oracle.rs|src/*/*/tests.rs|crates/*/src/tests.rs|crates/*/src/*_tests.rs)
+        src/*_tests.rs|src/kani_proofs.rs|src/kani_in_place_proofs.rs|src/kani_secret_proofs.rs|src/kani_secret_encode_proofs.rs|src/tests.rs|src/simd/tests.rs|src/simd/wasm.rs|src/simd/neon_decode_tests.rs|src/simd/x86_decode_tests.rs|src/v2/*_tests.rs|src/v2/fixtures.rs|src/v2/rfc4648_oracle.rs|src/*/tests.rs|src/*/*/tests.rs|crates/*/src/tests.rs|crates/*/src/*_tests.rs)
             continue
             ;;
     esac

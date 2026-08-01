@@ -57,11 +57,13 @@ Architecture-specific admission blockers:
 Before active encode dispatch can ship, runtime reporting must make the
 admission visible and auditable:
 
-- `active` must name the admitted backend when that backend is selected.
+- `encode_backend` must name the admitted backend when that backend is selected.
 - `candidate` must continue to name the strongest visible backend candidate.
 - `candidate_required_cpu_features` must list the exact feature bundle.
-- `accelerated_backend_active=true` only when dispatch uses an admitted backend.
-- `security_posture=accelerated` only when an accelerated backend is active.
+- `ordinary_acceleration_active=true` only when ordinary dispatch uses an
+  admitted backend.
+- `encode_backend.security_posture=ordinary-accelerated` only when an
+  accelerated encode backend is selected.
 - `candidate_detection_mode` must distinguish runtime probing from compile-time
   target-feature reporting.
 - `unsafe_boundary_enforced` must remain conservative for `simd` builds and be

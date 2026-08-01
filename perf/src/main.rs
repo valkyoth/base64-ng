@@ -106,8 +106,8 @@ fn run_benchmark() {
                     "encode",
                     &input,
                     input_len,
-                    snapshot.active,
-                    report.active_decode_backend().as_str(),
+                    snapshot.encode_backend.backend,
+                    snapshot.strict_decode_backend.backend,
                 );
                 benchmark_operation(
                     &config,
@@ -116,8 +116,8 @@ fn run_benchmark() {
                     "decode",
                     &encoded,
                     input_len,
-                    snapshot.active,
-                    report.active_decode_backend().as_str(),
+                    snapshot.encode_backend.backend,
+                    snapshot.strict_decode_backend.backend,
                 );
             }
         }

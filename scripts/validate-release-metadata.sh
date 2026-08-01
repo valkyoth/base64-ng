@@ -75,6 +75,7 @@ test -s docs/2.0_API_MIGRATION_LEDGER.md
 test -s docs/2.0_PACKAGE_TOPOLOGY.md
 test -s docs/2.0_SECRET_STORAGE_AND_EXPOSURE.md
 test -s docs/2.0_ASSURANCE_AND_PROTECTED_MEMORY.md
+test -s docs/2.0_OPERATION_REPORTING.md
 test -s api-snapshots/README.md
 test -s docs/ASYNC.md
 test -s docs/BENCHMARKS.md
@@ -105,6 +106,7 @@ test -s scripts/test-release-crates.py
 test -x scripts/test-release-readiness.sh
 test -s scripts/ct-asm-symbols.sh
 test -x scripts/test-ct-asm-symbols.sh
+test -x scripts/check-2.0-operation-reporting.sh
 
 if [ "$(sed -n '1p' scripts/release_crates.py)" != "#!/usr/bin/env python3" ]; then
     echo "release metadata: scripts/release_crates.py must use #!/usr/bin/env python3" >&2
@@ -351,7 +353,8 @@ fi
 
 for required_trust_text in \
 	"Runtime dependencies | Zero external crates" \
-	"Active backend | Scalar by default; std x86/x86_64 AVX-512 VBMI encode preferred, then AVX2, then SSSE3/SSE4.1 encode, plus little-endian std aarch64 NEON encode" \
+	"Per-operation backend | \`encode_backend\` and \`strict_decode_backend\` independently report admitted ordinary dispatch" \
+	"\`secret_decode_backend\` is always \`scalar-constant-time-oriented\`" \
 	"no formal cryptographic constant-time guarantee" \
 	"formally verified cryptographic constant-time behavior" \
 	"Wrapped and legacy decode may enter the admitted strict decode backend only after scalar line-profile validation" \

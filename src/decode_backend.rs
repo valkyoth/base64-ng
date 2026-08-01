@@ -5,6 +5,9 @@
 //! admission must update this boundary together with canonicality, error-shape,
 //! fallback, retention, timing, and release evidence.
 
+#[cfg(test)]
+extern crate std;
+
 use crate::{Alphabet, DecodeError, scalar};
 
 /// Decode backend currently allowed to execute.
@@ -45,6 +48,28 @@ pub(crate) enum DecodeBackend {
     #[cfg(all(feature = "simd", target_arch = "wasm32"))]
     WasmSimd128,
 }
+
+#[cfg(test)]
+std::thread_local! {
+    static LAST_TEST_EXECUTION: core::cell::Cell<bool> = const { core::cell::Cell::new(false) };
+}
+
+#[cfg(test)]
+pub(crate) fn last_test_execution() -> DecodeBackend {
+    if LAST_TEST_EXECUTION.with(core::cell::Cell::get) {
+        active_decode_backend()
+    } else {
+        DecodeBackend::Scalar
+    }
+}
+
+#[cfg(test)]
+fn record_test_execution(accelerated: bool) {
+    LAST_TEST_EXECUTION.with(|observed| observed.set(accelerated));
+}
+
+#[cfg(not(test))]
+const fn record_test_execution(_accelerated: bool) {}
 
 /// Returns the decode backend selected for this build and target.
 #[must_use]
@@ -107,34 +132,50 @@ where
     A: Alphabet,
 {
     match active_decode_backend() {
-        DecodeBackend::Scalar => scalar::decode_slice::<A, PAD>(input, output),
+        DecodeBackend::Scalar => {
+            record_test_execution(false);
+            scalar::decode_slice::<A, PAD>(input, output)
+        }
         #[cfg(all(
             feature = "simd",
             feature = "std",
             any(target_arch = "x86", target_arch = "x86_64")
         ))]
-        DecodeBackend::Avx512Vbmi => crate::simd::decode_slice_avx512::<A, PAD>(input, output),
+        DecodeBackend::Avx512Vbmi => {
+            record_test_execution(true);
+            crate::simd::decode_slice_avx512::<A, PAD>(input, output)
+        }
         #[cfg(all(
             feature = "simd",
             feature = "std",
             any(target_arch = "x86", target_arch = "x86_64")
         ))]
-        DecodeBackend::Avx2 => crate::simd::decode_slice_avx2::<A, PAD>(input, output),
+        DecodeBackend::Avx2 => {
+            record_test_execution(true);
+            crate::simd::decode_slice_avx2::<A, PAD>(input, output)
+        }
         #[cfg(all(
             feature = "simd",
             feature = "std",
             any(target_arch = "x86", target_arch = "x86_64")
         ))]
-        DecodeBackend::Ssse3Sse41 => crate::simd::decode_slice_ssse3_sse41::<A, PAD>(input, output),
+        DecodeBackend::Ssse3Sse41 => {
+            record_test_execution(true);
+            crate::simd::decode_slice_ssse3_sse41::<A, PAD>(input, output)
+        }
         #[cfg(all(
             feature = "simd",
             feature = "std",
             target_arch = "aarch64",
             target_endian = "little"
         ))]
-        DecodeBackend::Neon => crate::simd::decode_slice_neon::<A, PAD>(input, output),
+        DecodeBackend::Neon => {
+            record_test_execution(true);
+            crate::simd::decode_slice_neon::<A, PAD>(input, output)
+        }
         #[cfg(all(feature = "simd", target_arch = "wasm32"))]
         DecodeBackend::WasmSimd128 => {
+            record_test_execution(true);
             crate::simd::decode_slice_wasm_simd128::<A, PAD>(input, output)
         }
     }

@@ -49,7 +49,7 @@ base64-ng = { path = "../..", features = ["simd"] }
 EOF
 
 cat >"$smoke_dir/src/lib.rs" <<'EOF'
-use base64_ng::runtime::{Backend, backend_report};
+use base64_ng::runtime::{Backend, WasmArtifactPosture, WasmRuntimePosture, backend_report};
 use base64_ng::{STANDARD, URL_SAFE_NO_PAD, web};
 
 const MAX_INPUT: usize = 200;
@@ -68,11 +68,17 @@ fn run() -> Result<(), i32> {
     if report.candidate != Backend::WasmSimd128 {
         return Err(1);
     }
-    if report.active != Backend::WasmSimd128 {
+    if report.encode_backend.backend.as_str() != "wasm-simd128" {
         return Err(2);
     }
     if report.active_decode_backend() != Backend::WasmSimd128 {
         return Err(3);
+    }
+    if report.wasm_artifact_posture != WasmArtifactPosture::Simd128Artifact {
+        return Err(4);
+    }
+    if report.wasm_runtime_posture != WasmRuntimePosture::HostRuntimeUnidentified {
+        return Err(5);
     }
 
     let seeds = [1u8, 17, 93];

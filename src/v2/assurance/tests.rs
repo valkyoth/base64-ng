@@ -51,6 +51,33 @@ fn ordinary_backend_generation_does_not_stale_secret_token() {
 }
 
 #[test]
+fn token_report_keeps_all_context_generations_independent() {
+    let context = AssuranceContext::new();
+    let first = context.best_effort_token().report().snapshot();
+    context.invalidate_ordinary_backend();
+    let second = context.best_effort_token().report().snapshot();
+    assert_ne!(
+        first.ordinary_backend_generation,
+        second.ordinary_backend_generation
+    );
+    assert_eq!(
+        first.secret_algorithm_generation,
+        second.secret_algorithm_generation
+    );
+    assert_eq!(
+        first.wipe_barrier_generation,
+        second.wipe_barrier_generation
+    );
+    assert_eq!(first.speculation_generation, second.speculation_generation);
+    assert_eq!(
+        second.secret_decode_backend.backend,
+        "scalar-constant-time-oriented"
+    );
+    assert_eq!(second.attestation_posture, "not-attested");
+    assert_eq!(second.secret_policy_posture, "best-effort");
+}
+
+#[test]
 fn stale_secret_algorithm_does_not_invalidate_completed_wipe_evidence() {
     let context = AssuranceContext::new();
     let token = context.best_effort_token();
@@ -131,7 +158,11 @@ fn bounded_recovery_exhaustion_retains_quarantine_and_shuts_down() {
     assert_eq!(provider.report().quarantined, 1);
     assert_eq!(provider.maintain(), 1);
     assert_eq!(provider.report().health, ProviderHealth::Shutdown);
-    assert_eq!(provider.report().quarantined, 1);
+    assert_eq!(provider.report().quarantined, 0);
+    assert_eq!(provider.report().permanently_quarantined, 1);
+    let snapshot = provider.report().snapshot();
+    assert_eq!(snapshot.health, "shutdown");
+    assert_eq!(snapshot.permanently_quarantined, 1);
 }
 
 #[test]
@@ -148,7 +179,9 @@ fn assert_unwind_safe_bypass_still_runs_cleanup_for_each_typestate() {
     assert!(result.is_err());
 
     let uninitialized = ProtectedSecret::try_new(&provider, &token, 8).unwrap();
-    let unvalidated = uninitialized.begin_unvalidated(&token).unwrap();
+    let unvalidated = uninitialized
+        .begin_unvalidated(&token, super::SecretOperation::Decode)
+        .unwrap();
     let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         drop(unvalidated);
         panic!("reviewed unvalidated cleanup test");

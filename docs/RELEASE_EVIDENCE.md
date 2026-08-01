@@ -83,6 +83,16 @@ Rust and Rust 1.90.0 when installed. See
 [`2.0_ASSURANCE_AND_PROTECTED_MEMORY.md`](2.0_ASSURANCE_AND_PROTECTED_MEMORY.md)
 and `scripts/check-2.0-assurance.sh`.
 
+Commit 23 separates ordinary encode, ordinary strict decode, and secret decode
+backend reporting. Stable snapshots bind backend-health and assurance
+generations without promoting them into physical protection. Exact allocation
+reports, cleanup reports, cleanup errors, and provider reports retain wipe,
+protection, accounting, lifecycle, pending stage/substage, and allocation
+presence as independent redacted fields. Qualifying Standard operations are
+correlated with test-only dispatch counters. See
+[`2.0_OPERATION_REPORTING.md`](2.0_OPERATION_REPORTING.md) and
+`scripts/check-2.0-operation-reporting.sh`.
+
 The Commit 20 pentest follow-up also pins fail-closed forward-progress guards
 for WHATWG and legacy one-shot loops, immediate pending-state cleanup on
 secret decode failure, checked secret-array frame construction, and the

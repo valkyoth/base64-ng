@@ -397,3 +397,21 @@ Stable boundary:
   accounting, lifecycle, retry, and health posture.
 - `BestEffortProvider` is finite, volatile, and in-process only. No persistent
   provider or restart-recovery API is part of base 2.0.
+
+## 2.0 Commit 23 Reporting Surface
+
+- `BackendReport` names ordinary encode, ordinary strict decode, and secret
+  decode independently. Secret decode is always reported as
+  `scalar-constant-time-oriented`.
+- `BackendIdentifier` is privately constructed and exposes only a stable
+  logging string. Wasm reports artifact selection rather than native runtime
+  CPU probing.
+- `AssuranceToken::report` includes separate ordinary-backend,
+  secret-algorithm, wipe-barrier, and speculation generations but makes no
+  protected-allocation claim.
+- `ProtectedSecret::operation_report` requires the matching token and reports
+  physical posture only for its exact provider handle. Stale generations fail
+  closed.
+- Cleanup snapshots report wipe, physical protection, accounting, lifecycle,
+  pending stage/substage, provider health, and allocation presence separately.
+  Tombstones retain no address and say presence is unknown.

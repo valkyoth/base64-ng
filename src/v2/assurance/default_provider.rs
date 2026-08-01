@@ -244,6 +244,7 @@ unsafe impl<const SLOTS: usize> ProtectedMemoryProvider for BestEffortProvider<S
             protection_generation: state.protection_generation,
             active_and_reserved: 0,
             quarantined: 0,
+            permanently_quarantined: 0,
             tombstoned: 0,
             charged_logical_bytes: 0,
             charged_effective_pages: 0,
@@ -251,8 +252,9 @@ unsafe impl<const SLOTS: usize> ProtectedMemoryProvider for BestEffortProvider<S
         for slot in &state.slots {
             match slot.lifecycle {
                 SlotLifecycle::Reserved | SlotLifecycle::Active => report.active_and_reserved += 1,
-                SlotLifecycle::Quarantined | SlotLifecycle::PermanentlyQuarantined => {
-                    report.quarantined += 1;
+                SlotLifecycle::Quarantined => report.quarantined += 1,
+                SlotLifecycle::PermanentlyQuarantined => {
+                    report.permanently_quarantined += 1;
                 }
                 SlotLifecycle::Free => continue,
             }
@@ -275,7 +277,14 @@ unsafe impl<const SLOTS: usize> ProtectedMemoryProvider for BestEffortProvider<S
             return Err(ProtectionError::ProviderUnavailable);
         }
         let report = report_from_state(&state);
-        let used_identities = report.active_and_reserved + report.quarantined + report.tombstoned;
+        let used_identities = report
+            .active_and_reserved
+            .checked_add(report.quarantined)
+            .and_then(|used| used.checked_add(report.permanently_quarantined))
+            .and_then(|used| used.checked_add(report.tombstoned))
+            .ok_or(ProtectionError::ProtectionResourceExhausted(
+                ResourceKind::Identities,
+            ))?;
         let limit_result = check_limit(
             used_identities,
             1,

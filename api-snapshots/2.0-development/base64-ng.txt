@@ -14,6 +14,23 @@ impl core::hash::Hash for base64_ng::assurance::AccountingPosture
 pub fn base64_ng::assurance::AccountingPosture::hash<__H: core::hash::Hasher>(&self, &mut __H)
 impl core::marker::Copy for base64_ng::assurance::AccountingPosture
 impl core::marker::StructuralPartialEq for base64_ng::assurance::AccountingPosture
+#[non_exhaustive] pub enum base64_ng::assurance::AllocationPosture
+pub base64_ng::assurance::AllocationPosture::Absent
+pub base64_ng::assurance::AllocationPosture::Present
+pub base64_ng::assurance::AllocationPosture::UnknownNoAddressRetained
+impl base64_ng::assurance::AllocationPosture
+pub const fn base64_ng::assurance::AllocationPosture::as_str(self) -> &'static str
+impl core::clone::Clone for base64_ng::assurance::AllocationPosture
+pub fn base64_ng::assurance::AllocationPosture::clone(&self) -> base64_ng::assurance::AllocationPosture
+impl core::cmp::Eq for base64_ng::assurance::AllocationPosture
+impl core::cmp::PartialEq for base64_ng::assurance::AllocationPosture
+pub fn base64_ng::assurance::AllocationPosture::eq(&self, &base64_ng::assurance::AllocationPosture) -> bool
+impl core::fmt::Debug for base64_ng::assurance::AllocationPosture
+pub fn base64_ng::assurance::AllocationPosture::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng::assurance::AllocationPosture
+pub fn base64_ng::assurance::AllocationPosture::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng::assurance::AllocationPosture
+impl core::marker::StructuralPartialEq for base64_ng::assurance::AllocationPosture
 #[non_exhaustive] pub enum base64_ng::assurance::AllocationPresence
 pub base64_ng::assurance::AllocationPresence::Unknown
 impl core::clone::Clone for base64_ng::assurance::AllocationPresence
@@ -81,6 +98,22 @@ impl core::fmt::Display for base64_ng::assurance::AssuredEncodeError
 pub fn base64_ng::assurance::AssuredEncodeError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for base64_ng::assurance::AssuredEncodeError
 impl core::marker::StructuralPartialEq for base64_ng::assurance::AssuredEncodeError
+#[non_exhaustive] pub enum base64_ng::assurance::AttestationPosture
+pub base64_ng::assurance::AttestationPosture::Attested
+pub base64_ng::assurance::AttestationPosture::NotAttested
+impl base64_ng::assurance::AttestationPosture
+pub const fn base64_ng::assurance::AttestationPosture::as_str(self) -> &'static str
+impl core::clone::Clone for base64_ng::assurance::AttestationPosture
+pub fn base64_ng::assurance::AttestationPosture::clone(&self) -> base64_ng::assurance::AttestationPosture
+impl core::cmp::Eq for base64_ng::assurance::AttestationPosture
+impl core::cmp::PartialEq for base64_ng::assurance::AttestationPosture
+pub fn base64_ng::assurance::AttestationPosture::eq(&self, &base64_ng::assurance::AttestationPosture) -> bool
+impl core::fmt::Debug for base64_ng::assurance::AttestationPosture
+pub fn base64_ng::assurance::AttestationPosture::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng::assurance::AttestationPosture
+pub fn base64_ng::assurance::AttestationPosture::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng::assurance::AttestationPosture
+impl core::marker::StructuralPartialEq for base64_ng::assurance::AttestationPosture
 #[non_exhaustive] pub enum base64_ng::assurance::CleanupOutcome
 pub base64_ng::assurance::CleanupOutcome::Closed
 impl core::clone::Clone for base64_ng::assurance::CleanupOutcome
@@ -253,6 +286,39 @@ impl core::hash::Hash for base64_ng::assurance::ResourceKind
 pub fn base64_ng::assurance::ResourceKind::hash<__H: core::hash::Hasher>(&self, &mut __H)
 impl core::marker::Copy for base64_ng::assurance::ResourceKind
 impl core::marker::StructuralPartialEq for base64_ng::assurance::ResourceKind
+#[non_exhaustive] pub enum base64_ng::assurance::SecretOperation
+pub base64_ng::assurance::SecretOperation::Decode
+pub base64_ng::assurance::SecretOperation::Encode
+pub base64_ng::assurance::SecretOperation::NotStarted
+impl base64_ng::assurance::SecretOperation
+pub const fn base64_ng::assurance::SecretOperation::as_str(self) -> &'static str
+impl core::clone::Clone for base64_ng::assurance::SecretOperation
+pub fn base64_ng::assurance::SecretOperation::clone(&self) -> base64_ng::assurance::SecretOperation
+impl core::cmp::Eq for base64_ng::assurance::SecretOperation
+impl core::cmp::PartialEq for base64_ng::assurance::SecretOperation
+pub fn base64_ng::assurance::SecretOperation::eq(&self, &base64_ng::assurance::SecretOperation) -> bool
+impl core::fmt::Debug for base64_ng::assurance::SecretOperation
+pub fn base64_ng::assurance::SecretOperation::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng::assurance::SecretOperation
+pub fn base64_ng::assurance::SecretOperation::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng::assurance::SecretOperation
+impl core::marker::StructuralPartialEq for base64_ng::assurance::SecretOperation
+#[non_exhaustive] pub enum base64_ng::assurance::SecretPolicyPosture
+pub base64_ng::assurance::SecretPolicyPosture::BestEffort
+pub base64_ng::assurance::SecretPolicyPosture::HighAssuranceAttested
+impl base64_ng::assurance::SecretPolicyPosture
+pub const fn base64_ng::assurance::SecretPolicyPosture::as_str(self) -> &'static str
+impl core::clone::Clone for base64_ng::assurance::SecretPolicyPosture
+pub fn base64_ng::assurance::SecretPolicyPosture::clone(&self) -> base64_ng::assurance::SecretPolicyPosture
+impl core::cmp::Eq for base64_ng::assurance::SecretPolicyPosture
+impl core::cmp::PartialEq for base64_ng::assurance::SecretPolicyPosture
+pub fn base64_ng::assurance::SecretPolicyPosture::eq(&self, &base64_ng::assurance::SecretPolicyPosture) -> bool
+impl core::fmt::Debug for base64_ng::assurance::SecretPolicyPosture
+pub fn base64_ng::assurance::SecretPolicyPosture::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng::assurance::SecretPolicyPosture
+pub fn base64_ng::assurance::SecretPolicyPosture::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng::assurance::SecretPolicyPosture
+impl core::marker::StructuralPartialEq for base64_ng::assurance::SecretPolicyPosture
 #[non_exhaustive] pub enum base64_ng::assurance::TargetAttestation
 pub base64_ng::assurance::TargetAttestation::Aarch64Csdb
 pub base64_ng::assurance::TargetAttestation::ReviewedEmbedded
@@ -341,10 +407,57 @@ impl core::hash::Hash for base64_ng::assurance::AssuranceGenerations
 pub fn base64_ng::assurance::AssuranceGenerations::hash<__H: core::hash::Hasher>(&self, &mut __H)
 impl core::marker::Copy for base64_ng::assurance::AssuranceGenerations
 impl core::marker::StructuralPartialEq for base64_ng::assurance::AssuranceGenerations
+pub struct base64_ng::assurance::AssuranceReport
+pub base64_ng::assurance::AssuranceReport::attestation_posture: base64_ng::assurance::AttestationPosture
+pub base64_ng::assurance::AssuranceReport::encode_backend: base64_ng::runtime::OperationBackendReport
+pub base64_ng::assurance::AssuranceReport::generations: base64_ng::assurance::AssuranceGenerations
+pub base64_ng::assurance::AssuranceReport::result_gate_posture: base64_ng::runtime::CtGatePosture
+pub base64_ng::assurance::AssuranceReport::secret_decode_backend: base64_ng::runtime::OperationBackendReport
+pub base64_ng::assurance::AssuranceReport::secret_policy_posture: base64_ng::assurance::SecretPolicyPosture
+pub base64_ng::assurance::AssuranceReport::strict_decode_backend: base64_ng::runtime::OperationBackendReport
+pub base64_ng::assurance::AssuranceReport::wasm_artifact_posture: base64_ng::runtime::WasmArtifactPosture
+pub base64_ng::assurance::AssuranceReport::wasm_runtime_posture: base64_ng::runtime::WasmRuntimePosture
+pub base64_ng::assurance::AssuranceReport::wipe_posture: base64_ng::runtime::WipePosture
+impl base64_ng::assurance::AssuranceReport
+pub const fn base64_ng::assurance::AssuranceReport::snapshot(self) -> base64_ng::assurance::AssuranceSnapshot
+impl core::clone::Clone for base64_ng::assurance::AssuranceReport
+pub fn base64_ng::assurance::AssuranceReport::clone(&self) -> base64_ng::assurance::AssuranceReport
+impl core::cmp::Eq for base64_ng::assurance::AssuranceReport
+impl core::cmp::PartialEq for base64_ng::assurance::AssuranceReport
+pub fn base64_ng::assurance::AssuranceReport::eq(&self, &base64_ng::assurance::AssuranceReport) -> bool
+impl core::fmt::Debug for base64_ng::assurance::AssuranceReport
+pub fn base64_ng::assurance::AssuranceReport::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng::assurance::AssuranceReport
+impl core::marker::StructuralPartialEq for base64_ng::assurance::AssuranceReport
+pub struct base64_ng::assurance::AssuranceSnapshot
+pub base64_ng::assurance::AssuranceSnapshot::attestation_posture: &'static str
+pub base64_ng::assurance::AssuranceSnapshot::encode_backend: base64_ng::runtime::OperationBackendSnapshot
+pub base64_ng::assurance::AssuranceSnapshot::ordinary_backend_generation: usize
+pub base64_ng::assurance::AssuranceSnapshot::result_gate_posture: &'static str
+pub base64_ng::assurance::AssuranceSnapshot::secret_algorithm_generation: usize
+pub base64_ng::assurance::AssuranceSnapshot::secret_decode_backend: base64_ng::runtime::OperationBackendSnapshot
+pub base64_ng::assurance::AssuranceSnapshot::secret_policy_posture: &'static str
+pub base64_ng::assurance::AssuranceSnapshot::speculation_generation: usize
+pub base64_ng::assurance::AssuranceSnapshot::strict_decode_backend: base64_ng::runtime::OperationBackendSnapshot
+pub base64_ng::assurance::AssuranceSnapshot::wasm_artifact_posture: &'static str
+pub base64_ng::assurance::AssuranceSnapshot::wasm_runtime_posture: &'static str
+pub base64_ng::assurance::AssuranceSnapshot::wipe_barrier_generation: usize
+pub base64_ng::assurance::AssuranceSnapshot::wipe_posture: &'static str
+impl core::clone::Clone for base64_ng::assurance::AssuranceSnapshot
+pub fn base64_ng::assurance::AssuranceSnapshot::clone(&self) -> base64_ng::assurance::AssuranceSnapshot
+impl core::cmp::Eq for base64_ng::assurance::AssuranceSnapshot
+impl core::cmp::PartialEq for base64_ng::assurance::AssuranceSnapshot
+pub fn base64_ng::assurance::AssuranceSnapshot::eq(&self, &base64_ng::assurance::AssuranceSnapshot) -> bool
+impl core::fmt::Debug for base64_ng::assurance::AssuranceSnapshot
+pub fn base64_ng::assurance::AssuranceSnapshot::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng::assurance::AssuranceSnapshot
+impl core::marker::StructuralPartialEq for base64_ng::assurance::AssuranceSnapshot
 pub struct base64_ng::assurance::AssuranceToken<'context, Level: base64_ng::assurance::AssuranceLevel>
 impl<'context, Level: base64_ng::assurance::AssuranceLevel> base64_ng::assurance::AssuranceToken<'context, Level>
 pub const fn base64_ng::assurance::AssuranceToken<'context, Level>::generations(&self) -> base64_ng::assurance::AssuranceGenerations
 pub fn base64_ng::assurance::AssuranceToken<'context, Level>::revalidate(&self) -> core::result::Result<(), base64_ng::assurance::AssuranceError>
+impl<Level: base64_ng::assurance::AssuranceLevel> base64_ng::assurance::AssuranceToken<'_, Level>
+pub fn base64_ng::assurance::AssuranceToken<'_, Level>::report(&self) -> base64_ng::assurance::AssuranceReport
 impl<Level: base64_ng::assurance::AssuranceLevel> core::fmt::Debug for base64_ng::assurance::AssuranceToken<'_, Level>
 pub fn base64_ng::assurance::AssuranceToken<'_, Level>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub struct base64_ng::assurance::AttestationEvidence
@@ -397,10 +510,13 @@ pub struct base64_ng::assurance::CleanupError
 pub base64_ng::assurance::CleanupError::accounting: base64_ng::assurance::AccountingPosture
 pub base64_ng::assurance::CleanupError::lifecycle: base64_ng::assurance::LifecyclePosture
 pub base64_ng::assurance::CleanupError::pending_stage: base64_ng::assurance::PendingStage
+pub base64_ng::assurance::CleanupError::pending_substage: base64_ng::assurance::JournalDisposition
 pub base64_ng::assurance::CleanupError::physical_protection: base64_ng::assurance::PhysicalProtection
 pub base64_ng::assurance::CleanupError::provider_health: base64_ng::assurance::ProviderHealth
 pub base64_ng::assurance::CleanupError::retry_attempt: usize
 pub base64_ng::assurance::CleanupError::wipe: base64_ng::assurance::WipeEvidence
+impl base64_ng::assurance::CleanupError
+pub const fn base64_ng::assurance::CleanupError::snapshot(self) -> base64_ng::assurance::CleanupSnapshot
 impl core::clone::Clone for base64_ng::assurance::CleanupError
 pub fn base64_ng::assurance::CleanupError::clone(&self) -> base64_ng::assurance::CleanupError
 impl core::cmp::Eq for base64_ng::assurance::CleanupError
@@ -421,6 +537,8 @@ pub base64_ng::assurance::CleanupReport::lifecycle: base64_ng::assurance::Lifecy
 pub base64_ng::assurance::CleanupReport::outcome: base64_ng::assurance::CleanupOutcome
 pub base64_ng::assurance::CleanupReport::physical_protection: base64_ng::assurance::PhysicalProtection
 pub base64_ng::assurance::CleanupReport::wipe: base64_ng::assurance::WipeEvidence
+impl base64_ng::assurance::CleanupReport
+pub const fn base64_ng::assurance::CleanupReport::snapshot(self) -> base64_ng::assurance::CleanupSnapshot
 impl core::clone::Clone for base64_ng::assurance::CleanupReport
 pub fn base64_ng::assurance::CleanupReport::clone(&self) -> base64_ng::assurance::CleanupReport
 impl core::cmp::Eq for base64_ng::assurance::CleanupReport
@@ -432,6 +550,25 @@ impl core::hash::Hash for base64_ng::assurance::CleanupReport
 pub fn base64_ng::assurance::CleanupReport::hash<__H: core::hash::Hasher>(&self, &mut __H)
 impl core::marker::Copy for base64_ng::assurance::CleanupReport
 impl core::marker::StructuralPartialEq for base64_ng::assurance::CleanupReport
+pub struct base64_ng::assurance::CleanupSnapshot
+pub base64_ng::assurance::CleanupSnapshot::accounting: &'static str
+pub base64_ng::assurance::CleanupSnapshot::allocation: &'static str
+pub base64_ng::assurance::CleanupSnapshot::lifecycle: &'static str
+pub base64_ng::assurance::CleanupSnapshot::pending_stage: core::option::Option<&'static str>
+pub base64_ng::assurance::CleanupSnapshot::pending_substage: core::option::Option<&'static str>
+pub base64_ng::assurance::CleanupSnapshot::physical_protection: &'static str
+pub base64_ng::assurance::CleanupSnapshot::provider_health: core::option::Option<&'static str>
+pub base64_ng::assurance::CleanupSnapshot::retry_attempt: core::option::Option<usize>
+pub base64_ng::assurance::CleanupSnapshot::wipe: &'static str
+impl core::clone::Clone for base64_ng::assurance::CleanupSnapshot
+pub fn base64_ng::assurance::CleanupSnapshot::clone(&self) -> base64_ng::assurance::CleanupSnapshot
+impl core::cmp::Eq for base64_ng::assurance::CleanupSnapshot
+impl core::cmp::PartialEq for base64_ng::assurance::CleanupSnapshot
+pub fn base64_ng::assurance::CleanupSnapshot::eq(&self, &base64_ng::assurance::CleanupSnapshot) -> bool
+impl core::fmt::Debug for base64_ng::assurance::CleanupSnapshot
+pub fn base64_ng::assurance::CleanupSnapshot::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng::assurance::CleanupSnapshot
+impl core::marker::StructuralPartialEq for base64_ng::assurance::CleanupSnapshot
 pub struct base64_ng::assurance::ExposedProtectedSecret<'a>
 impl base64_ng::assurance::ExposedProtectedSecret<'_>
 pub const fn base64_ng::assurance::ExposedProtectedSecret<'_>::as_bytes(&self) -> &[u8]
@@ -439,12 +576,55 @@ impl core::convert::AsRef<[u8]> for base64_ng::assurance::ExposedProtectedSecret
 pub fn base64_ng::assurance::ExposedProtectedSecret<'_>::as_ref(&self) -> &[u8]
 impl core::fmt::Debug for base64_ng::assurance::ExposedProtectedSecret<'_>
 pub fn base64_ng::assurance::ExposedProtectedSecret<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+pub struct base64_ng::assurance::ProtectedOperationReport
+pub base64_ng::assurance::ProtectedOperationReport::accounting: base64_ng::assurance::AccountingPosture
+pub base64_ng::assurance::ProtectedOperationReport::allocation: base64_ng::assurance::AllocationPosture
+pub base64_ng::assurance::ProtectedOperationReport::assurance: base64_ng::assurance::AssuranceReport
+pub base64_ng::assurance::ProtectedOperationReport::health_generation: usize
+pub base64_ng::assurance::ProtectedOperationReport::lifecycle: base64_ng::assurance::LifecyclePosture
+pub base64_ng::assurance::ProtectedOperationReport::operation: base64_ng::assurance::SecretOperation
+pub base64_ng::assurance::ProtectedOperationReport::physical_protection: base64_ng::assurance::PhysicalProtection
+pub base64_ng::assurance::ProtectedOperationReport::protection_generation: usize
+pub base64_ng::assurance::ProtectedOperationReport::provider_health: base64_ng::assurance::ProviderHealth
+pub base64_ng::assurance::ProtectedOperationReport::wipe: base64_ng::assurance::WipeEvidence
+impl base64_ng::assurance::ProtectedOperationReport
+pub const fn base64_ng::assurance::ProtectedOperationReport::snapshot(self) -> base64_ng::assurance::ProtectedOperationSnapshot
+impl core::clone::Clone for base64_ng::assurance::ProtectedOperationReport
+pub fn base64_ng::assurance::ProtectedOperationReport::clone(&self) -> base64_ng::assurance::ProtectedOperationReport
+impl core::cmp::Eq for base64_ng::assurance::ProtectedOperationReport
+impl core::cmp::PartialEq for base64_ng::assurance::ProtectedOperationReport
+pub fn base64_ng::assurance::ProtectedOperationReport::eq(&self, &base64_ng::assurance::ProtectedOperationReport) -> bool
+impl core::fmt::Debug for base64_ng::assurance::ProtectedOperationReport
+pub fn base64_ng::assurance::ProtectedOperationReport::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng::assurance::ProtectedOperationReport
+impl core::marker::StructuralPartialEq for base64_ng::assurance::ProtectedOperationReport
+pub struct base64_ng::assurance::ProtectedOperationSnapshot
+pub base64_ng::assurance::ProtectedOperationSnapshot::accounting: &'static str
+pub base64_ng::assurance::ProtectedOperationSnapshot::allocation: &'static str
+pub base64_ng::assurance::ProtectedOperationSnapshot::assurance: base64_ng::assurance::AssuranceSnapshot
+pub base64_ng::assurance::ProtectedOperationSnapshot::health_generation: usize
+pub base64_ng::assurance::ProtectedOperationSnapshot::lifecycle: &'static str
+pub base64_ng::assurance::ProtectedOperationSnapshot::operation: &'static str
+pub base64_ng::assurance::ProtectedOperationSnapshot::physical_protection: &'static str
+pub base64_ng::assurance::ProtectedOperationSnapshot::protection_generation: usize
+pub base64_ng::assurance::ProtectedOperationSnapshot::provider_health: &'static str
+pub base64_ng::assurance::ProtectedOperationSnapshot::wipe: &'static str
+impl core::clone::Clone for base64_ng::assurance::ProtectedOperationSnapshot
+pub fn base64_ng::assurance::ProtectedOperationSnapshot::clone(&self) -> base64_ng::assurance::ProtectedOperationSnapshot
+impl core::cmp::Eq for base64_ng::assurance::ProtectedOperationSnapshot
+impl core::cmp::PartialEq for base64_ng::assurance::ProtectedOperationSnapshot
+pub fn base64_ng::assurance::ProtectedOperationSnapshot::eq(&self, &base64_ng::assurance::ProtectedOperationSnapshot) -> bool
+impl core::fmt::Debug for base64_ng::assurance::ProtectedOperationSnapshot
+pub fn base64_ng::assurance::ProtectedOperationSnapshot::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng::assurance::ProtectedOperationSnapshot
+impl core::marker::StructuralPartialEq for base64_ng::assurance::ProtectedOperationSnapshot
 pub struct base64_ng::assurance::ProtectedSecret<'provider, P, State, Level> where P: base64_ng::assurance::ProtectedMemoryProvider, Level: base64_ng::assurance::AssuranceLevel
 impl<'provider, P, Level> base64_ng::assurance::ProtectedSecret<'provider, P, base64_ng::assurance::Uninitialized, Level> where P: base64_ng::assurance::ProtectedMemoryProvider, Level: base64_ng::assurance::AssuranceLevel
 pub fn base64_ng::assurance::ProtectedSecret<'provider, P, base64_ng::assurance::Uninitialized, Level>::try_new(&'provider P, &base64_ng::assurance::AssuranceToken<'provider, Level>, usize) -> core::result::Result<Self, base64_ng::assurance::ProtectionError>
 impl<'provider, P, State, Level> base64_ng::assurance::ProtectedSecret<'provider, P, State, Level> where P: base64_ng::assurance::ProtectedMemoryProvider, Level: base64_ng::assurance::AssuranceLevel
 pub fn base64_ng::assurance::ProtectedSecret<'provider, P, State, Level>::capacity(&self) -> usize
 pub const fn base64_ng::assurance::ProtectedSecret<'provider, P, State, Level>::initialized_len(&self) -> usize
+pub fn base64_ng::assurance::ProtectedSecret<'provider, P, State, Level>::operation_report(&self, &base64_ng::assurance::AssuranceToken<'provider, Level>) -> core::result::Result<base64_ng::assurance::ProtectedOperationReport, base64_ng::assurance::ProtectionError>
 pub fn base64_ng::assurance::ProtectedSecret<'provider, P, State, Level>::try_close(self) -> core::result::Result<base64_ng::assurance::CleanupReport, base64_ng::assurance::CleanupError>
 impl<P, Level> base64_ng::assurance::ProtectedSecret<'_, P, base64_ng::assurance::Validated, Level> where P: base64_ng::assurance::ProtectedMemoryProvider, Level: base64_ng::assurance::AssuranceLevel
 pub fn base64_ng::assurance::ProtectedSecret<'_, P, base64_ng::assurance::Validated, Level>::expose_secret(&self) -> base64_ng::assurance::ExposedProtectedSecret<'_>
@@ -495,9 +675,12 @@ pub base64_ng::assurance::ProviderReport::charged_effective_pages: usize
 pub base64_ng::assurance::ProviderReport::charged_logical_bytes: usize
 pub base64_ng::assurance::ProviderReport::health: base64_ng::assurance::ProviderHealth
 pub base64_ng::assurance::ProviderReport::health_generation: usize
+pub base64_ng::assurance::ProviderReport::permanently_quarantined: usize
 pub base64_ng::assurance::ProviderReport::protection_generation: usize
 pub base64_ng::assurance::ProviderReport::quarantined: usize
 pub base64_ng::assurance::ProviderReport::tombstoned: usize
+impl base64_ng::assurance::ProviderReport
+pub const fn base64_ng::assurance::ProviderReport::snapshot(self) -> base64_ng::assurance::ProviderSnapshot
 impl core::clone::Clone for base64_ng::assurance::ProviderReport
 pub fn base64_ng::assurance::ProviderReport::clone(&self) -> base64_ng::assurance::ProviderReport
 impl core::cmp::Eq for base64_ng::assurance::ProviderReport
@@ -509,6 +692,25 @@ impl core::hash::Hash for base64_ng::assurance::ProviderReport
 pub fn base64_ng::assurance::ProviderReport::hash<__H: core::hash::Hasher>(&self, &mut __H)
 impl core::marker::Copy for base64_ng::assurance::ProviderReport
 impl core::marker::StructuralPartialEq for base64_ng::assurance::ProviderReport
+pub struct base64_ng::assurance::ProviderSnapshot
+pub base64_ng::assurance::ProviderSnapshot::active_and_reserved: usize
+pub base64_ng::assurance::ProviderSnapshot::charged_effective_pages: usize
+pub base64_ng::assurance::ProviderSnapshot::charged_logical_bytes: usize
+pub base64_ng::assurance::ProviderSnapshot::health: &'static str
+pub base64_ng::assurance::ProviderSnapshot::health_generation: usize
+pub base64_ng::assurance::ProviderSnapshot::permanently_quarantined: usize
+pub base64_ng::assurance::ProviderSnapshot::protection_generation: usize
+pub base64_ng::assurance::ProviderSnapshot::quarantined: usize
+pub base64_ng::assurance::ProviderSnapshot::tombstoned: usize
+impl core::clone::Clone for base64_ng::assurance::ProviderSnapshot
+pub fn base64_ng::assurance::ProviderSnapshot::clone(&self) -> base64_ng::assurance::ProviderSnapshot
+impl core::cmp::Eq for base64_ng::assurance::ProviderSnapshot
+impl core::cmp::PartialEq for base64_ng::assurance::ProviderSnapshot
+pub fn base64_ng::assurance::ProviderSnapshot::eq(&self, &base64_ng::assurance::ProviderSnapshot) -> bool
+impl core::fmt::Debug for base64_ng::assurance::ProviderSnapshot
+pub fn base64_ng::assurance::ProviderSnapshot::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng::assurance::ProviderSnapshot
+impl core::marker::StructuralPartialEq for base64_ng::assurance::ProviderSnapshot
 pub struct base64_ng::assurance::QuarantineRecord
 pub base64_ng::assurance::QuarantineRecord::accounting: base64_ng::assurance::AccountingPosture
 pub base64_ng::assurance::QuarantineRecord::cursor: base64_ng::assurance::TeardownCursor
@@ -709,6 +911,22 @@ impl core::fmt::Display for base64_ng::runtime::Backend
 pub fn base64_ng::runtime::Backend::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for base64_ng::runtime::Backend
 impl core::marker::StructuralPartialEq for base64_ng::runtime::Backend
+#[non_exhaustive] pub enum base64_ng::runtime::BackendHealthPosture
+pub base64_ng::runtime::BackendHealthPosture::AdmissionPolicyOnly
+pub base64_ng::runtime::BackendHealthPosture::SecretPolicyFixed
+impl base64_ng::runtime::BackendHealthPosture
+pub const fn base64_ng::runtime::BackendHealthPosture::as_str(self) -> &'static str
+impl core::clone::Clone for base64_ng::runtime::BackendHealthPosture
+pub fn base64_ng::runtime::BackendHealthPosture::clone(&self) -> base64_ng::runtime::BackendHealthPosture
+impl core::cmp::Eq for base64_ng::runtime::BackendHealthPosture
+impl core::cmp::PartialEq for base64_ng::runtime::BackendHealthPosture
+pub fn base64_ng::runtime::BackendHealthPosture::eq(&self, &base64_ng::runtime::BackendHealthPosture) -> bool
+impl core::fmt::Debug for base64_ng::runtime::BackendHealthPosture
+pub fn base64_ng::runtime::BackendHealthPosture::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng::runtime::BackendHealthPosture
+pub fn base64_ng::runtime::BackendHealthPosture::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng::runtime::BackendHealthPosture
+impl core::marker::StructuralPartialEq for base64_ng::runtime::BackendHealthPosture
 #[non_exhaustive] pub enum base64_ng::runtime::BackendPolicy
 pub base64_ng::runtime::BackendPolicy::HighAssuranceScalarOnly
 pub base64_ng::runtime::BackendPolicy::NoDetectedSimdCandidate
@@ -778,6 +996,40 @@ impl core::fmt::Display for base64_ng::runtime::MemoryLockPosture
 pub fn base64_ng::runtime::MemoryLockPosture::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for base64_ng::runtime::MemoryLockPosture
 impl core::marker::StructuralPartialEq for base64_ng::runtime::MemoryLockPosture
+#[non_exhaustive] pub enum base64_ng::runtime::OperationKind
+pub base64_ng::runtime::OperationKind::Encode
+pub base64_ng::runtime::OperationKind::SecretDecode
+pub base64_ng::runtime::OperationKind::StrictDecode
+impl base64_ng::runtime::OperationKind
+pub const fn base64_ng::runtime::OperationKind::as_str(self) -> &'static str
+impl core::clone::Clone for base64_ng::runtime::OperationKind
+pub fn base64_ng::runtime::OperationKind::clone(&self) -> base64_ng::runtime::OperationKind
+impl core::cmp::Eq for base64_ng::runtime::OperationKind
+impl core::cmp::PartialEq for base64_ng::runtime::OperationKind
+pub fn base64_ng::runtime::OperationKind::eq(&self, &base64_ng::runtime::OperationKind) -> bool
+impl core::fmt::Debug for base64_ng::runtime::OperationKind
+pub fn base64_ng::runtime::OperationKind::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng::runtime::OperationKind
+pub fn base64_ng::runtime::OperationKind::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng::runtime::OperationKind
+impl core::marker::StructuralPartialEq for base64_ng::runtime::OperationKind
+#[non_exhaustive] pub enum base64_ng::runtime::OperationSecurityPosture
+pub base64_ng::runtime::OperationSecurityPosture::OrdinaryAccelerated
+pub base64_ng::runtime::OperationSecurityPosture::OrdinaryScalar
+pub base64_ng::runtime::OperationSecurityPosture::ScalarConstantTimeOriented
+impl base64_ng::runtime::OperationSecurityPosture
+pub const fn base64_ng::runtime::OperationSecurityPosture::as_str(self) -> &'static str
+impl core::clone::Clone for base64_ng::runtime::OperationSecurityPosture
+pub fn base64_ng::runtime::OperationSecurityPosture::clone(&self) -> base64_ng::runtime::OperationSecurityPosture
+impl core::cmp::Eq for base64_ng::runtime::OperationSecurityPosture
+impl core::cmp::PartialEq for base64_ng::runtime::OperationSecurityPosture
+pub fn base64_ng::runtime::OperationSecurityPosture::eq(&self, &base64_ng::runtime::OperationSecurityPosture) -> bool
+impl core::fmt::Debug for base64_ng::runtime::OperationSecurityPosture
+pub fn base64_ng::runtime::OperationSecurityPosture::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng::runtime::OperationSecurityPosture
+pub fn base64_ng::runtime::OperationSecurityPosture::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng::runtime::OperationSecurityPosture
+impl core::marker::StructuralPartialEq for base64_ng::runtime::OperationSecurityPosture
 #[non_exhaustive] pub enum base64_ng::runtime::SecurityPosture
 pub base64_ng::runtime::SecurityPosture::Accelerated
 pub base64_ng::runtime::SecurityPosture::ScalarOnly
@@ -795,6 +1047,39 @@ impl core::fmt::Display for base64_ng::runtime::SecurityPosture
 pub fn base64_ng::runtime::SecurityPosture::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for base64_ng::runtime::SecurityPosture
 impl core::marker::StructuralPartialEq for base64_ng::runtime::SecurityPosture
+#[non_exhaustive] pub enum base64_ng::runtime::WasmArtifactPosture
+pub base64_ng::runtime::WasmArtifactPosture::NotWasm
+pub base64_ng::runtime::WasmArtifactPosture::ScalarArtifact
+pub base64_ng::runtime::WasmArtifactPosture::Simd128Artifact
+impl base64_ng::runtime::WasmArtifactPosture
+pub const fn base64_ng::runtime::WasmArtifactPosture::as_str(self) -> &'static str
+impl core::clone::Clone for base64_ng::runtime::WasmArtifactPosture
+pub fn base64_ng::runtime::WasmArtifactPosture::clone(&self) -> base64_ng::runtime::WasmArtifactPosture
+impl core::cmp::Eq for base64_ng::runtime::WasmArtifactPosture
+impl core::cmp::PartialEq for base64_ng::runtime::WasmArtifactPosture
+pub fn base64_ng::runtime::WasmArtifactPosture::eq(&self, &base64_ng::runtime::WasmArtifactPosture) -> bool
+impl core::fmt::Debug for base64_ng::runtime::WasmArtifactPosture
+pub fn base64_ng::runtime::WasmArtifactPosture::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng::runtime::WasmArtifactPosture
+pub fn base64_ng::runtime::WasmArtifactPosture::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng::runtime::WasmArtifactPosture
+impl core::marker::StructuralPartialEq for base64_ng::runtime::WasmArtifactPosture
+#[non_exhaustive] pub enum base64_ng::runtime::WasmRuntimePosture
+pub base64_ng::runtime::WasmRuntimePosture::HostRuntimeUnidentified
+pub base64_ng::runtime::WasmRuntimePosture::NotWasm
+impl base64_ng::runtime::WasmRuntimePosture
+pub const fn base64_ng::runtime::WasmRuntimePosture::as_str(self) -> &'static str
+impl core::clone::Clone for base64_ng::runtime::WasmRuntimePosture
+pub fn base64_ng::runtime::WasmRuntimePosture::clone(&self) -> base64_ng::runtime::WasmRuntimePosture
+impl core::cmp::Eq for base64_ng::runtime::WasmRuntimePosture
+impl core::cmp::PartialEq for base64_ng::runtime::WasmRuntimePosture
+pub fn base64_ng::runtime::WasmRuntimePosture::eq(&self, &base64_ng::runtime::WasmRuntimePosture) -> bool
+impl core::fmt::Debug for base64_ng::runtime::WasmRuntimePosture
+pub fn base64_ng::runtime::WasmRuntimePosture::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng::runtime::WasmRuntimePosture
+pub fn base64_ng::runtime::WasmRuntimePosture::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng::runtime::WasmRuntimePosture
+impl core::marker::StructuralPartialEq for base64_ng::runtime::WasmRuntimePosture
 #[non_exhaustive] pub enum base64_ng::runtime::WipePosture
 pub base64_ng::runtime::WipePosture::CompilerFenceOnly
 pub base64_ng::runtime::WipePosture::HardwareFence
@@ -811,6 +1096,22 @@ impl core::fmt::Display for base64_ng::runtime::WipePosture
 pub fn base64_ng::runtime::WipePosture::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for base64_ng::runtime::WipePosture
 impl core::marker::StructuralPartialEq for base64_ng::runtime::WipePosture
+pub struct base64_ng::runtime::BackendIdentifier(_)
+impl base64_ng::runtime::BackendIdentifier
+pub const fn base64_ng::runtime::BackendIdentifier::as_str(self) -> &'static str
+impl core::clone::Clone for base64_ng::runtime::BackendIdentifier
+pub fn base64_ng::runtime::BackendIdentifier::clone(&self) -> base64_ng::runtime::BackendIdentifier
+impl core::cmp::Eq for base64_ng::runtime::BackendIdentifier
+impl core::cmp::PartialEq for base64_ng::runtime::BackendIdentifier
+pub fn base64_ng::runtime::BackendIdentifier::eq(&self, &base64_ng::runtime::BackendIdentifier) -> bool
+impl core::fmt::Debug for base64_ng::runtime::BackendIdentifier
+pub fn base64_ng::runtime::BackendIdentifier::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for base64_ng::runtime::BackendIdentifier
+pub fn base64_ng::runtime::BackendIdentifier::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng::runtime::BackendIdentifier
+pub fn base64_ng::runtime::BackendIdentifier::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng::runtime::BackendIdentifier
+impl core::marker::StructuralPartialEq for base64_ng::runtime::BackendIdentifier
 pub struct base64_ng::runtime::BackendPolicyError
 pub base64_ng::runtime::BackendPolicyError::policy: base64_ng::runtime::BackendPolicy
 pub base64_ng::runtime::BackendPolicyError::report: base64_ng::runtime::BackendReport
@@ -832,9 +1133,15 @@ pub base64_ng::runtime::BackendReport::active: base64_ng::runtime::Backend
 pub base64_ng::runtime::BackendReport::candidate: base64_ng::runtime::Backend
 pub base64_ng::runtime::BackendReport::candidate_detection_mode: base64_ng::runtime::CandidateDetectionMode
 pub base64_ng::runtime::BackendReport::ct_gate_posture: base64_ng::runtime::CtGatePosture
+pub base64_ng::runtime::BackendReport::encode_backend: base64_ng::runtime::OperationBackendReport
+pub base64_ng::runtime::BackendReport::ordinary_acceleration_active: bool
+pub base64_ng::runtime::BackendReport::secret_decode_backend: base64_ng::runtime::OperationBackendReport
 pub base64_ng::runtime::BackendReport::security_posture: base64_ng::runtime::SecurityPosture
 pub base64_ng::runtime::BackendReport::simd_feature_enabled: bool
+pub base64_ng::runtime::BackendReport::strict_decode_backend: base64_ng::runtime::OperationBackendReport
 pub base64_ng::runtime::BackendReport::unsafe_boundary_enforced: bool
+pub base64_ng::runtime::BackendReport::wasm_artifact_posture: base64_ng::runtime::WasmArtifactPosture
+pub base64_ng::runtime::BackendReport::wasm_runtime_posture: base64_ng::runtime::WasmRuntimePosture
 pub base64_ng::runtime::BackendReport::wipe_posture: base64_ng::runtime::WipePosture
 impl base64_ng::runtime::BackendReport
 pub fn base64_ng::runtime::BackendReport::active_decode_backend(self) -> base64_ng::runtime::Backend
@@ -860,9 +1167,15 @@ pub base64_ng::runtime::BackendSnapshot::candidate: &'static str
 pub base64_ng::runtime::BackendSnapshot::candidate_detection_mode: &'static str
 pub base64_ng::runtime::BackendSnapshot::candidate_required_cpu_features: &'static [&'static str]
 pub base64_ng::runtime::BackendSnapshot::ct_gate_posture: &'static str
+pub base64_ng::runtime::BackendSnapshot::encode_backend: base64_ng::runtime::OperationBackendSnapshot
+pub base64_ng::runtime::BackendSnapshot::ordinary_acceleration_active: bool
+pub base64_ng::runtime::BackendSnapshot::secret_decode_backend: base64_ng::runtime::OperationBackendSnapshot
 pub base64_ng::runtime::BackendSnapshot::security_posture: &'static str
 pub base64_ng::runtime::BackendSnapshot::simd_feature_enabled: bool
+pub base64_ng::runtime::BackendSnapshot::strict_decode_backend: base64_ng::runtime::OperationBackendSnapshot
 pub base64_ng::runtime::BackendSnapshot::unsafe_boundary_enforced: bool
+pub base64_ng::runtime::BackendSnapshot::wasm_artifact_posture: &'static str
+pub base64_ng::runtime::BackendSnapshot::wasm_runtime_posture: &'static str
 pub base64_ng::runtime::BackendSnapshot::wipe_posture: &'static str
 impl core::clone::Clone for base64_ng::runtime::BackendSnapshot
 pub fn base64_ng::runtime::BackendSnapshot::clone(&self) -> base64_ng::runtime::BackendSnapshot
@@ -873,6 +1186,42 @@ impl core::fmt::Debug for base64_ng::runtime::BackendSnapshot
 pub fn base64_ng::runtime::BackendSnapshot::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for base64_ng::runtime::BackendSnapshot
 impl core::marker::StructuralPartialEq for base64_ng::runtime::BackendSnapshot
+pub struct base64_ng::runtime::OperationBackendReport
+pub base64_ng::runtime::OperationBackendReport::backend: base64_ng::runtime::BackendIdentifier
+pub base64_ng::runtime::OperationBackendReport::health_generation: usize
+pub base64_ng::runtime::OperationBackendReport::health_posture: base64_ng::runtime::BackendHealthPosture
+pub base64_ng::runtime::OperationBackendReport::operation: base64_ng::runtime::OperationKind
+pub base64_ng::runtime::OperationBackendReport::security_posture: base64_ng::runtime::OperationSecurityPosture
+impl base64_ng::runtime::OperationBackendReport
+pub const fn base64_ng::runtime::OperationBackendReport::snapshot(self) -> base64_ng::runtime::OperationBackendSnapshot
+impl core::clone::Clone for base64_ng::runtime::OperationBackendReport
+pub fn base64_ng::runtime::OperationBackendReport::clone(&self) -> base64_ng::runtime::OperationBackendReport
+impl core::cmp::Eq for base64_ng::runtime::OperationBackendReport
+impl core::cmp::PartialEq for base64_ng::runtime::OperationBackendReport
+pub fn base64_ng::runtime::OperationBackendReport::eq(&self, &base64_ng::runtime::OperationBackendReport) -> bool
+impl core::fmt::Debug for base64_ng::runtime::OperationBackendReport
+pub fn base64_ng::runtime::OperationBackendReport::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng::runtime::OperationBackendReport
+pub fn base64_ng::runtime::OperationBackendReport::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng::runtime::OperationBackendReport
+impl core::marker::StructuralPartialEq for base64_ng::runtime::OperationBackendReport
+pub struct base64_ng::runtime::OperationBackendSnapshot
+pub base64_ng::runtime::OperationBackendSnapshot::backend: &'static str
+pub base64_ng::runtime::OperationBackendSnapshot::health_generation: usize
+pub base64_ng::runtime::OperationBackendSnapshot::health_posture: &'static str
+pub base64_ng::runtime::OperationBackendSnapshot::operation: &'static str
+pub base64_ng::runtime::OperationBackendSnapshot::security_posture: &'static str
+impl core::clone::Clone for base64_ng::runtime::OperationBackendSnapshot
+pub fn base64_ng::runtime::OperationBackendSnapshot::clone(&self) -> base64_ng::runtime::OperationBackendSnapshot
+impl core::cmp::Eq for base64_ng::runtime::OperationBackendSnapshot
+impl core::cmp::PartialEq for base64_ng::runtime::OperationBackendSnapshot
+pub fn base64_ng::runtime::OperationBackendSnapshot::eq(&self, &base64_ng::runtime::OperationBackendSnapshot) -> bool
+impl core::fmt::Debug for base64_ng::runtime::OperationBackendSnapshot
+pub fn base64_ng::runtime::OperationBackendSnapshot::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng::runtime::OperationBackendSnapshot
+pub fn base64_ng::runtime::OperationBackendSnapshot::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng::runtime::OperationBackendSnapshot
+impl core::marker::StructuralPartialEq for base64_ng::runtime::OperationBackendSnapshot
 pub fn base64_ng::runtime::backend_report() -> base64_ng::runtime::BackendReport
 pub fn base64_ng::runtime::require_backend_policy(base64_ng::runtime::BackendPolicy) -> core::result::Result<(), base64_ng::runtime::BackendPolicyError>
 pub mod base64_ng::secret

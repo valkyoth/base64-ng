@@ -187,6 +187,13 @@ unsafe provider and attestation protocols only under the contracts in
 [2.0_ASSURANCE_AND_PROTECTED_MEMORY.md](2.0_ASSURANCE_AND_PROTECTED_MEMORY.md)
 and [UNSAFE.md](UNSAFE.md).
 
+Per-operation observability is defined in
+[2.0_OPERATION_REPORTING.md](2.0_OPERATION_REPORTING.md). Global runtime and
+token reports make no physical-allocation claim. Only the report borrowed from
+the exact `ProtectedSecret` includes provider-reported protection, and cleanup
+snapshots never substitute lifecycle or conservative accounting for wipe or
+physical evidence.
+
 ### Input Validation
 
 Strict APIs reject:

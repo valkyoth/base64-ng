@@ -2,7 +2,7 @@
 
 use super::{
     AssuranceError, AssuranceLevel, AssuranceToken, CleanupError, ProtectedMemoryProvider,
-    ProtectedSecret, ProtectionError, Uninitialized, Validated,
+    ProtectedSecret, ProtectionError, SecretOperation, Uninitialized, Validated,
 };
 use crate::v2::{
     Base64, Codec,
@@ -84,7 +84,7 @@ impl<S: Codec> Base64<S> {
         Level: AssuranceLevel,
     {
         token.revalidate().map_err(AssuredDecodeError::Assurance)?;
-        let mut allocation = match allocation.begin_unvalidated(token) {
+        let mut allocation = match allocation.begin_unvalidated(token, SecretOperation::Decode) {
             Ok(allocation) => allocation,
             Err((error, allocation)) => {
                 return Err(match allocation.try_close() {
@@ -139,7 +139,7 @@ impl<S: Codec> Base64<S> {
         Level: AssuranceLevel,
     {
         token.revalidate().map_err(AssuredEncodeError::Assurance)?;
-        let mut allocation = match allocation.begin_unvalidated(token) {
+        let mut allocation = match allocation.begin_unvalidated(token, SecretOperation::Encode) {
             Ok(allocation) => allocation,
             Err((error, allocation)) => {
                 return Err(match allocation.try_close() {

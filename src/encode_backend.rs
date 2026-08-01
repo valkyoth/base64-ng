@@ -8,6 +8,9 @@
 //! stack staging before entering admitted encode backends so output writes do
 //! not overwrite unread input bytes.
 
+#[cfg(test)]
+extern crate std;
+
 use crate::{Alphabet, EncodeError, scalar, scalar_encode_in_place};
 #[cfg(any(
     all(
@@ -96,6 +99,28 @@ pub(crate) enum EncodeBackend {
     WasmSimd128,
 }
 
+#[cfg(test)]
+std::thread_local! {
+    static LAST_TEST_EXECUTION: core::cell::Cell<bool> = const { core::cell::Cell::new(false) };
+}
+
+#[cfg(test)]
+pub(crate) fn last_test_execution() -> EncodeBackend {
+    if LAST_TEST_EXECUTION.with(core::cell::Cell::get) {
+        active_encode_backend()
+    } else {
+        EncodeBackend::Scalar
+    }
+}
+
+#[cfg(test)]
+fn record_test_execution(accelerated: bool) {
+    LAST_TEST_EXECUTION.with(|observed| observed.set(accelerated));
+}
+
+#[cfg(not(test))]
+const fn record_test_execution(_accelerated: bool) {}
+
 /// Returns the encode backend selected for this build and target.
 #[must_use]
 pub(crate) fn active_encode_backend() -> EncodeBackend {
@@ -126,11 +151,15 @@ where
     A: Alphabet,
 {
     if input.len() < MIN_SIMD_ENCODE_BLOCK {
+        record_test_execution(false);
         return scalar::encode_slice::<A, PAD>(input, output);
     }
 
     match active_encode_backend() {
-        EncodeBackend::Scalar => scalar::encode_slice::<A, PAD>(input, output),
+        EncodeBackend::Scalar => {
+            record_test_execution(false);
+            scalar::encode_slice::<A, PAD>(input, output)
+        }
         #[cfg(all(
             feature = "simd",
             feature = "std",
@@ -138,8 +167,10 @@ where
         ))]
         EncodeBackend::Avx512Vbmi => {
             if input.len() >= 48 && crate::simd::avx512_supports_alphabet::<A>() {
+                record_test_execution(true);
                 crate::simd::encode_slice_avx512::<A, PAD>(input, output)
             } else {
+                record_test_execution(false);
                 scalar::encode_slice::<A, PAD>(input, output)
             }
         }
@@ -150,8 +181,10 @@ where
         ))]
         EncodeBackend::Avx2 => {
             if input.len() >= 24 && crate::simd::avx2_supports_alphabet::<A>() {
+                record_test_execution(true);
                 crate::simd::encode_slice_avx2::<A, PAD>(input, output)
             } else {
+                record_test_execution(false);
                 scalar::encode_slice::<A, PAD>(input, output)
             }
         }
@@ -162,8 +195,10 @@ where
         ))]
         EncodeBackend::Ssse3Sse41 => {
             if input.len() >= 12 && crate::simd::ssse3_sse41_supports_alphabet::<A>() {
+                record_test_execution(true);
                 crate::simd::encode_slice_ssse3_sse41::<A, PAD>(input, output)
             } else {
+                record_test_execution(false);
                 scalar::encode_slice::<A, PAD>(input, output)
             }
         }
@@ -175,16 +210,20 @@ where
         ))]
         EncodeBackend::Neon => {
             if input.len() >= 12 && crate::simd::neon_supports_alphabet::<A>() {
+                record_test_execution(true);
                 crate::simd::encode_slice_neon::<A, PAD>(input, output)
             } else {
+                record_test_execution(false);
                 scalar::encode_slice::<A, PAD>(input, output)
             }
         }
         #[cfg(all(feature = "simd", target_arch = "wasm32"))]
         EncodeBackend::WasmSimd128 => {
             if input.len() >= 12 && crate::simd::wasm_simd128_supports_alphabet::<A>() {
+                record_test_execution(true);
                 crate::simd::encode_slice_wasm_simd128::<A, PAD>(input, output)
             } else {
+                record_test_execution(false);
                 scalar::encode_slice::<A, PAD>(input, output)
             }
         }

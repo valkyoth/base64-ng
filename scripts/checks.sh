@@ -160,6 +160,9 @@ scripts/check-2.0-secret-capabilities.sh
 echo "checks: 2.0 assurance and protected memory"
 scripts/check-2.0-assurance.sh
 
+echo "checks: 2.0 per-operation reporting"
+scripts/check-2.0-operation-reporting.sh
+
 echo "checks: dudect timing harness"
 scripts/check_dudect.sh
 

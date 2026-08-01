@@ -8,12 +8,13 @@ use std::{
 use base64_ng::{
     STRICT_STANDARD_PADDED,
     assurance::{
-        AccountingPosture, AllocationPresence, AssuranceContext, AttestationEvidence, BestEffort,
-        CleanupError, DisposalResult, JournalDisposition, LifecyclePosture, PendingStage,
-        PhysicalProtection, PlatformAttestation, ProtectedMemoryProvider, ProtectedSecret,
-        ProtectionError, ProtectionRequest, ProviderAccess, ProviderHealth, ProviderLimits,
-        ProviderOperationResult, ProviderReport, QuarantineRecord, ResourceKind, TargetAttestation,
-        TeardownCursor, WipeAttestation, WipeConfirmation, WipeEvidence,
+        AccountingPosture, AllocationPosture, AllocationPresence, AssuranceContext,
+        AttestationEvidence, AttestationPosture, BestEffort, CleanupError, DisposalResult,
+        JournalDisposition, LifecyclePosture, PendingStage, PhysicalProtection,
+        PlatformAttestation, ProtectedMemoryProvider, ProtectedSecret, ProtectionError,
+        ProtectionRequest, ProviderAccess, ProviderHealth, ProviderLimits, ProviderOperationResult,
+        ProviderReport, QuarantineRecord, ResourceKind, SecretOperation, SecretPolicyPosture,
+        TargetAttestation, TeardownCursor, WipeAttestation, WipeConfirmation, WipeEvidence,
     },
     runtime::{CtGatePosture, WipePosture},
     secret::SecretInput,
@@ -134,6 +135,7 @@ unsafe impl ProtectedMemoryProvider for FaultProvider {
             protection_generation: state.protection_generation,
             active_and_reserved: usize::from(state.active),
             quarantined: usize::from(state.quarantined.is_some()),
+            permanently_quarantined: 0,
             tombstoned: usize::from(state.tombstoned),
             charged_logical_bytes: charged * 16,
             charged_effective_pages: charged,
@@ -364,6 +366,11 @@ fn indeterminate_protection_is_unknown_not_attested() {
         provider.record().unwrap().physical_protection,
         PhysicalProtection::ProtectionUnknown
     );
+    let snapshot = error.snapshot();
+    assert_eq!(snapshot.pending_stage, Some("protection-removal"));
+    assert_eq!(snapshot.pending_substage, Some("indeterminate"));
+    assert_eq!(snapshot.physical_protection, "protection-unknown");
+    assert_eq!(snapshot.accounting, "charged");
 }
 
 #[test]
@@ -379,6 +386,10 @@ fn indeterminate_disposal_is_terminal_and_non_addressable() {
     assert_eq!(provider.report().health, ProviderHealth::Shutdown);
     assert_eq!(provider.report().tombstoned, 1);
     assert_eq!(provider.report().quarantined, 0);
+    let snapshot = error.snapshot();
+    assert_eq!(snapshot.lifecycle, "tombstoned");
+    assert_eq!(snapshot.allocation, "unknown-no-address-retained");
+    assert_eq!(snapshot.pending_substage, Some("indeterminate"));
 }
 
 #[test]
@@ -390,7 +401,38 @@ fn successful_close_uses_the_exact_order_once() {
     let validated = STRICT_STANDARD_PADDED
         .encode_assured(&token, allocation, &SecretInput::new(b"secret"))
         .unwrap();
-    validated.try_close().unwrap();
+    let operation = validated.operation_report(&token).unwrap();
+    assert_eq!(operation.operation, SecretOperation::Encode);
+    assert_eq!(operation.wipe, WipeEvidence::WipeNotCompleted);
+    assert_eq!(
+        operation.physical_protection,
+        PhysicalProtection::ProtectionConfirmedAbsent
+    );
+    assert_eq!(operation.accounting, AccountingPosture::Charged);
+    assert_eq!(operation.lifecycle, LifecyclePosture::Live);
+    assert_eq!(operation.allocation, AllocationPosture::Present);
+    assert_eq!(
+        operation.assurance.attestation_posture,
+        AttestationPosture::NotAttested
+    );
+    assert_eq!(
+        operation.assurance.secret_policy_posture,
+        SecretPolicyPosture::BestEffort
+    );
+    assert_eq!(
+        operation.assurance.secret_decode_backend.backend.as_str(),
+        "scalar-constant-time-oriented"
+    );
+    let close = validated.try_close().unwrap();
+    let close_snapshot = close.snapshot();
+    assert_eq!(close_snapshot.wipe, "wiped-best-effort");
+    assert_eq!(
+        close_snapshot.physical_protection,
+        "protection-confirmed-absent"
+    );
+    assert_eq!(close_snapshot.accounting, "reconciled");
+    assert_eq!(close_snapshot.lifecycle, "closed");
+    assert_eq!(close_snapshot.allocation, "absent");
     assert_eq!(
         provider.trace(),
         ["wipe", "protection", "accounting", "disposal"]
@@ -419,6 +461,19 @@ fn attested_token_authorizes_only_matching_protected_storage() {
     let validated = STRICT_STANDARD_PADDED
         .encode_assured(&token, allocation, &SecretInput::new(b"secret"))
         .unwrap();
+    let operation = validated.operation_report(&token).unwrap();
+    assert_eq!(
+        operation.assurance.attestation_posture,
+        AttestationPosture::Attested
+    );
+    assert_eq!(
+        operation.assurance.secret_policy_posture,
+        SecretPolicyPosture::HighAssuranceAttested
+    );
+    assert_eq!(
+        operation.physical_protection,
+        PhysicalProtection::ProtectionAttested
+    );
     assert_eq!(validated.expose_secret().as_bytes(), b"c2VjcmV0");
     assert_eq!(
         validated.try_close().unwrap().wipe,
@@ -438,6 +493,10 @@ fn stale_attested_provider_generation_quarantines_before_later_hooks() {
         .unwrap();
     provider.invalidate_health_generation();
 
+    assert_eq!(
+        validated.operation_report(&token),
+        Err(ProtectionError::StaleAssurance)
+    );
     let error = validated.try_close().unwrap_err();
     assert_eq!(provider.trace(), ["wipe"]);
     assert_eq!(error.pending_stage, PendingStage::Wipe);

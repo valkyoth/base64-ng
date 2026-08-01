@@ -12,6 +12,7 @@ mod operations;
 mod posture;
 mod protected;
 mod provider;
+mod report;
 
 pub use context::{
     AssuranceContext, AssuranceError, AssuranceGenerations, AssuranceLevel, AssuranceToken,
@@ -33,6 +34,11 @@ pub use protected::{
 pub use provider::{
     DisposalResult, ProtectedMemoryProvider, ProviderAccess, ProviderOperationResult,
     QuarantineRecord, ThreadMovableProvider, WipeConfirmation,
+};
+pub use report::{
+    AllocationPosture, AssuranceReport, AssuranceSnapshot, AttestationPosture, CleanupSnapshot,
+    ProtectedOperationReport, ProtectedOperationSnapshot, ProviderSnapshot, SecretOperation,
+    SecretPolicyPosture,
 };
 
 #[cfg(test)]

@@ -28,8 +28,8 @@ for required_text in \
     "benchmark output with scalar baseline" \
     "AArch64 NEON must include generated assembly" \
     "Any broader wasm \`simd128\` scope must include generated-code/JIT evidence" \
-    "accelerated_backend_active=true" \
-    "security_posture=accelerated" \
+    "ordinary_acceleration_active=true" \
+    "encode_backend.security_posture=ordinary-accelerated" \
     "candidate_detection_mode" \
     "high-assurance scalar policy" \
     "backend:" \
