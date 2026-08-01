@@ -3,52 +3,37 @@
 #[cfg(all(
     target_arch = "aarch64",
     target_endian = "little",
-    any(test, all(feature = "std", feature = "simd"))
+    any(test, feature = "simd")
 ))]
 use super::decode_helpers::{copy_verified_decode_output, fill_decode_values};
-#[cfg(any(test, all(feature = "std", target_arch = "aarch64")))]
+#[cfg(any(test, all(feature = "simd", target_arch = "aarch64")))]
 use crate::Alphabet;
 #[cfg(all(
     target_arch = "aarch64",
     target_endian = "little",
-    any(test, all(feature = "std", feature = "simd"))
+    any(test, feature = "simd")
 ))]
 use crate::Standard;
 #[cfg(all(
-    any(test, all(feature = "std", feature = "simd", target_arch = "aarch64")),
+    any(test, all(feature = "simd", target_arch = "aarch64")),
     any(
         target_arch = "aarch64",
         all(target_arch = "arm", target_feature = "neon")
     )
 ))]
 use crate::encode_base64_value;
-#[cfg(all(
-    feature = "std",
-    feature = "simd",
-    target_arch = "aarch64",
-    target_endian = "little"
-))]
+#[cfg(all(feature = "simd", target_arch = "aarch64", target_endian = "little"))]
 use crate::{EncodeError, checked_encoded_len, scalar};
 
-#[cfg(all(
-    feature = "std",
-    feature = "simd",
-    target_arch = "aarch64",
-    target_endian = "little"
-))]
+#[cfg(all(feature = "simd", target_arch = "aarch64", target_endian = "little"))]
 const NEON_DECODE_INPUT_BLOCK: usize = 16;
-#[cfg(all(
-    feature = "std",
-    feature = "simd",
-    target_arch = "aarch64",
-    target_endian = "little"
-))]
+#[cfg(all(feature = "simd", target_arch = "aarch64", target_endian = "little"))]
 const NEON_DECODE_OUTPUT_BLOCK: usize = 12;
 
 #[cfg(all(
     target_arch = "aarch64",
     target_endian = "little",
-    any(test, all(feature = "std", feature = "simd"))
+    any(test, feature = "simd")
 ))]
 use core::arch::aarch64::{
     uint8x16_t, uint32x4_t, vaddq_u8, vandq_u8, vandq_u32, vbslq_u8, vceqq_u8, vcgeq_u8, vcltq_u8,
@@ -58,7 +43,7 @@ use core::arch::aarch64::{
 #[cfg(all(test, target_arch = "arm", target_feature = "neon"))]
 use core::arch::arm::{uint8x16_t, vdupq_n_u8, vst1q_u8};
 
-#[cfg(all(feature = "std", target_arch = "aarch64", target_endian = "little"))]
+#[cfg(all(feature = "simd", target_arch = "aarch64", target_endian = "little"))]
 pub(crate) fn neon_supports_alphabet<A>() -> bool
 where
     A: Alphabet,
@@ -66,12 +51,7 @@ where
     is_standard_or_url_safe_family::<A>()
 }
 
-#[cfg(all(
-    feature = "std",
-    feature = "simd",
-    target_arch = "aarch64",
-    target_endian = "little"
-))]
+#[cfg(all(feature = "simd", target_arch = "aarch64", target_endian = "little"))]
 pub(crate) fn encode_slice_neon<A, const PAD: bool>(
     input: &[u8],
     output: &mut [u8],
@@ -98,8 +78,9 @@ where
     let mut read = 0;
     let mut write = 0;
     while read + 12 <= input.len() {
-        // SAFETY: Runtime dispatch reaches this function only on little-endian
-        // std AArch64 where NEON is part of the target contract. The fixed
+        // SAFETY: Health-gated dispatch reaches this function only on
+        // little-endian AArch64 where runtime, static, or unsafe-token
+        // evidence proves NEON. The fixed
         // arrays satisfy the block encoder's size preconditions.
         unsafe {
             let block = &*(input.as_ptr().add(read).cast::<[u8; 12]>());
@@ -114,12 +95,7 @@ where
     Ok(write + tail_written)
 }
 
-#[cfg(all(
-    feature = "std",
-    feature = "simd",
-    target_arch = "aarch64",
-    target_endian = "little"
-))]
+#[cfg(all(feature = "simd", target_arch = "aarch64", target_endian = "little"))]
 pub(crate) fn decode_slice_neon<A, const PAD: bool>(
     input: &[u8],
     output: &mut [u8],
@@ -143,8 +119,9 @@ where
     let mut write = 0;
     while read + NEON_DECODE_INPUT_BLOCK <= input.len() {
         let mut decoded = [0u8; NEON_DECODE_OUTPUT_BLOCK];
-        // SAFETY: Runtime dispatch reaches this function only on little-endian
-        // std AArch64, where NEON is part of the target contract. The loop
+        // SAFETY: Health-gated dispatch reaches this function only on
+        // little-endian AArch64 where runtime, static, or unsafe-token
+        // evidence proves NEON. The loop
         // guard proves the fixed input view is in bounds. Whole-input scalar
         // validation above preserves public error shape before any bytes are
         // copied to caller output.
@@ -187,8 +164,8 @@ pub(crate) fn neon_available() -> bool {
 /// Admission note: a real NEON implementation must explicitly clear every
 /// vector register that carries caller data before returning, document the
 /// exact cleanup sequence in `docs/UNSAFE.md`, and include generated-assembly
-/// evidence. The `AArch64` prototype clears its used NEON registers before
-/// return as best-effort register-retention reduction.
+/// evidence. The admitted `AArch64` implementation clears its used NEON
+/// registers before return as best-effort register-retention reduction.
 ///
 /// # Safety
 ///
@@ -197,7 +174,7 @@ pub(crate) fn neon_available() -> bool {
 /// `neon` target feature. The input and output sizes are fixed by their array
 /// types.
 #[cfg(all(
-    any(test, all(feature = "std", feature = "simd")),
+    any(test, feature = "simd"),
     any(
         target_arch = "aarch64",
         all(target_arch = "arm", target_feature = "neon")
@@ -234,7 +211,7 @@ where
 #[cfg(all(
     target_arch = "aarch64",
     target_endian = "little",
-    any(test, all(feature = "std", feature = "simd"))
+    any(test, feature = "simd")
 ))]
 macro_rules! clear_neon_registers_after_vector_block {
     () => {{
@@ -301,7 +278,7 @@ macro_rules! clear_neon_registers_after_vector_block {
 #[cfg(all(
     target_arch = "aarch64",
     target_endian = "little",
-    any(test, all(feature = "std", feature = "simd"))
+    any(test, feature = "simd")
 ))]
 pub(crate) unsafe fn decode_16_bytes_neon<A, const PAD: bool>(
     input: &[u8; 16],
@@ -363,7 +340,7 @@ where
 }
 
 #[cfg(all(
-    any(test, all(feature = "std", feature = "simd", target_arch = "aarch64")),
+    any(test, all(feature = "simd", target_arch = "aarch64")),
     any(
         target_arch = "aarch64",
         all(target_arch = "arm", target_feature = "neon")
@@ -393,7 +370,7 @@ where
 #[cfg(all(
     target_arch = "aarch64",
     target_endian = "little",
-    any(test, all(feature = "std", feature = "simd"))
+    any(test, feature = "simd")
 ))]
 fn is_standard_or_url_safe_family<A>() -> bool
 where
@@ -414,7 +391,7 @@ where
 #[cfg(all(
     target_arch = "aarch64",
     target_endian = "little",
-    any(test, all(feature = "std", feature = "simd"))
+    any(test, feature = "simd")
 ))]
 #[target_feature(enable = "neon")]
 unsafe fn encode_12_bytes_neon_aarch64_standard_family<A>(input: &[u8; 12], output: &mut [u8; 16])
@@ -455,7 +432,7 @@ where
 #[cfg(all(
     target_arch = "aarch64",
     target_endian = "little",
-    any(test, all(feature = "std", feature = "simd"))
+    any(test, feature = "simd")
 ))]
 #[target_feature(enable = "neon")]
 unsafe fn encode_standard_family_indices_neon<A>(indices: uint8x16_t) -> uint8x16_t

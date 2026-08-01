@@ -146,7 +146,9 @@ Implemented on this branch now:
   fixed blocks may be accelerated, while the final tail and padding are
   completed by the scalar encoder. In-place encode may use admitted encode
   backends only after stack staging protects unread input bytes. Unsupported
-  CPUs, `no_std`, custom alphabets, and line-ending insertion stay scalar.
+  CPUs, custom alphabets, and line-ending insertion stay scalar. `no_std`
+  acceleration requires complete compile-time target features and the backend
+  health latch; otherwise it stays scalar.
 - Runtime-dispatched std `x86`/`x86_64` AVX-512 VBMI fixed-block strict decode
   in the `1.3.0` line, falling back to AVX2, then
   SSSE3/SSE4.1, and then scalar, plus little-endian std `aarch64` NEON
@@ -158,7 +160,9 @@ Implemented on this branch now:
   compaction; legacy whitespace decode may use admitted strict decode after
   scalar whitespace compaction. Strict in-place decode may use admitted strict
   decode backends only after stack staging. Unsupported CPUs, big-endian
-  AArch64, `no_std`, custom alphabets, and CT secret decode stay scalar.
+  AArch64, custom alphabets, and CT secret decode stay scalar. `no_std`
+  acceleration requires complete compile-time target features and backend
+  health support.
 - Runtime-dispatched wasm `simd128` fixed-block encode and normal strict
   decode for Standard and URL-safe alphabets when built for `wasm32` with
   `target-feature=+simd128`, `simd`, and
@@ -183,8 +187,9 @@ Planned behind admission evidence:
   strict decode only after any scalar line or whitespace compaction: no
   vectorized line wrapping, no vectorized legacy whitespace, no custom
   alphabets, no bcrypt/crypt profiles, and no constant-time-oriented secret
-  decode. Default builds, unsupported runtime CPUs, `no_std`, and all
-  out-of-scope decode surfaces remain scalar.
+  decode. Default builds, unsupported runtime CPUs, `no_std` builds without
+  complete static feature and health evidence, and all out-of-scope decode
+  surfaces remain scalar.
 - Additional custom alphabet and broader wasm
   runtime/browser fast paths only after separate SIMD admission evidence is
   complete. Default builds and unsupported runtime CPUs remain scalar.
@@ -261,10 +266,10 @@ license = "MIT OR Apache-2.0"
 | --- | --- | --- |
 | `alloc` | yes | `Vec` and encoded `String` convenience APIs. |
 | `std` | yes | `std::error::Error` support and feature base for I/O. |
-| `simd` | no | Admitted std runtime-dispatched encode and normal strict decode acceleration for Standard and URL-safe alphabets, with scalar fallback for unsupported surfaces. |
+| `simd` | no | Admitted `std` runtime-dispatched or compile-time-proven `no_std` encode and strict-decode acceleration for Standard and URL-safe alphabets, with KAT/quarantine and scalar fallback. |
 | `stream` | no | `std::io` streaming wrappers. |
 | `secrets` | no | Dependency-free 2.0 secret storage, explicit exposure/declassification, bounded constant-time-oriented transforms, and generation-bound assurance/protected-memory APIs. |
-| `checked-backend` | no | Inert 2.0 development reservation that enables `simd`; redundant backend checking is implemented later in the 2.0 plan. |
+| `checked-backend` | no | Enables `simd` plus bounded scalar/SIMD comparison, permanent process quarantine on mismatch, and one scalar retry without exposing suspect chunks. |
 | `allow-wasm32-best-effort-wipe` | no | Explicitly allow `wasm32` `secrets` builds with compiler-fence-only cleanup; ordinary codecs do not need it. |
 | `allow-compiler-fence-only-wipe` | no | Explicitly allow `secrets` builds on unsupported native architectures with compiler-fence-only cleanup after platform review. |
 | `tokio` | no | Reserved placeholder in the core crate; currently inert and dependency-free. Use `base64-ng-tokio` for the admitted async helper and streaming adapter surface. |
@@ -1269,6 +1274,12 @@ Security commitments:
   AVX2, SSSE3/SSE4.1, NEON, and narrow wasm `simd128` encode and strict decode
   paths are gated by their documented runtime profiles, and all non-admitted
   backends and API surfaces remain prototype-only or scalar.
+- Every ordinary accelerated operation/backend pair must pass a direct
+  known-answer test before first use. Runtime health reports expose its
+  generation and `never-run`, `testing`, `healthy`, or `quarantined` state;
+  malformed input cannot quarantine a backend. `checked-backend` adds bounded
+  redundant scalar comparison and scalar retry without exposing a suspect
+  chunk.
 - Local checks verify that `allow(unsafe_code)` is confined to the volatile
   wipe helpers and SIMD boundary, every unsafe function is inventoried, and
   every unsafe block has a nearby `SAFETY:` explanation. Architecture intrinsics,
@@ -1290,8 +1301,10 @@ Security commitments:
   `BackendReport::active_decode_backend()`. The
   unsafe-boundary flag is true only when the reserved `simd` feature is
   disabled; SIMD-enabled builds must rely on the release evidence scripts for
-  boundary validation. On `no_std` and non-x86 targets, candidate detection is
-  compile-time target-feature reporting, not runtime CPU probing.
+  boundary validation. On `no_std`, acceleration requires complete compile-time
+  target-feature evidence plus the atomic health latch; otherwise execution is
+  scalar. Unsafe deployment attestation is represented by a thread-bound,
+  generation-bound `StaticBackendToken` and does not bypass KAT or quarantine.
 - `runtime::require_backend_policy()` lets deployments assert scalar execution,
   disabled SIMD features, or no detected SIMD candidate.
 - `BackendPolicy::HighAssuranceScalarOnly` combines the scalar/no-SIMD

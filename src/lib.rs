@@ -151,17 +151,17 @@ pub use v2::assurance;
 pub use v2::secret;
 pub use v2::{
     AssuranceClass, Atomicity, BCRYPT_ALPHABET_NO_PAD, BINHEX_ALPHABET, BackendClass, BackendFault,
-    Base64, BodyCodec, BodyLineEnding, BodyWrap, BodyWrapError, BufferLengthError,
-    CRYPT_ALPHABET_NO_PAD, Codec, CodecBuilder, CodecBuilderError, CodecSettings,
-    ConstTransformError, CountedSink, CountedWriteError, DecodePadding, DecodedArray, DecoderState,
-    EncodePadding, EncodedArray, EncodedChunk, EncodedChunks, EncodedDisplay, EncoderState,
-    Failure, FormatWriteError, IMAP_MUTF7_ALPHABET_NO_PAD, InPlaceError, InputError,
-    InputErrorKind, MIME_BODY_STRICT, OneShotError, OperationError, OutputFull,
-    PBKDF2_ALPHABET_NO_PAD, PEM_BODY_CRLF, PEM_BODY_LF, Progress, ProtocolScope, RuntimeSpec,
-    STRICT_STANDARD_PADDED, STRICT_STANDARD_UNPADDED, STRICT_URL_SAFE_PADDED,
-    STRICT_URL_SAFE_UNPADDED, Status, Step, StrictStandardPadded, StrictStandardUnpadded,
-    StrictUrlSafePadded, StrictUrlSafeUnpadded, TerminalError, TrailingBits, ValidatedAlphabet,
-    ValidatedAlphabetError,
+    BackendHealthSnapshot, BackendHealthState, BackendInitializationReport, Base64, BodyCodec,
+    BodyLineEnding, BodyWrap, BodyWrapError, BufferLengthError, CRYPT_ALPHABET_NO_PAD, Codec,
+    CodecBuilder, CodecBuilderError, CodecSettings, ConstTransformError, CountedSink,
+    CountedWriteError, DecodePadding, DecodedArray, DecoderState, EncodePadding, EncodedArray,
+    EncodedChunk, EncodedChunks, EncodedDisplay, EncoderState, Failure, FormatWriteError,
+    IMAP_MUTF7_ALPHABET_NO_PAD, InPlaceError, InputError, InputErrorKind, MIME_BODY_STRICT,
+    OneShotError, OperationError, OutputFull, PBKDF2_ALPHABET_NO_PAD, PEM_BODY_CRLF, PEM_BODY_LF,
+    Progress, ProtocolScope, RuntimeSpec, STRICT_STANDARD_PADDED, STRICT_STANDARD_UNPADDED,
+    STRICT_URL_SAFE_PADDED, STRICT_URL_SAFE_UNPADDED, Status, Step, StrictStandardPadded,
+    StrictStandardUnpadded, StrictUrlSafePadded, StrictUrlSafeUnpadded, TerminalError,
+    TrailingBits, ValidatedAlphabet, ValidatedAlphabetError, initialize_backends,
 };
 pub use v2::{compat, legacy, web};
 mod wrap;
@@ -208,6 +208,8 @@ pub mod perf_evidence;
 
 #[cfg(feature = "simd")]
 mod simd;
+#[cfg(feature = "simd")]
+pub use simd::StaticBackendToken;
 
 /// Runtime backend reporting for security-sensitive deployments.
 ///

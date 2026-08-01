@@ -76,10 +76,8 @@ where
     let mut read = 0;
     let mut write = 0;
     while read + 48 <= input.len() {
-        // SAFETY: Runtime dispatch reaches this function only after std CPU
-        // feature detection proves AVX-512 VBMI availability. The loop guard
-        // and prevalidated output length prove the fixed-size input and output
-        // views are in bounds for the block encoder.
+        // SAFETY: Health admission proves AVX-512 VBMI support. The loop and
+        // prevalidated output length prove both fixed-size views are in bounds.
         unsafe {
             let block = &*(input.as_ptr().add(read).cast::<[u8; 48]>());
             let encoded = &mut *(output.as_mut_ptr().add(write).cast::<[u8; 64]>());
@@ -119,10 +117,8 @@ where
     let mut read = 0;
     let mut write = 0;
     while read + 24 <= input.len() {
-        // SAFETY: Runtime dispatch reaches this function only after std CPU
-        // feature detection proves AVX2 availability. The loop guard and
-        // prevalidated output length prove the fixed-size input and output
-        // views are in bounds for the block encoder.
+        // SAFETY: Health admission proves AVX2 support. The loop and
+        // prevalidated output length prove both fixed-size views are in bounds.
         unsafe {
             let block = &*(input.as_ptr().add(read).cast::<[u8; 24]>());
             let encoded = &mut *(output.as_mut_ptr().add(write).cast::<[u8; 32]>());
@@ -162,10 +158,8 @@ where
     let mut read = 0;
     let mut write = 0;
     while read + 12 <= input.len() {
-        // SAFETY: Runtime dispatch reaches this function only after std CPU
-        // feature detection proves SSSE3 and SSE4.1 availability. The fixed
-        // input and output views are in bounds because of the loop guard and
-        // prevalidated output length.
+        // SAFETY: Health admission proves SSSE3/SSE4.1 support. The loop and
+        // prevalidated output length prove both fixed-size views are in bounds.
         unsafe {
             let block = &*(input.as_ptr().add(read).cast::<[u8; 12]>());
             let encoded = &mut *(output.as_mut_ptr().add(write).cast::<[u8; 16]>());

@@ -1262,9 +1262,15 @@ SIMD admission rules for all post-`1.0` work:
 
 ## Current 2.0 Development Checkpoint
 
-Commit 23 adds independent encode, strict-decode, and scalar secret-decode
-backend reports plus stable token, exact-allocation, provider, and teardown
-snapshots. Wasm reports artifact selection rather than native CPU dispatch.
+Commit 24 adds direct per-backend KATs, operation-specific health generations,
+permanent quarantine, explicit startup initialization, bounded redundant
+`checked-backend` execution, and generation-bound static `no_std` SIMD tokens.
+Malformed input cannot alter backend health, concurrent or recursive callers
+observing an in-progress test use scalar, and suspect checked output is never
+committed. Commit 23 added independent encode, strict-decode, and scalar
+secret-decode backend reports plus stable token, exact-allocation, provider,
+and teardown snapshots. Wasm reports artifact selection rather than native CPU
+dispatch.
 Physical protection appears only on the report borrowed from the exact
 participating protected owner; global and token reports make no allocation
 claim. Commit 22 added operation-specific runtime assurance and protected

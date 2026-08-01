@@ -38,7 +38,7 @@ require_text "$review_doc" "big-endian runtime reports must remain scalar active
 require_text "$review_doc" "QEMU-tested until real hardware evidence is linked"
 require_text "$simd_doc" "Big-endian and RISC-V acceleration work is tracked as a QEMU-first evidence"
 require_text "$simd_doc" "documented as QEMU-tested and community-hardware evidence requested"
-require_text "$admission_doc" "big-endian AArch64, CT secret decode, and \`no_std\` remain scalar or"
+require_text "$admission_doc" "big-endian AArch64 and CT secret decode remain scalar or"
 require_text "$qemu_script" "not_evidence_for=real hardware performance, timing, microarchitectural behavior, or side-channel behavior"
 require_text "$qemu_script" "hardware_status=community real-hardware reports requested for s390x, powerpc64, and big-endian AArch64"
 require_text "$intrinsics_script" "stdarch_s390x"

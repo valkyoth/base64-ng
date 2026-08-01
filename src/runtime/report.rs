@@ -281,6 +281,8 @@ impl BackendReport {
 pub fn backend_report() -> BackendReport {
     let encode = active_backend();
     let strict_decode = active_decode_backend();
+    let encode_candidate = encode_candidate_backend();
+    let decode_candidate = decode_candidate_backend();
     let candidate = detected_candidate();
     let candidate_detection_mode = candidate_detection_mode();
     let accelerated_backend_active = encode != Backend::Scalar;
@@ -299,10 +301,15 @@ pub fn backend_report() -> BackendReport {
         active: encode,
         accelerated_backend_active,
         security_posture,
-        encode_backend: OperationBackendReport::ordinary(OperationKind::Encode, encode),
+        encode_backend: OperationBackendReport::ordinary(
+            OperationKind::Encode,
+            encode,
+            encode_candidate,
+        ),
         strict_decode_backend: OperationBackendReport::ordinary(
             OperationKind::StrictDecode,
             strict_decode,
+            decode_candidate,
         ),
         secret_decode_backend: OperationBackendReport::secret_decode(),
         candidate,
@@ -393,19 +400,7 @@ fn write_feature_list(
 
 #[cfg(feature = "simd")]
 fn active_backend() -> Backend {
-    match crate::simd::active_backend() {
-        crate::simd::ActiveBackend::Scalar => Backend::Scalar,
-        #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
-        crate::simd::ActiveBackend::Avx512Vbmi => Backend::Avx512Vbmi,
-        #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
-        crate::simd::ActiveBackend::Avx2 => Backend::Avx2,
-        #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
-        crate::simd::ActiveBackend::Ssse3Sse41 => Backend::Ssse3Sse41,
-        #[cfg(all(feature = "std", target_arch = "aarch64", target_endian = "little"))]
-        crate::simd::ActiveBackend::Neon => Backend::Neon,
-        #[cfg(all(feature = "simd", target_arch = "wasm32"))]
-        crate::simd::ActiveBackend::WasmSimd128 => Backend::WasmSimd128,
-    }
+    crate::encode_backend::active_encode_backend().reported()
 }
 
 #[cfg(not(feature = "simd"))]
@@ -415,23 +410,31 @@ const fn active_backend() -> Backend {
 
 #[cfg(feature = "simd")]
 fn active_decode_backend() -> Backend {
-    match crate::decode_backend::active_decode_backend() {
-        crate::decode_backend::DecodeBackend::Scalar => Backend::Scalar,
-        #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
-        crate::decode_backend::DecodeBackend::Avx512Vbmi => Backend::Avx512Vbmi,
-        #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
-        crate::decode_backend::DecodeBackend::Avx2 => Backend::Avx2,
-        #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
-        crate::decode_backend::DecodeBackend::Ssse3Sse41 => Backend::Ssse3Sse41,
-        #[cfg(all(feature = "std", target_arch = "aarch64", target_endian = "little"))]
-        crate::decode_backend::DecodeBackend::Neon => Backend::Neon,
-        #[cfg(all(feature = "simd", target_arch = "wasm32"))]
-        crate::decode_backend::DecodeBackend::WasmSimd128 => Backend::WasmSimd128,
-    }
+    crate::decode_backend::active_decode_backend().reported()
 }
 
 #[cfg(not(feature = "simd"))]
 const fn active_decode_backend() -> Backend {
+    Backend::Scalar
+}
+
+#[cfg(feature = "simd")]
+fn encode_candidate_backend() -> Backend {
+    crate::encode_backend::candidate_encode_backend().reported()
+}
+
+#[cfg(not(feature = "simd"))]
+const fn encode_candidate_backend() -> Backend {
+    Backend::Scalar
+}
+
+#[cfg(feature = "simd")]
+fn decode_candidate_backend() -> Backend {
+    crate::decode_backend::candidate_decode_backend().reported()
+}
+
+#[cfg(not(feature = "simd"))]
+const fn decode_candidate_backend() -> Backend {
     Backend::Scalar
 }
 

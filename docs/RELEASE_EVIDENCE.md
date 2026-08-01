@@ -93,6 +93,16 @@ correlated with test-only dispatch counters. See
 [`2.0_OPERATION_REPORTING.md`](2.0_OPERATION_REPORTING.md) and
 `scripts/check-2.0-operation-reporting.sh`.
 
+Commit 24 admits ordinary accelerated backends only after direct known-answer
+tests and records independent operation/backend health generations. Its gate
+fault-injects failed and panicking initialization, impossible backend lengths,
+and checked-output mismatches; proves permanent quarantine and malformed-input
+separation; compiles scalar and static `no_std` postures; and validates the
+unsafe static-token boundary. `checked-backend` uses bounded stack staging and
+scalar retry without exposing the suspect chunk. See
+[`2.0_BACKEND_HEALTH.md`](2.0_BACKEND_HEALTH.md) and
+`scripts/check-2.0-backend-health.sh`.
+
 The Commit 20 pentest follow-up also pins fail-closed forward-progress guards
 for WHATWG and legacy one-shot loops, immediate pending-state cleanup on
 secret decode failure, checked secret-array frame construction, and the

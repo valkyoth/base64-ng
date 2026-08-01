@@ -63,8 +63,8 @@ stream = ["std"]
 # Broad best-effort secret storage, scalar processing, and cleanup capability.
 # This does not attest protected memory or platform high-assurance posture.
 secrets = []
-# Reserved 2.0 redundant-verification mode. Commit 24 supplies behavior; the
-# dependency edge is frozen now so Cargo feature unification can be tested.
+# Redundant ordinary backend verification with bounded stack staging,
+# quarantine, and scalar retry. It intentionally implies SIMD.
 checked-backend = ["simd"]
 # Secret-only deployment acknowledgements. They are no-ops for ordinary
 # public-data builds and intentionally do not imply high assurance.

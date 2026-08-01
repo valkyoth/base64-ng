@@ -1,5 +1,15 @@
 use base64_ng::{DecodeError, STANDARD, STANDARD_NO_PAD, URL_SAFE, URL_SAFE_NO_PAD};
 
+fn initialize_backend_health() {
+    #[cfg(all(feature = "simd", feature = "std"))]
+    {
+        static INITIALIZE: std::sync::Once = std::sync::Once::new();
+        INITIALIZE.call_once(|| {
+            let _ = base64_ng::initialize_backends();
+        });
+    }
+}
+
 fn fill_pattern(output: &mut [u8]) {
     for (index, byte) in output.iter_mut().enumerate() {
         *byte = u8::try_from((index * 29 + 17) % 251).unwrap();
@@ -8,6 +18,7 @@ fn fill_pattern(output: &mut [u8]) {
 
 #[test]
 fn strict_decode_surfaces_match_expected_for_simd_sized_inputs() {
+    initialize_backend_health();
     let mut input = [0u8; 96];
     fill_pattern(&mut input);
 
@@ -31,6 +42,7 @@ fn strict_decode_surfaces_match_expected_for_simd_sized_inputs() {
 
 #[test]
 fn strict_decode_keeps_public_error_shape_for_simd_sized_inputs() {
+    initialize_backend_health();
     let mut encoded = [0u8; 128];
     let mut input = [0u8; 96];
     fill_pattern(&mut input);
@@ -76,6 +88,7 @@ fn strict_decode_keeps_public_error_shape_for_simd_sized_inputs() {
 ))]
 #[test]
 fn runtime_report_exposes_strict_decode_backend() {
+    initialize_backend_health();
     let expected = if std::is_x86_feature_detected!("avx512f")
         && std::is_x86_feature_detected!("avx512bw")
         && std::is_x86_feature_detected!("avx512vl")
@@ -104,6 +117,7 @@ fn runtime_report_exposes_strict_decode_backend() {
 ))]
 #[test]
 fn runtime_report_exposes_aarch64_strict_decode_backend() {
+    initialize_backend_health();
     assert_eq!(
         base64_ng::runtime::backend_report().active_decode_backend(),
         base64_ng::runtime::Backend::Neon

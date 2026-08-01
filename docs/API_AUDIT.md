@@ -415,3 +415,19 @@ Stable boundary:
 - Cleanup snapshots report wipe, physical protection, accounting, lifecycle,
   pending stage/substage, provider health, and allocation presence separately.
   Tombstones retain no address and say presence is unknown.
+
+## 2.0 Commit 24 Backend Health Surface
+
+- `initialize_backends` performs direct, non-recursive known-answer tests for
+  every accelerated ordinary encode and strict-decode backend available to the
+  process. First-use admission uses the same KAT boundary.
+- Each operation/backend pair owns a monotonic process-local generation and a
+  `NeverRun`, `Testing`, `Healthy`, or permanently `Quarantined` state.
+  Backend integrity faults remain distinct from malformed caller input.
+- `checked-backend` redundantly evaluates bounded accelerated and scalar
+  chunks, validates reported lengths before slicing, commits only matching
+  bytes, and quarantines plus retries scalar on disagreement.
+- `StaticBackendToken` represents compile-time-proven or unsafely
+  deployment-attested `no_std` SIMD capability. It is thread-bound,
+  generation-bound, and cannot bypass KAT or quarantine.
+- Secret operations remain outside ordinary SIMD health and checked mode.

@@ -34,8 +34,9 @@ where
     let mut write = 0;
     while read + SSSE3_DECODE_INPUT_BLOCK <= input.len() {
         let mut decoded = [0u8; SSSE3_DECODE_OUTPUT_BLOCK];
-        // SAFETY: Runtime dispatch reaches this function only after std CPU
-        // feature detection proves SSSE3/SSE4.1 availability. The loop guard
+        // SAFETY: Health-gated dispatch reaches this function only after
+        // runtime probing, static target features, or the unsafe token
+        // contract proves SSSE3/SSE4.1 availability. The loop guard
         // proves the fixed input view is in bounds. Whole-input scalar
         // validation above preserves public error shape before any bytes are
         // copied to caller output.
@@ -87,8 +88,9 @@ where
     let mut write = 0;
     while read + AVX2_DECODE_INPUT_BLOCK <= input.len() {
         let mut decoded = [0u8; AVX2_DECODE_OUTPUT_BLOCK];
-        // SAFETY: Runtime dispatch reaches this function only after std CPU
-        // feature detection proves AVX2 availability. The loop guard proves
+        // SAFETY: Health-gated dispatch reaches this function only after
+        // runtime probing, static target features, or the unsafe token
+        // contract proves AVX2 availability. The loop guard proves
         // the fixed input view is in bounds. Whole-input scalar validation
         // above preserves public error shape before any bytes are copied to
         // caller output.
@@ -140,8 +142,9 @@ where
     let mut write = 0;
     while read + AVX512_DECODE_INPUT_BLOCK <= input.len() {
         let mut decoded = [0u8; AVX512_DECODE_OUTPUT_BLOCK];
-        // SAFETY: Runtime dispatch reaches this function only after std CPU
-        // feature detection proves AVX-512 VBMI availability. The loop guard
+        // SAFETY: Health-gated dispatch reaches this function only after
+        // runtime probing, complete static target features, or the unsafe
+        // token contract proves AVX-512 VBMI availability. The loop guard
         // proves the fixed input view is in bounds. Whole-input scalar
         // validation above preserves public error shape before any bytes are
         // copied to caller output.

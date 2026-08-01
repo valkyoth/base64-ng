@@ -88,7 +88,7 @@ for required_text in \
     "real non-dispatchable prototype" \
     "candidate only" \
     "admitted backend" \
-    "std x86/x86_64 and little-endian std aarch64 dispatch only" \
+    "runtime-probed \`std\` dispatch or compile-time-proven" \
     "Decode acceleration" \
     "Required precision" \
     "Performance numbers are release notes evidence only" \

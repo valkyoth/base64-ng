@@ -9,40 +9,25 @@
 extern crate std;
 
 use crate::{Alphabet, DecodeError, scalar};
+#[cfg(feature = "checked-backend")]
+mod checked;
 
 /// Decode backend currently allowed to execute.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum DecodeBackend {
     /// The audited scalar implementation.
     Scalar,
-    /// std `x86`/`x86_64` AVX-512 VBMI fixed-block strict decode.
-    #[cfg(all(
-        feature = "simd",
-        feature = "std",
-        any(target_arch = "x86", target_arch = "x86_64")
-    ))]
+    /// `x86`/`x86_64` AVX-512 VBMI fixed-block strict decode.
+    #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
     Avx512Vbmi,
-    /// std `x86`/`x86_64` AVX2 fixed-block strict decode.
-    #[cfg(all(
-        feature = "simd",
-        feature = "std",
-        any(target_arch = "x86", target_arch = "x86_64")
-    ))]
+    /// `x86`/`x86_64` AVX2 fixed-block strict decode.
+    #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
     Avx2,
-    /// std `x86`/`x86_64` SSSE3/SSE4.1 fixed-block strict decode.
-    #[cfg(all(
-        feature = "simd",
-        feature = "std",
-        any(target_arch = "x86", target_arch = "x86_64")
-    ))]
+    /// `x86`/`x86_64` SSSE3/SSE4.1 fixed-block strict decode.
+    #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
     Ssse3Sse41,
-    /// little-endian std `aarch64` NEON fixed-block strict decode.
-    #[cfg(all(
-        feature = "simd",
-        feature = "std",
-        target_arch = "aarch64",
-        target_endian = "little"
-    ))]
+    /// Little-endian `aarch64` NEON fixed-block strict decode.
+    #[cfg(all(feature = "simd", target_arch = "aarch64", target_endian = "little"))]
     Neon,
     /// wasm32 `simd128` fixed-block strict decode.
     #[cfg(all(feature = "simd", target_arch = "wasm32"))]
@@ -74,11 +59,21 @@ const fn record_test_execution(_accelerated: bool) {}
 /// Returns the decode backend selected for this build and target.
 #[must_use]
 pub(crate) fn active_decode_backend() -> DecodeBackend {
-    #[cfg(all(
-        feature = "simd",
-        feature = "std",
-        any(target_arch = "x86", target_arch = "x86_64")
-    ))]
+    let backend = candidate_decode_backend();
+    if crate::v2::backend_health::admit(
+        crate::runtime::OperationKind::StrictDecode,
+        backend.reported(),
+    ) {
+        backend
+    } else {
+        DecodeBackend::Scalar
+    }
+}
+
+/// Returns the backend selected by CPU/build policy before health admission.
+#[must_use]
+pub(crate) fn candidate_decode_backend() -> DecodeBackend {
+    #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
     {
         if crate::simd::avx512_decode_available() {
             return DecodeBackend::Avx512Vbmi;
@@ -93,12 +88,7 @@ pub(crate) fn active_decode_backend() -> DecodeBackend {
         }
     }
 
-    #[cfg(all(
-        feature = "simd",
-        feature = "std",
-        target_arch = "aarch64",
-        target_endian = "little"
-    ))]
+    #[cfg(all(feature = "simd", target_arch = "aarch64", target_endian = "little"))]
     {
         if crate::simd::neon_available() {
             return DecodeBackend::Neon;
@@ -113,6 +103,24 @@ pub(crate) fn active_decode_backend() -> DecodeBackend {
     }
 
     DecodeBackend::Scalar
+}
+
+impl DecodeBackend {
+    pub(crate) const fn reported(self) -> crate::runtime::Backend {
+        match self {
+            Self::Scalar => crate::runtime::Backend::Scalar,
+            #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
+            Self::Avx512Vbmi => crate::runtime::Backend::Avx512Vbmi,
+            #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
+            Self::Avx2 => crate::runtime::Backend::Avx2,
+            #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
+            Self::Ssse3Sse41 => crate::runtime::Backend::Ssse3Sse41,
+            #[cfg(all(feature = "simd", target_arch = "aarch64", target_endian = "little"))]
+            Self::Neon => crate::runtime::Backend::Neon,
+            #[cfg(all(feature = "simd", target_arch = "wasm32"))]
+            Self::WasmSimd128 => crate::runtime::Backend::WasmSimd128,
+        }
+    }
 }
 
 /// Decodes `input` into `output` through the admitted strict decode backend.
@@ -131,44 +139,34 @@ pub(crate) fn decode_slice<A, const PAD: bool>(
 where
     A: Alphabet,
 {
-    match active_decode_backend() {
+    let backend = active_decode_backend();
+    #[cfg(feature = "checked-backend")]
+    if backend != DecodeBackend::Scalar && backend_supports::<A>(backend) {
+        record_test_execution(true);
+        return checked::decode::<A, PAD>(backend.reported(), input, output);
+    }
+
+    match backend {
         DecodeBackend::Scalar => {
             record_test_execution(false);
             scalar::decode_slice::<A, PAD>(input, output)
         }
-        #[cfg(all(
-            feature = "simd",
-            feature = "std",
-            any(target_arch = "x86", target_arch = "x86_64")
-        ))]
+        #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
         DecodeBackend::Avx512Vbmi => {
             record_test_execution(true);
             crate::simd::decode_slice_avx512::<A, PAD>(input, output)
         }
-        #[cfg(all(
-            feature = "simd",
-            feature = "std",
-            any(target_arch = "x86", target_arch = "x86_64")
-        ))]
+        #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
         DecodeBackend::Avx2 => {
             record_test_execution(true);
             crate::simd::decode_slice_avx2::<A, PAD>(input, output)
         }
-        #[cfg(all(
-            feature = "simd",
-            feature = "std",
-            any(target_arch = "x86", target_arch = "x86_64")
-        ))]
+        #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
         DecodeBackend::Ssse3Sse41 => {
             record_test_execution(true);
             crate::simd::decode_slice_ssse3_sse41::<A, PAD>(input, output)
         }
-        #[cfg(all(
-            feature = "simd",
-            feature = "std",
-            target_arch = "aarch64",
-            target_endian = "little"
-        ))]
+        #[cfg(all(feature = "simd", target_arch = "aarch64", target_endian = "little"))]
         DecodeBackend::Neon => {
             record_test_execution(true);
             crate::simd::decode_slice_neon::<A, PAD>(input, output)
@@ -181,6 +179,23 @@ where
     }
 }
 
+#[cfg(feature = "checked-backend")]
+fn backend_supports<A: Alphabet>(backend: DecodeBackend) -> bool {
+    match backend {
+        DecodeBackend::Scalar => false,
+        #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
+        DecodeBackend::Avx512Vbmi => crate::simd::avx512_supports_alphabet::<A>(),
+        #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
+        DecodeBackend::Avx2 => crate::simd::avx2_supports_alphabet::<A>(),
+        #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
+        DecodeBackend::Ssse3Sse41 => crate::simd::ssse3_sse41_supports_alphabet::<A>(),
+        #[cfg(all(feature = "simd", target_arch = "aarch64", target_endian = "little"))]
+        DecodeBackend::Neon => crate::simd::neon_supports_alphabet::<A>(),
+        #[cfg(all(feature = "simd", target_arch = "wasm32"))]
+        DecodeBackend::WasmSimd128 => crate::simd::wasm_simd128_supports_alphabet::<A>(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{DecodeBackend, active_decode_backend};
@@ -188,39 +203,22 @@ mod tests {
     #[test]
     fn boundary_uses_only_admitted_backends() {
         let backend = active_decode_backend();
-        #[cfg(all(
-            feature = "simd",
-            feature = "std",
-            any(target_arch = "x86", target_arch = "x86_64")
-        ))]
+        #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
         if backend == DecodeBackend::Avx512Vbmi {
             assert!(crate::simd::avx512_decode_available());
             return;
         }
-        #[cfg(all(
-            feature = "simd",
-            feature = "std",
-            any(target_arch = "x86", target_arch = "x86_64")
-        ))]
+        #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
         if backend == DecodeBackend::Avx2 {
             assert!(crate::simd::avx2_decode_available());
             return;
         }
-        #[cfg(all(
-            feature = "simd",
-            feature = "std",
-            any(target_arch = "x86", target_arch = "x86_64")
-        ))]
+        #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
         if backend == DecodeBackend::Ssse3Sse41 {
             assert!(crate::simd::ssse3_sse41_decode_available());
             return;
         }
-        #[cfg(all(
-            feature = "simd",
-            feature = "std",
-            target_arch = "aarch64",
-            target_endian = "little"
-        ))]
+        #[cfg(all(feature = "simd", target_arch = "aarch64", target_endian = "little"))]
         if backend == DecodeBackend::Neon {
             assert!(crate::simd::neon_available());
             return;

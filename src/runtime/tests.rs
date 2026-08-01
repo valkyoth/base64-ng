@@ -7,6 +7,7 @@ use crate::{Standard, decode_backend, encode_backend};
 
 #[test]
 fn per_operation_reports_match_qualifying_dispatch_counters() {
+    initialize_runtime_backend_health();
     let input = [0x5au8; 96];
     let mut encoded = [0u8; 128];
     let encoded_len = encode_backend::encode_slice::<Standard, true>(&input, &mut encoded).unwrap();
@@ -34,6 +35,22 @@ fn per_operation_reports_match_qualifying_dispatch_counters() {
         report.secret_decode_backend.security_posture,
         OperationSecurityPosture::ScalarConstantTimeOriented
     );
+}
+
+fn initialize_runtime_backend_health() {
+    let _ = crate::initialize_backends();
+    #[cfg(all(feature = "std", feature = "simd"))]
+    for _ in 0..10_000 {
+        let report = backend_report();
+        if report.encode_backend.health_posture != super::BackendHealthPosture::Testing
+            && report.strict_decode_backend.health_posture != super::BackendHealthPosture::Testing
+        {
+            return;
+        }
+        std::thread::yield_now();
+    }
+    #[cfg(all(feature = "std", feature = "simd"))]
+    panic!("backend health initialization did not leave Testing");
 }
 
 #[test]
@@ -78,9 +95,14 @@ fn scalar_report(ct_gate_posture: CtGatePosture) -> BackendReport {
         active: Backend::Scalar,
         accelerated_backend_active: false,
         security_posture: SecurityPosture::ScalarOnly,
-        encode_backend: OperationBackendReport::ordinary(OperationKind::Encode, Backend::Scalar),
+        encode_backend: OperationBackendReport::ordinary(
+            OperationKind::Encode,
+            Backend::Scalar,
+            Backend::Scalar,
+        ),
         strict_decode_backend: OperationBackendReport::ordinary(
             OperationKind::StrictDecode,
+            Backend::Scalar,
             Backend::Scalar,
         ),
         secret_decode_backend: OperationBackendReport::secret_decode(),
@@ -99,30 +121,13 @@ fn scalar_report(ct_gate_posture: CtGatePosture) -> BackendReport {
 fn encode_id(backend: encode_backend::EncodeBackend) -> &'static str {
     match backend {
         encode_backend::EncodeBackend::Scalar => "scalar",
-        #[cfg(all(
-            feature = "simd",
-            feature = "std",
-            any(target_arch = "x86", target_arch = "x86_64")
-        ))]
+        #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
         encode_backend::EncodeBackend::Avx512Vbmi => "avx512-vbmi",
-        #[cfg(all(
-            feature = "simd",
-            feature = "std",
-            any(target_arch = "x86", target_arch = "x86_64")
-        ))]
+        #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
         encode_backend::EncodeBackend::Avx2 => "avx2",
-        #[cfg(all(
-            feature = "simd",
-            feature = "std",
-            any(target_arch = "x86", target_arch = "x86_64")
-        ))]
+        #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
         encode_backend::EncodeBackend::Ssse3Sse41 => "ssse3-sse4.1",
-        #[cfg(all(
-            feature = "simd",
-            feature = "std",
-            target_arch = "aarch64",
-            target_endian = "little"
-        ))]
+        #[cfg(all(feature = "simd", target_arch = "aarch64", target_endian = "little"))]
         encode_backend::EncodeBackend::Neon => "neon",
         #[cfg(all(feature = "simd", target_arch = "wasm32"))]
         encode_backend::EncodeBackend::WasmSimd128 => "wasm-simd128",
@@ -132,30 +137,13 @@ fn encode_id(backend: encode_backend::EncodeBackend) -> &'static str {
 fn decode_id(backend: decode_backend::DecodeBackend) -> &'static str {
     match backend {
         decode_backend::DecodeBackend::Scalar => "scalar",
-        #[cfg(all(
-            feature = "simd",
-            feature = "std",
-            any(target_arch = "x86", target_arch = "x86_64")
-        ))]
+        #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
         decode_backend::DecodeBackend::Avx512Vbmi => "avx512-vbmi",
-        #[cfg(all(
-            feature = "simd",
-            feature = "std",
-            any(target_arch = "x86", target_arch = "x86_64")
-        ))]
+        #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
         decode_backend::DecodeBackend::Avx2 => "avx2",
-        #[cfg(all(
-            feature = "simd",
-            feature = "std",
-            any(target_arch = "x86", target_arch = "x86_64")
-        ))]
+        #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
         decode_backend::DecodeBackend::Ssse3Sse41 => "ssse3-sse4.1",
-        #[cfg(all(
-            feature = "simd",
-            feature = "std",
-            target_arch = "aarch64",
-            target_endian = "little"
-        ))]
+        #[cfg(all(feature = "simd", target_arch = "aarch64", target_endian = "little"))]
         decode_backend::DecodeBackend::Neon => "neon",
         #[cfg(all(feature = "simd", target_arch = "wasm32"))]
         decode_backend::DecodeBackend::WasmSimd128 => "wasm-simd128",

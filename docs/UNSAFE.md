@@ -1475,6 +1475,26 @@ external provider can opt itself into this capability. The implementation does
 not move backing bytes; it only permits moving the unique owner when the
 provider contract has been reviewed for cross-thread teardown.
 
+## 2.0 Static Backend Attestation Token
+
+### `StaticBackendToken::assume_supported`
+
+Location: `src/simd/static_token.rs`
+
+This unsafe constructor is the sole caller-attested `no_std` SIMD selection
+boundary. The caller must prove the complete CPU feature bundle, enabled OS
+vector state, compatible ABI behavior, and that the constructing thread cannot
+migrate to an incompatible CPU. A false attestation can execute an unsupported
+instruction during the mandatory direct known-answer test and terminate the
+process. The token is non-forgeable through safe code, neither `Send` nor
+`Sync`, and generation-bound. It bypasses runtime probing only; bounds,
+canonicality, KAT, quarantine, and reporting remain mandatory.
+
+Safe static selection uses only compile-time `target_feature` evidence. A
+target without pointer-width atomics cannot maintain the required health latch
+and remains scalar. Architecture kernel methods are exposed through this token
+only by their later backend-specific admission commits.
+
 ## Admission Rule
 
 Unsafe SIMD can become an active backend only after scalar differential tests,
@@ -1497,6 +1517,8 @@ Any admitted SIMD path that processes caller data must also document its
 register-retention cleanup strategy and include the matching explicit register
 cleanup implementation, generated-assembly evidence, and tests in the admission
 evidence. This is a hard release blocker before dispatch, not an optional
-follow-up. Current x86 encode prototypes already load caller bytes into vector
-registers and include best-effort register cleanup as test evidence; runtime
-dispatch remains blocked until the full admission evidence is complete.
+follow-up. Current admitted x86 encode and strict-decode backends load caller
+bytes into vector registers and include best-effort register cleanup plus
+generated-code evidence. Commit 24 additionally places ordinary accelerated
+execution behind direct KAT, generation, and quarantine checks; later 2.0
+architecture rewrites must renew the complete admission evidence.

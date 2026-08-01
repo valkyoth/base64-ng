@@ -308,6 +308,11 @@ impl core::fmt::Display for BackendPolicy {
 mod operation;
 mod report;
 
+#[cfg(feature = "simd")]
+pub use crate::StaticBackendToken;
+pub use crate::{
+    BackendHealthSnapshot, BackendHealthState, BackendInitializationReport, initialize_backends,
+};
 pub use operation::{
     BackendHealthPosture, BackendIdentifier, OperationBackendReport, OperationBackendSnapshot,
     OperationKind, OperationSecurityPosture, WasmArtifactPosture, WasmRuntimePosture,

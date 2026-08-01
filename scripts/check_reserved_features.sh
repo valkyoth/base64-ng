@@ -55,7 +55,7 @@ if ! grep -q '^checked-backend = \["simd"\]$' Cargo.toml; then
     exit 1
 fi
 
-check_reserved_feature "checked-backend capability reservation" "checked-backend"
+check_reserved_feature "checked-backend capability" "checked-backend"
 check_reserved_feature \
     "all reserved features together" \
     "tokio,kani,fuzzing,secrets,checked-backend"

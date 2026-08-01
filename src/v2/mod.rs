@@ -8,7 +8,7 @@ pub(crate) mod alphabet;
 mod append;
 #[cfg(feature = "secrets")]
 pub mod assurance;
-mod backend_health;
+pub(crate) mod backend_health;
 mod bounded;
 mod chunks;
 pub mod compat;
@@ -49,6 +49,9 @@ pub mod web;
 mod wrapping;
 
 pub use alphabet::{BINHEX_ALPHABET, ValidatedAlphabet, ValidatedAlphabetError};
+pub use backend_health::{
+    BackendHealthSnapshot, BackendHealthState, BackendInitializationReport, initialize_backends,
+};
 pub use bounded::{BufferLengthError, DecodedArray, EncodedArray};
 pub use chunks::{EncodedChunk, EncodedChunks};
 pub use const_transforms::ConstTransformError;

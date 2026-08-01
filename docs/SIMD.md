@@ -114,17 +114,17 @@ runtime behavior for that line.
 - Encode and normal strict decode entry points pass through internal backend
   boundaries. In-place encode may use admitted encode backends only after
   stack staging protects unread input bytes. Strict decode may use the
-  admitted AVX-512 VBMI, AVX2, or SSSE3/SSE4.1 backend on std x86/x86_64
-  builds, or the admitted NEON backend on little-endian std AArch64 builds,
-  with the `simd` feature; every unsupported decode surface still falls back to
+  admitted AVX-512 VBMI, AVX2, or SSSE3/SSE4.1 backend on x86/x86_64, or the
+  admitted NEON backend on little-endian AArch64, with the `simd` feature.
+  `std` uses runtime probing; `no_std` requires complete static target-feature
+  evidence and pointer-width atomics. Every unsupported surface falls back to
   scalar.
 - With the `simd` feature enabled, the private dispatch scaffold detects
   AVX-512 VBMI, AVX2, SSSE3/SSE4.1, NEON, and wasm `simd128` candidates.
-  Only std `x86`/`x86_64` AVX-512 VBMI, AVX2, SSSE3/SSE4.1, and
-  little-endian std `aarch64` NEON encode can become active; normal strict
-  decode may also use the admitted x86/x86_64 or little-endian AArch64 backend
-  through its separate decode boundary. All other candidates still execute
-  scalar code.
+  Admitted x86/x86_64, little-endian AArch64, and narrow wasm backends can
+  become active after their direct KAT passes. Normal strict decode uses its
+  separate operation-specific health latch. All unsupported candidates still
+  execute scalar code.
 - Admitted SIMD encode paths run only when the current input can fill at least
   one block for the selected backend: 48 bytes for AVX-512 VBMI, 24 bytes for
   AVX2, and 12 bytes for SSSE3/SSE4.1 or NEON. Shorter inputs use scalar encode
@@ -145,14 +145,14 @@ runtime behavior for that line.
   compaction. Strict in-place decode may use admitted strict decode backends
   only after stack staging. CT secret decode, custom alphabets, and big-endian
   AArch64 remain scalar.
-- AVX-512 VBMI encode is admitted for std `x86`/`x86_64` Standard and URL-safe
+- AVX-512 VBMI encode is admitted for `x86`/`x86_64` Standard and URL-safe
   alphabet families. It uses AVX-512 lane-local byte shuffling, vector
   shifts/masks, and VBMI byte permutes over the alphabet table for fixed
   48-byte input blocks, then clears ZMM/YMM state before returning. Runtime
   dispatch uses `std::is_x86_feature_detected!` and requires `avx512f`,
   `avx512bw`, `avx512vl`, and `avx512vbmi`; unsupported CPUs fall back to
   AVX2, SSSE3/SSE4.1, or scalar. Final tail and padding completion use scalar
-  code. Custom alphabets, `no_std`, line-ending insertion, and every decode
+  code. Custom alphabets, line-ending insertion, and every decode
   surface outside the separate AVX-512/AVX2/SSSE3/SSE4.1/NEON strict decode
   admission stay scalar. In-place encode may enter only through stack staging.
 - Runtime backend identifiers expose their required CPU feature bundles through
@@ -164,32 +164,32 @@ runtime behavior for that line.
   compile-time target features.
 - Runtime backend reports expose `snapshot()` for structured audit logging
   without parsing formatted strings.
-- SSSE3/SSE4.1 encode is admitted for std `x86`/`x86_64` Standard and
+- SSSE3/SSE4.1 encode is admitted for `x86`/`x86_64` Standard and
   URL-safe alphabet families. It uses SSSE3 byte shuffling, SSE lane
   shifts/masks, and SSE4.1 byte blending for fixed 12-byte input blocks, then
   clears XMM registers before returning. Runtime dispatch uses
   `std::is_x86_feature_detected!`; unsupported CPUs execute scalar code.
-  Custom alphabets, final tail/padding completion, `no_std`, line-ending
+  Custom alphabets, final tail/padding completion, line-ending
   insertion, and every decode surface outside the separate
   AVX-512/AVX2/SSSE3/SSE4.1/NEON strict decode admission stay scalar.
   In-place encode may enter admitted encode backends only through stack
   staging.
-- AVX2 encode is admitted for std `x86`/`x86_64` Standard and URL-safe alphabet
+- AVX2 encode is admitted for `x86`/`x86_64` Standard and URL-safe alphabet
   families. It uses AVX2 lane-local byte shuffling, vector shifts/masks, and
   byte blending for fixed 24-byte input blocks, then clears XMM/YMM state
   before returning. Runtime dispatch uses `std::is_x86_feature_detected!`;
   unsupported CPUs fall back to SSSE3/SSE4.1 or scalar. Final tail and padding
-  completion use scalar code. Custom alphabets, `no_std`, line-ending
+  completion use scalar code. Custom alphabets, line-ending
   insertion, and every decode surface outside the separate
   AVX-512/AVX2/SSSE3/SSE4.1/NEON strict decode admission stay scalar.
   In-place encode may enter admitted encode backends only through stack
   staging.
-- AArch64 NEON encode is admitted for little-endian std `aarch64` Standard and
+- AArch64 NEON encode is admitted for little-endian `aarch64` Standard and
   URL-safe alphabet families. It uses NEON table lookup, vector shifts/masks,
   and byte-select alphabet mapping for fixed 12-byte input blocks, then clears
   used NEON registers before returning. NEON is mandatory for the admitted
   little-endian AArch64 target. Final tail and padding completion use scalar
-  code. Custom alphabets, big-endian AArch64, 32-bit `arm+neon`, `no_std`,
+  code. Custom alphabets, big-endian AArch64, 32-bit `arm+neon`,
   line-ending insertion, and every decode surface outside the separate
   AVX-512/AVX2/SSSE3/SSE4.1/NEON strict decode admission stay scalar. In-place
   encode may enter only through stack staging.
@@ -199,7 +199,9 @@ runtime behavior for that line.
   `crypt(3)`, custom alphabets, and other non-Standard-family alphabets remain
   scalar because accelerated alphabet mapping has not been separately proven.
   Wrapped encode may still use the admitted unwrapped staging step, but
-  line-ending insertion is scalar. `no_std` runtime dispatch remains scalar.
+  line-ending insertion is scalar. `no_std` has no runtime probing; it may use
+  SIMD only when the complete compile-time target-feature bundle and atomic
+  backend-health latch are available, otherwise it remains scalar.
 - wasm `simd128` is admitted in `1.3.3` for ordinary wasm32 binaries compiled
   with `target-feature=+simd128` and the `simd` feature. The admitted scope is Standard and URL-safe
   public encode plus normal strict decode. It uses wasm byte shuffling, vector
@@ -227,19 +229,20 @@ runtime behavior for that line.
 - `runtime::backend_report()` reports the active backend, detected candidate,
   detection mode, SIMD feature status, security posture, and a
   conservative unsafe-boundary posture flag. The flag is true only when the
-  reserved `simd` feature is disabled; SIMD-enabled builds include additional
-  private prototype boundaries and must use the release evidence scripts for
-  boundary validation.
+  `simd` feature is disabled; SIMD-enabled builds include additional private
+  audited unsafe boundaries and must use the release evidence scripts for
+  boundary validation. Commit 24 adds per-operation health state, generation,
+  and stable backend-fault telemetry.
 - On `x86`/`x86_64` with `std`, candidate detection uses
   `std::is_x86_feature_detected!` runtime CPU probing. On `no_std`, wasm, and
   current ARM builds, candidate detection is compile-time target-feature
   reporting. A binary compiled with `-C target-feature=+avx2` can therefore
   report an AVX2 candidate even if it is deployed on a CPU that cannot execute
-  AVX2 instructions. Active x86/x86_64 encode dispatch is std runtime-probed
-  only; active AArch64 NEON encode dispatch is little-endian std-only and
-  relies on the mandatory AArch64 NEON target contract. Any future `no_std`
-  SIMD activation must require an explicit caller-side CPU contract or remain
-  disabled where runtime probing is unavailable.
+  AVX2 instructions. Safe `no_std` acceleration therefore requires the full
+  compile-time target-feature bundle, pointer-width atomics, and a passing
+  direct KAT. The thread-bound `StaticBackendToken::assume_supported` is the
+  only unsafe deployment-attested alternative; false attestation violates its
+  safety contract.
 - `runtime::require_backend_policy()` allows deployments to enforce scalar
   execution, disabled SIMD features, or no detected SIMD candidate.
 - `BackendPolicy::HighAssuranceScalarOnly` combines scalar execution, disabled
