@@ -131,6 +131,27 @@ fn serializes_additional_field_profiles() {
 }
 
 #[test]
+fn wrapped_profiles_round_trip_across_multiple_line_boundaries() {
+    for len in 0..=256 {
+        let payload = (0..len)
+            .map(|index| u8::try_from((index * 73 + len * 19) % 256).unwrap())
+            .collect::<Vec<_>>();
+
+        let mime = MimeMessage {
+            payload: payload.clone(),
+        };
+        let encoded = serde_json::to_string(&mime).unwrap();
+        assert_eq!(serde_json::from_str::<MimeMessage>(&encoded).unwrap(), mime);
+
+        let pem = PemMessage {
+            payload: payload.clone(),
+        };
+        let encoded = serde_json::to_string(&pem).unwrap();
+        assert_eq!(serde_json::from_str::<PemMessage>(&encoded).unwrap(), pem);
+    }
+}
+
+#[test]
 fn wrapper_types_round_trip() {
     let standard = Base64Standard::new(b"hello".to_vec());
     let encoded = serde_json::to_string(&standard).unwrap();

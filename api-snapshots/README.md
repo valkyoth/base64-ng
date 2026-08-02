@@ -9,6 +9,9 @@ inventory.
 Commit 38 pins the Tokio writer migration to shared 2.0 state, including its
 accepted/committed progress and checked-recovery API.
 
+Commit 39 pins the Serde migration to validated 2.0 codec specifications and
+records its fixed-capacity ordinary and fixed-work secret field modules.
+
 Snapshots are generated with:
 
 ```text

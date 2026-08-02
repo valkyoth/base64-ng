@@ -144,6 +144,7 @@ for required_script in \
     "scripts/check-2.0-format-append-chunks.sh" \
     "scripts/check-2.0-bytes.sh" \
     "scripts/check-2.0-tokio-writers.sh" \
+    "scripts/check-2.0-serde.sh" \
     "scripts/check-2.0-in-place.sh" \
     "scripts/check-2.0-in-place-sanitizers.sh" \
     "scripts/check-2.0-wasm-loader.sh" \
@@ -566,6 +567,7 @@ for required_package_file in \
     "api-snapshots/README.md" \
     "api-snapshots/2.0-development/base64-ng.txt" \
     "api-snapshots/2.0-development/base64-ng-bytes.txt" \
+    "api-snapshots/2.0-development/base64-ng-serde.txt" \
     "api-snapshots/2.0-development/base64-ng-tokio.txt" \
     "api-snapshots/v1.3.9/base64-ng.txt" \
     "api-snapshots/v1.3.9/base64-ng-bytes.txt" \
@@ -581,6 +583,7 @@ for required_package_file in \
     "docs/2.0_BYTES_INTEGRATION.md" \
     "docs/2.0_TOKIO_ASYNC_READ.md" \
     "docs/2.0_TOKIO_ASYNC_WRITE.md" \
+    "docs/2.0_SERDE_INTEGRATION.md" \
     "docs/2.0_IN_PLACE_OPERATIONS.md" \
     "docs/2.0_DEVICE_VERIFICATION_QUEUE.md" \
     "docs/2.0_PROFILES_AND_TERMINOLOGY.md" \
@@ -631,6 +634,7 @@ for required_package_file in \
     "scripts/check-2.0-bytes.sh" \
     "scripts/check-2.0-tokio-readers.sh" \
     "scripts/check-2.0-tokio-writers.sh" \
+    "scripts/check-2.0-serde.sh" \
     "scripts/check-2.0-in-place.sh" \
     "scripts/check-2.0-in-place-sanitizers.sh" \
     "scripts/check-2.0-neon-hot-paths.sh" \

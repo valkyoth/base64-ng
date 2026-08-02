@@ -22,6 +22,7 @@ include = [
 default = ["alloc"]
 alloc = ["base64-ng/alloc", "serde/alloc"]
 std = ["alloc", "base64-ng/std", "serde/std"]
+secrets = ["alloc", "base64-ng/secrets"]
 
 [dependencies]
 base64-ng = { version = "2.0.0", path = "../..", default-features = false }

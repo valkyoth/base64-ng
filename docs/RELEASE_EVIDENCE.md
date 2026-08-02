@@ -278,6 +278,11 @@ The release gate runs:
   backpressure, dropped pending futures, retryable write/flush/shutdown
   failures, checked recovery, terminal cleanup, release tests, Miri coverage,
   and shared-state routing checks
+- Serde integration through `scripts/check-2.0-serde.sh`, including validated
+  2.0 codec routing, fixed-capacity ordinary output, fixed-work wiping secret
+  output, opaque secret errors, borrowed string/byte input, explicit
+  human-readable versus binary text representation, wrapped-body streaming,
+  and no-default-feature, clippy, and documentation checks
 - 2.0 validated-alphabet evidence through
   `scripts/check-2.0-alphabet.sh`, including const compile acceptance and
   rejection, exhaustive invalid-table diagnostics, all-value mapping parity,

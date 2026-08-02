@@ -483,11 +483,13 @@ assert_eq!(key.encode_base64::<8>().unwrap().as_str(), "aGVsbG8=");
 ```
 
 `base64-ng-serde` provides explicit serialization wrappers without admitting
-`serde` into the core package:
+`serde` into the core package. Its 2.0 adapters use validated codec
+specifications, borrowed encoded input where the format permits it, and
+explicit string-versus-byte-string serializer behavior:
 
 ```toml
 [dependencies]
-base64-ng-serde = "1.3.9"
+base64-ng-serde = { version = "2.0.0", features = ["secrets"] }
 serde = { version = "1.0.229", features = ["derive"] }
 ```
 
@@ -500,7 +502,11 @@ struct Message {
 ```
 
 Field-level modules are available for `standard`, `standard_no_pad`,
-`url_safe`, `url_safe_no_pad`, `mime`, and `pem`.
+`url_safe`, `url_safe_no_pad`, `mime`, and `pem`. Matching `bounded::*`
+modules decode into fixed-capacity `DecodedArray<CAP>` values. The optional
+`secret::*` modules decode strict Standard and URL-safe fields through
+fixed-work frames into wiping `SecretArray<CAP>` storage. General Serde format
+parsing remains timing-variable and outside that secret boundary.
 
 `base64-ng-bytes` provides fragment-preserving `Bytes`, `Buf`, and `BufMut`
 helpers over the sealed 2.0 codec. Owned results are transactional, while

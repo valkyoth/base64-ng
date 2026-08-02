@@ -92,7 +92,9 @@ do
             echo "api snapshots: base64-ng drifted from the reviewed 2.0 development API" >&2
             exit 1
         fi
-    elif [ "$package" = "base64-ng-bytes" ] || [ "$package" = "base64-ng-tokio" ]; then
+    elif [ "$package" = "base64-ng-bytes" ] || \
+        [ "$package" = "base64-ng-serde" ] || \
+        [ "$package" = "base64-ng-tokio" ]; then
         development="$development_dir/$package.txt"
         if [ "$mode" = "--update" ]; then
             cp "$generated" "$development"

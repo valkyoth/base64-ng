@@ -202,6 +202,9 @@ scripts/check-2.0-tokio-readers.sh
 echo "checks: 2.0 Tokio AsyncWrite integration"
 scripts/check-2.0-tokio-writers.sh
 
+echo "checks: 2.0 Serde integration"
+scripts/check-2.0-serde.sh
+
 echo "checks: dudect timing harness"
 scripts/check_dudect.sh
 

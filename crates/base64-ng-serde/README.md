@@ -31,12 +31,11 @@ The core `base64-ng` crate intentionally does not depend on `serde`. This
 companion crate provides explicit wrappers for applications that already admit
 `serde` in their dependency policy.
 
-The wrapper types clear their initialized bytes on drop as a best-effort
-retention-reduction measure, but they are still interoperability types. They
-serialize bytes into visible Base64 text, clones are independent copies, and
-deserialization uses the normal strict decoder rather than the `ct` module. Do
-not use this crate as the primary path for private keys, bearer tokens, or
-other fields whose malformed-input timing matters.
+The compatibility wrapper types clear their initialized bytes on drop as a
+retention-reduction measure, but they remain ordinary interoperability types.
+Human-readable formats receive a string; binary formats receive a byte string
+containing the same Base64 text. Deserialization prefers borrowed encoded
+input and allocates only the exact decoded vector.
 
 ```rust
 use base64_ng_serde::Base64Standard;
@@ -58,5 +57,23 @@ struct Message {
 
 Available field modules are `standard`, `standard_no_pad`, `url_safe`,
 `url_safe_no_pad`, `mime`, and `pem`. MIME and PEM use the strict wrapping
-profiles from `base64-ng`; they are interoperability helpers, not
-constant-time-oriented secret decoders.
+profiles from `base64-ng` and stream body bytes without a compacted encoded
+copy.
+
+Fixed-capacity ordinary fields use matching modules below `bounded`:
+
+```rust
+use base64_ng::DecodedArray;
+
+#[derive(serde::Serialize, serde::Deserialize)]
+struct BoundedMessage {
+    #[serde(with = "base64_ng_serde::bounded::standard")]
+    payload: DecodedArray<32>,
+}
+```
+
+Enable `secrets` for fixed-work Standard and URL-safe deserialization into
+wiping `base64_ng::secret::SecretArray<CAP>`. Serde format parsing before the
+adapter remains timing-variable and may allocate. See
+[`docs/2.0_SERDE_INTEGRATION.md`](https://github.com/valkyoth/base64-ng/blob/main/docs/2.0_SERDE_INTEGRATION.md)
+for the exact boundary.
