@@ -1,13 +1,15 @@
-import { Codecs, createBase64Ng } from "./package/src/index.js";
-
-const codecs = [
-  Codecs.STANDARD,
-  Codecs.STANDARD_NO_PAD,
-  Codecs.URL_SAFE,
-  Codecs.URL_SAFE_NO_PAD,
-];
+let Codecs;
+let createBase64Ng;
+let result;
 
 try {
+  ({ Codecs, createBase64Ng } = await import("./package/src/index.js"));
+  const codecs = [
+    Codecs.STANDARD,
+    Codecs.STANDARD_NO_PAD,
+    Codecs.URL_SAFE,
+    Codecs.URL_SAFE_NO_PAD,
+  ];
   const scalar = await createBase64Ng({ artifact: "scalar" });
   const simd = await createBase64Ng({ artifact: "simd128" });
   const automatic = await createBase64Ng();
@@ -44,16 +46,25 @@ try {
     const scalarTime = measure(() => scalar.encode(benchmarkInput));
     const simdTime = measure(() => simd.encode(benchmarkInput));
     const metrics = `scalar=${scalarTime.toFixed(3)}ms simd128=${simdTime.toFixed(3)}ms`;
-    document.body.dataset.base64NgWasmLoaderSmoke = "pass";
-    document.getElementById("result").textContent = `BASE64_NG_WASM_LOADER_BROWSER_PASS ${metrics}`;
+    result = `BASE64_NG_WASM_LOADER_BROWSER_PASS ${metrics}`;
   } finally {
     scalar.dispose();
     simd.dispose();
     automatic.dispose();
   }
 } catch (error) {
-  document.body.dataset.base64NgWasmLoaderSmoke = "fail";
-  document.getElementById("result").textContent = `BASE64_NG_WASM_LOADER_BROWSER_FAIL ${error}`;
+  result = `BASE64_NG_WASM_LOADER_BROWSER_FAIL ${error}`;
+}
+document.body.dataset.base64NgWasmLoaderSmoke = result.includes("_PASS") ? "pass" : "fail";
+document.getElementById("result").textContent = result;
+await reportResult(result);
+
+async function reportResult(result) {
+  await fetch("/__base64_ng_wasm_loader_result", {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=UTF-8" },
+    body: result,
+  });
 }
 
 function pattern(length) {

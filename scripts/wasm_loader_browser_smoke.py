@@ -7,6 +7,7 @@ import argparse
 import contextlib
 import functools
 import http.server
+import os
 import pathlib
 import shutil
 import subprocess
@@ -14,6 +15,7 @@ import sys
 import tempfile
 import threading
 import time
+from dataclasses import dataclass, field
 
 from wasm_webdriver_smoke import capabilities, free_port, request, session_id, wait_for_driver
 
@@ -22,56 +24,118 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 SERVE_ROOT = ROOT / "target" / "wasm-loader-package"
 PAGE = "browser-smoke.html"
 PASS_TEXT = "BASE64_NG_WASM_LOADER_BROWSER_PASS"
+FAIL_TEXT = "BASE64_NG_WASM_LOADER_BROWSER_FAIL"
+
+
+@dataclass
+class BrowserResult:
+    event: threading.Event = field(default_factory=threading.Event)
+    text: str = ""
 
 
 class QuietHandler(http.server.SimpleHTTPRequestHandler):
+    def __init__(self, *args: object, result: BrowserResult, **kwargs: object) -> None:
+        self.result = result
+        super().__init__(*args, **kwargs)
+
     def log_message(self, _format: str, *_args: object) -> None:
         pass
 
+    def do_POST(self) -> None:  # noqa: N802 - inherited HTTP handler API.
+        if self.path != "/__base64_ng_wasm_loader_result":
+            self.send_error(404)
+            return
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+        except ValueError:
+            self.send_error(400)
+            return
+        if not 0 < length <= 4096:
+            self.send_error(400)
+            return
+        body = self.rfile.read(length).decode("utf-8", errors="replace")
+        self.result.text = body
+        self.result.event.set()
+        self.send_response(204)
+        self.end_headers()
+
 
 @contextlib.contextmanager
-def serve() -> str:
+def serve() -> tuple[str, BrowserResult]:
     if not (SERVE_ROOT / "package" / "src" / "index.js").is_file():
         subprocess.run([str(ROOT / "scripts" / "check-2.0-wasm-loader.sh")], cwd=ROOT, check=True)
-    handler = functools.partial(QuietHandler, directory=SERVE_ROOT)
+    result = BrowserResult()
+    handler = functools.partial(QuietHandler, directory=SERVE_ROOT, result=result)
     server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     try:
-        yield f"http://127.0.0.1:{server.server_port}/{PAGE}"
+        yield f"http://127.0.0.1:{server.server_port}/{PAGE}", result
     finally:
         server.shutdown()
         server.server_close()
         thread.join(timeout=5)
 
 
-def run_chromium(binary: str, url: str, timeout: float) -> None:
+def run_chromium(
+    binary: str, url: str, timeout: float, browser_result: BrowserResult
+) -> None:
     profile = pathlib.Path(tempfile.mkdtemp(prefix="base64-ng-wasm-loader-", dir=SERVE_ROOT))
+    log_path = profile / "chromium.log"
+    environment = os.environ.copy()
+    environment.update(
+        {
+            "HOME": str(profile),
+            "XDG_CACHE_HOME": str(profile / "cache"),
+            "XDG_CONFIG_HOME": str(profile / "config"),
+        }
+    )
     try:
-        result = subprocess.run(
-            [
-                binary,
-                "--headless=new",
-                "--disable-gpu",
-                "--no-sandbox",
-                "--disable-dev-shm-usage",
-                "--virtual-time-budget=30000",
-                f"--user-data-dir={profile}",
-                "--dump-dom",
-                url,
-            ],
-            cwd=ROOT,
-            check=False,
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-        )
-        output = result.stdout + result.stderr
-        if result.returncode != 0 or PASS_TEXT not in output:
-            raise RuntimeError(f"Chromium loader smoke failed ({result.returncode}):\n{output[-4000:]}")
-        marker = next((line.strip() for line in output.splitlines() if PASS_TEXT in line), PASS_TEXT)
-        print(f"2.0 wasm loader browser: {marker}")
+        with log_path.open("wb") as log:
+            process = subprocess.Popen(
+                [
+                    binary,
+                    "--headless=new",
+                    "--disable-gpu",
+                    "--no-sandbox",
+                    "--disable-dev-shm-usage",
+                    "--disable-background-networking",
+                    "--disable-breakpad",
+                    "--no-first-run",
+                    "--password-store=basic",
+                    f"--user-data-dir={profile}",
+                    url,
+                ],
+                cwd=ROOT,
+                env=environment,
+                stdout=log,
+                stderr=subprocess.STDOUT,
+            )
+            deadline = time.monotonic() + timeout
+            while not browser_result.event.wait(timeout=0.1):
+                if process.poll() is not None:
+                    break
+                if time.monotonic() >= deadline:
+                    break
+            marker = browser_result.text
+            if PASS_TEXT in marker:
+                print(f"2.0 wasm loader browser: {marker}")
+                return
+            process_status = process.poll()
+            detail = "timed out" if process_status is None else f"exited {process_status}"
+            log.flush()
+            output = log_path.read_text(encoding="utf-8", errors="replace")[-4000:]
+            if FAIL_TEXT in marker:
+                raise RuntimeError(f"Chromium loader smoke reported failure: {marker}\n{output}")
+            raise RuntimeError(f"Chromium loader smoke {detail} without a result callback:\n{output}")
     finally:
+        if "process" in locals() and process.poll() is None:
+            process.terminate()
+            try:
+                process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait(timeout=5)
         shutil.rmtree(profile, ignore_errors=True)
 
 
@@ -141,11 +205,11 @@ def main() -> int:
     parser.add_argument("--no-headless", action="store_true")
     args = parser.parse_args()
     try:
-        with serve() as url:
+        with serve() as (url, browser_result):
             if args.browser == "chromium":
                 if not args.binary:
                     raise RuntimeError("--binary is required for Chromium")
-                run_chromium(args.binary, url, args.timeout)
+                run_chromium(args.binary, url, args.timeout, browser_result)
             else:
                 if not args.driver:
                     raise RuntimeError("--driver is required for WebDriver browsers")

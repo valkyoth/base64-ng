@@ -47,6 +47,22 @@ for (const artifact of ["scalar", "simd128"]) {
       "Rust-owned actual output tracking must override a stale zero cleanup bound",
     );
 
+    const malformed = new TextEncoder().encode("aGVs!!!!");
+    memory.set(malformed, inputPointer);
+    memory.fill(0x5a, outputPointer, outputPointer + 16);
+    assert.equal(exports.base64_ng_decode(malformed.length, 0), -1);
+    assert.equal(exports.base64_ng_last_error_code(), 5);
+    assert.deepEqual(
+      memory.slice(outputPointer, outputPointer + 16),
+      new Uint8Array(16).fill(0x5a),
+      "raw strict decode must validate before materializing any plaintext",
+    );
+    exports.base64_ng_clear_used(malformed.length, 0);
+    assert.ok(
+      memory.subarray(inputPointer, inputPointer + malformed.length).every((byte) => byte === 0),
+      "raw strict decode cleanup must still clear rejected input",
+    );
+
     memory.fill(0xa5, inputPointer, inputPointer + inputCapacity);
     memory.fill(0x5a, outputPointer, outputPointer + outputCapacity);
     exports.base64_ng_clear();

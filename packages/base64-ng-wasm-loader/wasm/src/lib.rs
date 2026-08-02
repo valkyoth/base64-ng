@@ -169,6 +169,28 @@ pub extern "C" fn base64_ng_decode(input_len: u32, codec: u32) -> i32 {
     let Ok(input) = input_slice(input_len) else {
         return -1;
     };
+    let validation = match codec {
+        0 => STANDARD.validate_result(input),
+        1 => STANDARD_NO_PAD.validate_result(input),
+        2 => URL_SAFE.validate_result(input),
+        3 => URL_SAFE_NO_PAD.validate_result(input),
+        _ => return fail(ERROR_INVALID_CODEC, None, None),
+    };
+    if let Err(error) = validation {
+        return map_decode_error(error);
+    }
+    let required = match codec {
+        0 => STANDARD.decoded_len(input),
+        1 => STANDARD_NO_PAD.decoded_len(input),
+        2 => URL_SAFE.decoded_len(input),
+        3 => URL_SAFE_NO_PAD.decoded_len(input),
+        _ => return fail(ERROR_INVALID_CODEC, None, None),
+    };
+    let required = match required {
+        Ok(required) => required,
+        Err(error) => return map_decode_error(error),
+    };
+    record_output_high_water(required);
     let output = output_slice();
     let result = match codec {
         0 => STANDARD.decode_slice(input, output),
@@ -297,12 +319,16 @@ fn result_length(length: usize) -> i32 {
 
 fn written_length(length: usize) -> i32 {
     let result = result_length(length);
-    if let Ok(length) = u32::try_from(length)
-        && result >= 0
-    {
-        OUTPUT_HIGH_WATER.fetch_max(length, Ordering::AcqRel);
+    if result >= 0 {
+        record_output_high_water(length);
     }
     result
+}
+
+fn record_output_high_water(length: usize) {
+    if let Ok(length) = u32::try_from(length) {
+        OUTPUT_HIGH_WATER.fetch_max(length, Ordering::AcqRel);
+    }
 }
 
 fn map_encode_error(error: EncodeError) -> i32 {
