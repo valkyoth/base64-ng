@@ -375,7 +375,12 @@ The release gate runs:
   candidate at vector lengths 128, 256, and 512. The candidate covers
   Standard/URL-safe ordinary encode and strict decode, malformed no-write
   behavior, capability-probe failures, per-thread vector-length changes, and
-  static `no_std` compilation. `scripts/generate_sve_asm_evidence.sh` checks
+  static `no_std` compilation. Portable fallback suites use
+  `-cpu max,sve=off`, and all QEMU libtest and doctest harnesses use
+  `--test-threads=1`; candidate runs separately enable SVE. This serialization
+  is a QEMU 8.2 compatibility constraint, not thread-safety or native-hardware
+  evidence. Concurrency-specific tests continue to create worker threads
+  internally. `scripts/generate_sve_asm_evidence.sh` checks
   exact leaf symbols, structured loads/stores, predicate mapping, register
   cleanup, absence of nested calls, and absence of stack use using target-aware
   AArch64 binutils rather than the host disassembler. This remains

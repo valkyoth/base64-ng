@@ -24,7 +24,10 @@ for required_text in \
     "128, 256, and 512 bits" \
     "two real SVE systems" \
     "normal published builds continue to use admitted NEON or scalar" \
-    "PR_SVE_GET_VL"
+    "PR_SVE_GET_VL" \
+    "fallback suites run with SVE disabled" \
+    "QEMU harnesses are serialized" \
+    "not thread-safety evidence"
 do
     if ! grep -F -q "$required_text" docs/SVE_QEMU_REVIEW.md; then
         echo "SVE posture: docs/SVE_QEMU_REVIEW.md is missing required text: $required_text" >&2

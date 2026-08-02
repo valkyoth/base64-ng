@@ -69,6 +69,13 @@ suites on statically linked `aarch64-unknown-linux-musl`. It then runs candidate
 differential encode/decode, malformed-input transactionality, runtime-report,
 probe, and per-thread vector-length-change tests at 128, 256, and 512 bits.
 
+The portable fallback suites run with SVE disabled (`-cpu max,sve=off`), and
+the QEMU harnesses are serialized with `--test-threads=1`. SVE candidates are
+separately enabled at vector lengths 128, 256, and 512. Serialization is a
+QEMU 8.2 compatibility constraint and is not thread-safety evidence or
+native-hardware evidence. Concurrency-specific tests continue to create and
+exercise their own worker threads inside the serialized libtest process.
+
 The assembly gate requires all five leaf symbols, SVE structured loads/stores,
 predicate mapping, vector-length discovery, caller-saved register cleanup, no
 nested calls, and no stack mutation. Cross-host evidence uses target-aware
