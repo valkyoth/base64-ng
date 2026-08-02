@@ -1,13 +1,18 @@
 #!/usr/bin/env sh
 set -eu
 
-script_revision="2026-07-03-big-endian-qemu-v1"
+script_revision="2026-08-02-commit31-big-endian-qemu-v2"
 evidence_dir="target/release-evidence/big-endian-qemu"
-required_target="s390x-unknown-linux-gnu"
-required_linker="${BASE64_NG_S390X_LINKER:-s390x-suse-linux-gcc}"
-required_runner="${BASE64_NG_S390X_RUNNER:-qemu-s390x -L /usr/s390x-suse-linux/sys-root}"
-optional_powerpc64="${BASE64_NG_BIG_ENDIAN_RUN_POWERPC64:-0}"
-powerpc64_sysroot="${BASE64_NG_POWERPC64_SYSROOT:-/usr/powerpc64-suse-linux/sys-root}"
+mode="${1:---all}"
+
+case "$mode" in
+    --all | --s390x | --powerpc64)
+        ;;
+    *)
+        echo "usage: $0 [--all|--s390x|--powerpc64]" >&2
+        exit 2
+        ;;
+esac
 
 require_command() {
     command_name="$1"
@@ -17,6 +22,26 @@ require_command() {
         echo "big-endian QEMU checks: install hint: $install_hint" >&2
         exit 1
     fi
+}
+
+first_command() {
+    for candidate in "$@"; do
+        if command -v "$candidate" >/dev/null 2>&1; then
+            printf '%s\n' "$candidate"
+            return
+        fi
+    done
+    return 1
+}
+
+first_directory() {
+    for candidate in "$@"; do
+        if [ -d "$candidate" ]; then
+            printf '%s\n' "$candidate"
+            return
+        fi
+    done
+    return 1
 }
 
 require_rust_target() {
@@ -38,15 +63,14 @@ require_big_endian_target() {
     fi
 }
 
-require_glibc_sysroot() {
+require_linker_runtime() {
     label="$1"
-    sysroot="$2"
-    libdir="$3"
-    install_hint="$4"
-
+    linker="$2"
+    install_hint="$3"
     for required_file in Scrt1.o crti.o libc.so; do
-        if [ ! -e "$sysroot/$libdir/$required_file" ]; then
-            echo "big-endian QEMU checks: $label sysroot is incomplete: missing $sysroot/$libdir/$required_file" >&2
+        resolved="$($linker -print-file-name="$required_file")"
+        if [ "$resolved" = "$required_file" ] || [ ! -e "$resolved" ]; then
+            echo "big-endian QEMU checks: $label linker cannot resolve $required_file" >&2
             echo "big-endian QEMU checks: install hint: $install_hint" >&2
             exit 1
         fi
@@ -82,35 +106,84 @@ run_target_suite() {
     require_rust_target "$target"
     require_big_endian_target "$target"
 
-    echo "big-endian QEMU checks: $label no_std simd-reserved library build"
+    echo "big-endian QEMU checks: $label no_std secret/SIMD portability build"
     cargo_for_target "$target" "$linker" "$runner" check \
         --target "$target" --no-default-features \
-        --features simd,allow-compiler-fence-only-wipe --lib
+        --features simd,secrets,allow-compiler-fence-only-wipe --lib
 
-    echo "big-endian QEMU checks: $label backend dispatch scalar fallback evidence"
+    echo "big-endian QEMU checks: $label default-feature complete suite"
     cargo_for_target "$target" "$linker" "$runner" test \
-        --target "$target" --all-features --lib \
-        backend_dispatch_matches_scalar_reference -- --nocapture
+        --target "$target" --lib --tests
 
-    echo "big-endian QEMU checks: $label RFC4648 and buffer surface evidence"
+    echo "big-endian QEMU checks: $label all-feature complete suite"
     cargo_for_target "$target" "$linker" "$runner" test \
-        --target "$target" --all-features --test rfc4648
+        --target "$target" --all-features --lib --tests
 
-    echo "big-endian QEMU checks: $label stream surface evidence"
+    echo "big-endian QEMU checks: $label no-default-feature complete suite"
     cargo_for_target "$target" "$linker" "$runner" test \
-        --target "$target" --all-features --test stream
+        --target "$target" --no-default-features --lib --tests
+
+    echo "big-endian QEMU checks: $label all-feature doctests"
+    cargo_for_target "$target" "$linker" "$runner" test \
+        --target "$target" --all-features --doc
+
+    echo "big-endian QEMU checks: $label no-default-feature doctests"
+    cargo_for_target "$target" "$linker" "$runner" test \
+        --target "$target" --no-default-features --doc
 }
 
-preflight_optional_powerpc64() {
-    if [ "$optional_powerpc64" = "1" ]; then
-        require_command qemu-ppc64 "sudo zypper install qemu-linux-user"
-        require_command powerpc64-suse-linux-gcc-16 "sudo zypper install cross-ppc64-gcc16 cross-ppc64-binutils plus the matching powerpc64 glibc-devel/sysroot package"
-        require_glibc_sysroot \
-            "powerpc64" \
-            "$powerpc64_sysroot" \
-            "usr/lib64" \
-            "install the matching powerpc64 glibc-devel/sysroot package, or set BASE64_NG_POWERPC64_SYSROOT to a complete sysroot"
+run_s390x() {
+    linker="${BASE64_NG_S390X_LINKER:-}"
+    if [ -z "$linker" ]; then
+        linker="$(first_command s390x-suse-linux-gcc s390x-linux-gnu-gcc || true)"
     fi
+    if [ -z "$linker" ]; then
+        echo "big-endian QEMU checks: no s390x cross linker found" >&2
+        exit 1
+    fi
+    sysroot="${BASE64_NG_S390X_SYSROOT:-}"
+    if [ -z "$sysroot" ]; then
+        sysroot="$(first_directory /usr/s390x-suse-linux/sys-root /usr/s390x-linux-gnu || true)"
+    fi
+    if [ -z "$sysroot" ]; then
+        echo "big-endian QEMU checks: no s390x runtime sysroot found" >&2
+        exit 1
+    fi
+    runner="${BASE64_NG_S390X_RUNNER:-qemu-s390x -L $sysroot}"
+    require_command qemu-s390x "install qemu-user or qemu-linux-user"
+    require_linker_runtime s390x "$linker" \
+        "install an s390x cross compiler and matching libc development sysroot"
+    run_target_suite s390x s390x-unknown-linux-gnu "$linker" "$runner"
+    s390x_result=pass
+    s390x_linker="$linker"
+    s390x_runner="$runner"
+}
+
+run_powerpc64() {
+    linker="${BASE64_NG_POWERPC64_LINKER:-}"
+    if [ -z "$linker" ]; then
+        linker="$(first_command powerpc64-suse-linux-gcc-16 powerpc64-linux-gnu-gcc || true)"
+    fi
+    if [ -z "$linker" ]; then
+        echo "big-endian QEMU checks: no powerpc64 cross linker found" >&2
+        exit 1
+    fi
+    sysroot="${BASE64_NG_POWERPC64_SYSROOT:-}"
+    if [ -z "$sysroot" ]; then
+        sysroot="$(first_directory /usr/powerpc64-suse-linux/sys-root /usr/powerpc64-linux-gnu || true)"
+    fi
+    if [ -z "$sysroot" ]; then
+        echo "big-endian QEMU checks: no powerpc64 runtime sysroot found" >&2
+        exit 1
+    fi
+    runner="${BASE64_NG_POWERPC64_RUNNER:-qemu-ppc64 -L $sysroot}"
+    require_command qemu-ppc64 "install qemu-user or qemu-linux-user"
+    require_linker_runtime powerpc64 "$linker" \
+        "install a powerpc64 cross compiler and matching libc development sysroot"
+    run_target_suite powerpc64 powerpc64-unknown-linux-gnu "$linker" "$runner"
+    powerpc64_result=pass
+    powerpc64_linker="$linker"
+    powerpc64_runner="$runner"
 }
 
 echo "big-endian QEMU checks: script=$script_revision"
@@ -118,37 +191,55 @@ echo "big-endian QEMU checks: host=$(rustc -vV | sed -n 's/^host: //p')"
 echo "big-endian QEMU checks: rustc=$(rustc --version)"
 echo "big-endian QEMU checks: cargo=$(cargo --version)"
 
-require_command qemu-s390x "sudo zypper install qemu-linux-user"
-require_command "$required_linker" "sudo zypper install cross-s390x-gcc16 cross-s390x-binutils cross-s390x-glibc-devel cross-s390x-linux-glibc-devel"
-preflight_optional_powerpc64
+scripts/validate-big-endian-byte-order.sh
 
-run_target_suite "s390x" "$required_target" "$required_linker" "$required_runner"
+s390x_result=not-run
+powerpc64_result=not-run
+s390x_linker=not-run
+s390x_runner=not-run
+powerpc64_linker=not-run
+powerpc64_runner=not-run
 
-if [ "$optional_powerpc64" = "1" ]; then
-    run_target_suite \
-        "powerpc64" \
-        "powerpc64-unknown-linux-gnu" \
-        "powerpc64-suse-linux-gcc-16" \
-        "qemu-ppc64 -L $powerpc64_sysroot"
-else
-    echo "big-endian QEMU checks: skipping optional powerpc64; set BASE64_NG_BIG_ENDIAN_RUN_POWERPC64=1 to require it"
-fi
+case "$mode" in
+    --all)
+        run_s390x
+        run_powerpc64
+        ;;
+    --s390x)
+        run_s390x
+        ;;
+    --powerpc64)
+        run_powerpc64
+        ;;
+esac
 
 mkdir -p "$evidence_dir"
 {
     echo "base64-ng big-endian QEMU evidence"
     echo "script=$script_revision"
-    echo "required_target=$required_target"
-    echo "required_runner=$required_runner"
-    echo "required_linker=$required_linker"
-    echo "qemu_s390x=$(qemu-s390x --version | sed -n '1p')"
+    echo "mode=$mode"
+    echo "source_commit=$(git rev-parse HEAD)"
+    echo "s390x_result=$s390x_result"
+    echo "s390x_linker=$s390x_linker"
+    echo "s390x_runner=$s390x_runner"
+    echo "powerpc64_result=$powerpc64_result"
+    echo "powerpc64_linker=$powerpc64_linker"
+    echo "powerpc64_runner=$powerpc64_runner"
+    echo "qemu_s390x=$(qemu-s390x --version 2>/dev/null | sed -n '1p' || true)"
+    echo "qemu_powerpc64=$(qemu-ppc64 --version 2>/dev/null | sed -n '1p' || true)"
     echo "rustc=$(rustc --version)"
     echo "cargo=$(cargo --version)"
     echo "evidence_scope=functional correctness and scalar/fallback behavior under QEMU user-mode"
-    echo "not_evidence_for=real hardware performance, timing, microarchitectural behavior, or side-channel behavior"
-    echo "wipe_barrier_status=compiler-fence-only feature enabled for unsupported big-endian architecture checks"
-    echo "hardware_status=community real-hardware reports requested for s390x, powerpc64, and big-endian AArch64"
+    echo "covered_surfaces=default,all-features,no-default-features,RFC4648,malformed,incremental,stream,in-place,wrapping,secret-cleanup,backend-reporting,doctests"
+    echo "not_evidence_for=real hardware performance, timing, microarchitectural behavior, register retention, physical cleanup, or side-channel behavior"
+    echo "wipe_barrier_status=compiler-fence-only feature enabled for secret checks on unsupported big-endian architectures"
+    echo "hardware_status=community real-hardware reports required before accelerated big-endian admission"
 } >"$evidence_dir/report.txt"
 
+if [ "$mode" = "--all" ] && { [ "$s390x_result" != pass ] || [ "$powerpc64_result" != pass ]; }; then
+    echo "big-endian QEMU checks: --all did not complete both required targets" >&2
+    exit 1
+fi
+
 echo "big-endian QEMU checks: wrote $evidence_dir/report.txt"
-echo "big-endian QEMU checks: ok"
+echo "big-endian QEMU checks: ok ($mode)"

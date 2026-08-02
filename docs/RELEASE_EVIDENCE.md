@@ -346,15 +346,16 @@ The release gate runs:
   NEON encode block evidence, backend evidence, SIMD feature-bundle checks, and
   SIMD admission validators on real ARM Linux hardware
 - big-endian QEMU user-mode verification through
-  `scripts/check_big_endian_qemu.sh`, which runs `s390x-unknown-linux-gnu`
-  no-std portability checks and QEMU-executed RFC4648, buffer, backend
-  fallback, malformed-input, clear-tail, in-place, wrapped/legacy, and stream
-  tests. This is functional correctness and scalar/fallback evidence under
-  emulation only; it is not real hardware performance, timing,
-  microarchitectural, or side-channel evidence. The script records that
-  community reports from real `s390x`, `powerpc64`, and big-endian AArch64
-  systems are still requested before any backend is upgraded from QEMU-tested
-  to hardware-attested.
+  `scripts/check_big_endian_qemu.sh --all`, which requires both
+  `s390x-unknown-linux-gnu` and `powerpc64-unknown-linux-gnu`. Each target runs
+  complete default, all-feature, and no-default-feature tests and doctests,
+  including RFC 4648, malformed input, incremental, stream, in-place,
+  wrapped/legacy, secret-cleanup, and backend-reporting surfaces. This is
+  functional correctness and scalar/fallback evidence under emulation only;
+  it is not real-hardware performance, timing, microarchitectural, physical
+  cleanup, or side-channel evidence. Native community submissions use the
+  checked `hardware-evidence/big-endian/schema-v1.json` contract before any
+  backend can be upgraded from QEMU-tested to hardware-attested.
 - RISC-V QEMU user-mode verification through `scripts/check_riscv_qemu.sh`,
   which runs `riscv64gc-unknown-linux-gnu` no-std portability checks and
   QEMU-executed RFC4648, buffer, backend fallback, malformed-input,

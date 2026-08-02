@@ -1,80 +1,90 @@
-# Big-Endian QEMU Review
+# Big-Endian QEMU And Hardware Review
 
-This review tracks the `1.3.4` big-endian evidence line.
+Status: Commit 31 scalar/fallback evidence complete under QEMU; real hardware
+evidence pending.
 
-## Status
+## Current Posture
 
-Big-endian targets are currently **QEMU-tested scalar/fallback targets**, not
-admitted accelerated backends.
+Big-endian targets are **QEMU-tested scalar/fallback targets**, not admitted
+accelerated backends. The release gate requires complete emulated suites for:
 
-The local evidence path is:
+- `s390x-unknown-linux-gnu` through `qemu-s390x`;
+- `powerpc64-unknown-linux-gnu` through `qemu-ppc64`.
+
+Run both required targets with:
 
 ```sh
-scripts/check_big_endian_qemu.sh
+scripts/check_big_endian_qemu.sh --all
 ```
 
-The required path is `s390x-unknown-linux-gnu` through `qemu-s390x`. The
-optional path is `powerpc64-unknown-linux-gnu` through `qemu-ppc64` when a
-complete local PowerPC64 glibc sysroot is available. A PowerPC64 cross
-compiler alone is not enough; the optional path also needs target start files
-and libc objects such as `Scrt1.o`, `crti.o`, and `libc.so`.
+`--s390x` and `--powerpc64` are diagnostic modes. A single-target result is
+not complete Commit 31 or release evidence.
+
+## Functional Coverage
+
+Each target receives default, all-feature, and no-default-feature test suites,
+all-feature and no-default-feature doctests, and a no-std build with secret and
+SIMD feature boundaries enabled. This includes:
+
+- RFC 4648 vectors, strict padding and trailing-bit behavior;
+- malformed input, transactional output, and clear-tail behavior;
+- incremental, stream, wrapped, legacy-whitespace, and in-place surfaces;
+- fixed and allocated secret storage, rejection cleanup, and assurance tests;
+- scalar fallback, backend health, and operation-specific runtime reporting;
+- the dedicated big-endian profile and in-place regression suite.
+
+The byte-order reasoning and mechanically enforced source boundaries are in
+[`2.0_BIG_ENDIAN_AUDIT.md`](2.0_BIG_ENDIAN_AUDIT.md).
 
 ## Evidence Boundary
 
-QEMU evidence is accepted for:
+QEMU evidence is accepted for functional correctness, target compilation, and
+scalar/fallback reporting. QEMU evidence is not accepted for:
 
-- functional encode/decode correctness
-- malformed-input behavior
-- clear-tail behavior
-- in-place behavior
-- wrapped and legacy compatibility behavior
-- stream behavior
-- scalar/fallback runtime reporting
+- real hardware performance claims;
+- timing or side-channel claims;
+- microarchitectural or register-retention behavior;
+- physical cleanup behavior;
+- proof that a production CPU executes identically to QEMU.
 
-QEMU evidence is not accepted for:
+## Stable Rust Acceleration Blocker
 
-- real hardware performance claims
-- timing or side-channel claims
-- microarchitectural behavior
-- register-retention behavior on production silicon
-- proof that a particular production CPU executes the same path
+On the active Rust `1.97.1` release toolchain:
 
-## Stable Rust Toolchain Blocker
+- `core::arch::s390x` remains gated by `stdarch_s390x`;
+- `core::arch::powerpc64` remains gated by `stdarch_powerpc`.
 
-The active release toolchain is Rust `1.97.1`. On that toolchain:
+`scripts/check_big_endian_intrinsics_status.sh` fails if this changes so the
+implementation and admission decision must be revisited. Hand-written inline
+assembly is not accepted as a shortcut. It would require a separate unsafe and
+ABI review, generated assembly, unwind and register-cleanup evidence, fallback
+tests, and real-hardware correctness and performance results.
 
-- `core::arch::s390x` is gated by the unstable `stdarch_s390x` feature.
-- `core::arch::powerpc64` is gated by the unstable `stdarch_powerpc` feature.
+Therefore big-endian runtime reports must remain scalar active. No s390x,
+PowerPC64, or big-endian AArch64 acceleration is admitted by Commit 31.
 
-Those gates prevent a stable, no-dependency Rust implementation from using the
-normal intrinsic-based vector path for s390x or PowerPC64 today.
-`scripts/check_big_endian_intrinsics_status.sh` verifies this toolchain state
-and fails if those intrinsics become available, forcing the admission manifest
-to be revisited before release.
+## Community Hardware Contract
 
-Hand-written inline assembly is not accepted as a shortcut for this release
-line. It would require a separate unsafe-boundary review, generated assembly
-review, register cleanup review, fallback evidence, and real hardware reports
-before it could be described as hardware-attested acceleration.
+Real-hardware operators should run:
 
-The current result is therefore a deliberate non-admission of big-endian
-acceleration. The release evidence proves that supported big-endian test
-targets continue to execute the scalar/fallback path correctly.
+```sh
+scripts/check_big_endian_hardware.sh
+```
 
-## Admission Rule
+The machine must report big-endian compilation, use a clean exact commit, and
+pass the complete native test and documentation suites. Reports use
+`hardware-evidence/big-endian/schema-v1.json` and are checked with:
 
-Until stable Rust exposes a reviewed intrinsic path, or the project accepts a
-separate assembly-backed backend review, big-endian runtime reports must remain scalar active.
-Any future s390x or PowerPC64 acceleration must be labeled as QEMU-tested until real hardware evidence is linked.
+```sh
+scripts/validate-big-endian-hardware-evidence.py REPORT.json
+```
 
-Required before upgrading from QEMU-tested to hardware-attested:
+The schema requires hardware, firmware, OS, kernel, compiler, exact commit,
+transcript hash, scalar backend report, and pentest provenance. Validation is
+structural, not authentication. Maintainers must review raw output and
+provenance. Reports remain QEMU-tested until real hardware evidence is linked.
 
-- exact hardware model and CPU feature report
-- kernel/runtime version
-- Rust toolchain and target triple
-- generated assembly evidence
-- scalar differential tests for encode and strict decode
-- malformed-input, padding, tail, and clear-tail evidence
-- register cleanup review
-- benchmark data
-- pentest review for the exact commit range
+Any future acceleration additionally requires direct differential and
+malformed-input tests, padding and tail coverage, assembly and ABI review,
+register cleanup, backend quarantine and fallback evidence, representative
+benchmarks, and external endian/alignment review for the exact commit.

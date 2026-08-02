@@ -304,6 +304,8 @@ pub(crate) fn encode_checked<A: Alphabet, const PAD: bool>(
 
 #[cfg(feature = "checked-backend")]
 fn backend_supports<A: Alphabet>(backend: EncodeBackend, input_len: usize) -> bool {
+    let _ = core::marker::PhantomData::<A>;
+    let _ = input_len;
     match backend {
         EncodeBackend::Scalar => false,
         #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]

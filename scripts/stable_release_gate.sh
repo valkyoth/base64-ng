@@ -63,7 +63,7 @@ echo "stable release gate: installed cross-target checks"
 scripts/check_targets.sh
 
 echo "stable release gate: big-endian QEMU checks"
-scripts/check_big_endian_qemu.sh
+scripts/check_big_endian_qemu.sh --all
 
 echo "stable release gate: RISC-V QEMU checks"
 scripts/check_riscv_qemu.sh

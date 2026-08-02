@@ -1262,6 +1262,14 @@ SIMD admission rules for all post-`1.0` work:
 
 ## Current 2.0 Development Checkpoint
 
+Commit 31 completes the portable big-endian byte-order audit and requires full
+default, all-feature, no-default-feature, documentation, secret-cleanup, and
+backend-reporting suites under both s390x and PowerPC64 QEMU. A checked
+community submission schema separates real-hardware evidence from emulation.
+Stable Rust still gates the relevant architecture intrinsics, so dispatch and
+runtime reports remain scalar; no big-endian acceleration or hardware
+performance claim is admitted.
+
 Commit 30 replaces the earlier wasm per-block verification path with direct
 12-to-16 encode and 16-to-12 strict-decode `simd128` kernels. It also adds the
 supported `base64-ng-wasm-loader` npm package with separate scalar/SIMD

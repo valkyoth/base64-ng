@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/valkyoth/base64-ng/hardware-evidence/big-endian/schema-v1.json",
+  "title": "base64-ng real big-endian hardware evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "project",
+    "execution_environment",
+    "source_commit",
+    "target",
+    "hardware",
+    "software",
+    "verification",
+    "backend",
+    "review"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "project": { "const": "base64-ng" },
+    "execution_environment": { "const": "real-hardware" },
+    "source_commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["triple", "endian"],
+      "properties": {
+        "triple": {
+          "enum": [
+            "s390x-unknown-linux-gnu",
+            "powerpc64-unknown-linux-gnu",
+            "aarch64_be-unknown-linux-gnu"
+          ]
+        },
+        "endian": { "const": "big" }
+      }
+    },
+    "hardware": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["vendor", "model", "cpu", "features", "firmware"],
+      "properties": {
+        "vendor": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "model": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "cpu": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "features": { "type": "string", "minLength": 1, "maxLength": 4096 },
+        "firmware": { "type": "string", "minLength": 1, "maxLength": 256 }
+      }
+    },
+    "software": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["os", "kernel", "rustc", "cargo"],
+      "properties": {
+        "os": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "kernel": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "rustc": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "cargo": { "type": "string", "minLength": 1, "maxLength": 256 }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["command", "passed", "output_sha256"],
+      "properties": {
+        "command": { "const": "scripts/check_big_endian_hardware.sh" },
+        "passed": { "const": true },
+        "output_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
+    "backend": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["encode", "strict_decode", "secret_decode", "accelerated"],
+      "properties": {
+        "encode": { "const": "scalar" },
+        "strict_decode": { "const": "scalar" },
+        "secret_decode": { "const": "scalar-constant-time-oriented" },
+        "accelerated": { "const": false }
+      }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reporter", "recorded_at", "pentest_range", "pentest_result"],
+      "properties": {
+        "reporter": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "recorded_at": { "type": "string", "format": "date-time" },
+        "pentest_range": { "type": "string", "pattern": "^[0-9a-f]{40}\\.\\.[0-9a-f]{40}$" },
+        "pentest_result": { "const": "PASS" }
+      }
+    }
+  }
+}

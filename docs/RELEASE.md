@@ -81,13 +81,24 @@ sudo zypper install cross-ppc64-gcc16 cross-ppc64-binutils
 sudo zypper install cross-riscv64-gcc16 cross-riscv64-binutils cross-riscv64-glibc-devel cross-riscv64-linux-glibc-devel
 ```
 
-`scripts/check_big_endian_qemu.sh` requires the `s390x` path and treats
-`powerpc64` as opt-in until a complete local PowerPC64 glibc sysroot is
-available. The optional PowerPC64 path preflights target start files and libc
-objects before running tests, because a cross compiler without the target
-sysroot cannot link Rust test binaries. The evidence is QEMU functional
-correctness and fallback evidence only; it is not real hardware performance,
-timing, or side-channel evidence.
+Commit 31 and the stable release gate require both big-endian targets:
+
+```sh
+scripts/check_big_endian_qemu.sh --all
+```
+
+The script accepts SUSE and Debian/Ubuntu cross-toolchain layouts and
+preflights target start files and libc objects. On Debian/Ubuntu install
+`qemu-user`, `gcc-s390x-linux-gnu`, `libc6-dev-s390x-cross`,
+`gcc-powerpc64-linux-gnu`, and `libc6-dev-ppc64-cross`. Per-target diagnostic
+modes do not count as complete release evidence. QEMU proves functional
+correctness and scalar fallback only; it is not real-hardware performance,
+timing, cleanup, or side-channel evidence.
+
+Native operators can produce a structurally checked community report with
+`scripts/check_big_endian_hardware.sh` and the schema under
+`hardware-evidence/big-endian/`. A report does not admit acceleration without
+the separate backend review.
 
 `scripts/check_riscv_qemu.sh` requires the `riscv64gc` path and the `lp64d`
 glibc sysroot used by the SUSE cross packages. The evidence is RISC-V QEMU

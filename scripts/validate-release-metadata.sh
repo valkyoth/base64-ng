@@ -153,6 +153,7 @@ for required_script in \
     "scripts/check-api-snapshots.sh" \
     "scripts/validate-2.0-api-ledger.sh" \
     "scripts/check_backend_evidence.sh" \
+    "scripts/check_big_endian_hardware.sh" \
     "scripts/check_big_endian_qemu.sh" \
     "scripts/check_big_endian_intrinsics_status.sh" \
     "scripts/cargo-deny-check.sh" \
@@ -162,6 +163,7 @@ for required_script in \
     "scripts/validate-api-audit.sh" \
     "scripts/validate-2.0-governance.sh" \
     "scripts/validate-big-endian-posture.sh" \
+    "scripts/validate-big-endian-byte-order.sh" \
     "scripts/validate-riscv-posture.sh" \
     "scripts/check_dudect.sh" \
     "scripts/check_fuzz.sh" \
@@ -339,7 +341,7 @@ for required_release_gate_command in \
     "scripts/check-2.0-in-place-sanitizers.sh" \
     "cargo +nightly fuzz build" \
     "scripts/check_targets.sh" \
-    "scripts/check_big_endian_qemu.sh" \
+    "scripts/check_big_endian_qemu.sh --all" \
     "scripts/check_riscv_qemu.sh" \
     "scripts/check_no_alloc_smoke.sh" \
     "scripts/check_migration_smoke.sh" \
@@ -512,6 +514,7 @@ for required_package_file in \
     "api-snapshots/v1.3.9/base64-ng-subtle.txt" \
     "api-snapshots/v1.3.9/base64-ng-tokio.txt" \
     "docs/2.0_API_MIGRATION_LEDGER.md" \
+    "docs/2.0_BIG_ENDIAN_AUDIT.md" \
     "docs/2.0_CONST_AND_BOUNDED_BUFFERS.md" \
     "docs/2.0_FORMAT_APPEND_CHUNKS.md" \
     "docs/2.0_IN_PLACE_OPERATIONS.md" \
@@ -524,6 +527,8 @@ for required_package_file in \
     "docs/ASYNC.md" \
     "docs/BENCHMARKS.md" \
     "docs/BIG_ENDIAN_QEMU_REVIEW.md" \
+    "hardware-evidence/big-endian/README.md" \
+    "hardware-evidence/big-endian/schema-v1.json" \
     "docs/RISCV_QEMU_REVIEW.md" \
     "docs/CONSTANT_TIME.md" \
     "docs/CT_ASM_REVIEW.md" \
@@ -566,6 +571,7 @@ for required_package_file in \
     "scripts/check-api-snapshots.sh" \
     "scripts/validate-2.0-api-ledger.sh" \
     "scripts/check_backend_evidence.sh" \
+    "scripts/check_big_endian_hardware.sh" \
     "scripts/check_big_endian_qemu.sh" \
     "scripts/check_big_endian_intrinsics_status.sh" \
     "scripts/check_riscv_qemu.sh" \
@@ -573,6 +579,9 @@ for required_package_file in \
     "scripts/ct-asm-symbols.sh" \
     "scripts/validate-api-audit.sh" \
     "scripts/validate-big-endian-posture.sh" \
+    "scripts/validate-big-endian-byte-order.sh" \
+    "scripts/validate-big-endian-hardware-evidence.py" \
+    "scripts/test-big-endian-hardware-evidence.py" \
     "scripts/validate-riscv-posture.sh" \
     "scripts/check_dudect.sh" \
     "scripts/check_fuzz.sh" \

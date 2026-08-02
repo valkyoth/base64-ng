@@ -103,6 +103,8 @@ until then, RISC-V remains QEMU-tested scalar/fallback-only.
 
 Implemented on this branch now:
 
+- Commit 31 big-endian byte-order audit and complete s390x/PowerPC64 QEMU
+  scalar-fallback evidence, with a separate schema for real-hardware reports.
 - `no_std` core with optional `alloc` and `std` features.
 - Zero external runtime or development dependencies in `Cargo.toml`.
 - Standard and URL-safe alphabets.

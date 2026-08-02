@@ -7,6 +7,9 @@
   acceptance.
 - See [`2.0.0-release-plan.md`](2.0.0-release-plan.md) for the complete ordered
   implementation and verification program.
+- Commit 31 audits portable byte-order assumptions, requires complete s390x
+  and PowerPC64 QEMU functional suites, preserves scalar-only big-endian
+  dispatch, and adds a checked real-hardware community evidence contract.
 
 ## 1.3.9 - 2026-07-21
 

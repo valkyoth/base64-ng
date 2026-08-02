@@ -236,6 +236,33 @@ jobs:
       - name: Check no-alloc portability smoke
         run: scripts/check_no_alloc_smoke.sh ${{ matrix.target }}
 
+  big-endian-qemu:
+    name: Big-endian QEMU functional evidence
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install Rust toolchain
+        shell: bash
+        run: scripts/ci_install_rust.sh
+
+      - name: Install big-endian Rust targets
+        run: rustup target add s390x-unknown-linux-gnu powerpc64-unknown-linux-gnu
+
+      - name: Install QEMU and cross libc toolchains
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends \
+            qemu-user \
+            gcc-s390x-linux-gnu libc6-dev-s390x-cross \
+            gcc-powerpc64-linux-gnu libc6-dev-ppc64-cross
+
+      - name: Run both complete big-endian suites
+        run: scripts/check_big_endian_qemu.sh --all
+
   miri:
     name: Miri
     runs-on: ubuntu-latest

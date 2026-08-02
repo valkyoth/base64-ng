@@ -16,6 +16,7 @@ include = [
     "tests/**",
     "benches/**",
     "docs/**",
+    "hardware-evidence/**",
     "api-snapshots/**",
     "portability/2_0_migration_smoke/src/**",
     "portability/aarch64_static_neon_smoke/src/**",
