@@ -1269,6 +1269,19 @@ SIMD admission rules for all post-`1.0` work:
 
 ## Current 2.0 Development Checkpoint
 
+Commit 33 implements a complete isolated AArch64 SVE Standard/URL-safe encode
+and strict-decode candidate with four active lanes at every physical vector
+length. QEMU executes it at 128, 256, and 512 bits; generated assembly checks
+the leaf ABI, structured memory operations, predicate mapping, and register
+cleanup. Public AArch64 dispatch remains admitted NEON or scalar until two real
+SVE systems with different vector lengths provide the required correctness,
+ABI, signal-state, cleanup, performance, and external-review evidence.
+
+Commit 32 implements a complete isolated RVV 1.0 Standard/URL-safe encode and
+strict-decode candidate with QEMU and assembly evidence. Production RISC-V
+dispatch remains scalar until native evidence and external review satisfy the
+admission contract.
+
 Commit 31 completes the portable big-endian byte-order audit and requires full
 default, all-feature, no-default-feature, documentation, secret-cleanup, and
 backend-reporting suites under both s390x and PowerPC64 QEMU. A checked

@@ -160,6 +160,14 @@ engine versions make browser-wide numerical claims inappropriate without a
 separate retained campaign. No Node result is generalized to browsers or edge
 runtimes.
 
+## SVE Candidate Performance
+
+Commit 33 includes only emulated SVE correctness and generated-code evidence.
+It intentionally publishes no SVE performance number or crossover. Admission
+requires beneficial encode and strict-decode measurements against admitted
+NEON on at least two real SVE systems with different vector lengths, recorded
+through `hardware-evidence/sve/schema-v1.json`.
+
 ## Resource Interpretation
 
 Allocation counts are observed around one prepared caller-owned slice

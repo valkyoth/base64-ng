@@ -121,6 +121,9 @@ scripts/validate-big-endian-posture.sh
 echo "checks: RISC-V QEMU posture"
 scripts/validate-riscv-posture.sh
 
+echo "checks: AArch64 SVE QEMU posture"
+scripts/validate-sve-posture.sh
+
 echo "checks: wasm SIMD codegen evidence"
 BASE64_NG_ALLOW_DIRTY_EVIDENCE=1 scripts/generate_wasm_simd_evidence.sh
 

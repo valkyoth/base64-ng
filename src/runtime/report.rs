@@ -4,7 +4,6 @@ use super::{
     SecurityPosture, WasmArtifactPosture, WasmRuntimePosture, WipePosture,
     operation::{wasm_artifact_posture, wasm_runtime_posture},
 };
-
 /// Runtime backend policy failure.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct BackendPolicyError {
@@ -13,7 +12,6 @@ pub struct BackendPolicyError {
     /// Backend report observed when the policy failed.
     pub report: BackendReport,
 }
-
 impl core::fmt::Display for BackendPolicyError {
     fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(
@@ -26,7 +24,6 @@ impl core::fmt::Display for BackendPolicyError {
 
 #[cfg(feature = "std")]
 impl std::error::Error for BackendPolicyError {}
-
 /// Backend report for the current build and target.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[allow(clippy::struct_excessive_bools)]
@@ -75,7 +72,6 @@ pub struct BackendReport {
     /// Current constant-time result-gate barrier posture.
     pub ct_gate_posture: CtGatePosture,
 }
-
 /// Compact structured backend snapshot for logging and policy evidence.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[allow(clippy::struct_excessive_bools)]
@@ -458,6 +454,8 @@ fn detected_candidate() -> Backend {
         crate::simd::Candidate::WasmSimd128 => Backend::WasmSimd128,
         #[cfg(all(target_arch = "riscv64", base64_ng_rvv_candidate))]
         crate::simd::Candidate::Rvv => Backend::Rvv,
+        #[cfg(all(target_arch = "aarch64", base64_ng_sve_candidate))]
+        crate::simd::Candidate::Sve => Backend::Sve,
     }
 }
 
@@ -472,6 +470,7 @@ const fn detected_candidate() -> Backend {
     any(
         target_arch = "x86",
         target_arch = "x86_64",
+        all(target_arch = "aarch64", base64_ng_sve_candidate),
         all(target_arch = "riscv64", base64_ng_rvv_candidate)
     )
 ))]
@@ -486,6 +485,7 @@ const fn candidate_detection_mode() -> CandidateDetectionMode {
         any(
             target_arch = "x86",
             target_arch = "x86_64",
+            all(target_arch = "aarch64", base64_ng_sve_candidate),
             all(target_arch = "riscv64", base64_ng_rvv_candidate)
         )
     ))

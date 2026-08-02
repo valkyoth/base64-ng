@@ -110,6 +110,17 @@ operators use `scripts/check_riscv_hardware.sh` and the checked schema under
 `hardware-evidence/riscv/`; normal published builds stay scalar until that
 evidence and external review are accepted.
 
+`scripts/check_sve_qemu.sh` builds a static AArch64 Linux test binary with the
+bundled `rust-lld`, runs the complete portable fallback suites, and exercises
+the isolated Commit 33 SVE candidate at vector lengths 128, 256, and 512.
+`scripts/generate_sve_asm_evidence.sh` checks the exact leaf symbols,
+structured loads/stores, predicate mapping, register cleanup, and absence of
+nested calls or stack use. This is emulation and codegen evidence only. Native
+operators use `scripts/check_sve_hardware.sh` and the checked schema under
+`hardware-evidence/sve/`; public AArch64 dispatch remains admitted NEON or
+scalar until evidence from two real SVE systems with different vector lengths
+and external review are accepted.
+
 The no-alloc portability smoke crate checks the same installed target list with:
 
 ```sh

@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/valkyoth/base64-ng/hardware-evidence/sve/schema-v1.json",
+  "title": "base64-ng real AArch64 SVE hardware evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "project", "execution_environment", "source_commit",
+    "target", "hardware", "software", "vector", "verification",
+    "backend", "benchmark", "review"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "project": { "const": "base64-ng" },
+    "execution_environment": { "const": "real-hardware" },
+    "source_commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "target": {
+      "type": "object", "additionalProperties": false,
+      "required": ["triple", "arch", "endian"],
+      "properties": {
+        "triple": { "const": "aarch64-unknown-linux-gnu" },
+        "arch": { "const": "aarch64" },
+        "endian": { "const": "little" }
+      }
+    },
+    "hardware": {
+      "type": "object", "additionalProperties": false,
+      "required": ["vendor", "system", "soc", "cpu", "firmware"],
+      "properties": {
+        "vendor": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "system": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "soc": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "cpu": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "firmware": { "type": "string", "minLength": 1, "maxLength": 256 }
+      }
+    },
+    "software": {
+      "type": "object", "additionalProperties": false,
+      "required": ["os", "kernel", "rustc", "cargo"],
+      "properties": {
+        "os": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "kernel": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "rustc": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "cargo": { "type": "string", "minLength": 1, "maxLength": 256 }
+      }
+    },
+    "vector": {
+      "type": "object", "additionalProperties": false,
+      "required": ["specification", "vector_length_bits", "hwcap_sve", "prctl_vector_length", "per_thread_vl_review", "signal_context_review", "ffi_abi_review"],
+      "properties": {
+        "specification": { "const": "SVE" },
+        "vector_length_bits": { "type": "integer", "minimum": 128, "maximum": 2048, "multipleOf": 128 },
+        "hwcap_sve": { "const": true },
+        "prctl_vector_length": { "const": true },
+        "per_thread_vl_review": { "const": "PASS" },
+        "signal_context_review": { "const": "PASS" },
+        "ffi_abi_review": { "const": "PASS" }
+      }
+    },
+    "verification": {
+      "type": "object", "additionalProperties": false,
+      "required": ["command", "passed", "output_sha256"],
+      "properties": {
+        "command": { "const": "scripts/check_sve_hardware.sh" },
+        "passed": { "const": true },
+        "output_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
+    "backend": {
+      "type": "object", "additionalProperties": false,
+      "required": ["encode", "strict_decode", "secret_decode", "production_admitted"],
+      "properties": {
+        "encode": { "const": "sve-candidate" },
+        "strict_decode": { "const": "sve-candidate" },
+        "secret_decode": { "const": "scalar-constant-time-oriented" },
+        "production_admitted": { "const": false }
+      }
+    },
+    "benchmark": {
+      "type": "object", "additionalProperties": false,
+      "required": ["command", "encode_beneficial", "decode_beneficial", "raw_data_sha256"],
+      "properties": {
+        "command": { "type": "string", "minLength": 1, "maxLength": 1024 },
+        "encode_beneficial": { "const": true },
+        "decode_beneficial": { "const": true },
+        "raw_data_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
+    "review": {
+      "type": "object", "additionalProperties": false,
+      "required": ["reporter", "recorded_at", "assembly", "register_cleanup", "pentest_range", "pentest_result"],
+      "properties": {
+        "reporter": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "recorded_at": { "type": "string", "format": "date-time" },
+        "assembly": { "const": "PASS" },
+        "register_cleanup": { "const": "PASS" },
+        "pentest_range": { "type": "string", "pattern": "^[0-9a-f]{40}\\.\\.[0-9a-f]{40}$" },
+        "pentest_result": { "const": "PASS" }
+      }
+    }
+  }
+}

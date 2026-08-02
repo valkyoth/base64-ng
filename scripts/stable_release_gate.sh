@@ -71,6 +71,12 @@ scripts/check_riscv_qemu.sh
 echo "stable release gate: RVV candidate assembly evidence"
 scripts/generate_rvv_asm_evidence.sh
 
+echo "stable release gate: AArch64 SVE QEMU checks"
+scripts/check_sve_qemu.sh
+
+echo "stable release gate: SVE candidate assembly evidence"
+scripts/generate_sve_asm_evidence.sh
+
 echo "stable release gate: no-alloc portability smoke"
 scripts/check_no_alloc_smoke.sh
 

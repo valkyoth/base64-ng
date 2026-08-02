@@ -1439,6 +1439,44 @@ candidate evidence only. Real-hardware correctness, ABI/signal preservation,
 performance, register-remanence review, and an external pentest remain hard
 requirements before production admission.
 
+## Commit 33 Non-Admitted SVE Candidate
+
+Location: `src/simd/sve.rs`
+
+Commit 33 adds an internal QEMU-only AArch64 SVE candidate. It is compiled
+only through the project-owned `base64_ng_sve_candidate` evidence cfg and does
+not enter `EncodeBackend`, `DecodeBackend`, or `ActiveBackend` dispatch.
+
+Unsafe operations:
+
+- four leaf `global_asm!` functions load exact 12/16-byte blocks with
+  `ld3b`/`ld4b`, execute predicate-based Standard or URL-safe mapping, store
+  exact 16/12-byte blocks with `st4b`/`st3b`, and clear caller-saved
+  `z0..z7` plus `p0..p1` before return;
+- one stackless leaf reads the architectural vector length with `cntb` for
+  evidence reporting;
+- Rust wrappers call those symbols through `extern "C"` only after exact block
+  bounds and the per-call SVE/vector-length gate are proven;
+- Linux/Android runtime detection calls `getauxval(AT_HWCAP)` and
+  `prctl(PR_SVE_GET_VL)` through their reviewed C ABI, and test-only evidence
+  changes the current thread's vector length with `PR_SVE_SET_VL`.
+
+Every data kernel activates exactly four byte lanes with `ptrue p0.b, vl4`, so
+its memory footprint and result are independent of the physical SVE vector
+length. The functions are stackless leaves, make no nested calls, use only
+base-PCS caller-saved vector and predicate registers, and carry CFI function
+boundaries. Scalar whole-input validation completes before strict-decode
+output writes; padded final quanta and tails remain scalar. Capability results
+are queried for every candidate call rather than cached because SVE vector
+length is per-thread and can change through `prctl`.
+
+Generated disassembly, QEMU execution at 128-, 256-, and 512-bit vector
+lengths, malformed probe tests, per-thread vector-length changes, and a static
+`no_std +sve` build are required by the Commit 33 gates. These are functional
+candidate evidence only. Real-hardware correctness on at least two vector
+lengths, ABI/signal preservation, performance, register-remanence review, and
+an external pentest remain hard requirements before production admission.
+
 ## Admission Rule
 
 Unsafe SIMD can become an active backend only after scalar differential tests,

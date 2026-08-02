@@ -57,6 +57,13 @@ only for backends named in this file and the release gate.
   each complete block-loop boundary, checked-backend quarantine, static
   `no_std` token execution, exhaustive real-device tests, and measured
   Apple/server ARM evidence gates.
+  The 2.0 Commit 33 checkpoint adds a complete non-admitted SVE encode/decode
+  candidate, QEMU execution at 128-, 256-, and 512-bit vector lengths,
+  fail-closed HWCAP and per-thread vector-length probing, generated assembly
+  review, and a checked native-hardware evidence schema. It does not add SVE
+  to public dispatch; AArch64 remains admitted NEON or scalar until two real
+  SVE systems with different vector lengths satisfy the complete admission
+  contract.
   Active encode dispatch uses the length policy above on x86/x86_64 and NEON
   on little-endian aarch64 for
   Standard and URL-safe alphabet families. AVX-512 VBMI strict decode is

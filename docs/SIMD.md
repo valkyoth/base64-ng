@@ -258,6 +258,7 @@ runtime behavior for that line.
   tracked in
   [WASM_SIMD128_RUNTIME_REVIEW.md](WASM_SIMD128_RUNTIME_REVIEW.md).
 - Big-endian and RISC-V acceleration work follows a QEMU-first evidence path.
+  SVE candidate work follows the same QEMU-first evidence discipline.
   QEMU proves functional behavior, not hardware performance, timing,
   microarchitectural, register-retention, signal-state, or side-channel
   properties. Commit 32 provides a vector-length-independent RVV 1.0
@@ -267,6 +268,15 @@ runtime behavior for that line.
   Linux `riscv_hwprobe`, auxiliary-vector, and vector-state checks. Normal
   published builds remain scalar on RISC-V until the native hardware contract
   and external RISC-V vector review pass.
+  Commit 33 similarly provides a vector-length-independent AArch64 SVE
+  Standard/URL-safe encode and strict-decode candidate behind the internal
+  `base64_ng_sve_candidate` evidence cfg. It uses four active lanes at every
+  legal vector length, is exercised under QEMU at 128, 256, and 512 bits, has
+  generated leaf-assembly and register-cleanup evidence, and fails closed on
+  missing HWCAP or invalid per-thread `PR_SVE_GET_VL` results. Normal public
+  AArch64 dispatch remains admitted NEON or scalar until evidence from at
+  least two real SVE systems with different vector lengths and external review
+  satisfy the native admission contract.
 - `runtime::backend_report()` reports the active backend, detected candidate,
   detection mode, SIMD feature status, security posture, and a
   conservative unsafe-boundary posture flag. The flag is true only when the

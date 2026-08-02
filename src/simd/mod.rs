@@ -29,9 +29,31 @@
 //! compile-time target-feature checks on `no_std`. The wasm `simd128`
 //! fixed-block implementation is reachable only for the admitted wasm runtime
 //! profile and remains scoped out of broader browser/JIT claims.
+//! Commit 33 also carries an internal, non-dispatchable SVE encode/decode
+//! candidate for QEMU and generated-code evidence. Public `AArch64` dispatch
+//! remains admitted NEON or scalar until the native SVE admission contract is
+//! satisfied.
 
 mod static_token;
 pub use static_token::StaticBackendToken;
+
+#[cfg(all(
+    feature = "simd",
+    target_arch = "aarch64",
+    target_endian = "little",
+    base64_ng_sve_candidate
+))]
+mod sve;
+#[cfg(all(
+    feature = "std",
+    feature = "simd",
+    test,
+    target_arch = "aarch64",
+    target_endian = "little",
+    target_os = "linux",
+    base64_ng_sve_candidate
+))]
+mod sve_tests;
 
 #[cfg(all(feature = "simd", target_arch = "riscv64", base64_ng_rvv_candidate))]
 mod rvv;
@@ -154,6 +176,9 @@ pub(crate) enum Candidate {
     /// ARM NEON is available.
     #[cfg(any(target_arch = "aarch64", target_arch = "arm"))]
     Neon,
+    /// SVE is visible to the non-admitted project-owned candidate build.
+    #[cfg(all(target_arch = "aarch64", base64_ng_sve_candidate))]
+    Sve,
     /// wasm32 `simd128` is available.
     #[cfg(target_arch = "wasm32")]
     WasmSimd128,
@@ -219,6 +244,18 @@ fn detect_active_backend() -> ActiveBackend {
 /// is complete.
 #[must_use]
 pub(crate) fn detected_candidate() -> Candidate {
+    #[cfg(all(
+        feature = "simd",
+        target_arch = "aarch64",
+        target_endian = "little",
+        base64_ng_sve_candidate
+    ))]
+    {
+        if sve::available() {
+            return Candidate::Sve;
+        }
+    }
+
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     {
         if avx512_vbmi_base64_available() {

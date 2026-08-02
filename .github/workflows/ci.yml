@@ -294,6 +294,33 @@ jobs:
       - name: Generate RVV candidate assembly evidence
         run: scripts/generate_rvv_asm_evidence.sh
 
+  sve-qemu:
+    name: AArch64 SVE QEMU candidate evidence
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install Rust toolchain
+        shell: bash
+        run: scripts/ci_install_rust.sh
+
+      - name: Install static AArch64 Rust target
+        run: rustup target add aarch64-unknown-linux-musl
+
+      - name: Install QEMU user-mode runner
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends qemu-user binutils
+
+      - name: Run scalar, NEON, and SVE candidate suites
+        run: scripts/check_sve_qemu.sh
+
+      - name: Generate SVE candidate assembly evidence
+        run: scripts/generate_sve_asm_evidence.sh
+
   miri:
     name: Miri
     runs-on: ubuntu-latest

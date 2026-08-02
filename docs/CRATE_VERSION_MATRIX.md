@@ -15,6 +15,10 @@ publish helper refuses to run until the final 2.0 acceptance checkpoint.
 Commit 32 includes a non-dispatchable RVV candidate with QEMU and assembly
 evidence. RISC-V production dispatch remains scalar until native hardware and
 external review evidence satisfy the admission contract.
+Commit 33 includes a non-dispatchable SVE candidate with QEMU execution at
+128-, 256-, and 512-bit vector lengths plus assembly evidence. Public AArch64
+dispatch remains admitted NEON or scalar until two real SVE systems with
+different vector lengths and external review satisfy the admission contract.
 
 | Crate | Development Version | Publish Now | Cargo |
 | --- | --- | --- | --- |

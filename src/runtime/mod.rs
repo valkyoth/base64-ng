@@ -26,6 +26,12 @@ pub enum Backend {
     /// project-owned candidate build. Production dispatch remains scalar
     /// until real-hardware admission evidence is accepted.
     Rvv,
+    /// An `AArch64` SVE candidate was detected.
+    ///
+    /// The 2.0 development branch reports this only from the internal
+    /// project-owned candidate build. Production dispatch remains on admitted
+    /// NEON or scalar until native-hardware admission evidence is accepted.
+    Sve,
 }
 
 impl Backend {
@@ -44,6 +50,7 @@ impl Backend {
             Self::Neon => "neon",
             Self::WasmSimd128 => "wasm-simd128",
             Self::Rvv => "rvv",
+            Self::Sve => "sve",
         }
     }
 
@@ -68,6 +75,7 @@ impl Backend {
             Self::Neon => &["neon"],
             Self::WasmSimd128 => &["simd128"],
             Self::Rvv => &["v"],
+            Self::Sve => &["sve"],
         }
     }
 }

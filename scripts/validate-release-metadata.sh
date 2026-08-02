@@ -160,6 +160,8 @@ for required_script in \
     "scripts/check_riscv_hardware.sh" \
     "scripts/check_riscv_qemu.sh" \
     "scripts/check_riscv_intrinsics_status.sh" \
+    "scripts/check_sve_hardware.sh" \
+    "scripts/check_sve_qemu.sh" \
     "scripts/check_scheduled_advisories.sh" \
     "scripts/validate-api-audit.sh" \
     "scripts/validate-2.0-governance.sh" \
@@ -187,6 +189,7 @@ for required_script in \
     "scripts/generate-sbom.sh" \
     "scripts/generate_ct_asm_evidence.sh" \
     "scripts/generate_rvv_asm_evidence.sh" \
+    "scripts/generate_sve_asm_evidence.sh" \
     "scripts/test-ct-asm-symbols.sh" \
     "scripts/test-evidence-source.sh" \
     "scripts/reproducible_build_check.sh" \
@@ -346,6 +349,8 @@ for required_release_gate_command in \
     "scripts/check_big_endian_qemu.sh --all" \
     "scripts/check_riscv_qemu.sh" \
     "scripts/generate_rvv_asm_evidence.sh" \
+    "scripts/check_sve_qemu.sh" \
+    "scripts/generate_sve_asm_evidence.sh" \
     "scripts/check_no_alloc_smoke.sh" \
     "scripts/check_migration_smoke.sh" \
     "scripts/check_simd_feature_bundles.sh" \
@@ -466,6 +471,7 @@ for required_checks_command in \
     "scripts/validate-api-audit.sh" \
     "scripts/validate-big-endian-posture.sh" \
     "scripts/validate-riscv-posture.sh" \
+    "scripts/validate-sve-posture.sh" \
     "scripts/validate-msrv-policy.sh" \
     "scripts/validate-wasm-posture.sh" \
     "scripts/validate-simd-encode-admission-draft.sh" \
@@ -535,6 +541,9 @@ for required_package_file in \
     "hardware-evidence/riscv/README.md" \
     "hardware-evidence/riscv/schema-v1.json" \
     "docs/RISCV_QEMU_REVIEW.md" \
+    "docs/SVE_QEMU_REVIEW.md" \
+    "hardware-evidence/sve/README.md" \
+    "hardware-evidence/sve/schema-v1.json" \
     "docs/CONSTANT_TIME.md" \
     "docs/CT_ASM_REVIEW.md" \
     "docs/DEPENDENCIES.md" \
@@ -582,6 +591,8 @@ for required_package_file in \
     "scripts/check_riscv_hardware.sh" \
     "scripts/check_riscv_qemu.sh" \
     "scripts/check_riscv_intrinsics_status.sh" \
+    "scripts/check_sve_hardware.sh" \
+    "scripts/check_sve_qemu.sh" \
     "scripts/ct-asm-symbols.sh" \
     "scripts/validate-api-audit.sh" \
     "scripts/validate-big-endian-posture.sh" \
@@ -591,6 +602,9 @@ for required_package_file in \
     "scripts/validate-riscv-posture.sh" \
     "scripts/validate-riscv-hardware-evidence.py" \
     "scripts/test-riscv-hardware-evidence.py" \
+    "scripts/validate-sve-posture.sh" \
+    "scripts/validate-sve-hardware-evidence.py" \
+    "scripts/test-sve-hardware-evidence.py" \
     "scripts/check_dudect.sh" \
     "scripts/check_fuzz.sh" \
     "scripts/check_fuzz_corpus.sh" \
@@ -607,6 +621,7 @@ for required_package_file in \
     "scripts/generate-sbom.sh" \
     "scripts/generate_ct_asm_evidence.sh" \
     "scripts/generate_rvv_asm_evidence.sh" \
+    "scripts/generate_sve_asm_evidence.sh" \
     "scripts/generate_neon_asm_evidence.sh" \
     "scripts/test-ct-asm-symbols.sh" \
     "scripts/test-neon-performance.py" \
@@ -653,6 +668,7 @@ for required_package_file in \
     "src/runtime/report.rs" \
     "src/scalar.rs" \
     "src/simd/mod.rs" \
+    "src/simd/sve.rs" \
     "src/simd/tests.rs" \
     "src/stream/mod.rs" \
     "src/stream/common.rs" \

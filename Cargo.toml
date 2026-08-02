@@ -89,6 +89,7 @@ unexpected_cfgs = { level = "warn", check-cfg = [
     "cfg(base64_ng_perf_evidence)",
     "cfg(base64_ng_require_high_assurance)",
     "cfg(base64_ng_rvv_candidate)",
+    "cfg(base64_ng_sve_candidate)",
     "cfg(base64_ng_kani_advanced)",
     "cfg(kani)",
     "cfg(miri)",

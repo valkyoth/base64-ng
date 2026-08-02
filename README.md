@@ -102,6 +102,11 @@ Commit 32 adds a complete, isolated RVV 1.0 encode/decode candidate and tests
 it under QEMU at VLEN 128 and 256. Normal published builds remain scalar on
 RISC-V: native correctness, ABI, signal-state, performance, assembly, and
 external pentest evidence are mandatory before production dispatch admission.
+Commit 33 adds the equivalent isolated, vector-length-independent AArch64 SVE
+candidate and tests it under QEMU at 128, 256, and 512 bits. It is not part of
+normal public dispatch: production AArch64 execution remains admitted NEON or
+scalar until two real SVE systems with different vector lengths provide the
+required correctness, ABI, signal-state, cleanup, and performance evidence.
 
 ## Backend Verification Status
 
@@ -120,14 +125,15 @@ normal public dispatch.
 | little-endian AArch64 NEON encode/decode | Complete | Native Apple M2 and AWS Neoverse-N1 plus assembly and direct-kernel gates | `admitted` | Not independently verified |
 | wasm `simd128` encode/decode | Complete | Node/V8, Wasmtime, Chromium/V8, Firefox/SpiderMonkey, and Safari/WebKit package/runtime gates | `admitted` for the documented SIMD artifact | Not independently verified |
 | RISC-V RVV 1.0 encode/decode | Complete candidate | QEMU VLEN 128/256 plus generated assembly; no accepted native RVV report | `not admitted`; published execution remains scalar | Not independently verified |
-| AArch64 SVE encode/decode | Commit 33 scope | No accepted implementation or hardware evidence at Commit 32 | `not admitted` | Not independently verified |
+| AArch64 SVE encode/decode | Complete candidate | QEMU vector lengths 128/256/512 plus generated assembly; no accepted native SVE report | `not admitted`; public execution remains NEON or scalar | Not independently verified |
 | Constant-time-oriented secret encode/decode | Complete scalar bounded path | Fixed-work tests, Kani, assembly review, and dudect-style project evidence | Separate scalar path; never ordinary SIMD dispatch | No formal or independent constant-time verification |
 | Big-endian acceleration | No backend implemented | Complete scalar suites under s390x and PowerPC64 QEMU only | `not admitted`; scalar only | No native hardware verification |
 
 The detailed evidence and non-claims are maintained in
 [the Trust Dashboard](docs/TRUST.md), [SIMD policy](docs/SIMD.md), and the
-[RISC-V review](docs/RISCV_QEMU_REVIEW.md). This table is updated whenever a
-backend implementation, execution environment, or admission decision changes.
+[RISC-V review](docs/RISCV_QEMU_REVIEW.md), and
+[SVE review](docs/SVE_QEMU_REVIEW.md). This table is updated whenever a backend
+implementation, execution environment, or admission decision changes.
 
 Implemented on this branch now:
 
@@ -138,6 +144,12 @@ Implemented on this branch now:
   assembly evidence, dual-VLEN QEMU tests, and a checked real-hardware report
   contract. The candidate is deliberately non-dispatchable until native
   evidence and external review pass.
+- Commit 33 vector-length-independent SVE Standard/URL-safe encode and
+  strict-decode candidate, fail-closed Linux/Android HWCAP and per-thread
+  vector-length probing, generated assembly evidence, QEMU tests at three
+  vector lengths, and a checked real-hardware report contract. The candidate
+  is deliberately non-dispatchable until native evidence and external review
+  pass.
 - `no_std` core with optional `alloc` and `std` features.
 - Zero external runtime or development dependencies in `Cargo.toml`.
 - Standard and URL-safe alphabets.

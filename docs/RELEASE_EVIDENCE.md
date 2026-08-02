@@ -368,6 +368,19 @@ The release gate runs:
   register-retention, or side-channel evidence. Production RISC-V dispatch
   remains scalar until a report accepted by
   `hardware-evidence/riscv/schema-v1.json` and external review pass.
+- AArch64 SVE QEMU user-mode verification through `scripts/check_sve_qemu.sh`,
+  which runs the complete portable fallback suites and the isolated Commit 33
+  candidate at vector lengths 128, 256, and 512. The candidate covers
+  Standard/URL-safe ordinary encode and strict decode, malformed no-write
+  behavior, capability-probe failures, per-thread vector-length changes, and
+  static `no_std` compilation. `scripts/generate_sve_asm_evidence.sh` checks
+  exact leaf symbols, structured loads/stores, predicate mapping, register
+  cleanup, absence of nested calls, and absence of stack use. This remains
+  emulation and codegen evidence, not native performance, timing, ABI/signal
+  preservation, microarchitectural, register-retention, or side-channel
+  evidence. Public AArch64 dispatch remains admitted NEON or scalar until two
+  reports accepted by `hardware-evidence/sve/schema-v1.json` at different
+  vector lengths and external review pass.
 - moved-code review for the `src/alphabet.rs` extraction, preserving root
   public exports for built-in alphabets, custom alphabet validation, and the
   `define_alphabet!` macro

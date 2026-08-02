@@ -17,6 +17,14 @@
   checked native-hardware report schema. Production RISC-V dispatch remains
   scalar until native correctness, ABI, signal-state, performance, assembly,
   and external pentest evidence pass.
+- Commit 33 implements an isolated, vector-length-independent AArch64 SVE
+  Standard/URL-safe encode and strict-decode candidate through reviewed leaf
+  assembly, fail-closed Linux/Android HWCAP and per-thread vector-length
+  checks, QEMU vector-length 128/256/512 differential suites, generated
+  assembly evidence, and a checked native-hardware report schema. Public
+  AArch64 dispatch remains admitted NEON or scalar until correctness, ABI,
+  signal-state, cleanup, performance, and external pentest evidence from at
+  least two real SVE systems with different vector lengths pass.
 
 ## 1.3.9 - 2026-07-21
 
