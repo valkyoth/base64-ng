@@ -167,12 +167,16 @@ Implemented on this branch now:
   health support and a `StaticBackendToken`. The direct NEON block validates
   every lane before its first exact-width output store; whole-input scalar
   validation preserves the public strict error contract.
-- Runtime-dispatched wasm `simd128` fixed-block encode and normal strict
-  decode for Standard and URL-safe alphabets when built for `wasm32` with
-  `target-feature=+simd128`, `simd`, and
-  `allow-wasm32-best-effort-wipe`. The admission is backed by Node/V8,
-  Wasmtime, Chromium-family browser, Firefox/SpiderMonkey, and Safari/WebKit runtime smoke evidence; unsupported
-  wasm builds stay scalar by compiling without `+simd128`.
+- Direct wasm `simd128` fixed-block encode and normal strict decode for
+  Standard and URL-safe alphabets when built for `wasm32` with
+  `target-feature=+simd128` and `simd`. The 2.0 Commit 30 hot loops use exact
+  12-to-16 encode and 16-to-12 strict-decode blocks after one whole-input
+  scalar validation; tails and padding remain scalar. The supported
+  `base64-ng-wasm-loader` npm package ships separate scalar and SIMD artifacts,
+  selects before instantiation, and is tested from its exact npm tarball under
+  Node/V8, Wasmtime, Chromium/V8, Firefox/SpiderMonkey, and operator-run
+  Safari/WebKit evidence. Secret wasm builds remain governed by the separate
+  fail-closed wipe acknowledgement.
 - Optional `base64-ng-sanitization` companion crate for applications that
   already admit `sanitization` and want direct CT decode helpers into
   clear-on-drop secret containers.
@@ -307,12 +311,35 @@ and crates.io examples resolve consistently across the workspace.
 | `base64-ng-bytes` | Optional `bytes` helpers for `Bytes`, `Buf`, and `BufMut` users. |
 | `base64-ng-subtle` | Optional `subtle::ConstantTimeEq` helpers for token/MAC comparison boundaries. |
 | `base64-ng-tokio` | Optional Tokio read-all/write-all helpers and async reader/writer streaming adapters. |
+| `base64-ng-wasm-loader` | Supported byte-only JavaScript/npm loader with separately selected scalar and `simd128` artifacts. |
 
 Subcrates are documented so crate pages are readable, but they belong to the
 main `base64-ng` crate family and are not intended as independent protocol
 products. Package versions and crates.io links are tracked in
 [Crate Version Matrix](docs/CRATE_VERSION_MATRIX.md) so releases can publish
 only the crates that changed instead of republishing the whole ecosystem.
+
+The 2.0 JavaScript companion selects an artifact with an embedded SIMD probe
+before instantiation and reports the selected posture:
+
+```sh
+npm install base64-ng-wasm-loader
+```
+
+```js
+import { Codecs, createBase64Ng } from "base64-ng-wasm-loader";
+
+const base64 = await createBase64Ng();
+const input = new TextEncoder().encode("hello");
+const encoded = base64.encode(input, Codecs.URL_SAFE_NO_PAD);
+const decoded = base64.decode(encoded, Codecs.URL_SAFE_NO_PAD);
+base64.dispose();
+```
+
+It accepts bytes only, snapshots input, commits `*Into` destinations only after
+success, rejects shared/resizable/detached/overlapping storage, and exposes no
+secret API or wasm-memory views. See
+[`packages/base64-ng-wasm-loader/README.md`](packages/base64-ng-wasm-loader/README.md).
 
 `base64-ng-sanitization` provides extension helpers for
 `base64_ng::ct::CtEngine` that decode directly into

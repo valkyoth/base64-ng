@@ -28,8 +28,6 @@
 //! fixed-block implementation is reachable only for the admitted wasm runtime
 //! profile and remains scoped out of broader browser/JIT claims.
 
-#[cfg(all(target_arch = "wasm32", any(test, feature = "simd")))]
-mod decode_helpers;
 mod static_token;
 pub use static_token::StaticBackendToken;
 #[cfg(any(target_arch = "aarch64", target_arch = "arm"))]

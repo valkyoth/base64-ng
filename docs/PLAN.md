@@ -1262,6 +1262,21 @@ SIMD admission rules for all post-`1.0` work:
 
 ## Current 2.0 Development Checkpoint
 
+Commit 30 replaces the earlier wasm per-block verification path with direct
+12-to-16 encode and 16-to-12 strict-decode `simd128` kernels. It also adds the
+supported `base64-ng-wasm-loader` npm package with separate scalar/SIMD
+artifacts, pre-instantiation capability selection, byte-only transactional
+APIs, hostile JavaScript storage checks, fixed memory ceilings, deterministic
+artifact evidence, exact-package Node/Wasmtime/browser smoke, and benchmark
+records. The package has no secret API and does not broaden wasm JIT timing or
+cleanup claims.
+
+Commit 29 replaces the AArch64 NEON staging prototypes with exact-width direct
+encode and strict-decode kernels, complete KAT/static-token routing, and one
+reviewed vector-register cleanup boundary after each block loop. Real macOS and
+Linux AArch64 evidence remains the authority for the admitted little-endian
+NEON posture.
+
 Commit 28 replaces the AVX-512 VBMI strict-decode staging prototype with direct
 64-byte ASCII classification, 6-bit mapping, multiply-add packing, VBMI lane
 compaction, and an exact masked 48-byte output store. Whole-input scalar

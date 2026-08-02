@@ -1,0 +1,30 @@
+{
+  "name": "base64-ng-wasm-loader",
+  "version": "2.0.0",
+  "description": "Capability-selecting scalar and simd128 WebAssembly loader for base64-ng",
+  "type": "module",
+  "exports": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "files": [
+    "artifacts/*",
+    "src/index.js",
+    "src/index.d.ts",
+    "README.md",
+    "LICENSE-APACHE",
+    "LICENSE-MIT"
+  ],
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test test/*.test.mjs",
+    "prepack": "npm run build && npm test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT OR Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/valkyoth/base64-ng.git",
+    "directory": "packages/base64-ng-wasm-loader"
+  }
+}

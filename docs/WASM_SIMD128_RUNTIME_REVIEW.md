@@ -1,125 +1,96 @@
 # Wasm `simd128` Runtime Review
 
-This file tracks the `1.3.3` wasm runtime-dispatch decision and admission
-evidence.
+This file tracks the direct wasm `simd128` implementation and supported
+JavaScript loader introduced by 2.0 Commit 30.
 
 ## Decision
 
-wasm `simd128` runtime dispatch is admitted in `1.3.3` for binaries compiled
-with `target-feature=+simd128` and the `simd` feature. Commit 21 removes the
-secret cleanup acknowledgement from this ordinary public-data profile.
+The Rust crate admits direct fixed-block `simd128` encode and strict decode for
+Standard and URL-safe alphabet families in artifacts compiled with
+`target-feature=+simd128` and the `simd` feature. Encode processes exact
+12-byte input blocks into 16-byte output blocks. Strict decode performs one
+whole-input scalar validation, then directly classifies and decodes exact
+16-byte blocks into 12-byte output blocks. Padded final quanta, canonical tail
+bits, and short tails remain scalar.
 
-The admitted runtime profile is intentionally narrow:
+The `base64-ng-wasm-loader` npm package ships two immutable artifacts:
 
-- Standard and URL-safe alphabet families only
-- normal encode through the public encode boundary
-- in-place encode only through stack staging before the public encode boundary
-- normal strict decode through the public strict decode boundary
-- strict in-place decode only through stack staging before the public strict
-  decode boundary
-- strict wrapped decode may enter the public strict decode boundary after
-  scalar line-profile validation and line-ending compaction
-- legacy whitespace decode may enter the public strict decode boundary after
-  scalar whitespace compaction
-- full fixed blocks use `simd128`; tails and unsupported surfaces use scalar
-- no vectorized line-profile validation, line-ending compaction, or
-  legacy-whitespace compaction; no custom alphabets, bcrypt-style profiles,
-  or `ct` secret decode
-- runtime smoke evidence is required for Node/V8, Wasmtime, at least one
-  Chromium-family browser, Firefox/SpiderMonkey, and Safari/WebKit
+- `base64-ng-scalar.wasm`
+- `base64-ng-simd128.wasm`
 
-When compiled with `simd128`, active encode and decode backends are `wasm-simd128`
-on `wasm32`.
+An embedded `WebAssembly.validate` SIMD probe selects the artifact before
+instantiation. A rejected probe never loads or instantiates the SIMD artifact.
+Deployments may explicitly require scalar or SIMD posture. The loader reports
+capability evidence, selected artifact, selection reason, compile-time artifact
+posture, ABI version, and configured ceilings separately.
+
+## JavaScript Boundary
+
+The supported API is byte-only and accepts genuine `Uint8Array` values. It
+provides `encodedLength`, `decodedLength`, `encode`, `decode`, `encodeInto`,
+`decodeInto`, and `decodeForgiving` for Standard, Standard-no-pad, URL-safe,
+and URL-safe-no-pad codecs.
+
+The loader:
+
+- captures a closed intrinsic allowlist at module evaluation;
+- rejects proxies, spoofed views, shared backing, detached backing, resizable
+  backing, overlapping input/output views, and runtimes that cannot prove
+  fixed `ArrayBuffer` storage;
+- accepts genuine cross-realm arrays and subclasses without invoking caller
+  constructors, iterators, species, or helper overrides;
+- snapshots input before validation and stages output before changing an
+  `*Into` destination;
+- exposes owned output copies and never exposes wasm memory or borrowed views;
+- checks exact safe-integer, WASM32, input, output, artifact, and memory limits;
+- exposes redacted `Base64NgError` diagnostics without rejected input bytes;
+- uses no `eval` or `new Function`; restrictive browser CSP deployments must
+  allow WebAssembly compilation with `script-src 'wasm-unsafe-eval'`; and
+- provides best-effort disposal of current scratch while making no engine, GC,
+  JIT, register, or historical-memory cleanup claim.
+
+The package has no secret API. The Rust `secrets` capability remains scalar and
+is governed by the separate wasm wipe policy.
 
 ## Evidence
 
-The admission is backed by:
+`scripts/check-2.0-wasm-loader.sh` is the primary package gate. It:
 
-- `scripts/check_wasm_runtime_dispatch.sh`, which builds a `cdylib` smoke
-  module with `RUSTFLAGS='-C target-feature=+simd128'` and executes it under
-  Node/V8 and Wasmtime.
-- `scripts/check_wasm_browser_dispatch.sh`, which executes the same smoke
-  module in a Chromium-family browser through synchronous browser
-  `WebAssembly.Module` instantiation.
-- `scripts/check_wasm_browser_firefox_dispatch.sh`, which executes the same
-  smoke module in Firefox/SpiderMonkey through `geckodriver`.
-- `scripts/check_wasm_browser_safari_dispatch.sh`, which executes the same
-  smoke module in Safari/WebKit through `safaridriver` when Safari remote
-  automation is enabled on macOS.
-- The smoke checks `runtime::backend_report()` and requires candidate, active
-  encode, and active decode backend reporting to be `wasm-simd128`.
-- The smoke runs a deterministic length sweep from 0 through 200 bytes with
-  multiple seeds for Standard padded and URL-safe no-padding payloads.
-- The smoke compares public encode output against an independent scalar reference encoder
-  before decoding it back through the public strict decode APIs.
-- The smoke includes malformed block-boundary inputs that must return decode
-  errors without trapping.
-- `scripts/generate_wasm_simd_evidence.sh`, which emits release test-harness
-  LLVM IR and checks for `simd128` codegen markers.
-- `scripts/check_simd_feature_bundles.sh`, which keeps compile/test-binary
-  evidence for `wasm32-unknown-unknown` with `target-feature=+simd128` when
-  the target is installed.
+- builds scalar and SIMD artifacts twice and compares exact checksums;
+- denies unreviewed Rust unsafe sites in the private artifact ABI;
+- runs Node/V8 scalar/SIMD differential, malformed-input, transactionality,
+  limit, disposal, cross-realm, hostile-object, shared-worker, and intrinsic
+  instrumentation tests;
+- executes each artifact self-test under Wasmtime when installed;
+- records Node/V8 encode/decode benchmark evidence;
+- packs the exact npm tarball, verifies its file allowlist, extracts it, and
+  runs install-from-package smoke tests; and
+- prepares that exact extracted package for browser tests.
+
+`scripts/check_wasm_loader_browser_dispatch.sh` and
+`scripts/check_wasm_loader_browser_firefox_dispatch.sh` serve the extracted npm
+package over HTTP and run complete codec sweeps in Chromium/V8 and
+Firefox/SpiderMonkey. `scripts/check_wasm_loader_browser_safari_dispatch.sh`
+runs the same package and page through Safari/WebKit on an operator-provided
+macOS host with remote automation enabled.
+
+`scripts/generate_wasm_simd_evidence.sh` records release LLVM IR and requires
+the `simd128` target feature, byte-vector shuffles, validity-mask reduction,
+and wasm bit-select operations. The existing Rust runtime smoke remains an
+independent check of core backend reporting and public Rust surfaces through
+`scripts/check_wasm_runtime_dispatch.sh`.
 
 ## Limits
 
-Wasm execution still includes a runtime or JIT layer outside the Rust compiler
-and outside this crate's control. This admission proves correctness and
-dispatch behavior for the named runtime smoke profile; it does not claim:
+The evidence proves functional correctness, selection, packaging, and measured
+benefit only for the named runtime executions. It does not prove universal JIT
+timing, native register cleanup, every browser version, every edge runtime, or
+constant-time behavior. Browser benchmark values are observations, not release
+thresholds. Node/V8 performance admission requires the exact local benchmark
+run to show both encode and decode benefit; other runtimes require their own
+record before making numerical throughput claims.
 
-- browser-wide behavior beyond the named Chromium-family, Firefox/SpiderMonkey,
-  and Safari/WebKit smoke runtimes
-- runtime/JIT timing behavior for every V8, SpiderMonkey, Wasmtime, Wasmer, or
-  edge-compute deployment
-- hardware register-retention cleanup guarantees after the wasm runtime lowers
-  wasm to native code
-- stronger zeroization behavior than the documented wasm wipe-barrier caveat
-- performance superiority without local benchmark evidence
-
-## Required Before Admission
-
-Before broadening wasm `simd128` beyond this admitted profile, a release must
-provide:
-
-- a named additional wasm runtime profile, not a generic "wasm" claim
-- scalar differential tests for encode, clear-tail, allocation helpers, and
-  every admitted decode surface if decode is included
-- generated wasm/codegen evidence with `target-feature=+simd128`
-- runtime tests in the admitted engine profile
-- fallback tests proving scalar execution when `simd128` is unavailable
-- benchmark evidence that names the wasm engine, version, host CPU, operating
-  system, Rust version, and exact commands
-- explicit documentation that the wasm wipe-barrier acknowledgement belongs
-  only to the separate `secrets` capability
-- release notes that distinguish candidate detection from active dispatch
-
-## Current Enforcement
-
-- `src/simd/mod.rs` includes `WasmSimd128` in `ActiveBackend` only behind
-  `cfg(all(feature = "simd", target_arch = "wasm32"))`.
-- `src/simd/wasm.rs` stages wasm encode output, compares it against scalar
-  output before copying bytes to the caller's output buffer, and wipes staged
-  stack buffers on every verification failure path before returning.
-  Evidence phrase: compares it against scalar output before copying bytes to the caller's output buffer.
-  Evidence phrase: wipes staged stack buffers on every verification failure path before returning.
-- `scripts/validate-wasm-posture.sh` checks this review document, the SIMD
-  documentation, the admission manifest, and the runtime boundary.
-- `scripts/check_wasm_runtime_dispatch.sh` executes the runtime smoke under
-  Node/V8 and Wasmtime when the tools are installed.
-- `scripts/check_wasm_browser_dispatch.sh` executes the same runtime smoke in
-  a Chromium-family browser when Chrome/Chromium is installed or
-  `BASE64_NG_BROWSER` points to a compatible browser binary.
-- `scripts/check_wasm_browser_firefox_dispatch.sh` executes the same runtime
-  smoke through `geckodriver` when Firefox evidence is requested locally or in
-  CI.
-- `scripts/check_wasm_browser_safari_dispatch.sh` executes the same runtime
-  smoke through `safaridriver` when Safari remote automation is enabled on
-  macOS. The `1.3.3` release evidence includes a macOS Safari pass reported
-  from `/System/Cryptexes/App/usr/bin/safaridriver`.
-- `scripts/check_simd_feature_bundles.sh` keeps compile/test-binary evidence
-  for `wasm32-unknown-unknown` with `target-feature=+simd128` when the target
-  is installed.
-- `scripts/generate_wasm_simd_evidence.sh` emits release test-harness LLVM IR
-  and checks for `simd128` codegen markers.
-- `scripts/check_wasm_wipe_policy.sh` proves ordinary WASM portability and
-  keeps `secrets` fail-closed unless `allow-wasm32-best-effort-wipe` is
-  explicitly enabled.
+Custom alphabets, bcrypt/crypt alphabets, line-ending insertion, and secret
+constant-time-oriented operations remain scalar. Unsupported runtimes use the
+separate scalar artifact rather than internal runtime fallback inside a SIMD
+artifact.

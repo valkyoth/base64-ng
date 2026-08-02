@@ -197,6 +197,11 @@ workspaces only when they are not packaged with the published crate:
   companion crates, not dependencies of the core `base64-ng` package. They are
   reviewed separately by `scripts/check_companion_crates.sh` so the root package keeps its
   zero-runtime-dependency guarantee.
+- `packages/base64-ng-wasm-loader/` is an npm companion with zero JavaScript
+  dependencies. Its private Rust artifact build depends only on the matching
+  local `base64-ng` source. `npm ci`, deterministic artifact rebuilds, exact
+  tarball inspection, and install-from-package tests run through
+  `scripts/check-2.0-wasm-loader.sh`.
 
 `scripts/checks.sh` runs those isolated harness checks so ordinary local
 verification catches harness dependency drift before release-only evidence

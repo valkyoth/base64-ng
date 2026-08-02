@@ -154,8 +154,8 @@ if ! printf '%s\n' "$wasm_row" | grep '| admitted backend |' >/dev/null 2>&1; th
     exit 1
 fi
 
-if ! grep -q 'Firefox/SpiderMonkey, and Safari/WebKit runtime smoke evidence' docs/SIMD_ADMISSION.md docs/SIMD.md; then
-    echo "simd admission: wasm admission must name Firefox/SpiderMonkey and Safari/WebKit runtime smoke evidence" >&2
+if ! grep -q 'Firefox/SpiderMonkey, and operator-run Safari/WebKit' docs/SIMD_ADMISSION.md docs/SIMD.md; then
+    echo "simd admission: wasm admission must distinguish automated Firefox/SpiderMonkey from operator-run Safari/WebKit evidence" >&2
     exit 1
 fi
 

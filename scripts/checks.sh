@@ -127,6 +127,15 @@ BASE64_NG_ALLOW_DIRTY_EVIDENCE=1 scripts/generate_wasm_simd_evidence.sh
 echo "checks: wasm SIMD runtime dispatch"
 scripts/check_wasm_runtime_dispatch.sh
 
+echo "checks: 2.0 wasm loader package"
+scripts/check-2.0-wasm-loader.sh
+
+echo "checks: 2.0 wasm loader Chromium dispatch"
+scripts/check_wasm_loader_browser_dispatch.sh
+
+echo "checks: 2.0 wasm loader Firefox dispatch"
+scripts/check_wasm_loader_browser_firefox_dispatch.sh
+
 echo "checks: wasm SIMD browser dispatch"
 scripts/check_wasm_browser_dispatch.sh
 

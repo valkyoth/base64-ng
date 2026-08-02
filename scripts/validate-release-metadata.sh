@@ -76,6 +76,11 @@ test -s docs/2.0_PACKAGE_TOPOLOGY.md
 test -s docs/2.0_SECRET_STORAGE_AND_EXPOSURE.md
 test -s docs/2.0_ASSURANCE_AND_PROTECTED_MEMORY.md
 test -s docs/2.0_OPERATION_REPORTING.md
+test -s packages/base64-ng-wasm-loader/package.json
+test -s packages/base64-ng-wasm-loader/package-lock.json
+test -s packages/base64-ng-wasm-loader/README.md
+test -s packages/base64-ng-wasm-loader/artifacts/base64-ng-scalar.wasm
+test -s packages/base64-ng-wasm-loader/artifacts/base64-ng-simd128.wasm
 test -s api-snapshots/README.md
 test -s docs/ASYNC.md
 test -s docs/BENCHMARKS.md
@@ -136,6 +141,7 @@ for required_script in \
     "scripts/check-2.0-format-append-chunks.sh" \
     "scripts/check-2.0-in-place.sh" \
     "scripts/check-2.0-in-place-sanitizers.sh" \
+    "scripts/check-2.0-wasm-loader.sh" \
     "scripts/check-2.0-neon-hot-paths.sh" \
     "scripts/check-2.0-x86-decode-hot-paths.sh" \
     "scripts/check-2.0-profiles.sh" \
@@ -170,6 +176,9 @@ for required_script in \
     "scripts/check_targets.sh" \
     "scripts/check_high_assurance_policy.sh" \
     "scripts/check_wasm_wipe_policy.sh" \
+    "scripts/check_wasm_loader_browser_dispatch.sh" \
+    "scripts/check_wasm_loader_browser_firefox_dispatch.sh" \
+    "scripts/check_wasm_loader_browser_safari_dispatch.sh" \
     "scripts/checks.sh" \
     "scripts/ci_install_rust.sh" \
     "scripts/generate-sbom.sh" \

@@ -55,10 +55,10 @@ test -s "$artifact"
 
 require_pattern "$artifact" 'target triple = "wasm32-unknown-unknown"' "wasm32 target triple"
 require_pattern "$artifact" '"target-features"="\+simd128"' "simd128 target feature"
-require_pattern "$artifact" "encode_12_bytes_wasm_simd128" "anchored wasm prototype symbol"
 require_pattern "$artifact" "shufflevector" "vector shuffle operation"
 require_pattern "$artifact" "<16 x i8>" "128-bit byte-vector operation"
 require_pattern "$artifact" "llvm\\.wasm\\.bitselect\\.v16i8" "wasm bitselect intrinsic"
+require_pattern "$artifact" "llvm\\.wasm\\.bitmask\\.v16i8" "whole-vector validity reduction"
 evidence_verify_source "wasm simd evidence"
 
 {
@@ -79,9 +79,9 @@ evidence_verify_source "wasm simd evidence"
     evidence_checksum_file "$artifact"
     echo
     echo "review focus:"
-    echo "- wasm simd128 release codegen evidence for the admitted narrow runtime profile"
-    echo "- test-harness LLVM IR contains fixed-block encode and decode vector code"
-    echo "- IR contains simd128 target features, vector shuffle, 128-bit byte vectors, and wasm bitselect"
+    echo "- wasm simd128 release codegen evidence for the direct fixed-block runtime profile"
+    echo "- test-harness LLVM IR contains production encode and strict-decode vector code"
+    echo "- IR contains simd128 target features, vector shuffle, 128-bit byte vectors, bitselect, and validity-mask reduction"
     echo "- this evidence does not execute wasm and does not attest any runtime/JIT timing or cleanup behavior; runtime dispatch is checked separately by scripts/check_wasm_runtime_dispatch.sh"
 } >"$manifest"
 

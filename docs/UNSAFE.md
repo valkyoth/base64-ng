@@ -1222,166 +1222,65 @@ Safety argument:
 - This macro clears all AArch64 vector registers for the reviewed encode
   sequence. It is not an admission claim for arbitrary future NEON code.
 
-### `encode_12_bytes_wasm_simd128`
+### `encode_12_bytes`, `decode_16_bytes`, and `decode_full_blocks` (wasm)
 
-Location: `src/simd/wasm.rs`
+Locations: `src/simd/wasm/direct.rs` and `src/simd/wasm.rs`.
 
-Status: private helper for the admitted narrow wasm `simd128` runtime profile.
-It is reachable through runtime backend selection only for `wasm32` binaries
-compiled with `target-feature=+simd128`, `simd`, and
-`allow-wasm32-best-effort-wipe`.
+Status: private direct fixed-block helpers for the 2.0 Commit 30 wasm
+`simd128` profile.
 
-Purpose:
+Purpose and preconditions:
 
-- Select the real wasm `simd128` fixed-block encode helper for Standard-family
-  alphabets.
-- Keep custom alphabets on scalar fallback logic because portable wasm SIMD
-  does not provide a direct 64-byte alphabet lookup instruction.
+- Encode exactly 12 input bytes into 16 Standard-family Base64 bytes.
+- Decode exactly 16 already scalar-validated Base64 bytes into 12 bytes.
+- The artifact is compiled with `target-feature=+simd128`; dispatch admits only
+  Standard and URL-safe alphabet families.
+- Whole-input scalar strict validation, decoded-size calculation, and output
+  preflight complete before the direct decode loop.
 
-Preconditions:
+Unsafe operations:
 
-- Caller must prove `simd128` is available for the current wasm runtime.
-- Input and output lengths are fixed by `[u8; 12]` and `[u8; 16]` arrays.
-
-Unsafe operation:
-
-- Calls the target-feature-gated wasm `simd128` helper.
+- Encode uses `v128_load64_zero` plus one four-byte lane load, fixed shuffles,
+  shifts, masks, and one exact 16-byte store.
+- Decode loads exactly 16 bytes, classifies every lane, reduces the complete
+  validity mask, packs four quanta, and stores exactly eight plus four bytes.
+- `decode_full_blocks` casts loop positions to fixed-array references only
+  under exact block guards and completed output preflight.
 
 Safety argument:
 
-- Fixed array types enforce the required block sizes.
-- The target-feature contract is explicit on the function.
-- Public dispatch reaches the helper only after the feature-gated wasm backend
-  reports `simd128` availability and the caller routes through an admitted
-  Standard-family encode surface.
-- Public dispatch stages this helper's output, compares it against scalar
-  output for the same 12-byte block, and copies to caller output only after the
-  scalar-verification check succeeds.
+- Fixed arrays and loop guards prove every load and store width without caller
+  over-read or over-write.
+- Decode performs no output store until `i8x16_bitmask(valid) == 0xffff`.
+- The public direct loop is reached only after scalar validation has preserved
+  exact error, padding, canonicality, and required-length behavior.
+- Padded final quanta and remaining tails are excluded from the direct loop and
+  handled by scalar code.
+- If the direct classifier unexpectedly disagrees with scalar validation, the
+  wrapper discards the partial result by rerunning the complete decode through
+  scalar code.
 
 Limitations:
 
-- Wasm engines include a runtime/JIT optimization layer outside Rust's compiler
-  boundary. This admission is backed by Node/V8, Wasmtime, and
-  Chromium-family browser, Firefox/SpiderMonkey, and Safari/WebKit runtime smoke evidence for correctness and dispatch
-  reporting, but it does not claim runtime timing, register-retention, or JIT
-  zeroization guarantees.
+- These are ordinary public-data operations, not secret or constant-time APIs.
+- Wasm JIT timing and register retention remain outside Rust's compiler
+  boundary. No native register-cleanup guarantee is claimed.
 
-### `encode_12_bytes_wasm_standard_family`
+### `base64-ng-wasm-artifact` ABI
 
-Location: `src/simd/wasm.rs`
+Location: `packages/base64-ng-wasm-loader/wasm/src/lib.rs`.
 
-Status: private helper for the admitted narrow wasm `simd128` runtime profile.
+The private artifact crate denies unsafe code by default and locally admits 24
+reviewed ABI, static-storage, pointer, and volatile-clear sites. The package
+gate fixes that exact count. The unsafe `Sync` implementations depend on one
+non-shared wasm instance with synchronous, non-reentrant exports. Raw slice
+construction is bounded by fixed 1 MiB input and derived output capacities.
+The loader never exports the instance, memory, or pointers and snapshots every
+JavaScript input before a call. The linker fixes maximum memory at 128 pages.
 
-Purpose:
-
-- Encode one 12-byte block into 16 Base64 bytes with wasm `simd128` byte
-  shuffling, vector shifts/masks, and Standard-family alphabet mapping.
-- Wipe the staged stack copy before returning.
-
-Preconditions:
-
-- Caller must prove `simd128` is available for the current wasm runtime.
-- Input and output lengths are fixed by array types.
-- The alphabet must be Standard-family as checked by the caller.
-
-Unsafe operation:
-
-- `v128_load` loads the staged 16-byte array.
-- `u8x16_shuffle`, `u32x4_shr`, `u32x4_shl`, masks, ORs, and byte-select
-  operations compute the fixed-block output.
-- `v128_store` writes exactly 16 output bytes.
-
-Safety argument:
-
-- The staged array is exactly 16 bytes and backs the 128-bit load.
-- The output array is exactly 16 bytes and backs the 128-bit store.
-- Shuffle lanes that refer to the second input vector read from a zero vector.
-- The shifts and masks constrain every encoded index byte to `0..=63`.
-- The target-feature contract enables the required wasm SIMD instructions.
-- Public dispatch stages this helper's output and compares it against scalar
-  output before copying bytes to caller output.
-
-Limitations:
-
-- This helper does not provide a wasm runtime/JIT timing or register-retention
-  guarantee. wasm32 cleanup remains governed by the separate fail-closed
-  best-effort wipe policy and `allow-wasm32-best-effort-wipe` opt-in.
-
-### `encode_standard_family_indices_wasm`
-
-Location: `src/simd/wasm.rs`
-
-Status: private helper for the admitted narrow wasm `simd128` runtime profile.
-
-Purpose:
-
-- Map sixteen 6-bit indices to Standard or URL-safe alphabet bytes with wasm
-  SIMD comparisons and `v128_bitselect` operations.
-
-Preconditions:
-
-- Caller must prove `simd128` is available for the current wasm runtime.
-- `indices` contains only byte values in `0..=63`.
-- The alphabet must be Standard-family as checked by the caller.
-
-Unsafe operation:
-
-- wasm SIMD byte comparisons, arithmetic, and bit-select operations compute the
-  ASCII output byte for each index.
-
-Safety argument:
-
-- The helper does not dereference raw pointers or access memory.
-- The target-feature contract enables the required wasm SIMD instructions.
-- The caller constructs `indices` with masks that constrain every byte to a
-  six-bit Base64 value.
-- The helper is private to the admitted wasm encode path.
-
-### `decode_16_bytes_wasm_simd128`
-
-Location: `src/simd/wasm.rs`
-
-Status: private helper for the admitted narrow wasm `simd128` runtime profile.
-It is reachable through strict decode dispatch only for Standard and URL-safe
-alphabet families after whole-input scalar validation.
-
-Purpose:
-
-- Decode one 16-byte Base64 block into 12 bytes with wasm `simd128` shifts,
-  masks, byte shuffles, and stack staging.
-- Preserve scalar strict-decode behavior by validating the entire input through
-  the scalar decoder before any wasm block writes reach caller output.
-- Wipe the staged scalar and decoded stack buffers before returning.
-
-Preconditions:
-
-- Caller must prove `simd128` is available for the current wasm runtime.
-- Input and output lengths are fixed by `[u8; 16]` and `[u8; 12]` arrays.
-- Whole-input scalar validation has already accepted the full encoded input.
-- The alphabet must be Standard-family as checked by the dispatch wrapper.
-
-Unsafe operation:
-
-- `v128_load` loads the staged 16-byte decoded-value array.
-- wasm SIMD shifts, masks, ORs, and `u8x16_shuffle` pack the decoded bytes.
-- `v128_store` writes exactly 16 bytes into a local scratch array; only the
-  first 12 decoded bytes are copied after scalar-equivalence verification.
-
-Safety argument:
-
-- Fixed array types enforce the required block sizes for every load and store.
-- Whole-input scalar validation prevents malformed input from reaching caller
-  output through the wasm block path.
-- The helper compares the wasm block output against the scalar block output
-  before returning success.
-- Local staging buffers are wiped before the helper returns.
-- The target-feature contract enables the required wasm SIMD instructions.
-
-Limitations:
-
-- This helper does not provide a wasm runtime/JIT timing or register-retention
-  guarantee. wasm32 cleanup remains governed by the separate fail-closed
-  best-effort wipe policy and `allow-wasm32-best-effort-wipe` opt-in.
+`base64_ng_clear` uses volatile writes over both current fixed buffers. This is
+best-effort current-memory cleanup only; the JavaScript package is explicitly
+ordinary and claims no GC, JIT, register, or historical-memory erasure.
 
 ## 2.0 Web Compatibility Boundary
 

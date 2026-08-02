@@ -238,20 +238,20 @@ runtime behavior for that line.
   line-ending insertion is scalar. `no_std` has no runtime probing; it may use
   SIMD only when the complete compile-time target-feature bundle and atomic
   backend-health latch are available, otherwise it remains scalar.
-- wasm `simd128` is admitted in `1.3.3` for ordinary wasm32 binaries compiled
-  with `target-feature=+simd128` and the `simd` feature. The admitted scope is Standard and URL-safe
-  public encode plus normal strict decode. It uses wasm byte shuffling, vector
-  shifts/masks, and branchless Standard-family alphabet mapping for fixed
-  12-byte encode input blocks and fixed 16-byte decode input blocks after
-  whole-input scalar validation. Custom alphabets remain scalar because
-  portable wasm SIMD does not provide a direct 64-byte alphabet lookup.
-  Wasm encode stages vector output and compares it against scalar output before
-  copying to caller output. Node/V8, Wasmtime, Chromium-family browser,
-  Firefox/SpiderMonkey, and Safari/WebKit runtime smoke evidence proves active backend reporting,
-  deterministic length sweeps, independent scalar reference encode checks, malformed-input
-  rejection, and round trips for the admitted profile; this is not a
-  browser-wide timing, register-retention, or cleanup guarantee. The
-  release-facing decision is
+- 2.0 Commit 30 rebuilds wasm `simd128` as direct production fixed-block
+  encode and strict decode for Standard and URL-safe alphabet families.
+  Encode loads exactly 12 bytes and stores exactly 16 bytes. Decode performs
+  whole-input scalar validation once, directly classifies each 16-byte vector,
+  reduces all validity lanes before exact 12-byte stores, and leaves padded
+  final quanta and tails to scalar code. There is no per-block scalar
+  comparison in the admitted hot loop. Custom alphabets remain scalar.
+  The supported `base64-ng-wasm-loader` npm package ships separate scalar and
+  SIMD artifacts and selects with an embedded `WebAssembly.validate` probe
+  before instantiation. Exact-package Node/V8, Wasmtime, Chromium/V8,
+  Firefox/SpiderMonkey, and operator-run Safari/WebKit evidence covers codec
+  sweeps, malformed input, hostile JavaScript values, transactionality,
+  ceilings, package contents, and disposal. This is not a universal JIT timing,
+  register-retention, or cleanup guarantee. The release-facing decision is
   tracked in
   [WASM_SIMD128_RUNTIME_REVIEW.md](WASM_SIMD128_RUNTIME_REVIEW.md).
 - Big-endian and RISC-V acceleration work is tracked as a QEMU-first evidence

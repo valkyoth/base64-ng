@@ -317,6 +317,20 @@ The release gate runs:
   `scripts/check_wasm_browser_safari_dispatch.sh`; the `1.3.3` release
   evidence includes a macOS pass with
   `/System/Cryptexes/App/usr/bin/safaridriver`
+- 2.0 Commit 30 exact npm-package evidence through
+  `scripts/check-2.0-wasm-loader.sh`: deterministic scalar and direct
+  `simd128` artifact checksums, artifact ABI clippy and unsafe-count gates,
+  Node/V8 differential and hostile-object tests, Wasmtime self-tests, measured
+  Node encode/decode benefit, npm tarball file inspection, and
+  install-from-package smoke
+- exact extracted-package browser evidence through
+  `scripts/check_wasm_loader_browser_dispatch.sh` and
+  `scripts/check_wasm_loader_browser_firefox_dispatch.sh`, which serve the
+  packed npm artifact over HTTP and run Standard/URL-safe padded/unpadded
+  scalar/SIMD sweeps in Chromium/V8 and Firefox/SpiderMonkey under a restrictive
+  CSP; Safari/WebKit uses
+  `scripts/check_wasm_loader_browser_safari_dispatch.sh` on an operator macOS
+  host
 - fail-closed unsupported-native wipe policy documented through
   `allow-compiler-fence-only-wipe` for architectures without an implemented
   hardware wipe barrier
@@ -598,6 +612,13 @@ separately records
 `active_backend_admitted=avx512-vbmi-or-avx2-or-ssse3-sse4.1-or-neon-or-wasm-simd128-encode`,
 so audit logs do not confuse remaining fixed-block prototype execution with
 active dispatch admission.
+
+The 2.0 JavaScript-facing evidence is separate from this older Rust-runtime
+smoke. `scripts/check-2.0-wasm-loader.sh` builds, tests, benchmarks, packs, and
+installs the supported `base64-ng-wasm-loader` package. Its browser scripts use
+the extracted npm tarball, not a source-tree-only wasm fixture. The package
+reports probe evidence and selected scalar/SIMD artifact independently and
+does not expose secret APIs or wasm linear-memory views.
 
 The release gate also runs:
 

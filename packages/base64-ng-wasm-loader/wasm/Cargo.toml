@@ -1,0 +1,24 @@
+[package]
+name = "base64-ng-wasm-artifact"
+version = "2.0.0"
+edition = "2024"
+rust-version = "1.90"
+publish = false
+
+[workspace]
+
+[lib]
+crate-type = ["cdylib"]
+
+[features]
+simd = ["base64-ng/simd"]
+
+[dependencies]
+base64-ng = { path = "../../..", default-features = false }
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
+panic = "abort"
+strip = "symbols"

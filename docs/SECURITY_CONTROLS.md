@@ -340,6 +340,13 @@ aarch64 NEON for full 16-byte encoded blocks after scalar whole-input
 validation; every other decode backend, including big-endian AArch64, and the
 `base64_ng::ct` constant-time-oriented decode path remain scalar unless a
 separate formal side-channel evidence package admits otherwise.
+The `base64-ng-wasm-loader` npm companion is likewise an ordinary byte codec,
+not a secret API. It selects separate scalar or direct `simd128` artifacts
+before instantiation, rejects shared/resizable/detached/overlapping JavaScript
+storage, snapshots input, and commits `*Into` output only after successful
+validation. Its explicit `dispose()` clears current wasm scratch on a
+best-effort basis but cannot clear JIT, GC, register, or historical linear
+memory copies. Do not use it as a classified-material cleanup boundary.
 Deployments that require the most conservative side-channel posture should
 combine `base64_ng::ct` with
 `runtime::BackendPolicy::HighAssuranceScalarOnly` so sensitive decode paths

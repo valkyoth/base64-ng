@@ -1,0 +1,89 @@
+#!/usr/bin/env sh
+set -eu
+
+package_dir="packages/base64-ng-wasm-loader"
+evidence_dir="target/release-evidence/wasm-loader"
+install_dir="target/wasm-loader-package"
+pack_dir="$install_dir/packed"
+package_extract="$install_dir/package"
+npm_cache="target/npm-cache"
+export npm_config_cache="$npm_cache"
+
+if ! command -v node >/dev/null 2>&1 || ! command -v npm >/dev/null 2>&1; then
+    echo "2.0 wasm loader: skipping JavaScript package; Node and npm are required"
+    exit 0
+fi
+if ! rustup target list --installed 2>/dev/null | grep -F -x -q wasm32-unknown-unknown; then
+    echo "2.0 wasm loader: skipping; wasm32-unknown-unknown is not installed"
+    exit 0
+fi
+
+mkdir -p "$evidence_dir" "$pack_dir" "$package_extract" "$npm_cache"
+rm -f "$pack_dir"/*.tgz
+rm -rf "$package_extract"
+mkdir -p "$package_extract"
+
+echo "2.0 wasm loader: format and clippy"
+if ! grep -F -q '#![deny(unsafe_code)]' "$package_dir/wasm/src/lib.rs"; then
+    echo "2.0 wasm loader: artifact crate must deny unsafe code by default" >&2
+    exit 1
+fi
+allow_count="$(grep -c '^#\[allow(unsafe_code)\]$' "$package_dir/wasm/src/lib.rs")"
+if [ "$allow_count" -ne 24 ]; then
+    echo "2.0 wasm loader: expected exactly 24 reviewed unsafe ABI sites" >&2
+    exit 1
+fi
+cargo fmt --manifest-path "$package_dir/wasm/Cargo.toml" -- --check
+CARGO_TARGET_DIR="$package_dir/target-scalar" \
+    cargo clippy --locked --manifest-path "$package_dir/wasm/Cargo.toml" \
+        --target wasm32-unknown-unknown --release -- -D warnings
+CARGO_TARGET_DIR="$package_dir/target-simd128" \
+RUSTFLAGS='-C target-feature=+simd128' \
+    cargo clippy --locked --manifest-path "$package_dir/wasm/Cargo.toml" \
+        --target wasm32-unknown-unknown --release --features simd -- -D warnings
+
+echo "2.0 wasm loader: deterministic scalar and simd128 artifacts"
+(cd "$package_dir" && npm ci --ignore-scripts && npm run build)
+(cd "$package_dir/artifacts" && sha256sum -c SHA256SUMS)
+sha256sum "$package_dir"/artifacts/*.wasm >"$evidence_dir/artifacts-first.sha256"
+(cd "$package_dir" && npm run build)
+sha256sum "$package_dir"/artifacts/*.wasm >"$evidence_dir/artifacts-second.sha256"
+cmp "$evidence_dir/artifacts-first.sha256" "$evidence_dir/artifacts-second.sha256"
+
+echo "2.0 wasm loader: Node/V8 differential and hostile-input tests"
+(cd "$package_dir" && npm test)
+(cd "$package_dir" && node test/benchmark.mjs) | tee "$evidence_dir/node-benchmark.json"
+
+if command -v wasmtime >/dev/null 2>&1; then
+    echo "2.0 wasm loader: Wasmtime scalar and simd128 self-tests"
+    wasmtime run -C cache=n --invoke base64_ng_self_test \
+        "$package_dir/artifacts/base64-ng-scalar.wasm" >/dev/null
+    wasmtime run -C cache=n --invoke base64_ng_self_test \
+        "$package_dir/artifacts/base64-ng-simd128.wasm" >/dev/null
+else
+    echo "2.0 wasm loader: skipping Wasmtime self-tests; wasmtime is not installed"
+fi
+
+echo "2.0 wasm loader: exact npm package and install smoke"
+tarball_name="$(cd "$package_dir" && npm pack --ignore-scripts --silent --pack-destination "../../$pack_dir")"
+tarball="$pack_dir/$tarball_name"
+test -s "$tarball"
+tar -xzf "$tarball" -C "$install_dir"
+test -s "$package_extract/src/index.js"
+test -s "$package_extract/src/index.d.ts"
+test -s "$package_extract/artifacts/base64-ng-scalar.wasm"
+test -s "$package_extract/artifacts/base64-ng-simd128.wasm"
+test -s "$package_extract/artifacts/SHA256SUMS"
+(cd "$package_extract/artifacts" && sha256sum -c SHA256SUMS)
+if tar -tzf "$tarball" | grep -E -q '(^|/)(test|scripts|wasm|target-|package-lock\.json)'; then
+    echo "2.0 wasm loader: npm artifact contains development-only files" >&2
+    exit 1
+fi
+node scripts/wasm_loader_install_smoke.mjs "$package_extract"
+tar -tzf "$tarball" | sort >"$evidence_dir/npm-package-files.txt"
+sha256sum "$tarball" >"$evidence_dir/npm-package.sha256"
+
+cp tests/wasm-loader-browser-smoke.html "$install_dir/browser-smoke.html"
+cp tests/wasm-loader-browser-smoke.mjs "$install_dir/browser-smoke.mjs"
+
+echo "2.0 wasm loader: ok"
