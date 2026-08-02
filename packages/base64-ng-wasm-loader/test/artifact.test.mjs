@@ -32,6 +32,17 @@ for (const artifact of ["scalar", "simd128"]) {
     assert.equal(memory[inputPointer + 3], 0xa5);
     assert.equal(memory[outputPointer + 5], 0x5a);
 
+    const input = new TextEncoder().encode("tracked actual output");
+    memory.set(input, inputPointer);
+    const written = exports.base64_ng_encode(input.length, 0);
+    assert.ok(written > 0);
+    assert.ok(memory.subarray(outputPointer, outputPointer + written).some((byte) => byte !== 0));
+    exports.base64_ng_clear_used(input.length, 0);
+    assert.ok(
+      memory.subarray(outputPointer, outputPointer + written).every((byte) => byte === 0),
+      "Rust-owned actual output tracking must override a stale zero cleanup bound",
+    );
+
     memory.fill(0xa5, inputPointer, inputPointer + inputCapacity);
     memory.fill(0x5a, outputPointer, outputPointer + outputCapacity);
     exports.base64_ng_clear();

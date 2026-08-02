@@ -1279,9 +1279,12 @@ The loader never exports the instance, memory, or pointers and snapshots every
 JavaScript input before a call. The linker fixes maximum memory at 128 pages.
 
 `base64_ng_clear_used` clamps caller-provided lengths to the two fixed
-capacities and uses volatile writes over only those current ranges after each
-operation. `base64_ng_clear` retains complete-capacity volatile clearing for
-teardown. Both are best-effort current-memory cleanup only; the JavaScript
+capacities. The Rust artifact independently records the high-water mark of
+successful output writes and clears the greater of that value and the loader's
+reported range, so cleanup coverage does not depend only on duplicated
+JavaScript length arithmetic. Volatile writes clear those current ranges after
+each operation. `base64_ng_clear` retains complete-capacity volatile clearing
+for teardown. Both are best-effort current-memory cleanup only; the JavaScript
 package is explicitly ordinary and claims no GC, JIT, register, or
 historical-memory erasure. The panic handler traps immediately with the safe
 wasm `unreachable` intrinsic rather than consuming a host thread indefinitely.

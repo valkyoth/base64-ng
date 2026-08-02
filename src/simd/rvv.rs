@@ -296,7 +296,15 @@ pub(crate) fn encode_slice<A: Alphabet, const PAD: bool>(
     input: &[u8],
     output: &mut [u8],
 ) -> Result<usize, EncodeError> {
-    if input.len() < ENCODE_INPUT_BLOCK || !supports_alphabet::<A>() {
+    encode_slice_with_availability::<A, PAD>(input, output, available())
+}
+
+fn encode_slice_with_availability<A: Alphabet, const PAD: bool>(
+    input: &[u8],
+    output: &mut [u8],
+    rvv_available: bool,
+) -> Result<usize, EncodeError> {
+    if input.len() < ENCODE_INPUT_BLOCK || !supports_alphabet::<A>() || !rvv_available {
         return scalar::encode_slice::<A, PAD>(input, output);
     }
     let required = checked_encoded_len(input.len(), PAD).ok_or(EncodeError::LengthOverflow)?;
@@ -311,7 +319,7 @@ pub(crate) fn encode_slice<A: Alphabet, const PAD: bool>(
     let mut write = 0;
     while read + ENCODE_INPUT_BLOCK <= input.len() {
         // SAFETY: The loop proves exact fixed input/output block bounds. The
-        // caller-side candidate gate proves RVV and enabled vector state.
+        // per-call availability gate proves RVV and enabled vector state.
         unsafe {
             encode_block::<A>(input.as_ptr().add(read), output.as_mut_ptr().add(write));
         }
@@ -326,7 +334,15 @@ pub(crate) fn decode_slice<A: Alphabet, const PAD: bool>(
     input: &[u8],
     output: &mut [u8],
 ) -> Result<usize, DecodeError> {
-    if input.len() < DECODE_INPUT_BLOCK || !supports_alphabet::<A>() {
+    decode_slice_with_availability::<A, PAD>(input, output, available())
+}
+
+fn decode_slice_with_availability<A: Alphabet, const PAD: bool>(
+    input: &[u8],
+    output: &mut [u8],
+    rvv_available: bool,
+) -> Result<usize, DecodeError> {
+    if input.len() < DECODE_INPUT_BLOCK || !supports_alphabet::<A>() || !rvv_available {
         return scalar::decode_slice::<A, PAD>(input, output);
     }
     let required = scalar::validate_decode::<A, PAD>(input)?;
@@ -347,7 +363,7 @@ pub(crate) fn decode_slice<A: Alphabet, const PAD: bool>(
     while read + DECODE_INPUT_BLOCK <= simd_input_len {
         // SAFETY: Whole-input scalar validation proves classification and
         // canonicality; the loop proves exact fixed block bounds; the
-        // caller-side candidate gate proves RVV and enabled vector state.
+        // per-call availability gate proves RVV and enabled vector state.
         unsafe {
             decode_block::<A>(input.as_ptr().add(read), output.as_mut_ptr().add(write));
         }
@@ -357,6 +373,22 @@ pub(crate) fn decode_slice<A: Alphabet, const PAD: bool>(
     let tail = scalar::decode_slice::<A, PAD>(&input[read..], &mut output[write..])
         .map_err(|error| error.with_index_offset(read))?;
     Ok(write + tail)
+}
+
+#[cfg(test)]
+pub(super) fn encode_slice_unavailable_for_test<A: Alphabet, const PAD: bool>(
+    input: &[u8],
+    output: &mut [u8],
+) -> Result<usize, EncodeError> {
+    encode_slice_with_availability::<A, PAD>(input, output, false)
+}
+
+#[cfg(test)]
+pub(super) fn decode_slice_unavailable_for_test<A: Alphabet, const PAD: bool>(
+    input: &[u8],
+    output: &mut [u8],
+) -> Result<usize, DecodeError> {
+    decode_slice_with_availability::<A, PAD>(input, output, false)
 }
 
 unsafe fn encode_block<A: Alphabet>(input: *const u8, output: *mut u8) {

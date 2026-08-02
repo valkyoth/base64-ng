@@ -3,6 +3,7 @@
 #![deny(unsafe_op_in_unsafe_fn)]
 
 use core::cell::UnsafeCell;
+use core::sync::atomic::{AtomicU32, Ordering};
 
 use base64_ng::{
     DecodeError, EncodeError, STANDARD, STANDARD_NO_PAD, URL_SAFE, URL_SAFE_NO_PAD, web,
@@ -47,6 +48,7 @@ unsafe impl Sync for SharedError {}
 
 static INPUT: SharedBuffer<MAX_INPUT> = SharedBuffer(UnsafeCell::new([0; MAX_INPUT]));
 static OUTPUT: SharedBuffer<MAX_OUTPUT> = SharedBuffer(UnsafeCell::new([0; MAX_OUTPUT]));
+static OUTPUT_HIGH_WATER: AtomicU32 = AtomicU32::new(0);
 static LAST_ERROR: SharedError = SharedError(UnsafeCell::new(ErrorState {
     code: ERROR_NONE,
     index: NO_INDEX,
@@ -157,7 +159,7 @@ pub extern "C" fn base64_ng_encode(input_len: u32, codec: u32) -> i32 {
         3 => URL_SAFE_NO_PAD.encode_slice(input, output),
         _ => return fail(ERROR_INVALID_CODEC, None, None),
     };
-    result.map_or_else(map_encode_error, result_length)
+    result.map_or_else(map_encode_error, written_length)
 }
 
 #[unsafe(no_mangle)]
@@ -175,7 +177,7 @@ pub extern "C" fn base64_ng_decode(input_len: u32, codec: u32) -> i32 {
         3 => URL_SAFE_NO_PAD.decode_slice(input, output),
         _ => return fail(ERROR_INVALID_CODEC, None, None),
     };
-    result.map_or_else(map_decode_error, result_length)
+    result.map_or_else(map_decode_error, written_length)
 }
 
 #[unsafe(no_mangle)]
@@ -190,7 +192,7 @@ pub extern "C" fn base64_ng_decode_forgiving(input_len: u32) -> i32 {
     };
     web::FORGIVING
         .decode_into(text, output_slice())
-        .map_or_else(|_| fail(ERROR_INVALID_INPUT, None, None), result_length)
+        .map_or_else(|_| fail(ERROR_INVALID_INPUT, None, None), written_length)
 }
 
 #[unsafe(no_mangle)]
@@ -213,6 +215,7 @@ pub extern "C" fn base64_ng_decoded_length_forgiving(input_len: u32) -> i32 {
 pub extern "C" fn base64_ng_clear() {
     wipe(INPUT.0.get().cast(), MAX_INPUT);
     wipe(OUTPUT.0.get().cast(), MAX_OUTPUT);
+    OUTPUT_HIGH_WATER.store(0, Ordering::Release);
     reset_error();
 }
 
@@ -222,9 +225,13 @@ pub extern "C" fn base64_ng_clear_used(input_used: u32, output_used: u32) {
     let input_len = usize::try_from(input_used)
         .unwrap_or(MAX_INPUT)
         .min(MAX_INPUT);
-    let output_len = usize::try_from(output_used)
+    let reported_output_len = usize::try_from(output_used)
         .unwrap_or(MAX_OUTPUT)
         .min(MAX_OUTPUT);
+    let actual_output_len = usize::try_from(OUTPUT_HIGH_WATER.swap(0, Ordering::AcqRel))
+        .unwrap_or(MAX_OUTPUT)
+        .min(MAX_OUTPUT);
+    let output_len = reported_output_len.max(actual_output_len);
     wipe(INPUT.0.get().cast(), input_len);
     wipe(OUTPUT.0.get().cast(), output_len);
     reset_error();
@@ -286,6 +293,16 @@ fn output_slice() -> &'static mut [u8] {
 
 fn result_length(length: usize) -> i32 {
     i32::try_from(length).unwrap_or_else(|_| fail(ERROR_BACKEND, None, None))
+}
+
+fn written_length(length: usize) -> i32 {
+    let result = result_length(length);
+    if let Ok(length) = u32::try_from(length)
+        && result >= 0
+    {
+        OUTPUT_HIGH_WATER.fetch_max(length, Ordering::AcqRel);
+    }
+    result
 }
 
 fn map_encode_error(error: EncodeError) -> i32 {

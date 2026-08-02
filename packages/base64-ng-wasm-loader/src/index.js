@@ -42,8 +42,8 @@ const ABI_ERRORS = Object.freeze({
 const NO_INDEX = 0xffff_ffff;
 const HARD_MAX_MEMORY_PAGES = 128;
 const ARTIFACT_SHA256 = Object.freeze({
-  scalar: "bb293cef31f08138fd7e4c7641973e683e54d316e9d3112260a7e2872642a9e8",
-  simd128: "f14972b3bab8891e40f02a73a7fc3a38b54775aaced282b4370d759b927ddaf7",
+  scalar: "199eab837efeb253ccba88f3d59bc6531dde5088e94cb9d6749589a178e982d2",
+  simd128: "abef8100fb5ed279478d3c5dc1dfbae5988c52fb8d8941cc1b703ca910298b63",
 });
 
 export const Codecs = Object.freeze({
@@ -253,13 +253,14 @@ export async function createBase64Ng(options = {}) {
     }
   }
 
-  function transform(input, codec, lengthOperation, operation, outputBound) {
+  function transform(input, codec, lengthOperation, operation) {
     const snapshot = prepareInput(input);
     const id = codecId(codec);
-    const outputUsed = outputBound(snapshot.length);
+    let outputUsed = 0;
     try {
       const expected = checkedOutputLength(invoke(snapshot, lengthOperation, id));
       const written = invoke(snapshot, operation, id);
+      outputUsed = written;
       if (written !== expected) throw error("backend-failure", "WASM length contract diverged");
       return outputCopy(written);
     } finally {
@@ -267,16 +268,17 @@ export async function createBase64Ng(options = {}) {
     }
   }
 
-  function transformInto(input, destination, codec, lengthOperation, operation, outputBound) {
+  function transformInto(input, destination, codec, lengthOperation, operation) {
     const prepared = prepareInto(input, destination);
     const id = codecId(codec);
-    const outputUsed = outputBound(prepared.snapshot.length);
+    let outputUsed = 0;
     try {
       const expected = checkedOutputLength(invoke(prepared.snapshot, lengthOperation, id));
       if (prepared.destinationInfo.length < expected) {
         throw error("output-capacity", "destination is too small", { required: expected });
       }
       const written = invoke(prepared.snapshot, operation, id);
+      outputUsed = written;
       if (written !== expected) throw error("backend-failure", "WASM length contract diverged");
       const pointer = checkedWasmInteger(exports.base64_ng_output_ptr(), "output pointer");
       const staged = new IntrinsicUint8Array(exports.memory.buffer, pointer, written);
@@ -289,12 +291,13 @@ export async function createBase64Ng(options = {}) {
 
   function decodeForgiving(input) {
     const snapshot = prepareInput(input);
-    const outputUsed = decodedCapacity(snapshot.length);
+    let outputUsed = 0;
     try {
       const expected = checkedOutputLength(
         invoke(snapshot, exports.base64_ng_decoded_length_forgiving),
       );
       const written = invoke(snapshot, exports.base64_ng_decode_forgiving);
+      outputUsed = written;
       if (written !== expected) throw error("backend-failure", "WASM length contract diverged");
       return outputCopy(written);
     } finally {
@@ -314,18 +317,16 @@ export async function createBase64Ng(options = {}) {
     encodedLength,
     decodedLength,
     encode: (input, codec = Codecs.STANDARD) => transform(
-      input, codec, exports.base64_ng_encoded_length, exports.base64_ng_encode, encodedCapacity,
+      input, codec, exports.base64_ng_encoded_length, exports.base64_ng_encode,
     ),
     decode: (input, codec = Codecs.STANDARD) => transform(
-      input, codec, exports.base64_ng_decoded_length, exports.base64_ng_decode, decodedCapacity,
+      input, codec, exports.base64_ng_decoded_length, exports.base64_ng_decode,
     ),
     encodeInto: (input, destination, codec = Codecs.STANDARD) => transformInto(
       input, destination, codec, exports.base64_ng_encoded_length, exports.base64_ng_encode,
-      encodedCapacity,
     ),
     decodeInto: (input, destination, codec = Codecs.STANDARD) => transformInto(
       input, destination, codec, exports.base64_ng_decoded_length, exports.base64_ng_decode,
-      decodedCapacity,
     ),
     decodeForgiving,
     dispose,
@@ -424,14 +425,6 @@ function exactLimit(value, name) {
     throw error("invalid-limit", `${name} must be an exact non-negative WASM32 integer`);
   }
   return value;
-}
-
-function encodedCapacity(inputLength) {
-  return Math.ceil(inputLength / 3) * 4;
-}
-
-function decodedCapacity(inputLength) {
-  return Math.ceil(inputLength / 4) * 3;
 }
 
 function exactSha256(value) {

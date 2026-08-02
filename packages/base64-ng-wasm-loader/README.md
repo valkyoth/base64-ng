@@ -49,7 +49,9 @@ This package provides ordinary Base64 operations, not a secret API. Inputs are
 snapshotted before validation, outputs are owned copies, and `*Into`
 destinations are changed only after successful validation and capacity checks.
 Each operation performs best-effort clearing only over the bounded input and
-output ranges it could have touched. `dispose()` clears both complete scratch
+output ranges it could have touched. The Rust artifact tracks successful output
+writes independently and clears at least that high-water range even if host
+cleanup accounting is stale. `dispose()` clears both complete scratch
 capacities. Neither path can clear engine, GC, JIT, register, or historical
 linear-memory copies.
 

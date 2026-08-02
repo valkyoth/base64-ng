@@ -56,6 +56,41 @@ fn rvv_probe_fails_closed_across_kernel_and_vector_state_results() {
     assert!(!probe_allows_rvv(false, false, true, 0));
 }
 
+#[test]
+fn unavailable_rvv_candidate_falls_back_to_scalar_without_assembly_entry() {
+    let mut input = [0u8; 48];
+    for (index, byte) in input.iter_mut().enumerate() {
+        *byte = index.to_le_bytes()[0].wrapping_mul(29).wrapping_add(7);
+    }
+
+    let mut expected_encoded = [0u8; 64];
+    let mut fallback_encoded = [0u8; 64];
+    let expected_written =
+        scalar::encode_slice::<Standard, true>(&input, &mut expected_encoded).unwrap();
+    let fallback_written = super::rvv::encode_slice_unavailable_for_test::<Standard, true>(
+        &input,
+        &mut fallback_encoded,
+    )
+    .unwrap();
+    assert_eq!(fallback_written, expected_written);
+    assert_eq!(fallback_encoded, expected_encoded);
+
+    let mut expected_decoded = [0u8; 48];
+    let mut fallback_decoded = [0u8; 48];
+    let expected_decoded_len = scalar::decode_slice::<Standard, true>(
+        &expected_encoded[..expected_written],
+        &mut expected_decoded,
+    )
+    .unwrap();
+    let fallback_decoded_len = super::rvv::decode_slice_unavailable_for_test::<Standard, true>(
+        &fallback_encoded[..fallback_written],
+        &mut fallback_decoded,
+    )
+    .unwrap();
+    assert_eq!(fallback_decoded_len, expected_decoded_len);
+    assert_eq!(fallback_decoded, expected_decoded);
+}
+
 fn assert_candidate_round_trips<A: Alphabet, const PAD: bool>() {
     let mut input = [0u8; 513];
     for (index, byte) in input.iter_mut().enumerate() {
