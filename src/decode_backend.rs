@@ -285,21 +285,49 @@ fn backend_supports<A: Alphabet>(backend: DecodeBackend) -> bool {
     match backend {
         DecodeBackend::Scalar => false,
         #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
-        DecodeBackend::Avx512Vbmi => crate::simd::avx512_supports_alphabet::<A>(),
+        DecodeBackend::Avx512Vbmi => crate::simd::avx512_supports_decode_alphabet::<A>(),
         #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
-        DecodeBackend::Avx2 => crate::simd::avx2_supports_alphabet::<A>(),
+        DecodeBackend::Avx2 => crate::simd::avx2_supports_decode_alphabet::<A>(),
         #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
-        DecodeBackend::Ssse3Sse41 => crate::simd::ssse3_sse41_supports_alphabet::<A>(),
+        DecodeBackend::Ssse3Sse41 => crate::simd::ssse3_sse41_supports_decode_alphabet::<A>(),
         #[cfg(all(feature = "simd", target_arch = "aarch64", target_endian = "little"))]
-        DecodeBackend::Neon => crate::simd::neon_supports_alphabet::<A>(),
+        DecodeBackend::Neon => crate::simd::neon_supports_decode_alphabet::<A>(),
         #[cfg(all(feature = "simd", target_arch = "wasm32"))]
-        DecodeBackend::WasmSimd128 => crate::simd::wasm_simd128_supports_alphabet::<A>(),
+        DecodeBackend::WasmSimd128 => crate::simd::wasm_simd128_supports_decode_alphabet::<A>(),
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::{DecodeBackend, active_decode_backend};
+    #[cfg(feature = "simd")]
+    use crate::{Alphabet, Engine, Standard, decode_alphabet_byte};
+
+    #[cfg(feature = "simd")]
+    struct DivergentStandard;
+
+    #[cfg(feature = "simd")]
+    impl Alphabet for DivergentStandard {
+        const ENCODE: [u8; 64] = Standard::ENCODE;
+
+        fn decode(byte: u8) -> Option<u8> {
+            decode_alphabet_byte(byte, &Self::ENCODE).map(|_| 0)
+        }
+    }
+
+    #[test]
+    #[cfg(feature = "simd")]
+    fn divergent_decode_contract_forces_scalar_semantics() {
+        assert!(!crate::simd::decode_matches_encode_table::<DivergentStandard>());
+
+        let input = [b'B'; 64];
+        let mut output = [0xa5; 48];
+        let written = Engine::<DivergentStandard, true>::new()
+            .decode_slice(&input, &mut output)
+            .unwrap();
+        assert_eq!(written, output.len());
+        assert_eq!(output, [0; 48]);
+    }
 
     #[test]
     fn boundary_uses_only_admitted_backends() {

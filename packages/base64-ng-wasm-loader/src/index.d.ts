@@ -23,6 +23,7 @@ export interface Base64NgPosture {
   readonly selectedArtifact: "scalar" | "simd128";
   readonly selectionReason: string;
   readonly artifactPosture: "scalar" | "simd128";
+  readonly artifactSha256: string;
   readonly abiVersion: 1;
   readonly maxInputLength: number;
   readonly maxOutputLength: number;
@@ -46,6 +47,8 @@ export interface Base64NgOptions {
   artifact?: "auto" | "scalar" | "simd128";
   scalarArtifact?: URL | string | Uint8Array;
   simdArtifact?: URL | string | Uint8Array;
+  scalarArtifactSha256?: string;
+  simdArtifactSha256?: string;
   maxInputLength?: number;
   maxOutputLength?: number;
   maximumMemoryPages?: number;

@@ -23,6 +23,9 @@ instantiation. A rejected probe never loads or instantiates the SIMD artifact.
 Deployments may explicitly require scalar or SIMD posture. The loader reports
 capability evidence, selected artifact, selection reason, compile-time artifact
 posture, ABI version, and configured ceilings separately.
+The loader verifies an embedded SHA-256 digest before instantiating either
+shipped artifact. Custom artifact bytes or URLs require an explicit expected
+digest rather than inheriting trust from the selected posture label.
 
 ## JavaScript Boundary
 
@@ -34,6 +37,8 @@ and URL-safe-no-pad codecs.
 The loader:
 
 - captures a closed intrinsic allowlist at module evaluation;
+- uses the captured WebCrypto SHA-256 primitive to verify artifact bytes before
+  `WebAssembly.instantiate`;
 - rejects proxies, spoofed views, shared backing, detached backing, resizable
   backing, overlapping input/output views, and runtimes that cannot prove
   fixed `ArrayBuffer` storage;
@@ -46,8 +51,11 @@ The loader:
 - exposes redacted `Base64NgError` diagnostics without rejected input bytes;
 - uses no `eval` or `new Function`; restrictive browser CSP deployments must
   allow WebAssembly compilation with `script-src 'wasm-unsafe-eval'`; and
-- provides best-effort disposal of current scratch while making no engine, GC,
-  JIT, register, or historical-memory cleanup claim.
+- clears only the bounded scratch ranges each operation could have touched,
+  performs a complete scratch clear on `dispose()`, and makes no engine, GC,
+  JIT, register, or historical-memory cleanup claim; and
+- converts a Rust panic into an immediate wasm trap instead of spinning on the
+  host execution thread.
 
 The package has no secret API. The Rust `secrets` capability remains scalar and
 is governed by the separate wasm wipe policy.
@@ -57,10 +65,12 @@ is governed by the separate wasm wipe policy.
 `scripts/check-2.0-wasm-loader.sh` is the primary package gate. It:
 
 - builds scalar and SIMD artifacts twice and compares exact checksums;
+- proves embedded loader digests match rebuilt artifacts and rejects missing or
+  mismatched digests for custom artifact sources;
 - denies unreviewed Rust unsafe sites in the private artifact ABI;
 - runs Node/V8 scalar/SIMD differential, malformed-input, transactionality,
-  limit, disposal, cross-realm, hostile-object, shared-worker, and intrinsic
-  instrumentation tests;
+  limit, proportional/full cleanup, disposal, cross-realm, hostile-object,
+  shared-worker, and intrinsic instrumentation tests;
 - executes each artifact self-test under Wasmtime when installed;
 - records Node/V8 encode/decode benchmark evidence;
 - packs the exact npm tarball, verifies its file allowlist, extracts it, and
@@ -90,7 +100,8 @@ thresholds. Node/V8 performance admission requires the exact local benchmark
 run to show both encode and decode benefit; other runtimes require their own
 record before making numerical throughput claims.
 
-Custom alphabets, bcrypt/crypt alphabets, line-ending insertion, and secret
-constant-time-oriented operations remain scalar. Unsupported runtimes use the
-separate scalar artifact rather than internal runtime fallback inside a SIMD
-artifact.
+Non-Standard-family custom alphabets, custom `Alphabet::decode` contracts that
+diverge from their encode table, bcrypt/crypt alphabets, line-ending insertion,
+and secret constant-time-oriented operations remain scalar. Unsupported
+runtimes use the separate scalar artifact rather than internal runtime fallback
+inside a SIMD artifact.

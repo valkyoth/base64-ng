@@ -16,7 +16,8 @@ pub(crate) fn decode_slice_ssse3_sse41<A, const PAD: bool>(
 where
     A: Alphabet,
 {
-    if input.len() < SSSE3_DECODE_INPUT_BLOCK || !super::ssse3_sse41_supports_alphabet::<A>() {
+    if input.len() < SSSE3_DECODE_INPUT_BLOCK || !super::ssse3_sse41_supports_decode_alphabet::<A>()
+    {
         return scalar::decode_slice::<A, PAD>(input, output);
     }
 
@@ -50,7 +51,7 @@ pub(crate) fn decode_slice_avx2<A, const PAD: bool>(
 where
     A: Alphabet,
 {
-    if input.len() < AVX2_DECODE_INPUT_BLOCK || !super::avx2_supports_alphabet::<A>() {
+    if input.len() < AVX2_DECODE_INPUT_BLOCK || !super::avx2_supports_decode_alphabet::<A>() {
         return decode_slice_ssse3_sse41::<A, PAD>(input, output);
     }
 
@@ -91,7 +92,7 @@ pub(crate) fn decode_slice_avx512<A, const PAD: bool>(
 where
     A: Alphabet,
 {
-    if input.len() < AVX512_DECODE_INPUT_BLOCK || !super::avx512_supports_alphabet::<A>() {
+    if input.len() < AVX512_DECODE_INPUT_BLOCK || !super::avx512_supports_decode_alphabet::<A>() {
         return decode_slice_avx2::<A, PAD>(input, output);
     }
 

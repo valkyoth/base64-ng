@@ -1270,7 +1270,7 @@ Limitations:
 
 Location: `packages/base64-ng-wasm-loader/wasm/src/lib.rs`.
 
-The private artifact crate denies unsafe code by default and locally admits 24
+The private artifact crate denies unsafe code by default and locally admits 25
 reviewed ABI, static-storage, pointer, and volatile-clear sites. The package
 gate fixes that exact count. The unsafe `Sync` implementations depend on one
 non-shared wasm instance with synchronous, non-reentrant exports. Raw slice
@@ -1278,9 +1278,13 @@ construction is bounded by fixed 1 MiB input and derived output capacities.
 The loader never exports the instance, memory, or pointers and snapshots every
 JavaScript input before a call. The linker fixes maximum memory at 128 pages.
 
-`base64_ng_clear` uses volatile writes over both current fixed buffers. This is
-best-effort current-memory cleanup only; the JavaScript package is explicitly
-ordinary and claims no GC, JIT, register, or historical-memory erasure.
+`base64_ng_clear_used` clamps caller-provided lengths to the two fixed
+capacities and uses volatile writes over only those current ranges after each
+operation. `base64_ng_clear` retains complete-capacity volatile clearing for
+teardown. Both are best-effort current-memory cleanup only; the JavaScript
+package is explicitly ordinary and claims no GC, JIT, register, or
+historical-memory erasure. The panic handler traps immediately with the safe
+wasm `unreachable` intrinsic rather than consuming a host thread indefinitely.
 
 ## 2.0 Web Compatibility Boundary
 

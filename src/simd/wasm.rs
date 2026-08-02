@@ -11,6 +11,10 @@ pub(crate) fn wasm_simd128_supports_alphabet<A: Alphabet>() -> bool {
     is_standard_or_url_safe_family::<A>()
 }
 
+pub(crate) fn wasm_simd128_supports_decode_alphabet<A: Alphabet>() -> bool {
+    wasm_simd128_supports_alphabet::<A>() && super::decode_matches_encode_table::<A>()
+}
+
 pub(crate) fn wasm_simd128_decode_available() -> bool {
     super::wasm_simd128_available()
 }
@@ -56,7 +60,7 @@ pub(crate) fn decode_slice_wasm_simd128<A: Alphabet, const PAD: bool>(
     input: &[u8],
     output: &mut [u8],
 ) -> Result<usize, crate::DecodeError> {
-    if input.len() < DECODE_INPUT_BLOCK || !wasm_simd128_supports_alphabet::<A>() {
+    if input.len() < DECODE_INPUT_BLOCK || !wasm_simd128_supports_decode_alphabet::<A>() {
         return scalar::decode_slice::<A, PAD>(input, output);
     }
 

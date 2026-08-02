@@ -218,6 +218,20 @@ pub extern "C" fn base64_ng_clear() {
 
 #[unsafe(no_mangle)]
 #[allow(unsafe_code)]
+pub extern "C" fn base64_ng_clear_used(input_used: u32, output_used: u32) {
+    let input_len = usize::try_from(input_used)
+        .unwrap_or(MAX_INPUT)
+        .min(MAX_INPUT);
+    let output_len = usize::try_from(output_used)
+        .unwrap_or(MAX_OUTPUT)
+        .min(MAX_OUTPUT);
+    wipe(INPUT.0.get().cast(), input_len);
+    wipe(OUTPUT.0.get().cast(), output_len);
+    reset_error();
+}
+
+#[unsafe(no_mangle)]
+#[allow(unsafe_code)]
 pub extern "C" fn base64_ng_self_test() -> i32 {
     let input = b"base64-ng wasm";
     // SAFETY: The source and fixed input buffer are disjoint and large enough.
@@ -338,7 +352,5 @@ fn wipe(pointer: *mut u8, length: usize) {
 
 #[panic_handler]
 fn panic(_info: &core::panic::PanicInfo<'_>) -> ! {
-    loop {
-        core::hint::spin_loop();
-    }
+    core::arch::wasm32::unreachable()
 }

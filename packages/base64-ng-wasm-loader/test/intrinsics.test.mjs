@@ -37,6 +37,12 @@ test("the closed intrinsic allowlist is exercised without caller hooks", async (
     return Reflect.apply(originalSet, this, args);
   };
   restores.push(() => { Uint8Array.prototype.set = originalSet; });
+  const originalDigest = SubtleCrypto.prototype.digest;
+  SubtleCrypto.prototype.digest = function digest(...args) {
+    increment("subtle-digest");
+    return Reflect.apply(originalDigest, this, args);
+  };
+  restores.push(() => { SubtleCrypto.prototype.digest = originalDigest; });
 
   try {
     const module = await import(`../src/index.js?instrumented=${Date.now()}`);
@@ -52,7 +58,7 @@ test("the closed intrinsic allowlist is exercised without caller hooks", async (
     for (const name of [
       "typed-tag", "typed-buffer", "typed-byte-length", "typed-byte-offset",
       "typed-length", "buffer-byte-length", "buffer-resizable",
-      "buffer-max-byte-length", "uint8-set",
+      "buffer-max-byte-length", "uint8-set", "subtle-digest",
     ]) {
       assert.ok((counters.get(name) ?? 0) > 0, `${name} was not exercised`);
     }

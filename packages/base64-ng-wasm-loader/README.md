@@ -28,21 +28,28 @@ loads only the selected artifact. Use `{ artifact: "scalar" }` to require the
 portable artifact or `{ artifact: "simd128" }` to require SIMD support. The
 returned frozen `posture` records the capability evidence, selected artifact,
 selection reason, limits, and ABI version.
-`artifacts/SHA256SUMS` records both shipped artifact digests.
+The reviewed JavaScript embeds and verifies the SHA-256 digest of each shipped
+artifact before instantiation; `posture.artifactSha256` reports the selected
+digest. `artifacts/SHA256SUMS` records the same values for release tooling.
 
 The package uses no `eval` or `new Function`. It works as an ES module in Node
 and browsers where the `.wasm` artifacts can be fetched. A restrictive browser
 CSP must allow WebAssembly compilation with `script-src 'wasm-unsafe-eval'`;
 this does not enable JavaScript `eval`. Callers may instead provide artifact
-bytes or URLs through `scalarArtifact` and `simdArtifact`.
+bytes or URLs through `scalarArtifact` and `simdArtifact`. A custom source must
+also provide the matching lowercase `scalarArtifactSha256` or
+`simdArtifactSha256`; custom artifacts are never instantiated without an
+explicit digest.
 
 ## Security boundary
 
 This package provides ordinary Base64 operations, not a secret API. Inputs are
 snapshotted before validation, outputs are owned copies, and `*Into`
 destinations are changed only after successful validation and capacity checks.
-`dispose()` performs best-effort clearing of current wasm scratch buffers, but
-cannot clear engine, GC, JIT, register, or historical linear-memory copies.
+Each operation performs best-effort clearing only over the bounded input and
+output ranges it could have touched. `dispose()` clears both complete scratch
+capacities. Neither path can clear engine, GC, JIT, register, or historical
+linear-memory copies.
 
 Default limits are 1 MiB input, the corresponding padded output size, and 128
 wasm pages (8 MiB). Lower limits may be configured at construction. The shipped

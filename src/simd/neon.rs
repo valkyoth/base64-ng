@@ -50,6 +50,14 @@ where
 }
 
 #[cfg(all(feature = "simd", target_arch = "aarch64", target_endian = "little"))]
+pub(crate) fn neon_supports_decode_alphabet<A>() -> bool
+where
+    A: Alphabet,
+{
+    neon_supports_alphabet::<A>() && super::decode_matches_encode_table::<A>()
+}
+
+#[cfg(all(feature = "simd", target_arch = "aarch64", target_endian = "little"))]
 pub(crate) fn encode_slice_neon<A, const PAD: bool>(
     input: &[u8],
     output: &mut [u8],
@@ -90,7 +98,7 @@ pub(crate) fn decode_slice_neon<A, const PAD: bool>(
 where
     A: Alphabet,
 {
-    if input.len() < NEON_DECODE_INPUT_BLOCK || !neon_supports_alphabet::<A>() {
+    if input.len() < NEON_DECODE_INPUT_BLOCK || !neon_supports_decode_alphabet::<A>() {
         return scalar::decode_slice::<A, PAD>(input, output);
     }
 

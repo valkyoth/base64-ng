@@ -259,6 +259,10 @@ Decision rationale:
   `decode` override affects the normal strict `Engine` path. The `ct` module
   scans `Alphabet::ENCODE` directly and does not depend on custom `decode`
   implementations.
+- Strict SIMD decode is eligible only when a Standard-family encode table and
+  the overridable `decode` method agree for every possible input byte. A
+  divergent implementation is forced through scalar strict decode so backend
+  selection cannot change its public result.
 
 Stable boundary:
 

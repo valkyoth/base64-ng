@@ -29,6 +29,12 @@ where
     is_standard_or_url_safe_family::<A>()
 }
 
+pub(crate) fn avx512_supports_decode_alphabet<A>() -> bool
+where
+    A: Alphabet,
+{
+    avx512_supports_alphabet::<A>() && super::decode_matches_encode_table::<A>()
+}
 pub(crate) fn avx2_supports_alphabet<A>() -> bool
 where
     A: Alphabet,
@@ -36,11 +42,25 @@ where
     is_standard_or_url_safe_family::<A>()
 }
 
+pub(crate) fn avx2_supports_decode_alphabet<A>() -> bool
+where
+    A: Alphabet,
+{
+    avx2_supports_alphabet::<A>() && super::decode_matches_encode_table::<A>()
+}
+
 pub(crate) fn ssse3_sse41_supports_alphabet<A>() -> bool
 where
     A: Alphabet,
 {
     is_standard_or_url_safe_family::<A>()
+}
+
+pub(crate) fn ssse3_sse41_supports_decode_alphabet<A>() -> bool
+where
+    A: Alphabet,
+{
+    ssse3_sse41_supports_alphabet::<A>() && super::decode_matches_encode_table::<A>()
 }
 
 pub(crate) fn ssse3_sse41_decode_available() -> bool {

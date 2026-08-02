@@ -344,9 +344,12 @@ The `base64-ng-wasm-loader` npm companion is likewise an ordinary byte codec,
 not a secret API. It selects separate scalar or direct `simd128` artifacts
 before instantiation, rejects shared/resizable/detached/overlapping JavaScript
 storage, snapshots input, and commits `*Into` output only after successful
-validation. Its explicit `dispose()` clears current wasm scratch on a
-best-effort basis but cannot clear JIT, GC, register, or historical linear
-memory copies. Do not use it as a classified-material cleanup boundary.
+validation. Artifact bytes are SHA-256 verified before instantiation; custom
+artifact sources require an explicit expected digest. Each call clears only
+the bounded scratch ranges it could have touched, while explicit `dispose()`
+clears both complete scratch capacities. This remains best effort and cannot
+clear JIT, GC, register, or historical linear-memory copies. Do not use it as
+a classified-material cleanup boundary.
 Deployments that require the most conservative side-channel posture should
 combine `base64_ng::ct` with
 `runtime::BackendPolicy::HighAssuranceScalarOnly` so sensitive decode paths

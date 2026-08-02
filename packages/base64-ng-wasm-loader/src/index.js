@@ -14,11 +14,14 @@ const sharedArrayBufferByteLength = typeof SharedArrayBuffer === "undefined"
   ? undefined
   : getOwnPropertyDescriptor(SharedArrayBuffer.prototype, "byteLength").get;
 const uint8Set = Uint8Array.prototype.set;
+const stringCharCodeAt = String.prototype.charCodeAt;
 const IntrinsicUint8Array = Uint8Array;
 const EMPTY_BYTES = new IntrinsicUint8Array(0);
 const numberIsSafeInteger = Number.isSafeInteger;
 const wasmValidate = WebAssembly.validate.bind(WebAssembly);
 const wasmInstantiate = WebAssembly.instantiate.bind(WebAssembly);
+const cryptoSubtle = globalThis.crypto?.subtle;
+const cryptoDigest = cryptoSubtle?.digest;
 
 const SIMD_PROBE = new IntrinsicUint8Array([
   0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 96, 0, 1, 123,
@@ -38,6 +41,10 @@ const ABI_ERRORS = Object.freeze({
 
 const NO_INDEX = 0xffff_ffff;
 const HARD_MAX_MEMORY_PAGES = 128;
+const ARTIFACT_SHA256 = Object.freeze({
+  scalar: "43bc6271c1181e884f6f2aeb59d9e05f8b9f679792d2f32b0246f3ab5d692abd",
+  simd128: "38f4bac9d2feb8c12544c2a1fb4bbbe500ca459bafec7a014c3a753c15b35043",
+});
 
 export const Codecs = Object.freeze({
   STANDARD: "standard",
@@ -98,10 +105,21 @@ export async function createBase64Ng(options = {}) {
         ? "embedded-simd128-probe-validated"
         : "embedded-simd128-probe-rejected";
 
-  const source = selectedArtifact === "simd128"
-    ? options.simdArtifact ?? new URL("../artifacts/base64-ng-simd128.wasm", import.meta.url)
-    : options.scalarArtifact ?? new URL("../artifacts/base64-ng-scalar.wasm", import.meta.url);
+  const configuredSource = selectedArtifact === "simd128"
+    ? options.simdArtifact
+    : options.scalarArtifact;
+  const configuredDigest = selectedArtifact === "simd128"
+    ? options.simdArtifactSha256
+    : options.scalarArtifactSha256;
+  const customArtifact = configuredSource !== undefined;
+  const source = customArtifact
+    ? configuredSource
+    : new URL(`../artifacts/base64-ng-${selectedArtifact}.wasm`, import.meta.url);
+  const expectedDigest = customArtifact
+    ? exactSha256(configuredDigest)
+    : ARTIFACT_SHA256[selectedArtifact];
   const bytes = await loadArtifactBytes(source);
+  await verifyArtifact(bytes, expectedDigest);
   const { instance } = await wasmInstantiate(bytes, {});
   const exports = validateExports(instance.exports, selectedArtifact);
   const initialPages = checkedWasmInteger(exports.memory.buffer.byteLength / 65536, "memory pages");
@@ -127,6 +145,7 @@ export async function createBase64Ng(options = {}) {
     selectedArtifact,
     selectionReason,
     artifactPosture: exports.base64_ng_artifact_posture() === 1 ? "simd128" : "scalar",
+    artifactSha256: expectedDigest,
     abiVersion: exports.base64_ng_abi_version(),
     maxInputLength,
     maxOutputLength,
@@ -200,8 +219,8 @@ export async function createBase64Ng(options = {}) {
     return copy;
   }
 
-  function clearScratch() {
-    exports.base64_ng_clear();
+  function clearScratch(inputUsed, outputUsed) {
+    exports.base64_ng_clear_used(inputUsed, outputUsed);
   }
 
   function checkedOutputLength(length) {
@@ -220,7 +239,7 @@ export async function createBase64Ng(options = {}) {
     try {
       return checkedOutputLength(invoke(snapshot, exports.base64_ng_encoded_length, id));
     } finally {
-      clearScratch();
+      clearScratch(snapshot.length, 0);
     }
   }
 
@@ -230,26 +249,28 @@ export async function createBase64Ng(options = {}) {
     try {
       return checkedOutputLength(invoke(snapshot, exports.base64_ng_decoded_length, id));
     } finally {
-      clearScratch();
+      clearScratch(snapshot.length, 0);
     }
   }
 
-  function transform(input, codec, lengthOperation, operation) {
+  function transform(input, codec, lengthOperation, operation, outputBound) {
     const snapshot = prepareInput(input);
     const id = codecId(codec);
+    const outputUsed = outputBound(snapshot.length);
     try {
       const expected = checkedOutputLength(invoke(snapshot, lengthOperation, id));
       const written = invoke(snapshot, operation, id);
       if (written !== expected) throw error("backend-failure", "WASM length contract diverged");
       return outputCopy(written);
     } finally {
-      clearScratch();
+      clearScratch(snapshot.length, outputUsed);
     }
   }
 
-  function transformInto(input, destination, codec, lengthOperation, operation) {
+  function transformInto(input, destination, codec, lengthOperation, operation, outputBound) {
     const prepared = prepareInto(input, destination);
     const id = codecId(codec);
+    const outputUsed = outputBound(prepared.snapshot.length);
     try {
       const expected = checkedOutputLength(invoke(prepared.snapshot, lengthOperation, id));
       if (prepared.destinationInfo.length < expected) {
@@ -262,12 +283,13 @@ export async function createBase64Ng(options = {}) {
       call(uint8Set, prepared.destination, staged, 0);
       return written;
     } finally {
-      clearScratch();
+      clearScratch(prepared.snapshot.length, outputUsed);
     }
   }
 
   function decodeForgiving(input) {
     const snapshot = prepareInput(input);
+    const outputUsed = decodedCapacity(snapshot.length);
     try {
       const expected = checkedOutputLength(
         invoke(snapshot, exports.base64_ng_decoded_length_forgiving),
@@ -276,7 +298,7 @@ export async function createBase64Ng(options = {}) {
       if (written !== expected) throw error("backend-failure", "WASM length contract diverged");
       return outputCopy(written);
     } finally {
-      clearScratch();
+      clearScratch(snapshot.length, outputUsed);
     }
   }
 
@@ -292,16 +314,18 @@ export async function createBase64Ng(options = {}) {
     encodedLength,
     decodedLength,
     encode: (input, codec = Codecs.STANDARD) => transform(
-      input, codec, exports.base64_ng_encoded_length, exports.base64_ng_encode,
+      input, codec, exports.base64_ng_encoded_length, exports.base64_ng_encode, encodedCapacity,
     ),
     decode: (input, codec = Codecs.STANDARD) => transform(
-      input, codec, exports.base64_ng_decoded_length, exports.base64_ng_decode,
+      input, codec, exports.base64_ng_decoded_length, exports.base64_ng_decode, decodedCapacity,
     ),
     encodeInto: (input, destination, codec = Codecs.STANDARD) => transformInto(
       input, destination, codec, exports.base64_ng_encoded_length, exports.base64_ng_encode,
+      encodedCapacity,
     ),
     decodeInto: (input, destination, codec = Codecs.STANDARD) => transformInto(
       input, destination, codec, exports.base64_ng_decoded_length, exports.base64_ng_decode,
+      decodedCapacity,
     ),
     decodeForgiving,
     dispose,
@@ -402,6 +426,62 @@ function exactLimit(value, name) {
   return value;
 }
 
+function encodedCapacity(inputLength) {
+  return Math.ceil(inputLength / 3) * 4;
+}
+
+function decodedCapacity(inputLength) {
+  return Math.ceil(inputLength / 4) * 3;
+}
+
+function exactSha256(value) {
+  if (typeof value !== "string" || value.length !== 64) {
+    throw error(
+      "artifact-integrity-policy",
+      "custom WASM artifacts require an exact lowercase SHA-256 digest",
+    );
+  }
+  for (let index = 0; index < value.length; index += 1) {
+    const code = call(stringCharCodeAt, value, index);
+    const digit = code >= 48 && code <= 57;
+    const lowerHex = code >= 97 && code <= 102;
+    if (!digit && !lowerHex) {
+      throw error(
+        "artifact-integrity-policy",
+        "custom WASM artifacts require an exact lowercase SHA-256 digest",
+      );
+    }
+  }
+  return value;
+}
+
+async function verifyArtifact(bytes, expectedDigest) {
+  if (cryptoSubtle === undefined || typeof cryptoDigest !== "function") {
+    throw error("runtime-intrinsics-unavailable", "SHA-256 verification is unavailable");
+  }
+  let digestBuffer;
+  try {
+    digestBuffer = await call(cryptoDigest, cryptoSubtle, "SHA-256", bytes);
+  } catch {
+    throw error("artifact-integrity", "WASM artifact SHA-256 verification failed");
+  }
+  const digest = new IntrinsicUint8Array(digestBuffer);
+  if (digest.length !== 32) {
+    throw error("artifact-integrity", "WASM artifact SHA-256 verification failed");
+  }
+  for (let index = 0; index < digest.length; index += 1) {
+    const upper = hexNibble(call(stringCharCodeAt, expectedDigest, index * 2));
+    const lower = hexNibble(call(stringCharCodeAt, expectedDigest, index * 2 + 1));
+    if (digest[index] !== (upper << 4 | lower)) {
+      throw error("artifact-integrity", "WASM artifact digest mismatch");
+    }
+  }
+}
+
+function hexNibble(code) {
+  return code <= 57 ? code - 48 : code - 87;
+}
+
 function checkedWasmInteger(value, name) {
   if (!numberIsSafeInteger(value) || value < 0 || value > 0xffff_ffff) {
     throw error("invalid-wasm-result", `${name} is outside the supported WASM32 range`);
@@ -430,7 +510,7 @@ function validateExports(exports, selectedArtifact) {
     "base64_ng_last_error_index", "base64_ng_last_error_required",
     "base64_ng_encoded_length", "base64_ng_decoded_length",
     "base64_ng_decoded_length_forgiving", "base64_ng_encode", "base64_ng_decode",
-    "base64_ng_decode_forgiving", "base64_ng_clear",
+    "base64_ng_decode_forgiving", "base64_ng_clear", "base64_ng_clear_used",
   ];
   for (const name of required) {
     if (!(name in exports)) throw error("artifact-abi", `${selectedArtifact} artifact lacks ${name}`);

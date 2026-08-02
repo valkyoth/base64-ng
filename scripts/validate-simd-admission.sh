@@ -179,4 +179,15 @@ if ! grep -F -q "fn standard_family_decode_error_surfaces_match_scalar()" src/de
     exit 1
 fi
 
+if ! grep -F -q "pub(crate) fn decode_matches_encode_table" src/simd/mod.rs; then
+    echo "simd admission: strict decode must verify Alphabet::decode against Alphabet::ENCODE" >&2
+    exit 1
+fi
+for source in src/simd/x86/decode.rs src/simd/neon.rs src/simd/wasm.rs; do
+    if ! grep -F -q "supports_decode_alphabet" "$source"; then
+        echo "simd admission: $source is missing decode-specific alphabet admission" >&2
+        exit 1
+    fi
+done
+
 echo "simd admission: AVX-512 VBMI, AVX2, SSSE3/SSE4.1, NEON, and wasm simd128 encode/decode admission gate ok"

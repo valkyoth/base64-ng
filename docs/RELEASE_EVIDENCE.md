@@ -618,7 +618,10 @@ smoke. `scripts/check-2.0-wasm-loader.sh` builds, tests, benchmarks, packs, and
 installs the supported `base64-ng-wasm-loader` package. Its browser scripts use
 the extracted npm tarball, not a source-tree-only wasm fixture. The package
 reports probe evidence and selected scalar/SIMD artifact independently and
-does not expose secret APIs or wasm linear-memory views.
+does not expose secret APIs or wasm linear-memory views. The package verifies
+embedded SHA-256 digests before instantiation, requires explicit digests for
+custom artifact sources, tests proportional per-operation cleanup separately
+from complete teardown cleanup, and traps rather than spins on Rust panic.
 
 The release gate also runs:
 

@@ -33,8 +33,17 @@ if ! grep -F -q '#![deny(unsafe_code)]' "$package_dir/wasm/src/lib.rs"; then
     exit 1
 fi
 allow_count="$(grep -c '^#\[allow(unsafe_code)\]$' "$package_dir/wasm/src/lib.rs")"
-if [ "$allow_count" -ne 24 ]; then
-    echo "2.0 wasm loader: expected exactly 24 reviewed unsafe ABI sites" >&2
+if [ "$allow_count" -ne 25 ]; then
+    echo "2.0 wasm loader: expected exactly 25 reviewed unsafe ABI sites" >&2
+    exit 1
+fi
+if ! grep -F -q 'pub extern "C" fn base64_ng_clear_used' "$package_dir/wasm/src/lib.rs"; then
+    echo "2.0 wasm loader: tracked-range cleanup export is missing" >&2
+    exit 1
+fi
+if grep -F -q 'core::hint::spin_loop()' "$package_dir/wasm/src/lib.rs" \
+    || ! grep -F -q 'core::arch::wasm32::unreachable()' "$package_dir/wasm/src/lib.rs"; then
+    echo "2.0 wasm loader: panic handler must trap instead of spinning" >&2
     exit 1
 fi
 cargo fmt --manifest-path "$package_dir/wasm/Cargo.toml" -- --check
@@ -49,6 +58,12 @@ RUSTFLAGS='-C target-feature=+simd128' \
 echo "2.0 wasm loader: deterministic scalar and simd128 artifacts"
 (cd "$package_dir" && npm ci --ignore-scripts && npm run build)
 (cd "$package_dir/artifacts" && sha256sum -c SHA256SUMS)
+while read -r digest artifact; do
+    if ! grep -F -q "$digest" "$package_dir/src/index.js"; then
+        echo "2.0 wasm loader: embedded digest is missing for $artifact" >&2
+        exit 1
+    fi
+done <"$package_dir/artifacts/SHA256SUMS"
 sha256sum "$package_dir"/artifacts/*.wasm >"$evidence_dir/artifacts-first.sha256"
 (cd "$package_dir" && npm run build)
 sha256sum "$package_dir"/artifacts/*.wasm >"$evidence_dir/artifacts-second.sha256"
