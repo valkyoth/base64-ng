@@ -199,8 +199,7 @@ pub(super) fn vector_length_bytes() -> usize {
 pub(crate) fn available() -> bool {
     #[cfg(all(feature = "std", target_os = "linux"))]
     {
-        static AVAILABLE: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
-        *AVAILABLE.get_or_init(detect_linux_rvv)
+        detect_linux_rvv()
     }
     #[cfg(all(feature = "std", not(target_os = "linux")))]
     {

@@ -21,6 +21,13 @@ pub(super) fn stream_encoder_failed_error() -> io::Error {
     )
 }
 
+pub(super) fn wrapped_reader_overreported_error() -> io::Error {
+    io::Error::new(
+        io::ErrorKind::InvalidData,
+        "wrapped reader reported more bytes than provided",
+    )
+}
+
 pub(super) const fn redacted_inner_state(present: bool) -> &'static str {
     if present { "<present>" } else { "<taken>" }
 }

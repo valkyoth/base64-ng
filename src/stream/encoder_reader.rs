@@ -1,4 +1,7 @@
-use super::{EncoderDriver, OutputQueue, redacted_inner_state, stream_encoder_failed_error};
+use super::{
+    EncoderDriver, OutputQueue, redacted_inner_state, stream_encoder_failed_error,
+    wrapped_reader_overreported_error,
+};
 use crate::{Alphabet, Engine};
 use std::io::{self, Read};
 
@@ -252,13 +255,20 @@ where
 {
     fn fill_output(&mut self) -> io::Result<()> {
         let mut input = [0u8; 768];
-        let read = match self.inner_mut().read(&mut input) {
+        let available = input.len();
+        let read = match self.inner_mut().read(&mut input[..available]) {
             Ok(read) => read,
             Err(err) => {
                 crate::wipe_bytes(&mut input);
                 return Err(err);
             }
         };
+        if read > available {
+            crate::wipe_bytes(&mut input);
+            self.clear_pending();
+            self.failed = true;
+            return Err(wrapped_reader_overreported_error());
+        }
         if read == 0 {
             crate::wipe_bytes(&mut input);
             self.finished = true;

@@ -52,6 +52,11 @@ Linux `std` evidence uses a minimal reviewed UAPI boundary:
    `AT_HWCAP` `V` bit as the fail-closed fallback;
 4. reject contradictory, disabled, missing, or malformed results.
 
+The complete probe is repeated at every candidate entry. In particular,
+`PR_RISCV_V_GET_CONTROL` is never process-cached because Linux defines vector
+control for the calling thread; a result from one thread cannot authorize RVV
+execution on another.
+
 Pure parsing tests cover successful probes, old-kernel fallback, disabled
 vector state, missing `V`, and contradictory results. Non-Linux `std` builds
 return unavailable. `no_std` evidence requires compile-time `+v`; it never

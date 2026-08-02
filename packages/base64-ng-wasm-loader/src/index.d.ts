@@ -28,6 +28,7 @@ export interface Base64NgPosture {
   readonly maxInputLength: number;
   readonly maxOutputLength: number;
   readonly maximumMemoryPages: number;
+  readonly maxArtifactBytes: number;
   readonly secretApi: false;
 }
 

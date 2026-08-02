@@ -7,6 +7,7 @@ const typedArrayBuffer = getOwnPropertyDescriptor(TypedArrayPrototype, "buffer")
 const typedArrayByteLength = getOwnPropertyDescriptor(TypedArrayPrototype, "byteLength").get;
 const typedArrayByteOffset = getOwnPropertyDescriptor(TypedArrayPrototype, "byteOffset").get;
 const typedArrayLength = getOwnPropertyDescriptor(TypedArrayPrototype, "length").get;
+const uint8Subarray = Uint8Array.prototype.subarray;
 const arrayBufferByteLength = getOwnPropertyDescriptor(ArrayBuffer.prototype, "byteLength").get;
 const arrayBufferResizable = getOwnPropertyDescriptor(ArrayBuffer.prototype, "resizable")?.get;
 const arrayBufferMaxByteLength = getOwnPropertyDescriptor(ArrayBuffer.prototype, "maxByteLength")?.get;
@@ -18,6 +19,7 @@ const stringCharCodeAt = String.prototype.charCodeAt;
 const IntrinsicUint8Array = Uint8Array;
 const EMPTY_BYTES = new IntrinsicUint8Array(0);
 const numberIsSafeInteger = Number.isSafeInteger;
+const numberFrom = Number;
 const wasmValidate = WebAssembly.validate.bind(WebAssembly);
 const wasmInstantiate = WebAssembly.instantiate.bind(WebAssembly);
 const cryptoSubtle = globalThis.crypto?.subtle;
@@ -41,6 +43,7 @@ const ABI_ERRORS = Object.freeze({
 
 const NO_INDEX = 0xffff_ffff;
 const HARD_MAX_MEMORY_PAGES = 128;
+const MAX_ARTIFACT_BYTES = 1024 * 1024;
 const ARTIFACT_SHA256 = Object.freeze({
   scalar: "199eab837efeb253ccba88f3d59bc6531dde5088e94cb9d6749589a178e982d2",
   simd128: "abef8100fb5ed279478d3c5dc1dfbae5988c52fb8d8941cc1b703ca910298b63",
@@ -150,6 +153,7 @@ export async function createBase64Ng(options = {}) {
     maxInputLength,
     maxOutputLength,
     maximumMemoryPages,
+    maxArtifactBytes: MAX_ARTIFACT_BYTES,
     secretApi: false,
   });
   if (posture.artifactPosture !== selectedArtifact) {
@@ -385,17 +389,17 @@ function inspectUint8Array(value, label) {
   return { buffer, byteLength, byteOffset, length };
 }
 
-function snapshotUint8Array(value, before) {
+function snapshotUint8Array(value, before, label = "input") {
   const snapshot = new IntrinsicUint8Array(before.length);
   try {
     call(uint8Set, snapshot, value, 0);
   } catch {
-    throw error("detached-buffer", "input became detached before snapshot completion");
+    throw error("detached-buffer", `${label} became detached before snapshot completion`);
   }
-  const after = inspectUint8Array(value, "input");
+  const after = inspectUint8Array(value, label);
   if (before.buffer !== after.buffer || before.byteLength !== after.byteLength
       || before.byteOffset !== after.byteOffset || before.length !== after.length) {
-    throw error("unstable-byte-view", "input storage changed during snapshot");
+    throw error("unstable-byte-view", `${label} storage changed during snapshot`);
   }
   return snapshot;
 }
@@ -516,17 +520,108 @@ function validateExports(exports, selectedArtifact) {
 
 async function loadArtifactBytes(source) {
   if (isGenuineUint8Array(source)) {
-    return snapshotUint8Array(source, inspectUint8Array(source, "artifact"));
+    const inspected = inspectUint8Array(source, "artifact");
+    enforceArtifactSize(inspected.length);
+    return snapshotUint8Array(source, inspected, "artifact");
   }
   const url = source instanceof URL ? source : new URL(source, import.meta.url);
   if (url.protocol === "file:" && typeof process !== "undefined" && process.versions?.node) {
-    const { readFile } = await import("node:fs/promises");
-    const bytes = await readFile(url);
-    return snapshotUint8Array(bytes, inspectUint8Array(bytes, "artifact"));
+    return readNodeArtifact(url);
   }
-  const response = await fetch(url);
+  return readHttpArtifact(url);
+}
+
+async function readNodeArtifact(url) {
+  const { open } = await import("node:fs/promises");
+  let file;
+  try {
+    file = await open(url, "r");
+  } catch {
+    throw error("artifact-fetch", "WASM artifact file could not be opened");
+  }
+  const staged = new IntrinsicUint8Array(MAX_ARTIFACT_BYTES + 1);
+  let total = 0;
+  try {
+    while (total < staged.length) {
+      const result = await file.read(staged, total, staged.length - total, total);
+      if (result.bytesRead === 0) break;
+      total += result.bytesRead;
+    }
+  } catch {
+    throw error("artifact-fetch", "WASM artifact file could not be read");
+  } finally {
+    await file.close();
+  }
+  enforceArtifactSize(total);
+  return exactArtifactPrefix(staged, total);
+}
+
+async function readHttpArtifact(url) {
+  let response;
+  try {
+    response = await fetch(url);
+  } catch {
+    throw error("artifact-fetch", "WASM artifact fetch failed");
+  }
   if (!response.ok) throw error("artifact-fetch", `artifact fetch failed with status ${response.status}`);
-  return new IntrinsicUint8Array(await response.arrayBuffer());
+  if (response.body === null || typeof response.body.getReader !== "function") {
+    throw error("artifact-stream", "WASM artifact response is not a bounded readable stream");
+  }
+  const reader = response.body.getReader();
+  const declaredText = response.headers.get("content-length");
+  if (declaredText !== null) {
+    const declared = numberFrom(declaredText);
+    if (numberIsSafeInteger(declared) && declared > MAX_ARTIFACT_BYTES) {
+      await cancelArtifactReader(reader);
+      throw artifactSizeError(declared);
+    }
+  }
+
+  const staged = new IntrinsicUint8Array(MAX_ARTIFACT_BYTES + 1);
+  let total = 0;
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const inspected = inspectUint8Array(value, "artifact stream chunk");
+      if (inspected.length > MAX_ARTIFACT_BYTES - total) {
+        await cancelArtifactReader(reader);
+        throw artifactSizeError(total + inspected.length);
+      }
+      call(uint8Set, staged, value, total);
+      total += inspected.length;
+    }
+  } catch (caught) {
+    if (caught instanceof Base64NgError) throw caught;
+    await cancelArtifactReader(reader);
+    throw error("artifact-fetch", "WASM artifact stream failed");
+  }
+  return exactArtifactPrefix(staged, total);
+}
+
+function exactArtifactPrefix(staged, length) {
+  const exact = new IntrinsicUint8Array(length);
+  call(uint8Set, exact, call(uint8Subarray, staged, 0, length), 0);
+  return exact;
+}
+
+function enforceArtifactSize(length) {
+  if (length > MAX_ARTIFACT_BYTES) throw artifactSizeError(length);
+}
+
+function artifactSizeError(required) {
+  return error("artifact-size", "WASM artifact exceeds the fixed size limit", {
+    required,
+    limit: MAX_ARTIFACT_BYTES,
+  });
+}
+
+async function cancelArtifactReader(reader) {
+  try {
+    await reader.cancel();
+  } catch {
+    // The size failure remains authoritative even if transport cancellation fails.
+  }
 }
 
 function isGenuineUint8Array(value) {

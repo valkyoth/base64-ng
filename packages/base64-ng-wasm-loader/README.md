@@ -33,6 +33,10 @@ artifact before instantiation; `posture.artifactSha256` reports the selected
 digest. `artifacts/SHA256SUMS` records the same values for release tooling.
 Builds remap the repository source root to a stable virtual path so official
 artifact bytes and hashes do not depend on a developer or CI checkout path.
+Artifact acquisition has a fixed 1 MiB ceiling. Supplied arrays are rejected
+before copying, Node files use bounded reads, and HTTP bodies are consumed as
+bounded streams before digest verification. The returned posture reports this
+ceiling as `maxArtifactBytes`.
 
 The package uses no `eval` or `new Function`. It works as an ES module in Node
 and browsers where the `.wasm` artifacts can be fetched. A restrictive browser

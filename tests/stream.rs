@@ -58,6 +58,16 @@ struct PoisoningReadError<'a> {
 }
 
 #[cfg(feature = "stream")]
+struct OverReportingReader;
+
+#[cfg(feature = "stream")]
+impl Read for OverReportingReader {
+    fn read(&mut self, output: &mut [u8]) -> std::io::Result<usize> {
+        Ok(output.len().saturating_add(1))
+    }
+}
+
+#[cfg(feature = "stream")]
 impl Read for PoisoningReadError<'_> {
     fn read(&mut self, output: &mut [u8]) -> std::io::Result<usize> {
         let len = self.poison.len().min(output.len());
@@ -690,6 +700,24 @@ fn stream_encoder_reader_propagates_read_error_after_wiping_input_buffer() {
 
 #[cfg(feature = "stream")]
 #[test]
+fn stream_encoder_reader_fails_closed_when_inner_reader_overreports() {
+    let mut reader = EncoderReader::new(OverReportingReader, STANDARD);
+    let mut output = [0u8; 8];
+
+    let error = reader.read(&mut output).unwrap_err();
+
+    assert_eq!(error.kind(), std::io::ErrorKind::InvalidData);
+    assert!(reader.is_failed());
+    assert_eq!(reader.pending_len(), 0);
+    assert_eq!(reader.buffered_output_len(), 0);
+    assert_eq!(
+        reader.read(&mut output).unwrap_err().kind(),
+        std::io::ErrorKind::InvalidInput
+    );
+}
+
+#[cfg(feature = "stream")]
+#[test]
 fn stream_decoder_handles_chunk_boundaries() {
     let mut decoder = Decoder::new(Vec::new(), STANDARD);
     assert_eq!(decoder.engine(), STANDARD);
@@ -1256,6 +1284,24 @@ fn stream_decoder_reader_propagates_read_error_after_wiping_input_buffer() {
     assert!(!reader.has_finished_input());
     assert!(!reader.is_finished());
     assert!(!reader.is_failed());
+}
+
+#[cfg(feature = "stream")]
+#[test]
+fn stream_decoder_reader_fails_closed_when_inner_reader_overreports() {
+    let mut reader = DecoderReader::new(OverReportingReader, STANDARD);
+    let mut output = [0u8; 3];
+
+    let error = reader.read(&mut output).unwrap_err();
+
+    assert_eq!(error.kind(), std::io::ErrorKind::InvalidData);
+    assert!(reader.is_failed());
+    assert_eq!(reader.pending_len(), 0);
+    assert_eq!(reader.buffered_output_len(), 0);
+    assert_eq!(
+        reader.read(&mut output).unwrap_err().kind(),
+        std::io::ErrorKind::InvalidInput
+    );
 }
 
 #[cfg(feature = "stream")]

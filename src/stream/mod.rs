@@ -41,6 +41,10 @@
 //! I/O staging. This keeps heap behavior predictable, but callers embedding
 //! these adapters in constrained `std` environments should account for that
 //! stack footprint in deeply nested writer/reader chains.
+//! A wrapped [`std::io::Read`] implementation that reports more bytes than the
+//! provided buffer violates its trait contract; reader adapters convert that
+//! condition into `InvalidData`, wipe pending codec state, and fail closed
+//! instead of indexing with the untrusted count.
 //!
 //! ```no_run
 //! use std::io::Read;
@@ -99,7 +103,7 @@ pub use encoder_reader::EncoderReader;
 
 use common::{
     redacted_inner_state, stream_decoder_failed_error, stream_encoder_failed_error,
-    trailing_input_after_padding_error,
+    trailing_input_after_padding_error, wrapped_reader_overreported_error,
 };
 use driver::{DecoderDriver, EncoderDriver};
 use queue::OutputQueue;

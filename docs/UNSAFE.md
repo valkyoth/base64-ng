@@ -1433,8 +1433,10 @@ caller-saved integer temporaries plus vector registers, and carry CFI function
 boundaries. Scalar validation completes before strict-decode output writes.
 The UAPI probe uses one valid writable pair, a zero-sized null CPU set, and
 fails closed on syscall errors, unsupported keys, missing `V`, or disabled
-vector state. QEMU's older-kernel fallback accepts only the startup `AT_HWCAP`
-`V` bit.
+vector state. The wrappers repeat the probe at each candidate entry and never
+process-cache `PR_RISCV_V_GET_CONTROL`, whose result applies to the calling
+thread. QEMU's older-kernel fallback accepts only the startup `AT_HWCAP` `V`
+bit.
 
 Generated disassembly, ELF attributes, VLEN 128/256 QEMU execution, and pure
 probe-result tests are required by the Commit 32 gates. These are functional

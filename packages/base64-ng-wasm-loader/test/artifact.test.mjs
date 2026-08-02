@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { readFile } from "node:fs/promises";
+import { mkdtemp, open, readFile, rm } from "node:fs/promises";
+import { createServer } from "node:http";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
+import { pathToFileURL } from "node:url";
 
 import { createBase64Ng } from "../src/index.js";
 
@@ -85,5 +89,63 @@ test("custom artifacts require and enforce an explicit SHA-256 digest", async ()
     assert.equal(api.posture.artifactSha256, expected);
   } finally {
     api.dispose();
+  }
+});
+
+test("artifact acquisition rejects arrays, files, and streams above the fixed ceiling", async () => {
+  const limit = 1024 * 1024;
+  const digest = "0".repeat(64);
+  const oversized = new Uint8Array(limit + 1);
+  await assert.rejects(
+    createBase64Ng({
+      artifact: "scalar",
+      scalarArtifact: oversized,
+      scalarArtifactSha256: digest,
+    }),
+    (caught) => caught.code === "artifact-size"
+      && caught.required === limit + 1
+      && caught.limit === limit,
+  );
+
+  const directory = await mkdtemp(join(tmpdir(), "base64-ng-artifact-limit-"));
+  const artifactPath = join(directory, "oversized.wasm");
+  const file = await open(artifactPath, "w");
+  await file.truncate(limit + 1);
+  await file.close();
+  try {
+    await assert.rejects(
+      createBase64Ng({
+        artifact: "scalar",
+        scalarArtifact: pathToFileURL(artifactPath),
+        scalarArtifactSha256: digest,
+      }),
+      (caught) => caught.code === "artifact-size" && caught.limit === limit,
+    );
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+
+  const server = createServer((_request, response) => {
+    response.writeHead(200, { "content-type": "application/wasm" });
+    const chunk = new Uint8Array(64 * 1024);
+    for (let index = 0; index < 17; index += 1) response.write(chunk);
+    response.end();
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  try {
+    await assert.rejects(
+      createBase64Ng({
+        artifact: "scalar",
+        scalarArtifact: new URL(`http://127.0.0.1:${address.port}/oversized.wasm`),
+        scalarArtifactSha256: digest,
+      }),
+      (caught) => caught.code === "artifact-size" && caught.limit === limit,
+    );
+  } finally {
+    await new Promise((resolve, reject) => server.close((failure) => {
+      if (failure) reject(failure);
+      else resolve();
+    }));
   }
 });

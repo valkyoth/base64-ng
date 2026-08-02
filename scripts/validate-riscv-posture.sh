@@ -34,6 +34,7 @@ require_text "$rvv" "vmv.v.i v15, 0"
 require_text "$rvv" "encode_slice_with_availability::<A, PAD>(input, output, available())"
 require_text "$rvv" "decode_slice_with_availability::<A, PAD>(input, output, available())"
 require_text "$rvv" "|| !rvv_available"
+require_text "$rvv" "detect_linux_rvv()"
 require_text "$simd" "base64_ng_rvv_candidate"
 require_text "$simd" "return Candidate::Rvv;"
 require_text "$encode" "EncodeBackend::Scalar"
@@ -41,6 +42,11 @@ require_text "$decode" "DecodeBackend::Scalar"
 
 if grep -E -q 'EncodeBackend::Rvv|DecodeBackend::Rvv|ActiveBackend::Rvv' "$encode" "$decode" "$simd"; then
     echo "RISC-V posture: RVV entered production dispatch before hardware admission" >&2
+    exit 1
+fi
+
+if grep -F -q 'OnceLock' "$rvv"; then
+    echo "RISC-V posture: per-thread vector control must not use process-wide caching" >&2
     exit 1
 fi
 

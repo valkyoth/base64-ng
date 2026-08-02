@@ -1,4 +1,7 @@
-use super::{DecoderDriver, OutputQueue, redacted_inner_state, stream_decoder_failed_error};
+use super::{
+    DecoderDriver, OutputQueue, redacted_inner_state, stream_decoder_failed_error,
+    wrapped_reader_overreported_error,
+};
 use crate::{Alphabet, Engine};
 use std::io::{self, Read};
 
@@ -304,6 +307,12 @@ where
                 return Err(err);
             }
         };
+        if read > available {
+            crate::wipe_bytes(&mut input);
+            self.clear_pending();
+            self.failed = true;
+            return Err(wrapped_reader_overreported_error());
+        }
         if read == 0 {
             crate::wipe_bytes(&mut input);
             self.finished = true;
