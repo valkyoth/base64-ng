@@ -199,6 +199,9 @@ scripts/check-2.0-bytes.sh
 echo "checks: 2.0 Tokio AsyncRead integration"
 scripts/check-2.0-tokio-readers.sh
 
+echo "checks: 2.0 Tokio AsyncWrite integration"
+scripts/check-2.0-tokio-writers.sh
+
 echo "checks: dudect timing harness"
 scripts/check_dudect.sh
 

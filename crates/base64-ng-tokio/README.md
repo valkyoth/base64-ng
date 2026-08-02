@@ -27,11 +27,11 @@
 
 Optional Tokio helpers for `base64-ng`.
 
-Commit 37 migrates async read-all helpers and manual `AsyncRead` adapters to the
-shared 2.0 incremental core. `new` reads through EOF; `new_exact` transforms
-exactly one declared frame and leaves adjacent bytes unread. The existing
-`AsyncWrite` adapters remain on their frozen compatibility surface until
-Commit 38 replaces them.
+The read-all helpers and manual `AsyncRead`/`AsyncWrite` adapters use the shared
+2.0 incremental core. Reader `new` consumes through EOF; `new_exact` transforms
+one declared frame and leaves adjacent bytes unread. Writers preserve bounded
+queued output across short writes, `Pending`, cancellation, and retryable I/O
+errors. Call `shutdown` to finalize a trailing quantum.
 
 Read-all helper allocations are RAII-wiped on success, error, and cancellation.
 Limited helpers consume no more than the configured limit plus one lookahead
@@ -43,8 +43,8 @@ replaced allocation before it is returned to the allocator.
 
 ```rust
 use base64_ng::STRICT_STANDARD_PADDED;
-use base64_ng_tokio::{encode_reader_to_writer_limited, EncoderReader};
-use tokio::io::AsyncReadExt;
+use base64_ng_tokio::{encode_reader_to_writer_limited, EncoderReader, EncoderWriter};
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 let mut input = &b"hello"[..];
 let mut output = Vec::new();
@@ -65,4 +65,8 @@ let mut streamed = Vec::new();
 reader.read_to_end(&mut streamed).await.unwrap();
 assert_eq!(streamed, b"aGVsbG8=");
 
+let mut writer = EncoderWriter::new(Vec::new(), &STRICT_STANDARD_PADDED);
+writer.write_all(b"hello").await.unwrap();
+writer.shutdown().await.unwrap();
+assert_eq!(writer.into_inner(), b"aGVsbG8=");
 ```

@@ -1,61 +1,55 @@
-use base64_ng::{Alphabet, Engine};
+use base64_ng::{Base64, Codec, EncoderState, Status};
 use core::{
-    marker::PhantomData,
     pin::Pin,
     task::{Context, Poll, ready},
 };
 use tokio::io::{self, AsyncWrite};
 
-use crate::{encode_io_error, queue::OutputQueue, wipe_bytes};
+use crate::{operation_io_error, queue::OutputQueue, wipe_bytes};
 
 const ENCODE_INPUT_CAP: usize = 768;
 const ENCODE_OUTPUT_CAP: usize = 1024;
+
 /// Async writer that accepts raw bytes and writes Base64 to the wrapped writer.
 ///
-/// `poll_write` may accept only part of the input, following normal
-/// [`AsyncWrite`] rules. Accepted bytes may remain buffered internally until
-/// a later write, [`AsyncWrite::poll_flush`], or [`AsyncWrite::poll_shutdown`].
-/// Shutdown is the finalization boundary: it encodes any trailing partial
-/// quantum, drains all buffered output, flushes, and then shuts down `inner`.
+/// `poll_write` drains previously accepted output before accepting another
+/// bounded input prefix. Once it returns `Ready(Ok(n))`, those `n` input bytes
+/// are owned by this adapter and represented either by the shared incremental
+/// encoder or the fixed output queue. `Poll::Pending` never accepts new input.
 ///
-/// # Security
+/// Output bytes accepted by the wrapped writer are irrevocably committed.
+/// Cancellation while this adapter remains alive preserves all uncommitted
+/// output. Dropping the adapter discards and clears uncommitted state, as is
+/// normal for a buffered writer; call `shutdown` before recovery when a
+/// complete stream is required.
 ///
-/// Internal cleanup is best-effort and limited to this adapter's fixed pending
-/// and output buffers. It cannot clear copies held by the wrapped writer, the
-/// caller's buffers, registers, caches, swap, or crash dumps.
-///
-/// I/O errors from the wrapped writer during drain do not set [`Self::is_failed`];
-/// only internal protocol or capacity violations latch a permanent failure.
-pub struct EncoderWriter<W, A, const PAD: bool>
-where
-    A: Alphabet,
-{
+/// Ordinary wrapped-writer I/O errors are retryable and retain queued output.
+/// Internal transform, accounting, or wrapped-writer protocol violations latch
+/// an absorbing failure and clear retained state.
+pub struct EncoderWriter<W> {
     inner: Option<W>,
-    engine: Engine<A, PAD>,
-    pending: [u8; 2],
-    pending_len: usize,
+    state: EncoderState,
     output: OutputQueue<ENCODE_OUTPUT_CAP>,
+    input_accepted: usize,
+    output_committed: usize,
     finalized: bool,
+    shutdown_complete: bool,
     failed: bool,
-    _alphabet: PhantomData<A>,
 }
 
-impl<W, A, const PAD: bool> EncoderWriter<W, A, PAD>
-where
-    A: Alphabet,
-{
-    /// Creates a new async Base64 encoder writer.
+impl<W> EncoderWriter<W> {
+    /// Creates an async writer over the selected 2.0 codec specification.
     #[must_use]
-    pub fn new(inner: W, engine: Engine<A, PAD>) -> Self {
+    pub fn new<S: Codec>(inner: W, codec: &Base64<S>) -> Self {
         Self {
             inner: Some(inner),
-            engine,
-            pending: [0; 2],
-            pending_len: 0,
+            state: codec.encoder(),
             output: OutputQueue::new(),
+            input_accepted: 0,
+            output_committed: 0,
             finalized: false,
+            shutdown_complete: false,
             failed: false,
-            _alphabet: PhantomData,
         }
     }
 
@@ -66,52 +60,94 @@ where
     }
 
     /// Returns a mutable reference to the wrapped writer.
+    ///
+    /// Writing directly to it while this adapter has buffered output can
+    /// reorder the stream.
     pub fn get_mut(&mut self) -> &mut W {
         self.inner_mut()
     }
 
-    /// Consumes the adapter and returns the wrapped writer.
-    ///
-    /// This does not finalize pending input. Prefer
-    /// [`AsyncWriteExt::shutdown`](tokio::io::AsyncWriteExt::shutdown) before
-    /// calling this when the Base64 stream must be complete.
-    #[must_use]
-    pub fn into_inner(mut self) -> W {
-        self.take_inner()
-    }
-
-    /// Returns whether this adapter has encountered an unrecoverable error.
+    /// Returns whether this adapter has entered its absorbing failure state.
     #[must_use]
     pub const fn is_failed(&self) -> bool {
         self.failed
     }
 
-    /// Returns whether shutdown has finalized this adapter.
+    /// Returns whether Base64 finalization has completed.
     #[must_use]
     pub const fn is_finalized(&self) -> bool {
         self.finalized
     }
 
-    /// Returns the number of raw bytes buffered until a full encode quantum is
-    /// available.
+    /// Returns whether the wrapped writer completed shutdown.
     #[must_use]
-    pub const fn pending_len(&self) -> usize {
-        self.pending_len
+    pub const fn is_shutdown(&self) -> bool {
+        self.shutdown_complete
     }
 
-    /// Returns the number of encoded bytes currently buffered for `inner`.
+    /// Returns raw input bytes accepted by this adapter.
+    #[must_use]
+    pub const fn input_accepted(&self) -> usize {
+        self.input_accepted
+    }
+
+    /// Returns encoded bytes accepted by the wrapped writer.
+    #[must_use]
+    pub const fn output_committed(&self) -> usize {
+        self.output_committed
+    }
+
+    /// Returns raw input bytes retained until a complete encode quantum.
+    #[must_use]
+    pub const fn pending_len(&self) -> usize {
+        self.state.buffered_input_len()
+    }
+
+    /// Returns encoded bytes queued for the wrapped writer.
     #[must_use]
     pub const fn buffered_output_len(&self) -> usize {
         self.output.len()
     }
 
-    fn clear_pending(&mut self) {
-        wipe_bytes(&mut self.pending);
-        self.pending_len = 0;
+    /// Returns whether checked recovery can avoid discarding accepted input.
+    #[must_use]
+    pub const fn can_into_inner(&self) -> bool {
+        !self.failed && self.pending_len() == 0 && self.output.is_empty()
     }
 
-    fn clear_output(&mut self) {
+    /// Consumes the adapter and returns the wrapped writer without finalizing.
+    ///
+    /// Accepted input or queued output may be discarded. Prefer `shutdown` and
+    /// [`Self::try_into_inner`] when completeness matters.
+    #[must_use]
+    pub fn into_inner(mut self) -> W {
+        self.take_inner()
+    }
+
+    /// Recovers the wrapped writer only when no accepted input would be lost.
+    ///
+    /// This does not flush or shut down the wrapped writer.
+    ///
+    /// # Errors
+    ///
+    /// Returns this adapter unchanged when it has failed or retains pending
+    /// input or output.
+    #[allow(clippy::result_large_err)]
+    pub fn try_into_inner(mut self) -> Result<W, Self> {
+        if !self.can_into_inner() {
+            return Err(self);
+        }
+        Ok(self.take_inner())
+    }
+
+    fn clear_internal(&mut self) {
+        self.state.clear();
         self.output.clear_all();
+    }
+
+    fn latch_failure(&mut self) {
+        self.failed = true;
+        self.clear_internal();
     }
 
     fn inner_ref(&self) -> &W {
@@ -135,108 +171,84 @@ where
         }
     }
 
-    fn queue_encoded_temp(&mut self, input: &[u8], encoded: &mut [u8]) -> io::Result<()> {
-        let written = match self.engine.encode_slice(input, encoded) {
-            Ok(written) => written,
-            Err(error) => {
-                wipe_bytes(encoded);
-                self.failed = true;
-                return Err(encode_io_error(error));
-            }
-        };
-
-        let result = self.output.push_slice(&encoded[..written]);
-        wipe_bytes(encoded);
-        if result.is_err() {
-            self.failed = true;
-        }
-        result
-    }
-
-    fn queue_pending_final(&mut self) -> io::Result<()> {
-        if self.pending_len == 0 {
-            return Ok(());
-        }
-
-        let mut pending = [0u8; 2];
-        pending[..self.pending_len].copy_from_slice(&self.pending[..self.pending_len]);
-        let pending_len = self.pending_len;
-        let mut encoded = [0u8; 4];
-        let result = self.queue_encoded_temp(&pending[..pending_len], &mut encoded);
-        wipe_bytes(&mut pending);
-        result?;
-        self.clear_pending();
-        Ok(())
-    }
-
     fn process_input(&mut self, input: &[u8]) -> io::Result<usize> {
-        if input.is_empty() {
+        let offered = input.len().min(ENCODE_INPUT_CAP);
+        if offered == 0 {
             return Ok(0);
         }
 
-        let mut consumed = 0;
-        if self.pending_len > 0 {
-            let needed = 3 - self.pending_len;
-            if input.len() < needed {
-                self.pending[self.pending_len..self.pending_len + input.len()]
-                    .copy_from_slice(input);
-                self.pending_len += input.len();
-                return Ok(input.len());
+        let mut encoded = [0u8; ENCODE_OUTPUT_CAP];
+        let result = self.state.update(&input[..offered], &mut encoded);
+        let step = match result {
+            Ok(step) => step,
+            Err(error) => {
+                wipe_bytes(&mut encoded);
+                self.latch_failure();
+                return Err(operation_io_error(error));
             }
-
-            let mut quantum = [0u8; 3];
-            quantum[..self.pending_len].copy_from_slice(&self.pending[..self.pending_len]);
-            quantum[self.pending_len..].copy_from_slice(&input[..needed]);
-            let mut encoded = [0u8; 4];
-            let result = self.queue_encoded_temp(&quantum, &mut encoded);
-            wipe_bytes(&mut quantum);
-            result?;
-            self.clear_pending();
-            consumed += needed;
+        };
+        let progress = step.progress();
+        let consumed = progress.input_consumed();
+        let produced = progress.output_produced();
+        if consumed == 0 || consumed > offered || produced > encoded.len() {
+            wipe_bytes(&mut encoded);
+            self.latch_failure();
+            return Err(io::Error::other(
+                "base64-ng-tokio encoder made invalid progress",
+            ));
         }
-
-        let remaining = &input[consumed..];
-        let full_len = remaining.len() / 3 * 3;
-        if full_len != 0 {
-            let max_by_queue = self.output.available_capacity() / 4 * 3;
-            let mut take = core::cmp::min(full_len, core::cmp::min(ENCODE_INPUT_CAP, max_by_queue));
-            take -= take % 3;
-
-            if take == 0 {
-                return Ok(consumed);
-            }
-
-            let mut encoded = [0u8; ENCODE_OUTPUT_CAP];
-            self.queue_encoded_temp(&remaining[..take], &mut encoded)?;
-            consumed += take;
-
-            if take < full_len {
-                return Ok(consumed);
-            }
+        if let Err(error) = self.output.push_slice(&encoded[..produced]) {
+            wipe_bytes(&mut encoded);
+            self.latch_failure();
+            return Err(error);
         }
-
-        let tail = &input[consumed..];
-        self.pending[..tail.len()].copy_from_slice(tail);
-        self.pending_len = tail.len();
-        consumed += tail.len();
+        wipe_bytes(&mut encoded);
+        self.input_accepted = self.state.source_position();
         Ok(consumed)
     }
-}
 
-impl<W, A, const PAD: bool> Drop for EncoderWriter<W, A, PAD>
-where
-    A: Alphabet,
-{
-    fn drop(&mut self) {
-        self.clear_pending();
-        self.clear_output();
+    fn finalize(&mut self) -> io::Result<()> {
+        if self.finalized {
+            return Ok(());
+        }
+        let mut encoded = [0u8; 4];
+        let result = self.state.finish(&mut encoded);
+        let step = match result {
+            Ok(step) => step,
+            Err(error) => {
+                wipe_bytes(&mut encoded);
+                self.latch_failure();
+                return Err(operation_io_error(error));
+            }
+        };
+        let produced = step.progress().output_produced();
+        if produced > encoded.len() || step.status() != Status::Complete {
+            wipe_bytes(&mut encoded);
+            self.latch_failure();
+            return Err(io::Error::other(
+                "base64-ng-tokio encoder finalization made invalid progress",
+            ));
+        }
+        if let Err(error) = self.output.push_slice(&encoded[..produced]) {
+            wipe_bytes(&mut encoded);
+            self.latch_failure();
+            return Err(error);
+        }
+        wipe_bytes(&mut encoded);
+        self.finalized = true;
+        Ok(())
     }
 }
 
-impl<W, A, const PAD: bool> EncoderWriter<W, A, PAD>
+impl<W> Drop for EncoderWriter<W> {
+    fn drop(&mut self) {
+        self.clear_internal();
+    }
+}
+
+impl<W> EncoderWriter<W>
 where
     W: AsyncWrite + Unpin,
-    A: Alphabet + Unpin,
 {
     fn poll_drain_output(&mut self, context: &mut Context<'_>) -> Poll<io::Result<()>> {
         let mut chunk = [0u8; ENCODE_OUTPUT_CAP];
@@ -249,31 +261,36 @@ where
                 Poll::Ready(Ok(0)) => {
                     return Poll::Ready(Err(io::Error::new(
                         io::ErrorKind::WriteZero,
-                        "base64-ng-tokio encoder writer could not drain buffered output",
+                        "base64-ng-tokio encoder could not drain buffered output",
                     )));
                 }
-                Poll::Ready(Ok(written)) => {
-                    if written > pending {
-                        self.failed = true;
-                        return Poll::Ready(Err(io::Error::new(
-                            io::ErrorKind::InvalidData,
-                            "wrapped async writer reported more bytes than provided",
+                Poll::Ready(Ok(written)) if written <= pending => {
+                    let Some(committed) = self.output_committed.checked_add(written) else {
+                        self.latch_failure();
+                        return Poll::Ready(Err(io::Error::other(
+                            "base64-ng-tokio encoder output position overflow",
                         )));
-                    }
+                    };
                     self.output.discard_front(written);
+                    self.output_committed = committed;
+                }
+                Poll::Ready(Ok(_)) => {
+                    self.latch_failure();
+                    return Poll::Ready(Err(io::Error::new(
+                        io::ErrorKind::InvalidData,
+                        "wrapped async writer reported more bytes than provided",
+                    )));
                 }
                 Poll::Ready(Err(error)) => return Poll::Ready(Err(error)),
             }
         }
-
         Poll::Ready(Ok(()))
     }
 }
 
-impl<W, A, const PAD: bool> AsyncWrite for EncoderWriter<W, A, PAD>
+impl<W> AsyncWrite for EncoderWriter<W>
 where
     W: AsyncWrite + Unpin,
-    A: Alphabet + Unpin,
 {
     fn poll_write(
         mut self: Pin<&mut Self>,
@@ -285,15 +302,13 @@ where
                 "base64-ng-tokio encoder writer is failed",
             )));
         }
-
-        ready!(self.poll_drain_output(context))?;
-        if self.finalized {
+        if self.shutdown_complete || self.finalized {
             return Poll::Ready(Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
                 "base64-ng-tokio encoder writer received input after shutdown",
             )));
         }
-
+        ready!(self.poll_drain_output(context))?;
         Poll::Ready(self.process_input(input))
     }
 
@@ -303,7 +318,9 @@ where
                 "base64-ng-tokio encoder writer is failed",
             )));
         }
-
+        if self.shutdown_complete {
+            return Poll::Ready(Ok(()));
+        }
         ready!(self.poll_drain_output(context))?;
         Pin::new(self.inner_mut()).poll_flush(context)
     }
@@ -314,18 +331,15 @@ where
                 "base64-ng-tokio encoder writer is failed",
             )));
         }
-
-        ready!(self.poll_drain_output(context))?;
-        if !self.finalized {
-            if let Err(error) = self.queue_pending_final() {
-                self.failed = true;
-                self.clear_output();
-                return Poll::Ready(Err(error));
-            }
-            self.finalized = true;
+        if self.shutdown_complete {
+            return Poll::Ready(Ok(()));
         }
         ready!(self.poll_drain_output(context))?;
+        self.finalize()?;
+        ready!(self.poll_drain_output(context))?;
         ready!(Pin::new(self.inner_mut()).poll_flush(context))?;
-        Pin::new(self.inner_mut()).poll_shutdown(context)
+        ready!(Pin::new(self.inner_mut()).poll_shutdown(context))?;
+        self.shutdown_complete = true;
+        Poll::Ready(Ok(()))
     }
 }

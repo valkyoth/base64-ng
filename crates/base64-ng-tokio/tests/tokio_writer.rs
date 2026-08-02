@@ -1,6 +1,6 @@
 #![allow(missing_docs)]
 
-use base64_ng::{STANDARD, URL_SAFE_NO_PAD};
+use base64_ng::{STRICT_STANDARD_PADDED, STRICT_URL_SAFE_UNPADDED};
 use base64_ng_tokio::{DecoderWriter, EncoderWriter};
 use core::{
     pin::Pin,
@@ -88,7 +88,7 @@ fn noop_waker() -> std::task::Waker {
 
 #[tokio::test]
 async fn streaming_encoder_writer_handles_split_writes() {
-    let mut writer = EncoderWriter::new(Vec::new(), STANDARD);
+    let mut writer = EncoderWriter::new(Vec::new(), &STRICT_STANDARD_PADDED);
 
     writer.write_all(b"he").await.unwrap();
     writer.write_all(b"llo").await.unwrap();
@@ -99,7 +99,7 @@ async fn streaming_encoder_writer_handles_split_writes() {
 
 #[tokio::test]
 async fn streaming_decoder_writer_handles_split_quanta() {
-    let mut writer = DecoderWriter::new(Vec::new(), STANDARD);
+    let mut writer = DecoderWriter::new(Vec::new(), &STRICT_STANDARD_PADDED);
 
     writer.write_all(b"aG").await.unwrap();
     writer.write_all(b"VsbG8=").await.unwrap();
@@ -115,7 +115,7 @@ async fn streaming_encoder_writer_resumes_after_pending_shutdown_drain() {
         WriteAction::Pending,
         WriteAction::Accept(usize::MAX),
     ]);
-    let mut writer = EncoderWriter::new(inner, STANDARD);
+    let mut writer = EncoderWriter::new(inner, &STRICT_STANDARD_PADDED);
     let waker = noop_waker();
     let mut context = Context::from_waker(&waker);
 
@@ -141,7 +141,7 @@ async fn streaming_decoder_writer_resumes_after_pending_shutdown_drain() {
         WriteAction::Pending,
         WriteAction::Accept(usize::MAX),
     ]);
-    let mut writer = DecoderWriter::new(inner, STANDARD);
+    let mut writer = DecoderWriter::new(inner, &STRICT_STANDARD_PADDED);
     let waker = noop_waker();
     let mut context = Context::from_waker(&waker);
 
@@ -162,7 +162,7 @@ async fn streaming_decoder_writer_resumes_after_pending_shutdown_drain() {
 
 #[tokio::test]
 async fn streaming_decoder_writer_fails_closed_after_malformed_input() {
-    let mut writer = DecoderWriter::new(Vec::new(), STANDARD);
+    let mut writer = DecoderWriter::new(Vec::new(), &STRICT_STANDARD_PADDED);
 
     let error = writer.write_all(b"aGVsbG8=$").await.unwrap_err();
 
@@ -171,29 +171,27 @@ async fn streaming_decoder_writer_fails_closed_after_malformed_input() {
 }
 
 #[tokio::test]
-async fn streaming_decoder_writer_reports_accepted_prefix_before_invalid_quad() {
-    let mut writer = DecoderWriter::new(Vec::new(), STANDARD);
+async fn streaming_decoder_writer_rejects_malformed_poll_without_accepting_prefix() {
+    let mut writer = DecoderWriter::new(Vec::new(), &STRICT_STANDARD_PADDED);
     let waker = noop_waker();
     let mut context = Context::from_waker(&waker);
 
-    let accepted = Pin::new(&mut writer)
+    let error = Pin::new(&mut writer)
         .poll_write(&mut context, b"aGVs$$$$")
-        .map(|result| result.unwrap());
+        .map(|result| result.unwrap_err());
 
-    assert_eq!(accepted, Poll::Ready(4));
-    assert!(!writer.is_failed());
-    assert_eq!(writer.get_ref(), b"");
-
-    let error = writer.write_all(b"$$$$").await.unwrap_err();
-
-    assert_eq!(error.kind(), std::io::ErrorKind::InvalidData);
+    assert_eq!(
+        error.map(|error| error.kind()),
+        Poll::Ready(std::io::ErrorKind::InvalidData)
+    );
     assert!(writer.is_failed());
-    assert_eq!(writer.get_ref(), b"hel");
+    assert_eq!(writer.input_accepted(), 0);
+    assert_eq!(writer.get_ref(), b"");
 }
 
 #[tokio::test]
 async fn streaming_decoder_writer_rejects_incomplete_padded_tail_on_shutdown() {
-    let mut writer = DecoderWriter::new(Vec::new(), STANDARD);
+    let mut writer = DecoderWriter::new(Vec::new(), &STRICT_STANDARD_PADDED);
 
     writer.write_all(b"aG").await.unwrap();
     let error = writer.shutdown().await.unwrap_err();
@@ -204,7 +202,7 @@ async fn streaming_decoder_writer_rejects_incomplete_padded_tail_on_shutdown() {
 
 #[tokio::test]
 async fn streaming_decoder_writer_supports_unpadded_tail_on_shutdown() {
-    let mut writer = DecoderWriter::new(Vec::new(), URL_SAFE_NO_PAD);
+    let mut writer = DecoderWriter::new(Vec::new(), &STRICT_URL_SAFE_UNPADDED);
 
     writer.write_all(b"aGVsbG8").await.unwrap();
     writer.shutdown().await.unwrap();
@@ -215,7 +213,7 @@ async fn streaming_decoder_writer_supports_unpadded_tail_on_shutdown() {
 #[tokio::test]
 async fn streaming_encoder_writer_propagates_inner_write_error() {
     let inner = ScriptedWriter::new([WriteAction::Error]);
-    let mut writer = EncoderWriter::new(inner, STANDARD);
+    let mut writer = EncoderWriter::new(inner, &STRICT_STANDARD_PADDED);
 
     writer.write_all(b"hello").await.unwrap();
     let error = writer.shutdown().await.unwrap_err();
@@ -227,9 +225,12 @@ async fn streaming_encoder_writer_propagates_inner_write_error() {
 #[tokio::test]
 async fn streaming_encoder_writer_round_trips_large_input_with_one_byte_backpressure() {
     let input: Vec<u8> = (0u8..=250).cycle().take(5000).collect();
-    let expected = STANDARD.encode_vec(&input).unwrap();
+    let expected = STRICT_STANDARD_PADDED
+        .encode_to_string(&input)
+        .unwrap()
+        .into_bytes();
     let inner = ScriptedWriter::new((0..expected.len()).map(|_| WriteAction::Accept(1)));
-    let mut writer = EncoderWriter::new(inner, STANDARD);
+    let mut writer = EncoderWriter::new(inner, &STRICT_STANDARD_PADDED);
 
     writer.write_all(&input).await.unwrap();
     writer.shutdown().await.unwrap();
@@ -240,9 +241,12 @@ async fn streaming_encoder_writer_round_trips_large_input_with_one_byte_backpres
 #[tokio::test]
 async fn streaming_decoder_writer_round_trips_large_input_with_one_byte_backpressure() {
     let input: Vec<u8> = (0u8..=250).cycle().take(5000).collect();
-    let encoded = STANDARD.encode_vec(&input).unwrap();
+    let encoded = STRICT_STANDARD_PADDED
+        .encode_to_string(&input)
+        .unwrap()
+        .into_bytes();
     let inner = ScriptedWriter::new((0..input.len()).map(|_| WriteAction::Accept(1)));
-    let mut writer = DecoderWriter::new(inner, STANDARD);
+    let mut writer = DecoderWriter::new(inner, &STRICT_STANDARD_PADDED);
 
     writer.write_all(&encoded).await.unwrap();
     writer.shutdown().await.unwrap();
@@ -253,8 +257,11 @@ async fn streaming_decoder_writer_round_trips_large_input_with_one_byte_backpres
 #[tokio::test]
 async fn streaming_encoder_writer_clamps_single_large_poll_write_to_queue_capacity() {
     let input: Vec<u8> = (0u8..=250).cycle().take(2000).collect();
-    let expected = STANDARD.encode_vec(&input).unwrap();
-    let mut writer = EncoderWriter::new(Vec::new(), STANDARD);
+    let expected = STRICT_STANDARD_PADDED
+        .encode_to_string(&input)
+        .unwrap()
+        .into_bytes();
+    let mut writer = EncoderWriter::new(Vec::new(), &STRICT_STANDARD_PADDED);
     let waker = noop_waker();
     let mut context = Context::from_waker(&waker);
 
@@ -274,8 +281,11 @@ async fn streaming_encoder_writer_clamps_single_large_poll_write_to_queue_capaci
 #[tokio::test]
 async fn streaming_decoder_writer_clamps_single_large_poll_write_to_queue_capacity() {
     let input: Vec<u8> = (0u8..=250).cycle().take(2000).collect();
-    let encoded = STANDARD.encode_vec(&input).unwrap();
-    let mut writer = DecoderWriter::new(Vec::new(), STANDARD);
+    let encoded = STRICT_STANDARD_PADDED
+        .encode_to_string(&input)
+        .unwrap()
+        .into_bytes();
+    let mut writer = DecoderWriter::new(Vec::new(), &STRICT_STANDARD_PADDED);
     let waker = noop_waker();
     let mut context = Context::from_waker(&waker);
 

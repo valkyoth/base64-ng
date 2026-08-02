@@ -41,10 +41,18 @@ with live frame contents.
 - `base64-ng-tokio` also provides streaming adapters: `EncoderReader`,
   `DecoderReader`, `EncoderWriter`, and `DecoderWriter`.
 - Commit 37 reader adapters use the shared 2.0 incremental state and distinguish
-  EOF mode from exact-length mode. Writer migration follows in Commit 38.
+  EOF mode from exact-length mode. Commit 38 writer adapters use the same
+  shared state and report adapter-accepted input separately from output bytes
+  accepted by the wrapped writer.
 - Async writer shutdown is the finalization boundary. Call
   `AsyncWriteExt::shutdown` to encode or validate final partial quanta before
   recovering the wrapped writer.
+- A pending writer poll accepts no new caller input. Output already accepted by
+  the wrapped writer is irrevocably committed; queued output survives
+  cancellation while the adapter remains alive and retryable downstream I/O
+  errors.
+- Streaming decode is an ordinary prefix-delivering API. It does not provide
+  unbounded validate-before-release handling for secret plaintext.
 
 ## Admission Requirements
 

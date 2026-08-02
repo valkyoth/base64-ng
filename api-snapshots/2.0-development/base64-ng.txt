@@ -2603,8 +2603,10 @@ pub type base64_ng::DecodedBuffer<CAP>::Err = base64_ng::DecodeError
 pub fn base64_ng::DecodedBuffer<CAP>::from_str(&str) -> core::result::Result<Self, Self::Err>
 pub struct base64_ng::DecoderState
 impl base64_ng::DecoderState
+pub const fn base64_ng::DecoderState::buffered_input_len(&self) -> usize
 pub fn base64_ng::DecoderState::clear(&mut self)
 pub fn base64_ng::DecoderState::finish(&mut self, &mut [u8]) -> core::result::Result<base64_ng::Step, base64_ng::OperationError>
+pub const fn base64_ng::DecoderState::has_terminal_padding(&self) -> bool
 pub fn base64_ng::DecoderState::reset(&mut self)
 pub const fn base64_ng::DecoderState::source_position(&self) -> usize
 pub fn base64_ng::DecoderState::update(&mut self, &[u8], &mut [u8]) -> core::result::Result<base64_ng::Step, base64_ng::OperationError>
@@ -2711,6 +2713,7 @@ pub fn base64_ng::EncodedDisplay<'a>::clone(&self) -> base64_ng::EncodedDisplay<
 impl<'a> core::marker::Copy for base64_ng::EncodedDisplay<'a>
 pub struct base64_ng::EncoderState
 impl base64_ng::EncoderState
+pub const fn base64_ng::EncoderState::buffered_input_len(&self) -> usize
 pub fn base64_ng::EncoderState::clear(&mut self)
 pub fn base64_ng::EncoderState::finish(&mut self, &mut [u8]) -> core::result::Result<base64_ng::Step, base64_ng::OperationError>
 pub fn base64_ng::EncoderState::reset(&mut self)

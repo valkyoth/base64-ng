@@ -1,4 +1,4 @@
-use base64_ng::{Base64, Codec, DecoderState, EncoderState, Failure, OperationError};
+use base64_ng::{Base64, Codec, DecoderState, EncoderState};
 use core::{
     cmp,
     pin::Pin,
@@ -6,7 +6,7 @@ use core::{
 };
 use tokio::io::{self, AsyncRead, ReadBuf};
 
-use crate::wipe_bytes;
+use crate::{operation_io_error, wipe_bytes};
 
 const ENCODE_INPUT_CAP: usize = 768;
 const ENCODE_OUTPUT_CAP: usize = 1024;
@@ -431,12 +431,3 @@ macro_rules! impl_async_read {
 
 impl_async_read!(EncoderReader);
 impl_async_read!(DecoderReader);
-
-fn operation_io_error(error: OperationError) -> io::Error {
-    match error {
-        OperationError::Failed(Failure::Input(input)) => {
-            io::Error::new(io::ErrorKind::InvalidData, input.kind().as_str())
-        }
-        _ => io::Error::other(error.as_str()),
-    }
-}

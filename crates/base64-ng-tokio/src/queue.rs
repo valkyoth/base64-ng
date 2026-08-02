@@ -81,3 +81,26 @@ impl<const CAP: usize> OutputQueue<CAP> {
         self.len = 0;
     }
 }
+
+impl<const CAP: usize> Drop for OutputQueue<CAP> {
+    fn drop(&mut self) {
+        self.clear_all();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::OutputQueue;
+
+    #[test]
+    fn discard_and_clear_zero_retained_storage() {
+        let mut queue = OutputQueue::<8>::new();
+        queue.push_slice(b"secrets!").unwrap();
+        queue.discard_front(3);
+        assert!(queue.buffer[..3].iter().all(|byte| *byte == 0));
+        queue.clear_all();
+        assert!(queue.buffer.iter().all(|byte| *byte == 0));
+        assert_eq!(queue.start, 0);
+        assert_eq!(queue.len, 0);
+    }
+}

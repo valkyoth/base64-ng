@@ -124,7 +124,7 @@ impl EncoderState {
 
     /// Returns raw input bytes retained until the next complete quantum.
     #[must_use]
-    pub(crate) const fn buffered_input_len(&self) -> usize {
+    pub const fn buffered_input_len(&self) -> usize {
         self.tail_len
     }
 

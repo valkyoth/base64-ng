@@ -10,7 +10,8 @@ evidence_dir="target/release-evidence/miri"
 no_default_output="$evidence_dir/no-default-features.txt"
 all_features_output="$evidence_dir/all-features.txt"
 bytes_output="$evidence_dir/base64-ng-bytes.txt"
-tokio_output="$evidence_dir/base64-ng-tokio-readers.txt"
+tokio_reader_output="$evidence_dir/base64-ng-tokio-readers.txt"
+tokio_writer_output="$evidence_dir/base64-ng-tokio-writers.txt"
 manifest="$evidence_dir/MANIFEST.txt"
 
 run_miri_case() {
@@ -49,7 +50,8 @@ cat "$no_default_output"
 if [ "$no_default_status" -ne 0 ]; then
     all_features_status=99
     bytes_status=99
-    tokio_status=99
+    tokio_reader_status=99
+    tokio_writer_status=99
 else
     echo "Miri checks: all-features scalar, alloc, and stream surface"
     all_features_status=0
@@ -78,7 +80,8 @@ else
 
     if [ "$all_features_status" -ne 0 ]; then
         bytes_status=99
-        tokio_status=99
+        tokio_reader_status=99
+        tokio_writer_status=99
     else
         echo "Miri checks: base64-ng-bytes fragmented and panic boundaries"
         bytes_status=0
@@ -94,21 +97,40 @@ else
         cat "$bytes_output"
 
         if [ "$bytes_status" -ne 0 ]; then
-            tokio_status=99
+            tokio_reader_status=99
+            tokio_writer_status=99
         else
             echo "Miri checks: base64-ng-tokio exact reader boundary"
-            tokio_status=0
+            tokio_reader_status=0
             {
                 echo "base64-ng-tokio AsyncRead Miri evidence"
                 echo
                 echo "command: rustup run nightly cargo miri test --manifest-path crates/base64-ng-tokio/Cargo.toml --test tokio_reader_adversarial exact_readers_stop_without_consuming_adjacent_frames -- --exact"
-            } >"$tokio_output"
+            } >"$tokio_reader_output"
             rustup run nightly cargo miri test \
                 --manifest-path crates/base64-ng-tokio/Cargo.toml \
                 --test tokio_reader_adversarial \
                 exact_readers_stop_without_consuming_adjacent_frames \
-                -- --exact >>"$tokio_output" 2>&1 || tokio_status="$?"
-            cat "$tokio_output"
+                -- --exact >>"$tokio_reader_output" 2>&1 || tokio_reader_status="$?"
+            cat "$tokio_reader_output"
+
+            if [ "$tokio_reader_status" -ne 0 ]; then
+                tokio_writer_status=99
+            else
+                echo "Miri checks: base64-ng-tokio writer cancellation boundary"
+                tokio_writer_status=0
+                {
+                    echo "base64-ng-tokio AsyncWrite Miri evidence"
+                    echo
+                    echo "command: rustup run nightly cargo miri test --manifest-path crates/base64-ng-tokio/Cargo.toml --test tokio_writer_adversarial dropped_pending_write_futures_resume_without_loss_or_duplication -- --exact"
+                } >"$tokio_writer_output"
+                rustup run nightly cargo miri test \
+                    --manifest-path crates/base64-ng-tokio/Cargo.toml \
+                    --test tokio_writer_adversarial \
+                    dropped_pending_write_futures_resume_without_loss_or_duplication \
+                    -- --exact >>"$tokio_writer_output" 2>&1 || tokio_writer_status="$?"
+                cat "$tokio_writer_output"
+            fi
         fi
     fi
 fi
@@ -139,15 +161,16 @@ fi
     echo "no_default_features=$no_default_status"
     echo "all_features=$all_features_status"
     echo "base64_ng_bytes=$bytes_status"
-    echo "base64_ng_tokio_readers=$tokio_status"
+    echo "base64_ng_tokio_readers=$tokio_reader_status"
+    echo "base64_ng_tokio_writers=$tokio_writer_status"
     echo
     echo "artifacts:"
     if command -v sha256sum >/dev/null 2>&1; then
-        sha256sum "$no_default_output" "$all_features_output" "$bytes_output" "$tokio_output" 2>/dev/null || true
+        sha256sum "$no_default_output" "$all_features_output" "$bytes_output" "$tokio_reader_output" "$tokio_writer_output" 2>/dev/null || true
     elif command -v shasum >/dev/null 2>&1; then
-        shasum -a 256 "$no_default_output" "$all_features_output" "$bytes_output" "$tokio_output" 2>/dev/null || true
+        shasum -a 256 "$no_default_output" "$all_features_output" "$bytes_output" "$tokio_reader_output" "$tokio_writer_output" 2>/dev/null || true
     else
-        cksum "$no_default_output" "$all_features_output" "$bytes_output" "$tokio_output" 2>/dev/null || true
+        cksum "$no_default_output" "$all_features_output" "$bytes_output" "$tokio_reader_output" "$tokio_writer_output" 2>/dev/null || true
     fi
     echo
     echo "interpretation:"
@@ -170,8 +193,12 @@ if [ "$bytes_status" -ne 0 ]; then
     exit "$bytes_status"
 fi
 
-if [ "$tokio_status" -ne 0 ]; then
-    exit "$tokio_status"
+if [ "$tokio_reader_status" -ne 0 ]; then
+    exit "$tokio_reader_status"
+fi
+
+if [ "$tokio_writer_status" -ne 0 ]; then
+    exit "$tokio_writer_status"
 fi
 
 echo "Miri checks: ok"

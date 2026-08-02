@@ -15,7 +15,8 @@
 //! Reader adapters are implemented as explicit poll state machines over the
 //! shared 2.0 incremental core. [`EncoderReader::new_exact`] and
 //! [`DecoderReader::new_exact`] stop at an exact frame boundary without an
-//! overflow lookahead read. Writer migration remains scheduled for Commit 38.
+//! overflow lookahead read. Writer adapters use the same shared states and
+//! preserve bounded queued output across backpressure and cancellation.
 //!
 //! # Security
 //!
@@ -26,6 +27,8 @@
 //! decoders. For secret-bearing async frames, collect a bounded frame under
 //! the application's approved memory policy and decode through
 //! the 2.0 `secrets` capability or an approved protected-memory companion.
+//! Streaming decoder output accepted by an inner writer is irrevocably
+//! exposed, even when a later encoded suffix is malformed.
 
 mod decoder_writer;
 mod encoder_writer;
@@ -36,7 +39,7 @@ pub use decoder_writer::DecoderWriter;
 pub use encoder_writer::EncoderWriter;
 pub use readers::{DecoderReader, EncoderReader};
 
-use base64_ng::{Base64, Codec, OneShotError};
+use base64_ng::{Base64, Codec, Failure, OneShotError, OperationError};
 use tokio::io::{self, AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 
 const READ_ALL_EAGER_CAP: usize = 8192;
@@ -207,12 +210,13 @@ fn one_shot_decode_io_error(error: OneShotError) -> io::Error {
     }
 }
 
-fn encode_io_error(error: base64_ng::EncodeError) -> io::Error {
-    io::Error::new(io::ErrorKind::InvalidInput, error)
-}
-
-fn decode_io_error(error: base64_ng::DecodeError) -> io::Error {
-    io::Error::new(io::ErrorKind::InvalidData, error.kind().as_str())
+fn operation_io_error(error: OperationError) -> io::Error {
+    match error {
+        OperationError::Failed(Failure::Input(input)) => {
+            io::Error::new(io::ErrorKind::InvalidData, input.kind().as_str())
+        }
+        _ => io::Error::other(error.as_str()),
+    }
 }
 
 fn wipe_bytes(bytes: &mut [u8]) {

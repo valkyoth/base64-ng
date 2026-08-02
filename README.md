@@ -542,12 +542,13 @@ assert!(decoded.subtle_verify(b"hello"));
 ```
 
 `base64-ng-tokio` provides read-all async helpers and fixed-buffer
-`AsyncRead` adapters over the shared 2.0 incremental core. Prefer
+`AsyncRead`/`AsyncWrite` adapters over the shared 2.0 incremental core. Prefer
 `EncoderReader::new_exact` or `DecoderReader::new_exact` for a framed source
 whose adjacent bytes must remain unread. The transactional `*_limited`
 read-all helpers may consume one overflow lookahead byte and wipe their private
-allocations on return, error, and cancellation. The existing async writer
-adapters remain on their frozen compatibility surface until Commit 38:
+allocations on return, error, and cancellation. Writer adapters retain accepted
+input across backpressure; call `shutdown` to finalize tails before checked
+inner recovery:
 
 ```toml
 [dependencies]
@@ -558,8 +559,8 @@ tokio = { version = "1.53.1", features = ["io-util"] }
 
 ```rust
 use base64_ng::STRICT_STANDARD_PADDED;
-use base64_ng_tokio::{encode_reader_to_writer_limited, EncoderReader};
-use tokio::io::AsyncReadExt;
+use base64_ng_tokio::{encode_reader_to_writer_limited, EncoderReader, EncoderWriter};
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 # async fn example() -> std::io::Result<()> {
 let mut input = &b"hello"[..];
@@ -576,6 +577,11 @@ let mut reader = EncoderReader::new_exact(&b"helloNEXT"[..], &STRICT_STANDARD_PA
 let mut streamed = Vec::new();
 reader.read_to_end(&mut streamed).await?;
 assert_eq!(streamed, b"aGVsbG8=");
+
+let mut writer = EncoderWriter::new(Vec::new(), &STRICT_STANDARD_PADDED);
+writer.write_all(b"hello").await?;
+writer.shutdown().await?;
+assert_eq!(writer.into_inner(), b"aGVsbG8=");
 
 # Ok(())
 # }

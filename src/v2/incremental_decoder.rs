@@ -185,13 +185,13 @@ impl DecoderState {
 
     /// Returns encoded input bytes retained until the next complete quantum.
     #[must_use]
-    pub(crate) const fn buffered_input_len(&self) -> usize {
+    pub const fn buffered_input_len(&self) -> usize {
         self.quantum_len
     }
 
     /// Returns whether a terminal padded quantum has been accepted.
     #[must_use]
-    pub(crate) const fn has_terminal_padding(&self) -> bool {
+    pub const fn has_terminal_padding(&self) -> bool {
         self.terminal_padding
     }
 
