@@ -1,0 +1,133 @@
+pub mod base64_ng_bytes
+#[non_exhaustive] pub enum base64_ng_bytes::BytesErrorKind
+pub base64_ng_bytes::BytesErrorKind::AllocationFailed
+pub base64_ng_bytes::BytesErrorKind::AllocationFailed::requested: usize
+pub base64_ng_bytes::BytesErrorKind::FailedState
+pub base64_ng_bytes::BytesErrorKind::ImpossibleState
+pub base64_ng_bytes::BytesErrorKind::InputLimitExceeded
+pub base64_ng_bytes::BytesErrorKind::InputLimitExceeded::limit: usize
+pub base64_ng_bytes::BytesErrorKind::InputLimitExceeded::required: usize
+pub base64_ng_bytes::BytesErrorKind::InvalidInputBuffer
+pub base64_ng_bytes::BytesErrorKind::InvalidInputBuffer::remaining: usize
+pub base64_ng_bytes::BytesErrorKind::LengthOverflow
+pub base64_ng_bytes::BytesErrorKind::Operation(base64_ng::v2::contracts::OperationError)
+pub base64_ng_bytes::BytesErrorKind::OutputLimitExceeded
+pub base64_ng_bytes::BytesErrorKind::OutputLimitExceeded::limit: usize
+impl core::clone::Clone for base64_ng_bytes::BytesErrorKind
+pub fn base64_ng_bytes::BytesErrorKind::clone(&self) -> base64_ng_bytes::BytesErrorKind
+impl core::cmp::Eq for base64_ng_bytes::BytesErrorKind
+impl core::cmp::PartialEq for base64_ng_bytes::BytesErrorKind
+pub fn base64_ng_bytes::BytesErrorKind::eq(&self, &base64_ng_bytes::BytesErrorKind) -> bool
+impl core::fmt::Debug for base64_ng_bytes::BytesErrorKind
+pub fn base64_ng_bytes::BytesErrorKind::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng_bytes::BytesErrorKind
+pub fn base64_ng_bytes::BytesErrorKind::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng_bytes::BytesErrorKind
+impl core::marker::StructuralPartialEq for base64_ng_bytes::BytesErrorKind
+pub struct base64_ng_bytes::BytesDecoder
+impl base64_ng_bytes::BytesDecoder
+pub fn base64_ng_bytes::BytesDecoder::finish<M>(&mut self, &mut M) -> core::result::Result<base64_ng_bytes::BytesStep, base64_ng_bytes::BytesError> where M: bytes::buf::buf_mut::BufMut
+pub const fn base64_ng_bytes::BytesDecoder::is_failed(&self) -> bool
+pub const fn base64_ng_bytes::BytesDecoder::output_committed(&self) -> usize
+pub fn base64_ng_bytes::BytesDecoder::reset(&mut self)
+pub const fn base64_ng_bytes::BytesDecoder::source_position(&self) -> usize
+pub fn base64_ng_bytes::BytesDecoder::update<B, M>(&mut self, &mut B, &mut M) -> core::result::Result<base64_ng_bytes::BytesStep, base64_ng_bytes::BytesError> where B: bytes::buf::buf_impl::Buf, M: bytes::buf::buf_mut::BufMut
+impl core::fmt::Debug for base64_ng_bytes::BytesDecoder
+pub fn base64_ng_bytes::BytesDecoder::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+pub struct base64_ng_bytes::BytesEncoder
+impl base64_ng_bytes::BytesEncoder
+pub fn base64_ng_bytes::BytesEncoder::finish<M>(&mut self, &mut M) -> core::result::Result<base64_ng_bytes::BytesStep, base64_ng_bytes::BytesError> where M: bytes::buf::buf_mut::BufMut
+pub const fn base64_ng_bytes::BytesEncoder::is_failed(&self) -> bool
+pub const fn base64_ng_bytes::BytesEncoder::output_committed(&self) -> usize
+pub fn base64_ng_bytes::BytesEncoder::reset(&mut self)
+pub const fn base64_ng_bytes::BytesEncoder::source_position(&self) -> usize
+pub fn base64_ng_bytes::BytesEncoder::update<B, M>(&mut self, &mut B, &mut M) -> core::result::Result<base64_ng_bytes::BytesStep, base64_ng_bytes::BytesError> where B: bytes::buf::buf_impl::Buf, M: bytes::buf::buf_mut::BufMut
+impl core::fmt::Debug for base64_ng_bytes::BytesEncoder
+pub fn base64_ng_bytes::BytesEncoder::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+pub struct base64_ng_bytes::BytesError
+impl base64_ng_bytes::BytesError
+pub const fn base64_ng_bytes::BytesError::kind(self) -> base64_ng_bytes::BytesErrorKind
+pub const fn base64_ng_bytes::BytesError::progress(self) -> base64_ng_bytes::BytesProgress
+impl core::clone::Clone for base64_ng_bytes::BytesError
+pub fn base64_ng_bytes::BytesError::clone(&self) -> base64_ng_bytes::BytesError
+impl core::cmp::Eq for base64_ng_bytes::BytesError
+impl core::cmp::PartialEq for base64_ng_bytes::BytesError
+pub fn base64_ng_bytes::BytesError::eq(&self, &base64_ng_bytes::BytesError) -> bool
+impl core::error::Error for base64_ng_bytes::BytesError
+pub fn base64_ng_bytes::BytesError::source(&self) -> core::option::Option<&(dyn core::error::Error + 'static)>
+impl core::fmt::Debug for base64_ng_bytes::BytesError
+pub fn base64_ng_bytes::BytesError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for base64_ng_bytes::BytesError
+pub fn base64_ng_bytes::BytesError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng_bytes::BytesError
+pub fn base64_ng_bytes::BytesError::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng_bytes::BytesError
+impl core::marker::StructuralPartialEq for base64_ng_bytes::BytesError
+pub struct base64_ng_bytes::BytesLimits
+impl base64_ng_bytes::BytesLimits
+pub const base64_ng_bytes::BytesLimits::UNBOUNDED: Self
+pub const fn base64_ng_bytes::BytesLimits::max_input_len(self) -> usize
+pub const fn base64_ng_bytes::BytesLimits::max_output_len(self) -> usize
+pub const fn base64_ng_bytes::BytesLimits::new(usize, usize) -> Self
+impl core::clone::Clone for base64_ng_bytes::BytesLimits
+pub fn base64_ng_bytes::BytesLimits::clone(&self) -> base64_ng_bytes::BytesLimits
+impl core::cmp::Eq for base64_ng_bytes::BytesLimits
+impl core::cmp::PartialEq for base64_ng_bytes::BytesLimits
+pub fn base64_ng_bytes::BytesLimits::eq(&self, &base64_ng_bytes::BytesLimits) -> bool
+impl core::fmt::Debug for base64_ng_bytes::BytesLimits
+pub fn base64_ng_bytes::BytesLimits::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng_bytes::BytesLimits
+pub fn base64_ng_bytes::BytesLimits::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng_bytes::BytesLimits
+impl core::marker::StructuralPartialEq for base64_ng_bytes::BytesLimits
+pub struct base64_ng_bytes::BytesProgress
+impl base64_ng_bytes::BytesProgress
+pub const base64_ng_bytes::BytesProgress::ZERO: Self
+pub const fn base64_ng_bytes::BytesProgress::input_consumed(self) -> usize
+pub const fn base64_ng_bytes::BytesProgress::output_committed(self) -> usize
+impl core::clone::Clone for base64_ng_bytes::BytesProgress
+pub fn base64_ng_bytes::BytesProgress::clone(&self) -> base64_ng_bytes::BytesProgress
+impl core::cmp::Eq for base64_ng_bytes::BytesProgress
+impl core::cmp::PartialEq for base64_ng_bytes::BytesProgress
+pub fn base64_ng_bytes::BytesProgress::eq(&self, &base64_ng_bytes::BytesProgress) -> bool
+impl core::default::Default for base64_ng_bytes::BytesProgress
+pub fn base64_ng_bytes::BytesProgress::default() -> base64_ng_bytes::BytesProgress
+impl core::fmt::Debug for base64_ng_bytes::BytesProgress
+pub fn base64_ng_bytes::BytesProgress::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng_bytes::BytesProgress
+pub fn base64_ng_bytes::BytesProgress::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng_bytes::BytesProgress
+impl core::marker::StructuralPartialEq for base64_ng_bytes::BytesProgress
+pub struct base64_ng_bytes::BytesStep
+impl base64_ng_bytes::BytesStep
+pub const fn base64_ng_bytes::BytesStep::progress(self) -> base64_ng_bytes::BytesProgress
+pub const fn base64_ng_bytes::BytesStep::status(self) -> base64_ng::v2::contracts::Status
+impl core::clone::Clone for base64_ng_bytes::BytesStep
+pub fn base64_ng_bytes::BytesStep::clone(&self) -> base64_ng_bytes::BytesStep
+impl core::cmp::Eq for base64_ng_bytes::BytesStep
+impl core::cmp::PartialEq for base64_ng_bytes::BytesStep
+pub fn base64_ng_bytes::BytesStep::eq(&self, &base64_ng_bytes::BytesStep) -> bool
+impl core::fmt::Debug for base64_ng_bytes::BytesStep
+pub fn base64_ng_bytes::BytesStep::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng_bytes::BytesStep
+pub fn base64_ng_bytes::BytesStep::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng_bytes::BytesStep
+impl core::marker::StructuralPartialEq for base64_ng_bytes::BytesStep
+pub trait base64_ng_bytes::Base64BytesExt<S> where S: base64_ng::v2::specifications::Codec
+pub fn base64_ng_bytes::Base64BytesExt::bytes_decoder(&self) -> base64_ng_bytes::BytesDecoder
+pub fn base64_ng_bytes::Base64BytesExt::bytes_decoder_with_limits(&self, base64_ng_bytes::BytesLimits) -> base64_ng_bytes::BytesDecoder
+pub fn base64_ng_bytes::Base64BytesExt::bytes_encoder(&self) -> base64_ng_bytes::BytesEncoder
+pub fn base64_ng_bytes::Base64BytesExt::bytes_encoder_with_limits(&self, base64_ng_bytes::BytesLimits) -> base64_ng_bytes::BytesEncoder
+pub fn base64_ng_bytes::Base64BytesExt::decode_buf<B>(&self, B) -> core::result::Result<bytes::bytes::Bytes, base64_ng_bytes::BytesError> where B: bytes::buf::buf_impl::Buf
+pub fn base64_ng_bytes::Base64BytesExt::decode_buf_with_limits<B>(&self, B, base64_ng_bytes::BytesLimits) -> core::result::Result<bytes::bytes::Bytes, base64_ng_bytes::BytesError> where B: bytes::buf::buf_impl::Buf
+pub fn base64_ng_bytes::Base64BytesExt::encode_buf<B>(&self, B) -> core::result::Result<bytes::bytes::Bytes, base64_ng_bytes::BytesError> where B: bytes::buf::buf_impl::Buf
+pub fn base64_ng_bytes::Base64BytesExt::encode_buf_with_limits<B>(&self, B, base64_ng_bytes::BytesLimits) -> core::result::Result<bytes::bytes::Bytes, base64_ng_bytes::BytesError> where B: bytes::buf::buf_impl::Buf
+impl<S> base64_ng_bytes::Base64BytesExt<S> for base64_ng::v2::specifications::Base64<S> where S: base64_ng::v2::specifications::Codec
+pub fn base64_ng::v2::specifications::Base64<S>::bytes_decoder(&self) -> base64_ng_bytes::BytesDecoder
+pub fn base64_ng::v2::specifications::Base64<S>::bytes_decoder_with_limits(&self, base64_ng_bytes::BytesLimits) -> base64_ng_bytes::BytesDecoder
+pub fn base64_ng::v2::specifications::Base64<S>::bytes_encoder(&self) -> base64_ng_bytes::BytesEncoder
+pub fn base64_ng::v2::specifications::Base64<S>::bytes_encoder_with_limits(&self, base64_ng_bytes::BytesLimits) -> base64_ng_bytes::BytesEncoder
+pub fn base64_ng::v2::specifications::Base64<S>::decode_buf<B>(&self, B) -> core::result::Result<bytes::bytes::Bytes, base64_ng_bytes::BytesError> where B: bytes::buf::buf_impl::Buf
+pub fn base64_ng::v2::specifications::Base64<S>::decode_buf_with_limits<B>(&self, B, base64_ng_bytes::BytesLimits) -> core::result::Result<bytes::bytes::Bytes, base64_ng_bytes::BytesError> where B: bytes::buf::buf_impl::Buf
+pub fn base64_ng::v2::specifications::Base64<S>::encode_buf<B>(&self, B) -> core::result::Result<bytes::bytes::Bytes, base64_ng_bytes::BytesError> where B: bytes::buf::buf_impl::Buf
+pub fn base64_ng::v2::specifications::Base64<S>::encode_buf_with_limits<B>(&self, B, base64_ng_bytes::BytesLimits) -> core::result::Result<bytes::bytes::Bytes, base64_ng_bytes::BytesError> where B: bytes::buf::buf_impl::Buf

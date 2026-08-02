@@ -92,6 +92,17 @@ do
             echo "api snapshots: base64-ng drifted from the reviewed 2.0 development API" >&2
             exit 1
         fi
+    elif [ "$package" = "base64-ng-bytes" ]; then
+        development="$development_dir/$package.txt"
+        if [ "$mode" = "--update" ]; then
+            cp "$generated" "$development"
+        elif [ ! -f "$development" ]; then
+            echo "api snapshots: missing $development" >&2
+            exit 1
+        elif ! diff -u "$development" "$generated"; then
+            echo "api snapshots: base64-ng-bytes drifted from the reviewed 2.0 development API" >&2
+            exit 1
+        fi
     elif ! diff -u "$committed" "$generated"; then
         echo "api snapshots: $package drifted from the v1.3.9 inventory" >&2
         exit 1

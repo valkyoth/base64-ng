@@ -1,144 +1,342 @@
 #![allow(missing_docs)]
+#![allow(unsafe_code)]
 
-use base64_ng::{DecodeError, EncodeError, STANDARD, URL_SAFE_NO_PAD};
-use base64_ng_bytes::{BytesDecodeError, BytesEncodeError, EngineBytesExt};
-use bytes::{Bytes, BytesMut};
+use std::panic::{AssertUnwindSafe, catch_unwind};
 
-#[test]
-fn encodes_and_decodes_bytes() {
-    let encoded = STANDARD.encode_bytes(b"hello").unwrap();
-    assert_eq!(&encoded[..], b"aGVsbG8=");
-
-    let decoded = STANDARD.decode_bytes(encoded).unwrap();
-    assert_eq!(&decoded[..], b"hello");
-}
+use base64_ng::{
+    Failure, OperationError, STRICT_STANDARD_PADDED, STRICT_URL_SAFE_UNPADDED, Status,
+};
+use base64_ng_bytes::{Base64BytesExt, BytesErrorKind, BytesLimits};
+use bytes::{Buf, BufMut, Bytes, buf::UninitSlice};
 
 #[test]
-fn supports_buf_inputs() {
-    let input = Bytes::from_static(b"\xfb\xff");
-    let encoded = URL_SAFE_NO_PAD.encode_buf(input).unwrap();
+fn transactional_owned_results_accept_one_byte_fragments() {
+    assert!(
+        STRICT_STANDARD_PADDED
+            .encode_buf(Bytes::new())
+            .unwrap()
+            .is_empty()
+    );
+    assert!(
+        STRICT_STANDARD_PADDED
+            .decode_buf(Bytes::new())
+            .unwrap()
+            .is_empty()
+    );
+
+    let encoded = STRICT_STANDARD_PADDED
+        .encode_buf(OneByteBuf::new(b"fragmented bytes input"))
+        .unwrap();
+    assert_eq!(&encoded[..], b"ZnJhZ21lbnRlZCBieXRlcyBpbnB1dA==");
+
+    let decoded = STRICT_STANDARD_PADDED
+        .decode_buf(OneByteBuf::new(&encoded))
+        .unwrap();
+    assert_eq!(&decoded[..], b"fragmented bytes input");
+
+    let encoded = STRICT_URL_SAFE_UNPADDED
+        .encode_buf(OneByteBuf::new(b"\xfb\xff"))
+        .unwrap();
     assert_eq!(&encoded[..], b"-_8");
-
-    let decoded = URL_SAFE_NO_PAD.decode_buf(encoded).unwrap();
-    assert_eq!(&decoded[..], &[0xfb, 0xff]);
+    let decoded = STRICT_URL_SAFE_UNPADDED
+        .decode_buf(OneByteBuf::new(&encoded))
+        .unwrap();
+    assert_eq!(&decoded[..], b"\xfb\xff");
 }
 
 #[test]
-fn supports_limited_buf_inputs() {
-    let encoded = STANDARD
-        .encode_buf_limited(Bytes::from_static(b"hello"), 5)
-        .unwrap();
-    assert_eq!(&encoded[..], b"aGVsbG8=");
+fn encoder_resumes_after_every_one_byte_destination() {
+    let original = b"one byte output fragments";
+    let mut input = OneByteBuf::new(original);
+    let mut encoder = STRICT_STANDARD_PADDED.bytes_encoder();
+    let mut output = Vec::new();
+    let mut consumed = 0;
 
-    let decoded = STANDARD.decode_buf_limited(encoded, 8).unwrap();
-    assert_eq!(&decoded[..], b"hello");
-
-    assert_eq!(
-        STANDARD
-            .encode_buf_limited(Bytes::from_static(b"hello"), 4)
-            .unwrap_err(),
-        BytesEncodeError::InputTooLarge {
-            input_len: 5,
-            max_input_len: 4
+    while input.has_remaining() {
+        let mut byte = [0u8; 1];
+        let mut destination = &mut byte[..];
+        let step = encoder.update(&mut input, &mut destination).unwrap();
+        consumed += step.progress().input_consumed();
+        output.extend_from_slice(&byte[..step.progress().output_committed()]);
+        assert!(matches!(
+            step.status(),
+            Status::NeedInput | Status::OutputFull(_)
+        ));
+    }
+    loop {
+        let mut byte = [0u8; 1];
+        let mut destination = &mut byte[..];
+        let step = encoder.finish(&mut destination).unwrap();
+        output.extend_from_slice(&byte[..step.progress().output_committed()]);
+        if matches!(step.status(), Status::Complete) {
+            break;
         }
-    );
-    assert_eq!(
-        STANDARD
-            .decode_buf_limited(Bytes::from_static(b"aGVsbG8="), 7)
-            .unwrap_err(),
-        BytesDecodeError::InputTooLarge {
-            input_len: 8,
-            max_input_len: 7
+        assert!(matches!(step.status(), Status::OutputFull(_)));
+    }
+
+    assert_eq!(consumed, original.len());
+    assert_eq!(encoder.source_position(), original.len());
+    assert_eq!(encoder.output_committed(), output.len());
+    assert_eq!(output, b"b25lIGJ5dGUgb3V0cHV0IGZyYWdtZW50cw==");
+}
+
+#[test]
+fn decoder_resumes_after_fragmented_input_and_output() {
+    let encoded = b"b25lIGJ5dGUgb3V0cHV0IGZyYWdtZW50cw==";
+    let mut input = OneByteBuf::new(encoded);
+    let mut decoder = STRICT_STANDARD_PADDED.bytes_decoder();
+    let mut output = Vec::new();
+
+    while input.has_remaining() {
+        let mut byte = [0u8; 1];
+        let mut destination = &mut byte[..];
+        let step = decoder.update(&mut input, &mut destination).unwrap();
+        output.extend_from_slice(&byte[..step.progress().output_committed()]);
+    }
+    loop {
+        let mut byte = [0u8; 1];
+        let mut destination = &mut byte[..];
+        let step = decoder.finish(&mut destination).unwrap();
+        output.extend_from_slice(&byte[..step.progress().output_committed()]);
+        if matches!(step.status(), Status::Complete) {
+            break;
         }
-    );
+    }
+
+    assert_eq!(output, b"one byte output fragments");
 }
 
 #[test]
-fn writes_to_buf_mut() {
-    let mut encoded = BytesMut::with_capacity(8);
-    let written = STANDARD
-        .encode_buf_to_mut(Bytes::from_static(b"hello"), &mut encoded)
-        .unwrap();
-    assert_eq!(written, 8);
-    assert_eq!(&encoded[..], b"aGVsbG8=");
+fn malformed_suffix_reports_only_previously_committed_prefix() {
+    let mut input = Bytes::from_static(b"aGVsbG8=").chain(Bytes::from_static(b"!AAA"));
+    let mut output = Vec::new();
+    let mut decoder = STRICT_STANDARD_PADDED.bytes_decoder();
+    let error = decoder.update(&mut input, &mut output).unwrap_err();
 
-    let mut decoded = BytesMut::new();
-    decoded.reserve(5);
-    let written = STANDARD
-        .decode_buf_to_mut(encoded.freeze(), &mut decoded)
-        .unwrap();
-    assert_eq!(written, 5);
-    assert_eq!(&decoded[..], b"hello");
+    assert_eq!(error.progress().input_consumed(), 8);
+    assert_eq!(error.progress().output_committed(), 5);
+    assert_eq!(output, b"hello");
+    assert!(matches!(
+        error.kind(),
+        BytesErrorKind::Operation(OperationError::Failed(Failure::Input(_)))
+    ));
+    assert!(decoder.is_failed());
+    assert!(matches!(
+        decoder
+            .update(&mut Bytes::new(), &mut Vec::new())
+            .unwrap_err()
+            .kind(),
+        BytesErrorKind::FailedState
+    ));
 }
 
 #[test]
-fn writes_to_buf_mut_with_limits() {
-    let mut encoded = BytesMut::with_capacity(8);
-    let written = STANDARD
-        .encode_buf_to_mut_limited(Bytes::from_static(b"hello"), &mut encoded, 5)
-        .unwrap();
-    assert_eq!(written, 8);
-    assert_eq!(&encoded[..], b"aGVsbG8=");
-
-    let mut decoded = BytesMut::new();
-    decoded.reserve(5);
-    let written = STANDARD
-        .decode_buf_to_mut_limited(encoded.freeze(), &mut decoded, 8)
-        .unwrap();
-    assert_eq!(written, 5);
-    assert_eq!(&decoded[..], b"hello");
+fn transactional_decode_returns_no_partial_plaintext() {
+    let error = STRICT_STANDARD_PADDED
+        .decode_buf(Bytes::from_static(b"aGVsbG8=").chain(Bytes::from_static(b"!AAA")))
+        .unwrap_err();
+    assert_eq!(error.progress().output_committed(), 5);
+    assert!(matches!(error.kind(), BytesErrorKind::Operation(_)));
 }
 
 #[test]
-fn reports_small_outputs() {
-    let mut small = [0u8; 4];
-    let mut encoded = &mut small[..];
+fn cumulative_input_and_output_limits_fail_closed() {
+    let input_error = STRICT_STANDARD_PADDED
+        .encode_buf_with_limits(
+            Bytes::from_static(b"hello"),
+            BytesLimits::new(4, usize::MAX),
+        )
+        .unwrap_err();
     assert_eq!(
-        STANDARD
-            .encode_buf_to_mut(Bytes::from_static(b"hello"), &mut encoded)
-            .unwrap_err(),
-        EncodeError::OutputTooSmall {
-            required: 8,
-            available: 4
-        }
-    );
-
-    let mut small = [0u8; 4];
-    let mut decoded = &mut small[..];
-    assert_eq!(
-        STANDARD
-            .decode_buf_to_mut(Bytes::from_static(b"aGVsbG8="), &mut decoded)
-            .unwrap_err(),
-        DecodeError::OutputTooSmall {
+        input_error.kind(),
+        BytesErrorKind::InputLimitExceeded {
             required: 5,
-            available: 4
+            limit: 4,
         }
     );
+
+    let output_error = STRICT_STANDARD_PADDED
+        .encode_buf_with_limits(Bytes::from_static(b"hello"), BytesLimits::new(5, 7))
+        .unwrap_err();
+    assert_eq!(
+        output_error.kind(),
+        BytesErrorKind::OutputLimitExceeded { limit: 7 }
+    );
+
+    let mut decoder = STRICT_STANDARD_PADDED.bytes_decoder_with_limits(BytesLimits::new(8, 4));
+    let mut input = Bytes::from_static(b"aGVsbG8=");
+    let error = decoder.update(&mut input, &mut Vec::new()).unwrap_err();
+    assert_eq!(
+        error.kind(),
+        BytesErrorKind::OutputLimitExceeded { limit: 4 }
+    );
+    assert_eq!(error.progress().output_committed(), 4);
+    assert!(decoder.is_failed());
 }
 
 #[test]
-fn limited_buf_to_mut_reports_input_limits_before_output_limits() {
-    let mut small = [0u8; 4];
-    let mut encoded = &mut small[..];
+fn finite_buf_mut_reports_retryable_output_full() {
+    let mut input = Bytes::from_static(b"hello");
+    let mut first = [0u8; 3];
+    let mut first_destination = &mut first[..];
+    let mut encoder = STRICT_STANDARD_PADDED.bytes_encoder();
+
+    let first_step = encoder.update(&mut input, &mut first_destination).unwrap();
+    assert!(matches!(first_step.status(), Status::OutputFull(_)));
+    assert_eq!(first_step.progress().output_committed(), 3);
+
+    let mut remainder = Vec::new();
+    let second_step = encoder.update(&mut input, &mut remainder).unwrap();
+    assert!(matches!(second_step.status(), Status::NeedInput));
+    let final_step = encoder.finish(&mut remainder).unwrap();
+    assert!(matches!(final_step.status(), Status::Complete));
+
+    let mut combined = first.to_vec();
+    combined.extend_from_slice(&remainder);
+    assert_eq!(combined, b"aGVsbG8=");
+}
+
+#[test]
+fn invalid_safe_buf_contract_is_rejected_and_latched() {
+    let mut input = EmptyChunkBuf { remaining: 4 };
+    let mut output = Vec::new();
+    let mut encoder = STRICT_STANDARD_PADDED.bytes_encoder();
+    let error = encoder.update(&mut input, &mut output).unwrap_err();
     assert_eq!(
-        STANDARD
-            .encode_buf_to_mut_limited(Bytes::from_static(b"hello"), &mut encoded, 4)
-            .unwrap_err(),
-        BytesEncodeError::InputTooLarge {
-            input_len: 5,
-            max_input_len: 4
-        }
+        error.kind(),
+        BytesErrorKind::InvalidInputBuffer { remaining: 4 }
+    );
+    assert!(encoder.is_failed());
+}
+
+#[test]
+fn downstream_panic_latches_state_until_reset() {
+    let mut input = Bytes::from_static(b"abc");
+    let mut output = PanicAfterWrite::default();
+    let mut encoder = STRICT_STANDARD_PADDED.bytes_encoder();
+
+    let result = catch_unwind(AssertUnwindSafe(|| {
+        let _ = encoder.update(&mut input, &mut output);
+    }));
+    assert!(result.is_err());
+    assert!(encoder.is_failed());
+    assert_eq!(output.bytes, b"YWJj");
+
+    let error = encoder
+        .update(&mut Bytes::new(), &mut Vec::new())
+        .unwrap_err();
+    assert_eq!(error.kind(), BytesErrorKind::FailedState);
+    encoder.reset();
+    assert!(!encoder.is_failed());
+}
+
+#[test]
+fn input_panic_latches_state_until_reset() {
+    let mut encoder = STRICT_STANDARD_PADDED.bytes_encoder();
+    let mut input = PanicOnChunk;
+    let mut output = Vec::new();
+
+    let panic = catch_unwind(AssertUnwindSafe(|| {
+        let _ = encoder.update(&mut input, &mut output);
+    }));
+    assert!(panic.is_err());
+    assert!(encoder.is_failed());
+    assert_eq!(
+        encoder
+            .update(&mut Bytes::from_static(b"ok"), &mut output)
+            .unwrap_err()
+            .kind(),
+        BytesErrorKind::FailedState
     );
 
-    let mut small = [0u8; 4];
-    let mut decoded = &mut small[..];
-    assert_eq!(
-        STANDARD
-            .decode_buf_to_mut_limited(Bytes::from_static(b"aGVsbG8="), &mut decoded, 7)
-            .unwrap_err(),
-        BytesDecodeError::InputTooLarge {
-            input_len: 8,
-            max_input_len: 7
+    encoder.reset();
+    assert!(!encoder.is_failed());
+}
+
+struct OneByteBuf {
+    bytes: Bytes,
+}
+
+impl OneByteBuf {
+    fn new(bytes: &[u8]) -> Self {
+        Self {
+            bytes: Bytes::copy_from_slice(bytes),
         }
-    );
+    }
+}
+
+impl Buf for OneByteBuf {
+    fn remaining(&self) -> usize {
+        self.bytes.remaining()
+    }
+
+    fn chunk(&self) -> &[u8] {
+        let len = self.bytes.remaining().min(1);
+        &self.bytes.chunk()[..len]
+    }
+
+    fn advance(&mut self, count: usize) {
+        self.bytes.advance(count);
+    }
+}
+
+struct EmptyChunkBuf {
+    remaining: usize,
+}
+
+impl Buf for EmptyChunkBuf {
+    fn remaining(&self) -> usize {
+        self.remaining
+    }
+
+    fn chunk(&self) -> &[u8] {
+        &[]
+    }
+
+    fn advance(&mut self, count: usize) {
+        self.remaining -= count;
+    }
+}
+
+#[derive(Default)]
+struct PanicAfterWrite {
+    bytes: Vec<u8>,
+}
+
+struct PanicOnChunk;
+
+impl Buf for PanicOnChunk {
+    fn remaining(&self) -> usize {
+        1
+    }
+
+    fn chunk(&self) -> &[u8] {
+        panic!("injected input panic");
+    }
+
+    fn advance(&mut self, _count: usize) {}
+}
+
+// SAFETY: All required storage operations delegate to Vec's BufMut
+// implementation. The deliberate panic occurs only after a fully initialized
+// slice has been appended and models an adversarial downstream implementation.
+unsafe impl BufMut for PanicAfterWrite {
+    fn remaining_mut(&self) -> usize {
+        self.bytes.remaining_mut()
+    }
+
+    unsafe fn advance_mut(&mut self, count: usize) {
+        // SAFETY: The caller upholds BufMut's initialization contract, which is
+        // forwarded unchanged to Vec.
+        unsafe { self.bytes.advance_mut(count) };
+    }
+
+    fn chunk_mut(&mut self) -> &mut UninitSlice {
+        self.bytes.chunk_mut()
+    }
+
+    fn put_slice(&mut self, source: &[u8]) {
+        self.bytes.put_slice(source);
+        panic!("injected downstream panic after observable write");
+    }
 }

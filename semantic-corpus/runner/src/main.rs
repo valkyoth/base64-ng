@@ -1,11 +1,13 @@
 use base64_ng::{
-    Alphabet, DecodeError, Engine, STANDARD, STANDARD_NO_PAD, Standard, URL_SAFE, URL_SAFE_NO_PAD,
-    UrlSafe, ct,
+    Alphabet, Base64, Codec, DecodeError, Engine, Failure, OneShotError, OperationError, STANDARD,
+    STANDARD_NO_PAD, STRICT_STANDARD_PADDED, STRICT_STANDARD_UNPADDED,
+    STRICT_URL_SAFE_PADDED, STRICT_URL_SAFE_UNPADDED, Standard, URL_SAFE, URL_SAFE_NO_PAD, UrlSafe,
+    ct,
 };
-use base64_ng_bytes::EngineBytesExt;
+use base64_ng_bytes::{Base64BytesExt, BytesError, BytesErrorKind};
 use base64_ng_sanitization::CtDecodeSanitizationExt;
 use base64_ng_serde::{Base64Standard, Base64UrlSafeNoPad};
-use bytes::{Bytes, BytesMut};
+use bytes::Bytes;
 use std::io::Write;
 
 const CORPUS: &str = include_str!("../../v1/cases.tsv");
@@ -47,30 +49,44 @@ fn main() {
 
     for case in &cases {
         match case.profile {
-            Profile::StandardPadded => exercise::<Standard, true>(case, STANDARD),
-            Profile::StandardUnpadded => exercise::<Standard, false>(case, STANDARD_NO_PAD),
-            Profile::UrlSafePadded => exercise::<UrlSafe, true>(case, URL_SAFE),
-            Profile::UrlSafeUnpadded => exercise::<UrlSafe, false>(case, URL_SAFE_NO_PAD),
+            Profile::StandardPadded => {
+                exercise::<Standard, true, _>(case, STANDARD, STRICT_STANDARD_PADDED);
+            }
+            Profile::StandardUnpadded => {
+                exercise::<Standard, false, _>(case, STANDARD_NO_PAD, STRICT_STANDARD_UNPADDED);
+            }
+            Profile::UrlSafePadded => {
+                exercise::<UrlSafe, true, _>(case, URL_SAFE, STRICT_URL_SAFE_PADDED);
+            }
+            Profile::UrlSafeUnpadded => {
+                exercise::<UrlSafe, false, _>(case, URL_SAFE_NO_PAD, STRICT_URL_SAFE_UNPADDED);
+            }
         }
     }
 
     println!("semantic corpus: {} cases passed", cases.len());
 }
 
-fn exercise<A, const PAD: bool>(case: &Case<'_>, engine: Engine<A, PAD>)
+fn exercise<A, const PAD: bool, S>(case: &Case<'_>, engine: Engine<A, PAD>, codec: Base64<S>)
 where
     A: Alphabet,
+    S: Codec,
 {
     match case.operation {
-        "round-trip" => exercise_success(case, engine),
-        "decode-error" => exercise_failure(case, engine),
+        "round-trip" => exercise_success(case, engine, codec),
+        "decode-error" => exercise_failure(case, engine, codec),
         other => panic!("{}: unknown operation {other}", case.id),
     }
 }
 
-fn exercise_success<A, const PAD: bool>(case: &Case<'_>, engine: Engine<A, PAD>)
+fn exercise_success<A, const PAD: bool, S>(
+    case: &Case<'_>,
+    engine: Engine<A, PAD>,
+    codec: Base64<S>,
+)
 where
     A: Alphabet,
+    S: Codec,
 {
     assert_eq!(case.core_one_shot_contract, "byte-identical", "{}", case.id);
     assert_eq!(case.core_stream_contract, "byte-identical", "{}", case.id);
@@ -104,11 +120,17 @@ where
     assert_eq!(decoded_stream.finish().unwrap(), case.input, "{}", case.id);
 
     assert_eq!(
-        engine.encode_bytes(&case.input).unwrap().as_ref(),
+        codec
+            .encode_buf(Bytes::copy_from_slice(&case.input))
+            .unwrap()
+            .as_ref(),
         case.encoded
     );
     assert_eq!(
-        engine.decode_bytes(case.encoded).unwrap().as_ref(),
+        codec
+            .decode_buf(Bytes::copy_from_slice(case.encoded))
+            .unwrap()
+            .as_ref(),
         case.input
     );
     assert_eq!(
@@ -124,9 +146,14 @@ where
     exercise_sanitization_success(case);
 }
 
-fn exercise_failure<A, const PAD: bool>(case: &Case<'_>, engine: Engine<A, PAD>)
+fn exercise_failure<A, const PAD: bool, S>(
+    case: &Case<'_>,
+    engine: Engine<A, PAD>,
+    codec: Base64<S>,
+)
 where
     A: Alphabet,
+    S: Codec,
 {
     let error = engine.decode_vec(case.encoded).unwrap_err();
     assert_error(case, error);
@@ -171,12 +198,14 @@ where
     assert_eq!(stream_output, case.committed_prefix, "{}", case.id);
 
     assert_eq!(case.bytes_contract, "atomic-unchanged", "{}", case.id);
-    let mut bytes_output = BytesMut::from(&b"unchanged"[..]);
-    let bytes_error = engine
-        .decode_buf_to_mut(Bytes::copy_from_slice(case.encoded), &mut bytes_output)
+    let mut expected_output = [0u8; 64];
+    let expected_error = codec
+        .decode_into(case.encoded, &mut expected_output)
         .unwrap_err();
-    assert_error(case, bytes_error);
-    assert_eq!(bytes_output.as_ref(), b"unchanged");
+    let bytes_error = codec
+        .decode_buf(Bytes::copy_from_slice(case.encoded))
+        .unwrap_err();
+    assert_bytes_error(case, bytes_error, expected_error);
 
     assert_eq!(case.tokio_contract, "atomic-unchanged", "{}", case.id);
     let runtime = tokio::runtime::Builder::new_current_thread()
@@ -314,6 +343,17 @@ fn assert_error(case: &Case<'_>, error: DecodeError) {
         _ => None,
     };
     assert_eq!(offset, case.error_offset, "{}", case.id);
+}
+
+fn assert_bytes_error(case: &Case<'_>, error: BytesError, expected: OneShotError) {
+    let BytesErrorKind::Operation(OperationError::Failed(Failure::Input(error))) = error.kind()
+    else {
+        panic!("{}: unexpected bytes error {error}", case.id);
+    };
+    let OneShotError::Input(expected) = expected else {
+        panic!("{}: unexpected 2.0 one-shot error {expected}", case.id);
+    };
+    assert_eq!(error, expected, "{}", case.id);
 }
 
 fn parse_case(line: &str) -> Case<'_> {

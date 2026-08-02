@@ -25,32 +25,49 @@
 
 # base64-ng-bytes
 
-Optional `bytes` integration for `base64-ng`.
+Fragment-preserving `bytes` integration for the `base64-ng` 2.0 codec.
 
 This companion crate provides explicit helpers for services that already use
-`bytes::Bytes`, `bytes::BytesMut`, `bytes::Buf`, and `bytes::BufMut`.
+`bytes::Bytes`, `bytes::Buf`, and `bytes::BufMut`. Fragmented input is driven
+directly through the shared incremental core and is never fully coalesced.
 
 ```rust
-use base64_ng::STANDARD;
-use base64_ng_bytes::EngineBytesExt;
+use base64_ng::STRICT_STANDARD_PADDED;
+use base64_ng_bytes::Base64BytesExt;
+use bytes::Bytes;
 
-let encoded = STANDARD.encode_bytes(b"hello").unwrap();
+let encoded = STRICT_STANDARD_PADDED
+    .encode_buf(Bytes::from_static(b"hello"))
+    .unwrap();
 assert_eq!(&encoded[..], b"aGVsbG8=");
 
-let decoded = STANDARD.decode_bytes(encoded).unwrap();
+let decoded = STRICT_STANDARD_PADDED.decode_buf(encoded).unwrap();
 assert_eq!(&decoded[..], b"hello");
 ```
 
-For peer-controlled `Buf` values, prefer the bounded helpers so a custom
-`Buf::remaining()` value cannot drive an unbounded temporary allocation:
+The owned helpers are transactional for caller-visible output. For bounded
+peer-controlled frames, set both cumulative limits:
 
 ```rust
-use base64_ng::STANDARD;
-use base64_ng_bytes::EngineBytesExt;
+use base64_ng::STRICT_STANDARD_PADDED;
+use base64_ng_bytes::{Base64BytesExt, BytesLimits};
 use bytes::Bytes;
 
-let encoded = STANDARD
-    .encode_buf_limited(Bytes::from_static(b"hello"), 5)
+let encoded = STRICT_STANDARD_PADDED
+    .encode_buf_with_limits(
+        Bytes::from_static(b"hello"),
+        BytesLimits::new(5, 8),
+    )
     .unwrap();
 assert_eq!(&encoded[..], b"aGVsbG8=");
 ```
+
+For arbitrary `BufMut`, use `bytes_encoder()` or `bytes_decoder()`. These
+states are explicitly prefix-committing and return retryable
+`Status::OutputFull` while retaining pending quantum state. Ordinary decoded
+plaintext committed before a malformed later fragment cannot be withdrawn;
+use bounded secret APIs from the core `secrets` capability for secret-bearing
+frames.
+
+The complete contracts and evidence are documented in
+[`docs/2.0_BYTES_INTEGRATION.md`](https://github.com/valkyoth/base64-ng/blob/main/docs/2.0_BYTES_INTEGRATION.md).

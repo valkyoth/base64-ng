@@ -193,6 +193,9 @@ scripts/validate-2.0-dispatch-matrix.sh
 echo "checks: 2.0 synchronous I/O"
 scripts/check-2.0-sync-io.sh
 
+echo "checks: 2.0 bytes integration"
+scripts/check-2.0-bytes.sh
+
 echo "checks: dudect timing harness"
 scripts/check_dudect.sh
 

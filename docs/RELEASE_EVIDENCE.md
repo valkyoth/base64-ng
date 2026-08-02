@@ -264,6 +264,10 @@ The release gate runs:
   tests
 - independent-oracle differential tests and the versioned semantic corpus
   across core, streaming, bytes, Tokio, serde, and sanitization surfaces
+- fragmented `Buf`/`BufMut` integration through `scripts/check-2.0-bytes.sh`,
+  including one-byte partitions, exact prefix progress, cumulative limits,
+  transactional owned output, panic latching, Miri coverage, and an allocation
+  counter that rejects full-input coalescing
 - 2.0 validated-alphabet evidence through
   `scripts/check-2.0-alphabet.sh`, including const compile acceptance and
   rejection, exhaustive invalid-table diagnostics, all-value mapping parity,

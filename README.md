@@ -502,20 +502,25 @@ struct Message {
 Field-level modules are available for `standard`, `standard_no_pad`,
 `url_safe`, `url_safe_no_pad`, `mime`, and `pem`.
 
-`base64-ng-bytes` provides `Bytes`, `Buf`, and `BufMut` helpers:
+`base64-ng-bytes` provides fragment-preserving `Bytes`, `Buf`, and `BufMut`
+helpers over the sealed 2.0 codec. Owned results are transactional, while
+stateful arbitrary-`BufMut` adapters report exact committed prefixes:
 
 ```toml
 [dependencies]
-base64-ng = "1.3.9"
-base64-ng-bytes = "1.3.9"
+base64-ng = "2.0.0"
+base64-ng-bytes = "2.0.0"
 bytes = "1.12.1"
 ```
 
 ```rust
-use base64_ng::STANDARD;
-use base64_ng_bytes::EngineBytesExt;
+use base64_ng::STRICT_STANDARD_PADDED;
+use base64_ng_bytes::Base64BytesExt;
+use bytes::Bytes;
 
-let encoded = STANDARD.encode_bytes(b"hello").unwrap();
+let encoded = STRICT_STANDARD_PADDED
+    .encode_buf(Bytes::from_static(b"hello"))
+    .unwrap();
 assert_eq!(&encoded[..], b"aGVsbG8=");
 ```
 

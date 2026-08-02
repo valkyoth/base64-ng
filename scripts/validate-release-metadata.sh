@@ -142,6 +142,7 @@ for required_script in \
     "scripts/check-2.0-feature-contract.sh" \
     "scripts/check-2.0-const-buffers.sh" \
     "scripts/check-2.0-format-append-chunks.sh" \
+    "scripts/check-2.0-bytes.sh" \
     "scripts/check-2.0-in-place.sh" \
     "scripts/check-2.0-in-place-sanitizers.sh" \
     "scripts/check-2.0-wasm-loader.sh" \
@@ -563,6 +564,7 @@ for required_package_file in \
     "SECURITY.md" \
     "api-snapshots/README.md" \
     "api-snapshots/2.0-development/base64-ng.txt" \
+    "api-snapshots/2.0-development/base64-ng-bytes.txt" \
     "api-snapshots/v1.3.9/base64-ng.txt" \
     "api-snapshots/v1.3.9/base64-ng-bytes.txt" \
     "api-snapshots/v1.3.9/base64-ng-derive.txt" \
@@ -574,6 +576,7 @@ for required_package_file in \
     "docs/2.0_BIG_ENDIAN_AUDIT.md" \
     "docs/2.0_CONST_AND_BOUNDED_BUFFERS.md" \
     "docs/2.0_FORMAT_APPEND_CHUNKS.md" \
+    "docs/2.0_BYTES_INTEGRATION.md" \
     "docs/2.0_IN_PLACE_OPERATIONS.md" \
     "docs/2.0_DEVICE_VERIFICATION_QUEUE.md" \
     "docs/2.0_PROFILES_AND_TERMINOLOGY.md" \
@@ -621,6 +624,7 @@ for required_package_file in \
     "scripts/check-2.0-feature-contract.sh" \
     "scripts/check-2.0-const-buffers.sh" \
     "scripts/check-2.0-format-append-chunks.sh" \
+    "scripts/check-2.0-bytes.sh" \
     "scripts/check-2.0-in-place.sh" \
     "scripts/check-2.0-in-place-sanitizers.sh" \
     "scripts/check-2.0-neon-hot-paths.sh" \
