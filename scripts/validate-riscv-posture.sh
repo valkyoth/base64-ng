@@ -6,6 +6,7 @@ rvv="src/simd/rvv.rs"
 simd="src/simd/mod.rs"
 encode="src/encode_backend.rs"
 decode="src/decode_backend.rs"
+qemu="scripts/check_riscv_qemu.sh"
 
 require_text() {
     if ! grep -F -q -- "$2" "$1"; then
@@ -14,7 +15,7 @@ require_text() {
     fi
 }
 
-for file in "$review" "$rvv" "$simd" "$encode" "$decode"; do
+for file in "$review" "$rvv" "$simd" "$encode" "$decode" "$qemu"; do
     test -s "$file"
 done
 test -x scripts/check_riscv_qemu.sh
@@ -27,6 +28,9 @@ require_text "$review" "real hardware evidence remains mandatory"
 require_text "$review" "normal published builds remain scalar"
 require_text "$review" "riscv_hwprobe"
 require_text "$review" "PR_RISCV_V_GET_CONTROL"
+require_text "$qemu" "-cpu rv64,v=false"
+require_text "$qemu" "vext_spec=v1.0"
+require_text "$qemu" "--test-threads=1"
 require_text "$rvv" '.attribute arch, "rv64gcv"'
 require_text "$rvv" "base64_ng_rvv_encode_standard_12"
 require_text "$rvv" "base64_ng_rvv_decode_standard_16"

@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-script_revision="2026-08-02-commit32-riscv-qemu-v2"
+script_revision="2026-08-02-commit35-riscv-qemu-v3"
 evidence_dir="target/release-evidence/riscv-qemu"
 target="riscv64gc-unknown-linux-gnu"
 
@@ -67,9 +67,13 @@ require_sysroot() {
 }
 
 target_key="RISCV64GC_UNKNOWN_LINUX_GNU"
+runner_for_scalar() {
+    printf '%s' "qemu-riscv64 -cpu rv64,v=false -L $sysroot -E LD_LIBRARY_PATH=$libdirs"
+}
+
 runner_for_vlen() {
     vlen="$1"
-    printf '%s' "qemu-riscv64 -cpu rv64,v=true,vlen=$vlen,elen=64 -L $sysroot -E LD_LIBRARY_PATH=$libdirs"
+    printf '%s' "qemu-riscv64 -cpu rv64,v=true,vext_spec=v1.0,vlen=$vlen,elen=64 -L $sysroot -E LD_LIBRARY_PATH=$libdirs"
 }
 
 cargo_target() {
@@ -103,31 +107,32 @@ detect_toolchain
 require_command "$linker" "install the selected riscv64 cross compiler"
 require_sysroot
 
+runner_scalar="$(runner_for_scalar)"
 runner_128="$(runner_for_vlen 128)"
 runner_256="$(runner_for_vlen 256)"
 echo "RISC-V QEMU checks: linker=$linker"
 echo "RISC-V QEMU checks: sysroot=$sysroot"
 
 echo "RISC-V QEMU checks: scalar/fallback default-feature suite"
-cargo_target "$runner_128" test --target "$target" --lib --tests
+cargo_target "$runner_scalar" test --target "$target" --lib --tests -- --test-threads=1
 
 echo "RISC-V QEMU checks: scalar/fallback all-feature suite"
-cargo_target "$runner_128" test --target "$target" --all-features --lib --tests
+cargo_target "$runner_scalar" test --target "$target" --all-features --lib --tests -- --test-threads=1
 
 echo "RISC-V QEMU checks: scalar/fallback no-default suite"
-cargo_target "$runner_128" test --target "$target" --no-default-features --lib --tests
+cargo_target "$runner_scalar" test --target "$target" --no-default-features --lib --tests -- --test-threads=1
 
 echo "RISC-V QEMU checks: all-feature doctests"
-cargo_target "$runner_128" test --target "$target" --all-features --doc
+cargo_target "$runner_scalar" test --target "$target" --all-features --doc -- --test-threads=1
 
 echo "RISC-V QEMU checks: no-default doctests"
-cargo_target "$runner_128" test --target "$target" --no-default-features --doc
+cargo_target "$runner_scalar" test --target "$target" --no-default-features --doc -- --test-threads=1
 
 echo "RISC-V QEMU checks: RVV candidate VLEN=128"
-cargo_candidate "$runner_128" test --target "$target" --all-features --lib rvv_ -- --nocapture
+cargo_candidate "$runner_128" test --target "$target" --all-features --lib rvv_ -- --nocapture --test-threads=1
 
 echo "RISC-V QEMU checks: RVV candidate VLEN=256"
-cargo_candidate "$runner_256" test --target "$target" --all-features --lib rvv_ -- --nocapture
+cargo_candidate "$runner_256" test --target "$target" --all-features --lib rvv_ -- --nocapture --test-threads=1
 
 echo "RISC-V QEMU checks: no_std static +v candidate compile"
 candidate_static_flags="${RUSTFLAGS:-} --cfg base64_ng_rvv_candidate -C target-feature=+v"
@@ -146,8 +151,10 @@ mkdir -p "$evidence_dir"
     echo "qemu=$(qemu-riscv64 --version | sed -n '1p')"
     echo "rustc=$(rustc --version)"
     echo "cargo=$(cargo --version)"
+    echo "scalar_cpu=rv64,v=false"
     echo "candidate_vlens=128,256"
     echo "candidate_isa=RVV-1.0-basic-integer"
+    echo "qemu_test_threads=1"
     echo "candidate_dispatch=internal-QEMU-only"
     echo "public_dispatch=scalar"
     echo "evidence_scope=scalar functional coverage plus non-admitted RVV encode/decode candidate correctness"

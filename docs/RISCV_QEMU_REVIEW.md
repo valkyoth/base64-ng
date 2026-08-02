@@ -71,10 +71,14 @@ scripts/check_riscv_qemu.sh
 ```
 
 The gate runs complete default, all-feature, no-default, and doctest suites on
-`riscv64gc-unknown-linux-gnu`. It then compiles the internal candidate and runs
-its encode/decode differential, malformed-input, detection, and scalar-public-
-dispatch tests at VLEN 128 and VLEN 256. It also checks the `no_std` static
-`+v` build.
+`riscv64gc-unknown-linux-gnu` with vector execution explicitly disabled. It
+then compiles the internal candidate and runs its encode/decode differential,
+malformed-input, detection, and scalar-public-dispatch tests with RVV 1.0 at
+VLEN 128 and VLEN 256. Every QEMU-hosted Rust harness is serialized because
+Ubuntu 24.04 currently ships QEMU 8.2, whose user-mode RVV implementation can
+crash internally while a parallel test harness creates threads. Serialization
+is an emulator compatibility constraint, not evidence of thread safety or real
+hardware behavior. The gate also checks the `no_std` static `+v` build.
 
 Generated assembly is checked by:
 
