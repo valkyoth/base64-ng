@@ -33,6 +33,11 @@ SIMD feature boundaries enabled. This includes:
 - scalar fallback, backend health, and operation-specific runtime reporting;
 - the dedicated big-endian profile and in-place regression suite.
 
+Guest test binaries run with one libtest worker. This retains the complete test
+set while avoiding host-QEMU thread-scheduler instability observed in
+PowerPC64 user-mode emulation. A QEMU process crash remains a hard failure; the
+gate does not skip, retry, or convert failed guest execution into evidence.
+
 The byte-order reasoning and mechanically enforced source boundaries are in
 [`2.0_BIG_ENDIAN_AUDIT.md`](2.0_BIG_ENDIAN_AUDIT.md).
 

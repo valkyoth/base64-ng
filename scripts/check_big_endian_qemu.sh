@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-script_revision="2026-08-02-commit31-big-endian-qemu-v2"
+script_revision="2026-08-02-commit31-big-endian-qemu-v3"
 evidence_dir="target/release-evidence/big-endian-qemu"
 mode="${1:---all}"
 
@@ -113,23 +113,23 @@ run_target_suite() {
 
     echo "big-endian QEMU checks: $label default-feature complete suite"
     cargo_for_target "$target" "$linker" "$runner" test \
-        --target "$target" --lib --tests
+        --target "$target" --lib --tests -- --test-threads=1
 
     echo "big-endian QEMU checks: $label all-feature complete suite"
     cargo_for_target "$target" "$linker" "$runner" test \
-        --target "$target" --all-features --lib --tests
+        --target "$target" --all-features --lib --tests -- --test-threads=1
 
     echo "big-endian QEMU checks: $label no-default-feature complete suite"
     cargo_for_target "$target" "$linker" "$runner" test \
-        --target "$target" --no-default-features --lib --tests
+        --target "$target" --no-default-features --lib --tests -- --test-threads=1
 
     echo "big-endian QEMU checks: $label all-feature doctests"
     cargo_for_target "$target" "$linker" "$runner" test \
-        --target "$target" --all-features --doc
+        --target "$target" --all-features --doc -- --test-threads=1
 
     echo "big-endian QEMU checks: $label no-default-feature doctests"
     cargo_for_target "$target" "$linker" "$runner" test \
-        --target "$target" --no-default-features --doc
+        --target "$target" --no-default-features --doc -- --test-threads=1
 }
 
 run_s390x() {
@@ -231,6 +231,7 @@ mkdir -p "$evidence_dir"
     echo "cargo=$(cargo --version)"
     echo "evidence_scope=functional correctness and scalar/fallback behavior under QEMU user-mode"
     echo "covered_surfaces=default,all-features,no-default-features,RFC4648,malformed,incremental,stream,in-place,wrapping,secret-cleanup,backend-reporting,doctests"
+    echo "guest_test_execution=serial to avoid host-QEMU thread-scheduler instability without reducing test coverage"
     echo "not_evidence_for=real hardware performance, timing, microarchitectural behavior, register retention, physical cleanup, or side-channel behavior"
     echo "wipe_barrier_status=compiler-fence-only feature enabled for secret checks on unsupported big-endian architectures"
     echo "hardware_status=community real-hardware reports required before accelerated big-endian admission"

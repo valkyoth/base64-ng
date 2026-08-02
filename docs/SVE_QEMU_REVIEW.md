@@ -71,7 +71,9 @@ probe, and per-thread vector-length-change tests at 128, 256, and 512 bits.
 
 The assembly gate requires all five leaf symbols, SVE structured loads/stores,
 predicate mapping, vector-length discovery, caller-saved register cleanup, no
-nested calls, and no stack mutation.
+nested calls, and no stack mutation. Cross-host evidence uses target-aware
+AArch64 `objdump`, `nm`, and `readelf`; a host-only x86 disassembler is rejected
+rather than treated as SVE evidence.
 
 ## Real Hardware Admission
 

@@ -17,12 +17,36 @@ if [ ! -x "$linker" ]; then
     echo "SVE asm evidence: rust-lld is missing from the active toolchain" >&2
     exit 1
 fi
-for tool in objdump nm readelf; do
-    if ! command -v "$tool" >/dev/null 2>&1; then
-        echo "SVE asm evidence: missing $tool" >&2
-        exit 1
+
+binutils_prefix=""
+for candidate_prefix in aarch64-linux-gnu aarch64-suse-linux; do
+    if command -v "$candidate_prefix-objdump" >/dev/null 2>&1 \
+        && command -v "$candidate_prefix-nm" >/dev/null 2>&1 \
+        && command -v "$candidate_prefix-readelf" >/dev/null 2>&1; then
+        binutils_prefix="$candidate_prefix-"
+        break
     fi
 done
+if [ -z "$binutils_prefix" ]; then
+    case "$host" in
+        aarch64-*)
+            for tool in objdump nm readelf; do
+                if ! command -v "$tool" >/dev/null 2>&1; then
+                    echo "SVE asm evidence: missing native AArch64 $tool" >&2
+                    exit 1
+                fi
+            done
+            ;;
+        *)
+            echo "SVE asm evidence: missing AArch64 cross-binutils" >&2
+            echo "SVE asm evidence: install binutils-aarch64-linux-gnu or cross-aarch64-binutils" >&2
+            exit 1
+            ;;
+    esac
+fi
+objdump="${binutils_prefix}objdump"
+nm="${binutils_prefix}nm"
+readelf="${binutils_prefix}readelf"
 
 echo "SVE asm evidence: release candidate binary"
 env \
@@ -51,13 +75,13 @@ fi
 symbols="base64_ng_sve_encode_standard_12 base64_ng_sve_encode_url_safe_12 base64_ng_sve_decode_standard_16 base64_ng_sve_decode_url_safe_16 base64_ng_sve_vector_length"
 : >"$output_dir/disassembly.txt"
 for symbol in $symbols; do
-    if ! nm "$binary" | grep -E -q "[[:space:]][Tt][[:space:]]+$symbol$"; then
+    if ! "$nm" "$binary" | grep -E -q "[[:space:]][Tt][[:space:]]+$symbol$"; then
         echo "SVE asm evidence: missing leaf symbol $symbol" >&2
         exit 1
     fi
-    objdump -d --disassemble="$symbol" "$binary" >>"$output_dir/disassembly.txt"
+    "$objdump" -d --disassemble="$symbol" "$binary" >>"$output_dir/disassembly.txt"
 done
-readelf -h -n "$binary" >"$output_dir/elf.txt"
+"$readelf" -h -n "$binary" >"$output_dir/elf.txt"
 
 require_pattern() {
     pattern="$1"
@@ -100,6 +124,9 @@ evidence_verify_source "SVE asm evidence"
     echo
     echo "target=$target"
     echo "linker=$linker"
+    echo "objdump=$objdump"
+    echo "nm=$nm"
+    echo "readelf=$readelf"
     echo "candidate_cfg=base64_ng_sve_candidate"
     echo "production_admission=false"
     echo "symbols=$symbols"

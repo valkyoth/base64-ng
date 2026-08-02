@@ -115,8 +115,10 @@ bundled `rust-lld`, runs the complete portable fallback suites, and exercises
 the isolated Commit 33 SVE candidate at vector lengths 128, 256, and 512.
 `scripts/generate_sve_asm_evidence.sh` checks the exact leaf symbols,
 structured loads/stores, predicate mapping, register cleanup, and absence of
-nested calls or stack use. This is emulation and codegen evidence only. Native
-operators use `scripts/check_sve_hardware.sh` and the checked schema under
+nested calls or stack use. Cross-host runs require AArch64 binutils
+(`binutils-aarch64-linux-gnu` on Debian/Ubuntu or
+`cross-aarch64-binutils` on openSUSE). This is emulation and codegen evidence
+only. Native operators use `scripts/check_sve_hardware.sh` and the checked schema under
 `hardware-evidence/sve/`; public AArch64 dispatch remains admitted NEON or
 scalar until evidence from two real SVE systems with different vector lengths
 and external review are accepted.

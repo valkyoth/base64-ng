@@ -48,6 +48,9 @@ jobs:
           cargo install --locked cargo-license --version 0.7.0
           cargo install --locked cargo-sbom --version 0.10.0
 
+      - name: Install targets required by the complete check suite
+        run: rustup target add aarch64-unknown-linux-gnu wasm32-unknown-unknown
+
       - name: Run checks
         run: scripts/checks.sh
 
@@ -71,9 +74,6 @@ jobs:
 
       - name: Reproducible package/build check
         run: scripts/reproducible_build_check.sh
-
-      - name: Install SIMD feature-bundle targets
-        run: rustup target add aarch64-unknown-linux-gnu wasm32-unknown-unknown
 
       - name: Check SIMD feature bundles
         run: scripts/check_simd_feature_bundles.sh
@@ -313,7 +313,9 @@ jobs:
       - name: Install QEMU user-mode runner
         run: |
           sudo apt-get update
-          sudo apt-get install --no-install-recommends qemu-user binutils
+          sudo apt-get install --no-install-recommends \
+            qemu-user \
+            binutils-aarch64-linux-gnu
 
       - name: Run scalar, NEON, and SVE candidate suites
         run: scripts/check_sve_qemu.sh

@@ -350,7 +350,9 @@ The release gate runs:
   `s390x-unknown-linux-gnu` and `powerpc64-unknown-linux-gnu`. Each target runs
   complete default, all-feature, and no-default-feature tests and doctests,
   including RFC 4648, malformed input, incremental, stream, in-place,
-  wrapped/legacy, secret-cleanup, and backend-reporting surfaces. This is
+  wrapped/legacy, secret-cleanup, and backend-reporting surfaces. Guest libtest
+  execution is serialized to avoid host-QEMU thread-scheduler instability
+  without skipping any tests; an emulator crash remains a hard failure. This is
   functional correctness and scalar/fallback evidence under emulation only;
   it is not real-hardware performance, timing, microarchitectural, physical
   cleanup, or side-channel evidence. Native community submissions use the
@@ -375,7 +377,8 @@ The release gate runs:
   behavior, capability-probe failures, per-thread vector-length changes, and
   static `no_std` compilation. `scripts/generate_sve_asm_evidence.sh` checks
   exact leaf symbols, structured loads/stores, predicate mapping, register
-  cleanup, absence of nested calls, and absence of stack use. This remains
+  cleanup, absence of nested calls, and absence of stack use using target-aware
+  AArch64 binutils rather than the host disassembler. This remains
   emulation and codegen evidence, not native performance, timing, ABI/signal
   preservation, microarchitectural, register-retention, or side-channel
   evidence. Public AArch64 dispatch remains admitted NEON or scalar until two

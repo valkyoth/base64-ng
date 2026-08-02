@@ -298,6 +298,49 @@ do
     fi
 done
 
+for required_ci_evidence_text in \
+    'rustup target add aarch64-unknown-linux-gnu wasm32-unknown-unknown' \
+    'binutils-aarch64-linux-gnu'
+do
+    if ! grep -F -q "$required_ci_evidence_text" .github/workflows/ci.yml; then
+        echo "release metadata: CI evidence setup is missing $required_ci_evidence_text" >&2
+        exit 1
+    fi
+done
+
+if ! awk '
+    /rustup target add aarch64-unknown-linux-gnu wasm32-unknown-unknown/ {
+        target_install = NR
+    }
+    /run: scripts\/checks\.sh/ {
+        checks = NR
+    }
+    END {
+        exit !(target_install > 0 && checks > 0 && target_install < checks)
+    }
+' .github/workflows/ci.yml; then
+    echo "release metadata: complete-check targets must be installed before scripts/checks.sh" >&2
+    exit 1
+fi
+
+qemu_serial_count="$(grep -F -c -- '--test-threads=1' scripts/check_big_endian_qemu.sh || true)"
+if [ "$qemu_serial_count" -ne 5 ]; then
+    echo "release metadata: all five QEMU guest test commands must retain serial libtest execution" >&2
+    exit 1
+fi
+
+for required_sve_binutils_text in \
+    'for candidate_prefix in aarch64-linux-gnu aarch64-suse-linux' \
+    'objdump="${binutils_prefix}objdump"' \
+    'nm="${binutils_prefix}nm"' \
+    'readelf="${binutils_prefix}readelf"'
+do
+    if ! grep -F -q "$required_sve_binutils_text" scripts/generate_sve_asm_evidence.sh; then
+        echo "release metadata: SVE evidence must require target-aware $required_sve_binutils_text" >&2
+        exit 1
+    fi
+done
+
 if [ "$(sed -n '1p' scripts/validate-release-readiness.sh)" != "#!/usr/bin/env sh" ]; then
     echo "release metadata: scripts/validate-release-readiness.sh must use #!/usr/bin/env sh" >&2
     exit 1
