@@ -1,6 +1,7 @@
 mod allocation;
 mod codec;
 mod evidence;
+mod neon;
 mod resources;
 mod x86_decode;
 mod x86_encode;
@@ -74,6 +75,7 @@ fn main() {
         Some("availability") => print_availability(),
         Some("resources") => resources::print(),
         Some("correctness") => verify_correctness(),
+        Some("neon") => neon::run(),
         Some("x86-decode") => x86_decode::run(),
         Some("x86-encode") => x86_encode::run(),
         None | Some("benchmark") => run_benchmark(),

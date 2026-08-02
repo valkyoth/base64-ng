@@ -129,8 +129,10 @@ runtime behavior for that line.
   one block. On an AVX-512/VBMI x86 CPU, automatic encode uses SSSE3/SSE4.1 for
   12–23 bytes, AVX2 for 24–191 bytes, and AVX-512 from 192 bytes; exact static and
   evidence APIs may request AVX-512 from its 48-byte block boundary. Other x86
-  candidates use their native 24-byte AVX2 or 12-byte SSSE3/SSE4.1 boundary,
-  while NEON starts at 12 bytes. Shorter inputs and non-block tails use scalar.
+  candidates use their native 24-byte AVX2 or 12-byte SSSE3/SSE4.1 boundary.
+  Automatic NEON encode starts at the conservative 192-byte Commit 29
+  crossover; exact static/evidence calls retain the 12-byte block boundary.
+  Shorter inputs and non-block tails use scalar.
 - Public slice, clear-tail, alloc, and wrapped encode helpers route through the
   admitted encode boundary. For wrapped encode, SIMD applies only to the
   unwrapped Base64 staging step; line-ending insertion remains scalar.
@@ -141,9 +143,12 @@ runtime behavior for that line.
   packs, VBMI-compacts, and masked-stores full AVX-512 blocks directly after
   scalar whole-input validation. Commit 27 does the same for full 32-byte AVX2
   and 16-byte SSSE3/SSE4.1 blocks, with exact-width output stores and one
-  register cleanup per call. Little-endian AArch64 NEON decode applies
-  only to full 16-byte
-  encoded blocks after scalar whole-input validation. Public strict decode
+  register cleanup per call. Commit 29 gives little-endian AArch64 NEON the
+  same direct architecture: vector ASCII classification precedes exact 8+4
+  byte stores, scalar whole-input validation preserves diagnostics, and vector
+  state is cleared once after the full block loop. Automatic NEON strict
+  decode begins at 256 encoded bytes; exact static/evidence calls retain the
+  16-byte block boundary. Public strict decode
   supports every valid encoded length; short inputs and non-block tails are
   decoded by scalar code. Wrapped decode may use admitted strict decode after
   scalar line-profile validation and line-ending compaction. Legacy whitespace
@@ -211,11 +216,16 @@ runtime behavior for that line.
   and `decode_url_safe` expose these kernels to admitted `no_std` deployments;
   `checked-backend` retains redundant scalar comparison and quarantine.
 - AArch64 NEON encode is admitted for little-endian `aarch64` Standard and
-  URL-safe alphabet families. It uses NEON table lookup, vector shifts/masks,
-  and byte-select alphabet mapping for fixed 12-byte input blocks, then clears
-  used NEON registers before returning. NEON is mandatory for the admitted
-  little-endian AArch64 target. Final tail and padding completion use scalar
-  code. Custom alphabets, big-endian AArch64, 32-bit `arm+neon`,
+  URL-safe alphabet families. Commit 29 uses exact 8+4-byte caller-input reads,
+  NEON table lookup, vector shifts/masks, and byte-select alphabet mapping for
+  fixed 12-byte blocks without stack staging or caller over-read. Strict
+  decode directly classifies 16 ASCII lanes, reduces the full validity mask
+  before output, compacts four quanta, and stores exactly 8+4 bytes. Production
+  loops clear all AArch64 vector registers once after the block sequence.
+  Runtime dispatch, `StaticBackendToken`, operation-specific KATs,
+  checked-backend comparison, quarantine, and per-operation reports share the
+  same kernel boundary. Final tail and padding completion use scalar code.
+  Custom alphabets, big-endian AArch64, 32-bit `arm+neon`,
   line-ending insertion, and every decode surface outside the separate
   AVX-512/AVX2/SSSE3/SSE4.1/NEON strict decode admission stay scalar. In-place
   encode may enter only through stack staging.
@@ -375,6 +385,19 @@ bit-select, decode packing, and cleanup instructions. Cross-host runs record
 NEON library assembly and compile evidence; real AArch64 hosts must also run
 `scripts/check_aarch64_linux.sh` or `scripts/check_macos.sh` for test-harness
 execution evidence.
+
+Commit 29 also provides a focused cross-host AArch64 evidence gate:
+
+```sh
+scripts/check-2.0-neon-hot-paths.sh
+```
+
+On little-endian AArch64 this executes exhaustive direct-kernel tests, static
+`no_std` and checked-static tokens, fuzz-build contracts, and optional exact
+performance evidence. On other hosts it cross-checks AArch64 compilation,
+Clippy, direct-kernel source invariants, and generated release assembly. Set
+`BASE64_NG_RUN_COMMIT29_PERF=1` on both an Apple Silicon Mac and a server-class
+AArch64 Linux host to produce and validate the required hardware campaign.
 
 ## Required Before SIMD Code Lands
 

@@ -136,6 +136,7 @@ for required_script in \
     "scripts/check-2.0-format-append-chunks.sh" \
     "scripts/check-2.0-in-place.sh" \
     "scripts/check-2.0-in-place-sanitizers.sh" \
+    "scripts/check-2.0-neon-hot-paths.sh" \
     "scripts/check-2.0-x86-decode-hot-paths.sh" \
     "scripts/check-2.0-profiles.sh" \
     "scripts/check-2.0-secret-capabilities.sh" \
@@ -523,6 +524,7 @@ for required_package_file in \
     "docs/INVARIANTS.md" \
     "docs/KANI.md" \
     "docs/MIGRATION.md" \
+    "docs/NEON_COMMIT29_EVIDENCE.md" \
     "docs/PANIC_POLICY.md" \
     "docs/PLAN.md" \
     "docs/RELEASE.md" \
@@ -538,12 +540,14 @@ for required_package_file in \
     "portability/2_0_migration_smoke/src/lib.rs" \
     "portability/feature_contract_smoke/src/main.rs" \
     "portability/feature_unification_smoke/src/lib.rs" \
+    "portability/aarch64_static_neon_smoke/src/main.rs" \
     "portability/x86_static_encode_smoke/src/main.rs" \
     "scripts/check-2.0-feature-contract.sh" \
     "scripts/check-2.0-const-buffers.sh" \
     "scripts/check-2.0-format-append-chunks.sh" \
     "scripts/check-2.0-in-place.sh" \
     "scripts/check-2.0-in-place-sanitizers.sh" \
+    "scripts/check-2.0-neon-hot-paths.sh" \
     "scripts/check-2.0-one-shot.sh" \
     "scripts/check-2.0-profiles.sh" \
     "scripts/check-2.0-secret-capabilities.sh" \
@@ -576,7 +580,9 @@ for required_package_file in \
     "scripts/ci_install_rust.sh" \
     "scripts/generate-sbom.sh" \
     "scripts/generate_ct_asm_evidence.sh" \
+    "scripts/generate_neon_asm_evidence.sh" \
     "scripts/test-ct-asm-symbols.sh" \
+    "scripts/test-neon-performance.py" \
     "scripts/reproducible_build_check.sh" \
     "scripts/release_crates.py" \
     "scripts/stable_release_gate.sh" \
@@ -585,6 +591,7 @@ for required_package_file in \
     "scripts/validate-dependencies.sh" \
     "scripts/validate-doc-versions.sh" \
     "scripts/validate-msrv-policy.sh" \
+    "scripts/validate-neon-performance.py" \
     "scripts/validate-panic-policy.sh" \
     "scripts/validate-release-metadata.sh" \
     "scripts/validate-simd-encode-admission-draft.sh" \

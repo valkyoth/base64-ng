@@ -66,6 +66,21 @@ implementation and are absent from normal crate builds. This prevents a
 benchmark from claiming that a tier ran merely because a higher tier was
 selected by production dispatch.
 
+Commit 29 adds the matching focused campaign for little-endian AArch64 NEON:
+
+```sh
+BASE64_NG_RUN_COMMIT29_PERF=1 scripts/check-2.0-neon-hot-paths.sh
+```
+
+Run it on both an Apple Silicon macOS host and a server-class AArch64 Linux
+host. The matrix compares exact scalar and NEON encode/strict-decode operations
+for Standard and URL-safe, padded and unpadded profiles from one native block
+through 64 KiB. For raw inputs of at least 192 bytes, the mutation-tested
+validator requires the NEON encode and decode medians to exceed the matching
+scalar medians by `BASE64_NG_NEON_PERF_RATIO` (default `1.02`). These results
+are local hardware evidence only; they do not generalize to other cores,
+operating systems, thermal states, or compiler versions.
+
 ## Artifact Contract
 
 The generated directory contains:

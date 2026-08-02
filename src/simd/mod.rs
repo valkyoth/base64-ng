@@ -28,14 +28,7 @@
 //! fixed-block implementation is reachable only for the admitted wasm runtime
 //! profile and remains scoped out of broader browser/JIT claims.
 
-#[cfg(any(
-    all(
-        target_arch = "aarch64",
-        target_endian = "little",
-        any(test, feature = "simd")
-    ),
-    all(target_arch = "wasm32", any(test, feature = "simd"))
-))]
+#[cfg(all(target_arch = "wasm32", any(test, feature = "simd")))]
 mod decode_helpers;
 mod static_token;
 pub use static_token::StaticBackendToken;
@@ -80,6 +73,13 @@ pub(super) use x86::{
     target_endian = "little"
 ))]
 mod neon_decode_tests;
+#[cfg(all(
+    feature = "std",
+    test,
+    target_arch = "aarch64",
+    target_endian = "little"
+))]
+mod neon_direct_tests;
 #[cfg(all(target_arch = "wasm32", any(test, feature = "simd")))]
 mod wasm;
 #[cfg(all(

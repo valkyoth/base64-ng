@@ -16,7 +16,7 @@ fi
 toolchain="$(rustup show active-toolchain | sed 's/ .*//')"
 rustc_path="$(rustup which --toolchain "$toolchain" rustc)"
 host="$(rustup run "$toolchain" rustc -vV | sed -n 's/^host: //p')"
-script_revision="2026-07-02-aarch64-linux-v2"
+script_revision="2026-08-02-commit29-neon-v3"
 
 cargo_check() {
     RUSTC="$rustc_path" rustup run "$toolchain" cargo "$@"
@@ -59,6 +59,9 @@ cargo_check test --target "$host" --features simd neon_decode_block_matches_scal
 
 echo "AArch64 Linux checks: backend evidence"
 scripts/check_backend_evidence.sh
+
+echo "AArch64 Linux checks: Commit 29 direct NEON admission"
+scripts/check-2.0-neon-hot-paths.sh
 
 echo "AArch64 Linux checks: SIMD feature bundles"
 scripts/check_simd_feature_bundles.sh

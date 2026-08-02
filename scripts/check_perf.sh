@@ -41,6 +41,7 @@ run_perf test --manifest-path perf/Cargo.toml --bins
 
 echo "perf checks: evidence validator mutations"
 scripts/test-perf-evidence.py
+scripts/test-neon-performance.py
 
 echo "perf checks: correctness before evidence"
 run_perf run --quiet --release --manifest-path perf/Cargo.toml -- correctness

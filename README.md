@@ -139,7 +139,7 @@ Implemented on this branch now:
 - Constant-time assembly evidence generation for reviewer inspection.
 - Runtime-dispatched std `x86`/`x86_64` AVX-512 VBMI fixed-block encode,
   falling back to AVX2, then SSSE3/SSE4.1, and then scalar, plus
-  little-endian std `aarch64` NEON fixed-block encode, for Standard and
+  little-endian `aarch64` NEON fixed-block encode, for Standard and
   URL-safe alphabets behind the SIMD admission boundary. Public slice,
   clear-tail, alloc, and wrapped encode helpers can use admitted fixed-block
   encode for their unwrapped encoding step. All input lengths are supported:
@@ -147,11 +147,13 @@ Implemented on this branch now:
   completed by the scalar encoder. In-place encode may use admitted encode
   backends only after stack staging protects unread input bytes. Unsupported
   CPUs, custom alphabets, and line-ending insertion stay scalar. `no_std`
-  acceleration requires complete compile-time target features and the backend
-  health latch; otherwise it stays scalar.
+  acceleration requires complete compile-time target features, the backend
+  health latch, and a `StaticBackendToken`; otherwise it stays scalar. The 2.0
+  Commit 29 implementation uses direct exact-width NEON kernels and clears
+  vector state once after each complete block loop.
 - Runtime-dispatched std `x86`/`x86_64` AVX-512 VBMI fixed-block strict decode
   in the `1.3.0` line, falling back to AVX2, then
-  SSSE3/SSE4.1, and then scalar, plus little-endian std `aarch64` NEON
+  SSSE3/SSE4.1, and then scalar, plus little-endian `aarch64` NEON
   fixed-block strict decode, limited to Standard and URL-safe alphabets after
   whole-input scalar validation. Public strict decode supports every valid
   encoded length: fixed blocks may be accelerated, while short inputs and
@@ -162,7 +164,9 @@ Implemented on this branch now:
   decode backends only after stack staging. Unsupported CPUs, big-endian
   AArch64, custom alphabets, and CT secret decode stay scalar. `no_std`
   acceleration requires complete compile-time target features and backend
-  health support.
+  health support and a `StaticBackendToken`. The direct NEON block validates
+  every lane before its first exact-width output store; whole-input scalar
+  validation preserves the public strict error contract.
 - Runtime-dispatched wasm `simd128` fixed-block encode and normal strict
   decode for Standard and URL-safe alphabets when built for `wasm32` with
   `target-feature=+simd128`, `simd`, and
@@ -1450,9 +1454,10 @@ Amazon Graviton instance:
 scripts/check_aarch64_linux.sh
 ```
 
-This runs the host tests, all-feature tests, clippy, NEON encode block
+This runs the host tests, all-feature tests, clippy, direct NEON encode/decode
 evidence, backend evidence, SIMD feature-bundle checks, and SIMD admission
-validators on the real AArch64 host.
+validators on the real AArch64 host. For the Commit 29 measured campaign, run
+the device script with `BASE64_NG_RUN_COMMIT29_PERF=1`.
 
 Required security tools:
 

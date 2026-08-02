@@ -947,18 +947,13 @@ Safety argument:
 
 Location: `src/simd/`
 
-Status: admitted little-endian std AArch64 NEON encode wrapper for Standard
-and URL-safe alphabet families. It is reachable through AArch64 encode
-dispatch for fixed 12-byte blocks. Big-endian AArch64, 32-bit ARM, unsupported
-alphabets, `no_std`, and decode use scalar fallback. In-place encode may enter
-only through stack staging. Final tail and padding completion use scalar code.
+Status: test-facing wrapper for the admitted little-endian AArch64 NEON direct
+encode kernel. Production slice routing uses `encode_full_blocks_neon` and
+clears vector state once after the complete block sequence.
 
 Purpose:
 
-- Exercise ARM NEON intrinsic plumbing.
-- Validate the unsafe boundary on ARM targets.
-- Provide the fixed-block vector encode primitive for the admitted AArch64 NEON
-  encode backend.
+- Provide fixed-block test access to the direct AArch64 NEON encode kernel.
 - Keep 32-bit `arm+neon` and custom alphabets on scalar-equivalence scaffold
   paths until their architecture-specific evidence is complete.
 
@@ -972,8 +967,8 @@ Preconditions:
 
 Unsafe operations:
 
-- On `aarch64` with Standard or URL-safe alphabets, this wrapper calls
-  `encode_12_bytes_neon_aarch64_standard_family`.
+- On little-endian `aarch64` with Standard or URL-safe alphabets, this wrapper
+  calls `direct::encode_12_bytes` and then expands the reviewed cleanup macro.
 - On 32-bit `arm+neon`, `vdupq_n_u8` constructs one 128-bit NEON zero vector
   and `vst1q_u8` stores that vector into the output buffer before the scalar
   fallback overwrites the block.
@@ -989,31 +984,30 @@ Safety argument:
 - Runtime dispatch reaches the AArch64 vector path only on little-endian std
   AArch64, where NEON is part of the target contract. Direct tests use the
   same availability precondition.
-- Register-retention note: the AArch64 vector path loads caller bytes into NEON
-  state and expands `clear_neon_registers_after_vector_block!` directly inside
-  the block function before return. This is retention reduction for the
-  admitted encode block, not a formal microarchitectural side-channel proof.
+- Production dispatch does not use this test wrapper. It processes every full
+  block through `encode_full_blocks_neon` and clears vector state once after
+  the loop.
 
 ### `decode_slice_neon`
 
 Location: `src/simd/neon.rs`
 
-Status: admitted little-endian std AArch64 strict decode dispatch wrapper for
-Standard and URL-safe alphabet families. It is reachable only when the `simd`
-and `std` features are enabled on little-endian `aarch64`.
+Status: admitted little-endian AArch64 strict decode dispatch wrapper for
+Standard and URL-safe alphabet families. It is reachable through runtime
+`std` dispatch or a health-gated static `no_std` token.
 
 Purpose:
 
-- Carve full encoded input blocks into fixed-size array references for the
-  NEON target decode block function.
+- Carve full unpadded encoded input blocks into exact fixed-size references for
+  the direct NEON decode kernel.
 - Preserve scalar public error shape by validating the complete input before
-  any NEON block output is copied to caller-visible buffers.
+  any direct NEON output is written.
 - Fall back to scalar for shorter tails or unsupported surfaces.
 
 Preconditions:
 
-- Runtime dispatch has selected little-endian AArch64 NEON. NEON is mandatory
-  for the admitted AArch64 target.
+- Runtime dispatch or `StaticBackendToken` has admitted little-endian AArch64
+  NEON. NEON is mandatory for the admitted target.
 - The input block loop guard proves that each carved block is fully within the
   original input slice.
 - The output capacity has been checked against the scalar validated decoded
@@ -1021,22 +1015,22 @@ Preconditions:
 
 Unsafe operation:
 
-- The wrapper uses `input.as_ptr().add(read).cast::<[u8; 16]>()` and
-  dereferences the result to pass a fixed-size block reference to
-  `decode_16_bytes_neon`.
+- The full-block loop casts preflighted input/output offsets to exact
+  `[u8; 16]` and `[u8; 12]` block references and calls
+  `direct::decode_16_bytes`.
 
 Safety argument:
 
 - `read + 16 <= input.len()` is checked before every raw-pointer block carve.
 - `read` advances by exactly 16, so the pointer remains within the same input
   allocation and never crosses the slice boundary.
-- The wrapper never constructs a mutable alias to input memory.
-- Output writes go through a private stack staging buffer first. Bytes are
-  copied to caller output only after whole-input scalar validation and block
-  equality checks inside `decode_16_bytes_neon`.
-- Any unexpected block-level error wipes the local decoded staging buffer and
-  rebases the error index to the original input. Tail fallback errors are also
-  rebased to the original input offset.
+- Output capacity is preflighted and write offsets advance by exactly 12.
+- The direct kernel classifies all 16 lanes before its first exact-width output
+  store. An unexpected classification disagreement causes a full scalar retry,
+  which overwrites any earlier valid-prefix output.
+- The final padded quantum is excluded from SIMD and decoded by the scalar tail.
+- Vector state is cleared once after the complete block sequence, including an
+  unexpected classification failure.
 - Unsupported alphabets, short inputs, tails, CT secret decode, `no_std`, and
   32-bit ARM stay scalar. Strict in-place decode may enter this backend only
   after whole-input scalar validation and stack staging. Wrapped and legacy
@@ -1044,22 +1038,58 @@ Safety argument:
   validation, line-ending compaction, or legacy-whitespace compaction. Wasm
   decode is admitted only through its separate narrow `simd128` profile.
 
+### `decode_full_blocks_neon`
+
+Location: `src/simd/neon.rs`
+
+Status: private direct-block loop used by the admitted little-endian AArch64
+NEON strict decoder after whole-input scalar validation.
+
+Purpose:
+
+- Decode each complete 16-byte, non-padding input block directly into its exact
+  12-byte output region.
+- Return the input and output offsets for the scalar tail without decoding or
+  storing beyond the complete-block prefix.
+
+Preconditions:
+
+- The caller has completed strict scalar validation for the entire input and
+  checked the output capacity against the resulting decoded length.
+- Runtime dispatch or a health-gated `StaticBackendToken` has admitted NEON on
+  little-endian AArch64.
+- The caller excludes the final padded quantum from the direct-block prefix.
+
+Unsafe operation:
+
+- Preflighted input and output offsets are cast to exact `[u8; 16]` and
+  `[u8; 12]` references before calling `direct::decode_16_bytes`.
+
+Safety argument:
+
+- Every iteration checks that a complete input and output block remains before
+  constructing either reference.
+- The fixed increments match the exact 16-to-12 Base64 block relationship, so
+  neither pointer can leave its originating slice allocation.
+- `direct::decode_16_bytes` validates all lanes before either exact-width
+  output store. A disagreement with the completed scalar validation aborts the
+  direct loop and causes the caller to retry the whole operation through the
+  scalar backend.
+- The caller clears the used AArch64 vector-register set after the complete
+  block sequence and before observing either success or failure.
+
 ### `decode_16_bytes_neon`
 
 Location: `src/simd/neon.rs`
 
-Status: admitted little-endian std AArch64 NEON strict decode block for Standard and
-URL-safe alphabet families. It is reachable through strict decode dispatch for
-full 16-byte encoded blocks after whole-input scalar validation.
+Status: test-facing scalar-validation wrapper around the direct little-endian
+AArch64 NEON strict decode block. Production uses
+`src/simd/neon/direct.rs::decode_16_bytes` after one whole-input validation.
 
 Purpose:
 
-- Provide the fixed-block AArch64 NEON decode primitive for the admitted strict
-  decode boundary without changing scalar public error behavior.
-- Exercise NEON 6-bit-value packing for a 16-byte encoded block that produces
-  at most 12 decoded bytes.
-- Preserve scalar validation, padding, canonicality, and error behavior as the
-  source of truth.
+- Preserve the historical test helper while exercising the direct kernel on a
+  canonical, unpadded 16-byte block.
 
 Preconditions:
 
@@ -1071,37 +1101,21 @@ Preconditions:
 
 Unsafe operation:
 
-- `vld1q_u8` loads a local 16-byte sextet-value staging array.
-- NEON shifts, masks, and OR operations pack four 4-symbol quads into decoded
-  bytes in 32-bit lanes.
-- `vqtbl1q_u8` compacts the first three bytes of each lane into a contiguous
-  12-byte prefix using a fixed mask.
-- `vst1q_u8` stores into a local 16-byte packed buffer.
-- `clear_neon_registers_after_vector_block!` clears `v0` through `v31` inside
-  the prototype before return.
+- Calls the direct kernel after scalar block validation, then clears vector
+  state before returning to the test.
 
 Safety argument:
 
-- Scalar decode runs first and returns any malformed-input error before the
-  prototype copies bytes to caller-visible output.
-- The input and output array types provide fixed readable and writable bounds.
-- The vector store writes only to a local 16-byte packed buffer; the caller
-  output receives at most the scalar-validated `written` prefix, and only after
-  an unconditional release-mode equality check proves the vector-packed prefix
-  matches the scalar-validation prefix.
-- The compaction mask contains only valid source indices or zero lanes.
-- Staging, packed, and scalar-output buffers are wiped before successful return
-  or along the error path.
-- The NEON target-feature contract enables the required instructions.
-- The public dispatch wrapper validates the complete input with scalar before
-  calling this block function and rebases any unexpected block error to the
-  original input offset.
+- Scalar validation rejects malformed, padded, or non-canonical test blocks
+  before direct output.
+- Fixed array types provide exact readable and writable bounds.
+- The direct kernel's safety argument is recorded separately below.
 
-### `encode_12_bytes_neon_aarch64_standard_family`
+### `direct::encode_12_bytes`
 
-Location: `src/simd/neon.rs`
+Location: `src/simd/neon/direct.rs`
 
-Status: private helper for the admitted AArch64 NEON encode block and its tests.
+Status: production direct kernel for admitted little-endian AArch64 NEON encode.
 
 Purpose:
 
@@ -1117,80 +1131,76 @@ Preconditions:
 
 Unsafe operation:
 
-- `vld1q_u8` loads from a local 16-byte staging array that contains the 12-byte
-  input plus four zero bytes.
+- `vld1_u8` reads exactly the first eight input bytes and `read_unaligned`
+  reads exactly the final four bytes; vector lane construction inserts zeros
+  without a 16-byte caller-input over-read.
 - `vld1q_u8` loads a fixed shuffle mask.
-- `vqtbl1q_u8` reshapes staged bytes into four 24-bit lanes without reading
-  past the fixed staging array.
+- `vqtbl1q_u8` reshapes the exact input into four 24-bit lanes.
 - NEON shifts, masks, and OR operations produce sixteen 6-bit indices.
-- `encode_standard_family_indices_neon` maps those indices to Standard or
+- `encode_standard_family_indices` maps those indices to Standard or
   URL-safe alphabet bytes with NEON comparisons and bit selects.
 - `vst1q_u8` stores the 16 encoded bytes into the output buffer.
-- `clear_neon_registers_after_vector_block!` clears `v0` through `v31` inside
-  the block function before return.
-- The local staging array is wiped with the crate cleanup primitive before the
-  function returns.
 
 Safety argument:
 
 - The input and output array types provide fixed readable and writable bounds.
-- The SIMD load reads only from a local 16-byte staging array, so the helper
-  does not over-read the 12-byte caller input.
-- The staging array is mutable and wiped after the SIMD store and register
-  cleanup, reducing stack retention of the copied caller bytes.
+- Exact 8+4-byte reads remain within the 12-byte caller input.
 - The function is guarded by a NEON target-feature contract.
 - The index vector is masked to `0..=63` before alphabet mapping.
 - The output length is fixed by the output array type.
 - Runtime dispatch reaches this helper only through the admitted AArch64 NEON
   encode wrapper.
 
-### `encode_standard_family_indices_neon`
+### `direct::decode_16_bytes`
 
-Location: `src/simd/neon.rs`
+Location: `src/simd/neon/direct.rs`
 
-Status: private helper for the admitted AArch64 NEON encode block and its tests.
+Status: production direct kernel for admitted little-endian AArch64 strict
+decode.
 
 Purpose:
 
-- Map sixteen 6-bit indices to Standard or URL-safe alphabet bytes with NEON
-  comparisons and bit selects instead of scalar per-byte table indexing.
+- Classify and decode one exact 16-byte unpadded Standard-family block to 12
+  bytes without scalar per-block decode, value staging, or scalar comparison.
 
 Preconditions:
 
 - Caller must prove NEON is available on the current CPU.
-- `indices` contains only byte values in `0..=63`.
+- Input and output are exact fixed arrays.
 - The alphabet must be Standard-family as checked by the caller.
 
 Unsafe operation:
 
-- NEON byte comparisons, arithmetic, and bit-select operations compute the
-  ASCII output byte for each index.
+- `vld1q_u8` reads exactly 16 bytes.
+- Range/equality masks classify and map ASCII to six-bit values.
+- `vminvq_u8` requires every lane to be valid before any output store.
+- Shift/mask packing and `vqtbl1q_u8` compact four quanta.
+- `vst1_u8` plus `write_unaligned` store exactly 8+4 output bytes.
 
 Safety argument:
 
-- The helper does not dereference raw pointers or access memory.
-- The target-feature contract enables the required NEON instructions.
-- The caller constructs `indices` with masks that constrain every byte to a
-  six-bit Base64 value.
-- The helper is private to the Standard-family NEON encode path.
+- Fixed arrays bound the exact load and stores.
+- Output is untouched when any lane is invalid because validity reduction
+  precedes both stores.
+- The compaction mask contains only valid source indices or zero lanes.
+- The target-feature contract enables every NEON instruction.
 
 ### `clear_neon_registers_after_vector_block!`
 
 Location: `src/simd/neon.rs`
 
-Status: private macro for the admitted AArch64 NEON encode and strict decode
-blocks and their tests.
+Status: private macro for admitted AArch64 NEON encode/decode loop boundaries
+and direct-kernel tests.
 
 Purpose:
 
-- Clear AArch64 NEON registers used by the vector block before returning from
-  paths that process caller bytes in vector registers.
+- Clear AArch64 vector registers once after a complete direct block sequence.
 
 Preconditions:
 
 - Called only after the vector block has stored its local output and no later
   NEON value is needed by the function.
-- Expanded directly inside the vector block function. It must not be moved to a
+- Expanded directly inside the loop owner or test wrapper. It must not be moved to a
   separate function because an AArch64 helper can save and restore callee-saved
   `v8` through `v15`, undoing register clearing in the helper frame.
 
@@ -1202,7 +1212,8 @@ Unsafe operation:
 Safety argument:
 
 - The macro does not read or write memory.
-- The macro expands at the end of the NEON vector block path.
+- Production paths expand the macro once after the full block loop, not once
+  per block.
 - Clobbered registers are declared to the compiler with explicit `out("vN")`
   operands.
 - This is best-effort register-retention reduction for SIMD evidence, not a

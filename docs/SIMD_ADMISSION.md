@@ -24,6 +24,10 @@ only for backends named in this file and the release gate.
   bytes, AVX2 for 32 bytes through 16 KiB minus one, and AVX-512 VBMI from
   16 KiB when the complete feature bundles and operation-specific KATs pass.
   Exact static/evidence AVX-512 calls retain their 64-byte minimum.
+- Automatic AArch64 NEON length policy: scalar below 192 raw bytes for encode
+  and below 256 encoded bytes for strict decode; NEON at and above those
+  conservative Commit 29 crossovers. Exact static/evidence calls retain the
+  native 12-byte encode and 16-byte decode block boundaries.
 - Public performance claims: none without local benchmark evidence.
 - Release status: `1.3.9`; `1.2.0` admitted conservative active encode
   dispatch, and `1.3.0` admitted normal strict decode dispatch for the first
@@ -44,6 +48,11 @@ only for backends named in this file and the release gate.
   RISC-V RVV proof and admission review to `1.3.10`. The 2.0 Commit 24
   checkpoint adds direct KAT, health generation, quarantine, checked-backend,
   and static `no_std` admission without expanding alphabet or secret scope.
+  The 2.0 Commit 29 checkpoint replaces the AArch64 prototype architecture
+  with direct exact-width NEON encode and strict-decode kernels, one cleanup at
+  each complete block-loop boundary, checked-backend quarantine, static
+  `no_std` token execution, exhaustive real-device tests, and measured
+  Apple/server ARM evidence gates.
   Active encode dispatch uses the length policy above on x86/x86_64 and NEON
   on little-endian aarch64 for
   Standard and URL-safe alphabet families. AVX-512 VBMI strict decode is
@@ -65,6 +74,10 @@ The post-`1.3.2` non-standard surface review is tracked in
 That ledger records incremental non-standard surface admissions, pins the
 current scalar/fallback posture for surfaces not yet admitted, and lists
 evidence required before any broader surface can be advertised.
+
+The 2.0 Commit 29 direct-kernel, real-device, assembly, static-token, and
+performance contract is recorded in
+[NEON_COMMIT29_EVIDENCE.md](NEON_COMMIT29_EVIDENCE.md).
 
 ## `1.3.0` Decode Admission Scope Freeze
 
@@ -168,7 +181,7 @@ State labels are intentionally strict:
 | AVX-512 VBMI | admitted backend | `avx512f`, `avx512bw`, `avx512vl`, `avx512vbmi` | x86/x86_64 runtime-dispatched or static-token encode and strict decode for Standard and URL-safe alphabet families; automatic encode selects AVX-512 at 192 bytes while exact calls retain the 48-byte minimum; automatic strict decode selects AVX-512 at 16 KiB while exact calls retain the 64-byte minimum; Commit 28 decode directly classifies ASCII, maps 6-bit values, multiply-add packs, VBMI-compacts, and masked-stores exact 48-byte blocks after whole-input scalar validation preserves canonicality, diagnostics, sizing, and transactional rejection; tails remain scalar; in-place operations may enter only through stack staging; wrapped and legacy decode may enter after scalar validation and compaction; unsupported alphabets, CT secret decode, line/whitespace processing, and `no_std` without complete static target-feature, KAT, generation, and health evidence use scalar fallback |
 | AVX2 | admitted backend | `avx2` | x86/x86_64 runtime-dispatched or static-token encode and strict decode for Standard and URL-safe alphabet families; encode uses fixed 24-byte input blocks; Commit 27 strict decode performs direct vector ASCII classification, 6-bit mapping, packing, and exact two-lane 24-byte stores for fixed 32-byte unpadded blocks after one whole-input scalar validation preserves canonicality, exact diagnostics, required length, and transactional rejection; final padding and short tails are scalar; in-place encode/decode may enter only through stack staging; wrapped and legacy decode may enter after scalar validation and compaction; unsupported alphabets, CT secret decode, line/whitespace processing, and `no_std` without complete static target-feature, KAT, generation, and health evidence use scalar fallback |
 | SSSE3/SSE4.1 | admitted backend | `ssse3`, `sse4.1` | x86/x86_64 runtime-dispatched or static-token encode and strict decode for Standard and URL-safe alphabet families; encode uses fixed 12-byte input blocks; Commit 27 strict decode performs direct vector ASCII classification, 6-bit mapping, packing, and an exact 12-byte store for fixed 16-byte unpadded blocks after one whole-input scalar validation preserves canonicality, exact diagnostics, required length, and transactional rejection; final padding and short tails are scalar; in-place encode/decode may enter only through stack staging; wrapped and legacy decode may enter after scalar validation and compaction; unsupported alphabets, CT secret decode, line/whitespace processing, and `no_std` without complete static target-feature, KAT, generation, and health evidence use scalar fallback |
-| NEON | admitted backend | `neon` | little-endian std aarch64 runtime-dispatched encode and strict decode for Standard and URL-safe alphabet families; encode uses fixed 12-byte input blocks and completes any final tail/padding through scalar code; in-place encode may enter only through stack staging; decode uses fixed 16-byte encoded blocks only after whole-input scalar validation preserves public error shape; strict in-place decode may enter only through stack staging; wrapped and legacy decode may enter after scalar line-profile validation, line-ending compaction, or legacy-whitespace compaction; shorter inputs, unsupported alphabets, big-endian AArch64, 32-bit ARM, CT secret decode, line-ending insertion/compaction, whitespace compaction, and `no_std` without complete static target-feature and health evidence use scalar fallback |
+| NEON | admitted backend | `neon` | little-endian aarch64 runtime-dispatched or statically token-admitted encode and strict decode for Standard and URL-safe alphabet families; direct encode uses exact 8+4-byte reads for 12-byte blocks; direct decode classifies all 16 lanes before exact 8+4-byte stores; one vector cleanup follows each complete block loop; automatic dispatch uses the documented 192-byte encode and 256-byte encoded-decode crossovers; exact static/evidence calls retain native block minima; tails/padding remain scalar; in-place, wrapped, and legacy surfaces enter only after their documented staging/validation/compaction; unsupported alphabets, big-endian AArch64, 32-bit ARM, CT secret decode, line-ending insertion/compaction, and whitespace compaction remain scalar |
 | wasm `simd128` | admitted backend | `simd128` | ordinary wasm32 runtime-dispatched encode and strict decode for Standard and URL-safe alphabet families when compiled with `target-feature=+simd128` and the `simd` feature; wasm encode stages vector output, compares it against scalar output before copying to caller output, completes any final tail/padding through scalar code, and may serve in-place encode only through stack staging; strict in-place decode may enter only through stack staging; wrapped and legacy decode may enter after scalar line-profile validation, line-ending compaction, or legacy-whitespace compaction; Node/V8, Wasmtime, Chromium-family browser, Firefox/SpiderMonkey, and Safari/WebKit runtime smoke evidence proves active encode/decode reporting, a deterministic length sweep, independent scalar reference encode checks, malformed-input rejection, and round trips; shorter inputs, unsupported alphabets, CT secret decode, line-ending insertion/compaction, whitespace compaction, and broader browser-specific claims remain scalar, out of scope, or separately reviewed |
 
 ## Encode Surface Review

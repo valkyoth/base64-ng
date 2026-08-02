@@ -26,6 +26,8 @@ use crate::{checked_encoded_len, wipe_bytes};
 const MIN_SIMD_ENCODE_BLOCK: usize = 12;
 #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
 const AVX512_ENCODE_AUTO_MIN_INPUT: usize = 192;
+#[cfg(all(feature = "simd", target_arch = "aarch64", target_endian = "little"))]
+const NEON_ENCODE_AUTO_MIN_INPUT: usize = 192;
 #[cfg(any(
     all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")),
     all(feature = "simd", target_arch = "aarch64", target_endian = "little"),
@@ -126,7 +128,24 @@ pub(crate) fn active_encode_backend_for_input(input_len: usize) -> EncodeBackend
         EncodeBackend::Scalar
     }
 
-    #[cfg(not(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64"))))]
+    #[cfg(all(feature = "simd", target_arch = "aarch64", target_endian = "little"))]
+    {
+        if candidate == EncodeBackend::Neon
+            && input_len >= NEON_ENCODE_AUTO_MIN_INPUT
+            && crate::v2::backend_health::admit(
+                crate::runtime::OperationKind::Encode,
+                crate::runtime::Backend::Neon,
+            )
+        {
+            return EncodeBackend::Neon;
+        }
+        EncodeBackend::Scalar
+    }
+
+    #[cfg(not(any(
+        all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")),
+        all(feature = "simd", target_arch = "aarch64", target_endian = "little")
+    )))]
     {
         let _ = input_len;
         if crate::v2::backend_health::admit(
@@ -264,7 +283,11 @@ where
 
 #[cfg(all(
     feature = "checked-backend",
-    any(target_arch = "x86", target_arch = "x86_64")
+    any(
+        target_arch = "x86",
+        target_arch = "x86_64",
+        all(target_arch = "aarch64", target_endian = "little")
+    )
 ))]
 pub(crate) fn encode_checked<A: Alphabet, const PAD: bool>(
     backend: crate::runtime::Backend,
@@ -289,7 +312,9 @@ fn backend_supports<A: Alphabet>(backend: EncodeBackend, input_len: usize) -> bo
             input_len >= 12 && crate::simd::ssse3_sse41_supports_alphabet::<A>()
         }
         #[cfg(all(feature = "simd", target_arch = "aarch64", target_endian = "little"))]
-        EncodeBackend::Neon => input_len >= 12 && crate::simd::neon_supports_alphabet::<A>(),
+        EncodeBackend::Neon => {
+            input_len >= NEON_ENCODE_AUTO_MIN_INPUT && crate::simd::neon_supports_alphabet::<A>()
+        }
         #[cfg(all(feature = "simd", target_arch = "wasm32"))]
         EncodeBackend::WasmSimd128 => {
             input_len >= 12 && crate::simd::wasm_simd128_supports_alphabet::<A>()
@@ -456,3 +481,11 @@ fn round_up_to_multiple_of_three(value: usize) -> Result<usize, EncodeError> {
             .ok_or(EncodeError::LengthOverflow)
     }
 }
+
+#[cfg(all(
+    test,
+    feature = "simd",
+    target_arch = "aarch64",
+    target_endian = "little"
+))]
+mod neon_policy_tests;

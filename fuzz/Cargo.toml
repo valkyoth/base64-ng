@@ -62,3 +62,10 @@ path = "fuzz_targets/x86_decode.rs"
 test = false
 doc = false
 bench = false
+
+[[bin]]
+name = "neon"
+path = "fuzz_targets/neon.rs"
+test = false
+doc = false
+bench = false

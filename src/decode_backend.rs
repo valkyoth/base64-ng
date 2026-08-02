@@ -15,6 +15,8 @@ mod checked;
 const MIN_SIMD_DECODE_BLOCK: usize = 16;
 #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
 const AVX512_DECODE_AUTO_MIN_INPUT: usize = 16 * 1024;
+#[cfg(all(feature = "simd", target_arch = "aarch64", target_endian = "little"))]
+const NEON_DECODE_AUTO_MIN_INPUT: usize = 256;
 
 /// Decode backend currently allowed to execute.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -103,7 +105,24 @@ pub(crate) fn active_decode_backend_for_input(input_len: usize) -> DecodeBackend
         DecodeBackend::Scalar
     }
 
-    #[cfg(not(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64"))))]
+    #[cfg(all(feature = "simd", target_arch = "aarch64", target_endian = "little"))]
+    {
+        if candidate == DecodeBackend::Neon
+            && input_len >= NEON_DECODE_AUTO_MIN_INPUT
+            && crate::v2::backend_health::admit(
+                crate::runtime::OperationKind::StrictDecode,
+                crate::runtime::Backend::Neon,
+            )
+        {
+            return DecodeBackend::Neon;
+        }
+        DecodeBackend::Scalar
+    }
+
+    #[cfg(not(any(
+        all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")),
+        all(feature = "simd", target_arch = "aarch64", target_endian = "little")
+    )))]
     {
         let _ = input_len;
         if crate::v2::backend_health::admit(
@@ -242,7 +261,11 @@ where
 
 #[cfg(all(
     feature = "checked-backend",
-    any(target_arch = "x86", target_arch = "x86_64")
+    any(
+        target_arch = "x86",
+        target_arch = "x86_64",
+        all(target_arch = "aarch64", target_endian = "little")
+    )
 ))]
 pub(crate) fn decode_checked<A: Alphabet, const PAD: bool>(
     backend: crate::runtime::Backend,
@@ -313,5 +336,18 @@ mod tests {
         assert!(super::avx512_auto_preferred(
             super::AVX512_DECODE_AUTO_MIN_INPUT
         ));
+    }
+
+    #[test]
+    #[cfg(all(feature = "simd", target_arch = "aarch64", target_endian = "little"))]
+    fn neon_automatic_policy_uses_scalar_below_measured_crossover() {
+        assert_eq!(
+            super::active_decode_backend_for_input(super::NEON_DECODE_AUTO_MIN_INPUT - 1),
+            DecodeBackend::Scalar
+        );
+        assert_eq!(
+            super::active_decode_backend_for_input(super::NEON_DECODE_AUTO_MIN_INPUT),
+            DecodeBackend::Neon
+        );
     }
 }

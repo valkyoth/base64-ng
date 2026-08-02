@@ -410,10 +410,9 @@ The release gate runs:
   fixed-block thresholds, short inputs, non-block tails, and padded or
   unpadded input
 - SIMD admission policy for the current release series, with AVX-512 VBMI,
-  AVX2, SSSE3/SSE4.1, and NEON encode admitted only for std x86/x86_64 or
-  little-endian std aarch64 Standard and URL-safe alphabets, AVX-512 VBMI,
-  AVX2, SSSE3/SSE4.1, and NEON strict decode admitted only for std x86/x86_64
-  or little-endian std aarch64 Standard and URL-safe alphabets, and no SIMD
+  AVX2, SSSE3/SSE4.1, and NEON encode/strict decode admitted for runtime-probed
+  `std` or health-gated static `no_std` execution on applicable x86/x86_64 or
+  little-endian AArch64 Standard and URL-safe alphabet families, and no SIMD
   performance claims without complete local benchmark evidence
 - unsafe-boundary validation that confines `allow(unsafe_code)` to the audited
   cleanup helpers in `src/cleanup.rs`, CT barrier/comparison helpers in
@@ -749,6 +748,13 @@ execution evidence. On non-x86 hosts it records a skip manifest. The generated
 files are written to `target/release-evidence/simd-asm/`. SIMD assembly and
 wasm LLVM-IR generation follow the same isolated-target, exact-artifact,
 locked-input, and source-binding policy as constant-time assembly evidence.
+
+Commit 29 adds `scripts/generate_neon_asm_evidence.sh`, which works from any
+host with the AArch64 Rust target and checks direct decode validity reduction,
+exact output stores, table compaction, alphabet selection, and register
+cleanup. `scripts/check-2.0-neon-hot-paths.sh` combines that codegen evidence
+with real-device exhaustive tests, static `no_std` execution, fuzz contracts,
+and optional Apple/server ARM performance campaigns.
 
 ## Performance Evidence
 

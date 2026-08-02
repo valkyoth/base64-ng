@@ -18,6 +18,7 @@ include = [
     "docs/**",
     "api-snapshots/**",
     "portability/2_0_migration_smoke/src/**",
+    "portability/aarch64_static_neon_smoke/src/**",
     "portability/feature_contract_smoke/src/**",
     "portability/feature_unification_smoke/src/**",
     "portability/no_alloc_smoke/src/**",

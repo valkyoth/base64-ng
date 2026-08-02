@@ -85,9 +85,9 @@ impl StaticBackendToken {
 
     /// Encodes with the statically admitted Standard-alphabet backend.
     ///
-    /// Commits 25 and 26 enable direct SSSE3/SSE4.1, AVX2, and AVX-512 VBMI
-    /// execution. Other token backends, or a token invalidated by quarantine,
-    /// use the scalar encoder.
+    /// Commits 25, 26, and 29 enable direct SSSE3/SSE4.1, AVX2, AVX-512 VBMI,
+    /// and little-endian `AArch64` NEON execution. Other token backends, or a
+    /// token invalidated by quarantine, use the scalar encoder.
     /// The `checked-backend` feature applies the same per-call redundant
     /// scalar comparison and quarantine policy as automatic dispatch.
     pub fn encode_standard<const PAD: bool>(
@@ -100,9 +100,9 @@ impl StaticBackendToken {
 
     /// Encodes with the statically admitted URL-safe-alphabet backend.
     ///
-    /// Commits 25 and 26 enable direct SSSE3/SSE4.1, AVX2, and AVX-512 VBMI
-    /// execution. Other token backends, or a token invalidated by quarantine,
-    /// use the scalar encoder.
+    /// Commits 25, 26, and 29 enable direct SSSE3/SSE4.1, AVX2, AVX-512 VBMI,
+    /// and little-endian `AArch64` NEON execution. Other token backends, or a
+    /// token invalidated by quarantine, use the scalar encoder.
     /// The `checked-backend` feature applies the same per-call redundant
     /// scalar comparison and quarantine policy as automatic dispatch.
     pub fn encode_url_safe<const PAD: bool>(
@@ -115,10 +115,9 @@ impl StaticBackendToken {
 
     /// Decodes strict Standard Base64 with the statically admitted backend.
     ///
-    /// Commits 27 and 28 enable direct SSSE3/SSE4.1, AVX2, and AVX-512 VBMI
-    /// execution. Non-x86 token backends remain scalar here until their own
-    /// rewrite commits admit the static decode operation. Invalid input retains
-    /// the ordinary strict decoder's exact diagnostics. Direct SIMD blocks are
+    /// Commits 27, 28, and 29 enable direct SSSE3/SSE4.1, AVX2, AVX-512 VBMI,
+    /// and little-endian `AArch64` NEON execution. Invalid input retains the
+    /// ordinary strict decoder's exact diagnostics. Direct SIMD blocks are
     /// whole-input prevalidated, but short scalar fallbacks retain the ordinary
     /// decoder's partial-output-on-error behavior.
     pub fn decode_standard<const PAD: bool>(
@@ -131,10 +130,9 @@ impl StaticBackendToken {
 
     /// Decodes strict URL-safe Base64 with the statically admitted backend.
     ///
-    /// Commits 27 and 28 enable direct SSSE3/SSE4.1, AVX2, and AVX-512 VBMI
-    /// execution. Non-x86 token backends remain scalar here until their own
-    /// rewrite commits admit the static decode operation. Invalid input retains
-    /// the ordinary strict decoder's exact diagnostics. Direct SIMD blocks are
+    /// Commits 27, 28, and 29 enable direct SSSE3/SSE4.1, AVX2, AVX-512 VBMI,
+    /// and little-endian `AArch64` NEON execution. Invalid input retains the
+    /// ordinary strict decoder's exact diagnostics. Direct SIMD blocks are
     /// whole-input prevalidated, but short scalar fallbacks retain the ordinary
     /// decoder's partial-output-on-error behavior.
     pub fn decode_url_safe<const PAD: bool>(
@@ -155,10 +153,22 @@ impl StaticBackendToken {
         }
         #[cfg(all(
             feature = "checked-backend",
-            any(target_arch = "x86", target_arch = "x86_64")
+            any(
+                target_arch = "x86",
+                target_arch = "x86_64",
+                all(target_arch = "aarch64", target_endian = "little")
+            )
         ))]
         match self.backend {
             Backend::Avx512Vbmi | Backend::Avx2 | Backend::Ssse3Sse41 => {
+                return crate::encode_backend::encode_checked::<A, PAD>(
+                    self.backend,
+                    input,
+                    output,
+                );
+            }
+            #[cfg(all(target_arch = "aarch64", target_endian = "little"))]
+            Backend::Neon => {
                 return crate::encode_backend::encode_checked::<A, PAD>(
                     self.backend,
                     input,
@@ -178,6 +188,10 @@ impl StaticBackendToken {
             }
             _ => {}
         }
+        #[cfg(all(target_arch = "aarch64", target_endian = "little"))]
+        if self.backend == Backend::Neon {
+            return crate::simd::encode_slice_neon::<A, PAD>(input, output);
+        }
         crate::scalar::encode_slice::<A, PAD>(input, output)
     }
 
@@ -191,10 +205,22 @@ impl StaticBackendToken {
         }
         #[cfg(all(
             feature = "checked-backend",
-            any(target_arch = "x86", target_arch = "x86_64")
+            any(
+                target_arch = "x86",
+                target_arch = "x86_64",
+                all(target_arch = "aarch64", target_endian = "little")
+            )
         ))]
         match self.backend {
             Backend::Avx512Vbmi | Backend::Avx2 | Backend::Ssse3Sse41 => {
+                return crate::decode_backend::decode_checked::<A, PAD>(
+                    self.backend,
+                    input,
+                    output,
+                );
+            }
+            #[cfg(all(target_arch = "aarch64", target_endian = "little"))]
+            Backend::Neon => {
                 return crate::decode_backend::decode_checked::<A, PAD>(
                     self.backend,
                     input,
@@ -213,6 +239,10 @@ impl StaticBackendToken {
                 return crate::simd::decode_slice_ssse3_sse41::<A, PAD>(input, output);
             }
             _ => {}
+        }
+        #[cfg(all(target_arch = "aarch64", target_endian = "little"))]
+        if self.backend == Backend::Neon {
+            return crate::simd::decode_slice_neon::<A, PAD>(input, output);
         }
         crate::scalar::decode_slice::<A, PAD>(input, output)
     }

@@ -39,6 +39,10 @@ Current fuzz targets:
   decode comparison against the scalar public contract, including exact error
   equality and rejected-output retention; canonical input is also checked
   against the independent `base64` oracle
+- `neon`: forced little-endian AArch64 NEON Standard and URL-safe encode and
+  strict-decode comparison against the scalar public contract and independent
+  canonical oracle; input is capped at 64 KiB and the target is a no-op on
+  non-AArch64 fuzz hosts
 
 `scripts/check_fuzz.sh` also runs the fuzz workspace supply-chain gates:
 
@@ -61,6 +65,7 @@ Committed corpus inputs are allowed only under:
 - `fuzz/corpus/differential/`
 - `fuzz/corpus/x86_encode/`
 - `fuzz/corpus/x86_decode/`
+- `fuzz/corpus/neon/`
 
 Each committed corpus input must be:
 
@@ -110,6 +115,7 @@ Expected files:
 - `profiles.txt`
 - `x86_encode.txt`
 - `x86_decode.txt`
+- `neon.txt`
 - `MANIFEST.txt`
 
 Smoke campaigns use temporary corpus and artifact directories under

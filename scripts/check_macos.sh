@@ -10,7 +10,7 @@ toolchain="$(rustup show active-toolchain | sed 's/ .*//')"
 rustc_path="$(rustup which --toolchain "$toolchain" rustc)"
 host="$(rustup run "$toolchain" rustc -vV | sed -n 's/^host: //p')"
 machine="$(uname -m)"
-script_revision="2026-07-02-host-target-v4"
+script_revision="2026-08-02-commit29-neon-v5"
 
 cargo_check() {
     RUSTC="$rustc_path" rustup run "$toolchain" cargo "$@"
@@ -90,6 +90,9 @@ if [ "$host" = "aarch64-apple-darwin" ]; then
 
     echo "macOS checks: NEON decode block evidence"
     cargo_check test --target "$host" --features simd neon_decode_block_matches_scalar_when_available -- --nocapture
+
+    echo "macOS checks: Commit 29 direct NEON admission"
+    scripts/check-2.0-neon-hot-paths.sh
 fi
 
 for target in aarch64-apple-darwin x86_64-apple-darwin; do
