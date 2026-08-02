@@ -101,7 +101,22 @@ if [ ! -s docs/UNSAFE.md ]; then
     exit 1
 fi
 
-unsafe_functions="$(sed -n 's/^[[:space:]]*\(\(pub(\(crate\|super\))[[:space:]]*\)\?\)unsafe[[:space:]]*fn[[:space:]]*\([A-Za-z0-9_][A-Za-z0-9_]*\).*/\4/p' $simd_boundary_files)"
+# Parse declaration tokens with POSIX awk. BSD sed does not support the GNU
+# basic-regex `\|` extension previously used here, which made the macOS
+# inventory appear empty even though the reviewed unsafe functions were present.
+unsafe_functions="$(awk '
+    {
+        for (field = 1; field + 2 <= NF; field += 1) {
+            if ($field == "unsafe" && $(field + 1) == "fn") {
+                symbol = $(field + 2)
+                sub(/[<(].*$/, "", symbol)
+                if (symbol ~ /^[A-Za-z_][A-Za-z0-9_]*$/) {
+                    print symbol
+                }
+            }
+        }
+    }
+' $simd_boundary_files)"
 
 if [ -z "$unsafe_functions" ]; then
     echo "unsafe boundary: expected documented prototype unsafe functions in src/simd/"
