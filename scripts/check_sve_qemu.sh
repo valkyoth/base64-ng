@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-script_revision="2026-08-02-commit33-sve-qemu-v1"
+script_revision="2026-08-02-commit35-sve-qemu-v2"
 evidence_dir="target/release-evidence/sve-qemu"
 target="aarch64-unknown-linux-musl"
 target_key="AARCH64_UNKNOWN_LINUX_MUSL"
@@ -29,6 +29,10 @@ runner_for_vq() {
     printf '%s' "qemu-aarch64 -cpu max,sve-max-vq=$1"
 }
 
+runner_for_fallback() {
+    printf '%s' "qemu-aarch64 -cpu max,sve=off"
+}
+
 cargo_target() {
     runner="$1"
     shift
@@ -52,6 +56,7 @@ require_command qemu-aarch64
 rustc --print cfg --target "$target" | grep -q 'target_arch="aarch64"'
 rustc --print cfg --target "$target" | grep -q 'target_endian="little"'
 
+runner_fallback="$(runner_for_fallback)"
 runner_128="$(runner_for_vq 1)"
 runner_256="$(runner_for_vq 2)"
 runner_512="$(runner_for_vq 4)"
@@ -63,25 +68,25 @@ echo "SVE QEMU checks: cargo=$(cargo --version)"
 echo "SVE QEMU checks: linker=$linker"
 
 echo "SVE QEMU checks: scalar/NEON fallback default-feature suite"
-cargo_target "$runner_128" test --target "$target" --lib --tests
+cargo_target "$runner_fallback" test --target "$target" --lib --tests -- --test-threads=1
 
 echo "SVE QEMU checks: scalar/NEON fallback all-feature suite"
-cargo_target "$runner_128" test --target "$target" --all-features --lib --tests
+cargo_target "$runner_fallback" test --target "$target" --all-features --lib --tests -- --test-threads=1
 
 echo "SVE QEMU checks: scalar/NEON fallback no-default suite"
-cargo_target "$runner_128" test --target "$target" --no-default-features --lib --tests
+cargo_target "$runner_fallback" test --target "$target" --no-default-features --lib --tests -- --test-threads=1
 
 echo "SVE QEMU checks: all-feature doctests"
-cargo_target "$runner_128" test --target "$target" --all-features --doc
+cargo_target "$runner_fallback" test --target "$target" --all-features --doc -- --test-threads=1
 
 echo "SVE QEMU checks: no-default doctests"
-cargo_target "$runner_128" test --target "$target" --no-default-features --doc
+cargo_target "$runner_fallback" test --target "$target" --no-default-features --doc -- --test-threads=1
 
 for vector in "128:$runner_128" "256:$runner_256" "512:$runner_512"; do
     bits="${vector%%:*}"
     runner="${vector#*:}"
     echo "SVE QEMU checks: SVE candidate vector length=$bits"
-    cargo_candidate "$runner" test --target "$target" --all-features --lib sve_ -- --nocapture
+    cargo_candidate "$runner" test --target "$target" --all-features --lib sve_ -- --nocapture --test-threads=1
 done
 
 echo "SVE QEMU checks: no_std static +sve candidate compile"
@@ -99,8 +104,10 @@ mkdir -p "$evidence_dir"
     echo "qemu=$(qemu-aarch64 --version | sed -n '1p')"
     echo "rustc=$(rustc --version)"
     echo "cargo=$(cargo --version)"
+    echo "fallback_cpu=max,sve=off"
     echo "candidate_vector_lengths=128,256,512"
     echo "candidate_isa=SVE"
+    echo "qemu_test_threads=1"
     echo "candidate_dispatch=internal-QEMU-only"
     echo "public_dispatch=admitted-NEON-or-scalar"
     echo "evidence_scope=portable and NEON fallback coverage plus non-admitted SVE encode/decode candidate correctness"
