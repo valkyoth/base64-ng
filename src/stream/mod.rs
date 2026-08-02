@@ -23,6 +23,20 @@
 //! output until `finish()` succeeds, and can inspect [`Decoder::is_failed`] for
 //! diagnostics after each write.
 //!
+//! Every input byte counted by a successful [`std::io::Write::write`] return
+//! is irrevocably prefix-committed to the adapter. Encoded or decoded output
+//! may still be buffered, but a caller must never replay that accepted input.
+//! A third-party writer that mutates external state and then returns `Err`
+//! violates the ordinary transactional intuition: this adapter cannot observe,
+//! infer, or roll back those undocumented side effects. Retrying may therefore
+//! duplicate whatever the writer changed before reporting failure.
+//!
+//! These unbounded ordinary adapters are deliberately not secret-decoding
+//! APIs. Secret-bearing input must first be collected under an application
+//! frame limit and then passed to a bounded staged `ct` or 2.0 secret decoder;
+//! the crate does not expose an unbounded stream that releases secret plaintext
+//! before complete-frame validation.
+//!
 //! The streaming adapters use fixed stack buffers up to 1024 bytes for bounded
 //! I/O staging. This keeps heap behavior predictable, but callers embedding
 //! these adapters in constrained `std` environments should account for that
@@ -73,6 +87,7 @@
 mod common;
 mod decoder;
 mod decoder_reader;
+mod driver;
 mod encoder;
 mod encoder_reader;
 mod queue;
@@ -83,7 +98,8 @@ pub use encoder::Encoder;
 pub use encoder_reader::EncoderReader;
 
 use common::{
-    decode_error_to_io, encode_error_to_io, redacted_inner_state, stream_decoder_failed_error,
-    stream_encoder_failed_error, trailing_input_after_padding_error,
+    redacted_inner_state, stream_decoder_failed_error, stream_encoder_failed_error,
+    trailing_input_after_padding_error,
 };
+use driver::{DecoderDriver, EncoderDriver};
 use queue::OutputQueue;

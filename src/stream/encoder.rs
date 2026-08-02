@@ -1,4 +1,4 @@
-use super::{OutputQueue, encode_error_to_io, redacted_inner_state, stream_encoder_failed_error};
+use super::{EncoderDriver, OutputQueue, redacted_inner_state, stream_encoder_failed_error};
 use crate::{Alphabet, Engine};
 use std::io::{self, Write};
 
@@ -15,8 +15,7 @@ where
 {
     inner: Option<W>,
     engine: Engine<A, PAD>,
-    pending: [u8; 2],
-    pending_len: usize,
+    driver: EncoderDriver,
     output: OutputQueue<1024>,
     finalized: bool,
     failed: bool,
@@ -32,8 +31,7 @@ where
         Self {
             inner: Some(inner),
             engine,
-            pending: [0; 2],
-            pending_len: 0,
+            driver: EncoderDriver::new::<A, PAD>(),
             output: OutputQueue::new(),
             finalized: false,
             failed: false,
@@ -67,14 +65,14 @@ where
     /// complete 3-byte Base64 encode quantum is available.
     #[must_use]
     pub const fn pending_len(&self) -> usize {
-        self.pending_len
+        self.driver.pending_input_len()
     }
 
     /// Returns whether this encoder currently holds a partial input
     /// quantum.
     #[must_use]
     pub const fn has_pending_input(&self) -> bool {
-        self.pending_len != 0
+        self.pending_len() != 0
     }
 
     /// Returns how many additional input bytes are needed to complete the
@@ -84,7 +82,7 @@ where
     #[must_use]
     pub const fn pending_input_needed_len(&self) -> usize {
         if self.has_pending_input() {
-            3 - self.pending_len
+            3 - self.pending_len()
         } else {
             0
         }
@@ -188,8 +186,7 @@ where
     }
 
     fn clear_pending(&mut self) {
-        crate::wipe_bytes(&mut self.pending);
-        self.pending_len = 0;
+        self.driver.wipe();
     }
 
     fn clear_output(&mut self) {
@@ -216,8 +213,9 @@ where
             .debug_struct("Encoder")
             .field("inner", &redacted_inner_state(self.inner.is_some()))
             .field("engine", &self.engine)
+            .field("driver", &"<redacted>")
             .field("pending", &"<redacted>")
-            .field("pending_len", &self.pending_len)
+            .field("pending_len", &self.pending_len())
             .field("pending_input_needed_len", &self.pending_input_needed_len())
             .field("buffered_output_len", &self.output.len())
             .field("buffered_output_capacity", &self.output.capacity())
@@ -264,37 +262,23 @@ where
     }
 
     fn queue_pending_final(&mut self) -> io::Result<()> {
-        if self.pending_len == 0 {
-            return Ok(());
-        }
-
-        let mut pending = [0u8; 2];
-        pending[..self.pending_len].copy_from_slice(&self.pending[..self.pending_len]);
-        let pending_len = self.pending_len;
         let mut encoded = [0u8; 4];
-        let result = self.queue_encoded_temp(&pending[..pending_len], &mut encoded);
-        crate::wipe_bytes(&mut pending);
-        result?;
-        self.clear_pending();
-        Ok(())
-    }
-
-    fn queue_encoded_temp(&mut self, input: &[u8], encoded: &mut [u8]) -> io::Result<()> {
-        let written = match self.engine.encode_slice(input, encoded) {
-            Ok(written) => written,
+        let step = match self.driver.finish(&mut encoded) {
+            Ok(step) => step,
             Err(err) => {
-                crate::wipe_bytes(encoded);
+                crate::wipe_bytes(&mut encoded);
                 self.failed = true;
-                return Err(encode_error_to_io(err));
+                return Err(err);
             }
         };
-
-        let result = self.output.push_slice(&encoded[..written]);
-        crate::wipe_bytes(encoded);
+        let produced = step.progress().output_produced();
+        let result = self.output.push_slice(&encoded[..produced]);
+        crate::wipe_bytes(&mut encoded);
         if result.is_err() {
             self.failed = true;
         }
-        result
+        result?;
+        Ok(())
     }
 
     fn drain_output(&mut self) -> io::Result<()> {
@@ -348,54 +332,26 @@ where
             return Ok(0);
         }
 
-        let mut consumed = 0;
-        if self.pending_len > 0 {
-            let needed = 3 - self.pending_len;
-            if input.len() < needed {
-                self.pending[self.pending_len..self.pending_len + input.len()]
-                    .copy_from_slice(input);
-                self.pending_len += input.len();
-                return Ok(input.len());
+        let take = input.len().min(768);
+        let mut encoded = [0u8; 1024];
+        let step = match self.driver.update(&input[..take], &mut encoded) {
+            Ok(step) => step,
+            Err(err) => {
+                crate::wipe_bytes(&mut encoded);
+                self.failed = true;
+                return Err(err);
             }
-
-            let mut chunk = [0u8; 3];
-            chunk[..self.pending_len].copy_from_slice(&self.pending[..self.pending_len]);
-            chunk[self.pending_len..].copy_from_slice(&input[..needed]);
-
-            let mut encoded = [0u8; 4];
-            let result = self.queue_encoded_temp(&chunk, &mut encoded);
-            crate::wipe_bytes(&mut chunk);
-            result?;
-            self.clear_pending();
-            consumed += needed;
+        };
+        let progress = step.progress();
+        let result = self
+            .output
+            .push_slice(&encoded[..progress.output_produced()]);
+        crate::wipe_bytes(&mut encoded);
+        if result.is_err() {
+            self.failed = true;
         }
-
-        let remaining = &input[consumed..];
-        let full_len = remaining.len() / 3 * 3;
-        if full_len > 0 {
-            let max_by_queue = self.output.available_capacity() / 4 * 3;
-            let mut take = core::cmp::min(full_len, core::cmp::min(768, max_by_queue));
-            take -= take % 3;
-
-            if take == 0 {
-                return Ok(consumed);
-            }
-
-            let mut encoded = [0u8; 1024];
-            self.queue_encoded_temp(&remaining[..take], &mut encoded)?;
-            consumed += take;
-
-            if take < full_len {
-                return Ok(consumed);
-            }
-        }
-
-        let tail = &input[consumed..];
-        self.pending[..tail.len()].copy_from_slice(tail);
-        self.pending_len = tail.len();
-        consumed += tail.len();
-
-        Ok(consumed)
+        result?;
+        Ok(progress.input_consumed())
     }
 
     fn flush(&mut self) -> io::Result<()> {

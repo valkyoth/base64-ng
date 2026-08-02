@@ -1,5 +1,5 @@
 use super::{
-    OutputQueue, decode_error_to_io, redacted_inner_state, stream_decoder_failed_error,
+    DecoderDriver, OutputQueue, redacted_inner_state, stream_decoder_failed_error,
     trailing_input_after_padding_error,
 };
 use crate::{Alphabet, Engine};
@@ -39,8 +39,7 @@ where
 {
     inner: Option<W>,
     engine: Engine<A, PAD>,
-    pending: [u8; 4],
-    pending_len: usize,
+    driver: DecoderDriver,
     output: OutputQueue<1024>,
     finished: bool,
     failed: bool,
@@ -62,8 +61,7 @@ where
         Self {
             inner: Some(inner),
             engine,
-            pending: [0; 4],
-            pending_len: 0,
+            driver: DecoderDriver::new::<A, PAD>(),
             output: OutputQueue::new(),
             finished: false,
             finalized: false,
@@ -98,14 +96,14 @@ where
     /// a complete 4-byte Base64 decode quantum is available.
     #[must_use]
     pub const fn pending_len(&self) -> usize {
-        self.pending_len
+        self.driver.pending_input_len()
     }
 
     /// Returns whether this decoder currently holds a partial input
     /// quantum.
     #[must_use]
     pub const fn has_pending_input(&self) -> bool {
-        self.pending_len != 0
+        self.pending_len() != 0
     }
 
     /// Returns how many additional input bytes are needed to complete the
@@ -115,7 +113,7 @@ where
     #[must_use]
     pub const fn pending_input_needed_len(&self) -> usize {
         if self.has_pending_input() {
-            4 - self.pending_len
+            4 - self.pending_len()
         } else {
             0
         }
@@ -227,8 +225,7 @@ where
     }
 
     fn clear_pending(&mut self) {
-        crate::wipe_bytes(&mut self.pending);
-        self.pending_len = 0;
+        self.driver.wipe();
     }
 
     fn clear_output(&mut self) {
@@ -255,8 +252,9 @@ where
             .debug_struct("Decoder")
             .field("inner", &redacted_inner_state(self.inner.is_some()))
             .field("engine", &self.engine)
+            .field("driver", &"<redacted>")
             .field("pending", &"<redacted>")
-            .field("pending_len", &self.pending_len)
+            .field("pending_len", &self.pending_len())
             .field("pending_input_needed_len", &self.pending_input_needed_len())
             .field("buffered_output_len", &self.output.len())
             .field("buffered_output_capacity", &self.output.capacity())
@@ -304,52 +302,47 @@ where
     }
 
     fn queue_pending_final(&mut self) -> io::Result<()> {
-        if self.pending_len == 0 {
-            return Ok(());
-        }
-
-        let mut pending = [0u8; 4];
-        pending[..self.pending_len].copy_from_slice(&self.pending[..self.pending_len]);
-        let pending_len = self.pending_len;
         let mut decoded = [0u8; 3];
-        let result = self.queue_decoded_temp(&pending[..pending_len], &mut decoded);
-        crate::wipe_bytes(&mut pending);
-        if let Err(err) = result {
-            self.clear_pending();
-            return Err(err);
-        }
-        self.clear_pending();
-        Ok(())
-    }
-
-    fn queue_full_quad(&mut self, mut input: [u8; 4]) -> io::Result<()> {
-        let mut decoded = [0u8; 3];
-        let result = self.queue_decoded_temp(&input, &mut decoded);
-        crate::wipe_bytes(&mut input);
-        let written = result?;
-        if written < 3 {
-            self.finished = true;
-        }
-        Ok(())
-    }
-
-    fn queue_decoded_temp(&mut self, input: &[u8], decoded: &mut [u8]) -> io::Result<usize> {
-        let written = match self.engine.decode_slice(input, decoded) {
-            Ok(written) => written,
+        let step = match self.driver.finish(&mut decoded) {
+            Ok(step) => step,
             Err(err) => {
-                crate::wipe_bytes(decoded);
+                crate::wipe_bytes(&mut decoded);
                 self.failed = true;
-                return Err(decode_error_to_io(err));
+                self.clear_pending();
+                return Err(err);
             }
         };
+        let produced = step.progress().output_produced();
+        let result = self.output.push_slice(&decoded[..produced]);
+        crate::wipe_bytes(&mut decoded);
+        if result.is_err() {
+            self.failed = true;
+        }
+        result
+    }
 
-        let result = self.output.push_slice(&decoded[..written]);
-        crate::wipe_bytes(decoded);
+    fn queue_update(&mut self, input: &[u8]) -> io::Result<usize> {
+        let mut decoded = [0u8; 3];
+        let step = match self.driver.update(input, &mut decoded) {
+            Ok(step) => step,
+            Err(err) => {
+                crate::wipe_bytes(&mut decoded);
+                self.failed = true;
+                self.clear_pending();
+                return Err(err);
+            }
+        };
+        let progress = step.progress();
+        let result = self
+            .output
+            .push_slice(&decoded[..progress.output_produced()]);
+        crate::wipe_bytes(&mut decoded);
         if result.is_err() {
             self.failed = true;
         }
         result?;
-        Ok(written)
+        self.finished = self.driver.has_terminal_padding();
+        Ok(progress.input_consumed())
     }
 
     fn drain_output(&mut self) -> io::Result<()> {
@@ -409,78 +402,21 @@ where
         }
 
         let mut consumed = 0;
-        if self.pending_len > 0 {
-            let needed = 4 - self.pending_len;
-            if input.len() < needed {
-                self.pending[self.pending_len..self.pending_len + input.len()]
-                    .copy_from_slice(input);
-                self.pending_len += input.len();
-                return Ok(input.len());
+        while consumed < input.len() {
+            let pending = self.pending_len();
+            let take = (4 - pending).min(input.len() - consumed);
+            if pending + take == 4 && self.output.available_capacity() < 3 {
+                break;
             }
-
-            let mut quad = [0u8; 4];
-            quad[..self.pending_len].copy_from_slice(&self.pending[..self.pending_len]);
-            quad[self.pending_len..].copy_from_slice(&input[..needed]);
-            let result = self.queue_full_quad(quad);
-            crate::wipe_bytes(&mut quad);
-            if let Err(err) = result {
-                self.clear_pending();
-                return Err(err);
+            match self.queue_update(&input[consumed..consumed + take]) {
+                Ok(accepted) => consumed += accepted,
+                Err(_) if consumed != 0 => return Ok(consumed),
+                Err(err) => return Err(err),
             }
-            self.clear_pending();
-            consumed += needed;
-
-            if self.finished {
-                return Ok(consumed);
+            if self.finished || take < 4 - pending {
+                break;
             }
         }
-
-        while input.len() - consumed >= 4 {
-            if self.output.available_capacity() < 3 {
-                return Ok(consumed);
-            }
-
-            let mut quad = [
-                input[consumed],
-                input[consumed + 1],
-                input[consumed + 2],
-                input[consumed + 3],
-            ];
-            let mut decoded = [0u8; 3];
-            let written = match self.engine.decode_slice(&quad, &mut decoded) {
-                Ok(written) => written,
-                Err(err) => {
-                    crate::wipe_bytes(&mut quad);
-                    crate::wipe_bytes(&mut decoded);
-                    self.failed = true;
-                    if consumed > 0 {
-                        // Report accepted prefix progress per `io::Write`.
-                        // The adapter is now failed; the next write/flush/
-                        // finish call returns an error for the malformed quad.
-                        return Ok(consumed);
-                    }
-
-                    return Err(decode_error_to_io(err));
-                }
-            };
-
-            let result = self.output.push_slice(&decoded[..written]);
-            crate::wipe_bytes(&mut quad);
-            crate::wipe_bytes(&mut decoded);
-            result?;
-            consumed += 4;
-
-            if written < 3 {
-                self.finished = true;
-                return Ok(consumed);
-            }
-        }
-
-        let tail = &input[consumed..];
-        self.pending[..tail.len()].copy_from_slice(tail);
-        self.pending_len = tail.len();
-        consumed += tail.len();
-
         Ok(consumed)
     }
 

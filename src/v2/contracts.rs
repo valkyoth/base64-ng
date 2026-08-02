@@ -345,3 +345,15 @@ impl OperationError {
         }
     }
 }
+
+impl core::fmt::Display for OperationError {
+    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Self::Failed(Failure::Input(error)) => error.fmt(formatter),
+            Self::Failed(failure) => formatter.write_str(failure.as_str()),
+            Self::Terminal(error) => formatter.write_str(error.as_str()),
+        }
+    }
+}
+
+impl core::error::Error for OperationError {}

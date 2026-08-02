@@ -2216,7 +2216,10 @@ pub fn base64_ng::OperationError::clone(&self) -> base64_ng::OperationError
 impl core::cmp::Eq for base64_ng::OperationError
 impl core::cmp::PartialEq for base64_ng::OperationError
 pub fn base64_ng::OperationError::eq(&self, &base64_ng::OperationError) -> bool
+impl core::error::Error for base64_ng::OperationError
 impl core::fmt::Debug for base64_ng::OperationError
+pub fn base64_ng::OperationError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for base64_ng::OperationError
 pub fn base64_ng::OperationError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::hash::Hash for base64_ng::OperationError
 pub fn base64_ng::OperationError::hash<__H: core::hash::Hasher>(&self, &mut __H)

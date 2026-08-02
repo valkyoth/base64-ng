@@ -1,13 +1,4 @@
-use crate::{DecodeError, EncodeError};
 use std::io;
-
-pub(super) fn encode_error_to_io(err: EncodeError) -> io::Error {
-    io::Error::new(io::ErrorKind::InvalidInput, err)
-}
-
-pub(super) fn decode_error_to_io(err: DecodeError) -> io::Error {
-    io::Error::new(io::ErrorKind::InvalidInput, err)
-}
 
 pub(super) fn trailing_input_after_padding_error() -> io::Error {
     io::Error::new(

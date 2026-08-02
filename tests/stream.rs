@@ -138,6 +138,46 @@ impl Write for OverReportingWriter {
 }
 
 #[cfg(feature = "stream")]
+#[derive(Default)]
+struct SideEffectThenErrorWriter {
+    output: Vec<u8>,
+    fail_next: bool,
+}
+
+#[cfg(feature = "stream")]
+impl Write for SideEffectThenErrorWriter {
+    fn write(&mut self, input: &[u8]) -> std::io::Result<usize> {
+        if self.fail_next {
+            self.fail_next = false;
+            if let Some(byte) = input.first() {
+                self.output.push(*byte);
+            }
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::BrokenPipe,
+                "injected failure after an observable side effect",
+            ));
+        }
+        self.output.extend_from_slice(input);
+        Ok(input.len())
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        Ok(())
+    }
+}
+
+#[cfg(feature = "stream")]
+fn input_error_from_io(error: &std::io::Error) -> base64_ng::InputError {
+    match error
+        .get_ref()
+        .and_then(|source| source.downcast_ref::<base64_ng::OperationError>())
+    {
+        Some(base64_ng::OperationError::Failed(base64_ng::Failure::Input(error))) => *error,
+        _ => panic!("stream error did not retain its ordinary input diagnostic"),
+    }
+}
+
+#[cfg(feature = "stream")]
 #[test]
 fn stream_engine_convenience_constructors_attach_policy() {
     let mut encoder = STANDARD.encoder_writer(Vec::new());
@@ -1392,4 +1432,75 @@ fn stream_debug_output_redacts_wrapped_io() {
     assert!(debug.contains("buffered_output_remaining_capacity"));
     assert!(debug.contains("can_into_inner"));
     assert!(!debug.contains("raw-secret"));
+}
+
+#[test]
+fn stream_decoder_error_position_matches_v2_one_shot_after_committed_prefix() {
+    let input = b"Zm9v$$$$";
+    let expected = match base64_ng::STRICT_STANDARD_PADDED
+        .decoded_len(input)
+        .unwrap_err()
+    {
+        base64_ng::OneShotError::Input(error) => error,
+        error => panic!("unexpected one-shot error: {error:?}"),
+    };
+
+    let mut decoder = Decoder::new(Vec::new(), STANDARD);
+    assert_eq!(decoder.write(&input[..4]).unwrap(), 4);
+    let error = decoder.write(&input[4..]).unwrap_err();
+
+    assert_eq!(input_error_from_io(&error), expected);
+    assert!(decoder.is_failed());
+    assert_eq!(decoder.get_ref(), b"foo");
+}
+
+#[test]
+fn stream_writers_cannot_rollback_third_party_error_side_effects() {
+    let mut encoder = Encoder::new(SideEffectThenErrorWriter::default(), STANDARD);
+    assert_eq!(encoder.write(b"foo").unwrap(), 3);
+    encoder.get_mut().fail_next = true;
+    assert_eq!(
+        encoder.flush().unwrap_err().kind(),
+        std::io::ErrorKind::BrokenPipe
+    );
+    assert_eq!(encoder.get_ref().output, b"Z");
+    assert_eq!(encoder.buffered_output_len(), 4);
+    encoder.flush().unwrap();
+    assert_eq!(encoder.get_ref().output, b"ZZm9v");
+
+    let mut decoder = Decoder::new(SideEffectThenErrorWriter::default(), STANDARD);
+    assert_eq!(decoder.write(b"Zm9v").unwrap(), 4);
+    decoder.get_mut().fail_next = true;
+    assert_eq!(
+        decoder.flush().unwrap_err().kind(),
+        std::io::ErrorKind::BrokenPipe
+    );
+    assert_eq!(decoder.get_ref().output, b"f");
+    assert_eq!(decoder.buffered_output_len(), 3);
+    decoder.flush().unwrap();
+    assert_eq!(decoder.get_ref().output, b"ffoo");
+}
+
+#[test]
+fn stream_partitioning_matches_v2_one_shot_transforms() {
+    let input: Vec<u8> = (0u8..=191).collect();
+    let mut expected_encoded = vec![0u8; 256];
+    let encoded_len = base64_ng::STRICT_STANDARD_PADDED
+        .encode_into(&input, &mut expected_encoded)
+        .unwrap();
+    expected_encoded.truncate(encoded_len);
+
+    for chunk_len in 1..=17 {
+        let mut encoder = Encoder::new(Vec::new(), STANDARD);
+        for chunk in input.chunks(chunk_len) {
+            encoder.write_all(chunk).unwrap();
+        }
+        assert_eq!(encoder.finish().unwrap(), expected_encoded);
+
+        let mut decoder = Decoder::new(Vec::new(), STANDARD);
+        for chunk in expected_encoded.chunks(chunk_len) {
+            decoder.write_all(chunk).unwrap();
+        }
+        assert_eq!(decoder.finish().unwrap(), input);
+    }
 }

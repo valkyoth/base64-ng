@@ -31,6 +31,11 @@
   encode plus SSSE3/SSE4.1 and AVX2 strict decode. AVX-512 strict decode remains
   exact/static after two campaigns missed the automatic performance margin;
   RVV and SVE remain non-dispatchable without invented thresholds.
+- Commit 35 rebuilds all four synchronous `std::io` adapters over the canonical
+  2.0 incremental states while preserving short I/O, retry, finalization,
+  adjacent-frame, fail-closed, and exact prefix-progress behavior. It documents
+  non-rollbackable third-party writer side effects and keeps secret decoding on
+  bounded complete-frame APIs.
 
 ## 1.3.9 - 2026-07-21
 

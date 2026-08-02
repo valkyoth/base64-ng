@@ -190,6 +190,9 @@ scripts/check-2.0-neon-hot-paths.sh
 echo "checks: 2.0 final dispatch and performance matrix"
 scripts/validate-2.0-dispatch-matrix.sh
 
+echo "checks: 2.0 synchronous I/O"
+scripts/check-2.0-sync-io.sh
+
 echo "checks: dudect timing harness"
 scripts/check_dudect.sh
 

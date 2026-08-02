@@ -174,6 +174,30 @@ impl DecoderState {
         self.lifecycle.source_position()
     }
 
+    /// Returns encoded input bytes retained until the next complete quantum.
+    #[must_use]
+    pub(crate) const fn buffered_input_len(&self) -> usize {
+        self.quantum_len
+    }
+
+    /// Returns whether a terminal padded quantum has been accepted.
+    #[must_use]
+    pub(crate) const fn has_terminal_padding(&self) -> bool {
+        self.terminal_padding
+    }
+
+    /// Clears retained input and output through the reviewed wipe boundary.
+    pub(crate) fn wipe(&mut self) {
+        crate::wipe_bytes(&mut self.quantum);
+        crate::wipe_bytes(&mut self.pending);
+        self.quantum_indexes = [0; INPUT_QUANTUM];
+        self.quantum_len = 0;
+        self.pending_start = 0;
+        self.pending_len = 0;
+        self.terminal_padding = false;
+        self.lifecycle.reset();
+    }
+
     fn plan_update(
         &self,
         input: &[u8],

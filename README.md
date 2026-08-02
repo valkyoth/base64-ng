@@ -1369,6 +1369,10 @@ Security commitments:
   APIs. The optional companion crate now admits read-all/write-all helpers and
   manual `AsyncRead`/`AsyncWrite` streaming adapters; the core `tokio` feature
   remains reserved and inert.
+- [docs/2.0_SYNCHRONOUS_IO.md](docs/2.0_SYNCHRONOUS_IO.md) defines exact
+  prefix commitment, retry, framing, third-party writer failure, and bounded
+  secret-frame rules for the synchronous adapters rebuilt on the 2.0
+  incremental core.
 - [docs/DEPENDENCIES.md](docs/DEPENDENCIES.md) defines the dependency
   admission bar for any future external crate.
 - `runtime::backend_report()` exposes the active admitted backend, detected

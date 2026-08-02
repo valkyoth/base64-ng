@@ -112,6 +112,22 @@ impl EncoderState {
         self.lifecycle.source_position()
     }
 
+    /// Returns raw input bytes retained until the next complete quantum.
+    #[must_use]
+    pub(crate) const fn buffered_input_len(&self) -> usize {
+        self.tail_len
+    }
+
+    /// Clears retained input and output through the reviewed wipe boundary.
+    pub(crate) fn wipe(&mut self) {
+        crate::wipe_bytes(&mut self.tail);
+        crate::wipe_bytes(&mut self.pending);
+        self.tail_len = 0;
+        self.pending_start = 0;
+        self.pending_len = 0;
+        self.lifecycle.reset();
+    }
+
     fn drain_pending(&mut self, output: &mut [u8]) -> usize {
         let written = self.pending_len.min(output.len());
         let pending_end = self.pending_start + written;
