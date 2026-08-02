@@ -1,6 +1,11 @@
 #!/usr/bin/env sh
 set -eu
 
+if [ ! -s target/wasm-loader-package/package/src/index.js ]; then
+    echo "2.0 wasm loader browser: exact package is missing; run scripts/check-2.0-wasm-loader.sh first" >&2
+    exit 1
+fi
+
 driver="${BASE64_NG_GECKODRIVER:-}"
 if [ -z "$driver" ] && command -v geckodriver >/dev/null 2>&1; then
     driver="$(command -v geckodriver)"

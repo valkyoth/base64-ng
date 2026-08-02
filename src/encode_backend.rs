@@ -131,7 +131,7 @@ pub(crate) fn active_encode_backend_for_input(input_len: usize) -> EncodeBackend
     #[cfg(all(feature = "simd", target_arch = "aarch64", target_endian = "little"))]
     {
         if candidate == EncodeBackend::Neon
-            && input_len >= NEON_ENCODE_AUTO_MIN_INPUT
+            && neon_auto_preferred(input_len)
             && crate::v2::backend_health::admit(
                 crate::runtime::OperationKind::Encode,
                 crate::runtime::Backend::Neon,
@@ -162,6 +162,11 @@ pub(crate) fn active_encode_backend_for_input(input_len: usize) -> EncodeBackend
 #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
 pub(crate) const fn avx512_auto_preferred(input_len: usize) -> bool {
     input_len >= AVX512_ENCODE_AUTO_MIN_INPUT
+}
+
+#[cfg(all(feature = "simd", target_arch = "aarch64", target_endian = "little"))]
+pub(crate) const fn neon_auto_preferred(input_len: usize) -> bool {
+    input_len >= NEON_ENCODE_AUTO_MIN_INPUT
 }
 
 /// Returns the backend selected by CPU/build policy before health admission.
@@ -313,7 +318,7 @@ fn backend_supports<A: Alphabet>(backend: EncodeBackend, input_len: usize) -> bo
         }
         #[cfg(all(feature = "simd", target_arch = "aarch64", target_endian = "little"))]
         EncodeBackend::Neon => {
-            input_len >= NEON_ENCODE_AUTO_MIN_INPUT && crate::simd::neon_supports_alphabet::<A>()
+            neon_auto_preferred(input_len) && crate::simd::neon_supports_alphabet::<A>()
         }
         #[cfg(all(feature = "simd", target_arch = "wasm32"))]
         EncodeBackend::WasmSimd128 => {

@@ -13,9 +13,13 @@ if ! command -v node >/dev/null 2>&1 || ! command -v npm >/dev/null 2>&1; then
     echo "2.0 wasm loader: skipping JavaScript package; Node and npm are required"
     exit 0
 fi
+if ! command -v rustup >/dev/null 2>&1; then
+    echo "2.0 wasm loader: rustup is required to build the wasm artifacts" >&2
+    exit 1
+fi
 if ! rustup target list --installed 2>/dev/null | grep -F -x -q wasm32-unknown-unknown; then
-    echo "2.0 wasm loader: skipping; wasm32-unknown-unknown is not installed"
-    exit 0
+    echo "2.0 wasm loader: installing missing Rust target wasm32-unknown-unknown"
+    rustup target add wasm32-unknown-unknown
 fi
 
 mkdir -p "$evidence_dir" "$pack_dir" "$package_extract" "$npm_cache"

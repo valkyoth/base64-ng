@@ -53,7 +53,7 @@ pub(super) unsafe fn decode_16_bytes<A>(input: &[u8; 16], output: &mut [u8; 12])
 where
     A: Alphabet,
 {
-    const COMPACT: [u8; 16] = [2, 1, 0, 6, 5, 4, 10, 9, 8, 14, 13, 12, 255, 255, 255, 255];
+    const COMPACT: [u8; 16] = [0, 1, 2, 4, 5, 6, 8, 9, 10, 12, 13, 14, 255, 255, 255, 255];
 
     // SAFETY: Fixed arrays bound the exact 16-byte load and the exact 8+4
     // byte stores. Output is not touched unless all lanes classify as members

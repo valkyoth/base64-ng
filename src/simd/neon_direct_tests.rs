@@ -116,10 +116,19 @@ fn assert_slice_case<A: Alphabet, const PAD: bool>(input: &[u8]) {
 
     let mut neon_decoded = [0x55; 385];
     let mut scalar_decoded = [0xaa; 385];
-    let neon_len =
-        decode_slice_neon::<A, PAD>(&neon_encoded[..neon_len], &mut neon_decoded).unwrap();
+    let encoded_len = neon_len;
+    let neon_len = decode_slice_neon::<A, PAD>(
+        &neon_encoded[..encoded_len],
+        &mut neon_decoded,
+    )
+    .unwrap_or_else(|error| {
+        panic!(
+            "NEON decode failed for raw_len={}, encoded_len={encoded_len}, padded={PAD}: {error:?}",
+            input.len()
+        )
+    });
     let scalar_len =
-        crate::scalar::decode_slice::<A, PAD>(&neon_encoded[..neon_len], &mut scalar_decoded)
+        crate::scalar::decode_slice::<A, PAD>(&neon_encoded[..encoded_len], &mut scalar_decoded)
             .unwrap();
     assert_eq!(neon_len, scalar_len);
     assert_eq!(&neon_decoded[..neon_len], input);

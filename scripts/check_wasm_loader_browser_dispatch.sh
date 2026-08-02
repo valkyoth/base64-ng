@@ -1,6 +1,11 @@
 #!/usr/bin/env sh
 set -eu
 
+if [ ! -s target/wasm-loader-package/package/src/index.js ]; then
+    echo "2.0 wasm loader browser: exact package is missing; run scripts/check-2.0-wasm-loader.sh first" >&2
+    exit 1
+fi
+
 browser="${BASE64_NG_BROWSER:-}"
 if [ -z "$browser" ]; then
     for candidate in google-chrome chromium chromium-browser chrome microsoft-edge; do

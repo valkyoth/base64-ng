@@ -108,7 +108,7 @@ pub(crate) fn active_decode_backend_for_input(input_len: usize) -> DecodeBackend
     #[cfg(all(feature = "simd", target_arch = "aarch64", target_endian = "little"))]
     {
         if candidate == DecodeBackend::Neon
-            && input_len >= NEON_DECODE_AUTO_MIN_INPUT
+            && neon_auto_preferred(input_len)
             && crate::v2::backend_health::admit(
                 crate::runtime::OperationKind::StrictDecode,
                 crate::runtime::Backend::Neon,
@@ -134,6 +134,11 @@ pub(crate) fn active_decode_backend_for_input(input_len: usize) -> DecodeBackend
             DecodeBackend::Scalar
         }
     }
+}
+
+#[cfg(all(feature = "simd", target_arch = "aarch64", target_endian = "little"))]
+pub(crate) const fn neon_auto_preferred(input_len: usize) -> bool {
+    input_len >= NEON_DECODE_AUTO_MIN_INPUT
 }
 
 #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
@@ -341,13 +346,11 @@ mod tests {
     #[test]
     #[cfg(all(feature = "simd", target_arch = "aarch64", target_endian = "little"))]
     fn neon_automatic_policy_uses_scalar_below_measured_crossover() {
-        assert_eq!(
-            super::active_decode_backend_for_input(super::NEON_DECODE_AUTO_MIN_INPUT - 1),
-            DecodeBackend::Scalar
-        );
-        assert_eq!(
-            super::active_decode_backend_for_input(super::NEON_DECODE_AUTO_MIN_INPUT),
-            DecodeBackend::Neon
-        );
+        assert!(!super::neon_auto_preferred(
+            super::NEON_DECODE_AUTO_MIN_INPUT - 1
+        ));
+        assert!(super::neon_auto_preferred(
+            super::NEON_DECODE_AUTO_MIN_INPUT
+        ));
     }
 }

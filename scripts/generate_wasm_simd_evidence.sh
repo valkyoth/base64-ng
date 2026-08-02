@@ -22,17 +22,13 @@ require_pattern() {
     fi
 }
 
+if ! command -v rustup >/dev/null 2>&1; then
+    echo "wasm simd evidence: rustup is required to verify $wasm_target" >&2
+    exit 1
+fi
 if ! rustup target list --installed 2>/dev/null | grep -F -x -q "$wasm_target"; then
-    evidence_verify_source "wasm simd evidence"
-    {
-        echo "base64-ng wasm simd128 codegen evidence"
-        echo
-        evidence_write_source_manifest
-        echo
-        echo "skipped: target $wasm_target is not installed"
-    } >"$manifest"
-    echo "wasm simd evidence: skipping $wasm_target; Rust target is not installed"
-    exit 0
+    echo "wasm simd evidence: installing missing Rust target $wasm_target"
+    rustup target add "$wasm_target"
 fi
 
 echo "wasm simd evidence: release test-harness LLVM IR for $wasm_target"
