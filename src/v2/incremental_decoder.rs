@@ -168,6 +168,15 @@ impl DecoderState {
         self.lifecycle.reset();
     }
 
+    /// Clears retained ordinary input and output through the reviewed wipe
+    /// boundary, then resets the state for reuse.
+    ///
+    /// This is explicit best-effort cleanup. It cannot retract plaintext
+    /// already returned to a caller or clear copies outside this state.
+    pub fn clear(&mut self) {
+        self.wipe();
+    }
+
     /// Returns the absolute number of input bytes accepted since reset.
     #[must_use]
     pub const fn source_position(&self) -> usize {

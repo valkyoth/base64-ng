@@ -7,14 +7,15 @@
 //!
 //! The crate provides two API tiers:
 //!
-//! - read-all/write-all convenience functions, with `*_limited` variants for
+//! - read-all convenience functions, with `*_limited` variants for
 //!   peer-controlled request or frame boundaries.
 //! - manual [`AsyncRead`] and [`AsyncWrite`] streaming adapters with fixed
 //!   internal buffers and explicit drop cleanup.
 //!
-//! The streaming adapters are implemented as explicit state machines. They do
-//! not use `async fn` internally, so cancellation can only leave data in each
-//! adapter's fixed pending/output buffers; those buffers are cleared on drop.
+//! Reader adapters are implemented as explicit poll state machines over the
+//! shared 2.0 incremental core. [`EncoderReader::new_exact`] and
+//! [`DecoderReader::new_exact`] stop at an exact frame boundary without an
+//! overflow lookahead read. Writer migration remains scheduled for Commit 38.
 //!
 //! # Security
 //!
@@ -24,8 +25,7 @@
 //! not constant-time-oriented token validators or high-assurance secret
 //! decoders. For secret-bearing async frames, collect a bounded frame under
 //! the application's approved memory policy and decode through
-//! `base64_ng::ct`, staged CT decode, `base64-ng-derive`, or
-//! `base64-ng-sanitization`.
+//! the 2.0 `secrets` capability or an approved protected-memory companion.
 
 mod decoder_writer;
 mod encoder_writer;
@@ -36,7 +36,7 @@ pub use decoder_writer::DecoderWriter;
 pub use encoder_writer::EncoderWriter;
 pub use readers::{DecoderReader, EncoderReader};
 
-use base64_ng::{Alphabet, Engine};
+use base64_ng::{Base64, Codec, OneShotError};
 use tokio::io::{self, AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 
 const READ_ALL_EAGER_CAP: usize = 8192;
@@ -47,21 +47,22 @@ const READ_ALL_EAGER_CAP: usize = 8192;
 ///
 /// Returns I/O errors from the reader or writer, and wraps Base64 encoding
 /// errors as [`io::ErrorKind::InvalidInput`].
-pub async fn encode_reader_to_writer<A, const PAD: bool, R, W>(
-    engine: &Engine<A, PAD>,
+pub async fn encode_reader_to_writer<S, R, W>(
+    codec: &Base64<S>,
     reader: &mut R,
     writer: &mut W,
 ) -> io::Result<u64>
 where
-    A: Alphabet,
+    S: Codec,
     R: AsyncRead + Unpin + ?Sized,
     W: AsyncWrite + Unpin + ?Sized,
 {
     let input = read_to_end_guarded(reader).await?;
     let output = WipingVec::from_vec(
-        engine
-            .encode_vec(input.as_slice())
-            .map_err(encode_io_error)?,
+        codec
+            .encode_to_string(input.as_slice())
+            .map_err(one_shot_encode_io_error)?
+            .into_bytes(),
     );
     let written = output.len() as u64;
     writer.write_all(output.as_slice()).await?;
@@ -79,22 +80,23 @@ where
 /// Returns I/O errors from the reader or writer, reports oversized input as
 /// [`io::ErrorKind::InvalidData`], and wraps Base64 encoding errors as
 /// [`io::ErrorKind::InvalidInput`].
-pub async fn encode_reader_to_writer_limited<A, const PAD: bool, R, W>(
-    engine: &Engine<A, PAD>,
+pub async fn encode_reader_to_writer_limited<S, R, W>(
+    codec: &Base64<S>,
     reader: &mut R,
     writer: &mut W,
     max_input_len: usize,
 ) -> io::Result<u64>
 where
-    A: Alphabet,
+    S: Codec,
     R: AsyncRead + Unpin + ?Sized,
     W: AsyncWrite + Unpin + ?Sized,
 {
     let input = read_to_end_limited(reader, max_input_len).await?;
     let output = WipingVec::from_vec(
-        engine
-            .encode_vec(input.as_slice())
-            .map_err(encode_io_error)?,
+        codec
+            .encode_to_string(input.as_slice())
+            .map_err(one_shot_encode_io_error)?
+            .into_bytes(),
     );
     let written = output.len() as u64;
     writer.write_all(output.as_slice()).await?;
@@ -110,21 +112,21 @@ where
 ///
 /// Returns I/O errors from the reader or writer, and wraps Base64 decoding
 /// errors as [`io::ErrorKind::InvalidData`].
-pub async fn decode_reader_to_writer<A, const PAD: bool, R, W>(
-    engine: &Engine<A, PAD>,
+pub async fn decode_reader_to_writer<S, R, W>(
+    codec: &Base64<S>,
     reader: &mut R,
     writer: &mut W,
 ) -> io::Result<u64>
 where
-    A: Alphabet,
+    S: Codec,
     R: AsyncRead + Unpin + ?Sized,
     W: AsyncWrite + Unpin + ?Sized,
 {
     let input = read_to_end_guarded(reader).await?;
     let output = WipingVec::from_vec(
-        engine
-            .decode_vec(input.as_slice())
-            .map_err(decode_io_error)?,
+        codec
+            .decode_to_vec(input.as_slice())
+            .map_err(one_shot_decode_io_error)?,
     );
     let written = output.len() as u64;
     writer.write_all(output.as_slice()).await?;
@@ -142,22 +144,22 @@ where
 /// Returns I/O errors from the reader or writer, reports oversized or malformed
 /// input as [`io::ErrorKind::InvalidData`], and writes no decoded output on
 /// either condition.
-pub async fn decode_reader_to_writer_limited<A, const PAD: bool, R, W>(
-    engine: &Engine<A, PAD>,
+pub async fn decode_reader_to_writer_limited<S, R, W>(
+    codec: &Base64<S>,
     reader: &mut R,
     writer: &mut W,
     max_input_len: usize,
 ) -> io::Result<u64>
 where
-    A: Alphabet,
+    S: Codec,
     R: AsyncRead + Unpin + ?Sized,
     W: AsyncWrite + Unpin + ?Sized,
 {
     let input = read_to_end_limited(reader, max_input_len).await?;
     let output = WipingVec::from_vec(
-        engine
-            .decode_vec(input.as_slice())
-            .map_err(decode_io_error)?,
+        codec
+            .decode_to_vec(input.as_slice())
+            .map_err(one_shot_decode_io_error)?,
     );
     let written = output.len() as u64;
     writer.write_all(output.as_slice()).await?;
@@ -169,14 +171,14 @@ where
 /// # Errors
 ///
 /// Returns an I/O error if Base64 encoding fails.
-pub fn encode_to_vec<A, const PAD: bool>(
-    engine: &Engine<A, PAD>,
-    input: impl AsRef<[u8]>,
-) -> io::Result<Vec<u8>>
+pub fn encode_to_vec<S>(codec: &Base64<S>, input: impl AsRef<[u8]>) -> io::Result<Vec<u8>>
 where
-    A: Alphabet,
+    S: Codec,
 {
-    engine.encode_vec(input.as_ref()).map_err(encode_io_error)
+    codec
+        .encode_to_string(input.as_ref())
+        .map(String::into_bytes)
+        .map_err(one_shot_encode_io_error)
 }
 
 /// Decodes `input` into an owned byte vector.
@@ -184,14 +186,25 @@ where
 /// # Errors
 ///
 /// Returns an I/O error if Base64 decoding fails.
-pub fn decode_to_vec<A, const PAD: bool>(
-    engine: &Engine<A, PAD>,
-    input: impl AsRef<[u8]>,
-) -> io::Result<Vec<u8>>
+pub fn decode_to_vec<S>(codec: &Base64<S>, input: impl AsRef<[u8]>) -> io::Result<Vec<u8>>
 where
-    A: Alphabet,
+    S: Codec,
 {
-    engine.decode_vec(input.as_ref()).map_err(decode_io_error)
+    codec
+        .decode_to_vec(input.as_ref())
+        .map_err(one_shot_decode_io_error)
+}
+
+fn one_shot_encode_io_error(error: OneShotError) -> io::Error {
+    io::Error::new(io::ErrorKind::InvalidInput, error)
+}
+
+fn one_shot_decode_io_error(error: OneShotError) -> io::Error {
+    if let OneShotError::Input(input) = error {
+        io::Error::new(io::ErrorKind::InvalidData, input.kind().as_str())
+    } else {
+        io::Error::new(io::ErrorKind::InvalidData, error)
+    }
 }
 
 fn encode_io_error(error: base64_ng::EncodeError) -> io::Error {

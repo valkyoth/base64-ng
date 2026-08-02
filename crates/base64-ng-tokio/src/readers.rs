@@ -1,494 +1,442 @@
-use base64_ng::{Alphabet, Engine};
+use base64_ng::{Base64, Codec, DecoderState, EncoderState, Failure, OperationError};
 use core::{
     cmp,
-    marker::PhantomData,
     pin::Pin,
     task::{Context, Poll},
 };
 use tokio::io::{self, AsyncRead, ReadBuf};
 
-use crate::{decode_io_error, encode_io_error, wipe_bytes};
+use crate::wipe_bytes;
 
 const ENCODE_INPUT_CAP: usize = 768;
 const ENCODE_OUTPUT_CAP: usize = 1024;
 const DECODE_INPUT_CAP: usize = 1024;
 const DECODE_OUTPUT_CAP: usize = 768;
 
-/// Async reader that streams raw bytes as Base64.
+macro_rules! reader_observers {
+    () => {
+        /// Returns whether this adapter has entered its absorbing failure state.
+        #[must_use]
+        pub const fn is_failed(&self) -> bool {
+            self.failed
+        }
+
+        /// Returns whether finalization completed successfully.
+        #[must_use]
+        pub const fn is_complete(&self) -> bool {
+            self.finished && self.output_pos == self.output_len
+        }
+
+        /// Returns bytes irrevocably read from the wrapped source.
+        #[must_use]
+        pub const fn input_read(&self) -> usize {
+            self.input_read
+        }
+
+        /// Returns bytes accepted by the shared Base64 transformer.
+        #[must_use]
+        pub const fn source_position(&self) -> usize {
+            self.source_accepted
+        }
+
+        /// Returns output bytes already delivered to callers.
+        #[must_use]
+        pub const fn output_delivered(&self) -> usize {
+            self.output_delivered
+        }
+
+        /// Returns remaining source bytes for an exact frame, or `None` for EOF mode.
+        #[must_use]
+        pub const fn remaining_input(&self) -> Option<usize> {
+            self.boundary.remaining()
+        }
+    };
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum Boundary {
+    Eof,
+    Exact { remaining: usize },
+}
+
+impl Boundary {
+    fn read_cap(self, capacity: usize) -> usize {
+        match self {
+            Self::Eof => capacity,
+            Self::Exact { remaining } => remaining.min(capacity),
+        }
+    }
+
+    fn consume(&mut self, count: usize) {
+        if let Self::Exact { remaining } = self {
+            *remaining -= count;
+        }
+    }
+
+    const fn remaining(self) -> Option<usize> {
+        match self {
+            Self::Eof => None,
+            Self::Exact { remaining } => Some(remaining),
+        }
+    }
+}
+
+/// Async reader that transforms raw bytes into Base64 through the shared 2.0
+/// incremental encoder.
 ///
-/// This adapter reads from `inner` in bounded chunks, preserves at most two
-/// pending raw bytes between polls, and clears its pending/output buffers on
-/// drop. It is cancellation-resumable: if a read future is dropped after
-/// returning [`Poll::Pending`], polling the same adapter again continues from
-/// the same internal state without duplicating or dropping bytes.
+/// [`Self::new`] finalizes only after the wrapped reader returns EOF.
+/// [`Self::new_exact`] instead finalizes after exactly the declared number of
+/// source bytes and leaves adjacent bytes unread. Both modes preserve state
+/// across `Poll::Pending` and use fixed internal storage.
 ///
-/// # Security
-///
-/// Internal cleanup is best-effort and limited to this adapter's fixed buffers.
-/// It cannot clear copies held by the wrapped reader, the caller's output
-/// buffer, registers, caches, swap, or crash dumps.
-pub struct EncoderReader<R, A, const PAD: bool>
-where
-    A: Alphabet,
-{
+/// Output already returned through [`AsyncRead`] is irrevocably visible.
+/// Internal cleanup is best-effort and cannot clear caller buffers, wrapped
+/// reader storage, registers, caches, swap, or crash dumps.
+pub struct EncoderReader<R> {
     inner: R,
-    engine: Engine<A, PAD>,
-    pending: [u8; 2],
-    pending_len: usize,
+    state: EncoderState,
+    boundary: Boundary,
+    input: [u8; ENCODE_INPUT_CAP],
     output: [u8; ENCODE_OUTPUT_CAP],
     output_pos: usize,
     output_len: usize,
+    input_read: usize,
+    source_accepted: usize,
+    output_delivered: usize,
     finished: bool,
     failed: bool,
-    _alphabet: PhantomData<A>,
 }
 
-impl<R, A, const PAD: bool> EncoderReader<R, A, PAD>
-where
-    A: Alphabet,
-{
-    /// Creates a new async Base64 encoder reader.
+impl<R> EncoderReader<R> {
+    /// Creates a reader that continues until the wrapped reader returns EOF.
     #[must_use]
-    pub fn new(inner: R, engine: Engine<A, PAD>) -> Self {
+    pub fn new<S: Codec>(inner: R, codec: &Base64<S>) -> Self {
+        Self::with_boundary(inner, codec.encoder(), Boundary::Eof)
+    }
+
+    /// Creates a reader for one exact-length source frame.
+    ///
+    /// The adapter never reads beyond `input_len`. Premature EOF is reported as
+    /// [`io::ErrorKind::UnexpectedEof`].
+    #[must_use]
+    pub fn new_exact<S: Codec>(inner: R, codec: &Base64<S>, input_len: usize) -> Self {
+        Self::with_boundary(
+            inner,
+            codec.encoder(),
+            Boundary::Exact {
+                remaining: input_len,
+            },
+        )
+    }
+
+    fn with_boundary(inner: R, state: EncoderState, boundary: Boundary) -> Self {
         Self {
             inner,
-            engine,
-            pending: [0; 2],
-            pending_len: 0,
+            state,
+            boundary,
+            input: [0; ENCODE_INPUT_CAP],
             output: [0; ENCODE_OUTPUT_CAP],
             output_pos: 0,
             output_len: 0,
+            input_read: 0,
+            source_accepted: 0,
+            output_delivered: 0,
             finished: false,
             failed: false,
-            _alphabet: PhantomData,
         }
     }
 
-    /// Returns whether the adapter has encountered an unrecoverable error.
-    #[must_use]
-    pub const fn is_failed(&self) -> bool {
-        self.failed
-    }
+    reader_observers!();
 
-    fn clear_buffers(&mut self) {
-        wipe_bytes(&mut self.pending);
-        self.pending_len = 0;
+    fn clear_internal(&mut self) {
+        self.state.clear();
+        wipe_bytes(&mut self.input);
         wipe_bytes(&mut self.output);
         self.output_pos = 0;
         self.output_len = 0;
     }
 
-    fn drain_output(&mut self, destination: &mut ReadBuf<'_>) -> bool {
-        let available = self.output_len.saturating_sub(self.output_pos);
-        if available == 0 || destination.remaining() == 0 {
-            return false;
-        }
+    fn fail(&mut self, error: io::Error) -> Poll<io::Result<()>> {
+        self.failed = true;
+        self.clear_internal();
+        Poll::Ready(Err(error))
+    }
 
-        let count = cmp::min(available, destination.remaining());
+    fn drain(&mut self, destination: &mut ReadBuf<'_>) -> io::Result<bool> {
+        let count = cmp::min(
+            self.output_len.saturating_sub(self.output_pos),
+            destination.remaining(),
+        );
+        if count == 0 {
+            return Ok(false);
+        }
+        let next_delivered = self
+            .output_delivered
+            .checked_add(count)
+            .ok_or_else(|| io::Error::other("base64-ng-tokio output position overflow"))?;
         destination.put_slice(&self.output[self.output_pos..self.output_pos + count]);
         wipe_bytes(&mut self.output[self.output_pos..self.output_pos + count]);
         self.output_pos += count;
+        self.output_delivered = next_delivered;
         if self.output_pos == self.output_len {
             self.output_pos = 0;
             self.output_len = 0;
         }
-        true
+        Ok(true)
     }
 
-    fn append_encoded(&mut self, input: &[u8]) -> io::Result<()> {
-        let written = self
-            .engine
-            .encode_slice(input, &mut self.output[self.output_len..])
-            .map_err(encode_io_error)?;
-        self.output_len += written;
+    fn transform_input(&mut self, read: usize) -> io::Result<()> {
+        let result = self.state.update(&self.input[..read], &mut self.output);
+        wipe_bytes(&mut self.input[..read]);
+        let step = result.map_err(operation_io_error)?;
+        if step.progress().input_consumed() != read {
+            return Err(io::Error::other(
+                "base64-ng-tokio encoder made partial progress",
+            ));
+        }
+        self.output_pos = 0;
+        self.output_len = step.progress().output_produced();
+        self.source_accepted = self.state.source_position();
         Ok(())
     }
 
-    fn process_input(&mut self, input: &[u8]) -> io::Result<()> {
-        let mut read = 0;
-
-        if self.pending_len != 0 {
-            let needed = 3 - self.pending_len;
-            if input.len() < needed {
-                self.pending[self.pending_len..self.pending_len + input.len()]
-                    .copy_from_slice(input);
-                self.pending_len += input.len();
-                return Ok(());
-            }
-
-            let mut quantum = [0u8; 3];
-            quantum[..self.pending_len].copy_from_slice(&self.pending[..self.pending_len]);
-            quantum[self.pending_len..].copy_from_slice(&input[..needed]);
-            let result = self.append_encoded(&quantum);
-            wipe_bytes(&mut quantum);
-            wipe_bytes(&mut self.pending);
-            result?;
-            self.pending_len = 0;
-            read += needed;
-        }
-
-        let remaining = &input[read..];
-        let full_len = remaining.len() / 3 * 3;
-        if full_len != 0 {
-            self.append_encoded(&remaining[..full_len])?;
-        }
-
-        let tail = &remaining[full_len..];
-        if !tail.is_empty() {
-            self.pending[..tail.len()].copy_from_slice(tail);
-            self.pending_len = tail.len();
-        }
-
-        Ok(())
-    }
-
-    fn finish(&mut self) -> io::Result<()> {
-        if self.pending_len != 0 {
-            let mut tail = [0u8; 2];
-            tail[..self.pending_len].copy_from_slice(&self.pending[..self.pending_len]);
-            let pending_len = self.pending_len;
-            let result = self.append_encoded(&tail[..pending_len]);
-            wipe_bytes(&mut tail);
-            wipe_bytes(&mut self.pending);
-            result?;
-            self.pending_len = 0;
-        }
+    fn finish_transform(&mut self) -> io::Result<()> {
+        let step = self
+            .state
+            .finish(&mut self.output)
+            .map_err(operation_io_error)?;
+        self.output_pos = 0;
+        self.output_len = step.progress().output_produced();
         self.finished = true;
         Ok(())
     }
 }
 
-impl<R, A, const PAD: bool> AsyncRead for EncoderReader<R, A, PAD>
-where
-    R: AsyncRead + Unpin,
-    A: Alphabet + Unpin,
-{
-    fn poll_read(
-        mut self: Pin<&mut Self>,
-        context: &mut Context<'_>,
-        destination: &mut ReadBuf<'_>,
-    ) -> Poll<io::Result<()>> {
-        if self.failed {
-            return Poll::Ready(Err(io::Error::other(
-                "base64-ng-tokio encoder reader is failed",
-            )));
-        }
-
-        if self.drain_output(destination) || destination.remaining() == 0 {
-            return Poll::Ready(Ok(()));
-        }
-
-        if self.finished {
-            return Poll::Ready(Ok(()));
-        }
-
-        loop {
-            let mut input = [0u8; ENCODE_INPUT_CAP];
-            let mut input_buf = ReadBuf::new(&mut input);
-            match Pin::new(&mut self.inner).poll_read(context, &mut input_buf) {
-                Poll::Pending => return Poll::Pending,
-                Poll::Ready(Err(error)) => {
-                    wipe_bytes(&mut input);
-                    self.failed = true;
-                    self.clear_buffers();
-                    return Poll::Ready(Err(error));
-                }
-                Poll::Ready(Ok(())) => {
-                    let read = input_buf.filled().len();
-                    if read == 0 {
-                        let result = self.finish();
-                        wipe_bytes(&mut input);
-                        if let Err(error) = result {
-                            self.failed = true;
-                            self.clear_buffers();
-                            return Poll::Ready(Err(error));
-                        }
-                    } else {
-                        let result = self.process_input(&input[..read]);
-                        wipe_bytes(&mut input);
-                        if let Err(error) = result {
-                            self.failed = true;
-                            self.clear_buffers();
-                            return Poll::Ready(Err(error));
-                        }
-                    }
-
-                    if self.drain_output(destination) || self.finished {
-                        return Poll::Ready(Ok(()));
-                    }
-                }
-            }
-        }
-    }
-}
-
-impl<R, A, const PAD: bool> Drop for EncoderReader<R, A, PAD>
-where
-    A: Alphabet,
-{
-    fn drop(&mut self) {
-        self.clear_buffers();
-    }
-}
-
-/// Async reader that streams Base64 input as decoded bytes.
+/// Async reader that strictly decodes Base64 through the shared 2.0
+/// incremental decoder.
 ///
-/// This adapter decodes strict Base64 quanta as they arrive and preserves at
-/// most three pending encoded bytes between polls. If malformed input is
-/// observed, the adapter fails closed and clears its internal buffers.
-///
-/// # Security
-///
-/// Streaming decode is not atomic. Decoded bytes from valid leading quanta may
-/// already have been returned before a later malformed quantum is observed. For
-/// atomic secret-bearing frames, use `decode_reader_to_writer_limited` or a
-/// `ct` staged decode after collecting a bounded frame.
-pub struct DecoderReader<R, A, const PAD: bool>
-where
-    A: Alphabet,
-{
+/// This is an ordinary prefix-delivering API: plaintext returned before a
+/// later malformed suffix is irrevocably exposed. Secret-bearing frames must
+/// use a bounded validate-before-release secret API instead of this adapter.
+pub struct DecoderReader<R> {
     inner: R,
-    engine: Engine<A, PAD>,
-    pending: [u8; 4],
-    pending_len: usize,
+    state: DecoderState,
+    boundary: Boundary,
+    input: [u8; DECODE_INPUT_CAP],
     output: [u8; DECODE_OUTPUT_CAP],
     output_pos: usize,
     output_len: usize,
+    input_read: usize,
+    source_accepted: usize,
+    output_delivered: usize,
     finished: bool,
     failed: bool,
-    terminal_padding: bool,
-    _alphabet: PhantomData<A>,
 }
 
-impl<R, A, const PAD: bool> DecoderReader<R, A, PAD>
-where
-    A: Alphabet,
-{
-    /// Creates a new async Base64 decoder reader.
+impl<R> DecoderReader<R> {
+    /// Creates a strict decoder that continues until the wrapped reader returns
+    /// EOF.
     #[must_use]
-    pub fn new(inner: R, engine: Engine<A, PAD>) -> Self {
+    pub fn new<S: Codec>(inner: R, codec: &Base64<S>) -> Self {
+        Self::with_boundary(inner, codec.decoder(), Boundary::Eof)
+    }
+
+    /// Creates a strict decoder for one exact-length encoded frame.
+    ///
+    /// The adapter never reads beyond `input_len`. Premature EOF is reported as
+    /// [`io::ErrorKind::UnexpectedEof`]. This remains an ordinary streaming API
+    /// and does not defer plaintext release until full-frame validation.
+    #[must_use]
+    pub fn new_exact<S: Codec>(inner: R, codec: &Base64<S>, input_len: usize) -> Self {
+        Self::with_boundary(
+            inner,
+            codec.decoder(),
+            Boundary::Exact {
+                remaining: input_len,
+            },
+        )
+    }
+
+    fn with_boundary(inner: R, state: DecoderState, boundary: Boundary) -> Self {
         Self {
             inner,
-            engine,
-            pending: [0; 4],
-            pending_len: 0,
+            state,
+            boundary,
+            input: [0; DECODE_INPUT_CAP],
             output: [0; DECODE_OUTPUT_CAP],
             output_pos: 0,
             output_len: 0,
+            input_read: 0,
+            source_accepted: 0,
+            output_delivered: 0,
             finished: false,
             failed: false,
-            terminal_padding: false,
-            _alphabet: PhantomData,
         }
     }
 
-    /// Returns whether the adapter has encountered an unrecoverable error.
-    #[must_use]
-    pub const fn is_failed(&self) -> bool {
-        self.failed
-    }
+    reader_observers!();
 
-    fn clear_buffers(&mut self) {
-        wipe_bytes(&mut self.pending);
-        self.pending_len = 0;
+    fn clear_internal(&mut self) {
+        self.state.clear();
+        wipe_bytes(&mut self.input);
         wipe_bytes(&mut self.output);
         self.output_pos = 0;
         self.output_len = 0;
     }
 
-    fn drain_output(&mut self, destination: &mut ReadBuf<'_>) -> bool {
-        let available = self.output_len.saturating_sub(self.output_pos);
-        if available == 0 || destination.remaining() == 0 {
-            return false;
-        }
+    fn fail(&mut self, error: io::Error) -> Poll<io::Result<()>> {
+        self.failed = true;
+        self.clear_internal();
+        Poll::Ready(Err(error))
+    }
 
-        let count = cmp::min(available, destination.remaining());
+    fn drain(&mut self, destination: &mut ReadBuf<'_>) -> io::Result<bool> {
+        let count = cmp::min(
+            self.output_len.saturating_sub(self.output_pos),
+            destination.remaining(),
+        );
+        if count == 0 {
+            return Ok(false);
+        }
+        let next_delivered = self
+            .output_delivered
+            .checked_add(count)
+            .ok_or_else(|| io::Error::other("base64-ng-tokio output position overflow"))?;
         destination.put_slice(&self.output[self.output_pos..self.output_pos + count]);
         wipe_bytes(&mut self.output[self.output_pos..self.output_pos + count]);
         self.output_pos += count;
+        self.output_delivered = next_delivered;
         if self.output_pos == self.output_len {
             self.output_pos = 0;
             self.output_len = 0;
         }
-        true
+        Ok(true)
     }
 
-    fn append_decoded(&mut self, input: &[u8]) -> io::Result<usize> {
-        let written = self
-            .engine
-            .decode_slice(input, &mut self.output[self.output_len..])
-            .map_err(decode_io_error)?;
-        self.output_len += written;
-        Ok(written)
-    }
-
-    fn process_quad(&mut self, mut quad: [u8; 4]) -> io::Result<()> {
-        if self.terminal_padding {
-            wipe_bytes(&mut quad);
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidData,
-                "base64-ng-tokio decoder reader received trailing input after padding",
+    fn transform_input(&mut self, read: usize) -> io::Result<()> {
+        let result = self.state.update(&self.input[..read], &mut self.output);
+        wipe_bytes(&mut self.input[..read]);
+        let step = result.map_err(operation_io_error)?;
+        if step.progress().input_consumed() != read {
+            return Err(io::Error::other(
+                "base64-ng-tokio decoder made partial progress",
             ));
         }
-
-        let result = self.append_decoded(&quad);
-        let saw_terminal = quad.contains(&b'=');
-        wipe_bytes(&mut quad);
-        result?;
-
-        if saw_terminal {
-            self.terminal_padding = true;
-        }
+        self.output_pos = 0;
+        self.output_len = step.progress().output_produced();
+        self.source_accepted = self.state.source_position();
         Ok(())
     }
 
-    fn process_input(&mut self, input: &[u8]) -> io::Result<()> {
-        if self.terminal_padding && !input.is_empty() {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidData,
-                "base64-ng-tokio decoder reader received trailing input after padding",
-            ));
-        }
-
-        let mut read = 0;
-
-        if self.pending_len != 0 {
-            let needed = 4 - self.pending_len;
-            if input.len() < needed {
-                self.pending[self.pending_len..self.pending_len + input.len()]
-                    .copy_from_slice(input);
-                self.pending_len += input.len();
-                return Ok(());
-            }
-
-            let mut quad = [0u8; 4];
-            quad[..self.pending_len].copy_from_slice(&self.pending[..self.pending_len]);
-            quad[self.pending_len..].copy_from_slice(&input[..needed]);
-            self.process_quad(quad)?;
-            wipe_bytes(&mut self.pending);
-            self.pending_len = 0;
-            read += needed;
-        }
-
-        while read + 4 <= input.len() {
-            let quad = [
-                input[read],
-                input[read + 1],
-                input[read + 2],
-                input[read + 3],
-            ];
-            self.process_quad(quad)?;
-            let saw_terminal = self.terminal_padding;
-            read += 4;
-
-            if saw_terminal && read != input.len() {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidData,
-                    "base64-ng-tokio decoder reader received trailing input after padding",
-                ));
-            }
-        }
-
-        let tail = &input[read..];
-        if !tail.is_empty() {
-            self.pending[..tail.len()].copy_from_slice(tail);
-            self.pending_len = tail.len();
-        }
-
-        Ok(())
-    }
-
-    fn finish(&mut self) -> io::Result<()> {
-        if self.pending_len != 0 {
-            if PAD || self.pending_len == 1 {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidData,
-                    "base64-ng-tokio decoder reader received incomplete final quantum",
-                ));
-            }
-
-            let mut tail = [0u8; 4];
-            tail[..self.pending_len].copy_from_slice(&self.pending[..self.pending_len]);
-            let pending_len = self.pending_len;
-            self.append_decoded(&tail[..pending_len])?;
-            wipe_bytes(&mut tail);
-            wipe_bytes(&mut self.pending);
-            self.pending_len = 0;
-        }
+    fn finish_transform(&mut self) -> io::Result<()> {
+        let step = self
+            .state
+            .finish(&mut self.output)
+            .map_err(operation_io_error)?;
+        self.output_pos = 0;
+        self.output_len = step.progress().output_produced();
         self.finished = true;
         Ok(())
     }
 }
 
-impl<R, A, const PAD: bool> AsyncRead for DecoderReader<R, A, PAD>
-where
-    R: AsyncRead + Unpin,
-    A: Alphabet + Unpin,
-{
-    fn poll_read(
-        mut self: Pin<&mut Self>,
-        context: &mut Context<'_>,
-        destination: &mut ReadBuf<'_>,
-    ) -> Poll<io::Result<()>> {
-        if self.failed {
-            return Poll::Ready(Err(io::Error::other(
-                "base64-ng-tokio decoder reader is failed",
-            )));
-        }
-
-        if self.drain_output(destination) || destination.remaining() == 0 {
-            return Poll::Ready(Ok(()));
-        }
-
-        if self.finished {
-            return Poll::Ready(Ok(()));
-        }
-
-        loop {
-            let mut input = [0u8; DECODE_INPUT_CAP];
-            let mut input_buf = ReadBuf::new(&mut input);
-            match Pin::new(&mut self.inner).poll_read(context, &mut input_buf) {
-                Poll::Pending => return Poll::Pending,
-                Poll::Ready(Err(error)) => {
-                    wipe_bytes(&mut input);
-                    self.failed = true;
-                    self.clear_buffers();
-                    return Poll::Ready(Err(error));
+macro_rules! impl_async_read {
+    ($reader:ident) => {
+        impl<R> AsyncRead for $reader<R>
+        where
+            R: AsyncRead + Unpin,
+        {
+            fn poll_read(
+                mut self: Pin<&mut Self>,
+                context: &mut Context<'_>,
+                destination: &mut ReadBuf<'_>,
+            ) -> Poll<io::Result<()>> {
+                let this = &mut *self;
+                if this.failed {
+                    return Poll::Ready(Err(io::Error::other("base64-ng-tokio reader is failed")));
                 }
-                Poll::Ready(Ok(())) => {
-                    let read = input_buf.filled().len();
-                    if read == 0 {
-                        let result = self.finish();
-                        wipe_bytes(&mut input);
-                        if let Err(error) = result {
-                            self.failed = true;
-                            self.clear_buffers();
-                            return Poll::Ready(Err(error));
+                match this.drain(destination) {
+                    Ok(true) => return Poll::Ready(Ok(())),
+                    Err(error) => return this.fail(error),
+                    Ok(false) => {}
+                }
+                if destination.remaining() == 0 || this.finished {
+                    return Poll::Ready(Ok(()));
+                }
+
+                loop {
+                    let read_cap = this.boundary.read_cap(this.input.len());
+                    if read_cap == 0 {
+                        if let Err(error) = this.finish_transform() {
+                            return this.fail(error);
                         }
                     } else {
-                        let result = self.process_input(&input[..read]);
-                        wipe_bytes(&mut input);
-                        if let Err(error) = result {
-                            self.failed = true;
-                            self.clear_buffers();
-                            return Poll::Ready(Err(error));
+                        let (polled, read) = {
+                            let mut input_buf = ReadBuf::new(&mut this.input[..read_cap]);
+                            let polled =
+                                Pin::new(&mut this.inner).poll_read(context, &mut input_buf);
+                            (polled, input_buf.filled().len())
+                        };
+                        match polled {
+                            Poll::Pending if read == 0 => return Poll::Pending,
+                            Poll::Pending => {
+                                return this.fail(io::Error::other(
+                                    "base64-ng-tokio inner reader filled bytes before Pending",
+                                ));
+                            }
+                            Poll::Ready(Err(error)) => return this.fail(error),
+                            Poll::Ready(Ok(())) if read == 0 => {
+                                if this.boundary.remaining().is_some() {
+                                    return this.fail(io::Error::new(
+                                        io::ErrorKind::UnexpectedEof,
+                                        "base64-ng-tokio exact frame ended early",
+                                    ));
+                                }
+                                if let Err(error) = this.finish_transform() {
+                                    return this.fail(error);
+                                }
+                            }
+                            Poll::Ready(Ok(())) => {
+                                let Some(input_read) = this.input_read.checked_add(read) else {
+                                    return this.fail(io::Error::other(
+                                        "base64-ng-tokio input position overflow",
+                                    ));
+                                };
+                                this.input_read = input_read;
+                                this.boundary.consume(read);
+                                if let Err(error) = this.transform_input(read) {
+                                    return this.fail(error);
+                                }
+                            }
                         }
                     }
 
-                    if self.drain_output(destination) || self.finished {
-                        return Poll::Ready(Ok(()));
+                    match this.drain(destination) {
+                        Ok(true) => return Poll::Ready(Ok(())),
+                        Err(error) => return this.fail(error),
+                        Ok(false) if this.finished => return Poll::Ready(Ok(())),
+                        Ok(false) => {}
                     }
                 }
             }
         }
-    }
+
+        impl<R> Drop for $reader<R> {
+            fn drop(&mut self) {
+                self.clear_internal();
+            }
+        }
+    };
 }
 
-impl<R, A, const PAD: bool> Drop for DecoderReader<R, A, PAD>
-where
-    A: Alphabet,
-{
-    fn drop(&mut self) {
-        self.clear_buffers();
+impl_async_read!(EncoderReader);
+impl_async_read!(DecoderReader);
+
+fn operation_io_error(error: OperationError) -> io::Error {
+    match error {
+        OperationError::Failed(Failure::Input(input)) => {
+            io::Error::new(io::ErrorKind::InvalidData, input.kind().as_str())
+        }
+        _ => io::Error::other(error.as_str()),
     }
 }

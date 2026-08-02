@@ -268,6 +268,11 @@ The release gate runs:
   including one-byte partitions, exact prefix progress, cumulative limits,
   transactional owned output, panic latching, Miri coverage, and an allocation
   counter that rejects full-input coalescing
+- Tokio read-all and `AsyncRead` integration through
+  `scripts/check-2.0-tokio-readers.sh`, including one-byte destinations,
+  arbitrary deterministic chunk/`Pending` schedules, cancellation/resume,
+  exact-frame adjacent-byte preservation, irrevocable plaintext-prefix
+  behavior, release tests, Miri coverage, and shared-state routing checks
 - 2.0 validated-alphabet evidence through
   `scripts/check-2.0-alphabet.sh`, including const compile acceptance and
   rejection, exhaustive invalid-table diagnostics, all-value mapping parity,

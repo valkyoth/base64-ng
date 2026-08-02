@@ -106,6 +106,16 @@ impl EncoderState {
         self.lifecycle.reset();
     }
 
+    /// Clears retained ordinary input and output through the reviewed wipe
+    /// boundary, then resets the state for reuse.
+    ///
+    /// This is explicit best-effort cleanup. It cannot clear bytes already
+    /// returned to a caller or copies retained by an input source, allocator,
+    /// register, cache, swap device, or crash dump.
+    pub fn clear(&mut self) {
+        self.wipe();
+    }
+
     /// Returns the absolute number of input bytes accepted since reset.
     #[must_use]
     pub const fn source_position(&self) -> usize {

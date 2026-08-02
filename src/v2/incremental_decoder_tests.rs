@@ -459,3 +459,17 @@ fn partition_lengths(len: usize, mask: usize) -> Vec<usize> {
     lengths.push(len - start);
     lengths
 }
+
+#[test]
+fn explicit_clear_resets_retained_decoder_state_for_reuse() {
+    let mut state = STRICT_STANDARD_PADDED.decoder();
+    let mut output = [0_u8; 3];
+    let step = state.update(b"c2", &mut output).unwrap();
+    assert_eq!(step.progress().input_consumed(), 2);
+    assert_eq!(state.buffered_input_len(), 2);
+
+    state.clear();
+
+    assert_eq!(state, STRICT_STANDARD_PADDED.decoder());
+    assert_eq!(state.source_position(), 0);
+}

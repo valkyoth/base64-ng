@@ -17,7 +17,9 @@ suspension point. Their initialized bytes and spare capacity are wiped on
 success, I/O error, or future cancellation. Limited helpers request at most the
 remaining allowance plus one lookahead byte. Generic `AsyncRead` cannot return
 that lookahead byte to the source; callers that must preserve adjacent framed
-input should provide an already bounded reader or use a streaming adapter. The
+input should use an exact-length reader or provide an already bounded source.
+`EncoderReader::new_exact` and `DecoderReader::new_exact` cap every poll at the
+remaining frame length and finalize without lookahead. The
 limited helpers cap eager allocation at 8 KiB and wipe only the bytes filled by
 each successful read; their RAII guards still wipe complete live allocations
 and the complete staging array on cancellation or drop. When a read-all vector
@@ -32,12 +34,14 @@ with live frame contents.
 - `scripts/check_reserved_features.sh` verifies that `tokio` remains inert and
   dependency-free until admission.
 - No async traits, Tokio types, or async runtime dependencies are exported by
-  the crate today.
+  the dependency-free core crate today.
 - `base64-ng-tokio` provides optional read-all/write-all helpers for projects
   that already admit Tokio. Prefer its limited helpers for peer-controlled
   input. Their temporary allocations use cancellation-safe RAII cleanup.
 - `base64-ng-tokio` also provides streaming adapters: `EncoderReader`,
   `DecoderReader`, `EncoderWriter`, and `DecoderWriter`.
+- Commit 37 reader adapters use the shared 2.0 incremental state and distinguish
+  EOF mode from exact-length mode. Writer migration follows in Commit 38.
 - Async writer shutdown is the finalization boundary. Call
   `AsyncWriteExt::shutdown` to encode or validate final partial quanta before
   recovering the wrapped writer.

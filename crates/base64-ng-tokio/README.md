@@ -27,37 +27,42 @@
 
 Optional Tokio helpers for `base64-ng`.
 
-The current companion crate provides async convenience helpers plus manual
-`AsyncRead` and `AsyncWrite` streaming adapters. Use the `*_limited` helper
-variants when input size is controlled by a peer or request boundary. Writer
-shutdown is the finalization boundary: call `AsyncWriteExt::shutdown` to encode
-or validate a final partial quantum.
+Commit 37 migrates async read-all helpers and manual `AsyncRead` adapters to the
+shared 2.0 incremental core. `new` reads through EOF; `new_exact` transforms
+exactly one declared frame and leaves adjacent bytes unread. The existing
+`AsyncWrite` adapters remain on their frozen compatibility surface until
+Commit 38 replaces them.
 
 Read-all helper allocations are RAII-wiped on success, error, and cancellation.
 Limited helpers consume no more than the configured limit plus one lookahead
-byte used to detect overflow. Use a separately bounded reader or a streaming
-adapter when an adjacent frame's first byte must remain unread. Their eager
+byte used to detect overflow. Use `new_exact` when an adjacent frame's first
+byte must remain unread. Their eager
 allocation is capped at 8 KiB so cleanup work stays proportional to accepted
 input rather than the caller's maximum alone. Guarded vector growth wipes each
 replaced allocation before it is returned to the allocator.
 
 ```rust
-use base64_ng::STANDARD;
-use base64_ng_tokio::{encode_reader_to_writer_limited, EncoderReader, EncoderWriter};
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use base64_ng::STRICT_STANDARD_PADDED;
+use base64_ng_tokio::{encode_reader_to_writer_limited, EncoderReader};
+use tokio::io::AsyncReadExt;
 
 let mut input = &b"hello"[..];
 let mut output = Vec::new();
-encode_reader_to_writer_limited(&STANDARD, &mut input, &mut output, 1024).await.unwrap();
+encode_reader_to_writer_limited(
+    &STRICT_STANDARD_PADDED,
+    &mut input,
+    &mut output,
+    1024,
+).await.unwrap();
 assert_eq!(output, b"aGVsbG8=");
 
-let mut reader = EncoderReader::new(&b"hello"[..], STANDARD);
+let mut reader = EncoderReader::new_exact(
+    &b"helloNEXT"[..],
+    &STRICT_STANDARD_PADDED,
+    5,
+);
 let mut streamed = Vec::new();
 reader.read_to_end(&mut streamed).await.unwrap();
 assert_eq!(streamed, b"aGVsbG8=");
 
-let mut writer = EncoderWriter::new(Vec::new(), STANDARD);
-writer.write_all(b"hello").await.unwrap();
-writer.shutdown().await.unwrap();
-assert_eq!(writer.into_inner(), b"aGVsbG8=");
 ```

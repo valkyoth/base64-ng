@@ -134,11 +134,11 @@ where
         case.input
     );
     assert_eq!(
-        base64_ng_tokio::encode_to_vec(&engine, &case.input).unwrap(),
+        base64_ng_tokio::encode_to_vec(&codec, &case.input).unwrap(),
         case.encoded
     );
     assert_eq!(
-        base64_ng_tokio::decode_to_vec(&engine, case.encoded).unwrap(),
+        base64_ng_tokio::decode_to_vec(&codec, case.encoded).unwrap(),
         case.input
     );
 
@@ -214,7 +214,7 @@ where
     let mut reader = case.encoded;
     let mut tokio_output = b"unchanged".to_vec();
     let tokio_result = runtime.block_on(base64_ng_tokio::decode_reader_to_writer(
-        &engine,
+        &codec,
         &mut reader,
         &mut tokio_output,
     ));

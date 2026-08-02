@@ -2,8 +2,9 @@
 
 This directory records machine-generated public API at migration boundaries.
 The `v1.3.9` snapshots are immutable authoritative input inventories. The
-`2.0-development/base64-ng.txt` snapshot records reviewed intentional
-additions while CI also proves that every frozen 1.3.9 line remains unchanged.
+The `2.0-development` snapshots record reviewed intentional additions and
+companion migrations while CI preserves every applicable frozen 1.3.9 input
+inventory.
 
 Snapshots are generated with:
 
