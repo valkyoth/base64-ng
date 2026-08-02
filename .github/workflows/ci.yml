@@ -263,6 +263,37 @@ jobs:
       - name: Run both complete big-endian suites
         run: scripts/check_big_endian_qemu.sh --all
 
+  riscv-qemu:
+    name: RISC-V QEMU and RVV candidate evidence
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install Rust toolchain
+        shell: bash
+        run: scripts/ci_install_rust.sh
+
+      - name: Install RISC-V Rust target
+        run: rustup target add riscv64gc-unknown-linux-gnu
+
+      - name: Install QEMU and RISC-V cross toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends \
+            qemu-user \
+            gcc-riscv64-linux-gnu \
+            libc6-dev-riscv64-cross \
+            binutils-riscv64-linux-gnu
+
+      - name: Run scalar and RVV candidate suites
+        run: scripts/check_riscv_qemu.sh
+
+      - name: Generate RVV candidate assembly evidence
+        run: scripts/generate_rvv_asm_evidence.sh
+
   miri:
     name: Miri
     runs-on: ubuntu-latest

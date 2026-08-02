@@ -1407,6 +1407,38 @@ target without pointer-width atomics cannot maintain the required health latch
 and remains scalar. Architecture kernel methods are exposed through this token
 only by their later backend-specific admission commits.
 
+## Commit 32 Non-Admitted RVV Candidate
+
+Location: `src/simd/rvv.rs`
+
+Commit 32 adds an internal QEMU-only RVV 1.0 candidate. It is not compiled by
+normal published builds and does not enter `EncodeBackend`, `DecodeBackend`, or
+`ActiveBackend` dispatch.
+
+Unsafe operations:
+
+- four leaf `global_asm!` functions load exact 12/16-byte blocks, execute RVV
+  arithmetic and segmented stores, and clear `v0..v15` at VLMAX;
+- one leaf reads the architectural `vlenb` CSR for evidence reporting;
+- Rust wrappers `encode_block` and `decode_block` call those symbols through
+  `extern "C"` after fixed-block bounds checks and an RVV/vector-state gate;
+- Linux runtime detection calls `getauxval`, `riscv_hwprobe` through `syscall`,
+  and `prctl(PR_RISCV_V_GET_CONTROL)` with the kernel UAPI layouts.
+
+The assembly functions are stackless leaves, make no nested calls, use only
+caller-saved integer temporaries plus vector registers, and carry CFI function
+boundaries. Scalar validation completes before strict-decode output writes.
+The UAPI probe uses one valid writable pair, a zero-sized null CPU set, and
+fails closed on syscall errors, unsupported keys, missing `V`, or disabled
+vector state. QEMU's older-kernel fallback accepts only the startup `AT_HWCAP`
+`V` bit.
+
+Generated disassembly, ELF attributes, VLEN 128/256 QEMU execution, and pure
+probe-result tests are required by the Commit 32 gates. These are functional
+candidate evidence only. Real-hardware correctness, ABI/signal preservation,
+performance, register-remanence review, and an external pentest remain hard
+requirements before production admission.
+
 ## Admission Rule
 
 Unsafe SIMD can become an active backend only after scalar differential tests,

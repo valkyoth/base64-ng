@@ -1211,7 +1211,8 @@ inside the `1.3.x` line if they remain evidence-gated and do not weaken the
 - Move the stronger RISC-V RVV proof and backend-admission review to `1.3.10`
   so the breaking dependency migration receives an isolated review cycle.
 
-`1.3.10`: RISC-V RVV proof and backend-admission review.
+Historical `1.3.10` proposal, superseded by 2.0 Commit 32: RISC-V RVV proof
+and backend-admission review.
 
 - Add an RVV-specific implementation only when the active stable Rust
   toolchain exposes a reviewable intrinsic path, or when a separately audited
@@ -1228,6 +1229,12 @@ inside the `1.3.x` line if they remain evidence-gated and do not weaken the
 - If real hardware evidence or a stable implementation boundary is still
   unavailable, retain scalar active dispatch and publish the blocker honestly
   rather than weakening the admission requirements.
+
+2.0 Commit 32 implements that isolated assembly candidate, dual-VLEN QEMU
+campaign, fail-closed Linux capability probe, assembly generator, and native
+evidence schema. It intentionally retains scalar production dispatch while
+real-hardware correctness, ABI/signal-state, benchmark, and external pentest
+evidence remain outstanding.
 
 Historical `1.2.x` to `1.3.0` transition:
 

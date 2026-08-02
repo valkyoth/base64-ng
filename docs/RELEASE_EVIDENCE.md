@@ -357,16 +357,17 @@ The release gate runs:
   checked `hardware-evidence/big-endian/schema-v1.json` contract before any
   backend can be upgraded from QEMU-tested to hardware-attested.
 - RISC-V QEMU user-mode verification through `scripts/check_riscv_qemu.sh`,
-  which runs `riscv64gc-unknown-linux-gnu` no-std portability checks and
-  QEMU-executed RFC4648, buffer, backend fallback, malformed-input,
-  clear-tail, in-place, wrapped/legacy, strict decode dispatch surface, and
-  stream tests. This is functional correctness and scalar/fallback evidence
-  under emulation only; it is not RVV hardware performance, timing,
-  microarchitectural, register-retention, or side-channel evidence. The script
-  records that community reports from real RVV 1.0 systems are still requested
-  before any RISC-V backend is upgraded from QEMU-tested to hardware-attested.
-  The stronger RVV proof and backend-admission review is scheduled for
-  `1.3.10`; `1.3.9` preserves scalar active dispatch.
+  which runs complete `riscv64gc-unknown-linux-gnu` default, all-feature,
+  no-default-feature, and doctest suites. Commit 32 additionally compiles the
+  isolated RVV 1.0 candidate and runs differential encode/decode, malformed
+  transactionality, capability-probe, and runtime-report tests at VLEN 128 and
+  256. `scripts/generate_rvv_asm_evidence.sh` checks exact candidate symbols,
+  vector loads/stores, mapping instructions, cleanup, absence of nested calls,
+  and ELF vector attributes. This remains emulation and codegen evidence, not
+  native performance, timing, ABI/signal preservation, microarchitectural,
+  register-retention, or side-channel evidence. Production RISC-V dispatch
+  remains scalar until a report accepted by
+  `hardware-evidence/riscv/schema-v1.json` and external review pass.
 - moved-code review for the `src/alphabet.rs` extraction, preserving root
   public exports for built-in alphabets, custom alphabet validation, and the
   `define_alphabet!` macro

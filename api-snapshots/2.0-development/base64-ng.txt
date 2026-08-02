@@ -894,6 +894,7 @@ pub mod base64_ng::runtime
 pub base64_ng::runtime::Backend::Avx2
 pub base64_ng::runtime::Backend::Avx512Vbmi
 pub base64_ng::runtime::Backend::Neon
+pub base64_ng::runtime::Backend::Rvv
 pub base64_ng::runtime::Backend::Scalar
 pub base64_ng::runtime::Backend::Ssse3Sse41
 pub base64_ng::runtime::Backend::WasmSimd128

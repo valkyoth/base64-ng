@@ -257,14 +257,16 @@ runtime behavior for that line.
   register-retention, or cleanup guarantee. The release-facing decision is
   tracked in
   [WASM_SIMD128_RUNTIME_REVIEW.md](WASM_SIMD128_RUNTIME_REVIEW.md).
-- Big-endian and RISC-V acceleration work is tracked as a QEMU-first evidence
-  path. QEMU user-mode evidence can prove functional correctness and
-  scalar/fallback behavior for targets such as `s390x-unknown-linux-gnu` and
-  `riscv64gc-unknown-linux-gnu`, but it is not hardware performance, timing,
-  microarchitectural, register-retention, or side-channel evidence. Until real
-  hardware reports are linked, any such backend must be documented as QEMU-tested and community-hardware evidence requested.
-  The dedicated RISC-V RVV proof and admission review is scheduled for
-  `1.3.10`; `1.3.9` does not admit a RISC-V backend.
+- Big-endian and RISC-V acceleration work follows a QEMU-first evidence path.
+  QEMU proves functional behavior, not hardware performance, timing,
+  microarchitectural, register-retention, signal-state, or side-channel
+  properties. Commit 32 provides a vector-length-independent RVV 1.0
+  Standard/URL-safe encode and strict-decode candidate behind the internal
+  `base64_ng_rvv_candidate` evidence cfg. It is exercised at VLEN 128 and 256,
+  has generated instruction/register-cleanup evidence, and uses fail-closed
+  Linux `riscv_hwprobe`, auxiliary-vector, and vector-state checks. Normal
+  published builds remain scalar on RISC-V until the native hardware contract
+  and external RISC-V vector review pass.
 - `runtime::backend_report()` reports the active backend, detected candidate,
   detection mode, SIMD feature status, security posture, and a
   conservative unsafe-boundary posture flag. The flag is true only when the

@@ -12,6 +12,9 @@ reports, and external evidence unambiguously identify the API generation under
 test. This is not a published release. The release plan uses the
 `development-blocked` policy, every crate has `publish = false`, and the
 publish helper refuses to run until the final 2.0 acceptance checkpoint.
+Commit 32 includes a non-dispatchable RVV candidate with QEMU and assembly
+evidence. RISC-V production dispatch remains scalar until native hardware and
+external review evidence satisfy the admission contract.
 
 | Crate | Development Version | Publish Now | Cargo |
 | --- | --- | --- | --- |

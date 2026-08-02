@@ -157,6 +157,7 @@ for required_script in \
     "scripts/check_big_endian_qemu.sh" \
     "scripts/check_big_endian_intrinsics_status.sh" \
     "scripts/cargo-deny-check.sh" \
+    "scripts/check_riscv_hardware.sh" \
     "scripts/check_riscv_qemu.sh" \
     "scripts/check_riscv_intrinsics_status.sh" \
     "scripts/check_scheduled_advisories.sh" \
@@ -185,6 +186,7 @@ for required_script in \
     "scripts/ci_install_rust.sh" \
     "scripts/generate-sbom.sh" \
     "scripts/generate_ct_asm_evidence.sh" \
+    "scripts/generate_rvv_asm_evidence.sh" \
     "scripts/test-ct-asm-symbols.sh" \
     "scripts/test-evidence-source.sh" \
     "scripts/reproducible_build_check.sh" \
@@ -343,6 +345,7 @@ for required_release_gate_command in \
     "scripts/check_targets.sh" \
     "scripts/check_big_endian_qemu.sh --all" \
     "scripts/check_riscv_qemu.sh" \
+    "scripts/generate_rvv_asm_evidence.sh" \
     "scripts/check_no_alloc_smoke.sh" \
     "scripts/check_migration_smoke.sh" \
     "scripts/check_simd_feature_bundles.sh" \
@@ -529,6 +532,8 @@ for required_package_file in \
     "docs/BIG_ENDIAN_QEMU_REVIEW.md" \
     "hardware-evidence/big-endian/README.md" \
     "hardware-evidence/big-endian/schema-v1.json" \
+    "hardware-evidence/riscv/README.md" \
+    "hardware-evidence/riscv/schema-v1.json" \
     "docs/RISCV_QEMU_REVIEW.md" \
     "docs/CONSTANT_TIME.md" \
     "docs/CT_ASM_REVIEW.md" \
@@ -574,6 +579,7 @@ for required_package_file in \
     "scripts/check_big_endian_hardware.sh" \
     "scripts/check_big_endian_qemu.sh" \
     "scripts/check_big_endian_intrinsics_status.sh" \
+    "scripts/check_riscv_hardware.sh" \
     "scripts/check_riscv_qemu.sh" \
     "scripts/check_riscv_intrinsics_status.sh" \
     "scripts/ct-asm-symbols.sh" \
@@ -583,6 +589,8 @@ for required_package_file in \
     "scripts/validate-big-endian-hardware-evidence.py" \
     "scripts/test-big-endian-hardware-evidence.py" \
     "scripts/validate-riscv-posture.sh" \
+    "scripts/validate-riscv-hardware-evidence.py" \
+    "scripts/test-riscv-hardware-evidence.py" \
     "scripts/check_dudect.sh" \
     "scripts/check_fuzz.sh" \
     "scripts/check_fuzz_corpus.sh" \
@@ -598,6 +606,7 @@ for required_package_file in \
     "scripts/ci_install_rust.sh" \
     "scripts/generate-sbom.sh" \
     "scripts/generate_ct_asm_evidence.sh" \
+    "scripts/generate_rvv_asm_evidence.sh" \
     "scripts/generate_neon_asm_evidence.sh" \
     "scripts/test-ct-asm-symbols.sh" \
     "scripts/test-neon-performance.py" \

@@ -98,13 +98,46 @@ assembly comparison. The previous companion feature name `strict-ct` remains
 an alias for the renamed `strict-compare` feature during migration. New
 fail-closed fixed and dynamic locked decode establish required controls before
 plaintext materialization in the built-in `CtEngine` implementation.
-The stronger RISC-V RVV proof and admission review is scheduled for `1.3.10`;
-until then, RISC-V remains QEMU-tested scalar/fallback-only.
+Commit 32 adds a complete, isolated RVV 1.0 encode/decode candidate and tests
+it under QEMU at VLEN 128 and 256. Normal published builds remain scalar on
+RISC-V: native correctness, ABI, signal-state, performance, assembly, and
+external pentest evidence are mandatory before production dispatch admission.
+
+## Backend Verification Status
+
+"Project validated" means the named repository tests and evidence gates pass
+on the stated environments. It does not mean independent verification,
+certification, formal proof, or a portable performance guarantee. A backend is
+eligible for safe automatic dispatch only when its row says `admitted`;
+included candidates with incomplete hardware evidence remain unreachable from
+normal public dispatch.
+
+| Surface | Implementation | Project execution evidence | Safe automatic dispatch | Independent verification |
+| --- | --- | --- | --- | --- |
+| Portable scalar encode and strict decode | Complete | Native x86-64, Apple/AWS AArch64; QEMU s390x, PowerPC64, and RISC-V | `admitted` | Not independently verified |
+| x86 SSSE3/SSE4.1 and AVX2 encode/decode | Complete | Native x86-64 differential, direct-kernel, assembly, and benchmark gates | `admitted` | Not independently verified |
+| x86 AVX-512 VBMI encode/decode | Complete | Native AMD AVX-512 VBMI; second Intel performance confirmation remains outstanding | `admitted` with conservative measured thresholds | Not independently verified |
+| little-endian AArch64 NEON encode/decode | Complete | Native Apple M2 and AWS Neoverse-N1 plus assembly and direct-kernel gates | `admitted` | Not independently verified |
+| wasm `simd128` encode/decode | Complete | Node/V8, Wasmtime, Chromium/V8, Firefox/SpiderMonkey, and Safari/WebKit package/runtime gates | `admitted` for the documented SIMD artifact | Not independently verified |
+| RISC-V RVV 1.0 encode/decode | Complete candidate | QEMU VLEN 128/256 plus generated assembly; no accepted native RVV report | `not admitted`; published execution remains scalar | Not independently verified |
+| AArch64 SVE encode/decode | Commit 33 scope | No accepted implementation or hardware evidence at Commit 32 | `not admitted` | Not independently verified |
+| Constant-time-oriented secret encode/decode | Complete scalar bounded path | Fixed-work tests, Kani, assembly review, and dudect-style project evidence | Separate scalar path; never ordinary SIMD dispatch | No formal or independent constant-time verification |
+| Big-endian acceleration | No backend implemented | Complete scalar suites under s390x and PowerPC64 QEMU only | `not admitted`; scalar only | No native hardware verification |
+
+The detailed evidence and non-claims are maintained in
+[the Trust Dashboard](docs/TRUST.md), [SIMD policy](docs/SIMD.md), and the
+[RISC-V review](docs/RISCV_QEMU_REVIEW.md). This table is updated whenever a
+backend implementation, execution environment, or admission decision changes.
 
 Implemented on this branch now:
 
 - Commit 31 big-endian byte-order audit and complete s390x/PowerPC64 QEMU
   scalar-fallback evidence, with a separate schema for real-hardware reports.
+- Commit 32 vector-length-independent RVV 1.0 Standard/URL-safe encode and
+  strict-decode candidate, fail-closed Linux capability probing, generated
+  assembly evidence, dual-VLEN QEMU tests, and a checked real-hardware report
+  contract. The candidate is deliberately non-dispatchable until native
+  evidence and external review pass.
 - `no_std` core with optional `alloc` and `std` features.
 - Zero external runtime or development dependencies in `Cargo.toml`.
 - Standard and URL-safe alphabets.

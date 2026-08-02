@@ -20,6 +20,12 @@ pub enum Backend {
     Neon,
     /// A wasm `simd128` candidate was detected.
     WasmSimd128,
+    /// An RVV 1.0 candidate was detected.
+    ///
+    /// The 2.0 development branch reports this only from the internal
+    /// project-owned candidate build. Production dispatch remains scalar
+    /// until real-hardware admission evidence is accepted.
+    Rvv,
 }
 
 impl Backend {
@@ -37,6 +43,7 @@ impl Backend {
             Self::Ssse3Sse41 => "ssse3-sse4.1",
             Self::Neon => "neon",
             Self::WasmSimd128 => "wasm-simd128",
+            Self::Rvv => "rvv",
         }
     }
 
@@ -60,6 +67,7 @@ impl Backend {
             Self::Ssse3Sse41 => &["ssse3", "sse4.1"],
             Self::Neon => &["neon"],
             Self::WasmSimd128 => &["simd128"],
+            Self::Rvv => &["v"],
         }
     }
 }

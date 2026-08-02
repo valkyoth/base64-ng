@@ -68,6 +68,9 @@ scripts/check_big_endian_qemu.sh --all
 echo "stable release gate: RISC-V QEMU checks"
 scripts/check_riscv_qemu.sh
 
+echo "stable release gate: RVV candidate assembly evidence"
+scripts/generate_rvv_asm_evidence.sh
+
 echo "stable release gate: no-alloc portability smoke"
 scripts/check_no_alloc_smoke.sh
 

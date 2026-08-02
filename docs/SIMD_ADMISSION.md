@@ -45,7 +45,11 @@ only for backends named in this file and the release gate.
   Tokio cleanup and browser wasm evidence hardening patch; it admits no new
   SIMD backend. `1.3.9` migrates the optional sanitization companion to
   `sanitization` 2.0.3, admits no new SIMD backend, and moves the stronger
-  RISC-V RVV proof and admission review to `1.3.10`. The 2.0 Commit 24
+  RISC-V RVV proof and admission review to 2.0 Commit 32. Commit 32 now carries
+  a complete non-admitted RVV 1.0 encode/decode candidate, dual-VLEN QEMU
+  evidence, fail-closed Linux capability probing, and generated assembly
+  review. Real-hardware correctness, ABI, signal-state, benchmark, and pentest
+  evidence remain mandatory before dispatch admission. The 2.0 Commit 24
   checkpoint adds direct KAT, health generation, quarantine, checked-backend,
   and static `no_std` admission without expanding alphabet or secret scope.
   The 2.0 Commit 29 checkpoint replaces the AArch64 prototype architecture

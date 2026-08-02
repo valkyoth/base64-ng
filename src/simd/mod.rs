@@ -33,6 +33,17 @@
 mod static_token;
 pub use static_token::StaticBackendToken;
 
+#[cfg(all(feature = "simd", target_arch = "riscv64", base64_ng_rvv_candidate))]
+mod rvv;
+#[cfg(all(
+    feature = "std",
+    feature = "simd",
+    test,
+    target_arch = "riscv64",
+    base64_ng_rvv_candidate
+))]
+mod rvv_tests;
+
 #[cfg(any(target_arch = "aarch64", target_arch = "arm"))]
 mod neon;
 #[cfg(all(test, target_arch = "aarch64", target_endian = "little"))]
@@ -146,6 +157,9 @@ pub(crate) enum Candidate {
     /// wasm32 `simd128` is available.
     #[cfg(target_arch = "wasm32")]
     WasmSimd128,
+    /// RVV is visible to the non-admitted project-owned candidate build.
+    #[cfg(all(target_arch = "riscv64", base64_ng_rvv_candidate))]
+    Rvv,
 }
 
 /// Returns the backend that is allowed to execute for this build.
@@ -231,6 +245,13 @@ pub(crate) fn detected_candidate() -> Candidate {
     {
         if wasm_simd128_available() {
             return Candidate::WasmSimd128;
+        }
+    }
+
+    #[cfg(all(feature = "simd", target_arch = "riscv64", base64_ng_rvv_candidate))]
+    {
+        if rvv::available() {
+            return Candidate::Rvv;
         }
     }
 

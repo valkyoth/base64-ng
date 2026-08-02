@@ -10,6 +10,13 @@
 - Commit 31 audits portable byte-order assumptions, requires complete s390x
   and PowerPC64 QEMU functional suites, preserves scalar-only big-endian
   dispatch, and adds a checked real-hardware community evidence contract.
+- Commit 32 implements an isolated, vector-length-independent RVV 1.0
+  Standard/URL-safe encode and strict-decode candidate through reviewed leaf
+  assembly, fail-closed Linux `riscv_hwprobe` and vector-state checks, QEMU
+  VLEN 128/256 differential suites, generated assembly evidence, and a
+  checked native-hardware report schema. Production RISC-V dispatch remains
+  scalar until native correctness, ABI, signal-state, performance, assembly,
+  and external pentest evidence pass.
 
 ## 1.3.9 - 2026-07-21
 

@@ -31,19 +31,14 @@ impl std::error::Error for BackendPolicyError {}
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[allow(clippy::struct_excessive_bools)]
 pub struct BackendReport {
-    /// Compatibility alias for the ordinary encode backend.
-    ///
-    /// New code should use [`Self::encode_backend`] and inspect the separate
-    /// strict- and secret-decode reports when those operations matter.
+    /// Compatibility alias for ordinary encode. New code should use
+    /// [`Self::encode_backend`] and inspect the separate decode reports.
     pub active: Backend,
-    /// Compatibility alias reporting whether ordinary encode is accelerated.
-    ///
-    /// This does not describe strict decode. New code should inspect the
-    /// operation-specific reports.
+    /// Whether ordinary encode is accelerated; this does not describe strict
+    /// decode. New code should inspect the operation-specific reports.
     pub accelerated_backend_active: bool,
-    /// Compatibility posture for the ordinary encode backend and candidate.
-    ///
-    /// New code should use the operation-specific security postures.
+    /// Compatibility posture for ordinary encode and its candidate. New code
+    /// should use the operation-specific security postures.
     pub security_posture: SecurityPosture,
     /// Strongest healthy ordinary encode backend for qualifying inputs.
     ///
@@ -461,6 +456,8 @@ fn detected_candidate() -> Backend {
         crate::simd::Candidate::Neon => Backend::Neon,
         #[cfg(target_arch = "wasm32")]
         crate::simd::Candidate::WasmSimd128 => Backend::WasmSimd128,
+        #[cfg(all(target_arch = "riscv64", base64_ng_rvv_candidate))]
+        crate::simd::Candidate::Rvv => Backend::Rvv,
     }
 }
 
@@ -472,7 +469,11 @@ const fn detected_candidate() -> Backend {
 #[cfg(all(
     feature = "simd",
     feature = "std",
-    any(target_arch = "x86", target_arch = "x86_64")
+    any(
+        target_arch = "x86",
+        target_arch = "x86_64",
+        all(target_arch = "riscv64", base64_ng_rvv_candidate)
+    )
 ))]
 const fn candidate_detection_mode() -> CandidateDetectionMode {
     CandidateDetectionMode::RuntimeCpuFeatures
@@ -480,7 +481,14 @@ const fn candidate_detection_mode() -> CandidateDetectionMode {
 
 #[cfg(all(
     feature = "simd",
-    not(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))
+    not(all(
+        feature = "std",
+        any(
+            target_arch = "x86",
+            target_arch = "x86_64",
+            all(target_arch = "riscv64", base64_ng_rvv_candidate)
+        )
+    ))
 ))]
 const fn candidate_detection_mode() -> CandidateDetectionMode {
     CandidateDetectionMode::CompileTimeTargetFeatures

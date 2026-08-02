@@ -101,10 +101,14 @@ Native operators can produce a structurally checked community report with
 the separate backend review.
 
 `scripts/check_riscv_qemu.sh` requires the `riscv64gc` path and the `lp64d`
-glibc sysroot used by the SUSE cross packages. The evidence is RISC-V QEMU
-functional correctness and scalar/fallback evidence only; it is not RVV
-hardware performance, timing, microarchitectural, register-retention, or
-side-channel evidence.
+glibc sysroot used by the SUSE cross packages. It runs complete scalar suites
+and the isolated Commit 32 RVV candidate at VLEN 128 and 256.
+`scripts/generate_rvv_asm_evidence.sh` checks candidate instruction and cleanup
+shape. This is not native RVV performance, ABI/signal preservation, timing,
+microarchitectural, register-retention, or side-channel evidence. Native
+operators use `scripts/check_riscv_hardware.sh` and the checked schema under
+`hardware-evidence/riscv/`; normal published builds stay scalar until that
+evidence and external review are accepted.
 
 The no-alloc portability smoke crate checks the same installed target list with:
 
