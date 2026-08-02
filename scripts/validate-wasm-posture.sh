@@ -13,7 +13,7 @@ evidence_script="scripts/generate_wasm_simd_evidence.sh"
 require_text() {
     file="$1"
     text="$2"
-    if ! grep -F -q "$text" "$file"; then
+    if ! grep -F -q -- "$text" "$file"; then
         echo "wasm posture: $file is missing required text: $text" >&2
         exit 1
     fi
@@ -28,6 +28,7 @@ loader_browser_script="scripts/check_wasm_loader_browser_dispatch.sh"
 loader_firefox_script="scripts/check_wasm_loader_browser_firefox_dispatch.sh"
 loader_safari_script="scripts/check_wasm_loader_browser_safari_dispatch.sh"
 loader_source="packages/base64-ng-wasm-loader/src/index.js"
+loader_build="packages/base64-ng-wasm-loader/scripts/build.mjs"
 
 echo "wasm posture: checking admitted simd128 runtime policy"
 
@@ -51,6 +52,7 @@ require_text "$review_doc" "ships two immutable artifacts"
 require_text "$review_doc" "whole-input scalar validation"
 require_text "$review_doc" "closed intrinsic allowlist"
 require_text "$review_doc" "embedded SHA-256 digest"
+require_text "$review_doc" "second absolute checkout path"
 require_text "$review_doc" "complete scratch clear on \`dispose()\`"
 require_text "$review_doc" "no \`eval\` or \`new Function\`"
 require_text "$review_doc" "script-src 'wasm-unsafe-eval'"
@@ -87,6 +89,8 @@ require_text "$loader_source" "runtime-intrinsics-unavailable"
 require_text "$loader_source" "overlapping-views"
 require_text "$loader_source" "base64_ng_clear_used"
 require_text "$loader_source" "artifact-integrity-policy"
+require_text "$loader_build" "CARGO_ENCODED_RUSTFLAGS"
+require_text "$loader_build" "--remap-path-prefix="
 require_text "$runtime_report" "Candidate::WasmSimd128 => Backend::WasmSimd128"
 
 if ! awk '

@@ -244,10 +244,10 @@ runtime behavior for that line.
   whole-input scalar validation once, directly classifies each 16-byte vector,
   reduces all validity lanes before exact 12-byte stores, and leaves padded
   final quanta and tails to scalar code. There is no per-block scalar
-  comparison in the admitted hot loop. Before dispatch, the decoder verifies
-  over all 256 byte values that `Alphabet::decode` agrees with the mapping
-  implied by `Alphabet::ENCODE`; divergent custom implementations remain
-  scalar even when their encode table matches a built-in family.
+  comparison in the admitted hot loop. Scalar and SIMD decoding both derive
+  mappings directly from `Alphabet::ENCODE`; overridable `Alphabet::decode`
+  code is never executed as an admission check or an engine mapping boundary.
+  Non-Standard-family tables remain scalar unless separately admitted.
   The supported `base64-ng-wasm-loader` npm package ships separate scalar and
   SIMD artifacts and selects with an embedded `WebAssembly.validate` probe
   before instantiation. Exact-package Node/V8, Wasmtime, Chromium/V8,

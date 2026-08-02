@@ -12,7 +12,7 @@ pub(crate) fn wasm_simd128_supports_alphabet<A: Alphabet>() -> bool {
 }
 
 pub(crate) fn wasm_simd128_supports_decode_alphabet<A: Alphabet>() -> bool {
-    wasm_simd128_supports_alphabet::<A>() && super::decode_matches_encode_table::<A>()
+    wasm_simd128_supports_alphabet::<A>()
 }
 
 pub(crate) fn wasm_simd128_decode_available() -> bool {

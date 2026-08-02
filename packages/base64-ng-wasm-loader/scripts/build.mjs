@@ -1,9 +1,10 @@
-import { copyFile, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readFile, realpath, rm, writeFile } from "node:fs/promises";
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 
 const packageRoot = fileURLToPath(new URL("../", import.meta.url));
+const repositoryRoot = await realpath(fileURLToPath(new URL("../../../", import.meta.url)));
 const manifest = fileURLToPath(new URL("../wasm/Cargo.toml", import.meta.url));
 const artifacts = fileURLToPath(new URL("../artifacts/", import.meta.url));
 
@@ -11,7 +12,7 @@ await rm(artifacts, { recursive: true, force: true });
 await mkdir(artifacts, { recursive: true });
 
 await build("scalar", [], "");
-await build("simd128", ["--features", "simd"], "-C target-feature=+simd128");
+await build("simd128", ["--features", "simd"], "target-feature=+simd128");
 await writeChecksums();
 
 async function build(name, features, targetFeatures) {
@@ -27,15 +28,20 @@ async function build(name, features, targetFeatures) {
     ...features,
   ];
   const rustflags = [
-    targetFeatures,
-    "-C link-arg=--max-memory=8388608",
-    "-C link-arg=--no-entry",
-  ].filter(Boolean).join(" ");
-  await run("cargo", args, {
+    ...(targetFeatures ? ["-C", targetFeatures] : []),
+    `--remap-path-prefix=${repositoryRoot}=.`,
+    "-C",
+    "link-arg=--max-memory=8388608",
+    "-C",
+    "link-arg=--no-entry",
+  ];
+  const env = {
     ...process.env,
     CARGO_TARGET_DIR: targetDir,
-    RUSTFLAGS: rustflags,
-  });
+    CARGO_ENCODED_RUSTFLAGS: rustflags.join("\x1f"),
+  };
+  delete env.RUSTFLAGS;
+  await run("cargo", args, env);
   await copyFile(
     `${targetDir}/wasm32-unknown-unknown/release/base64_ng_wasm_artifact.wasm`,
     `${artifacts}/base64-ng-${name}.wasm`,

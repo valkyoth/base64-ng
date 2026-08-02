@@ -199,8 +199,9 @@ workspaces only when they are not packaged with the published crate:
   zero-runtime-dependency guarantee.
 - `packages/base64-ng-wasm-loader/` is an npm companion with zero JavaScript
   dependencies. Its private Rust artifact build depends only on the matching
-  local `base64-ng` source. `npm ci`, deterministic artifact rebuilds, embedded
-  SHA-256 verification, exact tarball inspection, and install-from-package tests run through
+  local `base64-ng` source. `npm ci`, path-independent deterministic artifact
+  rebuilds, embedded SHA-256 verification, checkout-path leakage rejection,
+  exact tarball inspection, and install-from-package tests run through
   `scripts/check-2.0-wasm-loader.sh`.
 
 `scripts/checks.sh` runs those isolated harness checks so ordinary local

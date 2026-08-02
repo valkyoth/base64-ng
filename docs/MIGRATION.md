@@ -131,6 +131,14 @@ low-level helper. Standard and URL-safe table families use crate-owned
 compile-time-selected arithmetic mappers; other custom tables retain the
 conservative fixed-scan mapper.
 
+### Custom Alphabet Decoding In 2.0
+
+`Alphabet::ENCODE` is also the authoritative decode table for every `Engine`
+surface. A hand-written `Alphabet::decode` override remains directly callable
+for compatibility, but ordinary scalar, SIMD, and secret engine paths do not
+execute it. Move custom decode mappings into `ENCODE`; stateful or context-
+dependent method overrides no longer affect `Engine` results.
+
 ## Decoding
 
 `base64`:

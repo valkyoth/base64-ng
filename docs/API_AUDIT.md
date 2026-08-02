@@ -248,21 +248,19 @@ Decision rationale:
   for every emitted byte. This preserves the conservative no secret-indexed
   lookup posture, but it is slower than the arithmetic mappers used by built-in
   alphabets.
-- `Alphabet::ENCODE` is the authoritative output table. Runtime and const
-  `Engine` APIs read that table through crate-owned mappers and never invoke a
-  hand-written `Alphabet::encode` override. The method remains available as a
-  low-level direct-call helper for API compatibility, but it cannot alter
-  `Engine` output. Standard-family mapper classification is evaluated as an
-  associated compile-time constant, not repeated for each scalar call.
+- `Alphabet::ENCODE` is the authoritative encode and decode table. Runtime and
+  const `Engine` APIs read that table through crate-owned mappers and never
+  invoke hand-written `Alphabet::encode` or `Alphabet::decode` overrides. The
+  methods remain available as low-level direct-call helpers for API
+  compatibility, but cannot alter `Engine` output. Standard-family mapper
+  classification is an associated compile-time constant.
 - Manual `Alphabet` implementations can override `encode` or `decode`. An
-  `encode` override affects only direct calls to that low-level helper; a
-  `decode` override affects the normal strict `Engine` path. The `ct` module
-  scans `Alphabet::ENCODE` directly and does not depend on custom `decode`
-  implementations.
-- Strict SIMD decode is eligible only when a Standard-family encode table and
-  the overridable `decode` method agree for every possible input byte. A
-  divergent implementation is forced through scalar strict decode so backend
-  selection cannot change its public result.
+  `encode` or `decode` override affects only direct calls to that low-level
+  helper. Ordinary scalar, SIMD, and `ct` engine paths derive mappings from
+  `Alphabet::ENCODE` and do not depend on executable custom methods.
+- Strict SIMD decode is eligible only for admitted Standard-family tables. Its
+  mapping is identical to scalar strict decode by construction rather than by a
+  check-then-use scan of overridable code.
 
 Stable boundary:
 

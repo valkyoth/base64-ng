@@ -179,8 +179,13 @@ if ! grep -F -q "fn standard_family_decode_error_surfaces_match_scalar()" src/de
     exit 1
 fi
 
-if ! grep -F -q "pub(crate) fn decode_matches_encode_table" src/simd/mod.rs; then
-    echo "simd admission: strict decode must verify Alphabet::decode against Alphabet::ENCODE" >&2
+if ! grep -F -q "RuntimeAlphabetMapperFor::<A>::VALUE" src/scalar.rs \
+    || ! grep -F -q ".decode::<A>(byte)" src/scalar.rs; then
+    echo "simd admission: scalar strict decode must derive mapping from Alphabet::ENCODE" >&2
+    exit 1
+fi
+if grep -F -q "A::decode(byte)" src/scalar.rs src/simd/mod.rs; then
+    echo "simd admission: overridable Alphabet::decode must not be an engine or admission boundary" >&2
     exit 1
 fi
 for source in src/simd/x86/decode.rs src/simd/neon.rs src/simd/wasm.rs; do

@@ -26,6 +26,9 @@ posture, ABI version, and configured ceilings separately.
 The loader verifies an embedded SHA-256 digest before instantiating either
 shipped artifact. Custom artifact bytes or URLs require an explicit expected
 digest rather than inheriting trust from the selected posture label.
+Artifact builds use an encoded stable source-path remap. The package gate
+rebuilds from a second absolute checkout path, compares exact hashes, and rejects
+developer-home or CI-workspace paths in shipped binaries.
 
 ## JavaScript Boundary
 
@@ -64,7 +67,9 @@ is governed by the separate wasm wipe policy.
 
 `scripts/check-2.0-wasm-loader.sh` is the primary package gate. It:
 
-- builds scalar and SIMD artifacts twice and compares exact checksums;
+- builds scalar and SIMD artifacts twice, rebuilds from a second absolute
+  checkout path, and compares exact checksums;
+- rejects developer-home and CI-workspace path disclosure in shipped artifacts;
 - proves embedded loader digests match rebuilt artifacts and rejects missing or
   mismatched digests for custom artifact sources;
 - denies unreviewed Rust unsafe sites in the private artifact ABI;
@@ -100,8 +105,9 @@ thresholds. Node/V8 performance admission requires the exact local benchmark
 run to show both encode and decode benefit; other runtimes require their own
 record before making numerical throughput claims.
 
-Non-Standard-family custom alphabets, custom `Alphabet::decode` contracts that
-diverge from their encode table, bcrypt/crypt alphabets, line-ending insertion,
-and secret constant-time-oriented operations remain scalar. Unsupported
+Non-Standard-family custom alphabets, bcrypt/crypt alphabets, line-ending
+insertion, and secret constant-time-oriented operations remain scalar. Ordinary
+scalar and SIMD decode both derive mapping from `Alphabet::ENCODE`; executable
+`Alphabet::decode` overrides are not part of the engine contract. Unsupported
 runtimes use the separate scalar artifact rather than internal runtime fallback
 inside a SIMD artifact.

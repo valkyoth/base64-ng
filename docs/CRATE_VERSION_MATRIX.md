@@ -57,7 +57,7 @@ guarded read-all vector growth and wipes every replaced allocation before
 deallocation. The Chromium-family wasm evidence gate now requires a
 runtime-created DOM success attribute that is proven absent from the static
 HTML source. Runtime encoding now uses `Alphabet::ENCODE` as its sole output
-definition, so custom overrides cannot create backend-dependent output;
+definition, so custom encode overrides cannot create backend-dependent output;
 standard-family mapper selection is compile-time rather than repeated per
 scalar call. Scheduled advisory monitoring covers all maintained lockfiles.
 SIMD admission scope, unsafe boundaries, and the zero-dependency core posture

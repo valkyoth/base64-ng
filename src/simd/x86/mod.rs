@@ -33,7 +33,7 @@ pub(crate) fn avx512_supports_decode_alphabet<A>() -> bool
 where
     A: Alphabet,
 {
-    avx512_supports_alphabet::<A>() && super::decode_matches_encode_table::<A>()
+    avx512_supports_alphabet::<A>()
 }
 pub(crate) fn avx2_supports_alphabet<A>() -> bool
 where
@@ -46,7 +46,7 @@ pub(crate) fn avx2_supports_decode_alphabet<A>() -> bool
 where
     A: Alphabet,
 {
-    avx2_supports_alphabet::<A>() && super::decode_matches_encode_table::<A>()
+    avx2_supports_alphabet::<A>()
 }
 
 pub(crate) fn ssse3_sse41_supports_alphabet<A>() -> bool
@@ -60,7 +60,7 @@ pub(crate) fn ssse3_sse41_supports_decode_alphabet<A>() -> bool
 where
     A: Alphabet,
 {
-    ssse3_sse41_supports_alphabet::<A>() && super::decode_matches_encode_table::<A>()
+    ssse3_sse41_supports_alphabet::<A>()
 }
 
 pub(crate) fn ssse3_sse41_decode_available() -> bool {

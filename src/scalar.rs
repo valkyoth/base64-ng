@@ -1,7 +1,7 @@
 //! Scalar encoding and strict decoding implementation.
 
 use crate::{
-    Alphabet, DecodeError, EncodeError, RuntimeEncodeMapperFor, checked_encoded_len,
+    Alphabet, DecodeError, EncodeError, RuntimeAlphabetMapperFor, checked_encoded_len,
     decoded_len_padded, decoded_len_unpadded,
 };
 
@@ -62,7 +62,7 @@ where
         });
     }
 
-    let mapper = RuntimeEncodeMapperFor::<A>::VALUE;
+    let mapper = RuntimeAlphabetMapperFor::<A>::VALUE;
 
     let mut read = 0;
     let mut write = 0;
@@ -429,5 +429,7 @@ pub(crate) fn decode_tail_unpadded<A: Alphabet>(
 }
 
 pub(crate) fn decode_byte<A: Alphabet>(byte: u8, index: usize) -> Result<u8, DecodeError> {
-    A::decode(byte).ok_or(DecodeError::InvalidByte { index, byte })
+    RuntimeAlphabetMapperFor::<A>::VALUE
+        .decode::<A>(byte)
+        .ok_or(DecodeError::InvalidByte { index, byte })
 }

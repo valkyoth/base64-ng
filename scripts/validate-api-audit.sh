@@ -35,9 +35,8 @@ for required_text in \
     "try_into_exposed_string" \
     "Encode-to-back and decode-to-front contracts" \
     "define_alphabet!" \
-    "\`encode\` override affects only direct calls" \
-    "\`decode\` override affects the normal strict \`Engine\` path" \
-    "\`Alphabet::ENCODE\` directly" \
+    "\`encode\` or \`decode\` override affects only direct calls" \
+    "\`Alphabet::ENCODE\` is the authoritative encode and decode table" \
     "Keep the custom-alphabet timing contract documented" \
     "Padded \`DecoderReader\` stops after terminal padding" \
     "Keep ct malformed-content errors opaque"

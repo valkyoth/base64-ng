@@ -167,15 +167,16 @@ pub const fn validate_alphabet(encode: &[u8; 64]) -> Result<(), AlphabetError> {
 ///
 /// # Security
 ///
-/// This helper is part of the normal strict decoder path, not the
-/// constant-time-oriented [`ct`](crate::ct) module. It is a `const fn` so it
-/// does not use the optimizer barriers, volatile accumulator reads, or
-/// generated-code evidence hooks used by the private `ct` scanner. Do not rely
-/// on this helper for military or cryptographic constant-time guarantees under
-/// LTO or future compiler rewrites. For secret-bearing custom alphabets, use
+/// This is a directly callable custom-alphabet helper, not the mapping boundary
+/// used by [`Engine`](crate::Engine) or the constant-time-oriented
+/// [`ct`](crate::ct) module. It is a `const fn` so it does not use the optimizer
+/// barriers, volatile accumulator reads, or generated-code evidence hooks used
+/// by the private `ct` scanner. Do not rely on this helper for military or
+/// cryptographic constant-time guarantees under LTO or future compiler
+/// rewrites. For secret-bearing custom alphabets, use
 /// [`Engine::ct_decoder`](crate::Engine::ct_decoder) or the [`ct`](crate::ct)
-/// module, which scans [`Alphabet::ENCODE`] directly and does not call
-/// [`Alphabet::decode`].
+/// module. Both ordinary and secret engine paths derive their mapping directly
+/// from [`Alphabet::ENCODE`] and do not call [`Alphabet::decode`].
 ///
 /// # Examples
 ///
@@ -225,12 +226,12 @@ pub const fn decode_alphabet_byte(byte: u8, encode: &[u8; 64]) -> Option<u8> {
 /// [`Alphabet::ENCODE`] is its sole output definition for const, scalar, SIMD,
 /// wrapped, and in-place surfaces.
 ///
-/// The normal strict decode path calls [`Alphabet::decode`] and is not a
-/// constant-time decoder. The [`ct`](crate::ct) module does not call
-/// [`Alphabet::decode`]; it scans [`Alphabet::ENCODE`] directly with its own
-/// fixed 64-entry mapper. A custom non-constant-time `decode` implementation
-/// therefore affects normal strict decode diagnostics and timing, but not the
-/// `ct` module's symbol-mapping loop.
+/// Public [`Engine`](crate::Engine) decoding also treats [`Alphabet::ENCODE`] as
+/// authoritative and does not call [`Alphabet::decode`]. This prevents mutable
+/// or otherwise stateful method overrides from changing results across scalar
+/// and SIMD backends. The [`ct`](crate::ct) module independently scans the same
+/// table with its fixed-work mapper. Direct calls to an overridden `decode`
+/// method retain that implementation's behavior and timing.
 pub trait Alphabet {
     /// Encoding table indexed by 6-bit values.
     const ENCODE: [u8; 64];
@@ -253,8 +254,9 @@ pub trait Alphabet {
     ///
     /// Implementations that want conservative custom-alphabet timing posture
     /// should delegate to [`decode_alphabet_byte`], which scans all 64 entries
-    /// before returning. The `ct` module ignores this method and scans
-    /// [`Self::ENCODE`] directly.
+    /// before returning. This method is retained as a public low-level mapping
+    /// helper for API compatibility; [`Engine`](crate::Engine) and the `ct`
+    /// module ignore it and derive mappings from [`Self::ENCODE`] directly.
     fn decode(byte: u8) -> Option<u8>;
 }
 
@@ -355,12 +357,12 @@ pub(crate) const fn encode_base64_value<A: Alphabet>(value: u8) -> u8 {
 }
 
 #[derive(Clone, Copy)]
-pub(crate) enum RuntimeEncodeMapper {
+pub(crate) enum RuntimeAlphabetMapper {
     StandardFamily { value_62: u8, value_63: u8 },
     ScannedTable,
 }
 
-impl RuntimeEncodeMapper {
+impl RuntimeAlphabetMapper {
     pub(crate) const fn for_alphabet<A: Alphabet>() -> Self {
         const STANDARD_PREFIX: [u8; 62] =
             *b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -391,12 +393,22 @@ impl RuntimeEncodeMapper {
             Self::ScannedTable => encode_alphabet_value(value, &A::ENCODE),
         }
     }
+
+    #[inline]
+    pub(crate) fn decode<A: Alphabet>(self, byte: u8) -> Option<u8> {
+        match self {
+            Self::StandardFamily { value_62, value_63 } => {
+                decode_ascii_base64(byte, value_62, value_63)
+            }
+            Self::ScannedTable => decode_alphabet_byte(byte, &A::ENCODE),
+        }
+    }
 }
 
-pub(crate) struct RuntimeEncodeMapperFor<A: Alphabet>(core::marker::PhantomData<A>);
+pub(crate) struct RuntimeAlphabetMapperFor<A: Alphabet>(core::marker::PhantomData<A>);
 
-impl<A: Alphabet> RuntimeEncodeMapperFor<A> {
-    pub(crate) const VALUE: RuntimeEncodeMapper = RuntimeEncodeMapper::for_alphabet::<A>();
+impl<A: Alphabet> RuntimeAlphabetMapperFor<A> {
+    pub(crate) const VALUE: RuntimeAlphabetMapper = RuntimeAlphabetMapper::for_alphabet::<A>();
 }
 
 #[inline]

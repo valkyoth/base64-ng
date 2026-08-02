@@ -880,12 +880,12 @@ mappers selected as an associated compile-time constant. For very large
 payloads and custom alphabets, benchmark this tradeoff before using them on
 untrusted high-volume traffic.
 
-If you implement `Alphabet` manually, `Engine` still treats `ENCODE` as the
-sole encoding definition and does not call an overridden `encode` method.
-Direct calls to a custom `Alphabet::encode` implementation retain that
-implementation's timing behavior. A custom `decode` implementation affects the
-normal strict decoder, while the `ct` module scans `Alphabet::ENCODE` directly
-with its own fixed 64-entry mapper.
+If you implement `Alphabet` manually, `Engine` treats `ENCODE` as the sole
+encoding and decoding definition and does not call overridden `encode` or
+`decode` methods. Direct calls to those low-level compatibility helpers retain
+the custom implementation's behavior and timing. Ordinary scalar, SIMD, and
+`ct` engine paths instead use crate-owned mappers derived from `ENCODE`, so a
+stateful override cannot create backend-dependent output.
 
 Built-in non-RFC alphabets are available for explicit interoperability:
 

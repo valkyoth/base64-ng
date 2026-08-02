@@ -17,9 +17,10 @@
 //! and line-ending compaction. Legacy whitespace decode may enter admitted
 //! strict decode only after scalar whitespace compaction. Strict in-place
 //! encode and decode may enter admitted backends only after stack staging.
-//! Non-Standard-family custom alphabets, divergent custom decode contracts,
-//! big-endian `AArch64`, CT secret decode, and every other unsupported SIMD
-//! surface still execute through the scalar implementation.
+//! Non-Standard-family custom alphabets, big-endian `AArch64`, CT secret decode,
+//! and every other unsupported SIMD surface still execute through the scalar
+//! implementation. `Alphabet::ENCODE` is authoritative for ordinary scalar and
+//! SIMD decode; overridable `Alphabet::decode` code is never an admission input.
 //! A `no_std` build may execute an admitted backend only when complete static
 //! target-feature evidence and the atomic backend-health latch are available.
 //!
@@ -32,33 +33,6 @@
 mod static_token;
 pub use static_token::StaticBackendToken;
 
-/// Returns whether an alphabet's overridable decoder agrees with its table.
-///
-/// SIMD classifiers derive byte values directly from `Alphabet::ENCODE`, while
-/// the scalar strict validator and decoder honor `Alphabet::decode`. Both
-/// definitions must agree before strict decode may enter a SIMD backend.
-pub(crate) fn decode_matches_encode_table<A: crate::Alphabet>() -> bool {
-    let mut inverse = [u8::MAX; 256];
-    let mut index = 0;
-    while index < A::ENCODE.len() {
-        inverse[usize::from(A::ENCODE[index])] = u8::try_from(index).unwrap_or(u8::MAX);
-        index += 1;
-    }
-
-    let mut byte = u8::MIN;
-    loop {
-        let value = inverse[usize::from(byte)];
-        let expected = if value == u8::MAX { None } else { Some(value) };
-        if A::decode(byte) != expected {
-            return false;
-        }
-        if byte == u8::MAX {
-            break;
-        }
-        byte += 1;
-    }
-    true
-}
 #[cfg(any(target_arch = "aarch64", target_arch = "arm"))]
 mod neon;
 #[cfg(all(test, target_arch = "aarch64", target_endian = "little"))]

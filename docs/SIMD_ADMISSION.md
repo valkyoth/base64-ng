@@ -62,8 +62,7 @@ only for backends named in this file and the release gate.
   full 64-byte encoded block is present. AVX2 covers full 32-byte encoded blocks,
   SSSE3/SSE4.1 covers full 16-byte encoded blocks, and little-endian std
   `aarch64` NEON covers full 16-byte encoded blocks. Non-Standard-family custom
-  alphabets, divergent custom decode contracts, big-endian AArch64, and CT
-  secret decode remain scalar or
+  alphabets, big-endian AArch64, and CT secret decode remain scalar or
   prototype-only. Wrapped encode, in-place encode, and in-place decode may use
   admitted fixed-block backends only for staged input/output movement. Wrapped
   and legacy decode may use admitted strict decode after scalar line-profile
@@ -91,8 +90,7 @@ scalar unless a later evidence package separately admits them:
 - line-profile validation and line-ending compaction for MIME/PEM decode
 - legacy whitespace compaction itself
 - bcrypt-style and `crypt(3)`-style profiles
-- custom alphabets whose `Alphabet::decode` behavior differs from the mapping
-  implied by `Alphabet::ENCODE`
+- non-Standard-family custom alphabet tables
 - `no_std` SIMD dispatch without complete static feature and health evidence
 - constant-time-oriented `base64_ng::ct` secret decode
 
@@ -195,10 +193,10 @@ The `1.3.0` encode surface review keeps the active encode admission unchanged:
 x86/x86_64 AVX-512 VBMI, AVX2, SSSE3/SSE4.1, and little-endian aarch64 NEON
 fixed-block encode for Standard and URL-safe alphabet families only. Bcrypt,
 `crypt(3)`, and custom alphabets remain scalar unless separately admitted.
-Strict SIMD decode additionally scans the full byte domain before admission and
-requires the overridable `Alphabet::decode` contract to agree exactly with the
-mapping implied by `Alphabet::ENCODE`; table-family similarity alone is not
-sufficient.
+Strict scalar and SIMD decode share `Alphabet::ENCODE` as their sole mapping
+definition. Overridable `Alphabet::decode` code is not executed for admission or
+engine decoding, so mutable helper behavior cannot create backend-dependent
+results. SIMD remains limited to admitted Standard-family tables.
 Commit 24 admits `no_std` only with complete static feature and backend-health
 evidence. In-place encode may enter only through stack staging. Wasm runtime
 dispatch is

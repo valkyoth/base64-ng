@@ -31,6 +31,8 @@ selection reason, limits, and ABI version.
 The reviewed JavaScript embeds and verifies the SHA-256 digest of each shipped
 artifact before instantiation; `posture.artifactSha256` reports the selected
 digest. `artifacts/SHA256SUMS` records the same values for release tooling.
+Builds remap the repository source root to a stable virtual path so official
+artifact bytes and hashes do not depend on a developer or CI checkout path.
 
 The package uses no `eval` or `new Function`. It works as an ES module in Node
 and browsers where the `.wasm` artifacts can be fetched. A restrictive browser

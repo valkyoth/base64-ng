@@ -54,7 +54,7 @@ pub(crate) fn neon_supports_decode_alphabet<A>() -> bool
 where
     A: Alphabet,
 {
-    neon_supports_alphabet::<A>() && super::decode_matches_encode_table::<A>()
+    neon_supports_alphabet::<A>()
 }
 
 #[cfg(all(feature = "simd", target_arch = "aarch64", target_endian = "little"))]

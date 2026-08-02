@@ -309,10 +309,11 @@ heap-owned secret material when clone-free redacted handling is required.
 ### Side-Channel Posture
 
 The default scalar encoder avoids input-derived alphabet table indexes for
-built-in alphabets, and custom alphabet helper decoding now scans the full
-64-byte alphabet before returning. The default strict decoder still preserves
-localized errors and may return early for malformed input, padding, length, or
-output-size failures, so it is not a constant-time decoder. Named engines and
+built-in alphabets, and custom alphabet mapping scans the full 64-byte table.
+Ordinary engine encoding and decoding derive mappings from `Alphabet::ENCODE`
+without executing overridable helper methods. The default strict decoder still
+preserves localized errors and may return early for malformed input, padding,
+length, or output-size failures, so it is not a constant-time decoder. Named engines and
 profiles such as `STANDARD`, `URL_SAFE_NO_PAD`, `MIME`, `PEM`, `BCRYPT`, and
 `CRYPT` are strict interoperability APIs, not token-comparison or key-material
 decode APIs. The `ct` module narrows the timing target further for scalar

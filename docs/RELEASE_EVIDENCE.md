@@ -621,7 +621,8 @@ reports probe evidence and selected scalar/SIMD artifact independently and
 does not expose secret APIs or wasm linear-memory views. The package verifies
 embedded SHA-256 digests before instantiation, requires explicit digests for
 custom artifact sources, tests proportional per-operation cleanup separately
-from complete teardown cleanup, and traps rather than spins on Rust panic.
+from complete teardown cleanup, traps rather than spins on Rust panic, rebuilds
+from two absolute checkout paths, and rejects host checkout paths in artifacts.
 
 The release gate also runs:
 

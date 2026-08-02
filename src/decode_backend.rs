@@ -300,33 +300,39 @@ fn backend_supports<A: Alphabet>(backend: DecodeBackend) -> bool {
 #[cfg(test)]
 mod tests {
     use super::{DecodeBackend, active_decode_backend};
-    #[cfg(feature = "simd")]
     use crate::{Alphabet, Engine, Standard, decode_alphabet_byte};
+    use core::sync::atomic::{AtomicUsize, Ordering};
 
-    #[cfg(feature = "simd")]
-    struct DivergentStandard;
+    static DECODE_CALLS: AtomicUsize = AtomicUsize::new(0);
 
-    #[cfg(feature = "simd")]
-    impl Alphabet for DivergentStandard {
+    struct StatefulStandard;
+
+    impl Alphabet for StatefulStandard {
         const ENCODE: [u8; 64] = Standard::ENCODE;
 
         fn decode(byte: u8) -> Option<u8> {
-            decode_alphabet_byte(byte, &Self::ENCODE).map(|_| 0)
+            let call = DECODE_CALLS.fetch_add(1, Ordering::Relaxed);
+            if call < 512 {
+                decode_alphabet_byte(byte, &Self::ENCODE)
+            } else {
+                decode_alphabet_byte(byte, &Self::ENCODE).map(|_| 0)
+            }
         }
     }
 
     #[test]
-    #[cfg(feature = "simd")]
-    fn divergent_decode_contract_forces_scalar_semantics() {
-        assert!(!crate::simd::decode_matches_encode_table::<DivergentStandard>());
-
+    fn engine_decode_never_executes_stateful_alphabet_code() {
+        DECODE_CALLS.store(0, Ordering::Relaxed);
         let input = [b'B'; 64];
         let mut output = [0xa5; 48];
-        let written = Engine::<DivergentStandard, true>::new()
+        let written = Engine::<StatefulStandard, true>::new()
             .decode_slice(&input, &mut output)
             .unwrap();
         assert_eq!(written, output.len());
-        assert_eq!(output, [0; 48]);
+        for chunk in output.chunks_exact(3) {
+            assert_eq!(chunk, [0x04, 0x10, 0x41]);
+        }
+        assert_eq!(DECODE_CALLS.load(Ordering::Relaxed), 0);
     }
 
     #[test]

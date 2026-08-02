@@ -7,6 +7,7 @@ install_dir="target/wasm-loader-package"
 pack_dir="$install_dir/packed"
 package_extract="$install_dir/package"
 npm_cache="target/npm-cache"
+alternate_root="$evidence_dir/path-independent/repository"
 export npm_config_cache="$npm_cache"
 
 if ! command -v node >/dev/null 2>&1 || ! command -v npm >/dev/null 2>&1; then
@@ -68,6 +69,28 @@ sha256sum "$package_dir"/artifacts/*.wasm >"$evidence_dir/artifacts-first.sha256
 (cd "$package_dir" && npm run build)
 sha256sum "$package_dir"/artifacts/*.wasm >"$evidence_dir/artifacts-second.sha256"
 cmp "$evidence_dir/artifacts-first.sha256" "$evidence_dir/artifacts-second.sha256"
+
+echo "2.0 wasm loader: path-independent artifact rebuild"
+rm -rf "$alternate_root"
+mkdir -p "$alternate_root"
+git ls-files | while IFS= read -r tracked_file; do
+    mkdir -p "$alternate_root/$(dirname "$tracked_file")"
+    cp "$tracked_file" "$alternate_root/$tracked_file"
+done
+(cd "$alternate_root/$package_dir" && npm run build)
+sha256sum "$alternate_root/$package_dir"/artifacts/*.wasm \
+    | awk '{ print $1 }' >"$evidence_dir/artifacts-alternate-path.sha256"
+sha256sum "$package_dir"/artifacts/*.wasm \
+    | awk '{ print $1 }' >"$evidence_dir/artifacts-current-path.sha256"
+cmp "$evidence_dir/artifacts-current-path.sha256" \
+    "$evidence_dir/artifacts-alternate-path.sha256"
+
+for artifact in "$package_dir"/artifacts/*.wasm; do
+    if LC_ALL=C grep -a -E -q '/home/|/Users/|/workspace/|/builds/|[A-Za-z]:\\\\' "$artifact"; then
+        echo "2.0 wasm loader: absolute checkout path leaked into $artifact" >&2
+        exit 1
+    fi
+done
 
 echo "2.0 wasm loader: Node/V8 differential and hostile-input tests"
 (cd "$package_dir" && npm test)
