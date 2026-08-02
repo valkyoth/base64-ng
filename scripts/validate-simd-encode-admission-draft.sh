@@ -76,7 +76,7 @@ if ! grep -F -q "Admitted backends: AVX-512 VBMI encode, AVX2 encode, SSSE3/SSE4
     exit 1
 fi
 
-if ! grep -F -q "Active backend priority: AVX-512 VBMI, then AVX2, then SSSE3/SSE4.1 on x86/x86_64; NEON on little-endian aarch64" "$manifest"; then
+if ! grep -F -q "Active encode priority: AVX-512 VBMI, then AVX2, then SSSE3/SSE4.1" "$manifest"; then
     echo "simd encode admission draft: manifest must report AVX-512, AVX2, SSSE3/SSE4.1, and NEON encode priority" >&2
     exit 1
 fi

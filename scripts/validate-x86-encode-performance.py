@@ -4,10 +4,11 @@
 import csv
 import math
 import os
-import statistics
 import sys
 from collections import defaultdict
 from pathlib import Path
+
+from performance_statistics import MINIMUM_SAMPLES, validate_advantage
 
 
 def fail(message: str) -> None:
@@ -22,6 +23,8 @@ def main() -> None:
     avx512_to_avx2_ratio = float(
         os.environ.get("BASE64_NG_AVX512_TO_AVX2_RATIO", "1.05")
     )
+    if minimum_ratio < 1.02 or avx512_to_avx2_ratio < 1.05:
+        fail("environment cannot weaken frozen 1.02/1.05 admission ratios")
     samples: dict[tuple[str, str, str, int], list[float]] = defaultdict(list)
     with path.open(newline="", encoding="utf-8") as handle:
         for row in csv.DictReader(handle):
@@ -42,8 +45,8 @@ def main() -> None:
             for padding in ("padded", "unpadded"):
                 for input_len in lengths:
                     key = (backend, alphabet, padding, input_len)
-                    if len(samples[key]) < 3:
-                        fail(f"missing three samples for {key}")
+                    if len(samples[key]) < MINIMUM_SAMPLES:
+                        fail(f"missing {MINIMUM_SAMPLES} samples for {key}")
     for key, values in sorted(samples.items()):
         backend, alphabet, padding, input_len = key
         if backend == "scalar":
@@ -53,21 +56,16 @@ def main() -> None:
         if backend == "avx512-vbmi" and input_len < 192:
             continue
         scalar_key = ("scalar", alphabet, padding, input_len)
-        if len(samples[scalar_key]) < 3:
-            fail(f"missing three scalar samples for {key}")
-        ratio = statistics.median(values) / statistics.median(samples[scalar_key])
-        if ratio < minimum_ratio:
-            fail(f"{key} ratio {ratio:.3f} is below {minimum_ratio:.3f}")
+        try:
+            validate_advantage(values, samples[scalar_key], minimum_ratio, key)
+        except ValueError as error:
+            fail(str(error))
         if backend == "avx512-vbmi":
             avx2_key = ("avx2", alphabet, padding, input_len)
-            if len(samples[avx2_key]) < 3:
-                fail(f"missing three AVX2 comparison samples for {key}")
-            width_ratio = statistics.median(values) / statistics.median(samples[avx2_key])
-            if width_ratio < avx512_to_avx2_ratio:
-                fail(
-                    f"{key} AVX-512/AVX2 ratio {width_ratio:.3f} "
-                    f"is below {avx512_to_avx2_ratio:.3f}"
-                )
+            try:
+                validate_advantage(values, samples[avx2_key], avx512_to_avx2_ratio, key)
+            except ValueError as error:
+                fail(f"AVX-512/AVX2 {error}")
     print(
         "x86 encode performance: SSSE3/SSE4.1, AVX2, and AVX-512 admitted sizes exceed scalar by "
         f"configured scalar ratio {minimum_ratio:.3f}; automatic AVX-512 sizes exceed "

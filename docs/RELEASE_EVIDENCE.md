@@ -190,13 +190,13 @@ BASE64_NG_RUN_COMMIT28_PERF=1 \
   scripts/check-2.0-x86-decode-hot-paths.sh
 ```
 
-Automatic x86 decode retains AVX2 below 16 KiB and selects AVX-512 from
-16 KiB. Exact static and evidence calls retain the 64-byte AVX-512 block
-minimum. Nine-sample local AMD Ryzen 9 9950X3D evidence shows every profile at
-16 KiB and 64 KiB exceeds AVX2 by at least the configured 1.02 median ratio.
-A second, preferably Intel, AVX-512 VBMI microarchitecture remains an explicit
-pre-release evidence requirement; no portable throughput or frequency claim is
-made from this host.
+Commit 34 supersedes the provisional crossover. Automatic x86 strict decode
+selects SSSE3/SSE4.1 from 16 encoded bytes and AVX2 from 32 encoded bytes.
+AVX-512 retains exact static/evidence execution from its 64-byte block minimum,
+but has no automatic threshold. A retained 15-sample AMD Ryzen 9 9950X3D
+campaign found a weakest AVX-512/AVX2 median ratio of 1.0166, below the frozen
+1.02 requirement; a separate seven-sample campaign also missed the requirement.
+The final matrix therefore makes no automatic AVX-512 decode performance claim.
 
 The Commit 20 pentest follow-up also pins fail-closed forward-progress guards
 for WHATWG and legacy one-shot loops, immediate pending-state cleanup on

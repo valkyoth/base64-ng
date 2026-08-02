@@ -3,7 +3,7 @@
 mod cleanup;
 mod decode;
 mod decode_direct;
-#[cfg(test)]
+#[cfg(all(test, feature = "std"))]
 mod test_probes;
 
 use crate::{Alphabet, EncodeError, checked_encoded_len, scalar};
@@ -17,7 +17,7 @@ pub(crate) use decode::{
     decode_16_bytes_ssse3_sse41, decode_32_bytes_avx2, decode_64_bytes_avx512,
 };
 
-#[cfg(test)]
+#[cfg(all(test, feature = "std"))]
 pub(in crate::simd) use test_probes::{
     test_direct_decode_16, test_direct_decode_32, test_direct_decode_64,
 };

@@ -21,7 +21,7 @@ def rows() -> list[list[object]]:
             for alphabet in ("standard", "url-safe"):
                 for padding in ("padded", "unpadded"):
                     for input_len in LENGTHS:
-                        for sample in range(3):
+                        for sample in range(15):
                             evidence.append(
                                 [backend, operation, alphabet, padding, input_len,
                                  sample, 1, 1, throughput]

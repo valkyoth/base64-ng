@@ -22,7 +22,7 @@ const LENGTHS: &[usize] = &[
     16 * 1024,
     64 * 1024,
 ];
-const DEFAULT_SAMPLES: usize = 7;
+const DEFAULT_SAMPLES: usize = 15;
 const DEFAULT_TARGET_BYTES: usize = 4 * 1024 * 1024;
 
 pub fn run() {

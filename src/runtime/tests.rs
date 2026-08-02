@@ -8,10 +8,9 @@ use crate::{Standard, decode_backend, encode_backend};
 #[test]
 fn per_operation_reports_match_qualifying_dispatch_counters() {
     initialize_runtime_backend_health();
-    // AVX-512 is reported as the strongest healthy backend on capable hosts,
-    // but automatic encode and decode intentionally prefer narrower backends
-    // below their measured crossovers. Keep this report-correlation input
-    // large enough to produce exactly 16 KiB of padded encoded input.
+    // Encode can report AVX-512 on capable hosts. Commit 34 keeps automatic
+    // strict decode on AVX2 even when AVX-512 is the detected candidate. Keep
+    // this input large enough to exercise the final operation-specific tiers.
     let input = [0x5au8; 12 * 1024];
     let mut encoded = [0u8; 16 * 1024];
     let encoded_len = encode_backend::encode_slice::<Standard, true>(&input, &mut encoded).unwrap();

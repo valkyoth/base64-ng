@@ -25,6 +25,12 @@
   AArch64 dispatch remains admitted NEON or scalar until correctness, ABI,
   signal-state, cleanup, performance, and external pentest evidence from at
   least two real SVE systems with different vector lengths pass.
+- Commit 34 freezes per-operation runtime and static `no_std` dispatch,
+  threshold, fallback, and evidence matrices. A retained clean-source
+  15-sample x86 campaign and one-sided sign-test gates preserve automatic x86
+  encode plus SSSE3/SSE4.1 and AVX2 strict decode. AVX-512 strict decode remains
+  exact/static after two campaigns missed the automatic performance margin;
+  RVV and SVE remain non-dispatchable without invented thresholds.
 
 ## 1.3.9 - 2026-07-21
 

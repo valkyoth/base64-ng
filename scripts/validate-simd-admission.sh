@@ -93,7 +93,8 @@ for required_text in \
     "Required precision" \
     "Performance numbers are release notes evidence only" \
     "Admitted backends: AVX-512 VBMI encode, AVX2 encode, SSSE3/SSE4.1 encode, NEON encode, AVX-512 VBMI strict decode, AVX2 strict decode, SSSE3/SSE4.1 strict decode, and NEON strict decode" \
-    "Active backend priority: AVX-512 VBMI, then AVX2, then SSSE3/SSE4.1 on x86/x86_64; NEON on little-endian aarch64" \
+    "Active encode priority: AVX-512 VBMI, then AVX2, then SSSE3/SSE4.1" \
+    "active strict-decode priority: AVX2, then SSSE3/SSE4.1" \
     "wasm simd128 runtime smoke evidence" \
     "The active non-scalar backends" \
     "Advertise SIMD acceleration only with the admitted backend name and scope"
@@ -120,8 +121,8 @@ if [ "$backend_row_count" -ne 5 ]; then
 fi
 
 avx512_row="$(printf '%s\n' "$backend_rows" | grep '^| AVX-512 VBMI ')"
-if ! printf '%s\n' "$avx512_row" | grep '| admitted backend |' >/dev/null 2>&1; then
-    echo "simd admission: AVX-512 VBMI row must be an admitted backend" >&2
+if ! printf '%s\n' "$avx512_row" | grep '| admitted encode and exact/static strict decode |' >/dev/null 2>&1; then
+    echo "simd admission: AVX-512 VBMI row must distinguish automatic encode from exact/static decode" >&2
     printf '%s\n' "$backend_rows" >&2
     exit 1
 fi
@@ -195,4 +196,4 @@ for source in src/simd/x86/decode.rs src/simd/neon.rs src/simd/wasm.rs; do
     fi
 done
 
-echo "simd admission: AVX-512 VBMI, AVX2, SSSE3/SSE4.1, NEON, and wasm simd128 encode/decode admission gate ok"
+echo "simd admission: automatic and exact/static backend scopes are gated"

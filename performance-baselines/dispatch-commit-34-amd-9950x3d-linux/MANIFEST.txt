@@ -1,0 +1,14 @@
+schema=base64-ng-focused-performance-v1
+source_commit=32cd285be9ab90a80db59b68ae49f1077b79a6a3
+source_status=clean
+host_arch=x86_64
+cpu=AMD Ryzen 9 9950X3D 16-Core Processor
+microcode=0xb404035
+rust=1.97.1
+samples_per_cell=15
+target_bytes_per_sample=16777216
+median_minimum_ratio=1.02
+avx512_encode_to_avx2_minimum_ratio=1.05
+one_sided_sign_test_maximum_p=0.05
+x86-decode.csv=658a3dda3869c95f2a428d2c5a0056e47e7fdd0d573b4bcd58cb86f786953e2d
+x86-encode.csv=d1cb71dba5891e0e9c99bc8bb7a5a3ef7e40f40003dc03f52138f6e44679f23c

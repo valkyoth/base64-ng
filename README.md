@@ -266,7 +266,7 @@ Planned behind admission evidence:
 | Active release toolchain | Rust `1.97.1` |
 | Runtime dependencies | Zero external crates |
 | Unsafe policy | Scalar encode/decode remains safe Rust; audited unsafe is limited to volatile wiping, CT comparison/barrier helpers, and the reviewed SIMD boundary |
-| Active backend | Scalar by default; std x86/x86_64 AVX-512 VBMI preferred, then AVX2, then SSSE3/SSE4.1, plus little-endian std aarch64 NEON, and wasm `simd128` when the admitted feature/runtime profile is present |
+| Active backend | Scalar by default; std x86/x86_64 encode selects SSSE3/SSE4.1, AVX2, or AVX-512 VBMI by length, strict decode selects SSSE3/SSE4.1 or AVX2, plus little-endian std aarch64 NEON and wasm `simd128` under their admitted profiles; AVX-512 strict decode is exact/static only |
 | Strict RFC 4648 decoding | Default, canonical, no whitespace |
 | Legacy compatibility | Explicit opt-in APIs |
 | Constant-time posture | Constant-time-oriented scalar validation/decode plus bounded 2.0 secret frames with private staging and isolated timing evidence; no formal cryptographic guarantee |
@@ -1386,10 +1386,12 @@ Security commitments:
   Its `encode_standard` and `encode_url_safe` methods execute the rewritten
   SSSE3/SSE4.1, AVX2, or AVX-512 hot path when that exact token remains healthy.
   Its `decode_standard` and `decode_url_safe` methods execute direct
-  SSSE3/SSE4.1, AVX2, or AVX-512 strict decode. Automatic x86 decode retains
-  AVX2 below the measured 16 KiB AVX-512 crossover; exact static-token calls
-  may use AVX-512 from one 64-byte encoded block. Other token backends and
-  invalidated generations use scalar execution.
+  SSSE3/SSE4.1, AVX2, or AVX-512 strict decode. Commit 34 keeps automatic x86
+  strict decode on SSSE3/SSE4.1 or AVX2 because retained AVX-512 measurements
+  missed the frozen performance margin; exact static-token calls may still use
+  AVX-512 from one 64-byte encoded block. Other token backends and invalidated
+  generations use scalar execution. The complete frozen policy is in
+  [`docs/2.0_DISPATCH_AND_PERFORMANCE_MATRIX.md`](docs/2.0_DISPATCH_AND_PERFORMANCE_MATRIX.md).
 - `runtime::require_backend_policy()` lets deployments assert scalar execution,
   disabled SIMD features, or no detected SIMD candidate.
 - `BackendPolicy::HighAssuranceScalarOnly` combines the scalar/no-SIMD

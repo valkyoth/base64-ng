@@ -137,9 +137,10 @@ runtime behavior for that line.
   admitted encode boundary. For wrapped encode, SIMD applies only to the
   unwrapped Base64 staging step; line-ending insertion remains scalar.
 - Public strict `decode_slice`, `decode_slice_clear_tail`, `decode_buffer`, and
-  alloc strict decode helpers route through the decode boundary. AVX-512 VBMI
-  automatic decode applies from the measured 16 KiB encoded-input crossover;
-  exact static/evidence calls retain the 64-byte block minimum. Commit 28 maps,
+  alloc strict decode helpers route through the decode boundary. Commit 34
+  keeps automatic x86 strict decode on SSSE3/SSE4.1 or AVX2 because two retained
+  AVX-512 campaigns missed the frozen performance margin. Exact static/evidence
+  calls retain the 64-byte AVX-512 block minimum. Commit 28 maps,
   packs, VBMI-compacts, and masked-stores full AVX-512 blocks directly after
   scalar whole-input validation. Commit 27 does the same for full 32-byte AVX2
   and 16-byte SSSE3/SSE4.1 blocks, with exact-width output stores and one

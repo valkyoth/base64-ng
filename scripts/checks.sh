@@ -187,6 +187,9 @@ scripts/check-2.0-x86-decode-hot-paths.sh
 echo "checks: 2.0 AArch64 NEON hot paths"
 scripts/check-2.0-neon-hot-paths.sh
 
+echo "checks: 2.0 final dispatch and performance matrix"
+scripts/validate-2.0-dispatch-matrix.sh
+
 echo "checks: dudect timing harness"
 scripts/check_dudect.sh
 

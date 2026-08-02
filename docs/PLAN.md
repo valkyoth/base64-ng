@@ -1269,6 +1269,15 @@ SIMD admission rules for all post-`1.0` work:
 
 ## Current 2.0 Development Checkpoint
 
+Commit 34 freezes the operation-specific runtime and static `no_std` dispatch
+matrix. It retains clean-source 15-sample x86 evidence and adds median plus
+one-sided sign-test regression gates. Automatic x86 encode remains
+SSSE3/SSE4.1, AVX2, or AVX-512 by length. Automatic strict decode is now
+SSSE3/SSE4.1 or AVX2: AVX-512 remains exact/static because two campaigns missed
+the frozen automatic margin. RVV and SVE remain included but non-dispatchable,
+with no invented threshold. The matrix also records the remaining NEON, wasm,
+RVV, SVE, and big-endian evidence gaps.
+
 Commit 33 implements a complete isolated AArch64 SVE Standard/URL-safe encode
 and strict-decode candidate with four active lanes at every physical vector
 length. QEMU executes it at 128, 256, and 512 bits; generated assembly checks
@@ -1310,12 +1319,13 @@ Commit 28 replaces the AVX-512 VBMI strict-decode staging prototype with direct
 compaction, and an exact masked 48-byte output store. Whole-input scalar
 validation remains authoritative. Static `no_std` tokens expose the exact
 backend after complete feature proof, KAT, generation, and health admission.
-Automatic x86 decode retains AVX2 below the measured 16 KiB crossover; exact
-static/evidence calls retain the 64-byte minimum. Exhaustive lanes, malformed
+Commit 34 supersedes the provisional automatic crossover and retains AVX2 for
+automatic strict decode; exact static/evidence calls retain the 64-byte
+AVX-512 minimum. Exhaustive lanes, malformed
 positions, tails, forced-backend fuzz, static execution, assembly, unsafe, and
 focused performance gates cover the rewrite. The first retained benchmark is
 from an AMD Ryzen 9 9950X3D; a second AVX-512 VBMI microarchitecture remains
-required before the 2.0 release can generalize the crossover.
+required before automatic selection can be reconsidered.
 
 Commit 27 replaces the SSSE3/SSE4.1 and AVX2 strict-decode staging prototypes
 with direct vector ASCII classification, 6-bit mapping, multiply-add packing,

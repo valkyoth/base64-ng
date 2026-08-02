@@ -56,9 +56,12 @@ BASE64_NG_RUN_COMMIT28_PERF=1 scripts/check-2.0-x86-decode-hot-paths.sh
 
 The focused matrix covers Standard and URL-safe, padded and unpadded input,
 raw payload lengths from 12 bytes through 64 KiB, exact scalar comparison for
-SSSE3/SSE4.1 and AVX2, AVX2 comparison for AVX-512 at 16 KiB and 64 KiB, and a
-configurable median threshold (`BASE64_NG_X86_DECODE_RATIO`, default `1.02`).
-It is local hardware evidence, not a cross-microarchitecture claim.
+SSSE3/SSE4.1 and AVX2, and observational AVX2 comparison for exact/static
+AVX-512 at 16 KiB and 64 KiB. Automatic rows use a frozen median threshold
+(`BASE64_NG_X86_DECODE_RATIO`, minimum `1.02`) plus a one-sided paired sign
+test (`p <= 0.05`) over 15 samples. Commit 34 keeps AVX-512 decode
+observational/exact-static because it missed that automatic margin. The result
+is local hardware evidence, not a cross-microarchitecture claim.
 
 The exact-backend entry points exist only under the build cfg
 `base64_ng_perf_evidence`. They check CPU availability before invoking an
@@ -77,7 +80,8 @@ host. The matrix compares exact scalar and NEON encode/strict-decode operations
 for Standard and URL-safe, padded and unpadded profiles from one native block
 through 64 KiB. For raw inputs of at least 192 bytes, the mutation-tested
 validator requires the NEON encode and decode medians to exceed the matching
-scalar medians by `BASE64_NG_NEON_PERF_RATIO` (default `1.02`). These results
+scalar medians by `BASE64_NG_NEON_PERF_RATIO` (minimum `1.02`) and pass the
+15-sample one-sided sign test. These results
 are local hardware evidence only; they do not generalize to other cores,
 operating systems, thermal states, or compiler versions.
 

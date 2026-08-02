@@ -76,6 +76,7 @@ test -s docs/2.0_PACKAGE_TOPOLOGY.md
 test -s docs/2.0_SECRET_STORAGE_AND_EXPOSURE.md
 test -s docs/2.0_ASSURANCE_AND_PROTECTED_MEMORY.md
 test -s docs/2.0_OPERATION_REPORTING.md
+test -s docs/2.0_DISPATCH_AND_PERFORMANCE_MATRIX.md
 test -s packages/base64-ng-wasm-loader/package.json
 test -s packages/base64-ng-wasm-loader/package-lock.json
 test -s packages/base64-ng-wasm-loader/README.md
@@ -112,6 +113,8 @@ test -x scripts/test-release-readiness.sh
 test -s scripts/ct-asm-symbols.sh
 test -x scripts/test-ct-asm-symbols.sh
 test -x scripts/check-2.0-operation-reporting.sh
+test -x scripts/validate-2.0-dispatch-matrix.sh
+test -x scripts/capture-2.0-neon-admission.sh
 
 if [ "$(sed -n '1p' scripts/release_crates.py)" != "#!/usr/bin/env python3" ]; then
     echo "release metadata: scripts/release_crates.py must use #!/usr/bin/env python3" >&2
@@ -143,6 +146,8 @@ for required_script in \
     "scripts/check-2.0-in-place-sanitizers.sh" \
     "scripts/check-2.0-wasm-loader.sh" \
     "scripts/check-2.0-neon-hot-paths.sh" \
+    "scripts/capture-2.0-neon-admission.sh" \
+    "scripts/validate-2.0-dispatch-matrix.sh" \
     "scripts/check-2.0-x86-decode-hot-paths.sh" \
     "scripts/check-2.0-profiles.sh" \
     "scripts/check-2.0-secret-capabilities.sh" \
@@ -493,7 +498,7 @@ case "$cargo_version" in
         required_readme_simd_status="Runtime-dispatched std \`x86\`/\`x86_64\` AVX-512 VBMI fixed-block encode"
         ;;
     *)
-        required_readme_simd_status="Scalar by default; std x86/x86_64 AVX-512 VBMI preferred, then AVX2, then SSSE3/SSE4.1, plus little-endian std aarch64 NEON"
+        required_readme_simd_status="Scalar by default; std x86/x86_64 encode selects SSSE3/SSE4.1, AVX2, or AVX-512 VBMI by length, strict decode selects SSSE3/SSE4.1 or AVX2"
         ;;
 esac
 

@@ -11,12 +11,7 @@ extern crate std;
 use crate::{Alphabet, DecodeError, scalar};
 #[cfg(feature = "checked-backend")]
 mod checked;
-
-const MIN_SIMD_DECODE_BLOCK: usize = 16;
-#[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
-const AVX512_DECODE_AUTO_MIN_INPUT: usize = 16 * 1024;
-#[cfg(all(feature = "simd", target_arch = "aarch64", target_endian = "little"))]
-const NEON_DECODE_AUTO_MIN_INPUT: usize = 256;
+mod policy;
 
 /// Decode backend currently allowed to execute.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -71,52 +66,33 @@ pub(crate) fn active_decode_backend_for_input(input_len: usize) -> DecodeBackend
     let candidate = candidate_decode_backend();
     #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
     {
-        if candidate == DecodeBackend::Avx512Vbmi
-            && avx512_auto_preferred(input_len)
-            && crate::v2::backend_health::admit(
-                crate::runtime::OperationKind::StrictDecode,
-                crate::runtime::Backend::Avx512Vbmi,
-            )
-        {
-            return DecodeBackend::Avx512Vbmi;
-        }
-        if matches!(candidate, DecodeBackend::Avx512Vbmi | DecodeBackend::Avx2)
-            && input_len >= 32
-            && crate::simd::avx2_decode_available()
-            && crate::v2::backend_health::admit(
-                crate::runtime::OperationKind::StrictDecode,
-                crate::runtime::Backend::Avx2,
-            )
-        {
-            return DecodeBackend::Avx2;
-        }
-        if matches!(
-            candidate,
-            DecodeBackend::Avx512Vbmi | DecodeBackend::Avx2 | DecodeBackend::Ssse3Sse41
-        ) && input_len >= MIN_SIMD_DECODE_BLOCK
-            && crate::simd::ssse3_sse41_decode_available()
-            && crate::v2::backend_health::admit(
-                crate::runtime::OperationKind::StrictDecode,
-                crate::runtime::Backend::Ssse3Sse41,
-            )
-        {
-            return DecodeBackend::Ssse3Sse41;
-        }
-        DecodeBackend::Scalar
+        policy::select_x86(candidate, input_len, |backend| match backend {
+            DecodeBackend::Avx2 => {
+                crate::simd::avx2_decode_available()
+                    && crate::v2::backend_health::admit(
+                        crate::runtime::OperationKind::StrictDecode,
+                        crate::runtime::Backend::Avx2,
+                    )
+            }
+            DecodeBackend::Ssse3Sse41 => {
+                crate::simd::ssse3_sse41_decode_available()
+                    && crate::v2::backend_health::admit(
+                        crate::runtime::OperationKind::StrictDecode,
+                        crate::runtime::Backend::Ssse3Sse41,
+                    )
+            }
+            DecodeBackend::Scalar | DecodeBackend::Avx512Vbmi => false,
+        })
     }
 
     #[cfg(all(feature = "simd", target_arch = "aarch64", target_endian = "little"))]
     {
-        if candidate == DecodeBackend::Neon
-            && neon_auto_preferred(input_len)
-            && crate::v2::backend_health::admit(
+        policy::select_neon(candidate, input_len, |_| {
+            crate::v2::backend_health::admit(
                 crate::runtime::OperationKind::StrictDecode,
                 crate::runtime::Backend::Neon,
             )
-        {
-            return DecodeBackend::Neon;
-        }
-        DecodeBackend::Scalar
+        })
     }
 
     #[cfg(not(any(
@@ -134,16 +110,6 @@ pub(crate) fn active_decode_backend_for_input(input_len: usize) -> DecodeBackend
             DecodeBackend::Scalar
         }
     }
-}
-
-#[cfg(all(feature = "simd", target_arch = "aarch64", target_endian = "little"))]
-pub(crate) const fn neon_auto_preferred(input_len: usize) -> bool {
-    input_len >= NEON_DECODE_AUTO_MIN_INPUT
-}
-
-#[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
-pub(crate) const fn avx512_auto_preferred(input_len: usize) -> bool {
-    input_len >= AVX512_DECODE_AUTO_MIN_INPUT
 }
 
 /// Returns the backend selected by CPU/build policy before health admission.
@@ -215,7 +181,7 @@ pub(crate) fn decode_slice<A, const PAD: bool>(
 where
     A: Alphabet,
 {
-    if input.len() < MIN_SIMD_DECODE_BLOCK {
+    if input.len() < policy::MIN_SIMD_INPUT {
         record_test_execution(DecodeBackend::Scalar);
         return scalar::decode_slice::<A, PAD>(input, output);
     }
@@ -364,27 +330,5 @@ mod tests {
             return;
         }
         assert_eq!(backend, DecodeBackend::Scalar);
-    }
-
-    #[test]
-    #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
-    fn avx512_automatic_policy_uses_avx2_below_crossover() {
-        assert!(!super::avx512_auto_preferred(
-            super::AVX512_DECODE_AUTO_MIN_INPUT - 1
-        ));
-        assert!(super::avx512_auto_preferred(
-            super::AVX512_DECODE_AUTO_MIN_INPUT
-        ));
-    }
-
-    #[test]
-    #[cfg(all(feature = "simd", target_arch = "aarch64", target_endian = "little"))]
-    fn neon_automatic_policy_uses_scalar_below_measured_crossover() {
-        assert!(!super::neon_auto_preferred(
-            super::NEON_DECODE_AUTO_MIN_INPUT - 1
-        ));
-        assert!(super::neon_auto_preferred(
-            super::NEON_DECODE_AUTO_MIN_INPUT
-        ));
     }
 }

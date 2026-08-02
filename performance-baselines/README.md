@@ -41,6 +41,12 @@ exclude a privileged concurrent writer.
 Evidence artifacts are committed separately after capture; the artifact
 commit is not substituted for the recorded measurement-source commit.
 
+The Commit 34 focused x86 freeze campaign is retained under
+`dispatch-commit-34-amd-9950x3d-linux/`. Unlike the complete cross-crate schema above,
+that focused campaign measures exact production backends only. Its manifest,
+raw CSV checksums, 15-sample median/sign-test policy, and automatic AVX-512
+decode rejection are validated by `scripts/validate-2.0-dispatch-matrix.sh`.
+
 Only canonical valid Standard and URL-safe padded/unpadded slice operations are
 compared with exact-pinned `base64 0.23.0` and `base64ct 1.8.3`. The archive
 does not present malformed-input, constant-time, wrapped, streaming, or secret

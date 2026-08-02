@@ -27,7 +27,7 @@ def rows() -> list[list[object]]:
         for alphabet in ("standard", "url-safe"):
             for padding in ("padded", "unpadded"):
                 for input_len in lengths:
-                    for sample in range(3):
+                    for sample in range(15):
                         output.append(
                             [backend, alphabet, padding, input_len, sample, 1, 1, throughput]
                         )
@@ -69,11 +69,11 @@ def main() -> None:
         write(path, slow)
         validate(path, False)
 
-        slow_avx512 = rows()
-        for row in slow_avx512:
+        invalid_avx512 = rows()
+        for row in invalid_avx512:
             if row[0] == "avx512-vbmi" and row[1:4] == ["url-safe", "unpadded", 16 * 1024]:
-                row[-1] = 109.0
-        write(path, slow_avx512)
+                row[-1] = -1.0
+        write(path, invalid_avx512)
         validate(path, False)
     print("x86 decode performance validator: mutation checks ok")
 

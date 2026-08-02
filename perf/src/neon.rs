@@ -6,7 +6,7 @@ use base64_ng::perf_evidence::EvidenceBackend;
 use crate::codec::{self, Profile};
 
 const LENGTHS: &[usize] = &[12, 24, 48, 64, 96, 192, 384, 768, 1024, 4096, 64 * 1024];
-const DEFAULT_SAMPLES: usize = 7;
+const DEFAULT_SAMPLES: usize = 15;
 const DEFAULT_TARGET_BYTES: usize = 4 * 1024 * 1024;
 
 pub fn run() {

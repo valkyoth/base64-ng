@@ -2,6 +2,7 @@
 """Mutation checks for the Commit 25/26 performance validator."""
 
 import csv
+import os
 import subprocess
 import tempfile
 from pathlib import Path
@@ -37,7 +38,7 @@ def rows() -> list[list[object]]:
         for alphabet in ("standard", "url-safe"):
             for padding in ("padded", "unpadded"):
                 for input_len in lengths:
-                    for sample in range(3):
+                    for sample in range(15):
                         output.append(
                             [backend, alphabet, padding, input_len, sample, 1, 1, throughput]
                         )
@@ -86,7 +87,24 @@ def main() -> None:
                 row[-1] = 112.0
         write(path, slow_avx512)
         validate(path, False)
+
+        write(path, rows())
+        validate_with_weakened_environment(path)
     print("x86 encode performance validator: mutation checks ok")
+
+
+def validate_with_weakened_environment(path: Path) -> None:
+    environment = os.environ.copy()
+    environment["BASE64_NG_X86_ENCODE_RATIO"] = "0.50"
+    result = subprocess.run(
+        ["scripts/validate-x86-encode-performance.py", str(path)],
+        check=False,
+        capture_output=True,
+        text=True,
+        env=environment,
+    )
+    if result.returncode == 0:
+        raise SystemExit("weakened encode threshold was accepted")
 
 
 if __name__ == "__main__":
