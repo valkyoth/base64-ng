@@ -1,6 +1,7 @@
 let Codecs;
 let createBase64Ng;
-let result;
+let status = "fail";
+let detail = "browser smoke did not complete";
 
 try {
   ({ Codecs, createBase64Ng } = await import("./package/src/index.js"));
@@ -46,24 +47,28 @@ try {
     const scalarTime = measure(() => scalar.encode(benchmarkInput));
     const simdTime = measure(() => simd.encode(benchmarkInput));
     const metrics = `scalar=${scalarTime.toFixed(3)}ms simd128=${simdTime.toFixed(3)}ms`;
-    result = `BASE64_NG_WASM_LOADER_BROWSER_PASS ${metrics}`;
+    status = "pass";
+    detail = `BASE64_NG_WASM_LOADER_BROWSER_PASS ${metrics}`;
   } finally {
     scalar.dispose();
     simd.dispose();
     automatic.dispose();
   }
 } catch (error) {
-  result = `BASE64_NG_WASM_LOADER_BROWSER_FAIL ${error}`;
+  status = "fail";
+  detail = `BASE64_NG_WASM_LOADER_BROWSER_FAIL ${error}`;
 }
-document.body.dataset.base64NgWasmLoaderSmoke = result.includes("_PASS") ? "pass" : "fail";
-document.getElementById("result").textContent = result;
-await reportResult(result);
+document.body.dataset.base64NgWasmLoaderSmoke = status;
+document.getElementById("result").textContent = detail;
+await reportResult(status, detail);
 
-async function reportResult(result) {
+async function reportResult(status, detail) {
+  const nonce = new URL(window.location.href).searchParams.get("nonce");
+  if (nonce === null || nonce.length === 0) throw new Error("missing browser evidence nonce");
   await fetch("/__base64_ng_wasm_loader_result", {
     method: "POST",
-    headers: { "Content-Type": "text/plain;charset=UTF-8" },
-    body: result,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ nonce, status, detail }),
   });
 }
 

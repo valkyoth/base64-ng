@@ -7,8 +7,10 @@ import argparse
 import contextlib
 import functools
 import http.server
+import json
 import os
 import pathlib
+import secrets
 import shutil
 import subprocess
 import sys
@@ -30,12 +32,16 @@ FAIL_TEXT = "BASE64_NG_WASM_LOADER_BROWSER_FAIL"
 @dataclass
 class BrowserResult:
     event: threading.Event = field(default_factory=threading.Event)
+    status: str = ""
     text: str = ""
 
 
 class QuietHandler(http.server.SimpleHTTPRequestHandler):
-    def __init__(self, *args: object, result: BrowserResult, **kwargs: object) -> None:
+    def __init__(
+        self, *args: object, result: BrowserResult, nonce: str, **kwargs: object
+    ) -> None:
         self.result = result
+        self.nonce = nonce
         super().__init__(*args, **kwargs)
 
     def log_message(self, _format: str, *_args: object) -> None:
@@ -53,11 +59,33 @@ class QuietHandler(http.server.SimpleHTTPRequestHandler):
         if not 0 < length <= 4096:
             self.send_error(400)
             return
-        body = self.rfile.read(length).decode("utf-8", errors="replace")
-        self.result.text = body
-        self.result.event.set()
+        try:
+            payload = json.loads(self.rfile.read(length).decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            self.send_error(400)
+            return
+        if not isinstance(payload, dict) or set(payload) != {"nonce", "status", "detail"}:
+            self.send_error(400)
+            return
+        nonce = payload["nonce"]
+        status = payload["status"]
+        detail = payload["detail"]
+        if (
+            not isinstance(nonce, str)
+            or not secrets.compare_digest(nonce, self.nonce)
+            or not isinstance(status, str)
+            or status not in {"pass", "fail"}
+            or not isinstance(detail, str)
+            or len(detail) > 2048
+            or classify_marker(detail) != status
+        ):
+            self.send_error(400)
+            return
         self.send_response(204)
         self.end_headers()
+        self.result.status = status
+        self.result.text = detail
+        self.result.event.set()
 
 
 @contextlib.contextmanager
@@ -65,12 +93,15 @@ def serve() -> tuple[str, BrowserResult]:
     if not (SERVE_ROOT / "package" / "src" / "index.js").is_file():
         subprocess.run([str(ROOT / "scripts" / "check-2.0-wasm-loader.sh")], cwd=ROOT, check=True)
     result = BrowserResult()
-    handler = functools.partial(QuietHandler, directory=SERVE_ROOT, result=result)
+    nonce = secrets.token_urlsafe(32)
+    handler = functools.partial(
+        QuietHandler, directory=SERVE_ROOT, result=result, nonce=nonce
+    )
     server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     try:
-        yield f"http://127.0.0.1:{server.server_port}/{PAGE}", result
+        yield f"http://127.0.0.1:{server.server_port}/{PAGE}?nonce={nonce}", result
     finally:
         server.shutdown()
         server.server_close()
@@ -118,14 +149,14 @@ def run_chromium(
                 if time.monotonic() >= deadline:
                     break
             marker = browser_result.text
-            if PASS_TEXT in marker:
+            if browser_result.status == "pass":
                 print(f"2.0 wasm loader browser: {marker}")
                 return
             process_status = process.poll()
             detail = "timed out" if process_status is None else f"exited {process_status}"
             log.flush()
             output = log_path.read_text(encoding="utf-8", errors="replace")[-4000:]
-            if FAIL_TEXT in marker:
+            if browser_result.status == "fail":
                 raise RuntimeError(f"Chromium loader smoke reported failure: {marker}\n{output}")
             raise RuntimeError(f"Chromium loader smoke {detail} without a result callback:\n{output}")
     finally:
@@ -137,6 +168,28 @@ def run_chromium(
                 process.kill()
                 process.wait(timeout=5)
         shutil.rmtree(profile, ignore_errors=True)
+
+
+def classify_marker(marker: str) -> str | None:
+    if marker.startswith(f"{PASS_TEXT} "):
+        return "pass"
+    if marker.startswith(f"{FAIL_TEXT} "):
+        return "fail"
+    return None
+
+
+def verify_result_classifier() -> None:
+    injected = f"{FAIL_TEXT} Error: injected {PASS_TEXT}"
+    cases = {
+        f"{PASS_TEXT} scalar=1ms simd128=1ms": "pass",
+        f"{FAIL_TEXT} Error: expected failure": "fail",
+        injected: "fail",
+        PASS_TEXT: None,
+        f"prefix {PASS_TEXT} scalar=1ms": None,
+    }
+    for marker, expected in cases.items():
+        if classify_marker(marker) != expected:
+            raise RuntimeError(f"browser result classifier rejected its regression matrix: {marker}")
 
 
 def run_webdriver(browser: str, driver: str, url: str, timeout: float, headless: bool) -> None:
@@ -178,10 +231,11 @@ def run_webdriver(browser: str, driver: str, url: str, timeout: float, headless:
                     },
                 )
                 last = str(result.get("value", ""))
-                if PASS_TEXT in last:
+                status = classify_marker(last)
+                if status == "pass":
                     print(f"2.0 wasm loader browser: {last}")
                     return
-                if "_FAIL" in last:
+                if status == "fail":
                     raise RuntimeError(f"{browser} loader smoke failed: {last}")
                 time.sleep(0.2)
             raise RuntimeError(f"{browser} loader smoke timed out: {last}")
@@ -205,6 +259,7 @@ def main() -> int:
     parser.add_argument("--no-headless", action="store_true")
     args = parser.parse_args()
     try:
+        verify_result_classifier()
         with serve() as (url, browser_result):
             if args.browser == "chromium":
                 if not args.binary:
