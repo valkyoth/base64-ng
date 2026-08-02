@@ -34,12 +34,15 @@ require_pattern() {
     fi
 }
 
-require_pattern 'uminv[[:space:]]+b[0-9]+, v[0-9]+\.16b' \
+require_pattern '(uminv[[:space:]]+b[0-9]+, v[0-9]+\.16b|uminv\.16b[[:space:]]+b[0-9]+, v[0-9]+)' \
     'all-lane strict-decode validity reduction'
-require_pattern 'tbl[[:space:]]+v[0-9]+\.16b' 'NEON byte-table permutation'
-require_pattern 'bsl[[:space:]]+v[0-9]+\.16b' 'NEON alphabet mapping select'
-require_pattern 'st1[[:space:]]+\{ v[0-9]+\.s \}\[2\]' 'exact final four-byte decode store'
-require_pattern 'eor[[:space:]]+v0\.16b, v0\.16b, v0\.16b' \
+require_pattern '(tbl[[:space:]]+v[0-9]+\.16b|tbl\.16b[[:space:]]+v[0-9]+)' \
+    'NEON byte-table permutation'
+require_pattern '(bsl[[:space:]]+v[0-9]+\.16b|bsl\.16b[[:space:]]+v[0-9]+)' \
+    'NEON alphabet mapping select'
+require_pattern '(st1[[:space:]]+\{ v[0-9]+\.s \}\[2\]|st1\.s[[:space:]]+\{ v[0-9]+ \}\[2\])' \
+    'exact final four-byte decode store'
+require_pattern '(eor[[:space:]]+v0\.16b, v0\.16b, v0\.16b|eor\.16b[[:space:]]+v0, v0, v0)' \
     'one-per-call NEON register cleanup sequence'
 
 evidence_verify_source "NEON asm evidence"
