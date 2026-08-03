@@ -58,10 +58,20 @@ fn display_and_formatter_paths_allocate_zero_heap_blocks() {
     .unwrap();
     let input = b"allocation-free formatter evidence";
 
-    let mut warmup = StackWriter::new();
+    // Keep platform and formatter one-time initialization outside the measured
+    // region, then prove every steady-state library path remains allocation-free.
+    let mut built_in_warmup = StackWriter::new();
     STRICT_STANDARD_PADDED
-        .encode_to_fmt(input, &mut warmup)
+        .encode_to_fmt(input, &mut built_in_warmup)
         .unwrap();
+    let mut display_warmup = StackWriter::new();
+    let display = STRICT_STANDARD_PADDED.display(input).unwrap();
+    write!(&mut display_warmup, "{display}").unwrap();
+    let mut custom_warmup = StackWriter::new();
+    runtime.encode_to_fmt(input, &mut custom_warmup).unwrap();
+    assert!(!built_in_warmup.as_bytes().is_empty());
+    assert!(!display_warmup.as_bytes().is_empty());
+    assert!(!custom_warmup.as_bytes().is_empty());
 
     ALLOCATIONS.store(0, Ordering::Relaxed);
     COUNTING.store(true, Ordering::Relaxed);
