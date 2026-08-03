@@ -1396,6 +1396,16 @@ page-locking or persistent-recovery provider. Ordinary SIMD may coexist in one
 build but does not enter or authorize assured secret operations. The numbered
 acceptance criteria remain authoritative in `2.0.0-release-plan.md`.
 
+Commit 46 adds `base64-ng-imap`, a bounded `no_std` companion for only the
+obsolete RFC 3501 Section 5.1.3 modified-Base64 payload transform. It accepts
+and returns already-converted UTF-16BE bytes, uses the shared validated IMAP
+alphabet, rejects padding and noncanonical tails, and provides transactional
+one-shot plus heapless incremental operations. Unicode conversion, shift
+grammar, and complete mailbox parsing stay outside the API. Locked RFC/errata
+evidence, exhaustive small lengths, Python and iconv differential checks, and
+fuzzing support the implementation; external pentest acceptance remains
+pending.
+
 ## Release Gate
 
 The release gate must pass before every release:

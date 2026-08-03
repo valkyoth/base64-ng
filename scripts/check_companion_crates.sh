@@ -7,6 +7,7 @@ serde_manifest="crates/base64-ng-serde/Cargo.toml"
 bytes_manifest="crates/base64-ng-bytes/Cargo.toml"
 subtle_manifest="crates/base64-ng-subtle/Cargo.toml"
 tokio_manifest="crates/base64-ng-tokio/Cargo.toml"
+imap_manifest="crates/base64-ng-imap/Cargo.toml"
 mime_manifest="crates/base64-ng-mime/Cargo.toml"
 multibase_manifest="crates/base64-ng-multibase/Cargo.toml"
 pem_manifest="crates/base64-ng-pem/Cargo.toml"
@@ -98,6 +99,24 @@ cargo doc --manifest-path "$tokio_manifest" --no-deps --all-features
 
 echo "companion crates: base64-ng-tokio dependency policy"
 scripts/cargo-deny-check.sh "$tokio_manifest" deny.toml
+
+echo "companion crates: base64-ng-imap no-default-features"
+cargo check --manifest-path "$imap_manifest" --no-default-features
+
+echo "companion crates: base64-ng-imap alloc"
+cargo test --manifest-path "$imap_manifest" --no-default-features --features alloc
+
+echo "companion crates: base64-ng-imap all features"
+cargo test --manifest-path "$imap_manifest" --all-features
+
+echo "companion crates: base64-ng-imap clippy"
+cargo clippy --manifest-path "$imap_manifest" --all-targets --all-features -- -D warnings
+
+echo "companion crates: base64-ng-imap docs"
+cargo doc --manifest-path "$imap_manifest" --no-deps --all-features
+
+echo "companion crates: base64-ng-imap dependency policy"
+scripts/cargo-deny-check.sh "$imap_manifest" deny.toml
 
 echo "companion crates: base64-ng-mime no-default-features"
 cargo check --manifest-path "$mime_manifest" --no-default-features

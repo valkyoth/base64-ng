@@ -358,6 +358,7 @@ and crates.io examples resolve consistently across the workspace.
 | `base64-ng-bytes` | Optional `bytes` helpers for `Bytes`, `Buf`, and `BufMut` users. |
 | `base64-ng-subtle` | Sealed `subtle::ConstantTimeEq` integration for final 2.0 secret owners and token/MAC comparison boundaries. |
 | `base64-ng-tokio` | Optional Tokio read-all/write-all helpers and async reader/writer streaming adapters. |
+| `base64-ng-imap` | Bounded legacy RFC 3501 Section 5.1.3 modified-Base64 payload transforms over already-converted UTF-16BE bytes; not a complete mailbox codec. |
 | `base64-ng-mime` | Bounded RFC 2045 Section 6.8 Base64 content-transfer body encoding and decoding; not a MIME message or header parser. |
 | `base64-ng-multibase` | Bounded strict support for the four registered Base64-family multibase prefixes; not a complete open-world multibase registry. |
 | `base64-ng-pem` | Bounded complete RFC 7468 textual encoding parser and generator with labels, boundaries, multiple blocks, and opt-in secret payload release. |

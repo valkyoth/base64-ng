@@ -68,7 +68,7 @@ def validate_sources(directory: Path) -> None:
         "https://www.rfc-editor.org/rfc/rfc4648.txt",
         EXPECTED_RFC_SHA256,
     ]
-    if expected not in rows or len(rows) != 3:
+    if expected not in rows or len(rows) != 4:
         fail("SOURCES does not contain the locked RFC 4648 HTTPS source")
     if digest(directory / "rfc4648.txt") != EXPECTED_RFC_SHA256:
         fail("rfc4648.txt differs from the locked RFC Editor bytes")

@@ -34,6 +34,10 @@ Commit 45 adds the new `base64-ng-multibase` package snapshot for bounded,
 strict Base64-family multibase operations. It has no frozen 1.3.9 baseline
 because the package did not exist in that release.
 
+Commit 46 adds the new `base64-ng-imap` package snapshot for bounded, strict
+RFC 3501 Section 5.1.3 modified-Base64 payload operations. It has no frozen
+1.3.9 baseline because the package did not exist in that release.
+
 Snapshots are generated with:
 
 ```text

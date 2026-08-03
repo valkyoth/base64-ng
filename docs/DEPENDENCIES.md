@@ -108,6 +108,11 @@ Current decisions:
   fixed buffers and drop cleanup. Writer adapters finalize pending Base64 tails
   during `AsyncWrite::poll_shutdown`; callers must drive shutdown to completion
   before extracting the wrapped writer.
+- `base64-ng-imap` is admitted as a companion because the obsolete RFC 3501
+  modified-Base64 payload is legacy protocol grammar rather than core RFC 4648
+  behavior. It depends only on the core crate, requires finite limits, accepts
+  already-converted UTF-16BE bytes, and does not claim complete mailbox or
+  Unicode conversion support.
 - `base64-ng-mime` is admitted as a companion because RFC 2045's permissive
   content-transfer body rules are protocol grammar, not a reason to weaken
   strict RFC 4648 core defaults. It has finite input/output/line/skip/work
@@ -224,7 +229,8 @@ workspaces only when they are not packaged with the published crate:
 - `dudect/` dependencies are reviewed by `scripts/check_dudect.sh`.
 - `crates/base64-ng-sanitization/`, `crates/base64-ng-derive/`,
   `crates/base64-ng-serde/`, `crates/base64-ng-bytes/`,
-  `crates/base64-ng-subtle/`, and `crates/base64-ng-tokio/` are optional
+  `crates/base64-ng-subtle/`, `crates/base64-ng-tokio/`, and
+  `crates/base64-ng-imap/` are optional
   companion crates, not dependencies of the core `base64-ng` package. They are
   reviewed separately by `scripts/check_companion_crates.sh` so the root package keeps its
   zero-runtime-dependency guarantee.

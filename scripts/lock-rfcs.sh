@@ -47,6 +47,9 @@ done <"$sources"
         rfc2045-errata.tsv \
         rfc2045-requirements.json \
         rfc2045.txt \
+        rfc3501-errata.tsv \
+        rfc3501-requirements.json \
+        rfc3501.txt \
         rfc4648-errata.tsv \
         rfc4648-requirements.json \
         rfc4648.txt \

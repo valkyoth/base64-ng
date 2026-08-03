@@ -21,6 +21,9 @@ LOCKED_FILES = [
     "rfc2045-errata.tsv",
     "rfc2045-requirements.json",
     "rfc2045.txt",
+    "rfc3501-errata.tsv",
+    "rfc3501-requirements.json",
+    "rfc3501.txt",
     "rfc4648-errata.tsv",
     "rfc4648-requirements.json",
     "rfc4648.txt",
@@ -159,6 +162,30 @@ def stale_rfc7468_errata(directory: Path) -> None:
     relock(directory)
 
 
+def changed_rfc3501_bytes(directory: Path) -> None:
+    path = directory / "rfc3501.txt"
+    path.write_bytes(path.read_bytes() + b"changed")
+
+
+def stale_rfc3501_errata(directory: Path) -> None:
+    path = directory / "rfc3501-errata.tsv"
+    path.write_text(
+        path.read_text(encoding="utf-8").replace(
+            "261\tVerified\t", "261\tReported\t"
+        ),
+        encoding="utf-8",
+    )
+    relock(directory)
+
+
+def unmapped_rfc3501_requirement(directory: Path) -> None:
+    path = directory / "rfc3501-requirements.json"
+    data = json.loads(path.read_text(encoding="utf-8"))
+    data["requirements"][0]["tests"] = []
+    path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    relock(directory)
+
+
 def unmapped_rfc7468_requirement(directory: Path) -> None:
     path = directory / "rfc7468-requirements.json"
     data = json.loads(path.read_text(encoding="utf-8"))
@@ -181,6 +208,9 @@ def main() -> int:
         ("changed RFC 2045 bytes", changed_rfc2045_bytes),
         ("stale RFC 2045 errata status", stale_rfc2045_errata),
         ("unmapped RFC 2045 requirement", unmapped_rfc2045_requirement),
+        ("changed RFC 3501 bytes", changed_rfc3501_bytes),
+        ("stale RFC 3501 errata status", stale_rfc3501_errata),
+        ("unmapped RFC 3501 requirement", unmapped_rfc3501_requirement),
         ("changed RFC 7468 bytes", changed_rfc7468_bytes),
         ("stale RFC 7468 errata status", stale_rfc7468_errata),
         ("unmapped RFC 7468 requirement", unmapped_rfc7468_requirement),

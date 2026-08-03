@@ -51,6 +51,7 @@ fi
 for package in \
     base64-ng \
     base64-ng-derive \
+    base64-ng-imap \
     base64-ng-mime \
     base64-ng-multibase \
     base64-ng-pem \
@@ -71,7 +72,8 @@ do
         --omit auto-trait-impls \
         -p "$package" >"$generated"
 
-    if [ "$package" != "base64-ng-mime" ] && \
+    if [ "$package" != "base64-ng-imap" ] && \
+        [ "$package" != "base64-ng-mime" ] && \
         [ "$package" != "base64-ng-multibase" ] && \
         [ "$package" != "base64-ng-pem" ] && \
         [ ! -f "$committed" ]; then
@@ -99,6 +101,7 @@ do
             exit 1
         fi
     elif [ "$package" = "base64-ng-derive" ] || \
+        [ "$package" = "base64-ng-imap" ] || \
         [ "$package" = "base64-ng-mime" ] || \
         [ "$package" = "base64-ng-multibase" ] || \
         [ "$package" = "base64-ng-pem" ] || \

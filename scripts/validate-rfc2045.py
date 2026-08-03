@@ -51,7 +51,7 @@ def validate(directory: Path) -> None:
         "https://www.rfc-editor.org/rfc/rfc2045.txt",
         EXPECTED_RFC_SHA256,
     ]
-    if expected_source not in source_rows or len(source_rows) != 3:
+    if expected_source not in source_rows or len(source_rows) != 4:
         fail("SOURCES does not contain the locked RFC 2045 HTTPS source")
 
     with (directory / "rfc2045-errata.tsv").open(

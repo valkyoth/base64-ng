@@ -24,10 +24,18 @@ version = "0.0.0"
 dependencies = [
  "base64",
  "base64-ng",
+ "base64-ng-imap",
  "base64-ng-mime",
  "base64-ng-multibase",
  "base64-ng-pem",
  "libfuzzer-sys",
+]
+
+[[package]]
+name = "base64-ng-imap"
+version = "2.0.0"
+dependencies = [
+ "base64-ng",
 ]
 
 [[package]]

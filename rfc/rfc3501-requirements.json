@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "rfc": 3501,
+  "scope": "Legacy Section 5.1.3 modified Base64 payload transform only; UTF-16 conversion, shifts, and mailbox grammar excluded",
+  "reviewed": "2026-08-03",
+  "requirements": [
+    {
+      "id": "RFC3501-5.1.3-ALPHABET",
+      "section": "5.1.3",
+      "normative": "modified Base64",
+      "decision": "Use standard Base64 bit grouping with comma in place of slash and no equals padding.",
+      "implementation": ["crates/base64-ng-imap/src/one_shot.rs", "src/v2/profiles.rs"],
+      "tests": ["crates/base64-ng-imap/tests/imap_payload.rs", "crates/base64-ng-imap/tests/interoperability.rs"]
+    },
+    {
+      "id": "RFC3501-5.1.3-UTF16BE",
+      "section": "5.1.3",
+      "normative": "UTF-16BE octets",
+      "decision": "Accept and return already-converted UTF-16BE octets, reject odd decoded byte lengths, and leave Unicode conversion and scalar validation to the caller.",
+      "implementation": ["crates/base64-ng-imap/src/one_shot.rs", "crates/base64-ng-imap/src/incremental.rs"],
+      "tests": ["crates/base64-ng-imap/tests/imap_payload.rs"]
+    },
+    {
+      "id": "RFC3501-5.1.3-EXACT-TEXT",
+      "section": "5.1.3",
+      "normative": "must preserve and case-sensitive",
+      "decision": "Validate exact case-sensitive alphabet bytes, forbid padding, and require canonical trailing bits without normalization.",
+      "implementation": ["crates/base64-ng-imap/src/one_shot.rs"],
+      "tests": ["crates/base64-ng-imap/tests/imap_payload.rs", "fuzz/fuzz_targets/imap_payload.rs"]
+    },
+    {
+      "id": "RFC3501-5.1.3-SCOPE",
+      "section": "5.1.3",
+      "normative": "protocol boundary",
+      "decision": "Expose payload bytes only; do not emit ampersand/hyphen shifts, encode printable ASCII policy, convert Unicode, or claim complete mailbox syntax.",
+      "implementation": ["crates/base64-ng-imap/src/lib.rs", "crates/base64-ng-imap/README.md"],
+      "tests": ["scripts/check-2.0-imap.sh"]
+    }
+  ]
+}

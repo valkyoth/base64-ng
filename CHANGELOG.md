@@ -41,6 +41,12 @@
   transactional one-shot APIs, heapless incremental states, official vectors,
   independent differential evidence, and explicit rejection of every other
   prefix.
+- Commit 46 adds `base64-ng-imap` with strict, bounded support for only the
+  obsolete RFC 3501 Section 5.1.3 modified-Base64 payload transform over
+  already-converted UTF-16BE bytes. It provides transactional one-shot and
+  heapless incremental APIs, locks the RFC and relevant erratum, rejects
+  padding and noncanonical tails, and adds RFC, Python, iconv, and fuzz
+  evidence without claiming Unicode conversion or a complete mailbox codec.
 
 ## 1.3.9 - 2026-07-21
 

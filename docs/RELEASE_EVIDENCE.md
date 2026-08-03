@@ -911,6 +911,21 @@ and manifest.
 Performance numbers are release notes evidence only; they do not independently
 admit or preserve a runtime backend.
 
+## Commit 46 IMAP Payload Evidence
+
+`base64-ng-imap` is release-gated by `scripts/check-2.0-imap.sh`. The gate
+validates the locked RFC 3501 bytes, reviewed erratum 261, and requirement
+ledger; builds the companion without default features and with allocation;
+runs conformance, limit, rollback, fragmented-state, Python differential, and
+optional `iconv` interoperability tests; compiles its fuzz target; checks
+Clippy, rustdoc, MSRV when locally installed, dependencies, and exact package
+contents; and proves the locked RFC material is excluded from publication.
+
+The evidence supports only the modified-Base64 payload transform over
+already-converted UTF-16BE bytes. It does not support a full modified UTF-7,
+mailbox-parser, Unicode-conversion, current IMAP4rev2, secret-processing, or
+constant-time claim.
+
 ## Reproducibility
 
 The reproducible package/build check packages and verifies the crate twice and

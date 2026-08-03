@@ -12,6 +12,9 @@ expected_files="$(
         rfc2045-errata.tsv \
         rfc2045-requirements.json \
         rfc2045.txt \
+        rfc3501-errata.tsv \
+        rfc3501-requirements.json \
+        rfc3501.txt \
         rfc4648-errata.tsv \
         rfc4648-requirements.json \
         rfc4648.txt \
@@ -39,6 +42,7 @@ fi
 
 python3 scripts/validate-rfc4648.py "$rfc_dir"
 python3 scripts/validate-rfc2045.py "$rfc_dir"
+python3 scripts/validate-rfc3501.py "$rfc_dir"
 python3 scripts/validate-rfc7468.py "$rfc_dir"
 
 if [ "$skip_package" != "1" ]; then
@@ -47,6 +51,7 @@ if [ "$skip_package" != "1" ]; then
     for package in \
         base64-ng \
         base64-ng-derive \
+        base64-ng-imap \
         base64-ng-mime \
         base64-ng-multibase \
         base64-ng-pem \

@@ -1,0 +1,2 @@
+id	status	type	section	reported	source	reviewed	disposition	implementation_decision	security_effect
+261	Verified	Technical	5.1.3	2007-06-13	https://www.rfc-editor.org/errata/eid261	2026-08-03	accepted	Reject every payload byte outside the exact modified Base64 alphabet and reject padding or noncanonical tails.	Prevents parser differentials and hidden non-alphabet data inside accepted payload text.

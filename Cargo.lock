@@ -22,6 +22,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "base64-ng-imap"
+version = "2.0.0"
+dependencies = [
+ "base64-ng",
+]
+
+[[package]]
 name = "base64-ng-mime"
 version = "2.0.0"
 dependencies = [
