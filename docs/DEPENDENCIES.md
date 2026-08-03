@@ -6,6 +6,12 @@ new dependency expands the audit, license, advisory, and supply-chain surface.
 
 ## Current Status
 
+The non-published `protocol-registry/runner` pins `base64` 0.23.0 and
+`base64ct` 1.8.3 solely as independent release-evidence references. Its lock
+file, cargo-deny policy, RustSec audit, and license provenance are checked by
+`scripts/check-protocol-registry.sh`; neither crate enters a published runtime
+dependency graph through this tooling.
+
 - `Cargo.toml` has no normal, build, or dev dependencies.
 - `scripts/validate-dependencies.sh` fails if the root crate dependency graph
   contains anything beyond `base64-ng` itself.

@@ -59,6 +59,7 @@ exclude = [
     "dudect",
     "fuzz",
     "perf",
+    "protocol-registry/runner",
     "semantic-corpus/runner",
 ]
 resolver = "2"

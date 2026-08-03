@@ -1,0 +1,3 @@
+snapshot_date	2026-08-03
+source	status	disposition	note
+multibase-d7406cdea189b82a0b3937f5737b440f5fa92f92	none	complete	The pinned registry has no separate errata feed; changes require a new reviewed commit lock.

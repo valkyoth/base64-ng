@@ -1,0 +1,4 @@
+snapshot_date	2026-08-03
+source	status	disposition	note
+Passlib-1.7.4	none	complete	No upstream errata registry exists; source-version corrections require a new reviewed snapshot.
+SHA-crypt	none	complete	No upstream errata registry exists; source corrections require a new reviewed snapshot.

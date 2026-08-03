@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "requirements": [
+    {
+      "id": "MULTIBASE-BASE64-FAMILY",
+      "source": "multibase.csv",
+      "claim": "Case-sensitive m, M, u, and U prefixes and their exact padding/status policies",
+      "tests": ["crates/base64-ng-multibase/tests/multibase.rs", "crates/base64-ng-multibase/tests/interoperability.rs"]
+    }
+  ]
+}

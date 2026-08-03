@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "protocols": "TSV registry of protocol companions and independently claimed format families",
+  "configurations": "TSV registry of core RFC 4648 and named alphabet/policy surfaces",
+  "cases": "Hex-encoded positive and negative corpus consumed by independent models and production implementations",
+  "provenance": "External implementation, source snapshot, license, and reproduction metadata",
+  "hashes": "SHA-256 inventory covering every retained registry input except SHA256SUMS itself"
+}

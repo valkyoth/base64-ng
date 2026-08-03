@@ -52,6 +52,8 @@ case "$mode" in
 
         cargo +"$toolchain" check --locked \
             --manifest-path semantic-corpus/runner/Cargo.toml
+        cargo +"$toolchain" check --locked \
+            --manifest-path protocol-registry/runner/Cargo.toml
         BASE64_NG_ALPHABET_TOOLCHAIN="$toolchain" \
             scripts/check-2.0-alphabet.sh
         ;;

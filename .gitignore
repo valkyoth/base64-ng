@@ -3,6 +3,7 @@
 /packages/base64-ng-wasm-loader/target-simd128/
 /packages/base64-ng-wasm-loader/target/
 /semantic-corpus/runner/target/
+/protocol-registry/runner/target/
 /.idea/
 /.vscode/
 *.swp

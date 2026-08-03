@@ -9,6 +9,18 @@ Apple/Mach-O function-definition labels; this parser is covered by
 local habit. The release gate generates and verifies evidence that downstream
 users can inspect before adopting a version.
 
+## Protocol Registry Freeze
+
+`scripts/check-protocol-registry.sh` validates the versioned
+`protocol-registry/v1` evidence set. It requires complete entries for all
+specialized companion claims and every named core configuration, verifies
+source/API/model/corpus hashes, executes independent grammar models against
+the production APIs, repeats pinned `base64` 0.23.0 and `base64ct` 1.8.3
+comparisons, checks dependency licenses/advisories, runs MSRV compilation when
+available, and proves retained evidence is excluded from published packages.
+Mutation tests establish fail-closed behavior for missing names, changed
+source bytes, altered corpus decisions, and oracle contamination.
+
 The 2.0 checkpoint program is governed by
 [`2.0_GOVERNANCE.md`](2.0_GOVERNANCE.md). Each numbered checkpoint records
 its exact commit, verification commands, tool and target identity, skips, and

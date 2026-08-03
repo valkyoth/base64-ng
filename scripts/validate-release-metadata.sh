@@ -78,6 +78,12 @@ test -s docs/2.0_ASSURANCE_AND_PROTECTED_MEMORY.md
 test -s docs/2.0_OPERATION_REPORTING.md
 test -s docs/2.0_DISPATCH_AND_PERFORMANCE_MATRIX.md
 test -s docs/2.0_DERIVE_HARDENING.md
+test -s docs/2.0_PROTOCOL_REGISTRY.md
+test -s protocol-registry/v1/SHA256SUMS
+test -s protocol-registry/v1/protocols.tsv
+test -s protocol-registry/v1/configurations.tsv
+test -s protocol-registry/v1/cases.tsv
+test -s protocol-registry/v1/provenance.tsv
 test -s packages/base64-ng-wasm-loader/package.json
 test -s packages/base64-ng-wasm-loader/package-lock.json
 test -s packages/base64-ng-wasm-loader/README.md
@@ -153,6 +159,7 @@ for required_script in \
     "scripts/check-2.0-multibase.sh" \
     "scripts/check-2.0-password.sh" \
     "scripts/check-2.0-openpgp.sh" \
+    "scripts/check-protocol-registry.sh" \
     "scripts/check-2.0-pem.sh" \
     "scripts/check-2.0-in-place.sh" \
     "scripts/check-2.0-in-place-sanitizers.sh" \
@@ -613,6 +620,7 @@ for required_package_file in \
     "docs/2.0_MIME_BODY.md" \
     "docs/2.0_MULTIBASE.md" \
     "docs/2.0_PASSWORD_RECORDS.md" \
+    "docs/2.0_PROTOCOL_REGISTRY.md" \
     "docs/2.0_PEM.md" \
     "docs/2.0_IN_PLACE_OPERATIONS.md" \
     "docs/2.0_DEVICE_VERIFICATION_QUEUE.md" \
@@ -672,6 +680,10 @@ for required_package_file in \
     "scripts/check-2.0-multibase.sh" \
     "scripts/check-2.0-password.sh" \
     "scripts/check-2.0-openpgp.sh" \
+    "scripts/check-protocol-registry.sh" \
+    "scripts/validate-protocol-registry.py" \
+    "scripts/check-protocol-registry-mutations.py" \
+    "scripts/validate-password-spec.py" \
     "scripts/check-2.0-pem.sh" \
     "scripts/check-2.0-in-place.sh" \
     "scripts/check-2.0-in-place-sanitizers.sh" \

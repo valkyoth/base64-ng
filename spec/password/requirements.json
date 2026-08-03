@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "requirements": [
+    {
+      "id": "PASSLIB-PBKDF2-FORMAT",
+      "source": "passlib-1.7.4-pbkdf2.rst",
+      "claim": "PBKDF2 identifiers, canonical decimal rounds, adapted unpadded Base64 fields, and exact digest lengths",
+      "tests": ["crates/base64-ng-password/tests/password_records.rs"]
+    },
+    {
+      "id": "SHA-CRYPT-FORMAT",
+      "source": "SHA-crypt.txt",
+      "claim": "SHA-256/SHA-512 crypt identifiers, rounds and salt grammar, and digest-byte permutations",
+      "tests": ["crates/base64-ng-password/tests/password_records.rs", "crates/base64-ng-password/tests/interoperability.rs"]
+    }
+  ]
+}

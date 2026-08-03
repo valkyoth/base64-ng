@@ -4,6 +4,9 @@ set -eu
 manifest="crates/base64-ng-password/Cargo.toml"
 msrv_toolchain="${BASE64_NG_MSRV_TOOLCHAIN:-1.90.0}"
 
+echo "2.0 password records: exact source lock"
+scripts/validate-password-spec.py
+
 echo "2.0 password records: no-default compile"
 cargo check --manifest-path "$manifest" --no-default-features
 

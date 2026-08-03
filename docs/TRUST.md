@@ -10,6 +10,13 @@ admission, and independent verification. Repository tests and pentests count
 as project evidence only; they do not become independent verification merely
 because they pass.
 
+Specialized protocol claims are also not trusted from crate names or prose
+alone. `protocol-registry/v1` binds each claim to immutable standards/source
+bytes, reviewed errata and requirements, finite limits, independent models,
+retained corpus decisions, external implementations, and the package API
+snapshot. This improves reproducibility without making the external tools part
+of the published runtime trusted computing base.
+
 | Area | Current Status | Evidence |
 | --- | --- | --- |
 | License | `MIT OR Apache-2.0` | `Cargo.toml`, `LICENSE-MIT`, `LICENSE-APACHE` |

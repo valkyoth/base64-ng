@@ -15,6 +15,11 @@ Build `base64-ng` as a modern, secure, `no_std`-first Base64 implementation for 
 - Runtime and dev dependency graph: zero external crates.
 - Local testing system modeled after `fluxheim`: check script, release gate, dependency policy, audit config, Miri when installed, SBOM, reproducible build check, and CI.
 
+Commit 49 completes the protocol and interoperability evidence freeze. See
+[`2.0_PROTOCOL_REGISTRY.md`](2.0_PROTOCOL_REGISTRY.md) for the machine-checked
+mapping from every specialized public claim to locked sources, finite limits,
+corpora, independent models, and external implementations.
+
 ## Dependency Policy
 
 The default position is no external crates.

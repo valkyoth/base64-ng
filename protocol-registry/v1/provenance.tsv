@@ -1,0 +1,13 @@
+id	implementation	version_or_snapshot	license	role	reproduction
+python-email	CPython email.base64mime	3.13.14	PSF-2.0	MIME encode/decode differential	crates/base64-ng-mime/tests/interoperability.rs
+openssl	OpenSSL command line	3.5.3	Apache-2.0	MIME/PEM/SHA-crypt differential	crates/base64-ng-mime/tests/interoperability.rs|crates/base64-ng-pem/tests/rfc7468.rs|crates/base64-ng-password/tests/interoperability.rs
+python-ssl	CPython ssl.PEM_cert_to_DER_cert	3.13.14	PSF-2.0	PEM decode differential	crates/base64-ng-pem/tests/rfc7468.rs
+multibase-upstream	multiformats multibase	d7406cdea189b82a0b3937f5737b440f5fa92f92	MIT;CC-BY-SA-4.0	registry and vector source	scripts/validate-multibase-spec.py
+python-base64	CPython base64	3.13.14	PSF-2.0	alphabet-transform differential	crates/base64-ng-multibase/tests/interoperability.rs|crates/base64-ng-imap/tests/interoperability.rs|crates/base64-ng-password/tests/interoperability.rs
+gnu-iconv	GNU libc iconv	2.43	LGPL-2.1-or-later	complete IMAP mailbox cross-check	crates/base64-ng-imap/tests/interoperability.rs
+passlib-1.7.4	Passlib	1.7.4	BSD-3-Clause	PBKDF2 format vectors	spec/password/passlib-1.7.4-pbkdf2.rst
+base64-0.23.0	base64 Rust crate	0.23.0	MIT;Apache-2.0	configuration differential	protocol-registry/runner/src/references.rs
+base64ct-1.8.3	base64ct Rust crate	1.8.3	MIT;Apache-2.0	strict and PBKDF2 differential	protocol-registry/runner/src/references.rs
+sha-crypt-upstream	Ulrich Drepper sample implementation and vectors	2008-04-23	LicenseRef-Public-Domain	SHA-crypt independent implementation and vectors	spec/password/SHA-crypt.txt
+gnupg	GnuPG	2.5.21	GPL-3.0-or-later	OpenPGP dearmor differential	crates/base64-ng-openpgp/tests/interoperability.rs
+sequoia-sq	Sequoia sq	CI-reported	LGPL-2.0-or-later	OpenPGP dearmor differential	crates/base64-ng-openpgp/tests/interoperability.rs

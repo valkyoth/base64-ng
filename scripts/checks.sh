@@ -111,6 +111,9 @@ scripts/check-rfc-source-mutations.py
 echo "checks: cross-crate semantic corpus"
 scripts/check-semantic-corpus.sh
 
+echo "checks: protocol and interoperability registry"
+scripts/check-protocol-registry.sh
+
 echo "checks: file line budget"
 scripts/validate-file-line-budget.sh
 
