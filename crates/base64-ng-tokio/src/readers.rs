@@ -4,6 +4,7 @@ use core::{
     pin::Pin,
     task::{Context, Poll},
 };
+use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
 use tokio::io::{self, AsyncRead, ReadBuf};
 
 use crate::{operation_io_error, wipe_bytes};
@@ -373,9 +374,18 @@ macro_rules! impl_async_read {
                     } else {
                         let (polled, read) = {
                             let mut input_buf = ReadBuf::new(&mut this.input[..read_cap]);
-                            let polled =
-                                Pin::new(&mut this.inner).poll_read(context, &mut input_buf);
+                            let polled = catch_unwind(AssertUnwindSafe(|| {
+                                Pin::new(&mut this.inner).poll_read(context, &mut input_buf)
+                            }));
                             (polled, input_buf.filled().len())
+                        };
+                        let polled = match polled {
+                            Ok(polled) => polled,
+                            Err(payload) => {
+                                this.failed = true;
+                                this.clear_internal();
+                                resume_unwind(payload);
+                            }
                         };
                         match polled {
                             Poll::Pending if read == 0 => return Poll::Pending,

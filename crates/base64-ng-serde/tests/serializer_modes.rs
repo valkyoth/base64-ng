@@ -33,6 +33,7 @@ impl ser::Error for ProbeError {
 
 struct ProbeSerializer {
     human_readable: bool,
+    panic_on_value: bool,
 }
 
 macro_rules! unsupported_scalar {
@@ -74,10 +75,16 @@ impl Serializer for ProbeSerializer {
     );
 
     fn serialize_str(self, value: &str) -> Result<Self::Ok, Self::Error> {
+        if self.panic_on_value {
+            std::panic::panic_any("injected serializer panic");
+        }
         Ok(Token::String(value.into()))
     }
 
     fn serialize_bytes(self, value: &[u8]) -> Result<Self::Ok, Self::Error> {
+        if self.panic_on_value {
+            std::panic::panic_any("injected serializer panic");
+        }
         Ok(Token::Bytes(value.into()))
     }
 
@@ -215,7 +222,8 @@ macro_rules! assert_modes {
             base64_ng_serde::$module::serialize(
                 plain,
                 ProbeSerializer {
-                    human_readable: true
+                    human_readable: true,
+                    panic_on_value: false,
                 }
             )
             .unwrap(),
@@ -225,7 +233,8 @@ macro_rules! assert_modes {
             base64_ng_serde::$module::serialize(
                 plain,
                 ProbeSerializer {
-                    human_readable: false
+                    human_readable: false,
+                    panic_on_value: false,
                 }
             )
             .unwrap(),
@@ -236,6 +245,24 @@ macro_rules! assert_modes {
             plain
         );
     }};
+}
+
+#[test]
+fn secret_serialization_resumes_serializer_panics_through_the_cleanup_guard() {
+    let secret = base64_ng::secret::SecretArray::from_array(*b"secret00", 6).unwrap();
+
+    for human_readable in [true, false] {
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let _ = base64_ng_serde::secret::standard::serialize(
+                &secret,
+                ProbeSerializer {
+                    human_readable,
+                    panic_on_value: true,
+                },
+            );
+        }));
+        assert!(result.is_err());
+    }
 }
 
 #[test]

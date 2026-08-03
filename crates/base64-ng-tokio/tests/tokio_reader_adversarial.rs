@@ -19,6 +19,21 @@ struct ScriptedReader {
     actions: VecDeque<ReadAction>,
 }
 
+struct PanicAfterFillReader {
+    bytes: &'static [u8],
+}
+
+impl AsyncRead for PanicAfterFillReader {
+    fn poll_read(
+        self: Pin<&mut Self>,
+        _context: &mut Context<'_>,
+        destination: &mut ReadBuf<'_>,
+    ) -> Poll<std::io::Result<()>> {
+        destination.put_slice(self.bytes);
+        std::panic::panic_any("injected reader panic after fill");
+    }
+}
+
 impl ScriptedReader {
     fn new(actions: impl IntoIterator<Item = ReadAction>) -> Self {
         Self {
@@ -85,6 +100,48 @@ fn scheduled_actions(input: &[u8], schedule: &[usize]) -> Vec<ReadAction> {
         index += 1;
     }
     actions
+}
+
+#[test]
+fn wrapped_reader_panics_latch_and_clear_both_adapters() {
+    let waker = noop_waker();
+    let mut context = Context::from_waker(&waker);
+
+    let mut encoder = EncoderReader::new(
+        PanicAfterFillReader { bytes: b"secret" },
+        &STRICT_STANDARD_PADDED,
+    );
+    let mut destination_bytes = [0u8; 16];
+    let panic = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let mut destination = ReadBuf::new(&mut destination_bytes);
+        let _ = Pin::new(&mut encoder).poll_read(&mut context, &mut destination);
+    }));
+    assert!(panic.is_err());
+    assert!(encoder.is_failed());
+    assert_eq!(encoder.input_read(), 0);
+    let mut destination = ReadBuf::new(&mut destination_bytes);
+    assert!(matches!(
+        Pin::new(&mut encoder).poll_read(&mut context, &mut destination),
+        Poll::Ready(Err(_))
+    ));
+
+    let mut decoder = DecoderReader::new(
+        PanicAfterFillReader { bytes: b"c2VjcmV0" },
+        &STRICT_STANDARD_PADDED,
+    );
+    let mut destination_bytes = [0u8; 16];
+    let panic = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let mut destination = ReadBuf::new(&mut destination_bytes);
+        let _ = Pin::new(&mut decoder).poll_read(&mut context, &mut destination);
+    }));
+    assert!(panic.is_err());
+    assert!(decoder.is_failed());
+    assert_eq!(decoder.input_read(), 0);
+    let mut destination = ReadBuf::new(&mut destination_bytes);
+    assert!(matches!(
+        Pin::new(&mut decoder).poll_read(&mut context, &mut destination),
+        Poll::Ready(Err(_))
+    ));
 }
 
 async fn read_one_byte_at_a_time<R: AsyncRead + Unpin>(reader: &mut R) -> Vec<u8> {

@@ -74,6 +74,9 @@ struct BoundedMessage {
 
 Enable `secrets` for fixed-work Standard and URL-safe deserialization into
 wiping `base64_ng::secret::SecretArray<CAP>`. Serde format parsing before the
-adapter remains timing-variable and may allocate. See
+adapter remains timing-variable and may allocate. Owned encoded values and
+secret-serialization temporaries are guarded and wiped across normal return,
+error, and unwinding panic; borrowed input and serializer-retained copies stay
+outside this crate's ownership. See
 [`docs/2.0_SERDE_INTEGRATION.md`](https://github.com/valkyoth/base64-ng/blob/main/docs/2.0_SERDE_INTEGRATION.md)
 for the exact boundary.

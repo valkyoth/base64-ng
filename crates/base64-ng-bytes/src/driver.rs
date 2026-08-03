@@ -177,11 +177,12 @@ impl Driver {
     {
         self.require_open()?;
         self.failed = true;
-        self.preflight_input(input.remaining())?;
+        self.preflight_input(input.remaining(), BytesProgress::ZERO)?;
 
         let mut progress = BytesProgress::ZERO;
         loop {
             let reported_remaining = input.remaining();
+            self.preflight_input(reported_remaining, progress)?;
             let chunk = input.chunk();
             if (reported_remaining != 0 && chunk.is_empty()) || chunk.len() > reported_remaining {
                 return Err(BytesError::new(
@@ -340,18 +341,19 @@ impl Driver {
         }
     }
 
-    fn preflight_input(&mut self, incoming: usize) -> Result<(), BytesError> {
+    fn preflight_input(
+        &mut self,
+        incoming: usize,
+        progress: BytesProgress,
+    ) -> Result<(), BytesError> {
         let Some(required) = self.source_position().checked_add(incoming) else {
             self.failed = true;
-            return Err(BytesError::new(
-                BytesProgress::ZERO,
-                BytesErrorKind::LengthOverflow,
-            ));
+            return Err(BytesError::new(progress, BytesErrorKind::LengthOverflow));
         };
         if required > self.limits.max_input_len() {
             self.failed = true;
             return Err(BytesError::new(
-                BytesProgress::ZERO,
+                progress,
                 BytesErrorKind::InputLimitExceeded {
                     required,
                     limit: self.limits.max_input_len(),

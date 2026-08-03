@@ -266,23 +266,26 @@ The release gate runs:
   across core, streaming, bytes, Tokio, serde, and sanitization surfaces
 - fragmented `Buf`/`BufMut` integration through `scripts/check-2.0-bytes.sh`,
   including one-byte partitions, exact prefix progress, cumulative limits,
-  transactional owned output, panic latching, Miri coverage, and an allocation
-  counter that rejects full-input coalescing
+  mutable-`remaining` limit-bypass rejection, transactional owned output,
+  panic latching, Miri coverage, and an allocation counter that rejects
+  full-input coalescing
 - Tokio read-all and `AsyncRead` integration through
   `scripts/check-2.0-tokio-readers.sh`, including one-byte destinations,
   arbitrary deterministic chunk/`Pending` schedules, cancellation/resume,
   exact-frame adjacent-byte preservation, irrevocable plaintext-prefix
-  behavior, release tests, Miri coverage, and shared-state routing checks
+  behavior, wrapped-reader unwind cleanup, release tests, Miri coverage, and
+  shared-state routing checks
 - Tokio `AsyncWrite` integration through `scripts/check-2.0-tokio-writers.sh`,
   including bounded acceptance, short writes, arbitrary deterministic
   backpressure, dropped pending futures, retryable write/flush/shutdown
   failures, checked recovery, terminal cleanup, release tests, Miri coverage,
-  and shared-state routing checks
+  wrapped-writer unwind latching, and shared-state routing checks
 - Serde integration through `scripts/check-2.0-serde.sh`, including validated
   2.0 codec routing, fixed-capacity ordinary output, fixed-work wiping secret
   output, opaque secret errors, borrowed string/byte input, explicit
   human-readable versus binary text representation, wrapped-body streaming,
-  and no-default-feature, clippy, and documentation checks
+  full-capacity owned-input and serializer-unwind cleanup, and
+  no-default-feature, clippy, and documentation checks
 - Sanitization protected fill through `scripts/check-2.0-sanitization.sh`,
   including no-default and no-std memory-lock builds, separately protected
   staging and destination mappings, fixed-work `SecretFrame` routing, exact

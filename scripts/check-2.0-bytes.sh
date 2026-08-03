@@ -15,6 +15,7 @@ fi
 for required_text in \
     'input.chunk()' \
     'input.advance(consumed)' \
+    'self.preflight_input(reported_remaining, progress)' \
     'output.put_slice(&scratch[..produced])' \
     'self.failed = true'
 do

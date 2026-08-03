@@ -3,6 +3,7 @@ use core::{
     pin::Pin,
     task::{Context, Poll, ready},
 };
+use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
 use tokio::io::{self, AsyncWrite};
 
 use crate::{operation_io_error, queue::OutputQueue, wipe_bytes};
@@ -250,12 +251,47 @@ impl<W> EncoderWriter<W>
 where
     W: AsyncWrite + Unpin,
 {
+    fn poll_inner_flush(&mut self, context: &mut Context<'_>) -> Poll<io::Result<()>> {
+        let result = catch_unwind(AssertUnwindSafe(|| {
+            Pin::new(self.inner_mut()).poll_flush(context)
+        }));
+        match result {
+            Ok(polled) => polled,
+            Err(payload) => {
+                self.latch_failure();
+                resume_unwind(payload);
+            }
+        }
+    }
+
+    fn poll_inner_shutdown(&mut self, context: &mut Context<'_>) -> Poll<io::Result<()>> {
+        let result = catch_unwind(AssertUnwindSafe(|| {
+            Pin::new(self.inner_mut()).poll_shutdown(context)
+        }));
+        match result {
+            Ok(polled) => polled,
+            Err(payload) => {
+                self.latch_failure();
+                resume_unwind(payload);
+            }
+        }
+    }
+
     fn poll_drain_output(&mut self, context: &mut Context<'_>) -> Poll<io::Result<()>> {
         let mut chunk = [0u8; ENCODE_OUTPUT_CAP];
         while !self.output.is_empty() {
             let pending = self.output.copy_front(&mut chunk);
-            let result = Pin::new(self.inner_mut()).poll_write(context, &chunk[..pending]);
+            let result = catch_unwind(AssertUnwindSafe(|| {
+                Pin::new(self.inner_mut()).poll_write(context, &chunk[..pending])
+            }));
             wipe_bytes(&mut chunk[..pending]);
+            let result = match result {
+                Ok(polled) => polled,
+                Err(payload) => {
+                    self.latch_failure();
+                    resume_unwind(payload);
+                }
+            };
             match result {
                 Poll::Pending => return Poll::Pending,
                 Poll::Ready(Ok(0)) => {
@@ -322,7 +358,7 @@ where
             return Poll::Ready(Ok(()));
         }
         ready!(self.poll_drain_output(context))?;
-        Pin::new(self.inner_mut()).poll_flush(context)
+        self.poll_inner_flush(context)
     }
 
     fn poll_shutdown(mut self: Pin<&mut Self>, context: &mut Context<'_>) -> Poll<io::Result<()>> {
@@ -337,8 +373,8 @@ where
         ready!(self.poll_drain_output(context))?;
         self.finalize()?;
         ready!(self.poll_drain_output(context))?;
-        ready!(Pin::new(self.inner_mut()).poll_flush(context))?;
-        ready!(Pin::new(self.inner_mut()).poll_shutdown(context))?;
+        ready!(self.poll_inner_flush(context))?;
+        ready!(self.poll_inner_shutdown(context))?;
         self.shutdown_complete = true;
         Poll::Ready(Ok(()))
     }

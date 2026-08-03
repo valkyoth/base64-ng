@@ -33,6 +33,11 @@ one declared frame and leaves adjacent bytes unread. Writers preserve bounded
 queued output across short writes, `Pending`, cancellation, and retryable I/O
 errors. Call `shutdown` to finalize a trailing quantum.
 
+On unwind-capable builds, a panic from a wrapped reader or writer is resumed
+only after the adapter latches failure and clears retained state. Downstream
+bytes consumed before a panic remain irrevocable; retry through that adapter is
+therefore prohibited. `panic=abort` is outside this cleanup boundary.
+
 Read-all helper allocations are RAII-wiped on success, error, and cancellation.
 Limited helpers consume no more than the configured limit plus one lookahead
 byte used to detect overflow. Use `new_exact` when an adjacent frame's first

@@ -20,7 +20,9 @@ for required in \
     'deserialize_bounded' \
     'SecretArrayFrame::<CAP>::new' \
     'serialize_secret_codec' \
-    'clear_bytes(&mut encoded)' \
+    'SecretInputVisitor' \
+    'WipingOwnedInput::new' \
+    'clear_bytes(self.bytes)' \
     'invalid secret base64 input' \
     'serializer.is_human_readable()'
 do

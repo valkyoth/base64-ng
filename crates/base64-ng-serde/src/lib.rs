@@ -26,13 +26,20 @@
 //! JSON and general Serde parsing are not constant-time-oriented. Secret
 //! timing policy begins only after encoded input reaches this crate. Secret
 //! adapters prefer borrowed input, allocate no decoded heap output, return
-//! opaque errors, and do not release plaintext before final validation.
+//! opaque errors, and do not release plaintext before final validation. When
+//! a deserializer transfers an owned string or byte vector, the secret visitor
+//! wipes its complete allocation on return, error, or unwind. Borrowed input
+//! and copies retained by serializers remain outside this crate's ownership.
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
 #[cfg(feature = "alloc")]
 mod adapter;
+#[cfg(feature = "secrets")]
+mod adapter_secret;
+#[cfg(all(test, feature = "secrets"))]
+mod adapter_tests;
 #[cfg(feature = "alloc")]
 pub mod bounded;
 #[cfg(feature = "alloc")]

@@ -12,6 +12,7 @@ use tokio::io::{AsyncWrite, AsyncWriteExt};
 enum WriteAction {
     Accept(usize),
     Error,
+    PanicAfterAccept(usize),
     Pending,
 }
 
@@ -19,6 +20,8 @@ struct ScriptedWriter {
     actions: VecDeque<WriteAction>,
     output: Vec<u8>,
     shutdown: bool,
+    panic_flush: bool,
+    panic_shutdown: bool,
 }
 
 impl ScriptedWriter {
@@ -27,7 +30,19 @@ impl ScriptedWriter {
             actions: actions.into_iter().collect(),
             output: Vec::new(),
             shutdown: false,
+            panic_flush: false,
+            panic_shutdown: false,
         }
+    }
+
+    fn with_flush_panic(mut self) -> Self {
+        self.panic_flush = true;
+        self
+    }
+
+    fn with_shutdown_panic(mut self) -> Self {
+        self.panic_shutdown = true;
+        self
     }
 
     fn output(&self) -> &[u8] {
@@ -51,6 +66,11 @@ impl AsyncWrite for ScriptedWriter {
                 context.waker().wake_by_ref();
                 Poll::Pending
             }
+            Some(WriteAction::PanicAfterAccept(limit)) => {
+                let count = limit.min(input.len());
+                self.output.extend_from_slice(&input[..count]);
+                std::panic::panic_any("injected writer panic after accept");
+            }
             Some(WriteAction::Error) => Poll::Ready(Err(std::io::Error::new(
                 std::io::ErrorKind::BrokenPipe,
                 "scripted write error",
@@ -63,6 +83,9 @@ impl AsyncWrite for ScriptedWriter {
     }
 
     fn poll_flush(self: Pin<&mut Self>, _context: &mut Context<'_>) -> Poll<std::io::Result<()>> {
+        if self.panic_flush {
+            std::panic::panic_any("injected writer flush panic");
+        }
         Poll::Ready(Ok(()))
     }
 
@@ -70,6 +93,9 @@ impl AsyncWrite for ScriptedWriter {
         mut self: Pin<&mut Self>,
         _context: &mut Context<'_>,
     ) -> Poll<std::io::Result<()>> {
+        if self.panic_shutdown {
+            std::panic::panic_any("injected writer shutdown panic");
+        }
         self.shutdown = true;
         Poll::Ready(Ok(()))
     }
@@ -84,6 +110,69 @@ impl Wake for NoopWake {
 
 fn noop_waker() -> std::task::Waker {
     std::task::Waker::from(Arc::new(NoopWake))
+}
+
+#[test]
+fn wrapped_writer_panics_latch_clear_and_resume_the_original_panic() {
+    let waker = noop_waker();
+    let mut context = Context::from_waker(&waker);
+
+    let inner = ScriptedWriter::new([WriteAction::PanicAfterAccept(2)]);
+    let mut encoder = EncoderWriter::new(inner, &STRICT_STANDARD_PADDED);
+    assert!(matches!(
+        Pin::new(&mut encoder).poll_write(&mut context, b"secret"),
+        Poll::Ready(Ok(6))
+    ));
+    let panic = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let _ = Pin::new(&mut encoder).poll_flush(&mut context);
+    }));
+    assert!(panic.is_err());
+    assert!(encoder.is_failed());
+    assert_eq!(encoder.pending_len(), 0);
+    assert_eq!(encoder.buffered_output_len(), 0);
+    assert!(matches!(
+        Pin::new(&mut encoder).poll_write(&mut context, b"retry"),
+        Poll::Ready(Err(_))
+    ));
+    assert_eq!(encoder.get_ref().output(), b"c2");
+
+    let base64_input = STRICT_STANDARD_PADDED.encode_to_string(b"secret").unwrap();
+    let inner = ScriptedWriter::new([WriteAction::PanicAfterAccept(2)]);
+    let mut decoder = DecoderWriter::new(inner, &STRICT_STANDARD_PADDED);
+    assert!(matches!(
+        Pin::new(&mut decoder).poll_write(&mut context, base64_input.as_bytes()),
+        Poll::Ready(Ok(8))
+    ));
+    let panic = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let _ = Pin::new(&mut decoder).poll_flush(&mut context);
+    }));
+    assert!(panic.is_err());
+    assert!(decoder.is_failed());
+    assert_eq!(decoder.pending_len(), 0);
+    assert_eq!(decoder.buffered_output_len(), 0);
+    assert_eq!(decoder.get_ref().output(), b"se");
+}
+
+#[test]
+fn wrapped_flush_and_shutdown_panics_also_latch_failure() {
+    let waker = noop_waker();
+    let mut context = Context::from_waker(&waker);
+
+    let inner = ScriptedWriter::new([]).with_flush_panic();
+    let mut encoder = EncoderWriter::new(inner, &STRICT_STANDARD_PADDED);
+    let panic = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let _ = Pin::new(&mut encoder).poll_flush(&mut context);
+    }));
+    assert!(panic.is_err());
+    assert!(encoder.is_failed());
+
+    let inner = ScriptedWriter::new([]).with_shutdown_panic();
+    let mut decoder = DecoderWriter::new(inner, &STRICT_STANDARD_PADDED);
+    let panic = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let _ = Pin::new(&mut decoder).poll_shutdown(&mut context);
+    }));
+    assert!(panic.is_err());
+    assert!(decoder.is_failed());
 }
 
 #[tokio::test]

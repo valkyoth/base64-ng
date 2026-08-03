@@ -29,6 +29,9 @@
 //! the 2.0 `secrets` capability or an approved protected-memory companion.
 //! Streaming decoder output accepted by an inner writer is irrevocably
 //! exposed, even when a later encoded suffix is malformed.
+//! On unwind-capable builds, panics from wrapped I/O are resumed only after the
+//! adapter latches failure and clears retained state. Effects completed by the
+//! wrapped I/O object before its panic remain outside rollback guarantees.
 
 mod decoder_writer;
 mod encoder_writer;

@@ -1,12 +1,15 @@
 #![allow(missing_docs)]
 #![allow(unsafe_code)]
 
-use std::panic::{AssertUnwindSafe, catch_unwind};
+use std::{
+    cell::Cell,
+    panic::{AssertUnwindSafe, catch_unwind},
+};
 
 use base64_ng::{
     Failure, OperationError, STRICT_STANDARD_PADDED, STRICT_URL_SAFE_UNPADDED, Status,
 };
-use base64_ng_bytes::{Base64BytesExt, BytesErrorKind, BytesLimits};
+use base64_ng_bytes::{Base64BytesExt, BytesErrorKind, BytesLimits, BytesProgress};
 use bytes::{Buf, BufMut, Bytes, buf::UninitSlice};
 
 #[test]
@@ -210,6 +213,28 @@ fn invalid_safe_buf_contract_is_rejected_and_latched() {
 }
 
 #[test]
+fn changing_remaining_cannot_bypass_the_cumulative_input_limit() {
+    let mut input = ExpandingRemainingBuf::new(b"hello", 1);
+    let mut output = Vec::new();
+    let mut encoder =
+        STRICT_STANDARD_PADDED.bytes_encoder_with_limits(BytesLimits::new(4, usize::MAX));
+
+    let error = encoder.update(&mut input, &mut output).unwrap_err();
+
+    assert_eq!(
+        error.kind(),
+        BytesErrorKind::InputLimitExceeded {
+            required: 5,
+            limit: 4,
+        }
+    );
+    assert_eq!(error.progress(), BytesProgress::ZERO);
+    assert_eq!(input.advanced, 0);
+    assert!(output.is_empty());
+    assert!(encoder.is_failed());
+}
+
+#[test]
 fn downstream_panic_latches_state_until_reset() {
     let mut input = Bytes::from_static(b"abc");
     let mut output = PanicAfterWrite::default();
@@ -282,6 +307,45 @@ impl Buf for OneByteBuf {
 
 struct EmptyChunkBuf {
     remaining: usize,
+}
+
+struct ExpandingRemainingBuf {
+    bytes: Bytes,
+    first_report: usize,
+    calls: Cell<usize>,
+    advanced: usize,
+}
+
+impl ExpandingRemainingBuf {
+    fn new(bytes: &[u8], first_report: usize) -> Self {
+        Self {
+            bytes: Bytes::copy_from_slice(bytes),
+            first_report,
+            calls: Cell::new(0),
+            advanced: 0,
+        }
+    }
+}
+
+impl Buf for ExpandingRemainingBuf {
+    fn remaining(&self) -> usize {
+        let calls = self.calls.get();
+        self.calls.set(calls + 1);
+        if calls == 0 {
+            self.first_report
+        } else {
+            self.bytes.remaining()
+        }
+    }
+
+    fn chunk(&self) -> &[u8] {
+        self.bytes.chunk()
+    }
+
+    fn advance(&mut self, count: usize) {
+        self.bytes.advance(count);
+        self.advanced += count;
+    }
 }
 
 impl Buf for EmptyChunkBuf {

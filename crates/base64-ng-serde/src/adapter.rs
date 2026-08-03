@@ -2,16 +2,17 @@ use alloc::{string::String, vec::Vec};
 use core::fmt;
 
 #[cfg(feature = "secrets")]
-use base64_ng::clear_bytes;
-#[cfg(feature = "secrets")]
 use base64_ng::secret::{SecretArray, SecretArrayFrame, SecretInput};
 use base64_ng::{
     Base64, BodyCodec, Codec, DecodedArray, Failure, OneShotError, OperationError, Status,
 };
 use serde::{Deserializer, Serializer, de::Visitor};
 
+#[cfg(feature = "secrets")]
+use crate::adapter_secret::{SecretInputVisitor, WipingOwnedInput};
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum AdapterError {
+pub(crate) enum AdapterError {
     InvalidInput(&'static str),
     InvalidBodyLayout,
     OutputLimit,
@@ -99,12 +100,11 @@ where
         .encode_to_string(bytes)
         .map_err(serde::ser::Error::custom)?
         .into_bytes();
-    let result = match core::str::from_utf8(&encoded) {
+    let encoded = WipingOwnedInput::new(&mut encoded);
+    match core::str::from_utf8(encoded.as_slice()) {
         Ok(text) => serialize_text(text, serializer),
         Err(_) => Err(serde::ser::Error::custom("base64 transform failed")),
-    };
-    clear_bytes(&mut encoded);
-    result
+    }
 }
 
 pub(crate) fn deserialize_vec<'de, C, D>(
@@ -168,7 +168,7 @@ where
 {
     deserialize_input(
         deserializer,
-        InputVisitor(SecretDecoder::<C, CAP> { codec }),
+        SecretInputVisitor(SecretDecoder::<C, CAP> { codec }),
     )
 }
 
@@ -184,7 +184,7 @@ where
     }
 }
 
-trait DecodeInput {
+pub(crate) trait DecodeInput {
     type Output;
 
     fn decode(self, input: &[u8]) -> Result<Self::Output, AdapterError>;

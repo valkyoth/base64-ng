@@ -38,6 +38,8 @@ for required in \
     'self.input_accepted = self.state.source_position()' \
     'self.output_committed.checked_add(written)' \
     'self.output.discard_front(written)' \
+    'catch_unwind(AssertUnwindSafe' \
+    'resume_unwind(payload)' \
     'self.latch_failure()'
 do
     if ! grep -F -q "$required" "$encoder"; then
@@ -54,6 +56,8 @@ for required in \
     'self.input_accepted = self.state.source_position()' \
     'self.output_committed.checked_add(written)' \
     'self.output.discard_front(written)' \
+    'catch_unwind(AssertUnwindSafe' \
+    'resume_unwind(payload)' \
     'self.latch_failure()'
 do
     if ! grep -F -q "$required" "$decoder"; then

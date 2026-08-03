@@ -27,6 +27,8 @@ for required in \
     'codec.decoder()' \
     'Boundary::Exact' \
     'this.boundary.consume(read)' \
+    'catch_unwind(AssertUnwindSafe' \
+    'resume_unwind(payload)' \
     'self.state.clear()' \
     'self.failed = true'
 do
