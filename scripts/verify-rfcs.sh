@@ -54,6 +54,7 @@ if [ "$skip_package" != "1" ]; then
         base64-ng-imap \
         base64-ng-mime \
         base64-ng-multibase \
+        base64-ng-password \
         base64-ng-pem \
         base64-ng-sanitization \
         base64-ng-serde \

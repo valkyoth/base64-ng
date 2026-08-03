@@ -1406,6 +1406,16 @@ evidence, exhaustive small lengths, Python and iconv differential checks, and
 fuzzing support the implementation; external pentest acceptance remains
 pending.
 
+Commit 47 adds `base64-ng-password`, a bounded `no_std` companion for the
+exact Passlib 1.7.4 `$pbkdf2$`, `$pbkdf2-sha256$`, and `$pbkdf2-sha512$`
+record grammars plus Drepper `$5$` and `$6$` SHA-crypt records. It validates
+canonical rounds, salts, exact checksum lengths, and algorithm-specific
+SHA-crypt digest permutations; uses transactional caller-owned generation,
+optional exact-size allocation, redacted record formatting, finite limits,
+independent differential fixtures, OpenSSL interoperability, and fuzzing; and
+exposes no password, hashing, derivation, comparison, or verification API.
+External pentest acceptance remains pending.
+
 ## Release Gate
 
 The release gate must pass before every release:

@@ -46,6 +46,7 @@ members = [
     "crates/base64-ng-imap",
     "crates/base64-ng-mime",
     "crates/base64-ng-multibase",
+    "crates/base64-ng-password",
     "crates/base64-ng-pem",
     "crates/base64-ng-sanitization",
     "crates/base64-ng-serde",

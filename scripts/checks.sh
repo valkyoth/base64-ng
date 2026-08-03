@@ -92,6 +92,8 @@ echo "checks: 2.0 RFC 7468 textual encoding"
 scripts/check-2.0-pem.sh
 echo "checks: 2.0 IMAP modified-Base64 payload"
 scripts/check-2.0-imap.sh
+echo "checks: 2.0 password-record Base64 transforms"
+scripts/check-2.0-password.sh
 
 echo "checks: 2.0 secret storage and explicit exposure"
 scripts/check-2.0-secret-storage.sh

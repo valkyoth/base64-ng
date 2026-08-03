@@ -44,6 +44,13 @@ change = "code"
 publish = false
 reason = "Develops the bounded Base64-family multibase companion against a pinned registry; publication remains blocked until final acceptance."
 
+[crates."base64-ng-password"]
+previous_version = "0.0.0"
+version = "2.0.0"
+change = "code"
+publish = false
+reason = "Develops bounded Passlib PBKDF2 and SHA-crypt field and record transforms without password hashing or verification; publication remains blocked until final acceptance."
+
 [crates."base64-ng-pem"]
 previous_version = "0.0.0"
 version = "2.0.0"

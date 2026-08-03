@@ -926,6 +926,21 @@ already-converted UTF-16BE bytes. It does not support a full modified UTF-7,
 mailbox-parser, Unicode-conversion, current IMAP4rev2, secret-processing, or
 constant-time claim.
 
+## Commit 47 Password-Record Evidence
+
+`base64-ng-password` is release-gated by `scripts/check-2.0-password.sh`. The
+gate builds without default features, runs all five exact record formats,
+checks Passlib documentation vectors and independent adapted-Base64 and
+SHA-crypt permutation answers, exercises optional OpenSSL interoperability,
+tests malformed delimiters, rounds, salt alphabets, checksum lengths, unused
+bits, limits, transactional output, and redacted formatting, compiles the fuzz
+target, and checks Clippy, rustdoc, MSRV, dependencies, and package contents.
+
+This evidence covers field transformation plus record parsing and generation
+only. It supports no password input, PBKDF2/SHA derivation, password hashing,
+password verification, storage-policy, constant-time, or cleanup claim. Commit
+49 owns the exact release source and implementation pins.
+
 ## Reproducibility
 
 The reproducible package/build check packages and verifies the crate twice and

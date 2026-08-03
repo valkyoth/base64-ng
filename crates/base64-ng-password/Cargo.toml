@@ -1,0 +1,37 @@
+[package]
+name = "base64-ng-password"
+version = "2.0.0"
+edition = "2024"
+rust-version = "1.90"
+license = "MIT OR Apache-2.0"
+description = "Bounded Passlib PBKDF2 and SHA-crypt Base64 record transforms"
+repository = "https://github.com/valkyoth/base64-ng"
+homepage = "https://github.com/valkyoth/base64-ng"
+documentation = "https://docs.rs/base64-ng-password"
+readme = "README.md"
+keywords = ["base64", "password", "pbkdf2", "sha-crypt"]
+categories = ["encoding", "no-std"]
+include = [
+    "src/**",
+    "tests/**",
+    "Cargo.toml",
+    "README.md",
+]
+
+[features]
+default = ["alloc"]
+alloc = ["base64-ng/alloc"]
+
+[dependencies]
+base64-ng = { version = "2.0.0", path = "../..", default-features = false }
+
+[lints.rust]
+unsafe_code = "deny"
+missing_docs = "deny"
+
+[lints.clippy]
+all = "deny"
+pedantic = "deny"
+
+[package.metadata.docs.rs]
+all-features = true

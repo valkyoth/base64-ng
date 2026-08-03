@@ -32,6 +32,7 @@ different vector lengths and external review satisfy the admission contract.
 | `base64-ng-imap` | `2.0.0` | no | <https://crates.io/crates/base64-ng-imap> |
 | `base64-ng-mime` | `2.0.0` | no | <https://crates.io/crates/base64-ng-mime> |
 | `base64-ng-multibase` | `2.0.0` | no | <https://crates.io/crates/base64-ng-multibase> |
+| `base64-ng-password` | `2.0.0` | no | <https://crates.io/crates/base64-ng-password> |
 | `base64-ng-pem` | `2.0.0` | no | <https://crates.io/crates/base64-ng-pem> |
 
 ## 1.3.9 Release Plan

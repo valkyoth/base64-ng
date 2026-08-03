@@ -47,6 +47,11 @@
   heapless incremental APIs, locks the RFC and relevant erratum, rejects
   padding and noncanonical tails, and adds RFC, Python, iconv, and fuzz
   evidence without claiming Unicode conversion or a complete mailbox codec.
+- Commit 47 adds `base64-ng-password` with bounded, exact Passlib PBKDF2 and
+  SHA-crypt field/record transforms, canonical rounds and checksum sizes,
+  algorithm-specific SHA-crypt digest permutations, redacted diagnostics,
+  interoperability and fuzz evidence, and no password hashing or verification
+  surface.
 
 ## 1.3.9 - 2026-07-21
 

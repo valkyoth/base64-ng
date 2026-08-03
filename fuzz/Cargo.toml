@@ -15,6 +15,7 @@ base64-ng = { path = "..", version = "2.0.0", features = ["alloc", "simd", "std"
 base64-ng-imap = { path = "../crates/base64-ng-imap", version = "2.0.0" }
 base64-ng-mime = { path = "../crates/base64-ng-mime", version = "2.0.0" }
 base64-ng-multibase = { path = "../crates/base64-ng-multibase", version = "2.0.0" }
+base64-ng-password = { path = "../crates/base64-ng-password", version = "2.0.0" }
 base64-ng-pem = { path = "../crates/base64-ng-pem", version = "2.0.0" }
 libfuzzer-sys = "0.4"
 
@@ -98,6 +99,13 @@ bench = false
 [[bin]]
 name = "imap_payload"
 path = "fuzz_targets/imap_payload.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "password_records"
+path = "fuzz_targets/password_records.rs"
 test = false
 doc = false
 bench = false

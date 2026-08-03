@@ -58,6 +58,11 @@ new dependency expands the audit, license, advisory, and supply-chain surface.
   registry and official vectors are hash-locked repository evidence, while
   Python's standard `base64` module is a test-time interoperability reference;
   none are package dependencies.
+- `base64-ng-password` is a dependency-minimal format companion. Its only
+  runtime dependency is the matching `base64-ng` package. Python's standard
+  Base64 module and the system OpenSSL command are test-time interoperability
+  references, not package dependencies; final source and implementation pins
+  belong to Commit 49.
 - `base64-ng-pem` is a dependency-minimal protocol companion. Its only
   runtime dependency is the matching `base64-ng` package. Python `ssl` and
   the system OpenSSL command are test-time RFC 7468 interoperability
@@ -121,6 +126,10 @@ Current decisions:
   and evolving external registry are protocol metadata rather than core RFC
   4648 behavior. It admits only the four pinned Base64-family entries, applies
   finite limits, and does not claim complete multibase support.
+- `base64-ng-password` is admitted as a companion because Passlib PBKDF2 and
+  SHA-crypt add record grammar and algorithm-specific checksum permutations
+  beyond generic Base64. It depends only on the core crate, applies finite
+  limits and redacted formatting, and exposes no hashing or verification API.
 - `base64-ng-pem` is admitted as a companion because RFC 7468 labels,
   encapsulation boundaries, adjacent text, multi-block documents, and parser
   latitude are protocol grammar rather than core Base64 behavior. It has
@@ -229,10 +238,12 @@ workspaces only when they are not packaged with the published crate:
 - `dudect/` dependencies are reviewed by `scripts/check_dudect.sh`.
 - `crates/base64-ng-sanitization/`, `crates/base64-ng-derive/`,
   `crates/base64-ng-serde/`, `crates/base64-ng-bytes/`,
-  `crates/base64-ng-subtle/`, `crates/base64-ng-tokio/`, and
-  `crates/base64-ng-imap/` are optional
-  companion crates, not dependencies of the core `base64-ng` package. They are
-  reviewed separately by `scripts/check_companion_crates.sh` so the root package keeps its
+  `crates/base64-ng-subtle/`, `crates/base64-ng-tokio/`,
+  `crates/base64-ng-imap/`, `crates/base64-ng-mime/`,
+  `crates/base64-ng-multibase/`, `crates/base64-ng-password/`, and
+  `crates/base64-ng-pem/` are optional companion crates, not dependencies of
+  the core `base64-ng` package. They are reviewed separately by
+  `scripts/check_companion_crates.sh` so the root package keeps its
   zero-runtime-dependency guarantee.
 - `packages/base64-ng-wasm-loader/` is an npm companion with zero JavaScript
   dependencies. Its private Rust artifact build depends only on the matching
