@@ -12,6 +12,9 @@ accepted/committed progress and checked-recovery API.
 Commit 39 pins the Serde migration to validated 2.0 codec specifications and
 records its fixed-capacity ordinary and fixed-work secret field modules.
 
+Commit 40 pins the sanitization migration to separately protected staging and
+destination mappings plus the 2.0 fixed-work result gate.
+
 Snapshots are generated with:
 
 ```text

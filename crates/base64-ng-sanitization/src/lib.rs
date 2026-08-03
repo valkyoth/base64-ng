@@ -45,12 +45,52 @@ mod locked_vec;
 mod protected_decode;
 #[cfg(test)]
 mod protected_tests;
+#[cfg(all(
+    feature = "memory-lock",
+    any(
+        all(
+            target_os = "linux",
+            any(target_arch = "x86_64", target_arch = "aarch64")
+        ),
+        target_os = "macos",
+        target_os = "ios",
+        target_os = "android",
+        target_os = "windows",
+        target_os = "freebsd",
+        target_os = "openbsd",
+        target_os = "netbsd",
+        target_os = "dragonfly",
+    ),
+    not(miri)
+))]
+mod v2_protected;
 
 pub use compare::{LockedSanitizationCtEqExt, SanitizationCtEqExt, sanitization_ct_eq_public_len};
 pub use error::{LockedDecodeError, SanitizationDecodeError};
 #[cfg(feature = "memory-lock")]
 pub use protected_decode::CtDecodeSanitizationProtectedExt;
 use sanitization::SecretBytes;
+#[cfg(all(
+    feature = "memory-lock",
+    any(
+        all(
+            target_os = "linux",
+            any(target_arch = "x86_64", target_arch = "aarch64")
+        ),
+        target_os = "macos",
+        target_os = "ios",
+        target_os = "android",
+        target_os = "windows",
+        target_os = "freebsd",
+        target_os = "openbsd",
+        target_os = "netbsd",
+        target_os = "dragonfly",
+    ),
+    not(miri)
+))]
+pub use v2_protected::{
+    ProtectedAllocation, SanitizationProtectedDecodeError, SanitizationProtectedDecodeExt,
+};
 
 #[cfg(any(feature = "alloc", all(feature = "memory-lock", not(miri))))]
 use base64_ng::DecodeError;
@@ -175,13 +215,9 @@ pub trait CtDecodeSanitizationExt {
     /// Decode through stack staging and initialize fixed-size locked storage
     /// through sanitization's integrity-checked fill API.
     ///
-    /// This additive method exposes `sanitization` 2.0's fill error without
-    /// changing the return type of [`Self::decode_locked_secret_bytes`]. The
-    /// provided [`base64_ng::ct::CtEngine`] implementation uses the
-    /// integrity-checked fill API directly. The compatibility default for
-    /// external trait implementations maps the older generation error; custom
-    /// implementations that need integrity-aware initialization must override
-    /// this method.
+    /// This method exposes `sanitization` 2.0's integrity-aware fill error.
+    /// Implementers must define the fill behavior explicitly; 2.0 provides no
+    /// compatibility default that can discard integrity failures.
     ///
     /// For allocation-time fail-closed protection, use
     /// [`Self::decode_locked_secret_bytes_checked`].
@@ -212,17 +248,7 @@ pub trait CtDecodeSanitizationExt {
     fn decode_locked_secret_bytes_fill<const N: usize>(
         &self,
         input: &[u8],
-    ) -> Result<LockedSecretBytes<N>, LockedSecretBytesFillError<SanitizationDecodeError>> {
-        self.decode_locked_secret_bytes(input)
-            .map_err(|error| match error {
-                LockedSecretBytesGenerateError::Memory(error) => {
-                    LockedSecretBytesFillError::Memory(error)
-                }
-                LockedSecretBytesGenerateError::Generate(error) => {
-                    LockedSecretBytesFillError::Generate(error)
-                }
-            })
-    }
+    ) -> Result<LockedSecretBytes<N>, LockedSecretBytesFillError<SanitizationDecodeError>>;
 
     /// Decode into fixed-size locked storage and reject degraded protection.
     ///
@@ -233,10 +259,8 @@ pub trait CtDecodeSanitizationExt {
     /// directly into the already protected mapping, without an ordinary stack
     /// plaintext buffer.
     ///
-    /// The compatibility default for external trait implementations performs
-    /// post-construction report admission. Custom implementations that require
-    /// the same pre-decode guarantee must override this method and establish
-    /// the requested protections before decoding.
+    /// Implementers must establish and admit the requested protections before
+    /// decoding. 2.0 provides no post-construction compatibility default.
     ///
     /// # Errors
     ///
@@ -272,13 +296,7 @@ pub trait CtDecodeSanitizationExt {
     ) -> Result<
         LockedSecretBytes<N>,
         LockedDecodeError<LockedSecretBytesGenerateError<SanitizationDecodeError>>,
-    > {
-        let secret = self
-            .decode_locked_secret_bytes(input)
-            .map_err(LockedDecodeError::Operation)?;
-        let degraded = secret.protection_report().is_degraded();
-        locked::admit_locked(secret, degraded)
-    }
+    >;
 
     /// Decode `input` into a heap-backed clear-on-drop secret vector.
     ///
@@ -374,10 +392,8 @@ pub trait CtDecodeSanitizationExt {
     /// run. Canaries are required when enabled. A required-control failure
     /// therefore returns before decoded plaintext can enter the mapping.
     ///
-    /// The compatibility default for external trait implementations performs
-    /// post-construction report admission. Custom implementations that require
-    /// the same pre-decode guarantee must override this method and establish
-    /// the requested protections before decoding.
+    /// Implementers must establish and admit the requested protections before
+    /// decoding. 2.0 provides no post-construction compatibility default.
     #[cfg(all(
         feature = "memory-lock",
         any(
@@ -399,13 +415,7 @@ pub trait CtDecodeSanitizationExt {
     fn decode_locked_secret_vec_checked(
         &self,
         input: &[u8],
-    ) -> Result<LockedSecretVec, LockedDecodeError<LockedSecretVecFillError<DecodeError>>> {
-        let secret = self
-            .decode_locked_secret_vec(input)
-            .map_err(LockedDecodeError::Operation)?;
-        let degraded = secret.protection_report().is_degraded();
-        locked::admit_locked(secret, degraded)
-    }
+    ) -> Result<LockedSecretVec, LockedDecodeError<LockedSecretVecFillError<DecodeError>>>;
 }
 
 #[cfg(test)]

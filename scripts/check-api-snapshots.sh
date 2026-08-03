@@ -93,6 +93,7 @@ do
             exit 1
         fi
     elif [ "$package" = "base64-ng-bytes" ] || \
+        [ "$package" = "base64-ng-sanitization" ] || \
         [ "$package" = "base64-ng-serde" ] || \
         [ "$package" = "base64-ng-tokio" ]; then
         development="$development_dir/$package.txt"

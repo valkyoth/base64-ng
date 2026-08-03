@@ -23,7 +23,7 @@ default = []
 alloc = ["base64-ng/alloc", "sanitization/alloc"]
 std = ["alloc", "base64-ng/std", "sanitization/std"]
 asm-compare = ["sanitization/asm-compare"]
-memory-lock = ["sanitization/memory-lock"]
+memory-lock = ["base64-ng/secrets", "sanitization/memory-lock"]
 canary-check = ["memory-lock", "sanitization/canary-check"]
 random-canary = ["canary-check", "sanitization/random-canary"]
 high-assurance = [
@@ -35,7 +35,10 @@ high-assurance = [
 ]
 strict-compare = ["sanitization/strict-compare"]
 strict-ct = ["strict-compare"]
-wasm-compat = ["sanitization/wasm-compat"]
+wasm-compat = [
+    "base64-ng/allow-wasm32-best-effort-wipe",
+    "sanitization/wasm-compat",
+]
 
 [dependencies]
 base64-ng = { version = "2.0.0", path = "../..", default-features = false }

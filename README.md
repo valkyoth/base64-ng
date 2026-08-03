@@ -396,12 +396,19 @@ own `alloc` feature. The `1.3.9` companion uses exact-pinned
 helpers through `SanitizationCtEqExt`. Locked containers additionally expose
 fallible integrity-checked comparison through `LockedSanitizationCtEqExt`.
 Built-in checked fixed-size and dynamic decode establish required memory-lock,
-dump, and fork controls before plaintext materialization. External
-implementations of the public extension trait must override its compatibility
-default to provide the same pre-decode dynamic guarantee. The protected
-extension API preserves protection versus canary-integrity failures and offers
-a bounded dynamic helper that rejects oversized decoded capacity before
-mapping allocation.
+dump, and fork controls before plaintext materialization. The 2.0 trait has no
+post-construction compatibility defaults: external implementations must define
+every locked checked/fill method explicitly. The protected extension API
+preserves protection versus canary-integrity failures and offers a bounded
+dynamic helper that rejects oversized decoded capacity before mapping
+allocation.
+The 2.0 companion additionally implements
+`SanitizationProtectedDecodeExt` for `Base64<S>`. Its fixed and bounded dynamic
+methods establish separate protected staging and destination mappings before
+the fixed-work `SecretFrame` sees input. The single-allocation no-copy route is
+`Base64::decode_assured`; only that core provider path carries the quarantine,
+generation, and fallible-teardown claims from the 2.0 assurance model. See
+[`docs/2.0_SANITIZATION_PROTECTED_FILL.md`](docs/2.0_SANITIZATION_PROTECTED_FILL.md).
 Enable the companion's
 `high-assurance` feature to
 decode directly into `sanitization::LockedSecretBytes` or

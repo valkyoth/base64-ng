@@ -33,8 +33,8 @@ constant-time-oriented Base64 decode into clear-on-drop secret containers.
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.3.9", default-features = false }
-base64-ng-sanitization = { version = "1.3.9", default-features = false }
+base64-ng = { version = "2.0.0", default-features = false }
+base64-ng-sanitization = { version = "2.0.0", default-features = false }
 ```
 
 ```rust
@@ -54,7 +54,7 @@ assert!(secret.sanitization_verify(
 Enable `alloc` for heap-backed `sanitization::SecretVec` helpers:
 
 ```toml
-base64-ng-sanitization = { version = "1.3.9", features = ["alloc"] }
+base64-ng-sanitization = { version = "2.0.0", features = ["alloc"] }
 ```
 
 For high-assurance x86_64 or AArch64 native deployments, enable locked storage
@@ -64,7 +64,7 @@ strict random canaries, and strict assembly comparison, and decodes directly
 into locked memory:
 
 ```toml
-base64-ng-sanitization = { version = "1.3.9", features = ["high-assurance"] }
+base64-ng-sanitization = { version = "2.0.0", features = ["high-assurance"] }
 ```
 
 ```rust
@@ -101,10 +101,10 @@ The built-in fixed-size and dynamic `_checked` methods establish required
 memory-lock, dump, and fork controls before decoding plaintext into the
 mapping. Dynamic decode uses sanitization 2.0.3's protected-capacity fill
 constructor, whose closure is not invoked when a required control fails.
-External implementations of `CtDecodeSanitizationExt` must override the
-compatibility default to obtain that same pre-decode guarantee. Non-checked
-methods remain available when callers apply a deployment-specific policy to
-the complete report. The additive
+External implementations of `CtDecodeSanitizationExt` must implement every
+locked checked/fill method explicitly; 2.0 has no post-construction
+compatibility default. Non-checked methods remain available when callers apply
+a deployment-specific policy to the complete report. The
 `decode_locked_secret_bytes_fill` method exposes sanitization 2.0's integrity
 aware fill error while the original method retains its generation-error return
 type for source compatibility.
@@ -114,6 +114,26 @@ type for source compatibility.
 protection controls from canary-integrity failures. Its bounded dynamic helper
 rejects decoded capacities above the const-generic application limit before
 mapping allocation or decoder invocation.
+
+For the 2.0 codec, `SanitizationProtectedDecodeExt` accepts a classified
+`SecretInput` and protects both private staging and final destination before
+running the fixed-work `SecretFrame` decoder:
+
+```rust
+use base64_ng::{STRICT_STANDARD_PADDED, secret::SecretInput};
+use base64_ng_sanitization::SanitizationProtectedDecodeExt;
+
+let input = SecretInput::new(b"aGVsbG8=");
+let secret = STRICT_STANDARD_PADDED
+    .decode_sanitization_protected_bytes::<5>(&input)?;
+secret.try_expose_secret(|bytes| assert_eq!(bytes, b"hello"))?;
+# Ok::<(), Box<dyn std::error::Error>>(())
+```
+
+This companion path uses two `sanitization` mappings. The core
+`Base64::decode_assured` path remains the single-allocation no-copy route and
+is the only route covered by the core provider's generation, quarantine, and
+fallible-teardown claims.
 
 For locked comparisons, prefer `LockedSanitizationCtEqExt`: it returns
 `CanaryCorruptedError` so the application controls telemetry and termination.
@@ -147,7 +167,7 @@ For deployments that want `sanitization`'s assembly-backed comparison checks,
 enable the passthrough features:
 
 ```toml
-base64-ng-sanitization = { version = "1.3.9", features = ["strict-compare"] }
+base64-ng-sanitization = { version = "2.0.0", features = ["strict-compare"] }
 ```
 
 The previous companion feature name `strict-ct` remains as an alias for

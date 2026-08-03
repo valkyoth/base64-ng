@@ -123,7 +123,13 @@ certification claim.
   and fork controls before plaintext decode. The built-in dynamic
   `decode_locked_secret_vec_checked` uses a protected-capacity constructor that
   establishes the same controls before its decode closure runs. External trait
-  implementations must override the compatibility default for that guarantee.
+  implementations must provide each checked/fill method explicitly; 2.0 has no
+  post-construction compatibility default.
+  For the 2.0 codec, prefer `SanitizationProtectedDecodeExt`; it protects
+  separate staging and destination mappings before fixed-work `SecretFrame`
+  processing. Do not attribute core provider quarantine to those external
+  mappings; use `Base64::decode_assured` when that teardown contract is
+  required.
   Inspect `protection_report()` before admitting a value returned by a
   non-checked compatibility helper.
 - Use `CtDecodeSanitizationProtectedExt` where monitoring must distinguish an

@@ -283,6 +283,10 @@ The release gate runs:
   output, opaque secret errors, borrowed string/byte input, explicit
   human-readable versus binary text representation, wrapped-body streaming,
   and no-default-feature, clippy, and documentation checks
+- Sanitization protected fill through `scripts/check-2.0-sanitization.sh`,
+  including no-default and no-std memory-lock builds, separately protected
+  staging and destination mappings, fixed-work `SecretFrame` routing, exact
+  fixed-size and bounded dynamic output, redacted failures, clippy, and docs
 - 2.0 validated-alphabet evidence through
   `scripts/check-2.0-alphabet.sh`, including const compile acceptance and
   rejection, exhaustive invalid-table diagnostics, all-value mapping parity,
