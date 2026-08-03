@@ -74,6 +74,8 @@ pub struct PemParseReport {
     pub skipped_body_bytes: usize,
     /// Lines whose layout differed from strict Figure 3.
     pub noncanonical_body_lines: usize,
+    /// BEGIN or END boundary lines accepted with surrounding blanks.
+    pub noncanonical_boundary_lines: usize,
     /// CR-only or LF-only line endings observed.
     pub non_crlf_line_endings: usize,
     /// END boundaries accepted with a different label.

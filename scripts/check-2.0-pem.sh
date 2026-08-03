@@ -34,13 +34,26 @@ for required_source in \
     "base64_ng::secure_wipe" \
     "SecretVecFrame" \
     "PemParsePolicy::Strict" \
-    "LegacyHeadersNotSupported"
+    "LegacyHeadersNotSupported" \
+    "noncanonical_boundary_lines"
 do
     if ! grep -R -F -q "$required_source" crates/base64-ng-pem/src; then
         echo "2.0 PEM: missing implementation boundary: $required_source" >&2
         exit 1
     fi
 done
+
+if ! grep -F -q "struct Lines<'a>" crates/base64-ng-pem/src/parser/lines.rs; then
+    echo "2.0 PEM: missing cursor-based physical-line scanner" >&2
+    exit 1
+fi
+
+if grep -F -q "Vec<Line" crates/base64-ng-pem/src/parser.rs || \
+    grep -F -q "body_lengths" crates/base64-ng-pem/src/parser.rs
+then
+    echo "2.0 PEM: document-wide line metadata allocation returned" >&2
+    exit 1
+fi
 
 if grep -R -n -E 'Proc-Type|DEK-Info' crates/base64-ng-pem/src \
     | grep -v 'LegacyHeadersNotSupported'

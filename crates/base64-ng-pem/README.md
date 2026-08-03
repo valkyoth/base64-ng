@@ -57,5 +57,7 @@ memory locking or a formal constant-time claim.
 
 `PemLimits` always bounds input, generated output, decoded output, physical
 line length, label length, block count, adjacent text, and work before output.
+Physical lines are consumed through a cursor without a document-wide line
+index, and body-layout validation retains only constant-size metadata.
 The parser never interprets payload bytes as certificates, keys, CMS, or any
 other ASN.1 type.

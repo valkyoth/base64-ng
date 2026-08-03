@@ -5,6 +5,10 @@ use crate::{
     PemParseReport,
 };
 
+mod lines;
+
+use lines::{Line, LineEnding, Lines};
+
 const BEGIN_PREFIX: &[u8] = b"-----BEGIN ";
 const END_PREFIX: &[u8] = b"-----END ";
 pub(crate) struct RawPemBlock {
@@ -165,32 +169,33 @@ pub(crate) fn parse_raw_document(
     validate_base64: bool,
 ) -> Result<RawPemDocument, PemError> {
     preflight_input(input, limits)?;
-    let lines = split_lines(input, limits)?;
+    let mut lines = Lines::new(input, limits.max_physical_line_bytes());
     let mut blocks = Vec::new();
     let mut report = PemParseReport::default();
-    let mut index = 0;
-    while index < lines.len() {
-        if boundary_label(lines[index].bytes, true, policy)?.is_none() {
-            add_adjacent(&mut report, lines[index].span_len, limits)?;
-            if !matches!(lines[index].ending, LineEnding::CrLf | LineEnding::None) {
+    while let Some(line) = lines.next_line()? {
+        let Some(boundary) = boundary_label(line.bytes, true, policy)? else {
+            add_adjacent(&mut report, line.span_len, limits)?;
+            if !matches!(line.ending, LineEnding::CrLf | LineEnding::None) {
                 report.non_crlf_line_endings += 1;
             }
-            index += 1;
             continue;
-        }
+        };
         if blocks.len() >= limits.max_blocks() {
-            return Err(PemError::at(
-                PemErrorKind::BlockLimitExceeded,
-                lines[index].start,
-            ));
+            return Err(PemError::at(PemErrorKind::BlockLimitExceeded, line.start));
         }
-        let (block, next) =
-            parse_block(&lines, index, limits, policy, validate_base64, &mut report)?;
+        let block = parse_block(
+            &mut lines,
+            line,
+            boundary,
+            limits,
+            policy,
+            validate_base64,
+            &mut report,
+        )?;
         blocks
             .try_reserve(1)
             .map_err(|_| PemError::new(PemErrorKind::AllocationFailed))?;
         blocks.push(block);
-        index = next;
     }
     if blocks.is_empty() {
         return Err(PemError::new(PemErrorKind::BeginBoundaryMissing));
@@ -199,77 +204,21 @@ pub(crate) fn parse_raw_document(
 }
 
 #[derive(Clone, Copy)]
-struct Line<'a> {
-    bytes: &'a [u8],
-    start: usize,
-    span_len: usize,
-    ending: LineEnding,
-}
-
-#[derive(Clone, Copy, Eq, PartialEq)]
-enum LineEnding {
-    CrLf,
-    Cr,
-    Lf,
-    None,
-}
-
-fn split_lines(input: &[u8], limits: PemLimits) -> Result<Vec<Line<'_>>, PemError> {
-    let mut lines = Vec::new();
-    let mut start = 0;
-    while start < input.len() {
-        let mut end = start;
-        while end < input.len() && !matches!(input[end], b'\r' | b'\n') {
-            end += 1;
-        }
-        if end - start > limits.max_physical_line_bytes() {
-            return Err(PemError::at(PemErrorKind::PhysicalLineTooLong, start));
-        }
-        let (ending, ending_len) = if end == input.len() {
-            (LineEnding::None, 0)
-        } else if input[end] == b'\r' && input.get(end + 1) == Some(&b'\n') {
-            (LineEnding::CrLf, 2)
-        } else if input[end] == b'\r' {
-            (LineEnding::Cr, 1)
-        } else {
-            (LineEnding::Lf, 1)
-        };
-        lines
-            .try_reserve(1)
-            .map_err(|_| PemError::new(PemErrorKind::AllocationFailed))?;
-        lines.push(Line {
-            bytes: &input[start..end],
-            start,
-            span_len: end - start + ending_len,
-            ending,
-        });
-        start = end + ending_len;
-    }
-    if input.is_empty() {
-        lines
-            .try_reserve(1)
-            .map_err(|_| PemError::new(PemErrorKind::AllocationFailed))?;
-        lines.push(Line {
-            bytes: &[],
-            start: 0,
-            span_len: 0,
-            ending: LineEnding::None,
-        });
-    }
-    Ok(lines)
+struct ParsedBoundary<'a> {
+    label: &'a [u8],
+    had_blanks: bool,
 }
 
 fn parse_block(
-    lines: &[Line<'_>],
-    begin: usize,
+    lines: &mut Lines<'_>,
+    begin_line: Line<'_>,
+    begin_boundary: ParsedBoundary<'_>,
     limits: PemLimits,
     policy: PemParsePolicy,
     validate_base64: bool,
     report: &mut PemParseReport,
-) -> Result<(RawPemBlock, usize), PemError> {
-    let begin_line = lines[begin];
-    let label_bytes = boundary_label(begin_line.bytes, true, policy)?
-        .ok_or_else(|| PemError::at(PemErrorKind::InvalidBoundary, begin_line.start))?;
+) -> Result<RawPemBlock, PemError> {
+    let label_bytes = begin_boundary.label;
     if label_bytes.len() > limits.max_label_bytes() {
         return Err(PemError::at(
             PemErrorKind::LabelLimitExceeded,
@@ -284,15 +233,17 @@ fn parse_block(
         }
         crate::PemLabelError::AllocationFailed => PemError::new(PemErrorKind::AllocationFailed),
     })?;
+    account_boundary(begin_boundary, report)?;
     account_label(&label, policy, report, begin_line.start)?;
     account_line_ending(begin_line.ending, policy, report, begin_line.start, true)?;
 
     let mut body = WipingBytes::default();
-    let mut body_lengths = Vec::new();
-    let mut line_index = begin + 1;
-    while line_index < lines.len() {
-        let line = lines[line_index];
-        if let Some(end_label_bytes) = boundary_label(line.bytes, false, policy)? {
+    let mut body_lines = 0usize;
+    let mut completed_body_lines_are_64 = true;
+    let mut final_body_line_len = 0usize;
+    while let Some(line) = lines.next_line()? {
+        if let Some(end_boundary) = boundary_label(line.bytes, false, policy)? {
+            let end_label_bytes = end_boundary.label;
             let end_text = core::str::from_utf8(end_label_bytes)
                 .map_err(|_| PemError::at(PemErrorKind::InvalidLabel, line.start))?;
             let end_label = PemLabel::new(end_text).map_err(|error| match error {
@@ -303,6 +254,7 @@ fn parse_block(
                     PemError::new(PemErrorKind::AllocationFailed)
                 }
             })?;
+            account_boundary(end_boundary, report)?;
             account_label(&end_label, policy, report, line.start)?;
             if end_label != label {
                 if policy == PemParsePolicy::Strict {
@@ -311,13 +263,20 @@ fn parse_block(
                 report.mismatched_end_labels += 1;
             }
             account_line_ending(line.ending, policy, report, line.start, false)?;
-            validate_body_layout(&body_lengths, policy, report, line.start)?;
+            validate_body_layout(
+                body_lines,
+                completed_body_lines_are_64,
+                final_body_line_len,
+                policy,
+                report,
+                line.start,
+            )?;
             if validate_base64 {
                 base64_ng::STRICT_STANDARD_PADDED
                     .validate(&body)
                     .map_err(|_| PemError::at(PemErrorKind::InvalidBody, line.start))?;
             }
-            return Ok((RawPemBlock { label, body }, line_index + 1));
+            return Ok(RawPemBlock { label, body });
         }
         if line.bytes.windows(5).any(|window| window == b"-----") && line.bytes.contains(&b':') {
             return Err(PemError::at(
@@ -325,14 +284,16 @@ fn parse_block(
                 line.start,
             ));
         }
+        if body_lines != 0 && final_body_line_len != 64 {
+            completed_body_lines_are_64 = false;
+        }
         let before = body.len();
         compact_body_line(line, policy, limits, report, &mut body)?;
-        body_lengths
-            .try_reserve(1)
-            .map_err(|_| PemError::new(PemErrorKind::AllocationFailed))?;
-        body_lengths.push(body.len() - before);
+        final_body_line_len = body.len() - before;
+        body_lines = body_lines
+            .checked_add(1)
+            .ok_or_else(|| PemError::new(PemErrorKind::LengthOverflow))?;
         account_line_ending(line.ending, policy, report, line.start, true)?;
-        line_index += 1;
     }
     Err(PemError::at(
         PemErrorKind::MissingEndBoundary,
@@ -378,17 +339,14 @@ fn compact_body_line(
 }
 
 fn validate_body_layout(
-    lengths: &[usize],
+    body_lines: usize,
+    completed_body_lines_are_64: bool,
+    final_body_line_len: usize,
     policy: PemParsePolicy,
     report: &mut PemParseReport,
     position: usize,
 ) -> Result<(), PemError> {
-    let strict = !lengths.is_empty()
-        && lengths
-            .iter()
-            .enumerate()
-            .all(|(index, length)| index + 1 == lengths.len() || *length == 64)
-        && lengths.last().is_some_and(|length| *length <= 64);
+    let strict = body_lines != 0 && completed_body_lines_are_64 && final_body_line_len <= 64;
     if strict {
         return Ok(());
     }
@@ -403,7 +361,7 @@ fn boundary_label(
     line: &[u8],
     begin: bool,
     policy: PemParsePolicy,
-) -> Result<Option<&[u8]>, PemError> {
+) -> Result<Option<ParsedBoundary<'_>>, PemError> {
     let prefix = if begin { BEGIN_PREFIX } else { END_PREFIX };
     let trimmed = if policy == PemParsePolicy::Rfc7468Compatible {
         trim_blanks(line)
@@ -419,7 +377,23 @@ fn boundary_label(
     let Some(label) = rest.strip_suffix(b"-----") else {
         return Err(PemError::new(PemErrorKind::InvalidBoundary));
     };
-    Ok(Some(label))
+    Ok(Some(ParsedBoundary {
+        label,
+        had_blanks: trimmed.len() != line.len(),
+    }))
+}
+
+fn account_boundary(
+    boundary: ParsedBoundary<'_>,
+    report: &mut PemParseReport,
+) -> Result<(), PemError> {
+    if boundary.had_blanks {
+        report.noncanonical_boundary_lines = report
+            .noncanonical_boundary_lines
+            .checked_add(1)
+            .ok_or_else(|| PemError::new(PemErrorKind::LengthOverflow))?;
+    }
+    Ok(())
 }
 
 fn trim_blanks(mut bytes: &[u8]) -> &[u8] {

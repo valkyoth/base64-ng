@@ -188,6 +188,7 @@ pub base64_ng_pem::PemParseReport::adjacent_text_bytes: usize
 pub base64_ng_pem::PemParseReport::mismatched_end_labels: usize
 pub base64_ng_pem::PemParseReport::non_crlf_line_endings: usize
 pub base64_ng_pem::PemParseReport::noncanonical_body_lines: usize
+pub base64_ng_pem::PemParseReport::noncanonical_boundary_lines: usize
 pub base64_ng_pem::PemParseReport::noncanonical_labels: usize
 pub base64_ng_pem::PemParseReport::skipped_body_bytes: usize
 impl core::clone::Clone for base64_ng_pem::PemParseReport

@@ -230,7 +230,11 @@ fn preflight(
         .checked_add(label.as_str().len())
         .and_then(|value| value.checked_add(BOUNDARY_SUFFIX.len()))
         .ok_or_else(|| PemError::new(PemErrorKind::LengthOverflow))?;
-    if boundary_line > limits.max_physical_line_bytes() || 64 > limits.max_physical_line_bytes() {
+    let body_len = base64_ng::STRICT_STANDARD_PADDED
+        .encoded_len(payload_len)
+        .map_err(|_| PemError::new(PemErrorKind::LengthOverflow))?;
+    let longest_body_line = body_len.min(64);
+    if boundary_line.max(longest_body_line) > limits.max_physical_line_bytes() {
         return Err(PemError::new(PemErrorKind::PhysicalLineTooLong));
     }
     if payload_len > limits.max_decoded_output_bytes() {

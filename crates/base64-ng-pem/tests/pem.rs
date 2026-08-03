@@ -114,6 +114,32 @@ fn compatible_policy_reports_surrounding_text_layout_skips_and_mismatch() {
 }
 
 #[test]
+fn compatible_policy_reports_boundary_blanks() {
+    let input = b" \t-----BEGIN CERTIFICATE----- \r\nZg==\r\n\t-----END CERTIFICATE----- \t";
+    let document = parse_pem_document(input, LIMITS, PemParsePolicy::Rfc7468Compatible).unwrap();
+    assert_eq!(document.blocks()[0].contents(), b"f");
+    assert_eq!(
+        document.report(),
+        PemParseReport {
+            noncanonical_boundary_lines: 2,
+            ..PemParseReport::default()
+        }
+    );
+}
+
+#[test]
+fn newline_dense_input_does_not_require_a_document_wide_line_index() {
+    let input = vec![b'\n'; 65_536];
+    let limits = PemLimits::new(65_536, 65_536, 65_536, 1, 128, 1, 65_536, 65_536);
+    assert_eq!(
+        parse_pem_document(&input, limits, PemParsePolicy::Rfc7468Compatible)
+            .unwrap_err()
+            .kind(),
+        PemErrorKind::BeginBoundaryMissing
+    );
+}
+
+#[test]
 fn strict_policy_rejects_mismatch_padding_layout_and_legacy_headers() {
     let cases = [
         (
@@ -184,6 +210,35 @@ fn generation_is_transactional_on_every_preflight_error() {
     .unwrap_err();
     assert_eq!(error.kind(), PemErrorKind::EncodedOutputLimitExceeded);
     assert_eq!(output, before);
+}
+
+#[test]
+fn generation_checks_the_longest_line_actually_emitted() {
+    let label = PemLabel::new("A").unwrap();
+    let limits = PemLimits::new(128, 128, 8, 17, 1, 1, 0, 128);
+    let encoded =
+        encode_pem_block_to_string(&label, b"payload", limits, PemGenerationOptions::default())
+            .unwrap();
+    assert_eq!(
+        parse_pem_document(encoded.as_bytes(), limits, PemParsePolicy::Strict)
+            .unwrap()
+            .blocks()[0]
+            .contents(),
+        b"payload"
+    );
+
+    let too_narrow = PemLimits::new(256, 256, 49, 63, 1, 1, 0, 256);
+    assert_eq!(
+        encode_pem_block_to_string(
+            &label,
+            &[0u8; 49],
+            too_narrow,
+            PemGenerationOptions::default(),
+        )
+        .unwrap_err()
+        .kind(),
+        PemErrorKind::PhysicalLineTooLong
+    );
 }
 
 #[test]
