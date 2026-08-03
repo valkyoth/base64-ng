@@ -255,6 +255,21 @@ Run the streaming fuzz smoke when changing stream state machines:
 cargo +nightly fuzz run stream_chunks -- -runs=1000
 ```
 
+Run every bounded campaign with:
+
+```sh
+BASE64_NG_RUN_FUZZ_SMOKE=1 scripts/check_fuzz.sh
+```
+
+Before the final 2.0 release seal, run the release-duration campaign and retain
+its generated evidence:
+
+```sh
+BASE64_NG_RUN_FUZZ_RELEASE=1 \
+BASE64_NG_FUZZ_SECONDS_PER_TARGET=3600 \
+scripts/check_fuzz.sh
+```
+
 Review generated local corpus files before committing. Commit only small,
 non-sensitive inputs that preserve a regression, protocol boundary, or edge
 case not already represented by deterministic tests.

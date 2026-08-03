@@ -121,11 +121,7 @@ where
     match (clear_tail_result, vec_result) {
         (Ok(written), Ok(decoded)) => {
             assert_eq!(&clear_tail_output[..written], decoded);
-            assert!(
-                clear_tail_output[written..]
-                    .iter()
-                    .all(|byte| *byte == 0)
-            );
+            assert!(clear_tail_output[written..].iter().all(|byte| *byte == 0));
         }
         (Err(clear_tail_err), Err(vec_err)) => {
             assert_eq!(clear_tail_err, vec_err);
@@ -180,11 +176,7 @@ fn exercise_wrapped_decode<A, const PAD: bool>(
     match (clear_tail_result, vec_result) {
         (Ok(written), Ok(decoded)) => {
             assert_eq!(&clear_tail_output[..written], decoded);
-            assert!(
-                clear_tail_output[written..]
-                    .iter()
-                    .all(|byte| *byte == 0)
-            );
+            assert!(clear_tail_output[written..].iter().all(|byte| *byte == 0));
         }
         (Err(clear_tail_err), Err(vec_err)) => {
             assert_eq!(clear_tail_err, vec_err);
@@ -255,11 +247,7 @@ where
     match (clear_tail_result, vec_result) {
         (Ok(written), Ok(decoded)) => {
             assert_eq!(&clear_tail_output[..written], decoded);
-            assert!(
-                clear_tail_output[written..]
-                    .iter()
-                    .all(|byte| *byte == 0)
-            );
+            assert!(clear_tail_output[written..].iter().all(|byte| *byte == 0));
         }
         (Err(clear_tail_err), Err(vec_err)) => {
             assert_eq!(clear_tail_err, vec_err);
@@ -322,7 +310,9 @@ fn exercise_mutated_canonical<A, const PAD: bool>(
 ) where
     A: base64_ng::Alphabet,
 {
-    let encoded = engine.encode_vec(input).expect("encoding byte input succeeds");
+    let encoded = engine
+        .encode_vec(input)
+        .expect("encoding byte input succeeds");
     exercise_decode(&encoded, engine);
 
     for index in 0..encoded.len().min(64) {

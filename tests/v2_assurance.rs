@@ -2,6 +2,8 @@
 
 use std::{
     cell::{Cell, RefCell},
+    env,
+    process::{Command, Stdio},
     vec::Vec,
 };
 
@@ -29,6 +31,7 @@ enum Fault {
     Accounting,
     Disposal,
     DisposalIndeterminate,
+    PanicWipe,
 }
 
 struct Reservation {
@@ -197,6 +200,9 @@ unsafe impl ProtectedMemoryProvider for FaultProvider {
         cursor: &mut TeardownCursor,
     ) -> WipeConfirmation {
         self.state.borrow_mut().trace.push("wipe");
+        if self.fault.get() == Fault::PanicWipe {
+            panic!("unsafe provider violated its non-unwinding contract");
+        }
         if self.fault.get() == Fault::Wipe {
             WipeConfirmation {
                 result: ProviderOperationResult::NotApplied,
@@ -501,4 +507,39 @@ fn stale_attested_provider_generation_quarantines_before_later_hooks() {
     assert_eq!(provider.trace(), ["wipe"]);
     assert_eq!(error.pending_stage, PendingStage::Wipe);
     assert_eq!(error.wipe, WipeEvidence::WipedBestEffort);
+}
+
+#[test]
+fn violating_provider_double_panic_is_confined_to_a_subprocess() {
+    const CHILD: &str = "BASE64_NG_UNSAFE_PROVIDER_ABORT_CHILD";
+    if env::var_os(CHILD).is_some() {
+        struct OuterPanic;
+        impl Drop for OuterPanic {
+            fn drop(&mut self) {
+                panic!("injected caller panic");
+            }
+        }
+
+        let context = AssuranceContext::new();
+        let token = context.best_effort_token();
+        let provider = FaultProvider::new(Fault::PanicWipe);
+        let _allocation: ProtectedSecret<'_, _, _, BestEffort> =
+            ProtectedSecret::try_new(&provider, &token, 16).unwrap();
+        let _outer_panic = OuterPanic;
+        return;
+    }
+
+    let status = Command::new(env::current_exe().unwrap())
+        .args([
+            "--exact",
+            "violating_provider_double_panic_is_confined_to_a_subprocess",
+            "--nocapture",
+        ])
+        .env(CHILD, "1")
+        .env("RUST_BACKTRACE", "0")
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()
+        .unwrap();
+    assert!(!status.success());
 }

@@ -167,6 +167,7 @@ for required_script in \
     "scripts/check-2.0-pem.sh" \
     "scripts/check-2.0-in-place.sh" \
     "scripts/check-2.0-in-place-sanitizers.sh" \
+    "scripts/check-2.0-fuzz-campaigns.sh" \
     "scripts/check-2.0-wasm-loader.sh" \
     "scripts/check-2.0-neon-hot-paths.sh" \
     "scripts/capture-2.0-neon-admission.sh" \
@@ -555,6 +556,7 @@ for required_checks_command in \
     "scripts/release_crates.py --check" \
     "python3 scripts/test-release-crates.py" \
     "scripts/check_migration_smoke.sh" \
+    "scripts/check-2.0-fuzz-campaigns.sh" \
     "cargo test --doc --all-features" \
     "cargo test --doc --no-default-features" \
     "cargo doc --no-deps --all-features" \
@@ -568,7 +570,10 @@ done
 
 for required_fuzz_gate_text in \
     "cargo audit --file fuzz/Cargo.lock" \
-    "scripts/cargo-deny-check.sh fuzz/Cargo.toml fuzz/deny.toml"
+    "scripts/cargo-deny-check.sh fuzz/Cargo.toml fuzz/deny.toml" \
+    "BASE64_NG_RUN_FUZZ_RELEASE=1" \
+    "corpus-hashes:" \
+    "minimization:"
 do
     if ! grep -F -q "$required_fuzz_gate_text" scripts/check_fuzz.sh docs/FUZZING.md docs/RELEASE_EVIDENCE.md; then
         echo "release metadata: fuzz dependency gates are missing required text: $required_fuzz_gate_text" >&2
@@ -695,6 +700,7 @@ for required_package_file in \
     "scripts/check-2.0-pem.sh" \
     "scripts/check-2.0-in-place.sh" \
     "scripts/check-2.0-in-place-sanitizers.sh" \
+    "scripts/check-2.0-fuzz-campaigns.sh" \
     "scripts/check-2.0-neon-hot-paths.sh" \
     "scripts/check-2.0-one-shot.sh" \
     "scripts/check-2.0-profiles.sh" \

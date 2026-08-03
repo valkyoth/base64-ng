@@ -95,10 +95,7 @@ fn compare_results(
     let reference_result = reference(input, &mut reference_output);
     assert_eq!(accelerated_result, reference_result);
     match reference_result {
-        Ok(written) => assert_eq!(
-            &accelerated_output[..written],
-            &reference_output[..written]
-        ),
+        Ok(written) => assert_eq!(&accelerated_output[..written], &reference_output[..written]),
         Err(_) if input.len() >= direct_decode_input_block(backend) => {
             assert!(accelerated_output.iter().all(|byte| *byte == 0x55));
         }

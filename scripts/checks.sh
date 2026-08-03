@@ -240,6 +240,9 @@ scripts/check_dudect.sh
 echo "checks: fuzz harness"
 scripts/check_fuzz.sh
 
+echo "checks: 2.0 fuzz and property campaigns"
+scripts/check-2.0-fuzz-campaigns.sh
+
 echo "checks: performance harness"
 scripts/check_perf.sh
 

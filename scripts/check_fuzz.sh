@@ -18,8 +18,10 @@ cargo audit --file fuzz/Cargo.lock
 echo "fuzz checks: dependency policy"
 scripts/cargo-deny-check.sh fuzz/Cargo.toml fuzz/deny.toml
 
-if [ "${BASE64_NG_RUN_FUZZ_SMOKE:-0}" != "1" ]; then
-    echo "fuzz checks: smoke campaigns skipped; set BASE64_NG_RUN_FUZZ_SMOKE=1 to run bounded campaigns"
+if [ "${BASE64_NG_RUN_FUZZ_SMOKE:-0}" != "1" ] &&
+    [ "${BASE64_NG_RUN_FUZZ_RELEASE:-0}" != "1" ]
+then
+    echo "fuzz checks: campaigns skipped; set BASE64_NG_RUN_FUZZ_SMOKE=1 or BASE64_NG_RUN_FUZZ_RELEASE=1"
     exit 0
 fi
 
@@ -30,7 +32,35 @@ fi
 
 evidence_dir="target/release-evidence/fuzz"
 manifest="$evidence_dir/MANIFEST.txt"
-runs="${BASE64_NG_FUZZ_RUNS:-1000}"
+targets="
+decode
+in_place
+stream_chunks
+differential
+profiles
+x86_encode
+x86_decode
+neon
+mime_body
+pem_document
+multibase_family
+imap_payload
+password_records
+openpgp_armor
+v2_runtime_codec
+v2_incremental
+v2_async
+v2_assurance
+"
+if [ "${BASE64_NG_RUN_FUZZ_RELEASE:-0}" = "1" ]; then
+    mode="release-duration"
+    duration="${BASE64_NG_FUZZ_SECONDS_PER_TARGET:-3600}"
+    campaign_argument="-max_total_time=$duration"
+else
+    mode="bounded-smoke"
+    runs="${BASE64_NG_FUZZ_RUNS:-1000}"
+    campaign_argument="-runs=$runs"
+fi
 mkdir -p "$evidence_dir"
 
 {
@@ -46,22 +76,34 @@ mkdir -p "$evidence_dir"
     cargo fuzz --version
     echo
     echo "parameters:"
-    echo "runs=$runs"
+    echo "mode=$mode"
+    echo "campaign_argument=$campaign_argument"
+    echo "panic_oracle=crate-originated panic is a campaign failure"
+    echo "artifact_oracle=zero artifacts required"
     echo
     echo "targets:"
 } >"$manifest"
 
-for target in decode in_place stream_chunks differential profiles x86_encode x86_decode neon mime_body pem_document multibase_family imap_payload password_records openpgp_armor; do
+for target in $targets; do
     output="$evidence_dir/$target.txt"
     corpus_dir="$evidence_dir/corpus/$target"
     artifact_dir="$evidence_dir/artifacts/$target"
     mkdir -p "$corpus_dir" "$artifact_dir"
-    echo "fuzz checks: smoke campaign $target ($runs runs)"
+    echo "fuzz checks: $mode campaign $target ($campaign_argument)"
     if cargo +nightly fuzz run "$target" "$corpus_dir" -- \
         -artifact_prefix="$artifact_dir/" \
-        -runs="$runs" >"$output" 2>&1
+        -print_final_stats=1 \
+        "$campaign_argument" >"$output" 2>&1
     then
-        printf '%s=%s\n' "$target" "ok" >>"$manifest"
+        artifact_count="$(find "$artifact_dir" -type f | wc -l | tr -d '[:space:]')"
+        corpus_count="$(find "$corpus_dir" -type f | wc -l | tr -d '[:space:]')"
+        if [ "$artifact_count" != "0" ]; then
+            echo "fuzz checks: $target left $artifact_count crash artifacts" >&2
+            exit 1
+        fi
+        printf '%s=%s corpus=%s artifacts=%s\n' \
+            "$target" "ok" "$corpus_count" "$artifact_count" >>"$manifest"
+        grep '^stat::' "$output" >>"$manifest" || true
     else
         cat "$output"
         printf '%s=%s\n' "$target" "failed" >>"$manifest"
@@ -71,7 +113,7 @@ done
 
 {
     echo
-    echo "artifacts:"
+    echo "campaign-output-hashes:"
     if command -v sha256sum >/dev/null 2>&1; then
         sha256sum "$evidence_dir"/*.txt
     elif command -v shasum >/dev/null 2>&1; then
@@ -79,6 +121,20 @@ done
     else
         cksum "$evidence_dir"/*.txt
     fi
+    echo
+    echo "corpus-hashes:"
+    corpus_files="$(find "$evidence_dir/corpus" -type f -print)"
+    if [ -z "$corpus_files" ]; then
+        echo "none"
+    elif command -v sha256sum >/dev/null 2>&1; then
+        find "$evidence_dir/corpus" -type f -exec sha256sum {} \;
+    elif command -v shasum >/dev/null 2>&1; then
+        find "$evidence_dir/corpus" -type f -exec shasum -a 256 {} \;
+    else
+        find "$evidence_dir/corpus" -type f -exec cksum {} \;
+    fi
+    echo
+    echo "minimization: no crashing artifact remained; no crash minimization required"
 } >>"$manifest"
 
 echo "fuzz checks: wrote $evidence_dir"

@@ -43,6 +43,33 @@ Current fuzz targets:
   strict-decode comparison against the scalar public contract and independent
   canonical oracle; input is capped at 64 KiB and the target is a no-op on
   non-AArch64 fuzz hosts
+- `mime_body`, `pem_document`, `multibase_family`, `imap_payload`,
+  `password_records`, and `openpgp_armor`: bounded complete-protocol parsing,
+  generation, incremental partitioning, canonical regeneration, and malformed
+  input checks for every 2.0 protocol companion
+- `v2_runtime_codec`: runtime-alphabet construction and rejection, every
+  runtime padding/trailing-bit policy combination, one-shot, in-place, append,
+  allocation-limit, and transactional-output behavior against an independent
+  encoder
+- `v2_incremental`: arbitrary encoder/decoder partitions, absorbing malformed
+  state, legacy whitespace, WHATWG forgiving decode, short counted sinks, and
+  caller formatter panic propagation
+- `v2_async`: manually polled Tokio reader and writer adapters under one-byte
+  I/O, short writes, alternating `Pending`, shutdown, malformed failure, and
+  cancellation-by-drop schedules
+- `v2_assurance`: finite default-provider admission, invalidation,
+  maintenance, retry, exhaustion, assured encode/decode, and every teardown
+  fault stage through a fuzz-only unsafe provider whose assertions enforce
+  ordering, exact-once effects, zero-before-teardown, quarantine, tombstoning,
+  and claim separation
+
+`tests/v2_fuzz_properties.rs` supplies deterministic exhaustive-small
+properties for 64 runtime alphabet rotations, padded and unpadded policies,
+and all small input/output partition combinations. The target-specific x86 and
+NEON harnesses reach every runtime-supported admitted native backend directly.
+Wasm `simd128` cannot be executed by the native libFuzzer process; its admitted
+path remains covered by the dedicated Node, Wasmtime, Chromium, Firefox, and
+Safari runtime/browser differential gates.
 
 `scripts/check_fuzz.sh` also runs the fuzz workspace supply-chain gates:
 
@@ -66,6 +93,7 @@ Committed corpus inputs are allowed only under:
 - `fuzz/corpus/x86_encode/`
 - `fuzz/corpus/x86_decode/`
 - `fuzz/corpus/neon/`
+- one directory matching each remaining target name listed above
 
 Each committed corpus input must be:
 
@@ -96,9 +124,19 @@ BASE64_NG_RUN_FUZZ_SMOKE=1 scripts/check_fuzz.sh
 Use `BASE64_NG_FUZZ_RUNS=<n>` to change the per-target run count. The default
 is `1000` runs for each target.
 
-Longer campaigns are useful before release candidates, but generated corpus
-changes should be reviewed deliberately. Keep only the inputs that improve
-coverage or preserve a regression.
+Run the release-duration campaign with:
+
+```sh
+BASE64_NG_RUN_FUZZ_RELEASE=1 \
+BASE64_NG_FUZZ_SECONDS_PER_TARGET=3600 \
+scripts/check_fuzz.sh
+```
+
+The release mode defaults to one hour per target. Both modes require zero
+crash artifacts and record tool identities, parameters, final LibFuzzer
+statistics, corpus counts and hashes, output hashes, and minimization status in
+`MANIFEST.txt`. Generated corpus changes must be reviewed deliberately. Keep
+only non-sensitive inputs that improve coverage or preserve a regression.
 
 Opt-in smoke campaigns write release evidence under:
 
@@ -116,8 +154,24 @@ Expected files:
 - `x86_encode.txt`
 - `x86_decode.txt`
 - `neon.txt`
+- one `<target>.txt` file for each of the 18 targets
 - `MANIFEST.txt`
 
 Smoke campaigns use temporary corpus and artifact directories under
 `target/release-evidence/fuzz/` so ordinary release smoke runs do not leave
 generated files under committed `fuzz/corpus/` or `fuzz/artifacts/`.
+
+## Assurance Scope
+
+Base 2.0 has no persistent teardown provider. The assurance target therefore
+models one volatile provider-instance generation and treats generation
+termination as final: it exposes no restart, import, or resume parser that
+could honestly be fuzzed. A future persistent provider must add a separate
+authenticated parser and rollback, replay, corruption, torn-write,
+compaction, and capacity campaign before making a persistence claim.
+
+The fuzz-only unsafe provider is not a supported extension example. It exists
+to reject invalid hook order and lifecycle claims. A deliberately unwinding
+unsafe provider is exercised only in an isolated subprocess because unwinding
+from those teardown hooks violates their unsafe contract and may abort during
+double-panic cleanup.

@@ -32,12 +32,8 @@ fuzz_target!(|data: &[u8]| {
             GenerationOptions::new(checksum).with_line_ending(LineEnding::Lf),
         )
         .expect("bounded payload must armor");
-        let parsed = parse_armor_document(
-            generated.as_bytes(),
-            LIMITS,
-            ChecksumPolicy::Rfc9580,
-        )
-        .expect("generated armor must parse");
+        let parsed = parse_armor_document(generated.as_bytes(), LIMITS, ChecksumPolicy::Rfc9580)
+            .expect("generated armor must parse");
         assert_eq!(parsed.blocks()[0].contents(), payload);
     }
 

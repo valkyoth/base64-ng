@@ -13,19 +13,12 @@ fuzz_target!(|input: &[u8]| {
     let mut regenerated = [0_u8; 4096];
 
     if let Ok(record) = parse_pbkdf2_record(input, limits) {
-        let salt_len = decode_pbkdf2_field_into(
-            record.expose_encoded_salt(),
-            &mut decoded,
-            limits,
-        )
-        .expect("validated PBKDF2 salt must decode");
+        let salt_len = decode_pbkdf2_field_into(record.expose_encoded_salt(), &mut decoded, limits)
+            .expect("validated PBKDF2 salt must decode");
         let mut checksum = [0_u8; 64];
-        let checksum_len = decode_pbkdf2_field_into(
-            record.expose_encoded_checksum(),
-            &mut checksum,
-            limits,
-        )
-        .expect("validated PBKDF2 checksum must decode");
+        let checksum_len =
+            decode_pbkdf2_field_into(record.expose_encoded_checksum(), &mut checksum, limits)
+                .expect("validated PBKDF2 checksum must decode");
         let written = generate_pbkdf2_record_into(
             record.algorithm(),
             record.rounds(),

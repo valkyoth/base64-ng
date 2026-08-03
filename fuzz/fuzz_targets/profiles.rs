@@ -48,8 +48,16 @@ where
     assert!(profile.is_valid());
 
     let encoded = profile.encode_vec(input).expect("encoded length fits");
-    assert_eq!(profile.encoded_len(input.len()).expect("encoded length fits"), encoded.len());
-    assert_eq!(profile.checked_encoded_len(input.len()), Some(encoded.len()));
+    assert_eq!(
+        profile
+            .encoded_len(input.len())
+            .expect("encoded length fits"),
+        encoded.len()
+    );
+    assert_eq!(
+        profile.checked_encoded_len(input.len()),
+        Some(encoded.len())
+    );
     assert!(profile.validate(&encoded));
     assert_eq!(profile.validate_result(&encoded), Ok(()));
     assert_eq!(profile.decoded_len(&encoded), Ok(input.len()));

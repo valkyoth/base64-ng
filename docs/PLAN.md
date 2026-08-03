@@ -24,6 +24,13 @@ Commit 50 completes the final-core Kani proof inventory and bounded evidence
 runners. See [`2.0_FORMAL_VERIFICATION.md`](2.0_FORMAL_VERIFICATION.md) for the
 normal, advanced, and exploratory proof sets and their explicit non-claims.
 
+Commit 51 completes the final fuzz-target and deterministic property
+inventory. Eighteen isolated targets cover runtime policy, forced native
+backends, incremental and in-place state, async backpressure/cancellation,
+protocol companions, and volatile assurance teardown. See
+[`FUZZING.md`](FUZZING.md) for campaign commands, evidence records, and the
+explicit persistent-provider and wasm execution boundaries.
+
 ## Dependency Policy
 
 The default position is no external crates.

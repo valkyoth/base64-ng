@@ -265,10 +265,7 @@ fn exercise_decoder_reader_adjacent_payload<A>(
 ) where
     A: base64_ng::Alphabet,
 {
-    let payload_len = input
-        .len()
-        .min(usize::from(split_seed % 31) + 1)
-        .max(1);
+    let payload_len = input.len().min(usize::from(split_seed % 31) + 1).max(1);
     let mut payload = Vec::with_capacity(payload_len);
     if input.is_empty() {
         payload.push(split_seed);

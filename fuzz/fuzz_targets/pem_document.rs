@@ -1,7 +1,7 @@
 #![no_main]
 
 use base64_ng_pem::{
-    PemDocumentParser, PemGenerationOptions, PemLabel, PemLimits, PemParsePolicy,
+    PemDocumentParser, PemErrorKind, PemGenerationOptions, PemLabel, PemLimits, PemParsePolicy,
     encode_pem_block_to_string, parse_pem_document,
 };
 use libfuzzer_sys::fuzz_target;
@@ -16,10 +16,15 @@ fuzz_target!(|data: &[u8]| {
         payload,
         LIMITS,
         PemGenerationOptions::default(),
-    )
-    .unwrap();
-    let parsed = parse_pem_document(generated.as_bytes(), LIMITS, PemParsePolicy::Strict).unwrap();
-    assert_eq!(parsed.blocks()[0].contents(), payload);
+    );
+    if payload.is_empty() {
+        assert_eq!(generated.unwrap_err().kind(), PemErrorKind::InvalidBody);
+    } else {
+        let generated = generated.unwrap();
+        let parsed =
+            parse_pem_document(generated.as_bytes(), LIMITS, PemParsePolicy::Strict).unwrap();
+        assert_eq!(parsed.blocks()[0].contents(), payload);
+    }
 
     for policy in [PemParsePolicy::Strict, PemParsePolicy::Rfc7468Compatible] {
         let one_shot = parse_pem_document(data, LIMITS, policy);

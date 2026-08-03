@@ -32,6 +32,13 @@ pentests may cover contiguous checkpoint batches and remain working evidence;
 the normalized permanent GitHub pentest report is added for the final 2.0.0
 candidate.
 
+Commit 51 completes the isolated fuzz and property inventory. Eighteen targets
+cover ordinary/runtime codecs, forced native backends, incremental/in-place
+state, sync and async adapters, every protocol companion, and volatile
+assurance teardown. `scripts/check-2.0-fuzz-campaigns.sh` runs the deterministic
+property, panic, cancellation, cleanup, and unsafe-provider isolation suite;
+`scripts/check_fuzz.sh` records bounded or release-duration LibFuzzer evidence.
+
 Commit 2 freezes the machine-generated `v1.3.9` public API snapshots and the
 [`2.0_API_MIGRATION_LEDGER.md`](2.0_API_MIGRATION_LEDGER.md) disposition rules.
 `scripts/check-api-snapshots.sh`, `scripts/check-2.0-migration-smoke.sh`, and
@@ -561,6 +568,10 @@ The release gate runs:
   `crypt(3)`-style, and caller-defined alphabets
 - opt-in bounded fuzz smoke evidence through
   `BASE64_NG_RUN_FUZZ_SMOKE=1 scripts/check_fuzz.sh`
+- opt-in release-duration fuzz evidence through
+  `BASE64_NG_RUN_FUZZ_RELEASE=1 scripts/check_fuzz.sh`, including final
+  statistics, corpus and output hashes, artifact counts, and minimization
+  status for all 18 targets
 - generated constant-time assembly artifacts through
   `scripts/generate_ct_asm_evidence.sh`
 - manual generated-code review checklist in [CT_ASM_REVIEW.md](CT_ASM_REVIEW.md)
@@ -656,6 +667,16 @@ The `stream_chunks` fuzz target covers:
   the reader leaves those bytes unread
 - stream state-helper invariants for pending quanta, buffered output capacity,
   recovery readiness, and terminal input state
+
+The final 2.0 targets add runtime-alphabet and policy differential checks,
+arbitrary incremental partitions, legacy and WHATWG policies, caller
+formatter panic propagation, manually polled Tokio cancellation/backpressure,
+finite provider-budget schedules, and every volatile teardown fault stage.
+Static `no_std` backend-token behavior is executed by the architecture smoke
+crates because libFuzzer itself requires `std`. Wasm `simd128` remains bound to
+its dedicated runtime/browser differential evidence rather than a native fuzz
+process. Base 2.0 has no persistent provider or persistent parser, so no
+persistence/restart claim is made by the volatile assurance target.
 
 Run a bounded local smoke test with:
 

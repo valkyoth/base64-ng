@@ -14,6 +14,12 @@ portable model by direct differential tests, generated assembly, Miri,
 sanitizers, and platform evidence. See
 [`2.0_FORMAL_VERIFICATION.md`](2.0_FORMAL_VERIFICATION.md).
 
+Commit 51 adds no shipped unsafe code. Its `v2_assurance` target contains a
+fuzz-only `unsafe impl ProtectedMemoryProvider` that owns one stable allocation
+and asserts the extension contract at every hook. A contract-violating panic
+provider is confined to a subprocess regression. Neither implementation is
+compiled into a published crate.
+
 This inventory is intentionally small and release-gate enforced. Any new unsafe
 block must be added here before an accelerated backend can be admitted.
 

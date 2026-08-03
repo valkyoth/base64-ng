@@ -8,7 +8,28 @@ fi
 
 test -s docs/FUZZING.md
 
-for target in decode in_place stream_chunks differential profiles x86_encode x86_decode neon; do
+targets="
+decode
+in_place
+stream_chunks
+differential
+profiles
+x86_encode
+x86_decode
+neon
+mime_body
+pem_document
+multibase_family
+imap_payload
+password_records
+openpgp_armor
+v2_runtime_codec
+v2_incremental
+v2_async
+v2_assurance
+"
+
+for target in $targets; do
     mkdir -p "fuzz/corpus/$target"
 done
 
@@ -18,14 +39,12 @@ find fuzz/artifacts -type f ! -name .gitignore -print | while IFS= read -r artif
 done
 
 find fuzz/corpus -type f ! -name .gitkeep -print | while IFS= read -r corpus_file; do
-    case "$corpus_file" in
-        fuzz/corpus/decode/* | fuzz/corpus/in_place/* | fuzz/corpus/stream_chunks/* | fuzz/corpus/differential/* | fuzz/corpus/profiles/* | fuzz/corpus/x86_encode/* | fuzz/corpus/x86_decode/* | fuzz/corpus/neon/*)
-            ;;
-        *)
-            echo "fuzz corpus: unknown corpus target for $corpus_file" >&2
-            exit 1
-            ;;
-    esac
+    target="${corpus_file#fuzz/corpus/}"
+    target="${target%%/*}"
+    if ! printf '%s\n' "$targets" | grep -F -x -q "$target"; then
+        echo "fuzz corpus: unknown corpus target for $corpus_file" >&2
+        exit 1
+    fi
 
     size="$(wc -c <"$corpus_file" | tr -d '[:space:]')"
     if [ "$size" -gt 65536 ]; then

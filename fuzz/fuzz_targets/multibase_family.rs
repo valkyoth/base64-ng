@@ -20,12 +20,9 @@ fuzz_target!(|data: &[u8]| {
     }
 
     if let Ok(decoded) = decode_base64_multibase_to_vec(data, LIMITS) {
-        let canonical = encode_base64_multibase_to_string(
-            decoded.encoding(),
-            decoded.as_bytes(),
-            LIMITS,
-        )
-        .unwrap();
+        let canonical =
+            encode_base64_multibase_to_string(decoded.encoding(), decoded.as_bytes(), LIMITS)
+                .unwrap();
         assert_eq!(canonical.as_bytes(), data);
     }
 });
