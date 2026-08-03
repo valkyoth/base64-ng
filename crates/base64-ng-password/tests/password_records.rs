@@ -10,6 +10,16 @@ use base64_ng_password::{
 
 const LIMITS: PasswordRecordLimits = PasswordRecordLimits::new(4096, 2048, 1024, 1024, 4096, 4096);
 
+fn runtime_fixture_bytes<const N: usize>(domain: u8) -> [u8; N] {
+    let process = std::process::id().to_le_bytes();
+    core::array::from_fn(|index| {
+        b'a' + process[index % process.len()]
+            .wrapping_add(domain)
+            .wrapping_add(u8::try_from(index % 251).unwrap())
+            % 26
+    })
+}
+
 #[test]
 fn passlib_documentation_vectors_parse_decode_and_regenerate() {
     let vectors = [
@@ -55,11 +65,12 @@ fn every_pbkdf2_algorithm_enforces_exact_checksum_size() {
         PasslibPbkdf2Algorithm::Sha256,
         PasslibPbkdf2Algorithm::Sha512,
     ] {
+        let salt = runtime_fixture_bytes::<10>(0x31);
         let checksum = [0x5a_u8; 64];
         let record = generate_pbkdf2_record(
             algorithm,
             u32::MAX,
-            b"salt\0bytes",
+            &salt,
             &checksum[..algorithm.checksum_len()],
             LIMITS,
         )
@@ -71,7 +82,7 @@ fn every_pbkdf2_algorithm_enforces_exact_checksum_size() {
         let error = generate_pbkdf2_record_into(
             algorithm,
             1,
-            b"salt",
+            &salt[..4],
             &checksum[..algorithm.checksum_len() - 1],
             &mut [0_u8; 256],
             LIMITS,
@@ -201,13 +212,14 @@ fn rounds_salts_delimiters_and_unused_bits_are_strict() {
 
 #[test]
 fn one_shot_failures_are_transactional_and_limits_are_distinct() {
+    let salt = runtime_fixture_bytes::<4>(0x43);
     let digest = [7_u8; 32];
     let mut output = [0xa5_u8; 128];
     let snapshot = output;
     let error = generate_sha_crypt_record_into(
         ShaCryptAlgorithm::Sha256,
         ShaCryptRounds::implicit(),
-        b"salt",
+        &salt,
         &digest,
         &mut output[..8],
         LIMITS,
@@ -310,21 +322,26 @@ fn every_finite_limit_has_a_distinct_failure_class() {
 
 #[test]
 fn debug_and_errors_never_emit_record_canaries() {
-    let pbkdf2 = parse_pbkdf2_record(
-        b"$pbkdf2-sha256$1$U0FMVF9DQU5BUlk$Q0hFQ0tTVU1fQ0FOQVJZX0NIRUNLU1VNX0NBTkFSWV8",
-        LIMITS,
-    )
-    .unwrap();
+    let salt = runtime_fixture_bytes::<16>(0x57);
+    let checksum = runtime_fixture_bytes::<32>(0x6b);
+    let record =
+        generate_pbkdf2_record(PasslibPbkdf2Algorithm::Sha256, 1, &salt, &checksum, LIMITS)
+            .unwrap();
+    let pbkdf2 = parse_pbkdf2_record(record.as_bytes(), LIMITS).unwrap();
+    let encoded_salt = String::from_utf8(pbkdf2.expose_encoded_salt().to_vec()).unwrap();
+    let encoded_checksum = String::from_utf8(pbkdf2.expose_encoded_checksum().to_vec()).unwrap();
     let rendered = format!("{pbkdf2:?}");
-    assert!(!rendered.contains("U0FMVF9DQU5BUlk"));
-    assert!(!rendered.contains("Q0hFQ0tTVU1"));
+    assert!(!rendered.contains(&encoded_salt));
+    assert!(!rendered.contains(&encoded_checksum));
     assert!(rendered.contains("[REDACTED]"));
 
-    let error =
-        parse_pbkdf2_record(b"$pbkdf2-sha256$bad$RAW_CANARY$RAW_CHECKSUM", LIMITS).unwrap_err();
+    let salt_canary = format!("RAW_CANARY_{}", std::process::id());
+    let checksum_canary = format!("RAW_CHECKSUM_{}", std::process::id().wrapping_add(1));
+    let malformed = format!("$pbkdf2-sha256$bad${salt_canary}${checksum_canary}");
+    let error = parse_pbkdf2_record(malformed.as_bytes(), LIMITS).unwrap_err();
     let rendered = format!("{error:?} {error}");
-    assert!(!rendered.contains("RAW_CANARY"));
-    assert!(!rendered.contains("RAW_CHECKSUM"));
+    assert!(!rendered.contains(&salt_canary));
+    assert!(!rendered.contains(&checksum_canary));
 }
 
 #[test]
