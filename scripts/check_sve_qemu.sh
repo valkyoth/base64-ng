@@ -1,7 +1,8 @@
 #!/usr/bin/env sh
 set -eu
+ulimit -c 0
 
-script_revision="2026-08-02-commit35-sve-qemu-v2"
+script_revision="2026-08-03-cross-subprocess-v3"
 evidence_dir="target/release-evidence/sve-qemu"
 target="aarch64-unknown-linux-musl"
 target_key="AARCH64_UNKNOWN_LINUX_MUSL"
@@ -37,6 +38,7 @@ cargo_target() {
     runner="$1"
     shift
     env \
+        "BASE64_NG_TEST_SUBPROCESS_RUNNER=$runner" \
         "CARGO_TARGET_${target_key}_LINKER=$linker" \
         "CARGO_TARGET_${target_key}_RUNNER=$runner" \
         cargo "$@"
@@ -47,6 +49,7 @@ cargo_candidate() {
     shift
     env \
         RUSTFLAGS="${RUSTFLAGS:-} --cfg base64_ng_sve_candidate" \
+        "BASE64_NG_TEST_SUBPROCESS_RUNNER=$runner" \
         "CARGO_TARGET_${target_key}_LINKER=$linker" \
         "CARGO_TARGET_${target_key}_RUNNER=$runner" \
         cargo "$@"

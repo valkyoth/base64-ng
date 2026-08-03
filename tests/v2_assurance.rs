@@ -529,7 +529,9 @@ fn violating_provider_double_panic_is_confined_to_a_subprocess() {
         return;
     }
 
-    let status = Command::new(env::current_exe().unwrap())
+    let executable = env::current_exe().unwrap();
+    let mut command = recursive_test_command(&executable);
+    let status = command
         .args([
             "--exact",
             "violating_provider_double_panic_is_confined_to_a_subprocess",
@@ -542,4 +544,20 @@ fn violating_provider_double_panic_is_confined_to_a_subprocess() {
         .status()
         .unwrap();
     assert!(!status.success());
+}
+
+fn recursive_test_command(executable: &std::path::Path) -> Command {
+    let Some(runner) = env::var_os("BASE64_NG_TEST_SUBPROCESS_RUNNER") else {
+        return Command::new(executable);
+    };
+    let runner = runner
+        .to_str()
+        .expect("cross-test runner must be valid UTF-8");
+    let mut arguments = runner.split_whitespace();
+    let program = arguments
+        .next()
+        .expect("cross-test runner must name a program");
+    let mut command = Command::new(program);
+    command.args(arguments).arg(executable);
+    command
 }

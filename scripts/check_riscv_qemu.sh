@@ -1,5 +1,6 @@
 #!/usr/bin/env sh
 set -eu
+ulimit -c 0
 
 script_revision="2026-08-02-commit35-riscv-qemu-v3"
 evidence_dir="target/release-evidence/riscv-qemu"
@@ -80,6 +81,7 @@ cargo_target() {
     runner="$1"
     shift
     env \
+        "BASE64_NG_TEST_SUBPROCESS_RUNNER=$runner" \
         "CARGO_TARGET_${target_key}_LINKER=$linker" \
         "CARGO_TARGET_${target_key}_RUNNER=$runner" \
         cargo "$@"
@@ -91,6 +93,7 @@ cargo_candidate() {
     candidate_flags="${RUSTFLAGS:-} --cfg base64_ng_rvv_candidate"
     env \
         RUSTFLAGS="$candidate_flags" \
+        "BASE64_NG_TEST_SUBPROCESS_RUNNER=$runner" \
         "CARGO_TARGET_${target_key}_LINKER=$linker" \
         "CARGO_TARGET_${target_key}_RUNNER=$runner" \
         cargo "$@"

@@ -38,6 +38,14 @@ cargo test --all-features --test v2_fuzz_properties
 
 echo "2.0 fuzz campaigns: protected teardown and unsafe-provider isolation"
 cargo test --all-features --test v2_assurance
+grep -F -q 'BASE64_NG_TEST_SUBPROCESS_RUNNER' tests/v2_assurance.rs
+for cross_gate in \
+    scripts/check_sve_qemu.sh \
+    scripts/check_riscv_qemu.sh \
+    scripts/check_big_endian_qemu.sh
+do
+    grep -F -q 'BASE64_NG_TEST_SUBPROCESS_RUNNER' "$cross_gate"
+done
 
 echo "2.0 fuzz campaigns: async panic, cancellation, and backpressure regressions"
 cargo test -p base64-ng-tokio \

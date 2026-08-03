@@ -1,5 +1,6 @@
 #!/usr/bin/env sh
 set -eu
+ulimit -c 0
 
 script_revision="2026-08-02-commit31-big-endian-qemu-v3"
 evidence_dir="target/release-evidence/big-endian-qemu"
@@ -88,6 +89,7 @@ cargo_for_target() {
     shift 3
     key="$(target_key "$target")"
     env \
+        "BASE64_NG_TEST_SUBPROCESS_RUNNER=$runner" \
         "CARGO_TARGET_${key}_LINKER=$linker" \
         "CARGO_TARGET_${key}_RUNNER=$runner" \
         cargo "$@"
