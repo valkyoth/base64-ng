@@ -161,7 +161,7 @@ pub(super) fn require_disjoint_slices(left: &[u8], right: &[u8]) -> Result<(), I
     )
 }
 
-#[cfg(any(feature = "secrets", test))]
+#[cfg(any(feature = "secrets", test, kani))]
 fn require_disjoint_ranges(
     left_start: usize,
     left_len: usize,
@@ -179,6 +179,16 @@ fn require_disjoint_ranges(
     } else {
         Ok(())
     }
+}
+
+#[cfg(kani)]
+pub(crate) fn require_in_place_disjoint_ranges_for_proof(
+    left_start: usize,
+    left_len: usize,
+    right_start: usize,
+    right_len: usize,
+) -> Result<(), InPlaceError> {
+    require_disjoint_ranges(left_start, left_len, right_start, right_len)
 }
 
 #[cfg(test)]

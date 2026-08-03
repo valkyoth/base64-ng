@@ -15,6 +15,7 @@ pub mod compat;
 mod const_transforms;
 #[allow(dead_code)]
 pub(crate) mod contracts;
+mod decode_primitives;
 mod formatting;
 mod in_place;
 #[allow(dead_code)]
@@ -36,7 +37,7 @@ pub mod secret;
 mod secret_decoder;
 #[cfg(feature = "secrets")]
 mod secret_encoder;
-#[cfg(kani)]
+#[cfg(all(kani, feature = "secrets"))]
 pub(crate) use secret_encoder::{
     final_quantum_output_len_for_proof, require_disjoint_ranges_for_proof,
 };
@@ -59,10 +60,17 @@ pub use contracts::{
     AssuranceClass, Atomicity, BackendClass, BackendFault, Failure, InputError, InputErrorKind,
     OperationError, OutputFull, Progress, ProtocolScope, Status, Step, TerminalError,
 };
+#[cfg(kani)]
+pub(crate) use decode_primitives::pack_full_quantum_for_proof;
+#[cfg(all(kani, base64_ng_kani_advanced))]
+pub(crate) use decode_primitives::tail_is_canonical_for_proof;
 pub use formatting::{CountedSink, CountedWriteError, EncodedDisplay, FormatWriteError};
 pub use in_place::InPlaceError;
 #[cfg(kani)]
-pub(crate) use in_place::{encoded_tail_len, quantum_decoded_len, tail_decoded_len};
+pub(crate) use in_place::{
+    encoded_tail_len, quantum_decoded_len, require_in_place_disjoint_ranges_for_proof,
+    tail_decoded_len,
+};
 pub use incremental::EncoderState;
 pub use incremental_decoder::DecoderState;
 pub use ordinary::OneShotError;

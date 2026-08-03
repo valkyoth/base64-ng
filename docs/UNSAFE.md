@@ -6,6 +6,14 @@ limited to volatile wipe helpers in `src/cleanup.rs`, the constant-time
 comparison accumulator barrier and constant-time error gate barrier in
 `src/ct/`, and the SIMD boundary in `src/simd/`.
 
+Commit 50 adds no runtime unsafe code. Kani proves portable SIMD arithmetic,
+validity masks, wrapper cursor bounds, and initialized-before-visible commit
+rules, but does not claim to prove architecture intrinsics, inline assembly,
+register cleanup, or runtime feature detection. Those remain connected to the
+portable model by direct differential tests, generated assembly, Miri,
+sanitizers, and platform evidence. See
+[`2.0_FORMAL_VERIFICATION.md`](2.0_FORMAL_VERIFICATION.md).
+
 This inventory is intentionally small and release-gate enforced. Any new unsafe
 block must be added here before an accelerated backend can be admitted.
 

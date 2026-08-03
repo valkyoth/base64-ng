@@ -569,13 +569,26 @@ The release gate runs:
   `secret_encode_scan`; the parser
   accepts both legacy Rust symbols and the v0 symbols enabled by default in
   Rust `1.97.1`
-- Kani proofs through `scripts/check_kani.sh`; current local evidence is the
-  full no-default-features harness set on the Rust `1.90.0` Kani toolchain
-  with `cargo-kani 0.67.0`
+- Kani proofs through `scripts/check_kani.sh`; the machine-checked inventory is
+  43 normal, 19 advanced, and 6 exploratory harnesses on the Rust `1.90.0`
+  Kani toolchain with `cargo-kani 0.67.0`
+- complete required advanced release-host execution through
+  `BASE64_NG_KANI_ALL_ADVANCED=1 scripts/check_kani_advanced.sh`
+- retained verifier/compiler identities, exact commands, harness lists,
+  results, resource reports, unsupported-construct output, status, and
+  checksums under `target/release-evidence/kani/`
 - bounded Kani coverage for constant-time-oriented decode result bounds,
   clear-tail cleanup on error, and validate/decode agreement
 - opt-in bounded Kani coverage for Commit 20 final-quantum bounds, absorbing
   failure, and overlap/address-range preflight
+- independent fixed-array RFC 4648 refinement for every strict 2.0 preset,
+  incremental and in-place behavior, and canonical trailing-bit rejection
+- bounded portable SIMD arithmetic/mask/wrapper models and an explicit
+  initialized-before-visible commit model; architecture intrinsics and inline
+  assembly remain covered by differential, generated-code, and platform gates
+- an explicitly volatile in-memory four-axis teardown and journal model; it is
+  not persistence, crash-recovery, allocator, OS-protection, or unsafe-provider
+  proof
 - bounded-index invariant documentation in [INVARIANTS.md](INVARIANTS.md)
 - explicit Kani compatibility or verifier-exception documentation in
   [KANI.md](KANI.md) if a future installed Kani compiler cannot run the proofs

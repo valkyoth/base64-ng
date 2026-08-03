@@ -6,6 +6,10 @@ use super::{
     contracts::{
         BackendFault, Failure, InputError, Lifecycle, OperationError, Progress, SourceSpan, Step,
     },
+    decode_primitives::{
+        is_legacy_ascii_whitespace, one_byte_tail_is_canonical, pack_full_quantum,
+        two_byte_tail_is_canonical,
+    },
     specifications::{Base64, Codec, CodecSettings, DecodePadding, TrailingBits},
 };
 
@@ -371,11 +375,7 @@ fn decode_quantum(
         let third = decode_symbol(settings, input[2], indexes[2])?;
         let fourth = decode_symbol(settings, input[3], indexes[3])?;
         return Ok(DecodedQuantum {
-            bytes: [
-                (first << 2) | (second >> 4),
-                (second << 4) | (third >> 2),
-                (third << 6) | fourth,
-            ],
+            bytes: pack_full_quantum(first, second, third, fourth),
             len: 3,
             terminal_padding: false,
         });
@@ -383,7 +383,9 @@ fn decode_quantum(
 
     match (input[2], input[3]) {
         (b'=', b'=') => {
-            if second & 0x0f != 0 && settings.trailing_bits() == TrailingBits::RequireCanonical {
+            if !one_byte_tail_is_canonical(second)
+                && settings.trailing_bits() == TrailingBits::RequireCanonical
+            {
                 return Err(InputError::NonCanonicalTrailingBits { index: indexes[1] });
             }
             Ok(DecodedQuantum {
@@ -395,7 +397,9 @@ fn decode_quantum(
         (b'=', _) => Err(InputError::InvalidPadding { index: indexes[2] }),
         (third, b'=') => {
             let third = decode_symbol(settings, third, indexes[2])?;
-            if third & 0x03 != 0 && settings.trailing_bits() == TrailingBits::RequireCanonical {
+            if !two_byte_tail_is_canonical(third)
+                && settings.trailing_bits() == TrailingBits::RequireCanonical
+            {
                 return Err(InputError::NonCanonicalTrailingBits { index: indexes[2] });
             }
             Ok(DecodedQuantum {
@@ -412,11 +416,7 @@ fn decode_quantum(
             let third = decode_symbol(settings, third, indexes[2])?;
             let fourth = decode_symbol(settings, fourth, indexes[3])?;
             Ok(DecodedQuantum {
-                bytes: [
-                    (first << 2) | (second >> 4),
-                    (second << 4) | (third >> 2),
-                    (third << 6) | fourth,
-                ],
+                bytes: pack_full_quantum(first, second, third, fourth),
                 len: 3,
                 terminal_padding: false,
             })
@@ -433,7 +433,9 @@ fn decode_unpadded_tail(
         [first, second] => {
             let first = decode_symbol(settings, *first, indexes[0])?;
             let second = decode_symbol(settings, *second, indexes[1])?;
-            if second & 0x0f != 0 && settings.trailing_bits() == TrailingBits::RequireCanonical {
+            if !one_byte_tail_is_canonical(second)
+                && settings.trailing_bits() == TrailingBits::RequireCanonical
+            {
                 return Err(InputError::NonCanonicalTrailingBits { index: indexes[1] });
             }
             Ok(DecodedQuantum {
@@ -446,7 +448,9 @@ fn decode_unpadded_tail(
             let first = decode_symbol(settings, *first, indexes[0])?;
             let second = decode_symbol(settings, *second, indexes[1])?;
             let third = decode_symbol(settings, *third, indexes[2])?;
-            if third & 0x03 != 0 && settings.trailing_bits() == TrailingBits::RequireCanonical {
+            if !two_byte_tail_is_canonical(third)
+                && settings.trailing_bits() == TrailingBits::RequireCanonical
+            {
                 return Err(InputError::NonCanonicalTrailingBits { index: indexes[2] });
             }
             Ok(DecodedQuantum {
@@ -473,7 +477,9 @@ fn decode_final_tail(
     {
         let first = decode_symbol(settings, *first, indexes[0])?;
         let second = decode_symbol(settings, *second, indexes[1])?;
-        if second & 0x0f != 0 && settings.trailing_bits() == TrailingBits::RequireCanonical {
+        if !one_byte_tail_is_canonical(second)
+            && settings.trailing_bits() == TrailingBits::RequireCanonical
+        {
             return Err(InputError::NonCanonicalTrailingBits { index: indexes[1] });
         }
         return Ok(DecodedQuantum {
@@ -491,8 +497,4 @@ fn decode_symbol(settings: CodecSettings, byte: u8, index: usize) -> Result<u8, 
         None if byte == b'=' => Err(InputError::InvalidPadding { index }),
         None => Err(InputError::InvalidByte { index, byte }),
     }
-}
-
-pub(crate) const fn is_legacy_ascii_whitespace(byte: u8) -> bool {
-    matches!(byte, b' ' | b'\t' | b'\r' | b'\n')
 }

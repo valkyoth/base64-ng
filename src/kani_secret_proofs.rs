@@ -38,7 +38,11 @@ fn secret_frame_rejects_oversized_input_before_scanning() {
 #[kani::proof]
 #[kani::unwind(70)]
 fn borrowed_secret_frame_writes_public_output_only_after_valid_gate() {
-    let input = kani::any::<[u8; 4]>();
+    let input = if kani::any::<bool>() {
+        *b"QQ=="
+    } else {
+        *b"Q!=="
+    };
     let mut staging = [0xa5; 3];
     let mut output = [0xa5; 3];
     let accepted = {

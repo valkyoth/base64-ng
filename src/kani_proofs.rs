@@ -57,6 +57,22 @@ fn validated_alphabet_constructor_indexing_is_bounded() {
 }
 
 #[kani::proof]
+#[kani::unwind(66)]
+fn validated_alphabet_position_establishes_symbol_invariants() {
+    let table = kani::any::<[u8; 64]>();
+    let index = usize::from(kani::any::<u8>() & 63);
+    let second = usize::from(kani::any::<u8>() & 63);
+
+    if validate_position_for_proof(&table, index).is_ok() {
+        assert!((0x21..=0x7e).contains(&table[index]));
+        assert!(table[index] != b'=');
+        if second > index {
+            assert!(table[index] != table[second]);
+        }
+    }
+}
+
+#[kani::proof]
 #[kani::unwind(70)]
 fn standard_in_place_decode_returns_prefix_within_buffer() {
     let mut buffer = kani::any::<[u8; 8]>();

@@ -79,6 +79,8 @@ test -s docs/2.0_OPERATION_REPORTING.md
 test -s docs/2.0_DISPATCH_AND_PERFORMANCE_MATRIX.md
 test -s docs/2.0_DERIVE_HARDENING.md
 test -s docs/2.0_PROTOCOL_REGISTRY.md
+test -s docs/2.0_FORMAL_VERIFICATION.md
+test -s kani/harnesses.tsv
 test -s protocol-registry/v1/SHA256SUMS
 test -s protocol-registry/v1/protocols.tsv
 test -s protocol-registry/v1/configurations.tsv
@@ -160,6 +162,8 @@ for required_script in \
     "scripts/check-2.0-password.sh" \
     "scripts/check-2.0-openpgp.sh" \
     "scripts/check-protocol-registry.sh" \
+    "scripts/check_kani.sh" \
+    "scripts/check_kani_advanced.sh" \
     "scripts/check-2.0-pem.sh" \
     "scripts/check-2.0-in-place.sh" \
     "scripts/check-2.0-in-place-sanitizers.sh" \
@@ -621,6 +625,9 @@ for required_package_file in \
     "docs/2.0_MULTIBASE.md" \
     "docs/2.0_PASSWORD_RECORDS.md" \
     "docs/2.0_PROTOCOL_REGISTRY.md" \
+    "docs/2.0_FORMAL_VERIFICATION.md" \
+    "kani/README.md" \
+    "kani/harnesses.tsv" \
     "docs/2.0_PEM.md" \
     "docs/2.0_IN_PLACE_OPERATIONS.md" \
     "docs/2.0_DEVICE_VERIFICATION_QUEUE.md" \
@@ -684,6 +691,7 @@ for required_package_file in \
     "scripts/validate-protocol-registry.py" \
     "scripts/check-protocol-registry-mutations.py" \
     "scripts/validate-password-spec.py" \
+    "scripts/validate-kani-proof-inventory.py" \
     "scripts/check-2.0-pem.sh" \
     "scripts/check-2.0-in-place.sh" \
     "scripts/check-2.0-in-place-sanitizers.sh" \

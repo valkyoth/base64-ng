@@ -271,7 +271,7 @@ Planned behind admission evidence:
 | Legacy compatibility | Explicit opt-in APIs |
 | Constant-time posture | Constant-time-oriented scalar validation/decode plus bounded 2.0 secret frames with private staging and isolated timing evidence; no formal cryptographic guarantee |
 | Cleanup posture | Best-effort initialized-byte cleanup and redacted secret wrappers |
-| Kani | 28 bounded no-default-features harnesses verified with the Rust `1.90.0` Kani toolchain and `cargo-kani 0.67.0`; not a whole-crate formal-verification claim |
+| Kani | 43 normal and 19 release-host advanced harnesses with explicit resource limits on Rust `1.90.0` and `cargo-kani 0.67.0`; 6 high-cost integrated/wrapped harnesses remain exploratory, and this is not a whole-crate formal-verification claim |
 | Release evidence | fmt, clippy, tests, docs, deny, audit, license, SBOM, reproducibility |
 
 Full adoption details live in [docs/TRUST.md](docs/TRUST.md). Security-control

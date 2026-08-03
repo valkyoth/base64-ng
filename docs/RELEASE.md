@@ -190,6 +190,14 @@ Kani bundles its own Rust compiler and is intentionally documented as a
 separate verifier pairing. The current supported local path is Rust `1.90.0`
 with `cargo-kani 0.67.0`; `scripts/check_kani.sh` runs the
 no-default-features harness set through that toolchain when it is available.
+The exact 2.0 release-host advanced set runs with:
+
+```sh
+BASE64_NG_KANI_ALL_ADVANCED=1 scripts/check_kani_advanced.sh
+```
+
+Both runners enforce bounded resources and retain evidence under
+`target/release-evidence/kani/`.
 If a future Kani/compiler pairing is incompatible with this crate's
 `rust-version`, the script records an explicit skip rather than treating it as
 proof.

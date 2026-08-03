@@ -9,8 +9,11 @@ pairing is documented rather than assumed.
 - Active release toolchain: Rust `1.97.1`.
 - Kani verifier toolchain: Rust `1.90.0`.
 - Locally tested Kani: `cargo-kani 0.67.0`.
-- Current result: `scripts/check_kani.sh` verifies the full current
-  no-default-features Kani harness set: 28 harnesses, 0 failures.
+- Current inventory: 43 normal, 19 advanced, and 6 exploratory harnesses.
+- `scripts/check_kani.sh` verifies every normal no-default-features harness.
+- `BASE64_NG_KANI_ALL_ADVANCED=1 scripts/check_kani_advanced.sh` verifies every
+  required advanced harness on the release-evidence host. Exploratory
+  harnesses never count as release proof.
 
 This is not a normal Cargo dependency-resolution issue. Kani runs are compiler-integration-sensitive because Kani is a verifier with its own compiler integration.
 Updating the active release toolchain to Rust `1.97.1`
@@ -51,16 +54,30 @@ crate declares, the script prints a skip and exits successfully. The stable
 release gate treats that as an explicit policy skip, not as completed formal
 verification.
 
-For opt-in expensive exploration, run:
+For advanced code generation and selected proof groups, run:
 
 ```sh
 scripts/check_kani_advanced.sh
 ```
 
-The advanced script enables `--cfg base64_ng_kani_advanced`, prints each stage
-before it starts, enables the `secrets` feature, and runs advanced harness code
-generation by default. This keeps the default advanced check bounded and
-verifies that the opt-in harnesses still compile through Kani.
+The advanced script enables `--cfg base64_ng_kani_advanced`, prints each stage,
+enables the `secrets` feature, and runs advanced harness code generation by
+default. Both scripts apply explicit memory and per-harness time limits and
+retain version, command, result, resource, warning, and checksum evidence under
+`target/release-evidence/kani/`.
+
+Run the complete required advanced set with:
+
+```sh
+BASE64_NG_KANI_ALL_ADVANCED=1 scripts/check_kani_advanced.sh
+```
+
+Run only the independent RFC 4648 refinements or assurance protocol model with:
+
+```sh
+BASE64_NG_KANI_PROVE_FINAL_CORE=1 scripts/check_kani_advanced.sh
+BASE64_NG_KANI_PROVE_ASSURANCE=1 scripts/check_kani_advanced.sh
+```
 
 To prove the three bounded secret-frame properties added for the `2.0`
 development API, use:
@@ -93,17 +110,16 @@ To run the broad public strict-decode no-panic proof, use:
 BASE64_NG_KANI_PROVE_PUBLIC_SURFACE=1 scripts/check_kani_advanced.sh
 ```
 
-The symbolic wrapped-decode harnesses are intentionally excluded from the
-default advanced script because they can consume very large amounts of memory
-and run for hours on local workstations. To run them manually, use:
+The symbolic wrapped-decode harnesses are classified as exploratory because
+they can consume very large amounts of memory and run for hours. To run them
+manually, use:
 
 ```sh
 BASE64_NG_KANI_EXPENSIVE_WRAPPED=1 scripts/check_kani_advanced.sh
 ```
 
-These harnesses are not part of the mandatory release gate unless a future
-release explicitly promotes them after runtime evidence shows they are
-practical for CI.
+These harnesses are not release proof. Deterministic, property, fuzz, and Miri
+evidence covers wrapped public surfaces instead.
 
 ## Harness Scope
 
@@ -130,8 +146,12 @@ Current harnesses cover:
   tails; the proof and production kernel call the same encoded-tail,
   decoded-quantum, and decoded-tail length helpers so their arithmetic cannot
   drift independently
+- all strict 2.0 preset aliases, encoded-length formulas, runtime policy
+  validation, incremental finalization, and overlap preflight
+- portable SIMD block arithmetic, ASCII classification, all-lane masks,
+  backend-width cursor bounds, and initialized-before-visible commits
 
-The default advanced opt-in script additionally checks code generation for:
+The default advanced script checks code generation for:
 
 - bounded secret-frame release, pre-scan oversize rejection, and borrowed
   output release-gate properties
@@ -154,10 +174,38 @@ The `BASE64_NG_KANI_PROVE_SECRET_FRAMES=1` harness set additionally proves:
 - borrowed public output remains unavailable until the final validity gate,
   while both staging and public storage are cleared after release or rejection
 
-The `BASE64_NG_KANI_EXPENSIVE_WRAPPED=1` harness set additionally proves:
+The `BASE64_NG_KANI_PROVE_FINAL_CORE=1` harness set additionally proves:
+
+- all four strict preset encoders refine a deliberately independent fixed-array
+  RFC 4648 oracle for every bit of one quantum and every tail shape
+- Standard and URL-safe production alphabet lookup plus production decode
+  packing refine their independent position and bit formulas compositionally
+- exhaustive and differential tests connect the proof components to arbitrary
+  incremental and in-place inputs; two integrated Kani versions are retained
+  as exploratory because production lookup expansion exceeds 16 GiB
+- strict canonical trailing-bit rejection
+- incremental and in-place decode refinement and complete-buffer rollback
+- validated built-in alphabets are runtime-constructor fixed points
+
+The `BASE64_NG_KANI_PROVE_ASSURANCE=1` harness set additionally proves the
+bounded in-memory teardown and journal model: four-axis closure, exact pending
+stage, retained wipe evidence, generation rejection, no replay, exactly-once
+accounting, monotonic progress, and non-owning tombstones.
+
+This model does not prove persistence, crash recovery, OS protection, allocator
+behavior, or an external unsafe provider. The complete claim boundary is in
+[`2.0_FORMAL_VERIFICATION.md`](2.0_FORMAL_VERIFICATION.md).
+
+The `BASE64_NG_KANI_EXPENSIVE_WRAPPED=1` exploratory set attempts:
 
 - strict wrapped decode output-prefix bounds for an 8-byte symbolic input
 - strict wrapped clear-tail cleanup for an 8-byte symbolic input
+- incremental and in-place RFC known answers across every tail length
+- production in-place complete-buffer rollback after validation failure
+- borrowed secret-frame release gating through the full fixed-work decoder
+
+These six harnesses are not counted as release proof unless they complete
+within a separately reviewed resource profile.
 
 ## Historical v1.0.0 Verifier Exception
 

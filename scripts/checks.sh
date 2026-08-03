@@ -27,6 +27,9 @@ scripts/validate-doc-versions.sh
 echo "checks: 2.0 governance"
 scripts/validate-2.0-governance.sh
 
+echo "checks: Kani proof inventory"
+scripts/validate-kani-proof-inventory.py
+
 echo "checks: public API audit"
 scripts/validate-api-audit.sh
 

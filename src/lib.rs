@@ -438,6 +438,8 @@ pub fn clear_bytes(bytes: &mut [u8]) {
     wipe_bytes(bytes);
 }
 
+#[cfg(all(kani, feature = "secrets", base64_ng_kani_advanced))]
+mod kani_assurance_proofs;
 #[cfg(kani)]
 mod kani_in_place_proofs;
 #[cfg(kani)]
@@ -446,6 +448,10 @@ mod kani_proofs;
 mod kani_secret_encode_proofs;
 #[cfg(all(kani, feature = "secrets"))]
 mod kani_secret_proofs;
+#[cfg(kani)]
+mod kani_simd_model_proofs;
+#[cfg(kani)]
+mod kani_v2_core_proofs;
 
 #[cfg(test)]
 mod decode_surface_tests;

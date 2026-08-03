@@ -20,6 +20,10 @@ Commit 49 completes the protocol and interoperability evidence freeze. See
 mapping from every specialized public claim to locked sources, finite limits,
 corpora, independent models, and external implementations.
 
+Commit 50 completes the final-core Kani proof inventory and bounded evidence
+runners. See [`2.0_FORMAL_VERIFICATION.md`](2.0_FORMAL_VERIFICATION.md) for the
+normal, advanced, and exploratory proof sets and their explicit non-claims.
+
 ## Dependency Policy
 
 The default position is no external crates.
