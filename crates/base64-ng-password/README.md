@@ -1,3 +1,28 @@
+<p align="center">
+  <b>bounded Base64 fields for exact password-record formats.</b><br>
+  Strict record grammar, canonical fields, finite limits, and no password hashing claims.
+</p>
+
+<div align="center">
+  <a href="https://crates.io/crates/base64-ng">base64-ng crate</a>
+  |
+  <a href="https://docs.rs/base64-ng-password">Docs.rs</a>
+  |
+  <a href="https://github.com/valkyoth/base64-ng/blob/main/docs/2.0_PASSWORD_RECORDS.md">Password-record contract</a>
+  |
+  <a href="https://github.com/valkyoth/base64-ng/blob/main/docs/TRUST.md">Trust Dashboard</a>
+  |
+  <a href="https://github.com/valkyoth/base64-ng/blob/main/SECURITY.md">Security</a>
+</div>
+
+<br>
+
+<p align="center">
+  <a href="https://github.com/valkyoth/base64-ng">
+    <img src="https://raw.githubusercontent.com/valkyoth/base64-ng/main/.github/images/base64-ng.webp" alt="base64-ng Rust crate overview">
+  </a>
+</p>
+
 # base64-ng-password
 
 Bounded Base64 field and record transforms for exact Passlib PBKDF2 and
