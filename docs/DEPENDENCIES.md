@@ -49,6 +49,10 @@ new dependency expands the audit, license, advisory, and supply-chain surface.
   `base64-ng-tokio` are optional companion packages for applications that
   already admit `serde`, `bytes`, `subtle`, or `tokio`; they are not
   dependencies of the core `base64-ng` package.
+- `base64-ng-mime` is a dependency-minimal protocol companion. Its only
+  runtime dependency is the matching `base64-ng` package. Python's standard
+  `email.base64mime` and the system OpenSSL command are test-time
+  interoperability references and are not package dependencies.
 - Fuzz, performance, and dudect-style timing harness dependencies are isolated
   under `fuzz/`, `perf/`, and `dudect/`; the standard local gate checks them
   separately from the published crate dependency graph.
@@ -95,6 +99,10 @@ Current decisions:
   fixed buffers and drop cleanup. Writer adapters finalize pending Base64 tails
   during `AsyncWrite::poll_shutdown`; callers must drive shutdown to completion
   before extracting the wrapped writer.
+- `base64-ng-mime` is admitted as a companion because RFC 2045's permissive
+  content-transfer body rules are protocol grammar, not a reason to weaken
+  strict RFC 4648 core defaults. It has finite input/output/line/skip/work
+  limits and does not claim complete MIME message or header parsing.
 - The core `tokio` feature remains reserved and inert by design. The async
   cancellation, drop cleanup, chunk-boundary, dependency, and release-evidence
   requirements have been satisfied for `base64-ng-tokio`; moving Tokio into

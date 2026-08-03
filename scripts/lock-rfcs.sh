@@ -41,7 +41,16 @@ done <"$sources"
 
 (
     cd "$rfc_dir"
-    for file in README.md SOURCES rfc4648-errata.tsv rfc4648-requirements.json rfc4648.txt; do
+    for file in \
+        README.md \
+        SOURCES \
+        rfc2045-errata.tsv \
+        rfc2045-requirements.json \
+        rfc2045.txt \
+        rfc4648-errata.tsv \
+        rfc4648-requirements.json \
+        rfc4648.txt
+    do
         sha256sum "$file"
     done >SHA256SUMS
 )

@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "rfc": 2045,
+  "scope": "Section 6.8 Base64 Content-Transfer-Encoding body bytes only",
+  "reviewed": "2026-08-03",
+  "requirements": [
+    {
+      "id": "RFC2045-6.8-STANDARD-TABLE-1",
+      "section": "6.8",
+      "normative": "algorithm",
+      "decision": "Encode and decode only the Standard Base64 alphabet plus terminal padding.",
+      "implementation": ["crates/base64-ng-mime/src/encoder.rs", "crates/base64-ng-mime/src/decoder.rs"],
+      "tests": ["crates/base64-ng-mime/tests/mime_body.rs"]
+    },
+    {
+      "id": "RFC2045-6.8-MAX-76-COLUMNS",
+      "section": "6.8",
+      "normative": "must",
+      "decision": "Canonical output uses 76-column lines and CRLF; canonical input requires exact interior 76-column lines.",
+      "implementation": ["crates/base64-ng-mime/src/encoder.rs", "crates/base64-ng-mime/src/decoder.rs"],
+      "tests": ["crates/base64-ng-mime/tests/mime_body.rs"]
+    },
+    {
+      "id": "RFC2045-6.8-IGNORE-NONALPHABET",
+      "section": "6.8",
+      "normative": "must",
+      "decision": "The explicitly named compatible policy ignores bytes outside Table 1 under finite skip, line, input, output, and work limits and returns warning metadata.",
+      "implementation": ["crates/base64-ng-mime/src/decoder.rs", "crates/base64-ng-mime/src/limits.rs"],
+      "tests": ["crates/base64-ng-mime/tests/mime_body.rs", "fuzz/fuzz_targets/mime_body.rs"]
+    },
+    {
+      "id": "RFC2045-6.8-CANONICAL-PADDING",
+      "section": "6.8",
+      "normative": "must",
+      "decision": "Every final quantum is complete and uses the exact required padding count; noncanonical trailing bits remain rejected.",
+      "implementation": ["crates/base64-ng-mime/src/decoder.rs"],
+      "tests": ["crates/base64-ng-mime/tests/mime_body.rs"]
+    },
+    {
+      "id": "RFC2045-6.8-TEXT-CANONICALIZATION-OUTSIDE",
+      "section": "6.8",
+      "normative": "application responsibility",
+      "decision": "The companion transforms octets only and does not canonicalize text line endings before encoding.",
+      "implementation": ["crates/base64-ng-mime/src/lib.rs"],
+      "tests": ["crates/base64-ng-mime/tests/mime_body.rs"]
+    }
+  ]
+}

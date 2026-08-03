@@ -259,9 +259,9 @@ The release gate runs:
 - Rust 1.90.0 host and target capability checks through
   `scripts/check-2.0-msrv.sh`, with newer-only optimizations required to retain
   a documented MSRV implementation or scalar fallback
-- offline RFC 4648 byte, checksum, source, errata, requirements, Git
-  normalization, and package-exclusion validation plus fail-closed mutation
-  tests
+- offline RFC 4648 and RFC 2045 byte, checksum, source, errata, requirements,
+  Git normalization, and package-exclusion validation plus fail-closed
+  mutation tests
 - independent-oracle differential tests and the versioned semantic corpus
   across core, streaming, bytes, Tokio, serde, and sanitization surfaces
 - fragmented `Buf`/`BufMut` integration through `scripts/check-2.0-bytes.sh`,
@@ -298,6 +298,11 @@ The release gate runs:
   every sealed alphabet/padding/exposure combination, exact-length and
   redaction behavior, stable malformed-declaration diagnostics, implicit-trait
   compile failures, and generated-source routing inspection
+- RFC 2045 Base64 content-transfer body integration through
+  `scripts/check-2.0-mime-body.sh`, including canonical and bounded-compatible
+  policies, finite input/output/line/skip/work limits, transactional one-shot
+  output, one-byte chunk schedules, Python `email.base64mime` and OpenSSL
+  interoperability, package scope, and immutable Section 6.8 evidence
 - 2.0 validated-alphabet evidence through
   `scripts/check-2.0-alphabet.sh`, including const compile acceptance and
   rejection, exhaustive invalid-table diagnostics, all-value mapping parity,
@@ -309,8 +314,9 @@ The release gate runs:
 - zero-dependency policy check for the published crate
 - packaged dependency admission policy for future external-crate review
 - dependency admission review keeping the core crate dependency-free while
-  treating `base64-ng-serde`, `base64-ng-bytes`, `base64-ng-subtle`, and
-  `base64-ng-tokio` as separately reviewed optional companion crates; `zeroize`,
+  treating `base64-ng-serde`, `base64-ng-bytes`, `base64-ng-subtle`,
+  `base64-ng-tokio`, and `base64-ng-mime` as separately reviewed optional
+  companion crates; `zeroize`,
   property-testing, and benchmark frameworks remain out of the core package
   unless separately admitted
 - reserved feature placeholder checks for `tokio`, `kani`, and `fuzzing`,

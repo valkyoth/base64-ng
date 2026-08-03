@@ -24,7 +24,15 @@ version = "0.0.0"
 dependencies = [
  "base64",
  "base64-ng",
+ "base64-ng-mime",
  "libfuzzer-sys",
+]
+
+[[package]]
+name = "base64-ng-mime"
+version = "2.0.0"
+dependencies = [
+ "base64-ng",
 ]
 
 [[package]]

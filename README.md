@@ -358,6 +358,7 @@ and crates.io examples resolve consistently across the workspace.
 | `base64-ng-bytes` | Optional `bytes` helpers for `Bytes`, `Buf`, and `BufMut` users. |
 | `base64-ng-subtle` | Sealed `subtle::ConstantTimeEq` integration for final 2.0 secret owners and token/MAC comparison boundaries. |
 | `base64-ng-tokio` | Optional Tokio read-all/write-all helpers and async reader/writer streaming adapters. |
+| `base64-ng-mime` | Bounded RFC 2045 Section 6.8 Base64 content-transfer body encoding and decoding; not a MIME message or header parser. |
 | `base64-ng-wasm-loader` | Supported byte-only JavaScript/npm loader with separately selected scalar and `simd128` artifacts. |
 
 Subcrates are documented so crate pages are readable, but they belong to the

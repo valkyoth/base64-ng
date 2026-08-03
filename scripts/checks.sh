@@ -84,6 +84,9 @@ scripts/check-2.0-web-forgiving.sh
 echo "checks: 2.0 profiles and protocol terminology"
 scripts/check-2.0-profiles.sh
 
+echo "checks: 2.0 MIME content-transfer body"
+scripts/check-2.0-mime-body.sh
+
 echo "checks: 2.0 secret storage and explicit exposure"
 scripts/check-2.0-secret-storage.sh
 

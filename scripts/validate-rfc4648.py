@@ -63,13 +63,13 @@ def validate_sources(directory: Path) -> None:
         for line in (directory / "SOURCES").read_text(encoding="utf-8").splitlines()
         if line and not line.startswith("#")
     ]
-    expected = [[
+    expected = [
         "rfc4648.txt",
         "https://www.rfc-editor.org/rfc/rfc4648.txt",
         EXPECTED_RFC_SHA256,
-    ]]
-    if rows != expected:
-        fail("SOURCES does not contain the exact locked HTTPS source")
+    ]
+    if expected not in rows or len(rows) != 2:
+        fail("SOURCES does not contain the locked RFC 4648 HTTPS source")
     if digest(directory / "rfc4648.txt") != EXPECTED_RFC_SHA256:
         fail("rfc4648.txt differs from the locked RFC Editor bytes")
     rfc = (directory / "rfc4648.txt").read_bytes()

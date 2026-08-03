@@ -9,6 +9,9 @@ expected_files="$(
         README.md \
         SHA256SUMS \
         SOURCES \
+        rfc2045-errata.tsv \
+        rfc2045-requirements.json \
+        rfc2045.txt \
         rfc4648-errata.tsv \
         rfc4648-requirements.json \
         rfc4648.txt
@@ -32,6 +35,7 @@ fi
 )
 
 python3 scripts/validate-rfc4648.py "$rfc_dir"
+python3 scripts/validate-rfc2045.py "$rfc_dir"
 
 if [ "$skip_package" != "1" ]; then
     package_list="$(mktemp)"
@@ -39,6 +43,7 @@ if [ "$skip_package" != "1" ]; then
     for package in \
         base64-ng \
         base64-ng-derive \
+        base64-ng-mime \
         base64-ng-sanitization \
         base64-ng-serde \
         base64-ng-bytes \

@@ -34,6 +34,7 @@ case "$mode" in
 
         for package in \
             base64-ng-derive \
+            base64-ng-mime \
             base64-ng-sanitization \
             base64-ng-serde \
             base64-ng-bytes \

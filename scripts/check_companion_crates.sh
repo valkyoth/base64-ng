@@ -7,6 +7,7 @@ serde_manifest="crates/base64-ng-serde/Cargo.toml"
 bytes_manifest="crates/base64-ng-bytes/Cargo.toml"
 subtle_manifest="crates/base64-ng-subtle/Cargo.toml"
 tokio_manifest="crates/base64-ng-tokio/Cargo.toml"
+mime_manifest="crates/base64-ng-mime/Cargo.toml"
 
 echo "companion crates: base64-ng-sanitization no-default-features"
 cargo test --manifest-path "$manifest" --no-default-features
@@ -95,5 +96,23 @@ cargo doc --manifest-path "$tokio_manifest" --no-deps --all-features
 
 echo "companion crates: base64-ng-tokio dependency policy"
 scripts/cargo-deny-check.sh "$tokio_manifest" deny.toml
+
+echo "companion crates: base64-ng-mime no-default-features"
+cargo check --manifest-path "$mime_manifest" --no-default-features
+
+echo "companion crates: base64-ng-mime alloc"
+cargo test --manifest-path "$mime_manifest" --no-default-features --features alloc --lib
+
+echo "companion crates: base64-ng-mime all features"
+cargo test --manifest-path "$mime_manifest" --all-features
+
+echo "companion crates: base64-ng-mime clippy"
+cargo clippy --manifest-path "$mime_manifest" --all-targets --all-features -- -D warnings
+
+echo "companion crates: base64-ng-mime docs"
+cargo doc --manifest-path "$mime_manifest" --no-deps --all-features
+
+echo "companion crates: base64-ng-mime dependency policy"
+scripts/cargo-deny-check.sh "$mime_manifest" deny.toml
 
 echo "companion crates: ok"

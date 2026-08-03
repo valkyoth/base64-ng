@@ -43,6 +43,7 @@ members = [
     ".",
     "crates/base64-ng-bytes",
     "crates/base64-ng-derive",
+    "crates/base64-ng-mime",
     "crates/base64-ng-sanitization",
     "crates/base64-ng-serde",
     "crates/base64-ng-subtle",

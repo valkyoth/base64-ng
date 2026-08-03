@@ -18,6 +18,9 @@ SOURCE = ROOT / "rfc"
 LOCKED_FILES = [
     "README.md",
     "SOURCES",
+    "rfc2045-errata.tsv",
+    "rfc2045-requirements.json",
+    "rfc2045.txt",
     "rfc4648-errata.tsv",
     "rfc4648-requirements.json",
     "rfc4648.txt",
@@ -113,6 +116,30 @@ def unmapped_requirement(directory: Path) -> None:
     relock(directory)
 
 
+def changed_rfc2045_bytes(directory: Path) -> None:
+    path = directory / "rfc2045.txt"
+    path.write_bytes(path.read_bytes() + b"changed")
+
+
+def stale_rfc2045_errata(directory: Path) -> None:
+    path = directory / "rfc2045-errata.tsv"
+    path.write_text(
+        path.read_text(encoding="utf-8").replace(
+            "512\tVerified\t", "512\tReported\t"
+        ),
+        encoding="utf-8",
+    )
+    relock(directory)
+
+
+def unmapped_rfc2045_requirement(directory: Path) -> None:
+    path = directory / "rfc2045-requirements.json"
+    data = json.loads(path.read_text(encoding="utf-8"))
+    data["requirements"][0]["implementation"] = []
+    path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    relock(directory)
+
+
 def main() -> int:
     mutations = [
         ("changed bytes", changed_bytes),
@@ -124,6 +151,9 @@ def main() -> int:
         ("empty reference", empty_file),
         ("stale errata status", stale_errata),
         ("unmapped requirement", unmapped_requirement),
+        ("changed RFC 2045 bytes", changed_rfc2045_bytes),
+        ("stale RFC 2045 errata status", stale_rfc2045_errata),
+        ("unmapped RFC 2045 requirement", unmapped_rfc2045_requirement),
     ]
     for name, mutation in mutations:
         expect_rejected(name, mutation)

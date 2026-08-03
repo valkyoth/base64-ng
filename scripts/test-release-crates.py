@@ -57,6 +57,7 @@ def base_packages() -> dict[str, dict]:
     }
     packages["base64-ng-sanitization"]["dependencies"] = [{"name": "base64-ng"}]
     packages["base64-ng-derive"]["dependencies"] = [{"name": "base64-ng"}]
+    packages["base64-ng-mime"]["dependencies"] = [{"name": "base64-ng"}]
     packages["base64-ng-serde"]["dependencies"] = [
         {"name": "base64-ng"},
         {"name": "serde"},

@@ -1,0 +1,4 @@
+id	status	type	section	reported	source	reviewed	disposition	implementation_decision	security_effect
+512	Verified	Editorial	5.1	2005-02-24	https://www.rfc-editor.org/errata/eid512	2026-08-03	not-applicable	Content-Type token grammar is outside the Base64 content-transfer body companion.	none
+2586	Verified	Technical	1	2010-10-28	https://www.rfc-editor.org/errata/eid2586	2026-08-03	not-applicable	Header comment grammar is outside the Base64 content-transfer body companion.	none
+7120	Verified	Editorial	2.4	2022-09-07	https://www.rfc-editor.org/errata/eid7120	2026-08-03	not-applicable	Editorial entity-definition correction does not alter Section 6.8 body behavior.	none
