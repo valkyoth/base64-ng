@@ -2,6 +2,7 @@
 set -eu
 
 manifest="crates/base64-ng-multibase/Cargo.toml"
+msrv_toolchain="${BASE64_NG_MSRV_TOOLCHAIN:-1.90.0}"
 
 echo "2.0 multibase: pinned registry and official vectors"
 scripts/validate-multibase-spec.py
@@ -21,12 +22,19 @@ cargo test --manifest-path "$manifest" --no-default-features --features alloc
 echo "2.0 multibase: all-feature conformance and Python interoperability"
 cargo test --manifest-path "$manifest" --all-features
 
-echo "2.0 multibase: lint, docs, MSRV, and fuzz target"
+echo "2.0 multibase: lint, docs, and fuzz target"
 cargo clippy --manifest-path "$manifest" --all-targets --all-features -- -D warnings
 cargo doc --manifest-path "$manifest" --no-deps --all-features
-cargo +1.90.0 check --manifest-path "$manifest" --no-default-features
-cargo +1.90.0 check --manifest-path "$manifest" --all-features
 cargo check --manifest-path fuzz/Cargo.toml --bin multibase_family
+
+if rustup run "$msrv_toolchain" rustc --version >/dev/null 2>&1; then
+    echo "2.0 multibase: optional local MSRV evidence ($msrv_toolchain)"
+    cargo +"$msrv_toolchain" check --manifest-path "$manifest" --no-default-features
+    cargo +"$msrv_toolchain" check --manifest-path "$manifest" --all-features
+else
+    echo "2.0 multibase: skipping local MSRV checks; Rust $msrv_toolchain is not installed"
+    echo "2.0 multibase: the dedicated CI MSRV matrix remains authoritative"
+fi
 
 echo "2.0 multibase: dependency and package scope"
 scripts/cargo-deny-check.sh "$manifest" deny.toml
