@@ -18,6 +18,10 @@ destination mappings plus the 2.0 fixed-work result gate.
 Commit 41 pins the subtle migration to the sealed final 2.0 secret-owner
 comparison trait, explicit public-length naming, and `Choice`-only result.
 
+Commit 42 pins the derive migration to private `SecretArray<N>` storage,
+mandatory sealed-codec and exposure policy, staged secret decode, wiping
+secret encode, and removal of ordinary conversion and equality expansion.
+
 Snapshots are generated with:
 
 ```text

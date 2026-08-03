@@ -1,46 +1,181 @@
 #![allow(missing_docs)]
 
-use base64_ng::DecodeError;
+use base64_ng::secret::{SecretDecodeError, SecretInput};
 use base64_ng_derive::Base64Secret;
 
 #[derive(Base64Secret)]
-struct ApiKey([u8; 5]);
+#[base64_ng(
+    alphabet = "standard",
+    padding = "padded",
+    exact_length = 2,
+    exposure = "none"
+)]
+struct StandardPaddedNone(base64_ng::secret::SecretArray<2>);
+
+#[derive(Base64Secret)]
+#[base64_ng(
+    alphabet = "standard",
+    padding = "padded",
+    exact_length = 2,
+    exposure = "read"
+)]
+struct StandardPaddedRead(base64_ng::secret::SecretArray<2>);
+
+#[derive(Base64Secret)]
+#[base64_ng(
+    alphabet = "standard",
+    padding = "padded",
+    exact_length = 2,
+    exposure = "read_write"
+)]
+struct StandardPaddedWrite(base64_ng::secret::SecretArray<2>);
+
+#[derive(Base64Secret)]
+#[base64_ng(
+    alphabet = "standard",
+    padding = "unpadded",
+    exact_length = 2,
+    exposure = "none"
+)]
+struct StandardUnpaddedNone(base64_ng::secret::SecretArray<2>);
+
+#[derive(Base64Secret)]
+#[base64_ng(
+    alphabet = "standard",
+    padding = "unpadded",
+    exact_length = 2,
+    exposure = "read"
+)]
+struct StandardUnpaddedRead(base64_ng::secret::SecretArray<2>);
+
+#[derive(Base64Secret)]
+#[base64_ng(
+    alphabet = "standard",
+    padding = "unpadded",
+    exact_length = 2,
+    exposure = "read_write"
+)]
+struct StandardUnpaddedWrite(base64_ng::secret::SecretArray<2>);
+
+#[derive(Base64Secret)]
+#[base64_ng(
+    alphabet = "url_safe",
+    padding = "padded",
+    exact_length = 2,
+    exposure = "none"
+)]
+struct UrlSafePaddedNone(base64_ng::secret::SecretArray<2>);
+
+#[derive(Base64Secret)]
+#[base64_ng(
+    alphabet = "url_safe",
+    padding = "padded",
+    exact_length = 2,
+    exposure = "read"
+)]
+struct UrlSafePaddedRead(base64_ng::secret::SecretArray<2>);
+
+#[derive(Base64Secret)]
+#[base64_ng(
+    alphabet = "url_safe",
+    padding = "padded",
+    exact_length = 2,
+    exposure = "read_write"
+)]
+struct UrlSafePaddedWrite(base64_ng::secret::SecretArray<2>);
+
+#[derive(Base64Secret)]
+#[base64_ng(
+    alphabet = "url_safe",
+    padding = "unpadded",
+    exact_length = 2,
+    exposure = "none"
+)]
+struct UrlSafeUnpaddedNone(base64_ng::secret::SecretArray<2>);
+
+#[derive(Base64Secret)]
+#[base64_ng(
+    alphabet = "url_safe",
+    padding = "unpadded",
+    exact_length = 2,
+    exposure = "read"
+)]
+struct UrlSafeUnpaddedRead(base64_ng::secret::SecretArray<2>);
+
+#[derive(Base64Secret)]
+#[base64_ng(
+    alphabet = "url_safe",
+    padding = "unpadded",
+    exact_length = 2,
+    exposure = "read_write"
+)]
+struct UrlSafeUnpaddedWrite(base64_ng::secret::SecretArray<2>);
+
+fn input(bytes: &[u8]) -> SecretInput<'_> {
+    SecretInput::new(bytes)
+}
+
+macro_rules! assert_round_trip {
+    ($type:ty, $encoded:expr) => {{
+        let secret = <$type>::decode_base64(&input($encoded)).unwrap();
+        assert_eq!(<$type>::EXACT_LENGTH, 2);
+        let encoded = secret.encode_base64().unwrap();
+        assert_eq!(encoded.expose_secret().as_bytes(), $encoded);
+        assert!(core::mem::needs_drop::<$type>());
+    }};
+}
 
 #[test]
-fn decodes_fixed_secret_newtype() {
-    let key = ApiKey::from_base64(b"aGVsbG8=").unwrap();
+fn every_policy_combination_decodes_and_encodes() {
+    assert_round_trip!(StandardPaddedNone, b"++8=");
+    assert_round_trip!(StandardPaddedRead, b"++8=");
+    assert_round_trip!(StandardPaddedWrite, b"++8=");
+    assert_round_trip!(StandardUnpaddedNone, b"++8");
+    assert_round_trip!(StandardUnpaddedRead, b"++8");
+    assert_round_trip!(StandardUnpaddedWrite, b"++8");
+    assert_round_trip!(UrlSafePaddedNone, b"--8=");
+    assert_round_trip!(UrlSafePaddedRead, b"--8=");
+    assert_round_trip!(UrlSafePaddedWrite, b"--8=");
+    assert_round_trip!(UrlSafeUnpaddedNone, b"--8");
+    assert_round_trip!(UrlSafeUnpaddedRead, b"--8");
+    assert_round_trip!(UrlSafeUnpaddedWrite, b"--8");
+}
 
-    assert_eq!(key.expose_secret(), b"hello");
+#[test]
+fn exposure_policy_generates_only_named_views() {
+    let read = StandardPaddedRead::decode_base64(&input(b"++8=")).unwrap();
+    assert_eq!(read.expose_secret().as_bytes(), &[0xfb, 0xef]);
+
+    let mut read_write = UrlSafeUnpaddedWrite::decode_base64(&input(b"--8")).unwrap();
+    read_write.expose_secret_mut().as_bytes_mut()[0] = 0;
+    assert_eq!(read_write.expose_secret().as_bytes(), &[0, 0xef]);
+}
+
+#[test]
+fn formatting_is_redacted() {
+    let secret = StandardPaddedRead::decode_base64(&input(b"++8=")).unwrap();
     assert_eq!(
-        format!("{key:?}"),
-        r#"ApiKey { bytes: "<redacted>", len: 5 }"#
+        format!("{secret:?}"),
+        r#"StandardPaddedRead { secret: "<redacted>", len: 2 }"#
     );
-    assert_eq!(format!("{key}"), "<redacted secret>");
+    assert_eq!(format!("{secret}"), "<redacted secret>");
 }
 
 #[test]
-fn encodes_fixed_secret_newtype() {
-    let key = ApiKey::from(*b"hello");
-    let encoded = key.encode_base64::<8>().unwrap();
-
-    assert_eq!(encoded.as_str(), "aGVsbG8=");
-}
-
-#[test]
-fn rejects_length_mismatch() {
+fn exact_length_and_codec_policy_fail_closed() {
     assert_eq!(
-        ApiKey::from_base64(b"aGk=").unwrap_err(),
-        DecodeError::InvalidLength
+        StandardPaddedNone::decode_base64(&input(b"Zg==")).unwrap_err(),
+        SecretDecodeError::InvalidInput
     );
-}
-
-#[test]
-fn implements_standard_conversion_traits() {
-    let from_str: ApiKey = "aGVsbG8=".parse().unwrap();
-    let from_str_try = ApiKey::try_from("aGVsbG8=").unwrap();
-    let from_bytes_try = ApiKey::try_from(b"aGVsbG8=".as_slice()).unwrap();
-
-    assert!(from_str.constant_time_eq(&from_str_try));
-    assert!(from_str.constant_time_eq(&from_bytes_try));
-    assert_eq!(from_str.expose_secret(), b"hello");
+    assert_eq!(
+        StandardPaddedNone::decode_base64(&input(b"--8=")).unwrap_err(),
+        SecretDecodeError::InvalidInput
+    );
+    assert_eq!(
+        UrlSafeUnpaddedNone::decode_base64(&input(b"--8=")).unwrap_err(),
+        SecretDecodeError::InputTooLarge {
+            input_len: 4,
+            maximum_encoded_len: 3,
+        }
+    );
 }

@@ -100,3 +100,9 @@ protocol comparison boundary without adding `subtle` to the core crate. Its
 sealed 2.0 integration covers only final secret owners and views, exposes
 public-length behavior in the method name, and returns `Choice` for explicit
 protocol-level declassification.
+
+`base64-ng-derive` remains dependency-free and now generates only final 2.0
+secret-owner operations. It requires explicit sealed-codec, exact-length, and
+exposure policy, stages decode through `SecretArrayFrame`, and generates no
+ordinary conversion, cloning, or equality trait. Its evidence is release-gated
+by `scripts/check-2.0-derive.sh`.

@@ -92,7 +92,8 @@ do
             echo "api snapshots: base64-ng drifted from the reviewed 2.0 development API" >&2
             exit 1
         fi
-    elif [ "$package" = "base64-ng-bytes" ] || \
+    elif [ "$package" = "base64-ng-derive" ] || \
+        [ "$package" = "base64-ng-bytes" ] || \
         [ "$package" = "base64-ng-sanitization" ] || \
         [ "$package" = "base64-ng-serde" ] || \
         [ "$package" = "base64-ng-subtle" ] || \

@@ -294,6 +294,10 @@ The release gate runs:
   including every final 2.0 secret owner/view, equal and unequal contents,
   public-length mismatch, compile-fail misuse cases, optimized assembly, and
   the isolated dudect equality class
+- hardened derive integration through `scripts/check-2.0-derive.sh`, including
+  every sealed alphabet/padding/exposure combination, exact-length and
+  redaction behavior, stable malformed-declaration diagnostics, implicit-trait
+  compile failures, and generated-source routing inspection
 - 2.0 validated-alphabet evidence through
   `scripts/check-2.0-alphabet.sh`, including const compile acceptance and
   rejection, exhaustive invalid-table diagnostics, all-value mapping parity,

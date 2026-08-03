@@ -227,8 +227,8 @@ Implemented on this branch now:
 - Optional `base64-ng-sanitization` companion crate for applications that
   already admit `sanitization` and want direct CT decode helpers into
   clear-on-drop secret containers.
-- Optional `base64-ng-derive` companion crate for fixed-size byte newtypes that
-  need narrow Base64 parsing and encoding helpers.
+- Optional `base64-ng-derive` companion crate for fixed-size 2.0 secret
+  newtypes with explicit sealed-codec, exact-length, and exposure policy.
 - Optional `base64-ng-serde`, `base64-ng-bytes`, `base64-ng-subtle`, and
   `base64-ng-tokio` companion crates for projects that explicitly admit those
   ecosystem dependencies.
@@ -353,7 +353,7 @@ and crates.io examples resolve consistently across the workspace.
 | --- | --- |
 | `base64-ng` | Stable zero-runtime-dependency facade crate and primary user entry point. |
 | `base64-ng-sanitization` | Optional `sanitization` integration with native `Choice` comparison helpers and opt-in locked secret decode helpers. |
-| `base64-ng-derive` | Dependency-free `Base64Secret` derive for fixed-size secret newtypes. |
+| `base64-ng-derive` | Dependency-free `Base64Secret` derive with sealed codec, staged decode, exact length, and opt-in exposure policy. |
 | `base64-ng-serde` | Optional `serde` wrappers for projects that already admit `serde`. |
 | `base64-ng-bytes` | Optional `bytes` helpers for `Bytes`, `Buf`, and `BufMut` users. |
 | `base64-ng-subtle` | Sealed `subtle::ConstantTimeEq` integration for final 2.0 secret owners and token/MAC comparison boundaries. |
@@ -470,24 +470,40 @@ protection setup from canary corruption, or when dynamic output needs a
 compile-time decoded-capacity limit.
 
 `base64-ng-derive` provides a dependency-free `Base64Secret` derive for tuple
-newtypes around fixed byte arrays:
+newtypes around the final fixed-size 2.0 secret owner:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.3.9", default-features = false }
-base64-ng-derive = "1.3.9"
+base64-ng = { version = "2.0.0", default-features = false, features = ["secrets"] }
+base64-ng-derive = "2.0.0"
 ```
 
 ```rust
+use base64_ng::secret::SecretInput;
 use base64_ng_derive::Base64Secret;
 
 #[derive(Base64Secret)]
-struct ApiKey([u8; 5]);
+#[base64_ng(
+    alphabet = "standard",
+    padding = "padded",
+    exact_length = 5,
+    exposure = "read"
+)]
+struct ApiKey(base64_ng::secret::SecretArray<5>);
 
-let key = ApiKey::from_base64(b"aGVsbG8=").unwrap();
-assert_eq!(key.expose_secret(), b"hello");
-assert_eq!(key.encode_base64::<8>().unwrap().as_str(), "aGVsbG8=");
+let input = SecretInput::new(b"aGVsbG8=");
+let key = ApiKey::decode_base64(&input).unwrap();
+assert_eq!(key.expose_secret().as_bytes(), b"hello");
+assert_eq!(
+    key.encode_base64().unwrap().expose_secret().as_bytes(),
+    b"aGVsbG8="
+);
 ```
+
+The derive requires all codec, padding, exact-length, and exposure choices at
+the declaration. It generates no ordinary string parsing, implicit slice
+conversion, cloning, or equality traits. See
+[`2.0_DERIVE_HARDENING.md`](docs/2.0_DERIVE_HARDENING.md).
 
 `base64-ng-serde` provides explicit serialization wrappers without admitting
 `serde` into the core package. Its 2.0 adapters use validated codec

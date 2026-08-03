@@ -99,7 +99,7 @@ fn main() {
 RS
 
 cat >"$case_dir/secret-clone.rs" <<'RS'
-use base64_ng::secret::{SecretArray, SecretInput};
+use base64_ng::secret::SecretInput;
 
 fn main() {
     let input = SecretInput::new(b"secret");
@@ -110,13 +110,20 @@ fn main() {
 RS
 
 cat >"$case_dir/derive-as-ref.rs" <<'RS'
+use base64_ng::secret::{SecretArray, SecretInput};
 use base64_ng_derive::Base64Secret;
 
 #[derive(Base64Secret)]
-struct Key([u8; 3]);
+#[base64_ng(
+    alphabet = "standard",
+    padding = "unpadded",
+    exact_length = 3,
+    exposure = "none"
+)]
+struct Key(base64_ng::secret::SecretArray<3>);
 
 fn main() {
-    let key = Key::from(*b"key");
+    let key = Key::decode_base64(&SecretInput::new(b"a2V5")).unwrap();
     let _ = AsRef::<[u8]>::as_ref(&key);
 }
 RS

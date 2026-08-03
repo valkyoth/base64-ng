@@ -41,9 +41,10 @@ new dependency expands the audit, license, advisory, and supply-chain surface.
   independent review before updating that vendored copy. This operational
   control is additive to Cargo's checksum, RustSec, license, and source-policy
   checks.
-- `base64-ng-derive` is an optional companion package for fixed-size byte
-  newtypes. It is dependency-free and does not add proc-macro machinery to the
-  core `base64-ng` package.
+- `base64-ng-derive` is an optional dependency-free companion for fixed-size
+  2.0 `SecretArray<N>` newtypes. Its macro requires explicit sealed-codec,
+  padding, exact-length, and exposure policy and does not add proc-macro
+  machinery to the core `base64-ng` package.
 - `base64-ng-serde`, `base64-ng-bytes`, `base64-ng-subtle`, and
   `base64-ng-tokio` are optional companion packages for applications that
   already admit `serde`, `bytes`, `subtle`, or `tokio`; they are not
@@ -73,8 +74,9 @@ Current decisions:
   through `LockedSecretBytes` or `LockedSecretVec`.
 - `base64-ng-derive` is admitted as a companion crate because it keeps
   proc-macro code and generated newtype ergonomics outside the core package.
-  The derive surface is intentionally limited to tuple structs with one
-  `[u8; N]` field.
+  Its 2.0 surface is intentionally limited to one private `SecretArray<N>`
+  tuple field and four mandatory policy keys. It has no external dependency
+  and generates no implicit exposure or equality traits.
 - `base64-ng-serde` is admitted as a companion crate because serialization
   remains explicit at the field boundary and does not hide alphabet or padding
   choices inside the core package.

@@ -112,6 +112,9 @@ scripts/check-2.0-sanitization.sh
 echo "checks: 2.0 reviewed subtle equality integration"
 scripts/check-2.0-subtle.sh
 
+echo "checks: 2.0 hardened derive integration"
+scripts/check-2.0-derive.sh
+
 echo "checks: reserved feature placeholders"
 scripts/check_reserved_features.sh
 
