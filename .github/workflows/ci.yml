@@ -20,6 +20,10 @@ jobs:
     name: Format, lint, test, and audit
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    env:
+      BASE64_NG_REQUIRE_OPENPGP_INTEROP: "1"
+      GPG: /usr/bin/gpg
+      SQ: /usr/bin/sq
 
     steps:
       - name: Checkout repository
@@ -33,6 +37,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --no-install-recommends gnupg sq
+          /usr/bin/gpg --version
+          /usr/bin/sq packet dearmor --help >/dev/null
 
       - name: Cache Rust build output
         uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1

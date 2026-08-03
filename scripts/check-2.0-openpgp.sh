@@ -3,6 +3,13 @@ set -eu
 
 manifest="crates/base64-ng-openpgp/Cargo.toml"
 msrv_toolchain="${BASE64_NG_MSRV_TOOLCHAIN:-1.90.0}"
+gpg="${GPG:-gpg}"
+sq="${SQ:-sq}"
+
+sq_has_dearmor() {
+    "$1" packet dearmor --help >/dev/null 2>&1 ||
+        "$1" dearmor --help >/dev/null 2>&1
+}
 
 echo "2.0 OpenPGP: no-default no_std + alloc compile"
 cargo check --manifest-path "$manifest" --no-default-features
@@ -10,13 +17,20 @@ cargo check --manifest-path "$manifest" --no-default-features
 echo "2.0 OpenPGP: complete armor, checksum, streaming, and secrets"
 cargo test --manifest-path "$manifest" --all-features
 
-if command -v gpg >/dev/null 2>&1 && command -v sq >/dev/null 2>&1; then
+if command -v "$gpg" >/dev/null 2>&1 &&
+    command -v "$sq" >/dev/null 2>&1 &&
+    sq_has_dearmor "$sq"
+then
     echo "2.0 OpenPGP: required GnuPG and Sequoia differential evidence"
+    GPG="$gpg" SQ="$sq" \
     BASE64_NG_REQUIRE_OPENPGP_INTEROP=1 \
         cargo test --manifest-path "$manifest" --all-features \
         --test interoperability
+elif [ -n "${BASE64_NG_REQUIRE_OPENPGP_INTEROP:-}" ]; then
+    echo "2.0 OpenPGP: required GnuPG/Sequoia dearmor tooling is unavailable" >&2
+    exit 1
 else
-    echo "2.0 OpenPGP: local external interop skipped; install both gpg and sq"
+    echo "2.0 OpenPGP: local external interop skipped; install GnuPG and Sequoia sq"
     echo "2.0 OpenPGP: CI with BASE64_NG_REQUIRE_OPENPGP_INTEROP=1 is authoritative"
 fi
 

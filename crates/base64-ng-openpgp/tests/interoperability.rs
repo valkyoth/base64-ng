@@ -43,9 +43,14 @@ fn rfc9580_fixture_matches_gnupg_and_sequoia() {
 
     let sq = env::var("SQ").unwrap_or_else(|_| "sq".into());
     let sq_output = directory.join("sequoia.bin");
-    match run_sq(&sq, &input, &sq_output) {
-        Ok(status) if status.success() => assert_eq!(fs::read(&sq_output).unwrap(), expected),
-        Ok(status) => panic!("Sequoia sq dearmor failed with {status}"),
+    match detect_sq_dearmor(&sq) {
+        Ok(Some(command)) => match run_sq(&sq, command, &input, &sq_output) {
+            Ok(status) if status.success() => assert_eq!(fs::read(&sq_output).unwrap(), expected),
+            Ok(status) => panic!("Sequoia sq dearmor failed with {status}"),
+            Err(error) => panic!("Sequoia sq dearmor could not run: {error}"),
+        },
+        Ok(None) if required => panic!("required Sequoia sq has no supported dearmor command"),
+        Ok(None) => eprintln!("OpenPGP interoperability: skipping incompatible sq executable"),
         Err(error) if required => panic!("required Sequoia sq is unavailable: {error}"),
         Err(_) => eprintln!("OpenPGP interoperability: skipping unavailable Sequoia sq"),
     }
@@ -53,21 +58,48 @@ fn rfc9580_fixture_matches_gnupg_and_sequoia() {
     fs::remove_dir_all(directory).unwrap();
 }
 
-fn run_sq(sq: &str, input: &Path, output: &Path) -> std::io::Result<ExitStatus> {
-    let modern = Command::new(sq)
-        .args(["packet", "dearmor", "--output"])
-        .arg(output)
-        .arg(input)
-        .status()?;
-    if modern.success() {
-        return Ok(modern);
+#[derive(Clone, Copy)]
+enum SqDearmor {
+    Packet,
+    Legacy,
+}
+
+fn detect_sq_dearmor(sq: &str) -> std::io::Result<Option<SqDearmor>> {
+    if Command::new(sq)
+        .args(["packet", "dearmor", "--help"])
+        .output()?
+        .status
+        .success()
+    {
+        return Ok(Some(SqDearmor::Packet));
     }
-    let _ = fs::remove_file(output);
-    Command::new(sq)
-        .args(["dearmor", "--output"])
-        .arg(output)
-        .arg(input)
-        .status()
+    if Command::new(sq)
+        .args(["dearmor", "--help"])
+        .output()?
+        .status
+        .success()
+    {
+        return Ok(Some(SqDearmor::Legacy));
+    }
+    Ok(None)
+}
+
+fn run_sq(
+    sq: &str,
+    command: SqDearmor,
+    input: &Path,
+    output: &Path,
+) -> std::io::Result<ExitStatus> {
+    let mut process = Command::new(sq);
+    match command {
+        SqDearmor::Packet => {
+            process.args(["packet", "dearmor"]);
+        }
+        SqDearmor::Legacy => {
+            process.arg("dearmor");
+        }
+    }
+    process.arg("--output").arg(output).arg(input).status()
 }
 
 fn temporary_directory() -> PathBuf {
