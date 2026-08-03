@@ -61,7 +61,9 @@ fn python_email_decode(input: &[u8]) -> Vec<u8> {
 
 fn openssl_base64(input: &[u8], decode: bool) -> Vec<u8> {
     let arguments: &[&str] = if decode {
-        &["base64", "-d", "-A"]
+        // `-A` declares single-line input and some OpenSSL releases silently
+        // produce no output when a valid MIME body contains line wrapping.
+        &["base64", "-d"]
     } else {
         &["base64", "-A"]
     };
