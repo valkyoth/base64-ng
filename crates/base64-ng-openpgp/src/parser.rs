@@ -68,6 +68,13 @@ pub(crate) struct RawArmorDocument {
     pub adjacent: usize,
 }
 
+#[derive(Clone, Copy, Eq, PartialEq)]
+pub(crate) enum BodyValidation {
+    Ordinary,
+    #[cfg_attr(not(any(feature = "secrets", test)), allow(dead_code))]
+    DeferredSecret,
+}
+
 /// Incremental bounded armor document collector.
 ///
 /// Input chunks are retained only up to [`OpenPgpLimits::max_input_bytes`].
@@ -144,7 +151,7 @@ pub fn parse_armor_document(
     limits: OpenPgpLimits,
     checksum_policy: ChecksumPolicy,
 ) -> Result<ArmorDocument, OpenPgpError> {
-    let raw = parse_raw_document(input, limits)?;
+    let raw = parse_raw_document(input, limits, BodyValidation::Ordinary)?;
     let mut blocks = Vec::new();
     blocks
         .try_reserve_exact(raw.blocks.len())
@@ -180,6 +187,7 @@ pub fn parse_armor_document(
 pub(crate) fn parse_raw_document(
     input: &[u8],
     limits: OpenPgpLimits,
+    body_validation: BodyValidation,
 ) -> Result<RawArmorDocument, OpenPgpError> {
     if input.len() > limits.max_input_bytes() {
         return Err(OpenPgpError::new(OpenPgpErrorKind::InputLimitExceeded));
@@ -205,6 +213,7 @@ pub(crate) fn parse_raw_document(
                 limits,
                 &mut total_header_bytes,
                 line.start,
+                body_validation,
             )?;
             blocks
                 .try_reserve(1)
@@ -240,6 +249,7 @@ fn parse_block(
     limits: OpenPgpLimits,
     total_header_bytes: &mut usize,
     begin_position: usize,
+    body_validation: BodyValidation,
 ) -> Result<RawArmorBlock, OpenPgpError> {
     let mut headers = Vec::new();
     loop {
@@ -288,9 +298,11 @@ fn parse_block(
                     line.start,
                 ));
             }
-            base64_ng::STRICT_STANDARD_PADDED
-                .validate(&body)
-                .map_err(|_| OpenPgpError::at(OpenPgpErrorKind::InvalidBody, line.start))?;
+            if body_validation == BodyValidation::Ordinary {
+                base64_ng::STRICT_STANDARD_PADDED
+                    .validate(&body)
+                    .map_err(|_| OpenPgpError::at(OpenPgpErrorKind::InvalidBody, line.start))?;
+            }
             return Ok(RawArmorBlock {
                 kind,
                 headers,
@@ -319,7 +331,7 @@ fn parse_block(
                 line.start,
             ));
         }
-        compact_body_line(line, &mut body)?;
+        compact_body_line(line, &mut body, body_validation)?;
     }
     Err(OpenPgpError::at(
         OpenPgpErrorKind::MissingEndBoundary,
@@ -342,7 +354,11 @@ fn parse_header(line: Line<'_>) -> Result<ArmorHeader, OpenPgpError> {
         .map_err(|_| OpenPgpError::at(OpenPgpErrorKind::InvalidHeader, line.start))
 }
 
-fn compact_body_line(line: Line<'_>, body: &mut WipingBytes) -> Result<(), OpenPgpError> {
+fn compact_body_line(
+    line: Line<'_>,
+    body: &mut WipingBytes,
+    body_validation: BodyValidation,
+) -> Result<(), OpenPgpError> {
     let symbols = line
         .bytes
         .iter()
@@ -360,7 +376,9 @@ fn compact_body_line(line: Line<'_>, body: &mut WipingBytes) -> Result<(), OpenP
         if byte.is_ascii_whitespace() {
             continue;
         }
-        if !(byte.is_ascii_alphanumeric() || matches!(byte, b'+' | b'/' | b'=')) {
+        if body_validation == BodyValidation::Ordinary
+            && !(byte.is_ascii_alphanumeric() || matches!(byte, b'+' | b'/' | b'='))
+        {
             return Err(OpenPgpError::at(OpenPgpErrorKind::InvalidBody, line.start));
         }
         body.push(byte);

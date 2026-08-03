@@ -296,7 +296,16 @@ fn preflight(
         .checked_add(kind.label().len())
         .and_then(|value| value.checked_add(BOUNDARY_SUFFIX.len()))
         .ok_or_else(|| OpenPgpError::new(OpenPgpErrorKind::LengthOverflow))?;
-    if boundary_len.max(76) > limits.max_physical_line_bytes() {
+    let body_len = base64_ng::STRICT_STANDARD_PADDED
+        .encoded_len(payload_len)
+        .map_err(|_| OpenPgpError::new(OpenPgpErrorKind::LengthOverflow))?;
+    let longest_body_line = body_len.min(76);
+    let checksum_line = if options.checksum() == ChecksumGeneration::LegacyCrc24 {
+        5
+    } else {
+        0
+    };
+    if boundary_len.max(longest_body_line).max(checksum_line) > limits.max_physical_line_bytes() {
         return Err(OpenPgpError::new(OpenPgpErrorKind::PhysicalLineTooLong));
     }
     let required = armor_encoded_len(kind, headers, payload_len, options)?;

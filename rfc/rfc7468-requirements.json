@@ -40,7 +40,7 @@
       "id": "RFC7468-2-64-COLUMNS",
       "section": "2,3",
       "normative": "must generate",
-      "decision": "Generate exact 64-character non-final lines with no extraneous whitespace; strict parsing enforces the same shape.",
+      "decision": "Generate exact 64-character non-final lines with no extraneous whitespace and require one nonempty 4-to-64-character final quantum line; strict parsing enforces the same Figure 3 shape.",
       "implementation": ["crates/base64-ng-pem/src/generator.rs", "crates/base64-ng-pem/src/parser.rs"],
       "tests": ["crates/base64-ng-pem/tests/pem.rs", "crates/base64-ng-pem/tests/rfc7468.rs"]
     },

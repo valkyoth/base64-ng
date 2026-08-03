@@ -17,6 +17,8 @@ mod error;
 mod generator;
 mod limits;
 mod parser;
+#[cfg(test)]
+mod parser_tests;
 #[cfg(feature = "secrets")]
 mod secret;
 #[cfg(feature = "std")]

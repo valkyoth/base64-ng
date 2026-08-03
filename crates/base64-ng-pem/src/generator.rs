@@ -33,7 +33,7 @@ impl PemBlockEncoder {
         limits: PemLimits,
         options: PemGenerationOptions,
     ) -> Result<Self, PemError> {
-        let required = pem_block_encoded_len(&label, 0, options)?;
+        let required = candidate_pem_block_encoded_len(&label, 0, options)?;
         preflight(&label, 0, limits, options, required)?;
         Ok(Self {
             label,
@@ -109,8 +109,18 @@ impl PemBlockEncoder {
 ///
 /// # Errors
 ///
-/// Returns [`PemError`] for a noncanonical label or arithmetic overflow.
+/// Returns [`PemError`] for an empty payload, noncanonical label, or
+/// arithmetic overflow.
 pub fn pem_block_encoded_len(
+    label: &PemLabel,
+    payload_len: usize,
+    options: PemGenerationOptions,
+) -> Result<usize, PemError> {
+    require_nonempty_payload(payload_len)?;
+    candidate_pem_block_encoded_len(label, payload_len, options)
+}
+
+fn candidate_pem_block_encoded_len(
     label: &PemLabel,
     payload_len: usize,
     options: PemGenerationOptions,
@@ -166,8 +176,9 @@ pub fn encode_pem_block_into(
     limits: PemLimits,
     options: PemGenerationOptions,
 ) -> Result<usize, PemError> {
+    require_nonempty_payload(payload.len())?;
     preflight(label, payload.len(), limits, options, output.len())?;
-    let required = pem_block_encoded_len(label, payload.len(), options)?;
+    let required = candidate_pem_block_encoded_len(label, payload.len(), options)?;
     let mut body = Vec::new();
     let body_len = base64_ng::STRICT_STANDARD_PADDED
         .encoded_len(payload.len())
@@ -194,6 +205,7 @@ pub fn encode_pem_block_to_string(
     limits: PemLimits,
     options: PemGenerationOptions,
 ) -> Result<alloc::string::String, PemError> {
+    require_nonempty_payload(payload.len())?;
     let required = pem_block_encoded_len(label, payload.len(), options)?;
     preflight(label, payload.len(), limits, options, required)?;
     let mut output = Vec::new();
@@ -240,7 +252,7 @@ fn preflight(
     if payload_len > limits.max_decoded_output_bytes() {
         return Err(PemError::new(PemErrorKind::DecodedOutputLimitExceeded));
     }
-    let required = pem_block_encoded_len(label, payload_len, options)?;
+    let required = candidate_pem_block_encoded_len(label, payload_len, options)?;
     if required > limits.max_encoded_output_bytes() {
         return Err(PemError::new(PemErrorKind::EncodedOutputLimitExceeded));
     }
@@ -258,6 +270,14 @@ fn require_canonical_label(label: &PemLabel) -> Result<(), PemError> {
     }
 }
 
+fn require_nonempty_payload(payload_len: usize) -> Result<(), PemError> {
+    if payload_len == 0 {
+        Err(PemError::new(PemErrorKind::InvalidBody))
+    } else {
+        Ok(())
+    }
+}
+
 fn write_validated(
     label: &PemLabel,
     body: &[u8],
@@ -270,13 +290,9 @@ fn write_validated(
     put(output, &mut cursor, label.as_str().as_bytes());
     put(output, &mut cursor, BOUNDARY_SUFFIX);
     put(output, &mut cursor, ending);
-    if body.is_empty() {
+    for line in body.chunks(64) {
+        put(output, &mut cursor, line);
         put(output, &mut cursor, ending);
-    } else {
-        for line in body.chunks(64) {
-            put(output, &mut cursor, line);
-            put(output, &mut cursor, ending);
-        }
     }
     put(output, &mut cursor, END_PREFIX);
     put(output, &mut cursor, label.as_str().as_bytes());

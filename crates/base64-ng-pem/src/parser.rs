@@ -263,6 +263,11 @@ fn parse_block(
                 report.mismatched_end_labels += 1;
             }
             account_line_ending(line.ending, policy, report, line.start, false)?;
+            if validate_base64 {
+                base64_ng::STRICT_STANDARD_PADDED
+                    .validate(&body)
+                    .map_err(|_| PemError::at(PemErrorKind::InvalidBody, line.start))?;
+            }
             validate_body_layout(
                 body_lines,
                 completed_body_lines_are_64,
@@ -271,11 +276,6 @@ fn parse_block(
                 report,
                 line.start,
             )?;
-            if validate_base64 {
-                base64_ng::STRICT_STANDARD_PADDED
-                    .validate(&body)
-                    .map_err(|_| PemError::at(PemErrorKind::InvalidBody, line.start))?;
-            }
             return Ok(RawPemBlock { label, body });
         }
         if line.bytes.windows(5).any(|window| window == b"-----") && line.bytes.contains(&b':') {
@@ -346,7 +346,8 @@ fn validate_body_layout(
     report: &mut PemParseReport,
     position: usize,
 ) -> Result<(), PemError> {
-    let strict = body_lines != 0 && completed_body_lines_are_64 && final_body_line_len <= 64;
+    let strict =
+        body_lines != 0 && completed_body_lines_are_64 && (4..=64).contains(&final_body_line_len);
     if strict {
         return Ok(());
     }

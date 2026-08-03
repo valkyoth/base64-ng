@@ -28,7 +28,7 @@ fn labels_follow_rfc_syntax_and_generation_requires_uppercase() {
 #[test]
 fn canonical_generation_and_strict_parse_round_trip_boundaries() {
     let label = PemLabel::new("PUBLIC KEY").unwrap();
-    for len in 0..=193 {
+    for len in 1..=193 {
         let payload: Vec<u8> = (0..len)
             .scan(19u8, |state, _| {
                 let value = *state;
@@ -47,6 +47,44 @@ fn canonical_generation_and_strict_parse_round_trip_boundaries() {
         assert_eq!(document.blocks()[0].contents(), payload);
         assert_eq!(document.report(), PemParseReport::default());
     }
+}
+
+#[test]
+fn strict_figure_three_rejects_empty_bodies_and_generation_is_transactional() {
+    let label = PemLabel::new("CERTIFICATE").unwrap();
+    let empty = b"-----BEGIN CERTIFICATE-----\r\n\r\n-----END CERTIFICATE-----\r\n";
+    assert_eq!(
+        parse_pem_document(empty, LIMITS, PemParsePolicy::Strict)
+            .unwrap_err()
+            .kind(),
+        PemErrorKind::NonCanonicalLayout
+    );
+    assert!(parse_pem_document(empty, LIMITS, PemParsePolicy::Rfc7468Compatible).is_ok());
+    assert_eq!(
+        base64_ng_pem::pem_block_encoded_len(&label, 0, PemGenerationOptions::default())
+            .unwrap_err()
+            .kind(),
+        PemErrorKind::InvalidBody
+    );
+    let mut output = [0xa5; 128];
+    assert_eq!(
+        encode_pem_block_into(
+            &label,
+            b"",
+            &mut output,
+            LIMITS,
+            PemGenerationOptions::default(),
+        )
+        .unwrap_err()
+        .kind(),
+        PemErrorKind::InvalidBody
+    );
+    assert_eq!(output, [0xa5; 128]);
+    let encoder = PemBlockEncoder::new(label, LIMITS, PemGenerationOptions::default()).unwrap();
+    assert_eq!(
+        encoder.finish_to_string().unwrap_err().kind(),
+        PemErrorKind::InvalidBody
+    );
 }
 
 #[test]

@@ -3,7 +3,7 @@ use base64_ng::secret::{SecretInput, SecretVec, SecretVecFrame};
 use crate::{
     ArmorHeader, ArmorType, ChecksumPolicy, ChecksumStatus, OpenPgpError, OpenPgpErrorKind,
     OpenPgpLimits,
-    parser::{checksum_status, enforce_checksum, parse_raw_document},
+    parser::{BodyValidation, checksum_status, enforce_checksum, parse_raw_document},
 };
 
 /// One expected-type armor payload in clear-on-drop secret storage.
@@ -57,10 +57,11 @@ impl core::fmt::Debug for SecretArmorBlock {
 
 /// Parses exactly one expected armor type into clear-on-drop secret storage.
 ///
-/// The compacted Base64 body is wiped on drop. The core fixed-work secret
-/// decoder stages plaintext and releases it only after complete Base64
-/// validation. Armor grammar is parsed before decoding, and checksum policy
-/// is enforced before returning the secret block.
+/// The compacted Base64 body is wiped on drop. Body-symbol, padding, and
+/// canonical-tail validation are deferred to the core fixed-work secret
+/// decoder, which stages plaintext and releases it only after the result gate.
+/// Public armor framing, headers, line limits, block selection, and checksum
+/// metadata remain ordinary parsing work before or after that boundary.
 ///
 /// # Errors
 ///
@@ -72,7 +73,7 @@ pub fn parse_secret_armor_block(
     limits: OpenPgpLimits,
     checksum_policy: ChecksumPolicy,
 ) -> Result<SecretArmorBlock, OpenPgpError> {
-    let mut document = parse_raw_document(input, limits)?;
+    let mut document = parse_raw_document(input, limits, BodyValidation::DeferredSecret)?;
     if document.blocks.len() != 1 || document.blocks[0].kind != expected_kind {
         return Err(OpenPgpError::new(OpenPgpErrorKind::SecretBlockSelection));
     }
@@ -80,8 +81,11 @@ pub fn parse_secret_armor_block(
         return Err(OpenPgpError::new(OpenPgpErrorKind::SecretBlockSelection));
     };
     let encoded = SecretVec::from_vec(raw.take_body().into_vec());
-    let maximum = (encoded.len() / 4)
-        .checked_mul(3)
+    let maximum = encoded
+        .len()
+        .checked_add(3)
+        .map(|length| length / 4)
+        .and_then(|quanta| quanta.checked_mul(3))
         .ok_or_else(|| OpenPgpError::new(OpenPgpErrorKind::LengthOverflow))?;
     if maximum > limits.max_decoded_output_bytes() {
         return Err(OpenPgpError::new(
