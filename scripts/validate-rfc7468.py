@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the offline RFC 2045 Section 6.8 evidence lock."""
+"""Validate the offline RFC 7468 textual-encoding evidence lock."""
 
 from __future__ import annotations
 
@@ -10,18 +10,20 @@ import sys
 from pathlib import Path
 
 
-EXPECTED_RFC_SHA256 = "9bb251635dd37fda97dcce6c08dea019432117a0f1e389051d2ecbf7b76350b0"
+EXPECTED_RFC_SHA256 = "0b2c3c2087cc0b099789c90e61c0208e87b25793f0ce40090979e8c734b3d989"
 EXPECTED_ERRATA = {
-    "512": ("Verified", "Editorial", "5.1"),
-    "2586": ("Verified", "Technical", "1"),
-    "7120": ("Verified", "Editorial", "2.4"),
+    "4508": ("Verified", "Technical", "3"),
+    "7697": ("Reported", "Technical", "5.3"),
 }
 REQUIREMENTS = {
-    "RFC2045-6.8-STANDARD-TABLE-1",
-    "RFC2045-6.8-MAX-76-COLUMNS",
-    "RFC2045-6.8-IGNORE-NONALPHABET",
-    "RFC2045-6.8-CANONICAL-PADDING",
-    "RFC2045-6.8-TEXT-CANONICALIZATION-OUTSIDE",
+    "RFC7468-2-BOUNDARIES",
+    "RFC7468-2-LABELS",
+    "RFC7468-2-BASE64",
+    "RFC7468-2-NO-HEADERS",
+    "RFC7468-2-64-COLUMNS",
+    "RFC7468-2-PARSER-LATITUDE",
+    "RFC7468-2-ADJACENT-MULTIPLE",
+    "RFC7468-14-LABEL-SEMANTICS",
 }
 
 
@@ -30,31 +32,33 @@ def fail(message: str) -> None:
 
 
 def validate(directory: Path) -> None:
-    source = directory / "rfc2045.txt"
+    source = directory / "rfc7468.txt"
     if hashlib.sha256(source.read_bytes()).hexdigest() != EXPECTED_RFC_SHA256:
-        fail("rfc2045.txt differs from the locked RFC Editor bytes")
+        fail("rfc7468.txt differs from the locked RFC Editor bytes")
     text = source.read_bytes()
     for marker in (
-        b"RFC 2045",
-        b"6.8.  Base64 Content-Transfer-Encoding",
-        b"Any characters outside of the base64 alphabet are to be ignored",
+        b"RFC 7468",
+        b"Textual Encodings of PKIX, PKCS, and CMS Structures",
+        b"stricttextualmsg",
+        b"Generators MUST wrap the base64-encoded lines",
     ):
         if marker not in text:
             fail(f"RFC source is missing marker {marker!r}")
+
     source_rows = [
         line.split("\t")
         for line in (directory / "SOURCES").read_text(encoding="utf-8").splitlines()
         if line and not line.startswith("#")
     ]
     expected_source = [
-        "rfc2045.txt",
-        "https://www.rfc-editor.org/rfc/rfc2045.txt",
+        "rfc7468.txt",
+        "https://www.rfc-editor.org/rfc/rfc7468.txt",
         EXPECTED_RFC_SHA256,
     ]
     if expected_source not in source_rows or len(source_rows) != 3:
-        fail("SOURCES does not contain the locked RFC 2045 HTTPS source")
+        fail("SOURCES does not contain the locked RFC 7468 HTTPS source")
 
-    with (directory / "rfc2045-errata.tsv").open(
+    with (directory / "rfc7468-errata.tsv").open(
         newline="", encoding="utf-8"
     ) as handle:
         rows = list(csv.DictReader(handle, delimiter="\t"))
@@ -62,7 +66,7 @@ def validate(directory: Path) -> None:
         row["id"]: (row["status"], row["type"], row["section"]) for row in rows
     }
     if observed != EXPECTED_ERRATA:
-        fail(f"RFC 2045 errata snapshot drifted: {observed!r}")
+        fail(f"RFC 7468 errata snapshot drifted: {observed!r}")
     for row in rows:
         if row["source"] != f"https://www.rfc-editor.org/errata/eid{row['id']}":
             fail(f"erratum {row['id']} source is not canonical HTTPS")
@@ -70,18 +74,16 @@ def validate(directory: Path) -> None:
             fail(f"erratum {row['id']} has incomplete disposition metadata")
 
     ledger = json.loads(
-        (directory / "rfc2045-requirements.json").read_text(encoding="utf-8")
+        (directory / "rfc7468-requirements.json").read_text(encoding="utf-8")
     )
-    if ledger.get("schema_version") != 1 or ledger.get("rfc") != 2045:
-        fail("RFC 2045 requirements identity drifted")
+    if ledger.get("schema_version") != 1 or ledger.get("rfc") != 7468:
+        fail("RFC 7468 requirements identity drifted")
     requirements = ledger.get("requirements", [])
     identifiers = {entry.get("id") for entry in requirements}
     if identifiers != REQUIREMENTS or len(requirements) != len(REQUIREMENTS):
-        fail("RFC 2045 requirement set drifted")
+        fail("RFC 7468 requirement set drifted")
     for entry in requirements:
-        if entry.get("section") != "6.8":
-            fail(f"{entry.get('id')} escaped Section 6.8 scope")
-        for field in ("normative", "decision"):
+        for field in ("section", "normative", "decision"):
             if not entry.get(field):
                 fail(f"{entry.get('id')} has no {field}")
         for field in ("implementation", "tests"):
@@ -94,9 +96,9 @@ def main() -> int:
     try:
         validate(Path(sys.argv[1] if len(sys.argv) > 1 else "rfc"))
     except (OSError, ValueError, json.JSONDecodeError) as error:
-        print(f"RFC 2045 policy: {error}", file=sys.stderr)
+        print(f"RFC 7468 policy: {error}", file=sys.stderr)
         return 1
-    print("RFC 2045 policy: Section 6.8 source, errata, and requirements ok")
+    print("RFC 7468 policy: textual encoding source, errata, and requirements ok")
     return 0
 
 

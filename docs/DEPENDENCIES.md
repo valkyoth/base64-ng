@@ -53,6 +53,10 @@ new dependency expands the audit, license, advisory, and supply-chain surface.
   runtime dependency is the matching `base64-ng` package. Python's standard
   `email.base64mime` and the system OpenSSL command are test-time
   interoperability references and are not package dependencies.
+- `base64-ng-pem` is a dependency-minimal protocol companion. Its only
+  runtime dependency is the matching `base64-ng` package. Python `ssl` and
+  the system OpenSSL command are test-time RFC 7468 interoperability
+  references and are not package dependencies.
 - Fuzz, performance, and dudect-style timing harness dependencies are isolated
   under `fuzz/`, `perf/`, and `dudect/`; the standard local gate checks them
   separately from the published crate dependency graph.
@@ -103,6 +107,11 @@ Current decisions:
   content-transfer body rules are protocol grammar, not a reason to weaken
   strict RFC 4648 core defaults. It has finite input/output/line/skip/work
   limits and does not claim complete MIME message or header parsing.
+- `base64-ng-pem` is admitted as a companion because RFC 7468 labels,
+  encapsulation boundaries, adjacent text, multi-block documents, and parser
+  latitude are protocol grammar rather than core Base64 behavior. It has
+  finite limits, rejects legacy encapsulated headers, and never claims ASN.1
+  payload validation.
 - The core `tokio` feature remains reserved and inert by design. The async
   cancellation, drop cleanup, chunk-boundary, dependency, and release-evidence
   requirements have been satisfied for `base64-ng-tokio`; moving Tokio into

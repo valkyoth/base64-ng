@@ -259,7 +259,7 @@ The release gate runs:
 - Rust 1.90.0 host and target capability checks through
   `scripts/check-2.0-msrv.sh`, with newer-only optimizations required to retain
   a documented MSRV implementation or scalar fallback
-- offline RFC 4648 and RFC 2045 byte, checksum, source, errata, requirements,
+- offline RFC 4648, RFC 2045, and RFC 7468 byte, checksum, source, errata, requirements,
   Git normalization, and package-exclusion validation plus fail-closed
   mutation tests
 - independent-oracle differential tests and the versioned semantic corpus
@@ -303,6 +303,11 @@ The release gate runs:
   policies, finite input/output/line/skip/work limits, transactional one-shot
   output, one-byte chunk schedules, Python `email.base64mime` and OpenSSL
   interoperability, package scope, and immutable Section 6.8 evidence
+- RFC 7468 textual encoding integration through `scripts/check-2.0-pem.sh`,
+  including strict and bounded-compatible document grammar, exact labels and
+  boundaries, multiple blocks, adjacent text, secret-frame release, the
+  official certificate example, Python `ssl` and OpenSSL interoperability,
+  full-document fuzzing, and immutable RFC/errata evidence
 - 2.0 validated-alphabet evidence through
   `scripts/check-2.0-alphabet.sh`, including const compile acceptance and
   rejection, exhaustive invalid-table diagnostics, all-value mapping parity,
@@ -315,7 +320,7 @@ The release gate runs:
 - packaged dependency admission policy for future external-crate review
 - dependency admission review keeping the core crate dependency-free while
   treating `base64-ng-serde`, `base64-ng-bytes`, `base64-ng-subtle`,
-  `base64-ng-tokio`, and `base64-ng-mime` as separately reviewed optional
+  `base64-ng-tokio`, `base64-ng-mime`, and `base64-ng-pem` as separately reviewed optional
   companion crates; `zeroize`,
   property-testing, and benchmark frameworks remain out of the core package
   unless separately admitted

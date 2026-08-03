@@ -8,6 +8,7 @@ bytes_manifest="crates/base64-ng-bytes/Cargo.toml"
 subtle_manifest="crates/base64-ng-subtle/Cargo.toml"
 tokio_manifest="crates/base64-ng-tokio/Cargo.toml"
 mime_manifest="crates/base64-ng-mime/Cargo.toml"
+pem_manifest="crates/base64-ng-pem/Cargo.toml"
 
 echo "companion crates: base64-ng-sanitization no-default-features"
 cargo test --manifest-path "$manifest" --no-default-features
@@ -114,5 +115,20 @@ cargo doc --manifest-path "$mime_manifest" --no-deps --all-features
 
 echo "companion crates: base64-ng-mime dependency policy"
 scripts/cargo-deny-check.sh "$mime_manifest" deny.toml
+
+echo "companion crates: base64-ng-pem no-default-features"
+cargo check --manifest-path "$pem_manifest" --no-default-features
+
+echo "companion crates: base64-ng-pem all features"
+cargo test --manifest-path "$pem_manifest" --all-features
+
+echo "companion crates: base64-ng-pem clippy"
+cargo clippy --manifest-path "$pem_manifest" --all-targets --all-features -- -D warnings
+
+echo "companion crates: base64-ng-pem docs"
+cargo doc --manifest-path "$pem_manifest" --no-deps --all-features
+
+echo "companion crates: base64-ng-pem dependency policy"
+scripts/cargo-deny-check.sh "$pem_manifest" deny.toml
 
 echo "companion crates: ok"

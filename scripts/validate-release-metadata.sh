@@ -149,6 +149,7 @@ for required_script in \
     "scripts/check-2.0-subtle.sh" \
     "scripts/check-2.0-derive.sh" \
     "scripts/check-2.0-mime-body.sh" \
+    "scripts/check-2.0-pem.sh" \
     "scripts/check-2.0-in-place.sh" \
     "scripts/check-2.0-in-place-sanitizers.sh" \
     "scripts/check-2.0-wasm-loader.sh" \
@@ -493,6 +494,7 @@ for required_dependency_review_text in \
     "base64-ng-subtle\` is admitted as a companion crate" \
     "base64-ng-tokio\` is admitted as a companion crate" \
     "base64-ng-mime\` is admitted as a companion" \
+    "base64-ng-pem\` is admitted as a companion" \
     "\`subtle\` is admitted only through \`base64-ng-subtle\`"
 do
     if ! grep -F -q "$required_dependency_review_text" docs/DEPENDENCIES.md; then
@@ -574,6 +576,7 @@ for required_package_file in \
     "api-snapshots/2.0-development/base64-ng-bytes.txt" \
     "api-snapshots/2.0-development/base64-ng-derive.txt" \
     "api-snapshots/2.0-development/base64-ng-mime.txt" \
+    "api-snapshots/2.0-development/base64-ng-pem.txt" \
     "api-snapshots/2.0-development/base64-ng-serde.txt" \
     "api-snapshots/2.0-development/base64-ng-subtle.txt" \
     "api-snapshots/2.0-development/base64-ng-tokio.txt" \
@@ -595,6 +598,7 @@ for required_package_file in \
     "docs/2.0_SUBTLE_EQUALITY.md" \
     "docs/2.0_DERIVE_HARDENING.md" \
     "docs/2.0_MIME_BODY.md" \
+    "docs/2.0_PEM.md" \
     "docs/2.0_IN_PLACE_OPERATIONS.md" \
     "docs/2.0_DEVICE_VERIFICATION_QUEUE.md" \
     "docs/2.0_PROFILES_AND_TERMINOLOGY.md" \
@@ -649,6 +653,7 @@ for required_package_file in \
     "scripts/check-2.0-subtle.sh" \
     "scripts/check-2.0-derive.sh" \
     "scripts/check-2.0-mime-body.sh" \
+    "scripts/check-2.0-pem.sh" \
     "scripts/check-2.0-in-place.sh" \
     "scripts/check-2.0-in-place-sanitizers.sh" \
     "scripts/check-2.0-neon-hot-paths.sh" \

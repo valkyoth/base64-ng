@@ -26,6 +26,10 @@ Commit 43 adds the new `base64-ng-mime` package snapshot for bounded RFC 2045
 Section 6.8 content-transfer body operations. It has no frozen 1.3.9 baseline
 because the package did not exist in that release.
 
+Commit 44 adds the new `base64-ng-pem` package snapshot for bounded complete
+RFC 7468 textual encoding operations. It has no frozen 1.3.9 baseline because
+the package did not exist in that release.
+
 Snapshots are generated with:
 
 ```text

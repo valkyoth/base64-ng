@@ -1,0 +1,216 @@
+pub mod base64_ng_pem
+#[non_exhaustive] pub enum base64_ng_pem::PemErrorKind
+pub base64_ng_pem::PemErrorKind::AdjacentTextLimitExceeded
+pub base64_ng_pem::PemErrorKind::AllocationFailed
+pub base64_ng_pem::PemErrorKind::BeginBoundaryMissing
+pub base64_ng_pem::PemErrorKind::BlockLimitExceeded
+pub base64_ng_pem::PemErrorKind::DecodedOutputLimitExceeded
+pub base64_ng_pem::PemErrorKind::EncodedOutputLimitExceeded
+pub base64_ng_pem::PemErrorKind::InputLimitExceeded
+pub base64_ng_pem::PemErrorKind::InternalInvariantViolation
+pub base64_ng_pem::PemErrorKind::InvalidBody
+pub base64_ng_pem::PemErrorKind::InvalidBoundary
+pub base64_ng_pem::PemErrorKind::InvalidLabel
+pub base64_ng_pem::PemErrorKind::LabelLimitExceeded
+pub base64_ng_pem::PemErrorKind::LegacyHeadersNotSupported
+pub base64_ng_pem::PemErrorKind::LengthOverflow
+pub base64_ng_pem::PemErrorKind::MismatchedEndLabel
+pub base64_ng_pem::PemErrorKind::MissingEndBoundary
+pub base64_ng_pem::PemErrorKind::NonCanonicalLabel
+pub base64_ng_pem::PemErrorKind::NonCanonicalLayout
+pub base64_ng_pem::PemErrorKind::OutputTooSmall
+pub base64_ng_pem::PemErrorKind::PhysicalLineTooLong
+pub base64_ng_pem::PemErrorKind::SecretBlockSelection
+pub base64_ng_pem::PemErrorKind::TerminalState
+pub base64_ng_pem::PemErrorKind::WorkLimitExceeded
+impl core::clone::Clone for base64_ng_pem::PemErrorKind
+pub fn base64_ng_pem::PemErrorKind::clone(&self) -> base64_ng_pem::PemErrorKind
+impl core::cmp::Eq for base64_ng_pem::PemErrorKind
+impl core::cmp::PartialEq for base64_ng_pem::PemErrorKind
+pub fn base64_ng_pem::PemErrorKind::eq(&self, &base64_ng_pem::PemErrorKind) -> bool
+impl core::fmt::Debug for base64_ng_pem::PemErrorKind
+pub fn base64_ng_pem::PemErrorKind::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng_pem::PemErrorKind
+impl core::marker::StructuralPartialEq for base64_ng_pem::PemErrorKind
+#[non_exhaustive] pub enum base64_ng_pem::PemLabelError
+pub base64_ng_pem::PemLabelError::AllocationFailed
+pub base64_ng_pem::PemLabelError::InvalidSyntax
+impl core::clone::Clone for base64_ng_pem::PemLabelError
+pub fn base64_ng_pem::PemLabelError::clone(&self) -> base64_ng_pem::PemLabelError
+impl core::cmp::Eq for base64_ng_pem::PemLabelError
+impl core::cmp::PartialEq for base64_ng_pem::PemLabelError
+pub fn base64_ng_pem::PemLabelError::eq(&self, &base64_ng_pem::PemLabelError) -> bool
+impl core::convert::From<base64_ng_pem::PemLabelError> for base64_ng_pem::PemError
+pub fn base64_ng_pem::PemError::from(base64_ng_pem::PemLabelError) -> Self
+impl core::error::Error for base64_ng_pem::PemLabelError
+impl core::fmt::Debug for base64_ng_pem::PemLabelError
+pub fn base64_ng_pem::PemLabelError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for base64_ng_pem::PemLabelError
+pub fn base64_ng_pem::PemLabelError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng_pem::PemLabelError
+impl core::marker::StructuralPartialEq for base64_ng_pem::PemLabelError
+pub enum base64_ng_pem::PemLineEnding
+pub base64_ng_pem::PemLineEnding::CrLf
+pub base64_ng_pem::PemLineEnding::Lf
+impl core::clone::Clone for base64_ng_pem::PemLineEnding
+pub fn base64_ng_pem::PemLineEnding::clone(&self) -> base64_ng_pem::PemLineEnding
+impl core::cmp::Eq for base64_ng_pem::PemLineEnding
+impl core::cmp::PartialEq for base64_ng_pem::PemLineEnding
+pub fn base64_ng_pem::PemLineEnding::eq(&self, &base64_ng_pem::PemLineEnding) -> bool
+impl core::fmt::Debug for base64_ng_pem::PemLineEnding
+pub fn base64_ng_pem::PemLineEnding::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng_pem::PemLineEnding
+impl core::marker::StructuralPartialEq for base64_ng_pem::PemLineEnding
+pub enum base64_ng_pem::PemParsePolicy
+pub base64_ng_pem::PemParsePolicy::Rfc7468Compatible
+pub base64_ng_pem::PemParsePolicy::Strict
+impl core::clone::Clone for base64_ng_pem::PemParsePolicy
+pub fn base64_ng_pem::PemParsePolicy::clone(&self) -> base64_ng_pem::PemParsePolicy
+impl core::cmp::Eq for base64_ng_pem::PemParsePolicy
+impl core::cmp::PartialEq for base64_ng_pem::PemParsePolicy
+pub fn base64_ng_pem::PemParsePolicy::eq(&self, &base64_ng_pem::PemParsePolicy) -> bool
+impl core::fmt::Debug for base64_ng_pem::PemParsePolicy
+pub fn base64_ng_pem::PemParsePolicy::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng_pem::PemParsePolicy
+impl core::marker::StructuralPartialEq for base64_ng_pem::PemParsePolicy
+pub struct base64_ng_pem::PemBlock
+impl base64_ng_pem::PemBlock
+pub fn base64_ng_pem::PemBlock::contents(&self) -> &[u8]
+pub fn base64_ng_pem::PemBlock::into_contents(self) -> alloc::vec::Vec<u8>
+pub const fn base64_ng_pem::PemBlock::label(&self) -> &base64_ng_pem::PemLabel
+impl core::clone::Clone for base64_ng_pem::PemBlock
+pub fn base64_ng_pem::PemBlock::clone(&self) -> base64_ng_pem::PemBlock
+impl core::cmp::Eq for base64_ng_pem::PemBlock
+impl core::cmp::PartialEq for base64_ng_pem::PemBlock
+pub fn base64_ng_pem::PemBlock::eq(&self, &base64_ng_pem::PemBlock) -> bool
+impl core::fmt::Debug for base64_ng_pem::PemBlock
+pub fn base64_ng_pem::PemBlock::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for base64_ng_pem::PemBlock
+pub struct base64_ng_pem::PemBlockEncoder
+impl base64_ng_pem::PemBlockEncoder
+pub fn base64_ng_pem::PemBlockEncoder::finish_into(self, &mut [u8]) -> core::result::Result<usize, base64_ng_pem::PemError>
+pub fn base64_ng_pem::PemBlockEncoder::finish_to_string(self) -> core::result::Result<alloc::string::String, base64_ng_pem::PemError>
+pub fn base64_ng_pem::PemBlockEncoder::new(base64_ng_pem::PemLabel, base64_ng_pem::PemLimits, base64_ng_pem::PemGenerationOptions) -> core::result::Result<Self, base64_ng_pem::PemError>
+pub fn base64_ng_pem::PemBlockEncoder::update(&mut self, &[u8]) -> core::result::Result<(), base64_ng_pem::PemError>
+pub struct base64_ng_pem::PemDocument
+impl base64_ng_pem::PemDocument
+pub fn base64_ng_pem::PemDocument::blocks(&self) -> &[base64_ng_pem::PemBlock]
+pub fn base64_ng_pem::PemDocument::into_blocks(self) -> alloc::vec::Vec<base64_ng_pem::PemBlock>
+pub const fn base64_ng_pem::PemDocument::report(&self) -> base64_ng_pem::PemParseReport
+impl core::clone::Clone for base64_ng_pem::PemDocument
+pub fn base64_ng_pem::PemDocument::clone(&self) -> base64_ng_pem::PemDocument
+impl core::cmp::Eq for base64_ng_pem::PemDocument
+impl core::cmp::PartialEq for base64_ng_pem::PemDocument
+pub fn base64_ng_pem::PemDocument::eq(&self, &base64_ng_pem::PemDocument) -> bool
+impl core::fmt::Debug for base64_ng_pem::PemDocument
+pub fn base64_ng_pem::PemDocument::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for base64_ng_pem::PemDocument
+pub struct base64_ng_pem::PemDocumentParser
+impl base64_ng_pem::PemDocumentParser
+pub fn base64_ng_pem::PemDocumentParser::finish(self) -> core::result::Result<base64_ng_pem::PemDocument, base64_ng_pem::PemError>
+pub const fn base64_ng_pem::PemDocumentParser::new(base64_ng_pem::PemLimits, base64_ng_pem::PemParsePolicy) -> Self
+pub fn base64_ng_pem::PemDocumentParser::update(&mut self, &[u8]) -> core::result::Result<(), base64_ng_pem::PemError>
+pub struct base64_ng_pem::PemError
+impl base64_ng_pem::PemError
+pub const fn base64_ng_pem::PemError::kind(self) -> base64_ng_pem::PemErrorKind
+pub const fn base64_ng_pem::PemError::position(self) -> core::option::Option<usize>
+impl core::clone::Clone for base64_ng_pem::PemError
+pub fn base64_ng_pem::PemError::clone(&self) -> base64_ng_pem::PemError
+impl core::cmp::Eq for base64_ng_pem::PemError
+impl core::cmp::PartialEq for base64_ng_pem::PemError
+pub fn base64_ng_pem::PemError::eq(&self, &base64_ng_pem::PemError) -> bool
+impl core::convert::From<base64_ng_pem::PemLabelError> for base64_ng_pem::PemError
+pub fn base64_ng_pem::PemError::from(base64_ng_pem::PemLabelError) -> Self
+impl core::error::Error for base64_ng_pem::PemError
+impl core::fmt::Debug for base64_ng_pem::PemError
+pub fn base64_ng_pem::PemError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for base64_ng_pem::PemError
+pub fn base64_ng_pem::PemError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng_pem::PemError
+impl core::marker::StructuralPartialEq for base64_ng_pem::PemError
+pub struct base64_ng_pem::PemGenerationOptions
+impl base64_ng_pem::PemGenerationOptions
+pub const fn base64_ng_pem::PemGenerationOptions::line_ending(self) -> base64_ng_pem::PemLineEnding
+pub const fn base64_ng_pem::PemGenerationOptions::new(base64_ng_pem::PemLineEnding, bool) -> Self
+pub const fn base64_ng_pem::PemGenerationOptions::terminal_line_ending(self) -> bool
+impl core::clone::Clone for base64_ng_pem::PemGenerationOptions
+pub fn base64_ng_pem::PemGenerationOptions::clone(&self) -> base64_ng_pem::PemGenerationOptions
+impl core::cmp::Eq for base64_ng_pem::PemGenerationOptions
+impl core::cmp::PartialEq for base64_ng_pem::PemGenerationOptions
+pub fn base64_ng_pem::PemGenerationOptions::eq(&self, &base64_ng_pem::PemGenerationOptions) -> bool
+impl core::default::Default for base64_ng_pem::PemGenerationOptions
+pub fn base64_ng_pem::PemGenerationOptions::default() -> Self
+impl core::fmt::Debug for base64_ng_pem::PemGenerationOptions
+pub fn base64_ng_pem::PemGenerationOptions::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng_pem::PemGenerationOptions
+impl core::marker::StructuralPartialEq for base64_ng_pem::PemGenerationOptions
+pub struct base64_ng_pem::PemLabel(_)
+impl base64_ng_pem::PemLabel
+pub fn base64_ng_pem::PemLabel::as_str(&self) -> &str
+pub fn base64_ng_pem::PemLabel::is_canonical_uppercase(&self) -> bool
+pub fn base64_ng_pem::PemLabel::new(&str) -> core::result::Result<Self, base64_ng_pem::PemLabelError>
+impl core::clone::Clone for base64_ng_pem::PemLabel
+pub fn base64_ng_pem::PemLabel::clone(&self) -> base64_ng_pem::PemLabel
+impl core::cmp::Eq for base64_ng_pem::PemLabel
+impl core::cmp::PartialEq for base64_ng_pem::PemLabel
+pub fn base64_ng_pem::PemLabel::eq(&self, &base64_ng_pem::PemLabel) -> bool
+impl core::convert::AsRef<str> for base64_ng_pem::PemLabel
+pub fn base64_ng_pem::PemLabel::as_ref(&self) -> &str
+impl core::fmt::Debug for base64_ng_pem::PemLabel
+pub fn base64_ng_pem::PemLabel::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng_pem::PemLabel
+pub fn base64_ng_pem::PemLabel::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::StructuralPartialEq for base64_ng_pem::PemLabel
+pub struct base64_ng_pem::PemLimits
+impl base64_ng_pem::PemLimits
+pub const fn base64_ng_pem::PemLimits::max_adjacent_text_bytes(self) -> usize
+pub const fn base64_ng_pem::PemLimits::max_blocks(self) -> usize
+pub const fn base64_ng_pem::PemLimits::max_decoded_output_bytes(self) -> usize
+pub const fn base64_ng_pem::PemLimits::max_encoded_output_bytes(self) -> usize
+pub const fn base64_ng_pem::PemLimits::max_input_bytes(self) -> usize
+pub const fn base64_ng_pem::PemLimits::max_label_bytes(self) -> usize
+pub const fn base64_ng_pem::PemLimits::max_physical_line_bytes(self) -> usize
+pub const fn base64_ng_pem::PemLimits::max_work_before_output(self) -> usize
+pub const fn base64_ng_pem::PemLimits::new(usize, usize, usize, usize, usize, usize, usize, usize) -> Self
+impl core::clone::Clone for base64_ng_pem::PemLimits
+pub fn base64_ng_pem::PemLimits::clone(&self) -> base64_ng_pem::PemLimits
+impl core::cmp::Eq for base64_ng_pem::PemLimits
+impl core::cmp::PartialEq for base64_ng_pem::PemLimits
+pub fn base64_ng_pem::PemLimits::eq(&self, &base64_ng_pem::PemLimits) -> bool
+impl core::default::Default for base64_ng_pem::PemLimits
+pub fn base64_ng_pem::PemLimits::default() -> Self
+impl core::fmt::Debug for base64_ng_pem::PemLimits
+pub fn base64_ng_pem::PemLimits::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng_pem::PemLimits
+impl core::marker::StructuralPartialEq for base64_ng_pem::PemLimits
+pub struct base64_ng_pem::PemParseReport
+pub base64_ng_pem::PemParseReport::adjacent_text_bytes: usize
+pub base64_ng_pem::PemParseReport::mismatched_end_labels: usize
+pub base64_ng_pem::PemParseReport::non_crlf_line_endings: usize
+pub base64_ng_pem::PemParseReport::noncanonical_body_lines: usize
+pub base64_ng_pem::PemParseReport::noncanonical_labels: usize
+pub base64_ng_pem::PemParseReport::skipped_body_bytes: usize
+impl core::clone::Clone for base64_ng_pem::PemParseReport
+pub fn base64_ng_pem::PemParseReport::clone(&self) -> base64_ng_pem::PemParseReport
+impl core::cmp::Eq for base64_ng_pem::PemParseReport
+impl core::cmp::PartialEq for base64_ng_pem::PemParseReport
+pub fn base64_ng_pem::PemParseReport::eq(&self, &base64_ng_pem::PemParseReport) -> bool
+impl core::default::Default for base64_ng_pem::PemParseReport
+pub fn base64_ng_pem::PemParseReport::default() -> base64_ng_pem::PemParseReport
+impl core::fmt::Debug for base64_ng_pem::PemParseReport
+pub fn base64_ng_pem::PemParseReport::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng_pem::PemParseReport
+impl core::marker::StructuralPartialEq for base64_ng_pem::PemParseReport
+pub struct base64_ng_pem::SecretPemBlock
+impl base64_ng_pem::SecretPemBlock
+pub const fn base64_ng_pem::SecretPemBlock::contents(&self) -> &base64_ng::v2::secret::owned::SecretVec
+pub fn base64_ng_pem::SecretPemBlock::into_contents(self) -> base64_ng::v2::secret::owned::SecretVec
+pub const fn base64_ng_pem::SecretPemBlock::label(&self) -> &base64_ng_pem::PemLabel
+pub const fn base64_ng_pem::SecretPemBlock::report(&self) -> base64_ng_pem::PemParseReport
+impl core::fmt::Debug for base64_ng_pem::SecretPemBlock
+pub fn base64_ng_pem::SecretPemBlock::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+pub fn base64_ng_pem::encode_pem_block_into(&base64_ng_pem::PemLabel, &[u8], &mut [u8], base64_ng_pem::PemLimits, base64_ng_pem::PemGenerationOptions) -> core::result::Result<usize, base64_ng_pem::PemError>
+pub fn base64_ng_pem::encode_pem_block_to_string(&base64_ng_pem::PemLabel, &[u8], base64_ng_pem::PemLimits, base64_ng_pem::PemGenerationOptions) -> core::result::Result<alloc::string::String, base64_ng_pem::PemError>
+pub fn base64_ng_pem::parse_pem_document(&[u8], base64_ng_pem::PemLimits, base64_ng_pem::PemParsePolicy) -> core::result::Result<base64_ng_pem::PemDocument, base64_ng_pem::PemError>
+pub fn base64_ng_pem::parse_pem_secret_block(&[u8], &base64_ng_pem::PemLabel, base64_ng_pem::PemLimits, base64_ng_pem::PemParsePolicy) -> core::result::Result<base64_ng_pem::SecretPemBlock, base64_ng_pem::PemError>
+pub fn base64_ng_pem::pem_block_encoded_len(&base64_ng_pem::PemLabel, usize, base64_ng_pem::PemGenerationOptions) -> core::result::Result<usize, base64_ng_pem::PemError>

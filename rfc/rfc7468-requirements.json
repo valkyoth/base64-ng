@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "rfc": 7468,
+  "scope": "Complete textual encoding grammar; decoded ASN.1 semantics excluded",
+  "reviewed": "2026-08-03",
+  "requirements": [
+    {
+      "id": "RFC7468-2-BOUNDARIES",
+      "section": "2",
+      "normative": "must",
+      "decision": "Parse case-sensitive BEGIN/END boundaries with exactly five hyphens and one separating space; canonical generation repeats the same label.",
+      "implementation": ["crates/base64-ng-pem/src/parser.rs", "crates/base64-ng-pem/src/generator.rs"],
+      "tests": ["crates/base64-ng-pem/tests/pem.rs", "fuzz/fuzz_targets/pem_document.rs"]
+    },
+    {
+      "id": "RFC7468-2-LABELS",
+      "section": "2,3",
+      "normative": "grammar and generation",
+      "decision": "Validate the RFC label grammar, preserve case sensitivity, require canonical uppercase generation, and report compatible lowercase input.",
+      "implementation": ["crates/base64-ng-pem/src/label.rs", "crates/base64-ng-pem/src/parser.rs"],
+      "tests": ["crates/base64-ng-pem/tests/pem.rs"]
+    },
+    {
+      "id": "RFC7468-2-BASE64",
+      "section": "2,3",
+      "normative": "must",
+      "decision": "Use canonical padded RFC 4648 Standard Base64 and reject noncanonical trailing bits.",
+      "implementation": ["crates/base64-ng-pem/src/parser.rs", "crates/base64-ng-pem/src/generator.rs"],
+      "tests": ["crates/base64-ng-pem/tests/pem.rs", "crates/base64-ng-pem/tests/rfc7468.rs"]
+    },
+    {
+      "id": "RFC7468-2-NO-HEADERS",
+      "section": "2",
+      "normative": "does not permit",
+      "decision": "Reject legacy RFC 1421 and OpenSSL encapsulated headers instead of silently treating them as body text.",
+      "implementation": ["crates/base64-ng-pem/src/parser.rs"],
+      "tests": ["crates/base64-ng-pem/tests/pem.rs"]
+    },
+    {
+      "id": "RFC7468-2-64-COLUMNS",
+      "section": "2,3",
+      "normative": "must generate",
+      "decision": "Generate exact 64-character non-final lines with no extraneous whitespace; strict parsing enforces the same shape.",
+      "implementation": ["crates/base64-ng-pem/src/generator.rs", "crates/base64-ng-pem/src/parser.rs"],
+      "tests": ["crates/base64-ng-pem/tests/pem.rs", "crates/base64-ng-pem/tests/rfc7468.rs"]
+    },
+    {
+      "id": "RFC7468-2-PARSER-LATITUDE",
+      "section": "2,3",
+      "normative": "must and should",
+      "decision": "The explicitly named compatible policy handles CRLF, CR, and LF and bounded ignored body bytes while returning deviation metadata.",
+      "implementation": ["crates/base64-ng-pem/src/parser.rs", "crates/base64-ng-pem/src/types.rs"],
+      "tests": ["crates/base64-ng-pem/tests/pem.rs", "fuzz/fuzz_targets/pem_document.rs"]
+    },
+    {
+      "id": "RFC7468-2-ADJACENT-MULTIPLE",
+      "section": "2",
+      "normative": "must not malfunction and may",
+      "decision": "Parse multiple ordered instances amid explicitly bounded explanatory, interstitial, and trailing text.",
+      "implementation": ["crates/base64-ng-pem/src/parser.rs", "crates/base64-ng-pem/src/limits.rs"],
+      "tests": ["crates/base64-ng-pem/tests/pem.rs", "crates/base64-ng-pem/tests/rfc7468.rs"]
+    },
+    {
+      "id": "RFC7468-14-LABEL-SEMANTICS",
+      "section": "14",
+      "normative": "security consideration",
+      "decision": "Ordinary parsing never claims ASN.1 type validation; secret release requires one exact caller-expected label to prevent silent type confusion.",
+      "implementation": ["crates/base64-ng-pem/src/secret.rs", "crates/base64-ng-pem/src/types.rs"],
+      "tests": ["crates/base64-ng-pem/tests/pem.rs"]
+    }
+  ]
+}

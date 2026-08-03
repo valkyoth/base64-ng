@@ -25,6 +25,7 @@ RELEASE_POLICIES = ("synced-family", "development-blocked")
 PUBLISH_ORDER = (
     "base64-ng",
     "base64-ng-mime",
+    "base64-ng-pem",
     "base64-ng-sanitization",
     "base64-ng-derive",
     "base64-ng-serde",
