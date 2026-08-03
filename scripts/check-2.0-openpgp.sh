@@ -8,6 +8,7 @@ sq="${SQ:-sq}"
 
 sq_has_dearmor() {
     "$1" packet dearmor --help >/dev/null 2>&1 ||
+        "$1" toolbox dearmor --help >/dev/null 2>&1 ||
         "$1" dearmor --help >/dev/null 2>&1
 }
 

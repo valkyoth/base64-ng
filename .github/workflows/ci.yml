@@ -38,7 +38,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install --no-install-recommends gnupg sq
           /usr/bin/gpg --version
-          /usr/bin/sq packet dearmor --help >/dev/null
+          /usr/bin/sq version
+          if ! /usr/bin/sq packet dearmor --help >/dev/null 2>&1 &&
+             ! /usr/bin/sq toolbox dearmor --help >/dev/null 2>&1 &&
+             ! /usr/bin/sq dearmor --help >/dev/null 2>&1; then
+            echo "installed Sequoia sq has no supported dearmor command" >&2
+            exit 1
+          fi
 
       - name: Cache Rust build output
         uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1

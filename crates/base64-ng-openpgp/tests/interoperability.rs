@@ -61,6 +61,7 @@ fn rfc9580_fixture_matches_gnupg_and_sequoia() {
 #[derive(Clone, Copy)]
 enum SqDearmor {
     Packet,
+    Toolbox,
     Legacy,
 }
 
@@ -72,6 +73,14 @@ fn detect_sq_dearmor(sq: &str) -> std::io::Result<Option<SqDearmor>> {
         .success()
     {
         return Ok(Some(SqDearmor::Packet));
+    }
+    if Command::new(sq)
+        .args(["toolbox", "dearmor", "--help"])
+        .output()?
+        .status
+        .success()
+    {
+        return Ok(Some(SqDearmor::Toolbox));
     }
     if Command::new(sq)
         .args(["dearmor", "--help"])
@@ -94,6 +103,9 @@ fn run_sq(
     match command {
         SqDearmor::Packet => {
             process.args(["packet", "dearmor"]);
+        }
+        SqDearmor::Toolbox => {
+            process.args(["toolbox", "dearmor"]);
         }
         SqDearmor::Legacy => {
             process.arg("dearmor");
