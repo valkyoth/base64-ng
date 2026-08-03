@@ -1,1 +1,2 @@
 /rfc/*.txt -text
+/spec/multibase/upstream-README.md -text -diff

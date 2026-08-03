@@ -29,6 +29,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "base64-ng-multibase"
+version = "2.0.0"
+dependencies = [
+ "base64-ng",
+]
+
+[[package]]
 name = "base64-ng-pem"
 version = "2.0.0"
 dependencies = [

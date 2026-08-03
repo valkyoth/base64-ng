@@ -1,0 +1,187 @@
+pub mod base64_ng_multibase
+pub enum base64_ng_multibase::Base64MultibaseEncoding
+pub base64_ng_multibase::Base64MultibaseEncoding::Base64
+pub base64_ng_multibase::Base64MultibaseEncoding::Base64Pad
+pub base64_ng_multibase::Base64MultibaseEncoding::Base64Url
+pub base64_ng_multibase::Base64MultibaseEncoding::Base64UrlPad
+impl base64_ng_multibase::Base64MultibaseEncoding
+pub const base64_ng_multibase::Base64MultibaseEncoding::ALL: [Self; 4]
+pub const fn base64_ng_multibase::Base64MultibaseEncoding::from_prefix(u8) -> core::option::Option<Self>
+pub const fn base64_ng_multibase::Base64MultibaseEncoding::prefix(self) -> u8
+pub const fn base64_ng_multibase::Base64MultibaseEncoding::registry_name(self) -> &'static str
+pub const fn base64_ng_multibase::Base64MultibaseEncoding::registry_status(self) -> base64_ng_multibase::MultibaseRegistryStatus
+impl core::clone::Clone for base64_ng_multibase::Base64MultibaseEncoding
+pub fn base64_ng_multibase::Base64MultibaseEncoding::clone(&self) -> base64_ng_multibase::Base64MultibaseEncoding
+impl core::cmp::Eq for base64_ng_multibase::Base64MultibaseEncoding
+impl core::cmp::PartialEq for base64_ng_multibase::Base64MultibaseEncoding
+pub fn base64_ng_multibase::Base64MultibaseEncoding::eq(&self, &base64_ng_multibase::Base64MultibaseEncoding) -> bool
+impl core::fmt::Debug for base64_ng_multibase::Base64MultibaseEncoding
+pub fn base64_ng_multibase::Base64MultibaseEncoding::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng_multibase::Base64MultibaseEncoding
+pub fn base64_ng_multibase::Base64MultibaseEncoding::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng_multibase::Base64MultibaseEncoding
+impl core::marker::StructuralPartialEq for base64_ng_multibase::Base64MultibaseEncoding
+#[non_exhaustive] pub enum base64_ng_multibase::Base64MultibaseErrorKind
+pub base64_ng_multibase::Base64MultibaseErrorKind::AllocationFailed
+pub base64_ng_multibase::Base64MultibaseErrorKind::BackendFailure
+pub base64_ng_multibase::Base64MultibaseErrorKind::InputLimitExceeded
+pub base64_ng_multibase::Base64MultibaseErrorKind::InvalidPayload
+pub base64_ng_multibase::Base64MultibaseErrorKind::LengthOverflow
+pub base64_ng_multibase::Base64MultibaseErrorKind::MissingPrefix
+pub base64_ng_multibase::Base64MultibaseErrorKind::OutputLimitExceeded
+pub base64_ng_multibase::Base64MultibaseErrorKind::OutputTooSmall
+pub base64_ng_multibase::Base64MultibaseErrorKind::TerminalState
+pub base64_ng_multibase::Base64MultibaseErrorKind::UnsupportedPrefix
+pub base64_ng_multibase::Base64MultibaseErrorKind::WorkLimitExceeded
+impl core::clone::Clone for base64_ng_multibase::Base64MultibaseErrorKind
+pub fn base64_ng_multibase::Base64MultibaseErrorKind::clone(&self) -> base64_ng_multibase::Base64MultibaseErrorKind
+impl core::cmp::Eq for base64_ng_multibase::Base64MultibaseErrorKind
+impl core::cmp::PartialEq for base64_ng_multibase::Base64MultibaseErrorKind
+pub fn base64_ng_multibase::Base64MultibaseErrorKind::eq(&self, &base64_ng_multibase::Base64MultibaseErrorKind) -> bool
+impl core::fmt::Debug for base64_ng_multibase::Base64MultibaseErrorKind
+pub fn base64_ng_multibase::Base64MultibaseErrorKind::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng_multibase::Base64MultibaseErrorKind
+pub fn base64_ng_multibase::Base64MultibaseErrorKind::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng_multibase::Base64MultibaseErrorKind
+impl core::marker::StructuralPartialEq for base64_ng_multibase::Base64MultibaseErrorKind
+pub enum base64_ng_multibase::Base64MultibaseStatus
+pub base64_ng_multibase::Base64MultibaseStatus::Complete
+pub base64_ng_multibase::Base64MultibaseStatus::NeedInput
+pub base64_ng_multibase::Base64MultibaseStatus::OutputFull(core::num::nonzero::NonZeroUsize)
+impl core::clone::Clone for base64_ng_multibase::Base64MultibaseStatus
+pub fn base64_ng_multibase::Base64MultibaseStatus::clone(&self) -> base64_ng_multibase::Base64MultibaseStatus
+impl core::cmp::Eq for base64_ng_multibase::Base64MultibaseStatus
+impl core::cmp::PartialEq for base64_ng_multibase::Base64MultibaseStatus
+pub fn base64_ng_multibase::Base64MultibaseStatus::eq(&self, &base64_ng_multibase::Base64MultibaseStatus) -> bool
+impl core::fmt::Debug for base64_ng_multibase::Base64MultibaseStatus
+pub fn base64_ng_multibase::Base64MultibaseStatus::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng_multibase::Base64MultibaseStatus
+impl core::marker::StructuralPartialEq for base64_ng_multibase::Base64MultibaseStatus
+pub enum base64_ng_multibase::MultibaseRegistryStatus
+pub base64_ng_multibase::MultibaseRegistryStatus::Experimental
+pub base64_ng_multibase::MultibaseRegistryStatus::Final
+impl core::clone::Clone for base64_ng_multibase::MultibaseRegistryStatus
+pub fn base64_ng_multibase::MultibaseRegistryStatus::clone(&self) -> base64_ng_multibase::MultibaseRegistryStatus
+impl core::cmp::Eq for base64_ng_multibase::MultibaseRegistryStatus
+impl core::cmp::PartialEq for base64_ng_multibase::MultibaseRegistryStatus
+pub fn base64_ng_multibase::MultibaseRegistryStatus::eq(&self, &base64_ng_multibase::MultibaseRegistryStatus) -> bool
+impl core::fmt::Debug for base64_ng_multibase::MultibaseRegistryStatus
+pub fn base64_ng_multibase::MultibaseRegistryStatus::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng_multibase::MultibaseRegistryStatus
+pub fn base64_ng_multibase::MultibaseRegistryStatus::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng_multibase::MultibaseRegistryStatus
+impl core::marker::StructuralPartialEq for base64_ng_multibase::MultibaseRegistryStatus
+pub struct base64_ng_multibase::Base64MultibaseDecoder
+impl base64_ng_multibase::Base64MultibaseDecoder
+pub fn base64_ng_multibase::Base64MultibaseDecoder::clear(&mut self)
+pub const fn base64_ng_multibase::Base64MultibaseDecoder::encoding(&self) -> core::option::Option<base64_ng_multibase::Base64MultibaseEncoding>
+pub fn base64_ng_multibase::Base64MultibaseDecoder::finish(&mut self, &mut [u8]) -> core::result::Result<base64_ng_multibase::Base64MultibaseStep, base64_ng_multibase::Base64MultibaseError>
+pub const fn base64_ng_multibase::Base64MultibaseDecoder::new(base64_ng_multibase::Base64MultibaseLimits) -> Self
+pub fn base64_ng_multibase::Base64MultibaseDecoder::reset(&mut self)
+pub const fn base64_ng_multibase::Base64MultibaseDecoder::source_position(&self) -> usize
+pub fn base64_ng_multibase::Base64MultibaseDecoder::update(&mut self, &[u8], &mut [u8]) -> core::result::Result<base64_ng_multibase::Base64MultibaseStep, base64_ng_multibase::Base64MultibaseError>
+impl core::clone::Clone for base64_ng_multibase::Base64MultibaseDecoder
+pub fn base64_ng_multibase::Base64MultibaseDecoder::clone(&self) -> base64_ng_multibase::Base64MultibaseDecoder
+impl core::cmp::Eq for base64_ng_multibase::Base64MultibaseDecoder
+impl core::cmp::PartialEq for base64_ng_multibase::Base64MultibaseDecoder
+pub fn base64_ng_multibase::Base64MultibaseDecoder::eq(&self, &base64_ng_multibase::Base64MultibaseDecoder) -> bool
+impl core::fmt::Debug for base64_ng_multibase::Base64MultibaseDecoder
+pub fn base64_ng_multibase::Base64MultibaseDecoder::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for base64_ng_multibase::Base64MultibaseDecoder
+pub struct base64_ng_multibase::Base64MultibaseEncoder
+impl base64_ng_multibase::Base64MultibaseEncoder
+pub fn base64_ng_multibase::Base64MultibaseEncoder::clear(&mut self)
+pub const fn base64_ng_multibase::Base64MultibaseEncoder::encoding(&self) -> base64_ng_multibase::Base64MultibaseEncoding
+pub fn base64_ng_multibase::Base64MultibaseEncoder::finish(&mut self, &mut [u8]) -> core::result::Result<base64_ng_multibase::Base64MultibaseStep, base64_ng_multibase::Base64MultibaseError>
+pub fn base64_ng_multibase::Base64MultibaseEncoder::new(base64_ng_multibase::Base64MultibaseEncoding, base64_ng_multibase::Base64MultibaseLimits) -> core::result::Result<Self, base64_ng_multibase::Base64MultibaseError>
+pub fn base64_ng_multibase::Base64MultibaseEncoder::reset(&mut self)
+pub const fn base64_ng_multibase::Base64MultibaseEncoder::source_position(&self) -> usize
+pub fn base64_ng_multibase::Base64MultibaseEncoder::update(&mut self, &[u8], &mut [u8]) -> core::result::Result<base64_ng_multibase::Base64MultibaseStep, base64_ng_multibase::Base64MultibaseError>
+impl core::clone::Clone for base64_ng_multibase::Base64MultibaseEncoder
+pub fn base64_ng_multibase::Base64MultibaseEncoder::clone(&self) -> base64_ng_multibase::Base64MultibaseEncoder
+impl core::cmp::Eq for base64_ng_multibase::Base64MultibaseEncoder
+impl core::cmp::PartialEq for base64_ng_multibase::Base64MultibaseEncoder
+pub fn base64_ng_multibase::Base64MultibaseEncoder::eq(&self, &base64_ng_multibase::Base64MultibaseEncoder) -> bool
+impl core::fmt::Debug for base64_ng_multibase::Base64MultibaseEncoder
+pub fn base64_ng_multibase::Base64MultibaseEncoder::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for base64_ng_multibase::Base64MultibaseEncoder
+pub struct base64_ng_multibase::Base64MultibaseError
+impl base64_ng_multibase::Base64MultibaseError
+pub const fn base64_ng_multibase::Base64MultibaseError::available(self) -> core::option::Option<usize>
+pub const fn base64_ng_multibase::Base64MultibaseError::kind(self) -> base64_ng_multibase::Base64MultibaseErrorKind
+pub const fn base64_ng_multibase::Base64MultibaseError::position(self) -> core::option::Option<usize>
+pub const fn base64_ng_multibase::Base64MultibaseError::prefix(self) -> core::option::Option<u8>
+pub const fn base64_ng_multibase::Base64MultibaseError::required(self) -> core::option::Option<usize>
+impl core::clone::Clone for base64_ng_multibase::Base64MultibaseError
+pub fn base64_ng_multibase::Base64MultibaseError::clone(&self) -> base64_ng_multibase::Base64MultibaseError
+impl core::cmp::Eq for base64_ng_multibase::Base64MultibaseError
+impl core::cmp::PartialEq for base64_ng_multibase::Base64MultibaseError
+pub fn base64_ng_multibase::Base64MultibaseError::eq(&self, &base64_ng_multibase::Base64MultibaseError) -> bool
+impl core::error::Error for base64_ng_multibase::Base64MultibaseError
+impl core::fmt::Debug for base64_ng_multibase::Base64MultibaseError
+pub fn base64_ng_multibase::Base64MultibaseError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for base64_ng_multibase::Base64MultibaseError
+pub fn base64_ng_multibase::Base64MultibaseError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng_multibase::Base64MultibaseError
+impl core::marker::StructuralPartialEq for base64_ng_multibase::Base64MultibaseError
+pub struct base64_ng_multibase::Base64MultibaseLimits
+impl base64_ng_multibase::Base64MultibaseLimits
+pub const fn base64_ng_multibase::Base64MultibaseLimits::max_input_bytes(self) -> usize
+pub const fn base64_ng_multibase::Base64MultibaseLimits::max_output_bytes(self) -> usize
+pub const fn base64_ng_multibase::Base64MultibaseLimits::max_work_before_output(self) -> usize
+pub const fn base64_ng_multibase::Base64MultibaseLimits::new(usize, usize, usize) -> Self
+impl core::clone::Clone for base64_ng_multibase::Base64MultibaseLimits
+pub fn base64_ng_multibase::Base64MultibaseLimits::clone(&self) -> base64_ng_multibase::Base64MultibaseLimits
+impl core::cmp::Eq for base64_ng_multibase::Base64MultibaseLimits
+impl core::cmp::PartialEq for base64_ng_multibase::Base64MultibaseLimits
+pub fn base64_ng_multibase::Base64MultibaseLimits::eq(&self, &base64_ng_multibase::Base64MultibaseLimits) -> bool
+impl core::fmt::Debug for base64_ng_multibase::Base64MultibaseLimits
+pub fn base64_ng_multibase::Base64MultibaseLimits::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng_multibase::Base64MultibaseLimits
+impl core::marker::StructuralPartialEq for base64_ng_multibase::Base64MultibaseLimits
+pub struct base64_ng_multibase::Base64MultibaseStep
+impl base64_ng_multibase::Base64MultibaseStep
+pub const fn base64_ng_multibase::Base64MultibaseStep::input_consumed(self) -> usize
+pub const fn base64_ng_multibase::Base64MultibaseStep::output_produced(self) -> usize
+pub const fn base64_ng_multibase::Base64MultibaseStep::status(self) -> base64_ng_multibase::Base64MultibaseStatus
+impl core::clone::Clone for base64_ng_multibase::Base64MultibaseStep
+pub fn base64_ng_multibase::Base64MultibaseStep::clone(&self) -> base64_ng_multibase::Base64MultibaseStep
+impl core::cmp::Eq for base64_ng_multibase::Base64MultibaseStep
+impl core::cmp::PartialEq for base64_ng_multibase::Base64MultibaseStep
+pub fn base64_ng_multibase::Base64MultibaseStep::eq(&self, &base64_ng_multibase::Base64MultibaseStep) -> bool
+impl core::fmt::Debug for base64_ng_multibase::Base64MultibaseStep
+pub fn base64_ng_multibase::Base64MultibaseStep::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng_multibase::Base64MultibaseStep
+impl core::marker::StructuralPartialEq for base64_ng_multibase::Base64MultibaseStep
+pub struct base64_ng_multibase::DecodedBase64Multibase
+impl base64_ng_multibase::DecodedBase64Multibase
+pub const fn base64_ng_multibase::DecodedBase64Multibase::encoding(self) -> base64_ng_multibase::Base64MultibaseEncoding
+pub const fn base64_ng_multibase::DecodedBase64Multibase::written(self) -> usize
+impl core::clone::Clone for base64_ng_multibase::DecodedBase64Multibase
+pub fn base64_ng_multibase::DecodedBase64Multibase::clone(&self) -> base64_ng_multibase::DecodedBase64Multibase
+impl core::cmp::Eq for base64_ng_multibase::DecodedBase64Multibase
+impl core::cmp::PartialEq for base64_ng_multibase::DecodedBase64Multibase
+pub fn base64_ng_multibase::DecodedBase64Multibase::eq(&self, &base64_ng_multibase::DecodedBase64Multibase) -> bool
+impl core::fmt::Debug for base64_ng_multibase::DecodedBase64Multibase
+pub fn base64_ng_multibase::DecodedBase64Multibase::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng_multibase::DecodedBase64Multibase
+impl core::marker::StructuralPartialEq for base64_ng_multibase::DecodedBase64Multibase
+pub struct base64_ng_multibase::DecodedBase64MultibaseVec
+impl base64_ng_multibase::DecodedBase64MultibaseVec
+pub fn base64_ng_multibase::DecodedBase64MultibaseVec::as_bytes(&self) -> &[u8]
+pub const fn base64_ng_multibase::DecodedBase64MultibaseVec::encoding(&self) -> base64_ng_multibase::Base64MultibaseEncoding
+pub fn base64_ng_multibase::DecodedBase64MultibaseVec::into_bytes(self) -> alloc::vec::Vec<u8>
+impl core::clone::Clone for base64_ng_multibase::DecodedBase64MultibaseVec
+pub fn base64_ng_multibase::DecodedBase64MultibaseVec::clone(&self) -> base64_ng_multibase::DecodedBase64MultibaseVec
+impl core::cmp::Eq for base64_ng_multibase::DecodedBase64MultibaseVec
+impl core::cmp::PartialEq for base64_ng_multibase::DecodedBase64MultibaseVec
+pub fn base64_ng_multibase::DecodedBase64MultibaseVec::eq(&self, &base64_ng_multibase::DecodedBase64MultibaseVec) -> bool
+impl core::fmt::Debug for base64_ng_multibase::DecodedBase64MultibaseVec
+pub fn base64_ng_multibase::DecodedBase64MultibaseVec::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for base64_ng_multibase::DecodedBase64MultibaseVec
+pub fn base64_ng_multibase::base64_multibase_encoded_len(base64_ng_multibase::Base64MultibaseEncoding, usize) -> core::result::Result<usize, base64_ng_multibase::Base64MultibaseError>
+pub fn base64_ng_multibase::decode_base64_multibase_into(&[u8], &mut [u8], base64_ng_multibase::Base64MultibaseLimits) -> core::result::Result<base64_ng_multibase::DecodedBase64Multibase, base64_ng_multibase::Base64MultibaseError>
+pub fn base64_ng_multibase::decode_base64_multibase_to_vec(&[u8], base64_ng_multibase::Base64MultibaseLimits) -> core::result::Result<base64_ng_multibase::DecodedBase64MultibaseVec, base64_ng_multibase::Base64MultibaseError>
+pub fn base64_ng_multibase::encode_base64_multibase_into(base64_ng_multibase::Base64MultibaseEncoding, &[u8], &mut [u8], base64_ng_multibase::Base64MultibaseLimits) -> core::result::Result<usize, base64_ng_multibase::Base64MultibaseError>
+pub fn base64_ng_multibase::encode_base64_multibase_to_string(base64_ng_multibase::Base64MultibaseEncoding, &[u8], base64_ng_multibase::Base64MultibaseLimits) -> core::result::Result<alloc::string::String, base64_ng_multibase::Base64MultibaseError>
+pub fn base64_ng_multibase::validate_base64_multibase(&[u8], base64_ng_multibase::Base64MultibaseLimits) -> core::result::Result<base64_ng_multibase::Base64MultibaseEncoding, base64_ng_multibase::Base64MultibaseError>

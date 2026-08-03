@@ -52,6 +52,7 @@ for package in \
     base64-ng \
     base64-ng-derive \
     base64-ng-mime \
+    base64-ng-multibase \
     base64-ng-pem \
     base64-ng-sanitization \
     base64-ng-serde \
@@ -71,6 +72,7 @@ do
         -p "$package" >"$generated"
 
     if [ "$package" != "base64-ng-mime" ] && \
+        [ "$package" != "base64-ng-multibase" ] && \
         [ "$package" != "base64-ng-pem" ] && \
         [ ! -f "$committed" ]; then
         echo "api snapshots: missing $committed" >&2
@@ -98,6 +100,7 @@ do
         fi
     elif [ "$package" = "base64-ng-derive" ] || \
         [ "$package" = "base64-ng-mime" ] || \
+        [ "$package" = "base64-ng-multibase" ] || \
         [ "$package" = "base64-ng-pem" ] || \
         [ "$package" = "base64-ng-bytes" ] || \
         [ "$package" = "base64-ng-sanitization" ] || \

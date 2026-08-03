@@ -1269,6 +1269,13 @@ SIMD admission rules for all post-`1.0` work:
 
 ## Current 2.0 Development Checkpoint
 
+Commit 45 adds `base64-ng-multibase` for the pinned registry's four
+Base64-family entries only. Exact case-sensitive prefixes select strict
+Standard or URL-safe padded/unpadded core codecs. Bounded transactional
+one-shot operations, heapless incremental states, official vectors, Python
+differential evidence, source-mutation checks, and package-scope gates support
+the claim without implying complete multibase registry support.
+
 Commit 34 freezes the operation-specific runtime and static `no_std` dispatch
 matrix. It retains clean-source 15-sample x86 evidence and adds median plus
 one-sided sign-test regression gates. Automatic x86 encode remains

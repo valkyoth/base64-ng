@@ -13,6 +13,7 @@ cargo-fuzz = true
 base64 = "0.22.1"
 base64-ng = { path = "..", version = "2.0.0", features = ["alloc", "simd", "std", "stream"] }
 base64-ng-mime = { path = "../crates/base64-ng-mime", version = "2.0.0" }
+base64-ng-multibase = { path = "../crates/base64-ng-multibase", version = "2.0.0" }
 base64-ng-pem = { path = "../crates/base64-ng-pem", version = "2.0.0" }
 libfuzzer-sys = "0.4"
 
@@ -82,6 +83,13 @@ bench = false
 [[bin]]
 name = "pem_document"
 path = "fuzz_targets/pem_document.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "multibase_family"
+path = "fuzz_targets/multibase_family.rs"
 test = false
 doc = false
 bench = false

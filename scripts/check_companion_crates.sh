@@ -8,6 +8,7 @@ bytes_manifest="crates/base64-ng-bytes/Cargo.toml"
 subtle_manifest="crates/base64-ng-subtle/Cargo.toml"
 tokio_manifest="crates/base64-ng-tokio/Cargo.toml"
 mime_manifest="crates/base64-ng-mime/Cargo.toml"
+multibase_manifest="crates/base64-ng-multibase/Cargo.toml"
 pem_manifest="crates/base64-ng-pem/Cargo.toml"
 
 echo "companion crates: base64-ng-sanitization no-default-features"
@@ -115,6 +116,24 @@ cargo doc --manifest-path "$mime_manifest" --no-deps --all-features
 
 echo "companion crates: base64-ng-mime dependency policy"
 scripts/cargo-deny-check.sh "$mime_manifest" deny.toml
+
+echo "companion crates: base64-ng-multibase no-default-features"
+cargo test --manifest-path "$multibase_manifest" --no-default-features
+
+echo "companion crates: base64-ng-multibase alloc"
+cargo test --manifest-path "$multibase_manifest" --no-default-features --features alloc
+
+echo "companion crates: base64-ng-multibase all features"
+cargo test --manifest-path "$multibase_manifest" --all-features
+
+echo "companion crates: base64-ng-multibase clippy"
+cargo clippy --manifest-path "$multibase_manifest" --all-targets --all-features -- -D warnings
+
+echo "companion crates: base64-ng-multibase docs"
+cargo doc --manifest-path "$multibase_manifest" --no-deps --all-features
+
+echo "companion crates: base64-ng-multibase dependency policy"
+scripts/cargo-deny-check.sh "$multibase_manifest" deny.toml
 
 echo "companion crates: base64-ng-pem no-default-features"
 cargo check --manifest-path "$pem_manifest" --no-default-features

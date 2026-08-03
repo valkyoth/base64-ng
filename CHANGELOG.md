@@ -36,6 +36,11 @@
   adjacent-frame, fail-closed, and exact prefix-progress behavior. It documents
   non-rollbackable third-party writer side effects and keeps secret decoding on
   bounded complete-frame APIs.
+- Commit 45 adds `base64-ng-multibase` with strict, bounded support for the
+  pinned registry's `m`, `M`, `u`, and `U` Base64-family entries, including
+  transactional one-shot APIs, heapless incremental states, official vectors,
+  independent differential evidence, and explicit rejection of every other
+  prefix.
 
 ## 1.3.9 - 2026-07-21
 

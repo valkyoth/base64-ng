@@ -53,6 +53,11 @@ new dependency expands the audit, license, advisory, and supply-chain surface.
   runtime dependency is the matching `base64-ng` package. Python's standard
   `email.base64mime` and the system OpenSSL command are test-time
   interoperability references and are not package dependencies.
+- `base64-ng-multibase` is a dependency-minimal protocol companion. Its only
+  runtime dependency is the matching `base64-ng` package. The multiformats
+  registry and official vectors are hash-locked repository evidence, while
+  Python's standard `base64` module is a test-time interoperability reference;
+  none are package dependencies.
 - `base64-ng-pem` is a dependency-minimal protocol companion. Its only
   runtime dependency is the matching `base64-ng` package. Python `ssl` and
   the system OpenSSL command are test-time RFC 7468 interoperability
@@ -107,6 +112,10 @@ Current decisions:
   content-transfer body rules are protocol grammar, not a reason to weaken
   strict RFC 4648 core defaults. It has finite input/output/line/skip/work
   limits and does not claim complete MIME message or header parsing.
+- `base64-ng-multibase` is admitted as a companion because its leading prefix
+  and evolving external registry are protocol metadata rather than core RFC
+  4648 behavior. It admits only the four pinned Base64-family entries, applies
+  finite limits, and does not claim complete multibase support.
 - `base64-ng-pem` is admitted as a companion because RFC 7468 labels,
   encapsulation boundaries, adjacent text, multi-block documents, and parser
   latitude are protocol grammar rather than core Base64 behavior. It has

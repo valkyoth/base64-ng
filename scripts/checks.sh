@@ -86,6 +86,8 @@ scripts/check-2.0-profiles.sh
 
 echo "checks: 2.0 MIME content-transfer body"
 scripts/check-2.0-mime-body.sh
+echo "checks: 2.0 Base64-family multibase"
+scripts/check-2.0-multibase.sh
 echo "checks: 2.0 RFC 7468 textual encoding"
 scripts/check-2.0-pem.sh
 

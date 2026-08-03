@@ -308,6 +308,11 @@ The release gate runs:
   boundaries, multiple blocks, adjacent text, secret-frame release, the
   official certificate example, Python `ssl` and OpenSSL interoperability,
   full-document fuzzing, and immutable RFC/errata evidence
+- Base64-family multibase integration through `scripts/check-2.0-multibase.sh`,
+  including a hash-locked upstream registry and official vectors, all four
+  admitted prefixes, strict canonical rejection, finite limits, transactional
+  one-shot output, heapless one-byte partition schedules, Python standard
+  library differential checks, source-mutation checks, and package scope
 - 2.0 validated-alphabet evidence through
   `scripts/check-2.0-alphabet.sh`, including const compile acceptance and
   rejection, exhaustive invalid-table diagnostics, all-value mapping parity,
@@ -320,7 +325,8 @@ The release gate runs:
 - packaged dependency admission policy for future external-crate review
 - dependency admission review keeping the core crate dependency-free while
   treating `base64-ng-serde`, `base64-ng-bytes`, `base64-ng-subtle`,
-  `base64-ng-tokio`, `base64-ng-mime`, and `base64-ng-pem` as separately reviewed optional
+  `base64-ng-tokio`, `base64-ng-mime`, `base64-ng-multibase`, and
+  `base64-ng-pem` as separately reviewed optional
   companion crates; `zeroize`,
   property-testing, and benchmark frameworks remain out of the core package
   unless separately admitted

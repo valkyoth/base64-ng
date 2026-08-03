@@ -30,6 +30,13 @@ change = "code"
 publish = false
 reason = "Develops the bounded RFC 2045 Section 6.8 content-transfer body companion; publication remains blocked until final acceptance."
 
+[crates."base64-ng-multibase"]
+previous_version = "0.0.0"
+version = "2.0.0"
+change = "code"
+publish = false
+reason = "Develops the bounded Base64-family multibase companion against a pinned registry; publication remains blocked until final acceptance."
+
 [crates."base64-ng-pem"]
 previous_version = "0.0.0"
 version = "2.0.0"
