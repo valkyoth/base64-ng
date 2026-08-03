@@ -30,6 +30,9 @@ LOCKED_FILES = [
     "rfc7468-errata.tsv",
     "rfc7468-requirements.json",
     "rfc7468.txt",
+    "rfc9580-errata.tsv",
+    "rfc9580-requirements.json",
+    "rfc9580.txt",
 ]
 
 
@@ -194,6 +197,30 @@ def unmapped_rfc7468_requirement(directory: Path) -> None:
     relock(directory)
 
 
+def changed_rfc9580_bytes(directory: Path) -> None:
+    path = directory / "rfc9580.txt"
+    path.write_bytes(path.read_bytes() + b"changed")
+
+
+def stale_rfc9580_errata(directory: Path) -> None:
+    path = directory / "rfc9580-errata.tsv"
+    path.write_text(
+        path.read_text(encoding="utf-8").replace(
+            "8432\tVerified\t", "8432\tReported\t"
+        ),
+        encoding="utf-8",
+    )
+    relock(directory)
+
+
+def unmapped_rfc9580_requirement(directory: Path) -> None:
+    path = directory / "rfc9580-requirements.json"
+    data = json.loads(path.read_text(encoding="utf-8"))
+    data["requirements"][0]["tests"] = []
+    path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    relock(directory)
+
+
 def main() -> int:
     mutations = [
         ("changed bytes", changed_bytes),
@@ -214,6 +241,9 @@ def main() -> int:
         ("changed RFC 7468 bytes", changed_rfc7468_bytes),
         ("stale RFC 7468 errata status", stale_rfc7468_errata),
         ("unmapped RFC 7468 requirement", unmapped_rfc7468_requirement),
+        ("changed RFC 9580 bytes", changed_rfc9580_bytes),
+        ("stale RFC 9580 errata status", stale_rfc9580_errata),
+        ("unmapped RFC 9580 requirement", unmapped_rfc9580_requirement),
     ]
     for name, mutation in mutations:
         expect_rejected(name, mutation)

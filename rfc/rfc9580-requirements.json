@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "rfc": 9580,
+  "scope": "Complete ordinary OpenPGP ASCII armor grammar; packets and cleartext signatures excluded",
+  "reviewed": "2026-08-03",
+  "requirements": [
+    {
+      "id": "RFC9580-6-BASE64",
+      "section": "6",
+      "normative": "must",
+      "decision": "Use RFC 4648 Section 4 Standard Base64, ignore ASCII whitespace while parsing, reject nonalphabet data, and generate lines no longer than 76 characters.",
+      "implementation": ["crates/base64-ng-openpgp/src/parser.rs", "crates/base64-ng-openpgp/src/generator.rs"],
+      "tests": ["crates/base64-ng-openpgp/tests/openpgp.rs", "fuzz/fuzz_targets/openpgp_armor.rs"]
+    },
+    {
+      "id": "RFC9580-6.1-CRC24",
+      "section": "6.1",
+      "normative": "must not reject, should not generate",
+      "decision": "Rfc9580 parsing reports absent, malformed, mismatched, and valid checksum states without checksum-only rejection; generation omits CRC-24 by default. RequireValidCrc24 and LegacyCrc24 are separately named application and legacy-interoperability policies.",
+      "implementation": ["crates/base64-ng-openpgp/src/crc24.rs", "crates/base64-ng-openpgp/src/parser.rs", "crates/base64-ng-openpgp/src/generator.rs"],
+      "tests": ["crates/base64-ng-openpgp/tests/openpgp.rs", "crates/base64-ng-openpgp/tests/interoperability.rs"]
+    },
+    {
+      "id": "RFC9580-6.2-CONTAINER",
+      "section": "6.2",
+      "normative": "grammar",
+      "decision": "Require an armor header line, bounded headers, blank separator, Base64 data, optional checksum, and matching armor tail before releasing a block.",
+      "implementation": ["crates/base64-ng-openpgp/src/parser.rs", "crates/base64-ng-openpgp/src/types.rs"],
+      "tests": ["crates/base64-ng-openpgp/tests/openpgp.rs", "fuzz/fuzz_targets/openpgp_armor.rs"]
+    },
+    {
+      "id": "RFC9580-6.2.1-TYPES",
+      "section": "6.2.1",
+      "normative": "must",
+      "decision": "Accept only MESSAGE, PUBLIC KEY BLOCK, PRIVATE KEY BLOCK, and SIGNATURE ordinary armor labels at line start, with only trailing horizontal whitespace, and require an exact matching tail.",
+      "implementation": ["crates/base64-ng-openpgp/src/types.rs", "crates/base64-ng-openpgp/src/parser.rs"],
+      "tests": ["crates/base64-ng-openpgp/tests/openpgp.rs"]
+    },
+    {
+      "id": "RFC9580-6.2.2-HEADERS",
+      "section": "6.2.2",
+      "normative": "should recover and ignore unknown",
+      "decision": "Parse exact Key-colon-space-Value headers, preserve unknown valid headers, bound count and bytes, and reject malformed headers instead of heuristically recovering across ambiguous framing.",
+      "implementation": ["crates/base64-ng-openpgp/src/types.rs", "crates/base64-ng-openpgp/src/parser.rs", "crates/base64-ng-openpgp/src/limits.rs"],
+      "tests": ["crates/base64-ng-openpgp/tests/openpgp.rs"]
+    },
+    {
+      "id": "RFC9580-6.2.2.1-METADATA",
+      "section": "6.2.2.1",
+      "normative": "should not emit absent consent",
+      "decision": "The generator emits no Version header implicitly; every generated header is supplied explicitly by the caller.",
+      "implementation": ["crates/base64-ng-openpgp/src/generator.rs"],
+      "tests": ["crates/base64-ng-openpgp/tests/openpgp.rs"]
+    },
+    {
+      "id": "RFC9580-7-CLEARTEXT-EXCLUSION",
+      "section": "7",
+      "normative": "separate framework",
+      "decision": "PGP SIGNED MESSAGE is rejected because cleartext signatures require dash escaping, canonical text hashing, Hash headers, and a nested signature armor block beyond ordinary armor parsing.",
+      "implementation": ["crates/base64-ng-openpgp/src/types.rs", "crates/base64-ng-openpgp/src/parser.rs"],
+      "tests": ["crates/base64-ng-openpgp/tests/openpgp.rs"]
+    }
+  ]
+}

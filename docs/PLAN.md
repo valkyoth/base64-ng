@@ -1416,6 +1416,15 @@ independent differential fixtures, OpenSSL interoperability, and fuzzing; and
 exposes no password, hashing, derivation, comparison, or verification API.
 External pentest acceptance remains pending.
 
+Commit 48 adds `base64-ng-openpgp`, a bounded `no_std + alloc` companion for
+complete ordinary RFC 9580 ASCII armor. It validates the four registered
+ordinary labels, ordered headers, blank separator, 76-column Base64 body,
+optional CRC-24 status, and matching tail before release; supports bounded
+incremental and standard I/O operations; and offers exact-type fixed-work
+secret release behind `secrets`. The default checksum policy follows RFC
+9580's mandatory non-rejection behavior, while strict CRC-24 is explicitly
+opt-in. Packet semantics and cleartext signatures remain excluded.
+
 ## Release Gate
 
 The release gate must pass before every release:

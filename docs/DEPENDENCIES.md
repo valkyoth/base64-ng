@@ -63,6 +63,10 @@ new dependency expands the audit, license, advisory, and supply-chain surface.
   Base64 module and the system OpenSSL command are test-time interoperability
   references, not package dependencies; final source and implementation pins
   belong to Commit 49.
+- `base64-ng-openpgp` is a dependency-minimal protocol companion. Its only
+  runtime dependency is the matching `base64-ng` package. GnuPG and Sequoia
+  `sq` are test-time interoperability references, while the locked RFC 9580
+  source and errata remain repository evidence; none are package dependencies.
 - `base64-ng-pem` is a dependency-minimal protocol companion. Its only
   runtime dependency is the matching `base64-ng` package. Python `ssl` and
   the system OpenSSL command are test-time RFC 7468 interoperability
@@ -130,6 +134,10 @@ Current decisions:
   SHA-crypt add record grammar and algorithm-specific checksum permutations
   beyond generic Base64. It depends only on the core crate, applies finite
   limits and redacted formatting, and exposes no hashing or verification API.
+- `base64-ng-openpgp` is admitted as a companion because armor boundaries,
+  headers, checksum status, block types, and closing-tail validation are
+  protocol grammar beyond core Base64. It has finite limits and does not claim
+  packet parsing or cleartext-signature support.
 - `base64-ng-pem` is admitted as a companion because RFC 7468 labels,
   encapsulation boundaries, adjacent text, multi-block documents, and parser
   latitude are protocol grammar rather than core Base64 behavior. It has
@@ -240,8 +248,8 @@ workspaces only when they are not packaged with the published crate:
   `crates/base64-ng-serde/`, `crates/base64-ng-bytes/`,
   `crates/base64-ng-subtle/`, `crates/base64-ng-tokio/`,
   `crates/base64-ng-imap/`, `crates/base64-ng-mime/`,
-  `crates/base64-ng-multibase/`, `crates/base64-ng-password/`, and
-  `crates/base64-ng-pem/` are optional companion crates, not dependencies of
+  `crates/base64-ng-multibase/`, `crates/base64-ng-password/`,
+  `crates/base64-ng-openpgp/`, and `crates/base64-ng-pem/` are optional companion crates, not dependencies of
   the core `base64-ng` package. They are reviewed separately by
   `scripts/check_companion_crates.sh` so the root package keeps its
   zero-runtime-dependency guarantee.

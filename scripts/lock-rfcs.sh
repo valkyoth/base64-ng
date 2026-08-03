@@ -55,7 +55,10 @@ done <"$sources"
         rfc4648.txt \
         rfc7468-errata.tsv \
         rfc7468-requirements.json \
-        rfc7468.txt
+        rfc7468.txt \
+        rfc9580-errata.tsv \
+        rfc9580-requirements.json \
+        rfc9580.txt
     do
         sha256sum "$file"
     done >SHA256SUMS

@@ -11,6 +11,7 @@ imap_manifest="crates/base64-ng-imap/Cargo.toml"
 mime_manifest="crates/base64-ng-mime/Cargo.toml"
 multibase_manifest="crates/base64-ng-multibase/Cargo.toml"
 password_manifest="crates/base64-ng-password/Cargo.toml"
+openpgp_manifest="crates/base64-ng-openpgp/Cargo.toml"
 pem_manifest="crates/base64-ng-pem/Cargo.toml"
 
 echo "companion crates: base64-ng-sanitization no-default-features"
@@ -169,6 +170,21 @@ cargo doc --manifest-path "$password_manifest" --no-deps --all-features
 
 echo "companion crates: base64-ng-password dependency policy"
 scripts/cargo-deny-check.sh "$password_manifest" deny.toml
+
+echo "companion crates: base64-ng-openpgp no-default-features"
+cargo check --manifest-path "$openpgp_manifest" --no-default-features
+
+echo "companion crates: base64-ng-openpgp all features"
+cargo test --manifest-path "$openpgp_manifest" --all-features
+
+echo "companion crates: base64-ng-openpgp clippy"
+cargo clippy --manifest-path "$openpgp_manifest" --all-targets --all-features -- -D warnings
+
+echo "companion crates: base64-ng-openpgp docs"
+cargo doc --manifest-path "$openpgp_manifest" --no-deps --all-features
+
+echo "companion crates: base64-ng-openpgp dependency policy"
+scripts/cargo-deny-check.sh "$openpgp_manifest" deny.toml
 
 echo "companion crates: base64-ng-pem no-default-features"
 cargo check --manifest-path "$pem_manifest" --no-default-features

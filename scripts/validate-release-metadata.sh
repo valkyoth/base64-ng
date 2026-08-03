@@ -152,6 +152,7 @@ for required_script in \
     "scripts/check-2.0-mime-body.sh" \
     "scripts/check-2.0-multibase.sh" \
     "scripts/check-2.0-password.sh" \
+    "scripts/check-2.0-openpgp.sh" \
     "scripts/check-2.0-pem.sh" \
     "scripts/check-2.0-in-place.sh" \
     "scripts/check-2.0-in-place-sanitizers.sh" \
@@ -500,6 +501,7 @@ for required_dependency_review_text in \
     "base64-ng-mime\` is admitted as a companion" \
     "base64-ng-multibase\` is admitted as a companion" \
     "base64-ng-password\` is admitted as a companion" \
+    "base64-ng-openpgp\` is admitted as a companion" \
     "base64-ng-pem\` is admitted as a companion" \
     "\`subtle\` is admitted only through \`base64-ng-subtle\`"
 do
@@ -585,6 +587,7 @@ for required_package_file in \
     "api-snapshots/2.0-development/base64-ng-mime.txt" \
     "api-snapshots/2.0-development/base64-ng-multibase.txt" \
     "api-snapshots/2.0-development/base64-ng-password.txt" \
+    "api-snapshots/2.0-development/base64-ng-openpgp.txt" \
     "api-snapshots/2.0-development/base64-ng-pem.txt" \
     "api-snapshots/2.0-development/base64-ng-serde.txt" \
     "api-snapshots/2.0-development/base64-ng-subtle.txt" \
@@ -668,6 +671,7 @@ for required_package_file in \
     "scripts/check-2.0-mime-body.sh" \
     "scripts/check-2.0-multibase.sh" \
     "scripts/check-2.0-password.sh" \
+    "scripts/check-2.0-openpgp.sh" \
     "scripts/check-2.0-pem.sh" \
     "scripts/check-2.0-in-place.sh" \
     "scripts/check-2.0-in-place-sanitizers.sh" \

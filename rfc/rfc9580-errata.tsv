@@ -1,0 +1,8 @@
+id	status	type	section	reported	source	reviewed	disposition	implementation_decision	security_effect
+8432	Verified	Editorial	16.1	2025-05-27	https://www.rfc-editor.org/errata/eid8432	2026-08-03	not-applicable	Reference URL line wrapping does not affect Section 6 armor grammar.	none
+8449	Held for Document Update	Technical	5.11	2025-06-05	https://www.rfc-editor.org/errata/eid8449	2026-08-03	not-applicable	User ID packet wording is outside the armor-only companion.	none
+8454	Verified	Technical	5.2.3	2025-06-07	https://www.rfc-editor.org/errata/eid8454	2026-08-03	not-applicable	Signature packet MPI wording is outside the armor-only companion.	none
+8465	Verified	Technical	5.5.3	2025-06-18	https://www.rfc-editor.org/errata/eid8465	2026-08-03	not-applicable	Secret-key point representation is outside the armor-only companion.	none
+8466	Verified	Technical	11.2	2025-06-18	https://www.rfc-editor.org/errata/eid8466	2026-08-03	not-applicable	Elliptic-curve point representation is outside the armor-only companion.	none
+8814	Reported	Technical	5.6	2026-03-08	https://www.rfc-editor.org/errata/eid8814	2026-08-03	not-applicable	Compression packet wording is outside the armor-only companion.	none
+8847	Reported	Technical	9.1	2026-03-18	https://www.rfc-editor.org/errata/eid8847	2026-08-03	not-applicable	PKESK registry wording is outside the armor-only companion.	none

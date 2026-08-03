@@ -49,7 +49,7 @@ def validate(directory: Path) -> None:
         "https://www.rfc-editor.org/rfc/rfc3501.txt",
         EXPECTED_RFC_SHA256,
     ]
-    if expected_source not in source_rows or len(source_rows) != 4:
+    if expected_source not in source_rows or len(source_rows) != 5:
         fail("SOURCES does not contain the locked RFC 3501 HTTPS source")
 
     with (directory / "rfc3501-errata.tsv").open(

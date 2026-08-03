@@ -362,6 +362,7 @@ and crates.io examples resolve consistently across the workspace.
 | `base64-ng-mime` | Bounded RFC 2045 Section 6.8 Base64 content-transfer body encoding and decoding; not a MIME message or header parser. |
 | `base64-ng-multibase` | Bounded strict support for the four registered Base64-family multibase prefixes; not a complete open-world multibase registry. |
 | `base64-ng-password` | Bounded Passlib PBKDF2 and SHA-crypt field/record transforms with exact checksum permutations; never hashes or verifies passwords. |
+| `base64-ng-openpgp` | Bounded complete RFC 9580 ordinary ASCII armor parser and generator with explicit CRC-24 policy and opt-in secret payload release. |
 | `base64-ng-pem` | Bounded complete RFC 7468 textual encoding parser and generator with labels, boundaries, multiple blocks, and opt-in secret payload release. |
 | `base64-ng-wasm-loader` | Supported byte-only JavaScript/npm loader with separately selected scalar and `simd128` artifacts. |
 

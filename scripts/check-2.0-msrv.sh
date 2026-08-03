@@ -38,6 +38,7 @@ case "$mode" in
             base64-ng-mime \
             base64-ng-multibase \
             base64-ng-password \
+            base64-ng-openpgp \
             base64-ng-pem \
             base64-ng-sanitization \
             base64-ng-serde \

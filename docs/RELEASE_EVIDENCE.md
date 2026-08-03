@@ -941,6 +941,22 @@ only. It supports no password input, PBKDF2/SHA derivation, password hashing,
 password verification, storage-policy, constant-time, or cleanup claim. Commit
 49 owns the exact release source and implementation pins.
 
+## Commit 48 OpenPGP Armor Evidence
+
+`base64-ng-openpgp` is release-gated by `scripts/check-2.0-openpgp.sh`. The
+gate validates the locked July 2024 RFC 9580 bytes, all seven current RFC
+Editor errata records, and the armor requirement ledger; builds without
+default features; runs all ordinary labels, checksum states, official vectors,
+finite limits, malformed framing, incremental partitions, short I/O, redaction,
+and fixed-work secret release; requires GnuPG and Sequoia differential dearmor
+evidence in CI; compiles the whole-message fuzz target; and checks Clippy,
+rustdoc, MSRV, dependencies, and exact package contents.
+
+The evidence supports complete ordinary ASCII armor only. It does not support
+OpenPGP packet semantics, cleartext signatures, cryptographic integrity from
+CRC-24, or implicit permission to generate CRC-24 in RFC 9580 contexts that
+forbid it.
+
 ## Reproducibility
 
 The reproducible package/build check packages and verifies the crate twice and

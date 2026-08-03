@@ -16,6 +16,7 @@ base64-ng-imap = { path = "../crates/base64-ng-imap", version = "2.0.0" }
 base64-ng-mime = { path = "../crates/base64-ng-mime", version = "2.0.0" }
 base64-ng-multibase = { path = "../crates/base64-ng-multibase", version = "2.0.0" }
 base64-ng-password = { path = "../crates/base64-ng-password", version = "2.0.0" }
+base64-ng-openpgp = { path = "../crates/base64-ng-openpgp", version = "2.0.0" }
 base64-ng-pem = { path = "../crates/base64-ng-pem", version = "2.0.0" }
 libfuzzer-sys = "0.4"
 
@@ -106,6 +107,13 @@ bench = false
 [[bin]]
 name = "password_records"
 path = "fuzz_targets/password_records.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "openpgp_armor"
+path = "fuzz_targets/openpgp_armor.rs"
 test = false
 doc = false
 bench = false

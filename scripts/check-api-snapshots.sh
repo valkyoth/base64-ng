@@ -55,6 +55,7 @@ for package in \
     base64-ng-mime \
     base64-ng-multibase \
     base64-ng-password \
+    base64-ng-openpgp \
     base64-ng-pem \
     base64-ng-sanitization \
     base64-ng-serde \
@@ -77,6 +78,7 @@ do
         [ "$package" != "base64-ng-mime" ] && \
         [ "$package" != "base64-ng-multibase" ] && \
         [ "$package" != "base64-ng-password" ] && \
+        [ "$package" != "base64-ng-openpgp" ] && \
         [ "$package" != "base64-ng-pem" ] && \
         [ ! -f "$committed" ]; then
         echo "api snapshots: missing $committed" >&2
@@ -107,6 +109,7 @@ do
         [ "$package" = "base64-ng-mime" ] || \
         [ "$package" = "base64-ng-multibase" ] || \
         [ "$package" = "base64-ng-password" ] || \
+        [ "$package" = "base64-ng-openpgp" ] || \
         [ "$package" = "base64-ng-pem" ] || \
         [ "$package" = "base64-ng-bytes" ] || \
         [ "$package" = "base64-ng-sanitization" ] || \

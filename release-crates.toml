@@ -51,6 +51,13 @@ change = "code"
 publish = false
 reason = "Develops bounded Passlib PBKDF2 and SHA-crypt field and record transforms without password hashing or verification; publication remains blocked until final acceptance."
 
+[crates."base64-ng-openpgp"]
+previous_version = "0.0.0"
+version = "2.0.0"
+change = "code"
+publish = false
+reason = "Develops the bounded complete RFC 9580 OpenPGP ASCII armor companion; publication remains blocked until final acceptance."
+
 [crates."base64-ng-pem"]
 previous_version = "0.0.0"
 version = "2.0.0"

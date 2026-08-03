@@ -20,7 +20,10 @@ expected_files="$(
         rfc4648.txt \
         rfc7468-errata.tsv \
         rfc7468-requirements.json \
-        rfc7468.txt
+        rfc7468.txt \
+        rfc9580-errata.tsv \
+        rfc9580-requirements.json \
+        rfc9580.txt
 )"
 actual_files="$(
     for path in "$rfc_dir"/*; do
@@ -44,6 +47,7 @@ python3 scripts/validate-rfc4648.py "$rfc_dir"
 python3 scripts/validate-rfc2045.py "$rfc_dir"
 python3 scripts/validate-rfc3501.py "$rfc_dir"
 python3 scripts/validate-rfc7468.py "$rfc_dir"
+python3 scripts/validate-rfc9580.py "$rfc_dir"
 
 if [ "$skip_package" != "1" ]; then
     package_list="$(mktemp)"
@@ -55,6 +59,7 @@ if [ "$skip_package" != "1" ]; then
         base64-ng-mime \
         base64-ng-multibase \
         base64-ng-password \
+        base64-ng-openpgp \
         base64-ng-pem \
         base64-ng-sanitization \
         base64-ng-serde \
