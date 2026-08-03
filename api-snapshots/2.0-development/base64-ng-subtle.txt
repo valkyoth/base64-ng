@@ -1,0 +1,17 @@
+pub mod base64_ng_subtle
+pub trait base64_ng_subtle::SubtleSecretEq: base64_ng_subtle::sealed::Sealed
+pub fn base64_ng_subtle::SubtleSecretEq::subtle_ct_eq_public_len(&self, &[u8]) -> subtle::Choice
+impl base64_ng_subtle::SubtleSecretEq for base64_ng::v2::secret::exposure::ExposedSecret<'_>
+pub fn base64_ng::v2::secret::exposure::ExposedSecret<'_>::subtle_ct_eq_public_len(&self, &[u8]) -> subtle::Choice
+impl base64_ng_subtle::SubtleSecretEq for base64_ng::v2::secret::exposure::ExposedSecretMut<'_>
+pub fn base64_ng::v2::secret::exposure::ExposedSecretMut<'_>::subtle_ct_eq_public_len(&self, &[u8]) -> subtle::Choice
+impl base64_ng_subtle::SubtleSecretEq for base64_ng::v2::secret::exposure::SecretInput<'_>
+pub fn base64_ng::v2::secret::exposure::SecretInput<'_>::subtle_ct_eq_public_len(&self, &[u8]) -> subtle::Choice
+impl base64_ng_subtle::SubtleSecretEq for base64_ng::v2::secret::exposure::SecretOutput<'_>
+pub fn base64_ng::v2::secret::exposure::SecretOutput<'_>::subtle_ct_eq_public_len(&self, &[u8]) -> subtle::Choice
+impl base64_ng_subtle::SubtleSecretEq for base64_ng::v2::secret::owned::SecretVec
+pub fn base64_ng::v2::secret::owned::SecretVec::subtle_ct_eq_public_len(&self, &[u8]) -> subtle::Choice
+impl<const CAP: usize> base64_ng_subtle::SubtleSecretEq for base64_ng::v2::secret::owned::SecretArray<CAP>
+pub fn base64_ng::v2::secret::owned::SecretArray<CAP>::subtle_ct_eq_public_len(&self, &[u8]) -> subtle::Choice
+pub fn base64_ng_subtle::subtle_ct_eq_fixed_width<const N: usize>(&[u8; N], &[u8; N]) -> subtle::Choice
+pub fn base64_ng_subtle::subtle_ct_eq_public_len(&[u8], &[u8]) -> subtle::Choice

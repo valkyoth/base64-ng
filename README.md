@@ -346,7 +346,7 @@ The core `base64-ng` crate keeps its zero-runtime-dependency policy. Optional
 ecosystem integrations live as separate crates so applications can opt into
 their own approved dependency set without changing the base package.
 
-The `1.3.0` family syncs all companion crates to the same version so docs.rs
+The `2.0.0` family syncs all companion crates to the same version so docs.rs
 and crates.io examples resolve consistently across the workspace.
 
 | Crate | Purpose |
@@ -356,7 +356,7 @@ and crates.io examples resolve consistently across the workspace.
 | `base64-ng-derive` | Dependency-free `Base64Secret` derive for fixed-size secret newtypes. |
 | `base64-ng-serde` | Optional `serde` wrappers for projects that already admit `serde`. |
 | `base64-ng-bytes` | Optional `bytes` helpers for `Bytes`, `Buf`, and `BufMut` users. |
-| `base64-ng-subtle` | Optional `subtle::ConstantTimeEq` helpers for token/MAC comparison boundaries. |
+| `base64-ng-subtle` | Sealed `subtle::ConstantTimeEq` integration for final 2.0 secret owners and token/MAC comparison boundaries. |
 | `base64-ng-tokio` | Optional Tokio read-all/write-all helpers and async reader/writer streaming adapters. |
 | `base64-ng-wasm-loader` | Supported byte-only JavaScript/npm loader with separately selected scalar and `simd128` artifacts. |
 
@@ -537,22 +537,30 @@ let encoded = STRICT_STANDARD_PADDED
 assert_eq!(&encoded[..], b"aGVsbG8=");
 ```
 
-`base64-ng-subtle` provides explicit `subtle::ConstantTimeEq` integration for
-projects that already admit `subtle`:
+`base64-ng-subtle` provides a sealed `subtle::ConstantTimeEq` integration for
+final 2.0 secret owners and views in projects that already admit `subtle`:
 
 ```toml
 [dependencies]
-base64-ng = "1.3.9"
-base64-ng-subtle = "1.3.9"
+base64-ng = { version = "2.0.0", features = ["secrets"] }
+base64-ng-subtle = "2.0.0"
 ```
 
 ```rust
-use base64_ng::ct;
-use base64_ng_subtle::SubtleEqExt;
+use base64_ng::{
+    STRICT_STANDARD_PADDED,
+    secret::{SecretArrayFrame, SecretInput},
+};
+use base64_ng_subtle::SubtleSecretEq;
 
-let decoded = ct::STANDARD.decode_secret(b"aGVsbG8=").unwrap();
-assert!(decoded.subtle_verify(b"hello"));
+let mut frame = SecretArrayFrame::<5>::new(&STRICT_STANDARD_PADDED).unwrap();
+frame.update(&SecretInput::new(b"aGVsbG8=")).unwrap();
+let decoded = frame.finish().unwrap();
+assert!(bool::from(decoded.subtle_ct_eq_public_len(b"hello")));
 ```
+
+Length mismatch is public and returns `Choice::from(0)` immediately. The
+companion intentionally provides no boolean convenience method.
 
 `base64-ng-tokio` provides read-all async helpers and fixed-buffer
 `AsyncRead`/`AsyncWrite` adapters over the shared 2.0 incremental core. Prefer

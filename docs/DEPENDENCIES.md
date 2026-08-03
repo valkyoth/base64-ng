@@ -84,7 +84,9 @@ Current decisions:
 - `base64-ng-subtle` is admitted as a companion crate because authentication,
   MAC, password-hash, and token verification boundaries can opt into a reviewed
   `subtle::ConstantTimeEq` primitive without adding `subtle` to the core
-  package.
+  package. Its 2.0 trait is sealed to the final secret owners and views, names
+  public-length behavior, and returns `Choice` without boolean convenience
+  sugar.
 - `base64-ng-tokio` is admitted as a companion crate for async read-all/write-all
   helpers, including caller-limited variants for peer-controlled request or
   frame boundaries, and manual `AsyncRead`/`AsyncWrite` streaming adapters with
@@ -164,8 +166,9 @@ core crate today:
 - `zeroize`: deferred unless a review proves that the dependency materially
   improves the documented best-effort cleanup posture beyond the current
   audited local helpers.
-- `subtle`: use `base64-ng-subtle` when protocol code needs a reviewed
-  constant-time equality primitive for decoded or encoded buffers.
+- `subtle`: use `base64-ng-subtle` when protocol code needs the sealed reviewed
+  equality boundary for final 2.0 secret owners and views. Length mismatch is
+  public and `Choice` declassification remains explicit.
 - Criterion or other benchmark frameworks: keep benchmark evidence isolated
   unless the added dependency graph clearly improves release evidence quality.
 

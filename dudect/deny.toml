@@ -1,8 +1,9 @@
 # dudect-style timing-tool dependency policy.
 #
 # The published base64-ng crate remains zero-dependency. This isolated package
-# depends only on the local base64-ng crate and exists to collect empirical
-# timing evidence for constant-time-oriented APIs.
+# depends only on the local base64-ng family plus the exact reviewed `subtle`
+# dependency and exists to collect empirical timing evidence for
+# constant-time-oriented APIs.
 
 [graph]
 all-features = true
@@ -16,6 +17,7 @@ unused-license-exception = "deny"
 
 allow = [
     "Apache-2.0",
+    "BSD-3-Clause",
     "MIT",
 ]
 

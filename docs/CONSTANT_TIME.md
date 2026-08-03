@@ -114,6 +114,13 @@ FIPS-validated comparison primitives. High-assurance authentication boundaries
 should use a deployment-approved constant-time comparison primitive for MACs,
 bearer tokens, password hashes, and equivalent protocol decisions.
 
+For the final 2.0 secret owners and views, the optional `base64-ng-subtle`
+companion provides the sealed `SubtleSecretEq` trait. Its only method is
+`subtle_ct_eq_public_len`, and it returns `subtle::Choice` without a boolean
+convenience method. The final secret types do not implement `PartialEq` and do
+not expose the dependency-free 1.x equality sugar. See
+`2.0_SUBTLE_EQUALITY.md` for exact scope and evidence.
+
 ## Non-Goals
 
 - Do not describe Base64 itself as cryptography.

@@ -11,4 +11,19 @@ name = "base64-ng-dudect"
 version = "0.0.0"
 dependencies = [
  "base64-ng",
+ "base64-ng-subtle",
 ]
+
+[[package]]
+name = "base64-ng-subtle"
+version = "2.0.0"
+dependencies = [
+ "base64-ng",
+ "subtle",
+]
+
+[[package]]
+name = "subtle"
+version = "2.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"

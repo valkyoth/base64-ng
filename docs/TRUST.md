@@ -96,4 +96,7 @@ security-sensitive users.
 Optional companion crates may integrate with approved ecosystem dependencies,
 but they do not change the core `base64-ng` package dependency contract. Use
 `base64-ng-subtle` when an application wants `subtle::ConstantTimeEq` at the
-protocol comparison boundary without adding `subtle` to the core crate.
+protocol comparison boundary without adding `subtle` to the core crate. Its
+sealed 2.0 integration covers only final secret owners and views, exposes
+public-length behavior in the method name, and returns `Choice` for explicit
+protocol-level declassification.

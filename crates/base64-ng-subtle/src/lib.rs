@@ -4,85 +4,116 @@
 #![deny(clippy::all)]
 #![deny(clippy::pedantic)]
 
-//! Optional `subtle::ConstantTimeEq` integration for `base64-ng`.
+//! Reviewed `subtle::ConstantTimeEq` integration for 2.0 secret storage.
 //!
 //! The core `base64-ng` package stays zero-runtime-dependency. This companion
-//! crate exists for applications that already admit `subtle` and want a
-//! reviewed comparison primitive at the protocol boundary.
+//! crate isolates the `subtle` dependency and exposes one sealed comparison
+//! trait for the final 2.0 secret owners and views.
 //!
-//! Length is treated as public. Mismatched lengths return
-//! `subtle::Choice::from(0)` immediately. Use fixed-size protocol tokens when
-//! length must not vary. When the length itself is secret, compare fixed-size
-//! arrays or fixed-width protocol buffers directly with
-//! [`subtle::ConstantTimeEq`] instead of this public-length helper.
+//! [`SubtleSecretEq::subtle_ct_eq_public_len`] treats length as public. A
+//! mismatch returns `subtle::Choice::from(0)` immediately. The method returns
+//! [`Choice`] rather than an ordinary `bool`, so declassification remains
+//! visible at the protocol boundary.
 
-use base64_ng::{DecodedBuffer, EncodedBuffer};
+#[cfg(feature = "alloc")]
+use base64_ng::secret::SecretVec;
+use base64_ng::secret::{ExposedSecret, ExposedSecretMut, SecretArray, SecretInput, SecretOutput};
 use subtle::{Choice, ConstantTimeEq};
 
-#[cfg(feature = "alloc")]
-use base64_ng::SecretBuffer;
+mod sealed {
+    #[cfg(feature = "alloc")]
+    use base64_ng::secret::SecretVec;
+    use base64_ng::secret::{
+        ExposedSecret, ExposedSecretMut, SecretArray, SecretInput, SecretOutput,
+    };
 
-/// Extension trait for comparing `base64-ng` buffers with `subtle`.
+    pub trait Sealed {}
+
+    impl<const CAP: usize> Sealed for SecretArray<CAP> {}
+    impl Sealed for SecretInput<'_> {}
+    impl Sealed for SecretOutput<'_> {}
+    impl Sealed for ExposedSecret<'_> {}
+    impl Sealed for ExposedSecretMut<'_> {}
+    #[cfg(feature = "alloc")]
+    impl Sealed for SecretVec {}
+}
+
+/// Sealed reviewed equality integration for `base64-ng` secret bytes.
 ///
-/// The comparison delegates equal-length byte comparisons to
-/// [`subtle::ConstantTimeEq`]. Length mismatch remains public and returns
-/// `Choice::from(0)`.
-pub trait SubtleEqExt {
-    /// Compares `self` with `expected` using `subtle` for equal-length inputs.
+/// Only crate-reviewed 2.0 secret owners and views implement this trait.
+/// Length is public: mismatched lengths return `Choice::from(0)`
+/// immediately. Equal-length inputs are delegated to
+/// [`subtle::ConstantTimeEq`].
+///
+/// This trait deliberately provides no boolean convenience method. Convert or
+/// compose the returned [`Choice`] explicitly at the protocol decision point.
+///
+/// # Example
+///
+/// ```
+/// use base64_ng::{STRICT_STANDARD_PADDED, secret::{SecretArrayFrame, SecretInput}};
+/// use base64_ng_subtle::SubtleSecretEq;
+///
+/// let mut frame = SecretArrayFrame::<5>::new(&STRICT_STANDARD_PADDED).unwrap();
+/// frame.update(&SecretInput::new(b"aGVsbG8=")).unwrap();
+/// let token = frame.finish().unwrap();
+/// let accepted = bool::from(token.subtle_ct_eq_public_len(b"hello"));
+/// assert!(accepted);
+/// ```
+pub trait SubtleSecretEq: sealed::Sealed {
+    /// Compares the secret bytes with an expected public-length byte string.
     ///
-    /// Length is public. If lengths differ, this returns `Choice::from(0)`.
-    #[must_use = "use Choice or convert it deliberately with bool::from(choice)"]
-    fn subtle_ct_eq(&self, expected: &[u8]) -> Choice;
+    /// Length mismatch is a public early return. For a token, MAC, or key
+    /// whose length must not vary, enforce the fixed width before this call.
+    #[must_use = "compose Choice values or declassify explicitly at the protocol boundary"]
+    fn subtle_ct_eq_public_len(&self, expected: &[u8]) -> Choice;
+}
 
-    /// Convenience boolean wrapper around [`Self::subtle_ct_eq`].
-    ///
-    /// Prefer [`Self::subtle_ct_eq`] when composing with other `subtle`
-    /// decisions.
-    #[must_use]
-    fn subtle_verify(&self, expected: &[u8]) -> bool {
-        bool::from(self.subtle_ct_eq(expected))
+impl<const CAP: usize> SubtleSecretEq for SecretArray<CAP> {
+    fn subtle_ct_eq_public_len(&self, expected: &[u8]) -> Choice {
+        subtle_ct_eq_public_len(self.expose_secret().as_bytes(), expected)
     }
 }
 
-impl SubtleEqExt for [u8] {
-    fn subtle_ct_eq(&self, expected: &[u8]) -> Choice {
-        subtle_ct_eq_public_len(self, expected)
+impl SubtleSecretEq for SecretInput<'_> {
+    fn subtle_ct_eq_public_len(&self, expected: &[u8]) -> Choice {
+        subtle_ct_eq_public_len(self.expose_secret().as_bytes(), expected)
     }
 }
 
-impl SubtleEqExt for &[u8] {
-    fn subtle_ct_eq(&self, expected: &[u8]) -> Choice {
-        subtle_ct_eq_public_len(self, expected)
+impl SubtleSecretEq for SecretOutput<'_> {
+    fn subtle_ct_eq_public_len(&self, expected: &[u8]) -> Choice {
+        subtle_ct_eq_public_len(self.expose_secret().as_bytes(), expected)
     }
 }
 
-impl<const CAP: usize> SubtleEqExt for DecodedBuffer<CAP> {
-    fn subtle_ct_eq(&self, expected: &[u8]) -> Choice {
+impl SubtleSecretEq for ExposedSecret<'_> {
+    fn subtle_ct_eq_public_len(&self, expected: &[u8]) -> Choice {
         subtle_ct_eq_public_len(self.as_bytes(), expected)
     }
 }
 
-impl<const CAP: usize> SubtleEqExt for EncodedBuffer<CAP> {
-    fn subtle_ct_eq(&self, expected: &[u8]) -> Choice {
+impl SubtleSecretEq for ExposedSecretMut<'_> {
+    fn subtle_ct_eq_public_len(&self, expected: &[u8]) -> Choice {
         subtle_ct_eq_public_len(self.as_bytes(), expected)
     }
 }
 
 #[cfg(feature = "alloc")]
-impl SubtleEqExt for SecretBuffer {
-    fn subtle_ct_eq(&self, expected: &[u8]) -> Choice {
-        subtle_ct_eq_public_len(self.expose_secret(), expected)
+impl SubtleSecretEq for SecretVec {
+    fn subtle_ct_eq_public_len(&self, expected: &[u8]) -> Choice {
+        subtle_ct_eq_public_len(self.expose_secret().as_bytes(), expected)
     }
 }
 
-/// Compares two byte slices with public length.
+/// Compares byte slices while treating their lengths as public.
 ///
-/// Equal-length comparisons are delegated to [`subtle::ConstantTimeEq`].
-/// Mismatched lengths return `Choice::from(0)` immediately.
-///
-/// Use [`subtle::ConstantTimeEq`] directly on fixed-size arrays or fixed-width
-/// protocol buffers when token length must not be observable.
-#[must_use = "use Choice or convert it deliberately with bool::from(choice)"]
+/// Equal-length comparisons are delegated to [`subtle::ConstantTimeEq`]. A
+/// mismatch returns `Choice::from(0)` immediately. Prefer
+/// [`SubtleSecretEq`] for `base64-ng` secret storage so the reviewed call site
+/// is visible in source.
+#[inline(never)]
+#[must_use = "compose Choice values or declassify explicitly at the protocol boundary"]
 pub fn subtle_ct_eq_public_len(left: &[u8], right: &[u8]) -> Choice {
     if left.len() == right.len() {
         left.ct_eq(right)
@@ -91,37 +122,20 @@ pub fn subtle_ct_eq_public_len(left: &[u8], right: &[u8]) -> Choice {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::{SubtleEqExt, subtle_ct_eq_public_len};
-    use base64_ng::STANDARD;
-
-    #[cfg(feature = "alloc")]
-    use base64_ng::ct;
-
-    #[test]
-    fn compares_raw_slices_with_public_length() {
-        assert!(bool::from(subtle_ct_eq_public_len(b"hello", b"hello")));
-        assert!(!bool::from(subtle_ct_eq_public_len(b"hello", b"world")));
-        assert!(!bool::from(subtle_ct_eq_public_len(b"hello", b"hello!")));
-    }
-
-    #[test]
-    fn compares_stack_backed_buffers() {
-        let decoded = STANDARD.decode_buffer::<5>(b"aGVsbG8=").unwrap();
-        assert!(decoded.subtle_verify(b"hello"));
-        assert!(!decoded.subtle_verify(b"world"));
-
-        let encoded = STANDARD.encode_buffer::<8>(b"hello").unwrap();
-        assert!(encoded.subtle_verify(b"aGVsbG8="));
-        assert!(!encoded.subtle_verify(b"aGVsbG8h"));
-    }
-
-    #[cfg(feature = "alloc")]
-    #[test]
-    fn compares_secret_buffer() {
-        let decoded = ct::STANDARD.decode_secret(b"aGVsbG8=").unwrap();
-        assert!(decoded.subtle_verify(b"hello"));
-        assert!(!decoded.subtle_verify(b"world"));
-    }
+/// Compares two fixed-width byte arrays without a runtime length branch.
+///
+/// The width is a public compile-time fact. Secret owners with a variable
+/// initialized length should use [`SubtleSecretEq::subtle_ct_eq_public_len`]
+/// after their protocol has enforced the required width.
+///
+/// # Example
+///
+/// ```
+/// use base64_ng_subtle::subtle_ct_eq_fixed_width;
+///
+/// assert!(bool::from(subtle_ct_eq_fixed_width(b"token", b"token")));
+/// ```
+#[must_use = "compose Choice values or declassify explicitly at the protocol boundary"]
+pub fn subtle_ct_eq_fixed_width<const N: usize>(left: &[u8; N], right: &[u8; N]) -> Choice {
+    left.ct_eq(right)
 }

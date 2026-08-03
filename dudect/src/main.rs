@@ -16,16 +16,18 @@ enum TimingCase {
     PreGateContents,
     EncodeBuiltinContents,
     EncodeCustomContents,
+    ReviewedEqualityContents,
 }
 
 impl TimingCase {
-    const ALL: [Self; 6] = [
+    const ALL: [Self; 7] = [
         Self::ValidContents,
         Self::MalformedPosition,
         Self::MalformedClass,
         Self::PreGateContents,
         Self::EncodeBuiltinContents,
         Self::EncodeCustomContents,
+        Self::ReviewedEqualityContents,
     ];
 
     const fn label(self) -> &'static str {
@@ -36,6 +38,7 @@ impl TimingCase {
             Self::PreGateContents => "valid-contents-pre-gate",
             Self::EncodeBuiltinContents => "encode-builtin-input-contents",
             Self::EncodeCustomContents => "encode-custom-input-contents",
+            Self::ReviewedEqualityContents => "reviewed-equality-contents",
         }
     }
 
@@ -45,6 +48,10 @@ impl TimingCase {
 
     const fn encodes(self) -> bool {
         matches!(self, Self::EncodeBuiltinContents | Self::EncodeCustomContents)
+    }
+
+    const fn compares_equality(self) -> bool {
+        matches!(self, Self::ReviewedEqualityContents)
     }
 }
 
@@ -208,9 +215,24 @@ fn measure(
 ) -> Result<f64, String> {
     if case.encodes() {
         measure_encode(input, iterations, case)
+    } else if case.compares_equality() {
+        measure_equality(input, iterations)
     } else {
         measure_decode(input, iterations, case.stops_before_gate())
     }
+}
+
+fn measure_equality(input: &[u8; INPUT_LEN], iterations: usize) -> Result<f64, String> {
+    use base64_ng_subtle::SubtleSecretEq;
+
+    let secret = base64_ng::secret::SecretArray::from_array([0u8; INPUT_LEN], INPUT_LEN)
+        .map_err(|error| format!("secret equality input construction failed: {error}"))?;
+    let start = Instant::now();
+    for _ in 0..iterations {
+        black_box(secret.subtle_ct_eq_public_len(black_box(input)));
+    }
+    let nanos = start.elapsed().as_nanos() as f64;
+    Ok(nanos / iterations as f64)
 }
 
 fn measure_decode(
@@ -284,7 +306,9 @@ fn prepare_classes(
             left[INPUT_LEN / 2] = b'!';
             right[INPUT_LEN / 2] = b'=';
         }
-        TimingCase::EncodeBuiltinContents | TimingCase::EncodeCustomContents => {
+        TimingCase::EncodeBuiltinContents
+        | TimingCase::EncodeCustomContents
+        | TimingCase::ReviewedEqualityContents => {
             left.fill(0);
             fill_random_bytes(right, rng);
         }
@@ -300,7 +324,9 @@ fn refresh_random_class(
         TimingCase::ValidContents | TimingCase::PreGateContents => {
             fill_random_base64(right, rng);
         }
-        TimingCase::EncodeBuiltinContents | TimingCase::EncodeCustomContents => {
+        TimingCase::EncodeBuiltinContents
+        | TimingCase::EncodeCustomContents
+        | TimingCase::ReviewedEqualityContents => {
             fill_random_bytes(right, rng);
         }
         TimingCase::MalformedPosition | TimingCase::MalformedClass => {}
@@ -387,7 +413,8 @@ fn print_help() {
          \n\
          Measures bounded 2.0 secret decode frames across valid contents,\n\
          malformed positions, malformed classes, and the pre-gate core, plus\n\
-         built-in and custom-alphabet secret encoding input classes. This is\n\
+         built-in and custom-alphabet secret encoding input classes, and the\n\
+         reviewed subtle equality path across fixed and random contents. This is\n\
          empirical evidence only."
     );
 }

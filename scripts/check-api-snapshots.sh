@@ -95,6 +95,7 @@ do
     elif [ "$package" = "base64-ng-bytes" ] || \
         [ "$package" = "base64-ng-sanitization" ] || \
         [ "$package" = "base64-ng-serde" ] || \
+        [ "$package" = "base64-ng-subtle" ] || \
         [ "$package" = "base64-ng-tokio" ]; then
         development="$development_dir/$package.txt"
         if [ "$mode" = "--update" ]; then

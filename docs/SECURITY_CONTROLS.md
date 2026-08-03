@@ -149,7 +149,10 @@ certification claim.
   admit ecosystem dependencies and should be reviewed at the integration layer.
 - Use the optional `base64-ng-subtle` companion crate when protocol boundaries
   require a reviewed `subtle::ConstantTimeEq` comparison primitive instead of
-  the dependency-free best-effort comparison helpers in the core crate.
+  the dependency-free best-effort comparison helpers in the 1.x compatibility
+  API. The final 2.0 secret types use sealed `SubtleSecretEq`, whose method
+  explicitly names public-length behavior and returns `Choice` without a
+  boolean convenience method.
 - Set protocol-level maximum input sizes before allocation helpers or CT decode
   are reachable from untrusted traffic. Prefer caller-owned buffers, fixed-size
   `decode_buffer::<MAX>()` patterns, or streaming adapters for bounded services.

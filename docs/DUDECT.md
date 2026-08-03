@@ -1,8 +1,10 @@
 # dudect-Style Timing Evidence
 
-`base64-ng` includes an isolated, dependency-free dudect-style timing harness
-under `dudect/`. The harness is not included in the published crate and does
-not add dependencies to the root package.
+`base64-ng` includes an isolated dudect-style timing harness under `dudect/`.
+The harness is not included in the published crate and does not add
+dependencies to the root package. It depends on the local core and subtle
+companion plus the exact reviewed `subtle` version for Commit 41 equality
+evidence.
 
 The harness measures equal-public-length inputs through the 2.0 bounded
 `SecretArrayFrame` and `SecretArrayEncoder`. Decode reports separate Welch
@@ -10,8 +12,9 @@ t-statistics for distinct valid contents, first-versus-last malformed
 positions, malformed byte classes, and the pre-gate core without successful
 declassification. Encode compares fixed and randomized classified input for
 both the built-in arithmetic mapper and one custom-alphabet fixed scan. It is
-empirical evidence for review, not a formal proof or standalone cryptographic
-constant-time claim.
+also compares fixed and randomized equal-length contents through the sealed
+`SubtleSecretEq` path. It is empirical evidence for review, not a formal proof
+or standalone cryptographic constant-time claim.
 
 ## Compile the Harness
 
@@ -63,8 +66,8 @@ Expected files:
 ## Review Rules
 
 - Keep the harness outside the published crate.
-- Keep the harness dependency-free except for the local `base64-ng` path
-  dependency.
+- Keep dependencies limited to the local `base64-ng` family and the exact
+  reviewed `subtle` dependency admitted by `base64-ng-subtle`.
 - Do not use this as a replacement for Kani, Miri, generated-code review,
   fuzzing, or scalar differential tests.
 - Archive `target/release-evidence/dudect/` when using dudect evidence for a

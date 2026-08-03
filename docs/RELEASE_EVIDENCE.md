@@ -290,6 +290,10 @@ The release gate runs:
   including no-default and no-std memory-lock builds, separately protected
   staging and destination mappings, fixed-work `SecretFrame` routing, exact
   fixed-size and bounded dynamic output, redacted failures, clippy, and docs
+- reviewed equality integration through `scripts/check-2.0-subtle.sh`,
+  including every final 2.0 secret owner/view, equal and unequal contents,
+  public-length mismatch, compile-fail misuse cases, optimized assembly, and
+  the isolated dudect equality class
 - 2.0 validated-alphabet evidence through
   `scripts/check-2.0-alphabet.sh`, including const compile acceptance and
   rejection, exhaustive invalid-table diagnostics, all-value mapping parity,

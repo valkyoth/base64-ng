@@ -109,6 +109,9 @@ scripts/check_companion_crates.sh
 echo "checks: 2.0 sanitization protected fill"
 scripts/check-2.0-sanitization.sh
 
+echo "checks: 2.0 reviewed subtle equality integration"
+scripts/check-2.0-subtle.sh
+
 echo "checks: reserved feature placeholders"
 scripts/check_reserved_features.sh
 

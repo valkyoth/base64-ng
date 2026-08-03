@@ -15,6 +15,9 @@ records its fixed-capacity ordinary and fixed-work secret field modules.
 Commit 40 pins the sanitization migration to separately protected staging and
 destination mappings plus the 2.0 fixed-work result gate.
 
+Commit 41 pins the subtle migration to the sealed final 2.0 secret-owner
+comparison trait, explicit public-length naming, and `Choice`-only result.
+
 Snapshots are generated with:
 
 ```text
