@@ -2,9 +2,6 @@ use crate::{CtDecodeSanitizationExt, SanitizationDecodeError};
 use base64_ng::{Alphabet, ct::CtEngine};
 use sanitization::{SecretBytes, SecureSanitize};
 
-#[cfg(any(feature = "alloc", all(feature = "memory-lock", not(miri))))]
-use base64_ng::DecodeError;
-
 #[cfg(feature = "alloc")]
 use sanitization::SecretVec;
 
@@ -162,6 +159,7 @@ where
         &self,
         input: &[u8],
     ) -> Result<SecretBytes<N>, SanitizationDecodeError> {
+        const { crate::stack::enforce_stack_secret_capacity::<N>() }
         let required = self.decoded_len(input)?;
         if required != N {
             return Err(SanitizationDecodeError::LengthMismatch {
@@ -218,6 +216,7 @@ where
         &self,
         input: &[u8],
     ) -> Result<LockedSecretBytes<N>, LockedSecretBytesGenerateError<SanitizationDecodeError>> {
+        const { crate::stack::enforce_stack_secret_capacity::<N>() }
         let required = self
             .decoded_len(input)
             .map_err(|error| LockedSecretBytesGenerateError::Generate(error.into()))?;
@@ -281,6 +280,7 @@ where
         &self,
         input: &[u8],
     ) -> Result<LockedSecretBytes<N>, LockedSecretBytesFillError<SanitizationDecodeError>> {
+        const { crate::stack::enforce_stack_secret_capacity::<N>() }
         let required = self
             .decoded_len(input)
             .map_err(|error| LockedSecretBytesFillError::Generate(error.into()))?;
@@ -372,33 +372,24 @@ where
     }
 
     #[cfg(feature = "alloc")]
-    fn decode_secret_vec(&self, input: &[u8]) -> Result<SecretVec, DecodeError> {
-        let required = self.decoded_len(input)?;
-        let mut output = alloc::vec![0; required];
-        let written = self.decode_slice_clear_tail(input, &mut output)?;
-        output.truncate(written);
-        Ok(SecretVec::from_vec(output))
+    fn decode_secret_vec(&self, input: &[u8]) -> Result<SecretVec, crate::SecretVecDecodeError> {
+        crate::bounded_decode::decode_bounded::<A, PAD, { crate::DEFAULT_SECRET_VEC_DECODE_MAX_LEN }>(
+            self, input,
+        )
     }
 
     #[cfg(feature = "alloc")]
     fn decode_secret_vec_staged<const STAGE: usize>(
         &self,
         input: &[u8],
-    ) -> Result<SecretVec, DecodeError> {
-        let required = self.decoded_len(input)?;
-        let mut output = alloc::vec![0; required];
-        let mut staging = [0u8; STAGE];
-        let written = match self.decode_slice_staged_clear_tail(input, &mut output, &mut staging) {
-            Ok(written) => written,
-            Err(error) => {
-                output.secure_sanitize();
-                staging.secure_sanitize();
-                return Err(error);
-            }
-        };
-        output.truncate(written);
-        staging.secure_sanitize();
-        Ok(SecretVec::from_vec(output))
+    ) -> Result<SecretVec, crate::SecretVecDecodeError> {
+        const { crate::stack::enforce_stack_secret_capacity::<STAGE>() }
+        crate::bounded_decode::decode_staged_bounded::<
+            A,
+            PAD,
+            { crate::DEFAULT_SECRET_VEC_DECODE_MAX_LEN },
+            STAGE,
+        >(self, input)
     }
 
     #[cfg(all(
@@ -422,7 +413,7 @@ where
     fn decode_locked_secret_vec(
         &self,
         input: &[u8],
-    ) -> Result<LockedSecretVec, LockedSecretVecFillError<DecodeError>> {
+    ) -> Result<LockedSecretVec, LockedSecretVecFillError<base64_ng::DecodeError>> {
         let required = self
             .decoded_len(input)
             .map_err(LockedSecretVecFillError::Fill)?;
@@ -452,7 +443,8 @@ where
     fn decode_locked_secret_vec_checked(
         &self,
         input: &[u8],
-    ) -> Result<LockedSecretVec, LockedDecodeError<LockedSecretVecFillError<DecodeError>>> {
+    ) -> Result<LockedSecretVec, LockedDecodeError<LockedSecretVecFillError<base64_ng::DecodeError>>>
+    {
         validate_before_locked_vec_allocation(self, input, |required| {
             LockedSecretVec::try_from_capacity_with_protection(
                 required,

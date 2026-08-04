@@ -248,6 +248,13 @@ before classified input reaches staging. The core `decode_assured` provider
 path is the only single-allocation route carrying core generation, quarantine,
 and fallible-teardown claims.
 
+Legacy `decode_secret_vec` convenience calls now enforce a 1 MiB decoded
+ceiling and return `SecretVecDecodeError`, including allocation failure. Import
+`CtDecodeSanitizationBoundedExt` and use `decode_secret_vec_bounded::<MAX>` for
+an application-specific public limit. Fixed-size and staged companion helpers
+reject stack capacities above 1,024 bytes at compile time; larger values must
+use bounded heap or protected storage.
+
 ## Final Checklist
 
 1. Replace ordinary engine calls with an explicit strict `Base64<Spec>` value.

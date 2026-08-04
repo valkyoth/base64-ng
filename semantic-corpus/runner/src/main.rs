@@ -5,7 +5,7 @@ use base64_ng::{
     ct,
 };
 use base64_ng_bytes::{Base64BytesExt, BytesError, BytesErrorKind};
-use base64_ng_sanitization::CtDecodeSanitizationExt;
+use base64_ng_sanitization::{CtDecodeSanitizationExt, SecretVecDecodeError};
 use base64_ng_serde::{Base64Standard, Base64UrlSafeNoPad};
 use bytes::Bytes;
 use std::io::Write;
@@ -296,7 +296,9 @@ fn exercise_sanitization_failure(case: &Case<'_>) {
             assert!(
                 matches!(
                     error,
-                    DecodeError::InvalidInput | DecodeError::InvalidLength
+                    SecretVecDecodeError::Decode(
+                        DecodeError::InvalidInput | DecodeError::InvalidLength
+                    )
                 ),
                 "{}: secret surface exposed a localized error",
                 case.id
@@ -309,7 +311,9 @@ fn exercise_sanitization_failure(case: &Case<'_>) {
             assert!(
                 matches!(
                     error,
-                    DecodeError::InvalidInput | DecodeError::InvalidLength
+                    SecretVecDecodeError::Decode(
+                        DecodeError::InvalidInput | DecodeError::InvalidLength
+                    )
                 ),
                 "{}: secret surface exposed a localized error",
                 case.id

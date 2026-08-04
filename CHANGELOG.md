@@ -11,6 +11,10 @@
 - The explicitly approved pre-seal usability reopening adds an `alloc`-only
   `Base64String<S>` that retains its exact codec policy and a deliberately
   small ordinary prelude. Secret and compatibility APIs remain explicit.
+- Sanitization dynamic secret decode now enforces a 1 MiB safe default or an
+  explicit const-generic output limit, reserves fallibly, and rejects
+  insufficient staging before allocation. Companion stack secret arrays are
+  compile-time limited to 1,024 bytes, aligned with the core secret frame.
 - Password-record work limits are cumulative across repeated input passes, and
   caller-owned PBKDF2/SHA-crypt behavior is executed without `alloc` in the
   focused release gate. Allocating record generators complete work admission

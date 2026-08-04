@@ -30,6 +30,10 @@
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
+#[cfg(feature = "alloc")]
+mod bounded_decode;
+#[cfg(all(test, feature = "alloc"))]
+mod bounded_decode_tests;
 mod compare;
 #[cfg(test)]
 mod compare_tests;
@@ -45,6 +49,7 @@ mod locked_vec;
 mod protected_decode;
 #[cfg(test)]
 mod protected_tests;
+mod stack;
 #[cfg(all(
     feature = "memory-lock",
     any(
@@ -65,8 +70,10 @@ mod protected_tests;
 ))]
 mod v2_protected;
 
+#[cfg(feature = "alloc")]
+pub use bounded_decode::{CtDecodeSanitizationBoundedExt, DEFAULT_SECRET_VEC_DECODE_MAX_LEN};
 pub use compare::{LockedSanitizationCtEqExt, SanitizationCtEqExt, sanitization_ct_eq_public_len};
-pub use error::{LockedDecodeError, SanitizationDecodeError};
+pub use error::{LockedDecodeError, SanitizationDecodeError, SecretVecDecodeError};
 #[cfg(feature = "memory-lock")]
 pub use protected_decode::CtDecodeSanitizationProtectedExt;
 use sanitization::SecretBytes;
@@ -91,9 +98,6 @@ use sanitization::SecretBytes;
 pub use v2_protected::{
     ProtectedAllocation, SanitizationProtectedDecodeError, SanitizationProtectedDecodeExt,
 };
-
-#[cfg(any(feature = "alloc", all(feature = "memory-lock", not(miri))))]
-use base64_ng::DecodeError;
 
 #[cfg(feature = "alloc")]
 use sanitization::SecretVec;
@@ -139,6 +143,7 @@ use sanitization::{LockedSecretBytes, LockedSecretBytesFillError, LockedSecretBy
 use sanitization::{LockedSecretVec, LockedSecretVecFillError};
 
 pub use sanitization::ct;
+pub use stack::MAX_SANITIZATION_STACK_SECRET_BYTES;
 
 /// Extension helpers for decoding with [`base64_ng::ct::CtEngine`] into
 /// `sanitization` secret containers.
@@ -154,7 +159,8 @@ pub trait CtDecodeSanitizationExt {
     /// returned.
     ///
     /// This method uses a private stack staging buffer and clears temporary
-    /// buffers before returning.
+    /// buffers before returning. `N` may not exceed
+    /// [`MAX_SANITIZATION_STACK_SECRET_BYTES`].
     ///
     /// # Errors
     ///
@@ -172,6 +178,7 @@ pub trait CtDecodeSanitizationExt {
     /// the hardened native controls used by `high-assurance`, to use this
     /// helper on supported native targets. Decode uses private stack staging,
     /// then copies into locked storage only after the full decode succeeds.
+    /// `N` may not exceed [`MAX_SANITIZATION_STACK_SECRET_BYTES`].
     ///
     /// The decoded length must exactly match `N`. A length mismatch returns
     /// [`SanitizationDecodeError::LengthMismatch`] inside the
@@ -218,6 +225,7 @@ pub trait CtDecodeSanitizationExt {
     /// This method exposes `sanitization` 2.0's integrity-aware fill error.
     /// Implementers must define the fill behavior explicitly; 2.0 provides no
     /// compatibility default that can discard integrity failures.
+    /// `N` may not exceed [`MAX_SANITIZATION_STACK_SECRET_BYTES`].
     ///
     /// For allocation-time fail-closed protection, use
     /// [`Self::decode_locked_secret_bytes_checked`].
@@ -304,29 +312,35 @@ pub trait CtDecodeSanitizationExt {
     /// enclave-adjacent deployments where the final heap allocation must not
     /// contain transient plaintext from rejected input, prefer
     /// [`Self::decode_secret_vec_staged`] with a stack staging capacity large
-    /// enough for the decoded value.
+    /// enough for the decoded value. This convenience method rejects more
+    /// than [`DEFAULT_SECRET_VEC_DECODE_MAX_LEN`] decoded bytes and reserves
+    /// allocation fallibly. Use
+    /// [`CtDecodeSanitizationBoundedExt::decode_secret_vec_bounded`] for a
+    /// protocol-specific limit.
     ///
     /// # Errors
     ///
-    /// Returns [`DecodeError`] if Base64 decoding fails or the decoded length
-    /// cannot be represented for the selected padding policy.
+    /// Returns [`SecretVecDecodeError`] for malformed input, output above the
+    /// default ceiling, or allocation failure.
     #[cfg(feature = "alloc")]
-    fn decode_secret_vec(&self, input: &[u8]) -> Result<SecretVec, DecodeError>;
+    fn decode_secret_vec(&self, input: &[u8]) -> Result<SecretVec, SecretVecDecodeError>;
 
     /// Decode `input` through a private stack staging buffer into a
     /// heap-backed clear-on-drop secret vector.
     ///
-    /// `STAGE` must be at least the decoded byte length of `input`.
+    /// `STAGE` must be at least the decoded byte length of `input` and may not
+    /// exceed [`MAX_SANITIZATION_STACK_SECRET_BYTES`]. Staging capacity is
+    /// checked before heap allocation.
     ///
     /// # Errors
     ///
-    /// Returns [`DecodeError`] if Base64 decoding fails or `STAGE` is smaller
-    /// than the required decoded length.
+    /// Returns [`SecretVecDecodeError`] for malformed input, output above the
+    /// default ceiling, allocation failure, or insufficient staging capacity.
     #[cfg(feature = "alloc")]
     fn decode_secret_vec_staged<const STAGE: usize>(
         &self,
         input: &[u8],
-    ) -> Result<SecretVec, DecodeError>;
+    ) -> Result<SecretVec, SecretVecDecodeError>;
 
     /// Decode `input` directly into heap-backed locked secret storage.
     ///
@@ -339,8 +353,8 @@ pub trait CtDecodeSanitizationExt {
     /// # Errors
     ///
     /// Returns a `sanitization` memory error if locked storage cannot be
-    /// created. Returns [`DecodeError`] from the fill branch if Base64 decoding
-    /// fails.
+    /// created. Returns [`base64_ng::DecodeError`] from the fill branch if
+    /// Base64 decoding fails.
     ///
     /// # Security
     ///
@@ -368,7 +382,7 @@ pub trait CtDecodeSanitizationExt {
     fn decode_locked_secret_vec(
         &self,
         input: &[u8],
-    ) -> Result<LockedSecretVec, LockedSecretVecFillError<DecodeError>>;
+    ) -> Result<LockedSecretVec, LockedSecretVecFillError<base64_ng::DecodeError>>;
 
     /// Decode into dynamic locked storage and reject degraded protection.
     ///
@@ -415,7 +429,7 @@ pub trait CtDecodeSanitizationExt {
     fn decode_locked_secret_vec_checked(
         &self,
         input: &[u8],
-    ) -> Result<LockedSecretVec, LockedDecodeError<LockedSecretVecFillError<DecodeError>>>;
+    ) -> Result<LockedSecretVec, LockedDecodeError<LockedSecretVecFillError<base64_ng::DecodeError>>>;
 }
 
 #[cfg(test)]

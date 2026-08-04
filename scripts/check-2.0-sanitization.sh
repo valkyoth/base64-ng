@@ -12,7 +12,10 @@ for required in \
     'LockedSecretVec::try_from_exact_len_with_protection' \
     'LockedSecretVec::try_from_capacity_bounded_with_protection' \
     'ProtectedAllocation::Staging' \
-    'ProtectedAllocation::Destination'
+    'ProtectedAllocation::Destination' \
+    'DEFAULT_SECRET_VEC_DECODE_MAX_LEN' \
+    'try_reserve_exact' \
+    'enforce_stack_secret_capacity'
 do
     if ! grep -R -F -q "$required" "$source_dir"; then
         echo "2.0 sanitization: missing protected-fill marker: $required" >&2
@@ -38,10 +41,24 @@ cargo test --manifest-path "$manifest" --all-features protected_tests
 echo "2.0 sanitization: complete suite"
 cargo test --manifest-path "$manifest" --all-features
 
+echo "2.0 sanitization: bounded allocation and stack policy"
+cargo test --manifest-path "$manifest" --all-features \
+    bounded_secret_vec_decode_enforces_public_capacity_before_output
+cargo test --manifest-path "$manifest" --all-features \
+    staged_secret_vec_decode_rejects_stage_before_output_allocation
+cargo test --manifest-path "$manifest" --all-features \
+    default_secret_vec_decode_rejects_output_above_one_mibibyte
+cargo test --manifest-path "$manifest" --all-features \
+    capacity_overflow_is_a_reported_allocation_failure
+cargo test --manifest-path "$manifest" --all-features \
+    capacity_limit_returns_without_calling_allocator
+cargo test --manifest-path "$manifest" --all-features \
+    staging_limit_returns_without_calling_allocator
+
 echo "2.0 sanitization: lint"
 cargo clippy --manifest-path "$manifest" --all-targets --all-features -- -D warnings
 
 echo "2.0 sanitization: documentation"
 RUSTDOCFLAGS="-D warnings" cargo doc --manifest-path "$manifest" --no-deps --all-features
 
-echo "2.0 sanitization: protected staging, result gate, and destination ok"
+echo "2.0 sanitization: protected staging, bounded allocation, stack limit, result gate, and destination ok"

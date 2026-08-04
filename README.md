@@ -339,6 +339,10 @@ own `alloc` feature. The `2.0.0` companion uses exact-pinned
 `sanitization` `=2.0.3` and exposes `sanitization::ct::Choice` comparison
 helpers through `SanitizationCtEqExt`. Locked containers additionally expose
 fallible integrity-checked comparison through `LockedSanitizationCtEqExt`.
+Heap-backed convenience decode has a 1 MiB default ceiling, reports reservation
+failure, and offers const-generic bounded variants for protocol limits.
+Stack-backed fixed and staged helpers reject capacities above 1,024 bytes at
+compile time.
 Built-in checked fixed-size and dynamic decode establish required memory-lock,
 dump, and fork controls before plaintext materialization. The 2.0 trait has no
 post-construction compatibility defaults: external implementations must define
@@ -379,6 +383,19 @@ assert!(secret.sanitization_verify(
     b"hello",
     "example compares public expected bytes"
 ));
+```
+
+For attacker-controlled dynamic input, enable `alloc` and make the public
+decoded-output ceiling explicit:
+
+```rust
+use base64_ng::ct;
+use base64_ng_sanitization::CtDecodeSanitizationBoundedExt;
+
+let secret = ct::STANDARD
+    .decode_secret_vec_bounded::<4096>(b"aGVsbG8=")
+    .unwrap();
+secret.with_secret(|bytes| assert_eq!(bytes, b"hello"));
 ```
 
 ```toml

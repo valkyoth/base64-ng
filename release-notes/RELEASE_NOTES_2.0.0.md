@@ -12,6 +12,9 @@
 - Adds bounded fixed-work secret encode/decode, explicit secret exposure,
   cleanup owners, protected-memory provider capabilities, backend health
   checks, and checked-backend quarantine and scalar retry.
+- Makes sanitization dynamic secret decode bounded and fallibly allocated by
+  default, with explicit protocol-specific limits and a 1,024-byte compile-time
+  ceiling for stack staging.
 - Extends admitted acceleration and evidence for x86, AArch64 NEON, and wasm
   `simd128`, while keeping RVV and SVE candidates non-dispatchable until native
   hardware evidence satisfies their admission contracts.

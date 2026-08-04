@@ -36,6 +36,54 @@ impl From<DecodeError> for SanitizationDecodeError {
     }
 }
 
+/// Error returned by bounded heap-backed secret decode helpers.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[non_exhaustive]
+pub enum SecretVecDecodeError {
+    /// The Base64 decoder rejected the input or staging capacity.
+    Decode(DecodeError),
+    /// Decoded output exceeds the caller-selected public capacity limit.
+    CapacityLimit {
+        /// Maximum accepted decoded bytes.
+        maximum: usize,
+        /// Decoded bytes required by the input.
+        actual: usize,
+    },
+    /// The complete bounded output allocation could not be reserved.
+    AllocationFailed {
+        /// Number of decoded bytes requested.
+        requested: usize,
+    },
+}
+
+impl core::fmt::Display for SecretVecDecodeError {
+    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Self::Decode(error) => error.fmt(formatter),
+            Self::CapacityLimit { maximum, actual } => write!(
+                formatter,
+                "decoded secret exceeds limit: maximum {maximum} bytes, requires {actual}"
+            ),
+            Self::AllocationFailed { requested } => {
+                write!(
+                    formatter,
+                    "failed to reserve {requested} decoded secret bytes"
+                )
+            }
+        }
+    }
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for SecretVecDecodeError {}
+
+impl From<DecodeError> for SecretVecDecodeError {
+    #[inline]
+    fn from(error: DecodeError) -> Self {
+        Self::Decode(error)
+    }
+}
+
 /// Error returned by fail-closed locked-secret decode helpers.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum LockedDecodeError<E> {
