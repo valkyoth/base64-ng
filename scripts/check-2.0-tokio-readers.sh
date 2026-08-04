@@ -4,6 +4,7 @@ set -eu
 manifest="crates/base64-ng-tokio/Cargo.toml"
 reader_source="crates/base64-ng-tokio/src/readers.rs"
 helper_source="crates/base64-ng-tokio/src/lib.rs"
+helper_tests="crates/base64-ng-tokio/src/lib_tests.rs"
 
 fail() {
     echo "2.0 Tokio readers: $1" >&2
@@ -18,6 +19,15 @@ for forbidden in \
 do
     if grep -F -q "$forbidden" "$reader_source"; then
         fail "independent legacy codec boundary remains: $forbidden"
+    fi
+done
+
+for required in \
+    'exhausted_budget_suspends_before_the_next_external_write' \
+    'final_successful_write_has_no_following_internal_suspension'
+do
+    if ! grep -F -q "$required" "$helper_tests"; then
+        fail "cooperative output cancellation regression is missing: $required"
     fi
 done
 

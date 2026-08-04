@@ -48,7 +48,9 @@ replaced allocation before it is returned to the allocator. Collection,
 incremental transformation, and output delivery consume Tokio cooperative
 budget between bounded chunks. This keeps always-ready custom readers and
 short-writing writers from monopolizing a runtime worker, but unlimited helpers
-still require a trusted finite source.
+still require a trusted finite source. Output delivery checks budget before the
+next irreversible write; after the final write commits the complete frame, the
+helper returns success without another internal cancellation point.
 
 ```rust
 use base64_ng::STRICT_STANDARD_PADDED;

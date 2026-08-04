@@ -31,6 +31,9 @@ cooperative budget after every bounded chunk. This gives other ready tasks an
 opportunity to run even when custom `AsyncRead` or `AsyncWrite` implementations
 always return `Poll::Ready` with minimal progress. It does not impose a time or
 size ceiling: peer-controlled sources must still use a finite framing limit.
+Output delivery consumes budget before each prospective external write. Once a
+final write accepts the complete frame, the helper returns success without an
+additional internal suspension point that could make full commitment ambiguous.
 
 ## Current Status
 

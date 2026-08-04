@@ -341,8 +341,9 @@ The release gate runs:
   arbitrary deterministic chunk/`Pending` schedules, cancellation/resume,
   exact-frame adjacent-byte preservation, irrevocable plaintext-prefix
   behavior, wrapped-reader unwind cleanup, current-thread cooperative fairness
-  across collection/transformation/delivery, release tests, Miri coverage, and
-  shared-state routing checks
+  across collection/transformation/delivery, pre-write cancellation boundaries,
+  final-write completion, release tests, Miri coverage, and shared-state routing
+  checks
 - Tokio `AsyncWrite` integration through `scripts/check-2.0-tokio-writers.sh`,
   including bounded acceptance, short writes, arbitrary deterministic
   backpressure, dropped pending futures, retryable write/flush/shutdown

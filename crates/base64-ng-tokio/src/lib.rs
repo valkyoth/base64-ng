@@ -40,6 +40,9 @@ mod decoder_writer;
 mod encoder_writer;
 mod queue;
 mod readers;
+#[cfg(test)]
+#[path = "lib_tests.rs"]
+mod tests;
 
 pub use decoder_writer::DecoderWriter;
 pub use encoder_writer::EncoderWriter;
@@ -379,6 +382,9 @@ where
     W: AsyncWrite + Unpin + ?Sized,
 {
     while !output.is_empty() {
+        // Suspend before the next irreversible external side effect, never
+        // after a final successful write has committed the complete frame.
+        tokio::task::coop::consume_budget().await;
         let written = writer.write(output).await?;
         if written == 0 {
             return Err(io::Error::new(
@@ -392,7 +398,6 @@ where
             ));
         }
         output = &output[written..];
-        tokio::task::coop::consume_budget().await;
     }
     Ok(())
 }
