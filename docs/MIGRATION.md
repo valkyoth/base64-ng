@@ -1,320 +1,242 @@
-# Migrating from the `base64` Crate
+# Migrating To base64-ng 2.0
 
-This guide targets projects using `base64` `0.22.x`.
+This guide covers migration from `base64-ng` 1.3.9 and from the `base64`
+crate's ordinary Standard and URL-safe engines. The 2.0 API makes strictness,
+destination mutation, compatibility parsing, secret handling, and protocol
+scope visible at the call site.
 
-`base64-ng` is intentionally stricter and smaller. It does not try to mirror
-every compatibility setting from `base64`; it provides a strict RFC 4648 scalar
-core, caller-owned buffers, optional allocation helpers, and release evidence.
-
-The migration examples are covered by a local smoke crate:
+The examples are compiled by:
 
 ```sh
+scripts/check-2.0-migration-smoke.sh
 scripts/check_migration_smoke.sh
 ```
 
-The standard release gate runs this script so strict standard, URL-safe no-pad,
-MIME/PEM wrapping, legacy whitespace, custom alphabets, stack buffers, secret
-buffers, and stream wrapper migration examples stay in sync with the crate.
+The first command exercises the canonical 2.0 surface. The second proves that
+the reviewed 1.x compatibility inventory still compiles; compatibility names
+are not the recommended API for new 2.0 code.
 
 ## Dependency
 
-Before:
+```toml
+[dependencies]
+base64-ng = "2.0.0"
+```
+
+For `no_std` without allocation:
 
 ```toml
 [dependencies]
-base64 = "0.22"
+base64-ng = { version = "2.0.0", default-features = false }
 ```
 
-After:
+Enable ordinary runtime SIMD with `features = ["simd"]`, synchronous
+`std::io` adapters with `features = ["stream"]`, and secret owners with
+`features = ["secrets"]`. Secret operations remain scalar even when ordinary
+SIMD is enabled.
 
-```toml
-[dependencies]
-base64-ng = "1.3.9"
-```
+## Strict Presets
 
-For embedded or freestanding use:
+Use the explicit RFC 4648 presets:
 
-```toml
-[dependencies]
-base64-ng = { version = "1.3.9", default-features = false }
-```
-
-### Sanitization Companion In 1.3.9
-
-`base64-ng-sanitization` `1.3.9` migrates from `sanitization` 1.x to exact-pinned
-`sanitization` `2.0.3`. The existing `decode_locked_secret_bytes` method keeps
-its `LockedSecretBytesGenerateError<SanitizationDecodeError>` return type for
-source compatibility. Use the additive `decode_locked_secret_bytes_fill`
-method when the sanitization 2.0 `LockedSecretBytesFillError` integrity variant
-must be propagated explicitly.
-
-Mapped storage exposure is checked in sanitization 2.0. Replace
-`LockedSecretBytes::with_secret` with `try_expose_secret` and
-`LockedSecretVec::with_secret` with `try_with_secret`. Prefer
-`LockedSanitizationCtEqExt::try_sanitization_ct_eq` or
-`try_sanitization_verify` so canary corruption is returned rather than routed
-through the compatibility comparison trait's explicit fail-stop behavior.
-
-The companion feature `strict-compare` replaces sanitization's old `strict-ct`
-name. `strict-ct` remains a temporary alias in `base64-ng-sanitization` for
-source migration. The companion's `high-assurance` profile now includes strict
-comparison and strict random canaries and is intended for supported x86_64 and
-AArch64 native deployments.
-
-For fail-closed fixed locked-storage admission, use
-`decode_locked_secret_bytes_checked`. It requires memory locking, dump
-exclusion, and fork exclusion before decoding plaintext directly into the
-protected mapping. The built-in `decode_locked_secret_vec_checked`
-implementation uses sanitization 2.0.3's protected-capacity constructor to
-establish the same required controls before its decode closure runs. External
-trait implementations retain a post-fill compatibility default and must
-override it for the same guarantee. Existing non-checked helpers preserve their
-API and require callers to inspect `protection_report()` before relying on dump
-or fork exclusion.
-
-Import `CtDecodeSanitizationProtectedExt` when callers need
-`ProtectedSecretFillError` to distinguish required-control failures from
-canary-integrity failures. Use
-`decode_locked_secret_vec_checked_bounded::<MAX>` for untrusted runtime-size
-inputs so oversized decoded capacity is rejected before protected allocation.
-
-## Engine Mapping
-
-| `base64` engine | `base64-ng` engine |
+| Policy | 2.0 value |
 | --- | --- |
-| `base64::engine::general_purpose::STANDARD` | `base64_ng::STANDARD` |
-| `base64::engine::general_purpose::STANDARD_NO_PAD` | `base64_ng::STANDARD_NO_PAD` |
-| `base64::engine::general_purpose::URL_SAFE` | `base64_ng::URL_SAFE` |
-| `base64::engine::general_purpose::URL_SAFE_NO_PAD` | `base64_ng::URL_SAFE_NO_PAD` |
+| Standard, canonical padding required | `STRICT_STANDARD_PADDED` |
+| Standard, padding forbidden | `STRICT_STANDARD_UNPADDED` |
+| URL-safe, canonical padding required | `STRICT_URL_SAFE_PADDED` |
+| URL-safe, padding forbidden | `STRICT_URL_SAFE_UNPADDED` |
 
-## Encoding
+The historical `STANDARD`, `STANDARD_NO_PAD`, `URL_SAFE`, and
+`URL_SAFE_NO_PAD` names remain in the reviewed compatibility inventory, but
+new code should use the explicit strict names.
 
-`base64`:
+Strict decode rejects whitespace, mixed alphabets, impossible lengths,
+misplaced or forbidden padding, trailing data after terminal padding, and
+noncanonical trailing bits.
 
-```rust
-use base64::{Engine as _, engine::general_purpose::STANDARD};
+## One-Shot Operations
 
-let encoded = STANDARD.encode(b"hello");
-assert_eq!(encoded, "aGVsbG8=");
-```
-
-`base64-ng` with allocation:
-
-```rust
-use base64_ng::STANDARD;
-
-let encoded = STANDARD.encode_string(b"hello").unwrap();
-assert_eq!(encoded, "aGVsbG8=");
-```
-
-`base64-ng` with caller-owned output:
+The canonical caller-owned methods are transactional. A returned error leaves
+the complete destination unchanged.
 
 ```rust
-use base64_ng::{STANDARD, checked_encoded_len};
+use base64_ng::STRICT_STANDARD_PADDED;
 
-let input = b"hello";
-let mut output = vec![0u8; checked_encoded_len(input.len(), true).unwrap()];
-let written = STANDARD.encode_slice(input, &mut output).unwrap();
-output.truncate(written);
+let mut encoded = [0xa5; 12];
+let written = STRICT_STANDARD_PADDED
+    .encode_into(b"hello", &mut encoded)
+    .unwrap();
+assert_eq!(&encoded[..written], b"aGVsbG8=");
+assert_eq!(&encoded[written..], &[0xa5; 4]);
 
-assert_eq!(output, b"aGVsbG8=");
+let before = encoded;
+assert!(STRICT_STANDARD_PADDED
+    .decode_into(b"!!!!", &mut encoded)
+    .is_err());
+assert_eq!(encoded, before);
 ```
 
-### Custom Alphabet Encoding In 1.3.8
+With `alloc`, use `encode_to_string`, `decode_to_vec`, `encode_append`, and
+`decode_append`. Append operations roll back the appended suffix on returned
+errors and supported unwinding; they cannot undo side effects in arbitrary
+formatters or I/O sinks.
 
-`Alphabet::ENCODE` is the authoritative encoding table for every `Engine`
-surface. A hand-written `Alphabet::encode` override remains callable directly
-for API compatibility, but `Engine` no longer invokes it. Applications that
-previously relied on an override for custom encoding output or performance
-must move that behavior into the `ENCODE` table or use their own explicit
-low-level helper. Standard and URL-safe table families use crate-owned
-compile-time-selected arithmetic mappers; other custom tables retain the
-conservative fixed-scan mapper.
+| 1.x name | Canonical 2.0 name |
+| --- | --- |
+| `encode_slice` | `encode_into` |
+| `decode_slice` / `decode_slice_clear_tail` | `decode_into` |
+| `encode_string` | `encode_to_string` |
+| `decode_vec` | `decode_to_vec` |
+| `encode_buffer` | `encode_bounded` or `encode_array` |
+| `decode_buffer` | `decode_bounded` or `decode_array` |
 
-### Custom Alphabet Decoding In 2.0
+## Incremental And In-Place Operations
 
-`Alphabet::ENCODE` is also the authoritative decode table for every `Engine`
-surface. A hand-written `Alphabet::decode` override remains directly callable
-for compatibility, but ordinary scalar, SIMD, and secret engine paths do not
-execute it. Move custom decode mappings into `ENCODE`; stateful or context-
-dependent method overrides no longer affect `Engine` results.
-
-## Decoding
-
-`base64`:
+`codec.encoder()` and `codec.decoder()` are allocation-free state machines.
+Every update returns explicit consumed/produced progress and a `Status`.
+Committed output from an incremental operation is not transactional; after an
+error, only the previously reported prefix is observable.
 
 ```rust
-use base64::{Engine as _, engine::general_purpose::STANDARD};
+use base64_ng::{Status, STRICT_STANDARD_PADDED};
 
-let decoded = STANDARD.decode("aGVsbG8=").unwrap();
-assert_eq!(decoded, b"hello");
+let mut state = STRICT_STANDARD_PADDED.encoder();
+let mut output = [0u8; 8];
+let step = state.update(b"hello", &mut output).unwrap();
+let mut written = step.progress().output_produced();
+let final_step = state.finish(&mut output[written..]).unwrap();
+written += final_step.progress().output_produced();
+assert_eq!(final_step.status(), Status::Complete);
+assert_eq!(&output[..written], b"aGVsbG8=");
 ```
 
-`base64-ng` with allocation:
+The 2.0 in-place methods return initialized lengths. Ordinary in-place decode
+may expose a committed prefix before a later error. Use `decode_into` when the
+destination must remain unchanged, or `decode_in_place_staged` for the
+validated-before-mutation secret-adjacent contract.
 
 ```rust
-use base64_ng::STANDARD;
+use base64_ng::STRICT_STANDARD_PADDED;
 
-let decoded = STANDARD.decode_vec(b"aGVsbG8=").unwrap();
-assert_eq!(decoded, b"hello");
+let mut buffer = [0u8; 16];
+buffer[..6].copy_from_slice(b"secret");
+let encoded = STRICT_STANDARD_PADDED.encode_in_place(&mut buffer, 6).unwrap();
+let decoded = STRICT_STANDARD_PADDED
+    .decode_in_place(&mut buffer, encoded)
+    .unwrap();
+assert_eq!(&buffer[..decoded], b"secret");
 ```
 
-`base64-ng` with caller-owned output:
+## Compatibility Policies
 
-```rust
-use base64_ng::{STANDARD, decoded_capacity};
+Compatibility behavior is never enabled by a general permissive switch:
 
-let input = b"aGVsbG8=";
-let mut output = vec![0u8; decoded_capacity(input.len())];
-let written = STANDARD.decode_slice(input, &mut output).unwrap();
-output.truncate(written);
+- `web::FORGIVING` implements the exact ordinary WHATWG forgiving policy.
+- `legacy::ASCII_WHITESPACE` ignores only space, tab, CR, and LF around the
+  otherwise strict codec supplied by the caller.
+- `compat::*` contains explicitly named padding-indifferent and
+  noncanonical-trailing-bit expert policies.
+- `MIME_BODY_STRICT`, `PEM_BODY_LF`, and `PEM_BODY_CRLF` are body-formatting
+  conveniences, not complete protocol parsers.
 
-assert_eq!(output, b"hello");
-```
+Compatibility codecs are ordinary APIs. They are intentionally rejected by
+the secret API.
 
-## Strictness Differences
+## Custom Alphabets And Specifications
 
-`base64-ng` rejects ambiguous input by default:
+Replace hand-written `Alphabet` implementations with `ValidatedAlphabet` or a
+const validated alphabet. `CodecBuilder` validates padding and trailing-bit
+policies before constructing an immutable `Base64<RuntimeSpec>` value. Invalid
+specifications cannot be constructed through safe APIs.
 
-- whitespace is not ignored
-- mixed standard and URL-safe alphabets are rejected
-- padding in the payload body is rejected
-- trailing bytes after terminal padding are rejected
-- non-canonical trailing bits are rejected
-- padded engines require canonical padding
+Named alphabet-level values such as `BCRYPT_ALPHABET_NO_PAD`,
+`PBKDF2_ALPHABET_NO_PAD`, `IMAP_MUTF7_ALPHABET_NO_PAD`, and `BINHEX_ALPHABET`
+do not imply complete surrounding protocols.
 
-If the old project depends on line-wrapped or spaced Base64, use the explicit
-legacy whitespace APIs:
+## Secret Operations
 
-```rust
-use base64_ng::STANDARD;
-
-let decoded = STANDARD.decode_vec_legacy(b" aG\r\nVs\tbG8= ").unwrap();
-assert_eq!(decoded, b"hello");
-```
-
-The legacy profile only ignores ASCII space, tab, carriage return, and line
-feed. It still rejects mixed alphabets, malformed padding, trailing payload
-after padding, and non-canonical trailing bits. If the old project accepts
-broader non-canonical input, normalize or reject that input before calling
-`base64-ng`.
-
-## Length And Memory Handling
-
-`base64-ng` exposes recoverable length helpers:
+The 1.x `ct::*`, `SecretBuffer`, and `encode_secret`/`decode_secret` names are
+compatibility surfaces. New code enables `secrets` and uses `secret::*` with a
+strict eligible codec:
 
 ```rust
 use base64_ng::{
-    LineEnding, LineWrap, checked_encoded_len, checked_wrapped_encoded_len, decoded_capacity,
+    secret::{SecretArrayFrame, SecretInput},
+    STRICT_STANDARD_PADDED,
 };
 
-assert_eq!(checked_encoded_len(5, true), Some(8));
-assert_eq!(
-    checked_wrapped_encoded_len(5, true, LineWrap::new(4, LineEnding::Lf)),
-    Some(9)
-);
-assert_eq!(decoded_capacity(8), 6);
+let input = SecretInput::new(b"aGVsbG8=");
+let mut frame = SecretArrayFrame::<5>::new(&STRICT_STANDARD_PADDED).unwrap();
+frame.update(&input).unwrap();
+let secret = frame.finish().unwrap();
+assert_eq!(secret.expose_secret().as_bytes(), b"hello");
 ```
 
-Use `checked_encoded_len` for untrusted length metadata before allocating.
-Use `decode_slice` or `decode_in_place` when a caller-owned memory limit is
-required.
+Secret errors are opaque, frames are bounded, output is withheld until the
+result gate, and crate-owned initialized storage is wiped on ordinary drop and
+supported unwind paths. This is constant-time-oriented engineering, not a
+formal cryptographic constant-time guarantee. Abort, process termination,
+deliberate destructor suppression, caller-owned input, swap, hibernation,
+crash dumps, and historical register/cache copies remain outside the cleanup
+claim.
 
-## Streaming
+`BestEffortProvider` is finite, volatile, generation-scoped, and in-process.
+Its journal orders bounded teardown retries only. Base 2.0 ships no persistent
+provider and makes no restart- or crash-recovery claim.
 
-Enable the `stream` feature for `std::io` wrappers:
+## Streaming And Ecosystem Companions
+
+The core `stream` feature keeps the synchronous `std::io` adapters. Async and
+ecosystem integrations are separate synchronized packages:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.3.9", features = ["stream"] }
+base64-ng = "2.0.0"
+base64-ng-tokio = "2.0.0"
+base64-ng-bytes = "2.0.0"
+base64-ng-serde = "2.0.0"
 ```
 
-```rust
-use std::io::Write;
-use base64_ng::{STANDARD, stream::Encoder};
+The Tokio and bytes state machines expose accepted/committed progress,
+bounded pending buffers, fail-closed post-error states, and checked recovery.
+Panics from caller-provided I/O or trait implementations may propagate after
+crate-owned state is latched and cleaned; side effects already performed by
+the caller implementation cannot be rolled back.
 
-let mut encoder = Encoder::new(Vec::new(), STANDARD);
-assert_eq!(encoder.engine(), STANDARD);
-assert!(encoder.is_padded());
+## Protocol Companions
 
-encoder.write_all(b"he").unwrap();
-assert!(encoder.has_pending_input());
+Use the scoped package instead of combining ordinary Base64 helpers into a
+partial protocol parser:
 
-encoder.write_all(b"llo").unwrap();
-assert!(encoder.has_pending_input());
+| Package | Boundary |
+| --- | --- |
+| `base64-ng-mime` | RFC 2045 Section 6.8 transfer bodies |
+| `base64-ng-pem` | RFC 7468 textual encoding |
+| `base64-ng-openpgp` | RFC 9580 ASCII armor |
+| `base64-ng-multibase` | Four pinned Base64-family multibase entries |
+| `base64-ng-imap` | RFC 3501 modified-Base64 payload bytes only |
+| `base64-ng-password` | Passlib PBKDF2 and SHA-crypt fields/records only |
 
-encoder.try_finish().unwrap();
-assert!(encoder.is_finalized());
+Each parser is bounded and has an explicitly named strict or compatible
+policy. Locked RFC/specification sources are retained in the repository but
+excluded from published packages.
 
-let encoded = encoder.finish().unwrap();
+## Sanitization 2.0
 
-assert_eq!(encoded, b"aGVsbG8=");
-```
+`base64-ng-sanitization` 2.0 uses exact-pinned `sanitization` 2.0.3. Prefer its
+2.0 `SanitizationProtectedDecodeExt` methods for protected fixed or bounded
+dynamic decode. Required memory-lock, dump, and fork controls are established
+before classified input reaches staging. The core `decode_assured` provider
+path is the only single-allocation route carrying core generation, quarantine,
+and fallible-teardown claims.
 
-Writer adapters expose `try_finish()` when a caller wants to finalize pending
-Base64 input and flush the wrapped writer without immediately consuming the
-adapter. After successful finalization, later non-empty writes return
-`InvalidInput`. Writer adapters buffer encoded or decoded output internally
-before draining it into the wrapped writer, so failed wrapped writes can be
-retried by calling `flush()` or `try_finish()` again without re-encoding or
-re-decoding accepted input. Direct `write()` calls may report partial progress;
-use `write_all()` when the whole input slice must be consumed. Stream adapters
-also expose non-sensitive state helpers such as
-`engine()`, `is_padded()`, `pending_len()`, `has_pending_input()`,
-`pending_input_needed_len()`, `buffered_output_len()`,
-`buffered_output_capacity()`, `buffered_output_remaining_capacity()`, and
-`has_finished_input()`, and decoder-side `has_terminal_padding()` for framed
-protocols and audit logging. Use `can_into_inner()` and `try_into_inner()` when
-recovering the wrapped reader or writer should be refused if it would discard
-pending input or buffered output. Decoder writer and reader adapters also
-expose `is_failed()` and fail closed after malformed Base64 input; unchecked
-`into_inner()` remains available for explicit recovery of the wrapped object
-after a decode error.
+## Final Checklist
 
-The core crate's `tokio` feature is reserved, inert, and dependency-free. For
-Tokio applications, use the optional `base64-ng-tokio` companion crate instead:
-
-```toml
-[dependencies]
-base64-ng = "1.3.9"
-base64-ng-tokio = "1.3.9"
-tokio = { version = "1.53.1", features = ["io-util"] }
-```
-
-```rust
-use base64_ng::STANDARD;
-use base64_ng_tokio::{encode_reader_to_writer_limited, EncoderReader, EncoderWriter};
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
-
-# async fn example() -> std::io::Result<()> {
-let mut input = &b"hello"[..];
-let mut output = Vec::new();
-encode_reader_to_writer_limited(&STANDARD, &mut input, &mut output, 1024).await?;
-assert_eq!(output, b"aGVsbG8=");
-
-let mut reader = EncoderReader::new(&b"hello"[..], STANDARD);
-let mut streamed = Vec::new();
-reader.read_to_end(&mut streamed).await?;
-assert_eq!(streamed, b"aGVsbG8=");
-
-let mut writer = EncoderWriter::new(Vec::new(), STANDARD);
-writer.write_all(b"hello").await?;
-writer.shutdown().await?;
-let encoded = writer.into_inner()?;
-assert_eq!(encoded, b"aGVsbG8=");
-# Ok(())
-# }
-```
-
-## Security Notes
-
-The scalar encode/decode core has no external crate dependencies and remains
-safe Rust. The only scalar-side unsafe code is the audited volatile wipe helpers
-used by clear-tail and secret-buffer cleanup APIs; architecture-specific unsafe
-code remains limited to the dedicated SIMD boundary.
-Release gates include tests, clippy, docs, dependency policy, RustSec audit,
-license review, SBOM generation, reproducible package/build checks, and Miri
-when installed.
-
-`base64-ng` currently hardens obvious timing pitfalls in scalar encode/decode,
-but it does not claim a formally verified cryptographic constant-time API.
+1. Replace ordinary engine calls with an explicit strict `Base64<Spec>` value.
+2. Choose transactional, incremental, in-place, or sink semantics explicitly.
+3. Move permissive parsing to a named `web`, `legacy`, `compat`, or protocol
+   policy.
+4. Move secrets to `secret::*` and keep declassification explicit.
+5. Enforce input and output ceilings before allocation or protected mapping.
+6. Treat caller callback/I/O panics and already committed external side effects
+   as application boundaries.

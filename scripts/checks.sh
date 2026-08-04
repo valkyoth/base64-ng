@@ -40,8 +40,11 @@ scripts/validate-api-audit.sh
 echo "checks: 2.0 API migration ledger"
 scripts/validate-2.0-api-ledger.sh
 
-echo "checks: frozen 1.3.9 and 2.0 development public API snapshots"
+echo "checks: frozen 1.3.9 and 2.0.0 public API snapshots"
 scripts/check-api-snapshots.sh
+
+echo "checks: 2.0 release-candidate freeze"
+scripts/check-2.0-release-freeze.sh
 
 echo "checks: 2.0 migration examples"
 scripts/check-2.0-migration-smoke.sh

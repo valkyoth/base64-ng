@@ -68,6 +68,7 @@ test -s README.md
 test -s CONTRIBUTING.md
 test -s SECURITY.md
 test -d release-notes
+test -s release-notes/RELEASE_NOTES_2.0.0.md
 test -s security/pentest/README.md
 test -s docs/API_AUDIT.md
 test -s docs/2.0_GOVERNANCE.md
@@ -81,6 +82,7 @@ test -s docs/2.0_DERIVE_HARDENING.md
 test -s docs/2.0_PROTOCOL_REGISTRY.md
 test -s docs/2.0_FORMAL_VERIFICATION.md
 test -s docs/2.0_TIMING_AND_CODEGEN.md
+test -s docs/2.0_RELEASE_FREEZE.md
 test -s kani/harnesses.tsv
 test -s protocol-registry/v1/SHA256SUMS
 test -s protocol-registry/v1/protocols.tsv
@@ -148,6 +150,14 @@ if [ "$release_policy" = "development-blocked" ]; then
     fi
 fi
 
+if [ "$release_policy" = "synced-family" ]; then
+    publish_count="$(grep -F -c 'publish = true' release-crates.toml)"
+    if [ "$publish_count" -ne 13 ] || grep -F -q 'publish = false' release-crates.toml; then
+        echo "release metadata: 2.0 synchronized family must publish all 13 Rust packages" >&2
+        exit 1
+    fi
+fi
+
 for required_script in \
     "scripts/check-2.0-feature-contract.sh" \
     "scripts/check-2.0-const-buffers.sh" \
@@ -170,6 +180,7 @@ for required_script in \
     "scripts/check-2.0-in-place-sanitizers.sh" \
     "scripts/check-2.0-fuzz-campaigns.sh" \
     "scripts/check-2.0-wasm-loader.sh" \
+    "scripts/check-2.0-release-freeze.sh" \
     "scripts/check-2.0-neon-hot-paths.sh" \
     "scripts/capture-2.0-neon-admission.sh" \
     "scripts/validate-2.0-dispatch-matrix.sh" \
@@ -626,18 +637,19 @@ for required_package_file in \
     "rust-toolchain.toml" \
     "SECURITY.md" \
     "api-snapshots/README.md" \
-    "api-snapshots/2.0-development/base64-ng.txt" \
-    "api-snapshots/2.0-development/base64-ng-bytes.txt" \
-    "api-snapshots/2.0-development/base64-ng-derive.txt" \
-    "api-snapshots/2.0-development/base64-ng-imap.txt" \
-    "api-snapshots/2.0-development/base64-ng-mime.txt" \
-    "api-snapshots/2.0-development/base64-ng-multibase.txt" \
-    "api-snapshots/2.0-development/base64-ng-password.txt" \
-    "api-snapshots/2.0-development/base64-ng-openpgp.txt" \
-    "api-snapshots/2.0-development/base64-ng-pem.txt" \
-    "api-snapshots/2.0-development/base64-ng-serde.txt" \
-    "api-snapshots/2.0-development/base64-ng-subtle.txt" \
-    "api-snapshots/2.0-development/base64-ng-tokio.txt" \
+    "api-snapshots/v2.0.0/base64-ng.txt" \
+    "api-snapshots/v2.0.0/base64-ng-bytes.txt" \
+    "api-snapshots/v2.0.0/base64-ng-derive.txt" \
+    "api-snapshots/v2.0.0/base64-ng-imap.txt" \
+    "api-snapshots/v2.0.0/base64-ng-mime.txt" \
+    "api-snapshots/v2.0.0/base64-ng-multibase.txt" \
+    "api-snapshots/v2.0.0/base64-ng-password.txt" \
+    "api-snapshots/v2.0.0/base64-ng-openpgp.txt" \
+    "api-snapshots/v2.0.0/base64-ng-pem.txt" \
+    "api-snapshots/v2.0.0/base64-ng-sanitization.txt" \
+    "api-snapshots/v2.0.0/base64-ng-serde.txt" \
+    "api-snapshots/v2.0.0/base64-ng-subtle.txt" \
+    "api-snapshots/v2.0.0/base64-ng-tokio.txt" \
     "api-snapshots/v1.3.9/base64-ng.txt" \
     "api-snapshots/v1.3.9/base64-ng-bytes.txt" \
     "api-snapshots/v1.3.9/base64-ng-derive.txt" \
@@ -732,6 +744,7 @@ for required_package_file in \
     "scripts/check-2.0-in-place.sh" \
     "scripts/check-2.0-in-place-sanitizers.sh" \
     "scripts/check-2.0-fuzz-campaigns.sh" \
+    "scripts/check-2.0-release-freeze.sh" \
     "scripts/check-2.0-neon-hot-paths.sh" \
     "scripts/check-2.0-one-shot.sh" \
     "scripts/check-2.0-profiles.sh" \

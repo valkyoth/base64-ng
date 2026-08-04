@@ -53,20 +53,23 @@ removals, capability edges, and companion boundaries before implementation.
 
 ## Current Status
 
-The current public release is `1.3.9`.
+This source tree is the frozen `2.0.0` package-family candidate. The latest
+published crates.io release remains `1.3.9` until the final external review,
+green required CI, and signed `v2.0.0` tag in Commit 55. The synchronized
+release plan is publishable, but the release helper still refuses an untagged,
+dirty, or incorrectly signed source tree.
+The [2.0 release freeze](docs/2.0_RELEASE_FREEZE.md) and
+[2.0 release notes](release-notes/RELEASE_NOTES_2.0.0.md) describe the exact
+candidate presented for final review.
 
-The development branch reports package version `2.0.0` so source builds and
-device evidence identify the API generation being tested. It is not
-publishable: `release-crates.toml` remains fail-closed under the
-`development-blocked` policy until the final 2.0 acceptance checkpoint. Use
-the published `1.3.9` requirement for crates.io consumers, or use an explicit
-Git dependency when testing the development branch:
+Use the following Git dependency only when testing the exact candidate before
+the signed release:
 
 ```toml
 base64-ng = { git = "https://github.com/valkyoth/base64-ng", rev = "<reviewed-commit>" }
 ```
 
-`1.3.9` is a dependency-migration and crate-family synchronization patch on top
+The signed `1.3.9` baseline was a dependency-migration and crate-family synchronization patch on top
 of the `1.3.0` implementation-completion release, the `1.3.1` Tokio
 writer patch, the `1.3.2` non-standard SIMD surface review, the `1.3.3`
 wasm SIMD runtime-dispatch and profile-ergonomics patch, the `1.3.4`
@@ -89,7 +92,7 @@ and normal strict decode when the binary is compiled with
 `target-feature=+simd128`, the `simd` feature, and the explicit
 `allow-wasm32-best-effort-wipe` feature.
 
-The latest patch in this line is `1.3.9`, which keeps all workspace crate
+That baseline keeps all 1.x workspace crate
 versions aligned while migrating `base64-ng-sanitization` to exact-pinned
 `sanitization` `2.0.3`. Locked fixed-size decode adds the 2.0 fill-error
 model, locked comparisons have an integrity-checked extension API, and the
@@ -287,7 +290,7 @@ The active release toolchain is Rust `1.97.1`. MSRV remains Rust `1.90.0` and
 is checked separately in CI so the project can build and test with the latest
 stable compiler without dropping older supported users.
 
-Compatibility evidence for the `1.3.9` workspace:
+Compatibility evidence for the `2.0.0` workspace candidate:
 
 | Rust | Local Evidence |
 | --- | --- |
@@ -306,8 +309,24 @@ Compatibility evidence for the `1.3.9` workspace:
 
 ```toml
 [dependencies]
-base64-ng = "1.3.9"
+base64-ng = "2.0.0"
 ```
+
+For new code, use an explicit strict RFC 4648 preset:
+
+```rust
+use base64_ng::STRICT_STANDARD_PADDED;
+
+let encoded = STRICT_STANDARD_PADDED.encode_to_string(b"hello").unwrap();
+assert_eq!(encoded, "aGVsbG8=");
+
+let decoded = STRICT_STANDARD_PADDED.decode_to_vec(encoded.as_bytes()).unwrap();
+assert_eq!(decoded, b"hello");
+```
+
+The historical `STANDARD` family remains as reviewed compatibility API.
+Forgiving web decode, legacy whitespace, line wrapping, and protocol-specific
+transforms require separately named opt-in APIs.
 
 The crate is dual-licensed:
 
@@ -397,7 +416,7 @@ secret API or wasm-memory views. See
 `base64-ng-sanitization` provides extension helpers for
 `base64_ng::ct::CtEngine` that decode directly into
 `sanitization::SecretBytes<N>` in `no_std`, with `SecretVec` helpers behind its
-own `alloc` feature. The `1.3.9` companion uses exact-pinned
+own `alloc` feature. The `2.0.0` companion uses exact-pinned
 `sanitization` `=2.0.3` and exposes `sanitization::ct::Choice` comparison
 helpers through `SanitizationCtEqExt`. Locked containers additionally expose
 fallible integrity-checked comparison through `LockedSanitizationCtEqExt`.
@@ -425,8 +444,8 @@ checks:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.3.9", default-features = false }
-base64-ng-sanitization = { version = "1.3.9", default-features = false }
+base64-ng = { version = "2.0.0", default-features = false }
+base64-ng-sanitization = { version = "2.0.0", default-features = false }
 ```
 
 ```rust
@@ -445,7 +464,7 @@ assert!(secret.sanitization_verify(
 
 ```toml
 [dependencies]
-base64-ng-sanitization = { version = "1.3.9", features = ["high-assurance"] }
+base64-ng-sanitization = { version = "2.0.0", features = ["high-assurance"] }
 ```
 
 ```rust
@@ -634,7 +653,7 @@ Disable defaults for embedded or freestanding use:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.3.9", default-features = false }
+base64-ng = { version = "2.0.0", default-features = false }
 ```
 
 Enable admitted encode acceleration on supported `std` targets with the
@@ -646,7 +665,7 @@ and URL-safe alphabets after whole-input scalar validation:
 
 ```toml
 [dependencies]
-base64-ng = { version = "1.3.9", features = ["simd"] }
+base64-ng = { version = "2.0.0", features = ["simd"] }
 ```
 
 ```rust

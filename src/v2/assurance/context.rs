@@ -405,6 +405,9 @@ impl<Level: AssuranceLevel> core::fmt::Debug for AssuranceToken<'_, Level> {
     }
 }
 
+// Rust 1.97 renamed this operation; retain the 1.90 MSRV spelling until the
+// workspace MSRV can use `try_update`.
+#[allow(deprecated)]
 fn advance(generation: &AtomicUsize) {
     let _ = generation.fetch_update(Ordering::AcqRel, Ordering::Acquire, |value| {
         Some(if value == 0 {

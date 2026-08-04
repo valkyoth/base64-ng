@@ -4,7 +4,7 @@ set -eu
 expected_tool="cargo-public-api 0.52.0"
 public_api_toolchain="nightly-2026-07-13"
 snapshot_dir="api-snapshots/v1.3.9"
-development_dir="api-snapshots/2.0-development"
+release_dir="api-snapshots/v2.0.0"
 workdir="target/api-snapshot-check"
 mode="${1:---check}"
 
@@ -45,7 +45,7 @@ fi
 
 mkdir -p "$workdir"
 if [ "$mode" = "--update" ]; then
-    mkdir -p "$development_dir"
+    mkdir -p "$release_dir"
 fi
 
 for package in \
@@ -94,14 +94,14 @@ do
             fi
         done <"$committed"
 
-        development="$development_dir/$package.txt"
+        development="$release_dir/$package.txt"
         if [ "$mode" = "--update" ]; then
             cp "$generated" "$development"
         elif [ ! -f "$development" ]; then
             echo "api snapshots: missing $development" >&2
             exit 1
         elif ! diff -u "$development" "$generated"; then
-            echo "api snapshots: base64-ng drifted from the reviewed 2.0 development API" >&2
+            echo "api snapshots: base64-ng drifted from the frozen 2.0.0 API" >&2
             exit 1
         fi
     elif [ "$package" = "base64-ng-derive" ] || \
@@ -116,14 +116,14 @@ do
         [ "$package" = "base64-ng-serde" ] || \
         [ "$package" = "base64-ng-subtle" ] || \
         [ "$package" = "base64-ng-tokio" ]; then
-        development="$development_dir/$package.txt"
+        development="$release_dir/$package.txt"
         if [ "$mode" = "--update" ]; then
             cp "$generated" "$development"
         elif [ ! -f "$development" ]; then
             echo "api snapshots: missing $development" >&2
             exit 1
         elif ! diff -u "$development" "$generated"; then
-            echo "api snapshots: $package drifted from the reviewed 2.0 development API" >&2
+            echo "api snapshots: $package drifted from the frozen 2.0.0 API" >&2
             exit 1
         fi
     elif ! diff -u "$committed" "$generated"; then
@@ -132,4 +132,4 @@ do
     fi
 done
 
-echo "api snapshots: frozen 1.3.9 compatibility and 2.0 development API ok"
+echo "api snapshots: frozen 1.3.9 compatibility and 2.0.0 release API ok"

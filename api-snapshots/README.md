@@ -2,9 +2,9 @@
 
 This directory records machine-generated public API at migration boundaries.
 The `v1.3.9` snapshots are immutable authoritative input inventories. The
-`2.0-development` snapshots record reviewed intentional additions and
-companion migrations while CI preserves every applicable frozen 1.3.9 input
-inventory.
+`v2.0.0` snapshots are the frozen release API for the complete synchronized
+package family. CI preserves both the applicable 1.3.9 compatibility inventory
+and the exact 2.0.0 public surface.
 
 Commit 38 pins the Tokio writer migration to shared 2.0 state, including its
 accepted/committed progress and checked-recovery API.
@@ -55,8 +55,9 @@ traits rather than package-owned API. Auto-trait implementations are checked
 separately by `scripts/check-2.0-feature-contract.sh`, where layout and
 feature-unification behavior can be compared directly.
 
-Update the development snapshot only when a numbered 2.0 commit intentionally
-changes public API. The command never rewrites the frozen 1.3.9 baseline:
+The update mode existed for numbered development checkpoints. After Commit 54,
+using it requires an explicit reviewed API change because `v2.0.0` is the
+release snapshot. The command never rewrites the frozen 1.3.9 baseline:
 
 ```console
 scripts/check-api-snapshots.sh --update

@@ -31,7 +31,7 @@ only for backends named in this file and the release gate.
   conservative Commit 29 crossovers. Exact static/evidence calls retain the
   native 12-byte encode and 16-byte decode block boundaries.
 - Public performance claims: none without local benchmark evidence.
-- Release status: `1.3.9`; `1.2.0` admitted conservative active encode
+- Release status: `2.0.0`; `1.2.0` admitted conservative active encode
   dispatch, and `1.3.0` admitted normal strict decode dispatch for the first
   narrow decode scope. `1.3.3` admits a narrow wasm `simd128` runtime profile
   for Standard and URL-safe public encode plus normal strict decode when the
@@ -45,7 +45,7 @@ only for backends named in this file and the release gate.
   no new SIMD backend; it is a documentation and crate-family version
   synchronization patch. `1.3.7` admits no new SIMD backend. `1.3.8` is a
   Tokio cleanup and browser wasm evidence hardening patch; it admits no new
-  SIMD backend. `1.3.9` migrates the optional sanitization companion to
+  SIMD backend. `1.3.9` migrated the optional sanitization companion to
   `sanitization` 2.0.3, admits no new SIMD backend, and moves the stronger
   RISC-V RVV proof and admission review to 2.0 Commit 32. Commit 32 now carries
   a complete non-admitted RVV 1.0 encode/decode candidate, dual-VLEN QEMU

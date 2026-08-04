@@ -9,6 +9,24 @@ import { pathToFileURL } from "node:url";
 
 import { createBase64Ng } from "../src/index.js";
 
+test("artifact provenance binds the synchronized package and both digests", async () => {
+  const provenance = JSON.parse(
+    await readFile(new URL("../artifacts/PROVENANCE.json", import.meta.url), "utf8"),
+  );
+  assert.equal(provenance.schema, "base64-ng-wasm-provenance-v1");
+  assert.equal(provenance.package, "base64-ng-wasm-loader");
+  assert.equal(provenance.version, "2.0.0");
+  assert.match(provenance.sourceCommit, /^[0-9a-f]{40}$/u);
+  for (const artifact of ["scalar", "simd128"]) {
+    const name = `base64-ng-${artifact}.wasm`;
+    const bytes = await readFile(new URL(`../artifacts/${name}`, import.meta.url));
+    assert.equal(
+      provenance.artifacts[name],
+      createHash("sha256").update(bytes).digest("hex"),
+    );
+  }
+});
+
 for (const artifact of ["scalar", "simd128"]) {
   test(`${artifact}: artifact memory ceiling and tracked clearing are enforced`, async () => {
     const bytes = await readFile(new URL(`../artifacts/base64-ng-${artifact}.wasm`, import.meta.url));

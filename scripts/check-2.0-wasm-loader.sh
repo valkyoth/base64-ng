@@ -8,6 +8,8 @@ pack_dir="$install_dir/packed"
 package_extract="$install_dir/package"
 npm_cache="target/npm-cache"
 alternate_root="$evidence_dir/path-independent/repository"
+source_commit="$(git rev-parse HEAD)"
+export BASE64_NG_SOURCE_COMMIT="$source_commit"
 export npm_config_cache="$npm_cache"
 
 if ! command -v node >/dev/null 2>&1 || ! command -v npm >/dev/null 2>&1; then
@@ -59,6 +61,19 @@ RUSTFLAGS='-C target-feature=+simd128' \
 echo "2.0 wasm loader: deterministic scalar and simd128 artifacts"
 (cd "$package_dir" && npm ci --ignore-scripts && npm run build)
 (cd "$package_dir/artifacts" && sha256sum -c SHA256SUMS)
+python3 - "$package_dir/artifacts/PROVENANCE.json" "$source_commit" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as handle:
+    provenance = json.load(handle)
+if provenance.get("schema") != "base64-ng-wasm-provenance-v1":
+    raise SystemExit("2.0 wasm loader: invalid provenance schema")
+if provenance.get("package") != "base64-ng-wasm-loader" or provenance.get("version") != "2.0.0":
+    raise SystemExit("2.0 wasm loader: provenance package identity mismatch")
+if provenance.get("sourceCommit") != sys.argv[2]:
+    raise SystemExit("2.0 wasm loader: provenance source commit mismatch")
+PY
 while read -r digest artifact; do
     if ! grep -F -q "$digest" "$package_dir/src/index.js"; then
         echo "2.0 wasm loader: embedded digest is missing for $artifact" >&2
@@ -73,7 +88,10 @@ cmp "$evidence_dir/artifacts-first.sha256" "$evidence_dir/artifacts-second.sha25
 echo "2.0 wasm loader: path-independent artifact rebuild"
 rm -rf "$alternate_root"
 mkdir -p "$alternate_root"
-git ls-files | while IFS= read -r tracked_file; do
+git ls-files --cached --others --exclude-standard | while IFS= read -r tracked_file; do
+    if [ ! -f "$tracked_file" ]; then
+        continue
+    fi
     mkdir -p "$alternate_root/$(dirname "$tracked_file")"
     cp "$tracked_file" "$alternate_root/$tracked_file"
 done
@@ -116,7 +134,10 @@ test -s "$package_extract/src/index.d.ts"
 test -s "$package_extract/artifacts/base64-ng-scalar.wasm"
 test -s "$package_extract/artifacts/base64-ng-simd128.wasm"
 test -s "$package_extract/artifacts/SHA256SUMS"
+test -s "$package_extract/artifacts/PROVENANCE.json"
 (cd "$package_extract/artifacts" && sha256sum -c SHA256SUMS)
+cmp "$package_dir/artifacts/PROVENANCE.json" \
+    "$package_extract/artifacts/PROVENANCE.json"
 if tar -tzf "$tarball" | grep -E -q '(^|/)(test|scripts|wasm|target-|package-lock\.json)'; then
     echo "2.0 wasm loader: npm artifact contains development-only files" >&2
     exit 1

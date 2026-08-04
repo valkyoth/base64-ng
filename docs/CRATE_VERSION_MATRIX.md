@@ -5,13 +5,14 @@ crate remains the stable user entry point; companion crates are optional
 integration packages for applications that explicitly admit their dependency
 sets.
 
-## 2.0.0 Development Candidate
+## 2.0.0 Release Candidate
 
 `main` reports `2.0.0` for every workspace package so local builds, device
 reports, and external evidence unambiguously identify the API generation under
-test. This is not a published release. The release plan uses the
-`development-blocked` policy, every crate has `publish = false`, and the
-publish helper refuses to run until the final 2.0 acceptance checkpoint.
+test. Commit 54 freezes the reviewed `synced-family` publication plan for all
+13 Rust packages. This is not yet a published release: publication still
+requires Commit 55, final external acceptance, green required CI, and the
+signed `v2.0.0` tag.
 Commit 32 includes a non-dispatchable RVV candidate with QEMU and assembly
 evidence. RISC-V production dispatch remains scalar until native hardware and
 external review evidence satisfy the admission contract.
@@ -20,21 +21,21 @@ Commit 33 includes a non-dispatchable SVE candidate with QEMU execution at
 dispatch remains admitted NEON or scalar until two real SVE systems with
 different vector lengths and external review satisfy the admission contract.
 
-| Crate | Development Version | Publish Now | Cargo |
+| Crate | Candidate Version | In Synchronized Plan | Cargo |
 | --- | --- | --- | --- |
-| `base64-ng` | `2.0.0` | no | <https://crates.io/crates/base64-ng> |
-| `base64-ng-sanitization` | `2.0.0` | no | <https://crates.io/crates/base64-ng-sanitization> |
-| `base64-ng-derive` | `2.0.0` | no | <https://crates.io/crates/base64-ng-derive> |
-| `base64-ng-serde` | `2.0.0` | no | <https://crates.io/crates/base64-ng-serde> |
-| `base64-ng-bytes` | `2.0.0` | no | <https://crates.io/crates/base64-ng-bytes> |
-| `base64-ng-subtle` | `2.0.0` | no | <https://crates.io/crates/base64-ng-subtle> |
-| `base64-ng-tokio` | `2.0.0` | no | <https://crates.io/crates/base64-ng-tokio> |
-| `base64-ng-imap` | `2.0.0` | no | <https://crates.io/crates/base64-ng-imap> |
-| `base64-ng-mime` | `2.0.0` | no | <https://crates.io/crates/base64-ng-mime> |
-| `base64-ng-multibase` | `2.0.0` | no | <https://crates.io/crates/base64-ng-multibase> |
-| `base64-ng-password` | `2.0.0` | no | <https://crates.io/crates/base64-ng-password> |
-| `base64-ng-openpgp` | `2.0.0` | no | <https://crates.io/crates/base64-ng-openpgp> |
-| `base64-ng-pem` | `2.0.0` | no | <https://crates.io/crates/base64-ng-pem> |
+| `base64-ng` | `2.0.0` | yes | <https://crates.io/crates/base64-ng> |
+| `base64-ng-sanitization` | `2.0.0` | yes | <https://crates.io/crates/base64-ng-sanitization> |
+| `base64-ng-derive` | `2.0.0` | yes | <https://crates.io/crates/base64-ng-derive> |
+| `base64-ng-serde` | `2.0.0` | yes | <https://crates.io/crates/base64-ng-serde> |
+| `base64-ng-bytes` | `2.0.0` | yes | <https://crates.io/crates/base64-ng-bytes> |
+| `base64-ng-subtle` | `2.0.0` | yes | <https://crates.io/crates/base64-ng-subtle> |
+| `base64-ng-tokio` | `2.0.0` | yes | <https://crates.io/crates/base64-ng-tokio> |
+| `base64-ng-imap` | `2.0.0` | yes | <https://crates.io/crates/base64-ng-imap> |
+| `base64-ng-mime` | `2.0.0` | yes | <https://crates.io/crates/base64-ng-mime> |
+| `base64-ng-multibase` | `2.0.0` | yes | <https://crates.io/crates/base64-ng-multibase> |
+| `base64-ng-password` | `2.0.0` | yes | <https://crates.io/crates/base64-ng-password> |
+| `base64-ng-openpgp` | `2.0.0` | yes | <https://crates.io/crates/base64-ng-openpgp> |
+| `base64-ng-pem` | `2.0.0` | yes | <https://crates.io/crates/base64-ng-pem> |
 
 ## 1.3.9 Release Plan
 

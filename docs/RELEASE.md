@@ -2,6 +2,11 @@
 
 This checklist is for maintainers preparing a `base64-ng` release.
 
+For 2.0.0, [`2.0_RELEASE_FREEZE.md`](2.0_RELEASE_FREEZE.md) records the exact
+candidate boundary. The synchronized publish plan does not authorize release
+without Commit 55, final pentest acceptance, green required CI, and the signed
+tag.
+
 ## Preflight
 
 - Confirm `Cargo.toml` has the intended version.
@@ -10,6 +15,10 @@ This checklist is for maintainers preparing a `base64-ng` release.
 - Confirm `license = "MIT OR Apache-2.0"` remains unchanged.
 - Confirm `LICENSE-MIT` and `LICENSE-APACHE` are present at the repository root.
 - Confirm no unwanted dependencies were added.
+- Confirm every package selected in `release-crates.toml` has a frozen
+  `api-snapshots/vX.Y.Z/` record.
+- Confirm the wasm loader provenance binds its npm version, artifact digests,
+  and exact Git source commit.
 
 ## Required Gate
 

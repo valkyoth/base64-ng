@@ -178,6 +178,29 @@ def test_development_policy_requires_synced_unpublished_versions() -> None:
     )
 
 
+def test_synced_family_requires_every_changed_crate_to_publish() -> None:
+    entry = {
+        "previous_version": "1.3.9",
+        "version": "2.0.0",
+        "change": "code",
+        "publish": True,
+        "reason": "release candidate",
+    }
+    release_crates.validate_plan_entry(
+        "base64-ng", entry, "2.0.0", "synced-family"
+    )
+
+    entry["publish"] = False
+    assert_fails(
+        "code changes but publish is false",
+        release_crates.validate_plan_entry,
+        "base64-ng",
+        entry,
+        "2.0.0",
+        "synced-family",
+    )
+
+
 def test_publish_sequence_dry_runs_dependents_after_index_wait() -> None:
     plan = base_plan()
     plan["crates"]["base64-ng"]["version"] = "1.0.10"
@@ -296,6 +319,7 @@ def run_tests() -> None:
         test_unchanged_crates_are_not_published,
         test_publish_plan_skips_unchanged_crates,
         test_development_policy_requires_synced_unpublished_versions,
+        test_synced_family_requires_every_changed_crate_to_publish,
         test_publish_sequence_dry_runs_dependents_after_index_wait,
         test_post_tag_full_gate_uses_check_mode,
         test_release_tag_check_requires_valid_signature,

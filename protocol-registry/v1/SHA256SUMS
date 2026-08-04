@@ -1,9 +1,9 @@
-721a578cd089ccfc01662e2386d0ac4b20f60743fa62420d30c3619dec1155f4  api-snapshots/2.0-development/base64-ng-imap.txt
-0f57f667b3d55d808573dd160a527cce8519d4acc2dfa739c19fe2fa95ab198c  api-snapshots/2.0-development/base64-ng-mime.txt
-28cab4caa76f12f363beac3330faacba84c499062bc99b275a5bc558b331279a  api-snapshots/2.0-development/base64-ng-multibase.txt
-9f8f2df0384971f99f5d76e92fb35f62e47efeb07599b5b3af58d0a3b417ece8  api-snapshots/2.0-development/base64-ng-openpgp.txt
-22efa1eb442b95695adfd283afd47583fc6c185e7d740075e0c226932bfa0826  api-snapshots/2.0-development/base64-ng-password.txt
-6bc2c4162ffb897bf206f48c9bf5ad54fcc1728aaeee7e7424c9573c8607deff  api-snapshots/2.0-development/base64-ng-pem.txt
+721a578cd089ccfc01662e2386d0ac4b20f60743fa62420d30c3619dec1155f4  api-snapshots/v2.0.0/base64-ng-imap.txt
+0f57f667b3d55d808573dd160a527cce8519d4acc2dfa739c19fe2fa95ab198c  api-snapshots/v2.0.0/base64-ng-mime.txt
+28cab4caa76f12f363beac3330faacba84c499062bc99b275a5bc558b331279a  api-snapshots/v2.0.0/base64-ng-multibase.txt
+9f8f2df0384971f99f5d76e92fb35f62e47efeb07599b5b3af58d0a3b417ece8  api-snapshots/v2.0.0/base64-ng-openpgp.txt
+22efa1eb442b95695adfd283afd47583fc6c185e7d740075e0c226932bfa0826  api-snapshots/v2.0.0/base64-ng-password.txt
+6bc2c4162ffb897bf206f48c9bf5ad54fcc1728aaeee7e7424c9573c8607deff  api-snapshots/v2.0.0/base64-ng-pem.txt
 67f435bc2e97a920fcfbcac18ced541872afe1c1b4428442271a6b85fe3258ee  protocol-registry/runner/Cargo.lock
 11149e456f19d1051739a918cc45cf1129012039b3bf754558ff0cfab4d86d4e  protocol-registry/runner/Cargo.toml
 e7913f79eb5c8e6c194f9befcc4f4f24aa24a1973e55ecf31a03886ec2abf86e  protocol-registry/runner/deny.toml
@@ -13,7 +13,7 @@ e593a032e5d62f4c84a0f607709db19dbc4818e48fd06ef9e4ad0dee8dee85f9  protocol-regis
 10408e1efb3250bc1b00c28fdb2b50241b8ebb3ccee08a73d1b00048eecafc64  protocol-registry/runner/src/references.rs
 62a046b6013026cedfd656d88cfed87d223d1be7a53fc25963f96a45de155fe2  protocol-registry/v1/cases.tsv
 0d9205d817b2078f39ad97a55ef20355f9d6a6a6c964d7c0683f749809cf47f3  protocol-registry/v1/configurations.tsv
-39fbdde498fb03f2d1e92346acc98e1524baa8e92b236508015d0b50f9c3b733  protocol-registry/v1/protocols.tsv
+5e7255f88baa87fcc1e09a7bcfba3c821638e2d13b9b5f0c10a37dff4ac7500b  protocol-registry/v1/protocols.tsv
 a6a4d725b0fd4216a41a2b96dc3b674125cf5c0c0f6a6a4cdae090676454ca50  protocol-registry/v1/provenance.tsv
 02c803bad432a687156cb436b3d728fab8942ba89f40abf89b98ea6f1b87aeb0  protocol-registry/v1/schema.json
 621c10a1c841e66cdf319b22e3e0d696171e7f42ac6e024fcc3c056e44e6df70  rfc/rfc2045-errata.tsv

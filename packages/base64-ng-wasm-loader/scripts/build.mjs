@@ -14,6 +14,7 @@ await mkdir(artifacts, { recursive: true });
 await build("scalar", [], "");
 await build("simd128", ["--features", "simd"], "target-feature=+simd128");
 await writeChecksums();
+await writeProvenance();
 
 async function build(name, features, targetFeatures) {
   const targetDir = fileURLToPath(new URL(`../target-${name}/`, import.meta.url));
@@ -58,12 +59,54 @@ async function writeChecksums() {
   await writeFile(`${artifacts}/SHA256SUMS`, `${lines.join("\n")}\n`);
 }
 
+async function writeProvenance() {
+  const packageMetadata = JSON.parse(
+    await readFile(`${packageRoot}/package.json`, "utf8"),
+  );
+  const sourceCommit = process.env.BASE64_NG_SOURCE_COMMIT
+    ?? await capture("git", ["rev-parse", "HEAD"], repositoryRoot);
+  if (!/^[0-9a-f]{40}$/u.test(sourceCommit)) {
+    throw new Error("BASE64_NG_SOURCE_COMMIT must be a full lowercase Git commit");
+  }
+
+  const artifactsByName = {};
+  for (const name of ["base64-ng-scalar.wasm", "base64-ng-simd128.wasm"]) {
+    const bytes = await readFile(`${artifacts}/${name}`);
+    artifactsByName[name] = createHash("sha256").update(bytes).digest("hex");
+  }
+  const provenance = {
+    schema: "base64-ng-wasm-provenance-v1",
+    package: packageMetadata.name,
+    version: packageMetadata.version,
+    sourceCommit,
+    artifacts: artifactsByName,
+  };
+  await writeFile(
+    `${artifacts}/PROVENANCE.json`,
+    `${JSON.stringify(provenance, null, 2)}\n`,
+  );
+}
+
 function run(command, args, env) {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, { cwd: packageRoot, env, stdio: "inherit" });
     child.on("error", reject);
     child.on("exit", (code, signal) => {
       if (code === 0) resolve();
+      else reject(new Error(`${command} failed: code=${code} signal=${signal}`));
+    });
+  });
+}
+
+function capture(command, args, cwd) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, { cwd, stdio: ["ignore", "pipe", "inherit"] });
+    let output = "";
+    child.stdout.setEncoding("utf8");
+    child.stdout.on("data", (chunk) => { output += chunk; });
+    child.on("error", reject);
+    child.on("exit", (code, signal) => {
+      if (code === 0) resolve(output.trim());
       else reject(new Error(`${command} failed: code=${code} signal=${signal}`));
     });
   });

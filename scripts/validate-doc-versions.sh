@@ -53,7 +53,7 @@ case "$cargo_version" in
         require_text docs/SIMD_ADMISSION.md "$cargo_version"
         ;;
     *)
-        require_text README.md "The current public release is \`$cargo_version\`."
+        require_text README.md "This source tree is the frozen \`$cargo_version\` package-family candidate."
         if [ "$cargo_version" = "1.1.0" ]; then
             require_text docs/SIMD_ADMISSION.md "Release status: \`1.1.x\`"
         else

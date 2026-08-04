@@ -14,6 +14,8 @@ esac
 
 if [ "$mode" = "release" ]; then
     unset BASE64_NG_ALLOW_DIRTY_EVIDENCE
+    BASE64_NG_RUN_COMMIT54_PUBLISH_DRY_RUN=1
+    export BASE64_NG_RUN_COMMIT54_PUBLISH_DRY_RUN
     . scripts/evidence-source.sh
     evidence_capture_source "stable release gate"
 else

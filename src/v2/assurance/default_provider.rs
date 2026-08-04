@@ -110,6 +110,9 @@ pub struct BestEffortProvider<const SLOTS: usize> {
 }
 impl<const SLOTS: usize> BestEffortProvider<SLOTS> {
     /// Creates a bounded provider.
+    // Rust 1.97 renamed this operation; retain the 1.90 MSRV spelling until
+    // the workspace MSRV can use `try_update`.
+    #[allow(deprecated)]
     pub fn new(limits: ProviderLimits) -> Result<Self, ProtectionError> {
         if limits.page_size == 0
             || limits.max_identities > SLOTS

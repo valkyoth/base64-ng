@@ -2,6 +2,7 @@
 /packages/base64-ng-wasm-loader/target-scalar/
 /packages/base64-ng-wasm-loader/target-simd128/
 /packages/base64-ng-wasm-loader/target/
+/packages/base64-ng-wasm-loader/artifacts/PROVENANCE.json
 /semantic-corpus/runner/target/
 /protocol-registry/runner/target/
 /.idea/

@@ -1,10 +1,13 @@
 # Changelog
 
-## 2.0.0 - Unreleased
+## 2.0.0 - Release candidate
 
-- Development checkpoints now report the target `2.0.0` package version while
-  publication remains blocked until final API, pentest, and release evidence
-  acceptance.
+- The complete 13-crate Rust family and supported wasm loader are frozen at
+  `2.0.0`. Publication remains gated on final pentest acceptance, green
+  required CI, and the signed `v2.0.0` tag.
+- Commit 54 freezes the final public API snapshots, migration guide, package
+  order, release documentation, crates.io contents, and wasm artifact source
+  provenance.
 - See [`2.0.0-release-plan.md`](2.0.0-release-plan.md) for the complete ordered
   implementation and verification program.
 - Commit 31 audits portable byte-order assumptions, requires complete s390x
