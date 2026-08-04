@@ -63,6 +63,12 @@ grep -F -q 'base64-ng = "2.0.0"' docs/MIGRATION.md ||
     fail "migration guide is missing the 2.0.0 dependency"
 grep -F -q 'Persistent-provider inventory: **none**.' docs/2.0_RELEASE_FREEZE.md ||
     fail "persistent-provider inventory is not explicit"
+grep -F -q 'policy-carrying, immutable `Base64String<S>`' docs/2.0_RELEASE_FREEZE.md ||
+    fail "reviewed usability reopening is not recorded"
+grep -F -q 'pub struct Base64String' src/v2/ordinary_string.rs ||
+    fail "policy-carrying ordinary string owner is missing"
+grep -F -q 'pub mod prelude;' src/lib.rs ||
+    fail "focused ordinary prelude is missing"
 test -s release-notes/RELEASE_NOTES_2.0.0.md ||
     fail "missing 2.0.0 release notes"
 

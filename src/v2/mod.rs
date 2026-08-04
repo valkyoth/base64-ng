@@ -25,6 +25,8 @@ mod lifecycle;
 mod ordinary;
 #[cfg(feature = "alloc")]
 mod ordinary_alloc;
+#[cfg(feature = "alloc")]
+mod ordinary_string;
 mod profiles;
 #[cfg(not(feature = "secrets"))]
 pub(crate) mod secret;
@@ -71,6 +73,8 @@ pub(crate) use in_place::{
 pub use incremental::EncoderState;
 pub use incremental_decoder::DecoderState;
 pub use ordinary::OneShotError;
+#[cfg(feature = "alloc")]
+pub use ordinary_string::Base64String;
 pub use profiles::{
     BCRYPT_ALPHABET_NO_PAD, BodyCodec, CRYPT_ALPHABET_NO_PAD, IMAP_MUTF7_ALPHABET_NO_PAD,
     MIME_BODY_STRICT, PBKDF2_ALPHABET_NO_PAD, PEM_BODY_CRLF, PEM_BODY_LF,
@@ -111,6 +115,8 @@ mod incremental_encoder_tests;
 mod legacy_tests;
 #[cfg(test)]
 mod one_shot_tests;
+#[cfg(all(test, feature = "alloc"))]
+mod ordinary_string_tests;
 #[cfg(test)]
 mod profile_tests;
 #[cfg(test)]

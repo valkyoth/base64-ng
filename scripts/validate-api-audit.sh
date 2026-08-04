@@ -39,7 +39,10 @@ for required_text in \
     "\`Alphabet::ENCODE\` is the authoritative encode and decode table" \
     "Keep the custom-alphabet timing contract documented" \
     "Padded \`DecoderReader\` stops after terminal padding" \
-    "Keep ct malformed-content errors opaque"
+    "Keep ct malformed-content errors opaque" \
+    "## 2.0 Pre-Seal Usability Surface" \
+    "\`Base64String<S>\` retains the exact sealed codec value" \
+    "\`base64_ng::prelude\` contains only the four strict presets"
 do
     if ! grep -F -q "$required_text" docs/API_AUDIT.md; then
         echo "api audit: docs/API_AUDIT.md is missing required text: $required_text" >&2

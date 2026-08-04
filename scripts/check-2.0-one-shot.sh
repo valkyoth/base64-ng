@@ -50,6 +50,19 @@ do
     fi
 done
 
+for required in \
+    'pub struct Base64String' \
+    'pub fn encode' \
+    'pub fn from_string' \
+    'pub fn parse' \
+    'pub fn decode_with_limit'
+do
+    if ! grep -F -q "$required" src/v2/ordinary_string.rs; then
+        echo "2.0 one-shot: ordinary string implementation is missing: $required" >&2
+        exit 1
+    fi
+done
+
 run_cargo test --lib 'v2::one_shot_tests'
 run_cargo test --no-default-features --lib 'v2::one_shot_tests'
 scripts/check-2.0-migration-smoke.sh

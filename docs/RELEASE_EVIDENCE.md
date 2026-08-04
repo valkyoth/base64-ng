@@ -72,6 +72,14 @@ Commit 2 freezes the machine-generated `v1.3.9` public API snapshots and the
 `scripts/check-2.0-feature-contract.sh` prevent accidental inventory,
 canonical-name, and Cargo feature-unification drift.
 
+The release-owner-approved pre-seal usability reopening adds the ordinary
+policy-carrying `Base64String<S>` and focused ordinary prelude. Focused tests
+cover strict and runtime policies, malformed text, output limits, visible
+formatting, and policy retention. The migration smoke compiles the external
+surface, while the secret-storage gate proves `SecretInput` cannot enter the
+new ordinary owner without explicit exposure. The regenerated 2.0 snapshot
+records the exact added API before the final full-range pentest.
+
 Commit 4 adds the exact RFC 4648 source lock, errata and requirements ledgers,
 independent test-only oracle, versioned cross-crate semantic corpus, and the
 complete Rust 1.90.0 capability matrix. `scripts/verify-rfcs.sh` is offline;

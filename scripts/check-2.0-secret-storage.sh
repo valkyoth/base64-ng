@@ -38,7 +38,7 @@ publish = false
 [workspace]
 
 [dependencies]
-base64-ng = { path = "../..", default-features = false, features = ["secrets"] }
+base64-ng = { path = "../..", default-features = false, features = ["alloc", "secrets"] }
 base64-ng-derive = { path = "../../crates/base64-ng-derive" }
 TOML
 
@@ -83,6 +83,23 @@ fn needs_bytes<T: AsRef<[u8]>>(_: &T) {}
 fn main() {
     let secret = SecretArray::from_array(*b"key", 3).unwrap();
     needs_bytes(&secret);
+}
+RS
+
+cat >"$case_dir/ordinary-string-secret-input.rs" <<'RS'
+use base64_ng::{Base64String, STRICT_STANDARD_PADDED, secret::SecretInput};
+
+fn main() {
+    let input = SecretInput::new(b"secret");
+    let _ = Base64String::encode(STRICT_STANDARD_PADDED, input);
+}
+RS
+
+cat >"$case_dir/prelude-secret.rs" <<'RS'
+use base64_ng::prelude::SecretInput;
+
+fn main() {
+    let _ = core::mem::size_of::<SecretInput<'static>>();
 }
 RS
 
@@ -151,6 +168,8 @@ compile_failure() {
 
 check_case valid
 compile_failure implicit-input 'mismatched types'
+compile_failure ordinary-string-secret-input 'mismatched types'
+compile_failure prelude-secret 'unresolved import `base64_ng::prelude::SecretInput`'
 compile_failure secret-array-as-ref 'the trait bound `SecretArray<3>: AsRef<[u8]>` is not satisfied'
 compile_failure secret-output-as-mut 'the trait bound `SecretOutput'
 compile_failure secret-clone 'no method named `clone`'

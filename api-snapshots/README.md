@@ -42,6 +42,11 @@ Commit 47 adds the new `base64-ng-password` package snapshot for bounded,
 exact Passlib PBKDF2 and SHA-crypt field/record transforms. It has no frozen
 1.3.9 baseline because the package did not exist in that release.
 
+The pre-seal Commit 54 usability reopening adds the policy-carrying ordinary
+`Base64String<S>` owner and focused ordinary prelude. The release owner
+explicitly approved this API change before the final full-range pentest; the
+updated `v2.0.0` core snapshot is the new reviewed release boundary.
+
 Snapshots are generated with:
 
 ```text

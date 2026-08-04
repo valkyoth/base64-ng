@@ -81,6 +81,24 @@ With `alloc`, use `encode_to_string`, `decode_to_vec`, `encode_append`, and
 errors and supported unwinding; they cannot undo side effects in arbitrary
 formatters or I/O sinks.
 
+Use `Base64String<S>` when encoded text must retain the exact codec policy that
+validated it:
+
+```rust
+use base64_ng::{Base64String, STRICT_STANDARD_PADDED};
+
+let stored = Base64String::encode(STRICT_STANDARD_PADDED, b"hello").unwrap();
+assert_eq!(stored.as_str(), "aGVsbG8=");
+assert_eq!(stored.decode().unwrap(), b"hello");
+
+let parsed = Base64String::parse(STRICT_STANDARD_PADDED, "Zm9v").unwrap();
+assert_eq!(parsed.decode().unwrap(), b"foo");
+```
+
+This is ordinary, printable, non-wiping storage. It does not replace the
+`secret` module. A small `base64_ng::prelude` is available for ordinary 2.0
+code, but compatibility and secret APIs still require explicit imports.
+
 | 1.x name | Canonical 2.0 name |
 | --- | --- |
 | `encode_slice` | `encode_into` |

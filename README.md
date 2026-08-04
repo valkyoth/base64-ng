@@ -184,7 +184,7 @@ Choose the narrowest API matching the surrounding contract:
 | Explicit alphabet or padding policy | A `STRICT_*` preset with `encode_to_string` and `decode_to_vec` |
 | Transactional caller-owned buffers | `encode_into` and `decode_into` |
 | Heapless incremental processing | `encoder()` and `decoder()` |
-| Secret-bearing data | `secret::SecretArrayFrame` or `SecretVecFrame` |
+| Secret-bearing data | `secret::{SecretArrayFrame, SecretVecFrame}` |
 | Serde fields | `base64-ng-serde` |
 
 For example, an explicit strict preset makes the alphabet and padding policy
@@ -200,6 +200,21 @@ let decoded = STRICT_STANDARD_PADDED.decode_to_vec(encoded.as_bytes()).unwrap();
 assert_eq!(decoded, b"hello");
 ```
 
+When validated encoded text must carry its policy through storage or
+transport, use the ordinary `Base64String<S>` owner:
+
+```rust
+use base64_ng::{Base64String, STRICT_STANDARD_PADDED};
+
+let stored = Base64String::encode(STRICT_STANDARD_PADDED, b"hello").unwrap();
+assert_eq!(stored.as_str(), "aGVsbG8=");
+assert_eq!(stored.decode().unwrap(), b"hello");
+```
+
+`Base64String` is printable and non-wiping. It is not a secret container.
+`base64_ng::prelude` provides a focused import set for ordinary 2.0 code; it
+deliberately omits secret, compatibility, protocol, and historical APIs.
+
 The historical `STANDARD` family remains as reviewed compatibility API.
 Forgiving web decode, legacy whitespace, line wrapping, and protocol-specific
 transforms require separately named opt-in APIs.
@@ -212,7 +227,7 @@ The root crate documents and tests each 2.0 capability independently:
 | --- | --- |
 | Validated alphabets, sealed codecs, strict presets, and custom policy builders | [Codec specifications](docs/2.0_CODEC_SPECIFICATIONS.md) |
 | Error, progress, lifecycle, atomicity, and rollback contracts | [Operation contracts](docs/2.0_OPERATION_CONTRACTS.md) |
-| Transactional caller-owned and allocating one-shot operations | [Transactional one-shot](docs/2.0_TRANSACTIONAL_ONE_SHOT.md) |
+| Transactional caller-owned and allocating one-shot operations, including policy-carrying `Base64String` storage | [Transactional one-shot](docs/2.0_TRANSACTIONAL_ONE_SHOT.md) |
 | Heapless incremental encode and strict padded/unpadded decode | [Encoder](docs/2.0_INCREMENTAL_ENCODER.md), [padded decoder](docs/2.0_INCREMENTAL_PADDED_DECODER.md), [finalization](docs/2.0_INCREMENTAL_DECODER_FINALIZATION.md) |
 | Const transforms and fixed-capacity ordinary buffers | [Const and bounded buffers](docs/2.0_CONST_AND_BOUNDED_BUFFERS.md) |
 | Ordinary and staged secret-adjacent in-place transforms | [In-place operations](docs/2.0_IN_PLACE_OPERATIONS.md) |

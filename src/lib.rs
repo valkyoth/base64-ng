@@ -8,7 +8,7 @@
 //! `base64-ng` is a `no_std`-first Base64 encoder and decoder.
 //!
 //! The core API provides strict RFC 4648 behavior, caller-owned output
-//! buffers, and an audited scalar fallback. The `1.3.x` line admits selected
+//! buffers, and an audited scalar fallback. The `2.0` line admits selected
 //! SIMD encode and strict decode acceleration for standard-family alphabets.
 //! Any accelerated backend must match the scalar module byte-for-byte and pass
 //! the documented admission evidence before dispatch can select it.
@@ -140,11 +140,14 @@ mod encode_backend;
 mod engine;
 mod errors;
 mod length;
+pub mod prelude;
 mod profiles;
 mod scalar;
 mod scalar_encode_in_place;
 mod v2;
 
+#[cfg(feature = "alloc")]
+pub use v2::Base64String;
 #[cfg(feature = "secrets")]
 pub use v2::assurance;
 #[cfg(feature = "secrets")]

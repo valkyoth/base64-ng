@@ -889,6 +889,154 @@ impl core::fmt::Debug for base64_ng::legacy::LegacyWhitespaceDecoder
 pub fn base64_ng::legacy::LegacyWhitespaceDecoder::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::StructuralPartialEq for base64_ng::legacy::LegacyWhitespaceDecoder
 pub const base64_ng::legacy::ASCII_WHITESPACE: base64_ng::legacy::LegacyAsciiWhitespace
+pub mod base64_ng::prelude
+#[non_exhaustive] pub enum base64_ng::prelude::OneShotError
+pub base64_ng::prelude::OneShotError::AllocationFailed
+pub base64_ng::prelude::OneShotError::AllocationFailed::requested: usize
+pub base64_ng::prelude::OneShotError::AllocationLimitExceeded
+pub base64_ng::prelude::OneShotError::AllocationLimitExceeded::limit: usize
+pub base64_ng::prelude::OneShotError::AllocationLimitExceeded::required: usize
+pub base64_ng::prelude::OneShotError::Backend(base64_ng::BackendFault)
+pub base64_ng::prelude::OneShotError::Input(base64_ng::InputError)
+pub base64_ng::prelude::OneShotError::LengthOverflow
+pub base64_ng::prelude::OneShotError::OutputTooSmall
+pub base64_ng::prelude::OneShotError::OutputTooSmall::available: usize
+pub base64_ng::prelude::OneShotError::OutputTooSmall::required: usize
+pub base64_ng::prelude::OneShotError::PositionOverflow
+impl core::clone::Clone for base64_ng::OneShotError
+pub fn base64_ng::OneShotError::clone(&self) -> base64_ng::OneShotError
+impl core::cmp::Eq for base64_ng::OneShotError
+impl core::cmp::PartialEq for base64_ng::OneShotError
+pub fn base64_ng::OneShotError::eq(&self, &base64_ng::OneShotError) -> bool
+impl core::error::Error for base64_ng::OneShotError
+impl core::fmt::Debug for base64_ng::OneShotError
+pub fn base64_ng::OneShotError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for base64_ng::OneShotError
+pub fn base64_ng::OneShotError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng::OneShotError
+impl core::marker::StructuralPartialEq for base64_ng::OneShotError
+pub struct base64_ng::prelude::Base64<S>
+impl base64_ng::Base64<base64_ng::RuntimeSpec>
+pub const fn base64_ng::Base64<base64_ng::RuntimeSpec>::const_settings(&self) -> base64_ng::CodecSettings
+pub const fn base64_ng::Base64<base64_ng::RuntimeSpec>::decode_array<const INPUT: usize, const OUTPUT: usize>(&self, &[u8; INPUT]) -> core::result::Result<[u8; OUTPUT], base64_ng::ConstTransformError>
+pub const fn base64_ng::Base64<base64_ng::RuntimeSpec>::encode_array<const INPUT: usize, const OUTPUT: usize>(&self, &[u8; INPUT]) -> core::result::Result<[u8; OUTPUT], base64_ng::ConstTransformError>
+impl base64_ng::Base64<base64_ng::StrictStandardPadded>
+pub const fn base64_ng::Base64<base64_ng::StrictStandardPadded>::const_settings(&self) -> base64_ng::CodecSettings
+pub const fn base64_ng::Base64<base64_ng::StrictStandardPadded>::decode_array<const INPUT: usize, const OUTPUT: usize>(&self, &[u8; INPUT]) -> core::result::Result<[u8; OUTPUT], base64_ng::ConstTransformError>
+pub const fn base64_ng::Base64<base64_ng::StrictStandardPadded>::encode_array<const INPUT: usize, const OUTPUT: usize>(&self, &[u8; INPUT]) -> core::result::Result<[u8; OUTPUT], base64_ng::ConstTransformError>
+impl base64_ng::Base64<base64_ng::StrictStandardUnpadded>
+pub const fn base64_ng::Base64<base64_ng::StrictStandardUnpadded>::const_settings(&self) -> base64_ng::CodecSettings
+pub const fn base64_ng::Base64<base64_ng::StrictStandardUnpadded>::decode_array<const INPUT: usize, const OUTPUT: usize>(&self, &[u8; INPUT]) -> core::result::Result<[u8; OUTPUT], base64_ng::ConstTransformError>
+pub const fn base64_ng::Base64<base64_ng::StrictStandardUnpadded>::encode_array<const INPUT: usize, const OUTPUT: usize>(&self, &[u8; INPUT]) -> core::result::Result<[u8; OUTPUT], base64_ng::ConstTransformError>
+impl base64_ng::Base64<base64_ng::StrictUrlSafePadded>
+pub const fn base64_ng::Base64<base64_ng::StrictUrlSafePadded>::const_settings(&self) -> base64_ng::CodecSettings
+pub const fn base64_ng::Base64<base64_ng::StrictUrlSafePadded>::decode_array<const INPUT: usize, const OUTPUT: usize>(&self, &[u8; INPUT]) -> core::result::Result<[u8; OUTPUT], base64_ng::ConstTransformError>
+pub const fn base64_ng::Base64<base64_ng::StrictUrlSafePadded>::encode_array<const INPUT: usize, const OUTPUT: usize>(&self, &[u8; INPUT]) -> core::result::Result<[u8; OUTPUT], base64_ng::ConstTransformError>
+impl base64_ng::Base64<base64_ng::StrictUrlSafeUnpadded>
+pub const fn base64_ng::Base64<base64_ng::StrictUrlSafeUnpadded>::const_settings(&self) -> base64_ng::CodecSettings
+pub const fn base64_ng::Base64<base64_ng::StrictUrlSafeUnpadded>::decode_array<const INPUT: usize, const OUTPUT: usize>(&self, &[u8; INPUT]) -> core::result::Result<[u8; OUTPUT], base64_ng::ConstTransformError>
+pub const fn base64_ng::Base64<base64_ng::StrictUrlSafeUnpadded>::encode_array<const INPUT: usize, const OUTPUT: usize>(&self, &[u8; INPUT]) -> core::result::Result<[u8; OUTPUT], base64_ng::ConstTransformError>
+impl<S: base64_ng::Codec> base64_ng::Base64<S>
+pub fn base64_ng::Base64<S>::decode_append(&self, &[u8], &mut alloc::vec::Vec<u8>) -> core::result::Result<usize, base64_ng::OneShotError>
+pub fn base64_ng::Base64<S>::encode_append(&self, &[u8], &mut alloc::string::String) -> core::result::Result<usize, base64_ng::OneShotError>
+impl<S: base64_ng::Codec> base64_ng::Base64<S>
+pub fn base64_ng::Base64<S>::decode_assured<'provider, P, Level>(&self, &base64_ng::assurance::AssuranceToken<'provider, Level>, base64_ng::assurance::ProtectedSecret<'provider, P, base64_ng::assurance::Uninitialized, Level>, &base64_ng::secret::SecretInput<'_>) -> core::result::Result<base64_ng::assurance::ProtectedSecret<'provider, P, base64_ng::assurance::Validated, Level>, base64_ng::assurance::AssuredDecodeError> where P: base64_ng::assurance::ProtectedMemoryProvider, Level: base64_ng::assurance::AssuranceLevel
+pub fn base64_ng::Base64<S>::encode_assured<'provider, P, Level>(&self, &base64_ng::assurance::AssuranceToken<'provider, Level>, base64_ng::assurance::ProtectedSecret<'provider, P, base64_ng::assurance::Uninitialized, Level>, &base64_ng::secret::SecretInput<'_>) -> core::result::Result<base64_ng::assurance::ProtectedSecret<'provider, P, base64_ng::assurance::Validated, Level>, base64_ng::assurance::AssuredEncodeError> where P: base64_ng::assurance::ProtectedMemoryProvider, Level: base64_ng::assurance::AssuranceLevel
+impl<S: base64_ng::Codec> base64_ng::Base64<S>
+pub fn base64_ng::Base64<S>::decode_bounded<const CAP: usize>(&self, &[u8]) -> core::result::Result<base64_ng::DecodedArray<CAP>, base64_ng::OneShotError>
+pub fn base64_ng::Base64<S>::encode_bounded<const CAP: usize>(&self, &[u8]) -> core::result::Result<base64_ng::EncodedArray<CAP>, base64_ng::OneShotError>
+impl<S: base64_ng::Codec> base64_ng::Base64<S>
+pub fn base64_ng::Base64<S>::decode_in_place(&self, &mut [u8], usize) -> core::result::Result<usize, base64_ng::InPlaceError>
+pub fn base64_ng::Base64<S>::encode_in_place(&self, &mut [u8], usize) -> core::result::Result<usize, base64_ng::InPlaceError>
+impl<S: base64_ng::Codec> base64_ng::Base64<S>
+pub fn base64_ng::Base64<S>::decode_in_place_staged(&self, &mut [u8], usize, &mut [u8]) -> core::result::Result<usize, base64_ng::InPlaceError>
+pub fn base64_ng::Base64<S>::secret_decode_staging_len(&self, usize) -> core::result::Result<usize, base64_ng::InPlaceError>
+impl<S: base64_ng::Codec> base64_ng::Base64<S>
+pub fn base64_ng::Base64<S>::decode_into(&self, &[u8], &mut [u8]) -> core::result::Result<usize, base64_ng::OneShotError>
+pub fn base64_ng::Base64<S>::decoded_len(&self, &[u8]) -> core::result::Result<usize, base64_ng::OneShotError>
+pub fn base64_ng::Base64<S>::encode_into(&self, &[u8], &mut [u8]) -> core::result::Result<usize, base64_ng::OneShotError>
+pub fn base64_ng::Base64<S>::encoded_len(&self, usize) -> core::result::Result<usize, base64_ng::OneShotError>
+pub fn base64_ng::Base64<S>::validate(&self, &[u8]) -> core::result::Result<(), base64_ng::OneShotError>
+impl<S: base64_ng::Codec> base64_ng::Base64<S>
+pub fn base64_ng::Base64<S>::decode_to_vec(&self, &[u8]) -> core::result::Result<alloc::vec::Vec<u8>, base64_ng::OneShotError>
+pub fn base64_ng::Base64<S>::decode_to_vec_with_limit(&self, &[u8], usize) -> core::result::Result<alloc::vec::Vec<u8>, base64_ng::OneShotError>
+pub fn base64_ng::Base64<S>::encode_to_string(&self, &[u8]) -> core::result::Result<alloc::string::String, base64_ng::OneShotError>
+pub fn base64_ng::Base64<S>::encode_to_string_with_limit(&self, &[u8], usize) -> core::result::Result<alloc::string::String, base64_ng::OneShotError>
+impl<S: base64_ng::Codec> base64_ng::Base64<S>
+pub fn base64_ng::Base64<S>::decoder(&self) -> base64_ng::DecoderState
+impl<S: base64_ng::Codec> base64_ng::Base64<S>
+pub fn base64_ng::Base64<S>::display<'a>(&self, &'a [u8]) -> core::result::Result<base64_ng::EncodedDisplay<'a>, base64_ng::OneShotError>
+pub fn base64_ng::Base64<S>::encode_to_counted<W: base64_ng::CountedSink + ?core::marker::Sized>(&self, &[u8], &mut W) -> core::result::Result<usize, base64_ng::CountedWriteError<<W as base64_ng::CountedSink>::Error>>
+pub fn base64_ng::Base64<S>::encode_to_fmt<W: core::fmt::Write + ?core::marker::Sized>(&self, &[u8], &mut W) -> core::result::Result<usize, base64_ng::FormatWriteError>
+impl<S: base64_ng::Codec> base64_ng::Base64<S>
+pub fn base64_ng::Base64<S>::encode_secret_array<const CAP: usize>(&self, &base64_ng::secret::SecretInput<'_>) -> core::result::Result<base64_ng::secret::SecretArray<CAP>, base64_ng::secret::SecretEncodeError>
+pub fn base64_ng::Base64<S>::encode_secret_into<'a>(&self, &base64_ng::secret::SecretInput<'_>, &'a mut [u8]) -> core::result::Result<base64_ng::secret::SecretOutput<'a>, base64_ng::secret::SecretEncodeError>
+pub fn base64_ng::Base64<S>::encode_secret_vec(&self, &base64_ng::secret::SecretInput<'_>) -> core::result::Result<base64_ng::secret::SecretVec, base64_ng::secret::SecretEncodeError>
+impl<S: base64_ng::Codec> base64_ng::Base64<S>
+pub fn base64_ng::Base64<S>::encoded_chunks<'a>(&self, &'a [u8]) -> core::result::Result<base64_ng::EncodedChunks<'a>, base64_ng::OneShotError>
+impl<S: base64_ng::Codec> base64_ng::Base64<S>
+pub fn base64_ng::Base64<S>::encoder(&self) -> base64_ng::EncoderState
+impl<S: base64_ng::Codec> base64_ng::Base64<S>
+pub const fn base64_ng::Base64<S>::new(S) -> Self
+pub fn base64_ng::Base64<S>::settings(&self) -> base64_ng::CodecSettings
+pub const fn base64_ng::Base64<S>::specification(&self) -> &S
+impl<S: core::clone::Clone> core::clone::Clone for base64_ng::Base64<S>
+pub fn base64_ng::Base64<S>::clone(&self) -> base64_ng::Base64<S>
+impl<S: core::cmp::Eq> core::cmp::Eq for base64_ng::Base64<S>
+impl<S: core::cmp::PartialEq> core::cmp::PartialEq for base64_ng::Base64<S>
+pub fn base64_ng::Base64<S>::eq(&self, &base64_ng::Base64<S>) -> bool
+impl<S: core::cmp::PartialEq> core::marker::StructuralPartialEq for base64_ng::Base64<S>
+impl<S: core::fmt::Debug> core::fmt::Debug for base64_ng::Base64<S>
+pub fn base64_ng::Base64<S>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<S: core::hash::Hash> core::hash::Hash for base64_ng::Base64<S>
+pub fn base64_ng::Base64<S>::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl<S: core::marker::Copy> core::marker::Copy for base64_ng::Base64<S>
+pub struct base64_ng::prelude::Base64String<S: base64_ng::Codec>
+impl<S: base64_ng::Codec> base64_ng::Base64String<S>
+pub fn base64_ng::Base64String<S>::as_bytes(&self) -> &[u8]
+pub fn base64_ng::Base64String<S>::as_str(&self) -> &str
+pub const fn base64_ng::Base64String<S>::codec(&self) -> &base64_ng::Base64<S>
+pub fn base64_ng::Base64String<S>::decode(&self) -> core::result::Result<alloc::vec::Vec<u8>, base64_ng::OneShotError>
+pub fn base64_ng::Base64String<S>::decode_with_limit(&self, usize) -> core::result::Result<alloc::vec::Vec<u8>, base64_ng::OneShotError>
+pub fn base64_ng::Base64String<S>::encode(base64_ng::Base64<S>, &[u8]) -> core::result::Result<Self, base64_ng::OneShotError>
+pub fn base64_ng::Base64String<S>::from_string(base64_ng::Base64<S>, alloc::string::String) -> core::result::Result<Self, base64_ng::OneShotError>
+pub fn base64_ng::Base64String<S>::into_string(self) -> alloc::string::String
+pub fn base64_ng::Base64String<S>::is_empty(&self) -> bool
+pub fn base64_ng::Base64String<S>::len(&self) -> usize
+pub fn base64_ng::Base64String<S>::parse(base64_ng::Base64<S>, &str) -> core::result::Result<Self, base64_ng::OneShotError>
+pub fn base64_ng::Base64String<S>::settings(&self) -> base64_ng::CodecSettings
+impl<S: base64_ng::Codec> core::convert::AsRef<[u8]> for base64_ng::Base64String<S>
+pub fn base64_ng::Base64String<S>::as_ref(&self) -> &[u8]
+impl<S: base64_ng::Codec> core::convert::AsRef<str> for base64_ng::Base64String<S>
+pub fn base64_ng::Base64String<S>::as_ref(&self) -> &str
+impl<S: base64_ng::Codec> core::fmt::Display for base64_ng::Base64String<S>
+pub fn base64_ng::Base64String<S>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<S: core::clone::Clone + base64_ng::Codec> core::clone::Clone for base64_ng::Base64String<S>
+pub fn base64_ng::Base64String<S>::clone(&self) -> base64_ng::Base64String<S>
+impl<S: core::cmp::Eq + base64_ng::Codec> core::cmp::Eq for base64_ng::Base64String<S>
+impl<S: core::cmp::PartialEq + base64_ng::Codec> core::cmp::PartialEq for base64_ng::Base64String<S>
+pub fn base64_ng::Base64String<S>::eq(&self, &base64_ng::Base64String<S>) -> bool
+impl<S: core::cmp::PartialEq + base64_ng::Codec> core::marker::StructuralPartialEq for base64_ng::Base64String<S>
+impl<S: core::fmt::Debug + base64_ng::Codec> core::fmt::Debug for base64_ng::Base64String<S>
+pub fn base64_ng::Base64String<S>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<S: core::hash::Hash + base64_ng::Codec> core::hash::Hash for base64_ng::Base64String<S>
+pub fn base64_ng::Base64String<S>::hash<__H: core::hash::Hasher>(&self, &mut __H)
+pub const base64_ng::prelude::STRICT_STANDARD_PADDED: base64_ng::Base64<base64_ng::StrictStandardPadded>
+pub const base64_ng::prelude::STRICT_STANDARD_UNPADDED: base64_ng::Base64<base64_ng::StrictStandardUnpadded>
+pub const base64_ng::prelude::STRICT_URL_SAFE_PADDED: base64_ng::Base64<base64_ng::StrictUrlSafePadded>
+pub const base64_ng::prelude::STRICT_URL_SAFE_UNPADDED: base64_ng::Base64<base64_ng::StrictUrlSafeUnpadded>
+pub trait base64_ng::prelude::Codec: base64_ng::v2::specifications::sealed::Sealed + core::marker::Send + core::marker::Sync
+pub fn base64_ng::prelude::Codec::settings(&self) -> base64_ng::CodecSettings
+impl base64_ng::Codec for base64_ng::RuntimeSpec
+pub fn base64_ng::RuntimeSpec::settings(&self) -> base64_ng::CodecSettings
+impl base64_ng::Codec for base64_ng::StrictStandardPadded
+pub fn base64_ng::StrictStandardPadded::settings(&self) -> base64_ng::CodecSettings
+impl base64_ng::Codec for base64_ng::StrictStandardUnpadded
+pub fn base64_ng::StrictStandardUnpadded::settings(&self) -> base64_ng::CodecSettings
+impl base64_ng::Codec for base64_ng::StrictUrlSafePadded
+pub fn base64_ng::StrictUrlSafePadded::settings(&self) -> base64_ng::CodecSettings
+impl base64_ng::Codec for base64_ng::StrictUrlSafeUnpadded
+pub fn base64_ng::StrictUrlSafeUnpadded::settings(&self) -> base64_ng::CodecSettings
 pub mod base64_ng::runtime
 #[non_exhaustive] pub enum base64_ng::runtime::Backend
 pub base64_ng::runtime::Backend::Avx2
@@ -2419,6 +2567,36 @@ pub fn base64_ng::Base64<S>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::
 impl<S: core::hash::Hash> core::hash::Hash for base64_ng::Base64<S>
 pub fn base64_ng::Base64<S>::hash<__H: core::hash::Hasher>(&self, &mut __H)
 impl<S: core::marker::Copy> core::marker::Copy for base64_ng::Base64<S>
+pub struct base64_ng::Base64String<S: base64_ng::Codec>
+impl<S: base64_ng::Codec> base64_ng::Base64String<S>
+pub fn base64_ng::Base64String<S>::as_bytes(&self) -> &[u8]
+pub fn base64_ng::Base64String<S>::as_str(&self) -> &str
+pub const fn base64_ng::Base64String<S>::codec(&self) -> &base64_ng::Base64<S>
+pub fn base64_ng::Base64String<S>::decode(&self) -> core::result::Result<alloc::vec::Vec<u8>, base64_ng::OneShotError>
+pub fn base64_ng::Base64String<S>::decode_with_limit(&self, usize) -> core::result::Result<alloc::vec::Vec<u8>, base64_ng::OneShotError>
+pub fn base64_ng::Base64String<S>::encode(base64_ng::Base64<S>, &[u8]) -> core::result::Result<Self, base64_ng::OneShotError>
+pub fn base64_ng::Base64String<S>::from_string(base64_ng::Base64<S>, alloc::string::String) -> core::result::Result<Self, base64_ng::OneShotError>
+pub fn base64_ng::Base64String<S>::into_string(self) -> alloc::string::String
+pub fn base64_ng::Base64String<S>::is_empty(&self) -> bool
+pub fn base64_ng::Base64String<S>::len(&self) -> usize
+pub fn base64_ng::Base64String<S>::parse(base64_ng::Base64<S>, &str) -> core::result::Result<Self, base64_ng::OneShotError>
+pub fn base64_ng::Base64String<S>::settings(&self) -> base64_ng::CodecSettings
+impl<S: base64_ng::Codec> core::convert::AsRef<[u8]> for base64_ng::Base64String<S>
+pub fn base64_ng::Base64String<S>::as_ref(&self) -> &[u8]
+impl<S: base64_ng::Codec> core::convert::AsRef<str> for base64_ng::Base64String<S>
+pub fn base64_ng::Base64String<S>::as_ref(&self) -> &str
+impl<S: base64_ng::Codec> core::fmt::Display for base64_ng::Base64String<S>
+pub fn base64_ng::Base64String<S>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<S: core::clone::Clone + base64_ng::Codec> core::clone::Clone for base64_ng::Base64String<S>
+pub fn base64_ng::Base64String<S>::clone(&self) -> base64_ng::Base64String<S>
+impl<S: core::cmp::Eq + base64_ng::Codec> core::cmp::Eq for base64_ng::Base64String<S>
+impl<S: core::cmp::PartialEq + base64_ng::Codec> core::cmp::PartialEq for base64_ng::Base64String<S>
+pub fn base64_ng::Base64String<S>::eq(&self, &base64_ng::Base64String<S>) -> bool
+impl<S: core::cmp::PartialEq + base64_ng::Codec> core::marker::StructuralPartialEq for base64_ng::Base64String<S>
+impl<S: core::fmt::Debug + base64_ng::Codec> core::fmt::Debug for base64_ng::Base64String<S>
+pub fn base64_ng::Base64String<S>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<S: core::hash::Hash + base64_ng::Codec> core::hash::Hash for base64_ng::Base64String<S>
+pub fn base64_ng::Base64String<S>::hash<__H: core::hash::Hasher>(&self, &mut __H)
 pub struct base64_ng::Bcrypt
 impl base64_ng::Alphabet for base64_ng::Bcrypt
 pub const base64_ng::Bcrypt::ENCODE: [u8; 64]

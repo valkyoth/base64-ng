@@ -105,6 +105,8 @@ fi
 
 require_text "$ledger" \
     "Commit 18 activates \`base64_ng::secret\` as the canonical storage and exposure"
+require_text "$ledger" "\`Base64String<S>\`"
+require_text "$ledger" "\`base64_ng::prelude\`"
 require_text src/v2/mod.rs "pub mod secret;"
 
 if ! grep -q '^checked-backend = \["simd"\]$' Cargo.toml; then

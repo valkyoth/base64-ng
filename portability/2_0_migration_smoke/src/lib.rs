@@ -150,6 +150,18 @@ mod tests {
     }
 
     #[test]
+    fn ordinary_string_and_prelude_are_public_and_external() {
+        use base64_ng::prelude::*;
+
+        let encoded = Base64String::encode(STRICT_STANDARD_PADDED, b"hello").unwrap();
+        assert_eq!(encoded.as_str(), "aGVsbG8=");
+        assert_eq!(encoded.decode().unwrap(), b"hello");
+
+        let parsed = Base64String::parse(STRICT_URL_SAFE_UNPADDED, "-_8").unwrap();
+        assert_eq!(parsed.decode().unwrap(), b"\xfb\xff");
+    }
+
+    #[test]
     fn const_and_bounded_2_0_surface_is_public_and_external() {
         fn assert_copy<T: Copy>() {}
         assert_copy::<EncodedArray<16>>();

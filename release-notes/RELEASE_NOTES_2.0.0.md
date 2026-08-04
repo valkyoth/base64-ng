@@ -6,8 +6,9 @@
 ## Highlights
 
 - Adds validated codec specifications, strict RFC 4648 presets, transactional
-  one-shot operations, heapless incremental states, in-place transforms,
-  bounded buffers, formatting, append, and chunk iterators.
+  one-shot operations, a policy-carrying ordinary `Base64String`, a focused
+  ordinary prelude, heapless incremental states, in-place transforms, bounded
+  buffers, formatting, append, and chunk iterators.
 - Adds bounded fixed-work secret encode/decode, explicit secret exposure,
   cleanup owners, protected-memory provider capabilities, backend health
   checks, and checked-backend quarantine and scalar retry.

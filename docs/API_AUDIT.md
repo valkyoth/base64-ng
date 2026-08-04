@@ -459,3 +459,18 @@ Stable boundary:
 - The methods preserve ordinary detailed `DecodeError`, canonicality,
   output-capacity, tail, padding, and no-write-on-error behavior. They do not
   authorize constant-time-oriented secret SIMD processing.
+
+## 2.0 Pre-Seal Usability Surface
+
+- The release owner explicitly reopened the pre-seal API freeze for two narrow
+  ordinary usability additions before the final full-range pentest.
+- `Base64String<S>` retains the exact sealed codec value that encoded or
+  validated its immutable owned text. It is `alloc`-only, visibly printable,
+  conditionally cloneable, and non-wiping; it cannot accept `SecretInput`
+  without explicit exposure.
+- `base64_ng::prelude` contains only the four strict presets, the ordinary
+  `Base64`, `Codec`, and `OneShotError` types, plus `Base64String` under
+  `alloc`. It excludes compatibility, secret, constant-time-oriented,
+  protocol, and historical APIs.
+- No untyped `Base64String` default, implicit policy inference, mutable text
+  access, secret coercion, or panicking convenience constructor is admitted.
