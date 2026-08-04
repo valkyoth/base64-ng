@@ -111,6 +111,15 @@ printf 'source:\ncommit=%s\ncommit=%s\ntree_state=clean\n' \
     "$commit" "$commit" >"$manifest"
 assert_manifest_rejected duplicate-identical-key
 
+printf 'source:\ncommit=%s\ncommit=\ntree_state=clean\n' "$commit" >"$manifest"
+assert_manifest_rejected trailing-empty-commit
+
+printf 'source:\ncommit=\ncommit=%s\ntree_state=clean\n' "$commit" >"$manifest"
+assert_manifest_rejected leading-empty-commit
+
+printf 'source:\ncommit=%s\ntree_state=clean\ntree_state=\n' "$commit" >"$manifest"
+assert_manifest_rejected trailing-empty-tree-state
+
 printf 'source:\ncommit=stale\ncommit=%s\ntree_state=clean\n' \
     "$commit" >"$manifest"
 assert_manifest_rejected conflicting-key

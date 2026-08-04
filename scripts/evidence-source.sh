@@ -74,15 +74,18 @@ evidence_require_exact_manifest_key() {
     evidence_manifest_expected="$3"
     evidence_manifest_label="$4"
 
-    evidence_manifest_actual="$(
-        awk -v key="$evidence_manifest_key" '
+    if ! awk -v key="$evidence_manifest_key" -v expected="$evidence_manifest_expected" '
             index($0, key "=") == 1 && substr($0, 1, length(key) + 1) == key "=" {
-                print substr($0, length(key) + 2)
+                count += 1
+                if (substr($0, length(key) + 2) != expected) {
+                    invalid = 1
+                }
+            }
+            END {
+                exit !(count == 1 && invalid == 0)
             }
         ' "$evidence_manifest_file"
-    )"
-
-    if [ "$evidence_manifest_actual" != "$evidence_manifest_expected" ]; then
+    then
         echo "$evidence_manifest_label: invalid or duplicate $evidence_manifest_key in $evidence_manifest_file" >&2
         exit 1
     fi
