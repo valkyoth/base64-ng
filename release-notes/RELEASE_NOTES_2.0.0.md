@@ -17,7 +17,8 @@
   ceiling for stack staging. Derived encoded-input ceilings are enforced before
   constant-time-oriented validation across fixed, staged, locked, and bounded
   protected helpers, bounding attacker-controlled validation work as well as
-  output allocation.
+  output allocation. The fixed-size policy error is non-exhaustive, and legacy
+  locked-vector compatibility mappings for the 1 MiB default are documented.
 - Extends admitted acceleration and evidence for x86, AArch64 NEON, and wasm
   `simd128`, while keeping RVV and SVE candidates non-dispatchable until native
   hardware evidence satisfies their admission contracts.

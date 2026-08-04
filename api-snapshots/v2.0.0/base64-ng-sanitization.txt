@@ -28,7 +28,7 @@ impl core::fmt::Debug for base64_ng_sanitization::ProtectedAllocation
 pub fn base64_ng_sanitization::ProtectedAllocation::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for base64_ng_sanitization::ProtectedAllocation
 impl core::marker::StructuralPartialEq for base64_ng_sanitization::ProtectedAllocation
-pub enum base64_ng_sanitization::SanitizationDecodeError
+#[non_exhaustive] pub enum base64_ng_sanitization::SanitizationDecodeError
 pub base64_ng_sanitization::SanitizationDecodeError::Decode(base64_ng::errors::DecodeError)
 pub base64_ng_sanitization::SanitizationDecodeError::EncodedInputLimit
 pub base64_ng_sanitization::SanitizationDecodeError::EncodedInputLimit::actual: usize

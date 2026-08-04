@@ -15,6 +15,10 @@
   explicit const-generic output limit, reserves fallibly, and rejects
   insufficient staging before allocation. Companion stack secret arrays are
   compile-time limited to 1,024 bytes, aligned with the core secret frame.
+- Sanitization documents the exact compatibility error mapping for the default
+  locked-vector limit and makes `SanitizationDecodeError` non-exhaustive before
+  the 2.0 API is published, allowing future policy errors without breaking
+  exhaustive downstream matches.
 - Password-record work limits are cumulative across repeated input passes, and
   caller-owned PBKDF2/SHA-crypt behavior is executed without `alloc` in the
   focused release gate. Allocating record generators complete work admission

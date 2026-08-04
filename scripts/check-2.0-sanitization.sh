@@ -25,6 +25,29 @@ do
     fi
 done
 
+if ! awk '
+    /#\[non_exhaustive\]/ { non_exhaustive = 1; next }
+    /pub enum SanitizationDecodeError/ { found = non_exhaustive; exit }
+    { non_exhaustive = 0 }
+    END { exit(found ? 0 : 1) }
+' crates/base64-ng-sanitization/src/error.rs; then
+    echo "2.0 sanitization: SanitizationDecodeError must remain non-exhaustive" >&2
+    exit 1
+fi
+
+for required in \
+    'compatibility convenience method rejects encoded input' \
+    'LockedSecretVecFillError::Fill(DecodeError::InvalidLength)' \
+    'ProtectedSecretFillError::CapacityLimit'
+do
+    if ! grep -R -F -q "$required" \
+        crates/base64-ng-sanitization/src/lib.rs \
+        crates/base64-ng-sanitization/src/protected_decode.rs; then
+        echo "2.0 sanitization: missing locked-vector policy documentation: $required" >&2
+        exit 1
+    fi
+done
+
 if grep -F -n 'post-construction report admission' \
     crates/base64-ng-sanitization/src/lib.rs; then
     echo "2.0 sanitization: degraded compatibility default remains" >&2

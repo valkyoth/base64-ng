@@ -138,6 +138,15 @@ rejects encoded input beyond the derived public ceiling before full validation,
 then rejects decoded capacities above the const-generic application limit
 before mapping allocation or decoder invocation.
 
+The legacy dynamic locked-vector convenience methods use a 1 MiB decoded
+ceiling and reject input beyond the corresponding encoded ceiling before full
+validation. Their compatibility errors map oversized encoded input to
+`Fill(DecodeError::InvalidLength)` and oversized valid decoded output to
+`Length`; the detailed protected method reports either case as
+`ProtectedSecretFillError::CapacityLimit`. Prefer
+`decode_locked_secret_vec_checked_bounded::<MAX>` for protocol-specific limits
+and explicit policy-aware error handling.
+
 For the 2.0 codec, `SanitizationProtectedDecodeExt` accepts a classified
 `SecretInput` and protects both private staging and final destination before
 running the fixed-work `SecretFrame` decoder:

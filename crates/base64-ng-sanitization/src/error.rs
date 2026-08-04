@@ -1,7 +1,11 @@
 use base64_ng::DecodeError;
 
 /// Error returned by fixed-size sanitization decode helpers.
+///
+/// This enum is non-exhaustive so future policy failures can be reported
+/// without making security updates source-breaking for exhaustive matches.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[non_exhaustive]
 pub enum SanitizationDecodeError {
     /// The Base64 decoder rejected the input.
     Decode(DecodeError),

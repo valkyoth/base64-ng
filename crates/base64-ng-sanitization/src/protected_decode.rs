@@ -114,12 +114,18 @@ pub trait CtDecodeSanitizationProtectedExt {
 
     /// Decode a runtime-size secret after required controls are established.
     ///
+    /// This compatibility convenience method rejects encoded input beyond the
+    /// ceiling derived from [`DEFAULT_SECRET_VEC_DECODE_MAX_LEN`] before full
+    /// validation. It also rejects valid decoded output larger than that
+    /// default. Use [`Self::decode_locked_secret_vec_checked_bounded`] when the
+    /// protocol requires a different public limit.
+    ///
     /// # Errors
     ///
-    /// Preserves every [`ProtectedSecretFillError`] failure class, including
-    /// distinct protection and integrity errors. This compatibility helper
-    /// applies [`DEFAULT_SECRET_VEC_DECODE_MAX_LEN`] before full validation;
-    /// use the bounded method for a protocol-specific limit.
+    /// Encoded input beyond the compatibility ceiling returns
+    /// [`ProtectedSecretFillError::CapacityLimit`], as does valid decoded output
+    /// beyond [`DEFAULT_SECRET_VEC_DECODE_MAX_LEN`]. Other failures preserve
+    /// distinct protection, integrity, fill, and length categories.
     #[cfg(all(
         any(
             all(

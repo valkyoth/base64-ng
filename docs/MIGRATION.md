@@ -258,6 +258,16 @@ apply the same public-length preflight and reject stack capacities above 1,024
 bytes at compile time; larger values must use bounded heap or protected
 storage.
 
+Legacy dynamic locked-vector convenience calls use the same 1 MiB decoded
+ceiling. Their compatibility result maps oversized encoded input to
+`LockedSecretVecFillError::Fill(DecodeError::InvalidLength)` and oversized valid
+decoded output to `LockedSecretVecFillError::Length`; the detailed protected
+method uses `ProtectedSecretFillError::CapacityLimit`. Use
+`decode_locked_secret_vec_checked_bounded::<MAX>` when migrating protocols with
+a different public bound. `SanitizationDecodeError` is non-exhaustive in 2.0;
+downstream matches must retain a fallback arm so future security policy errors
+remain source-compatible.
+
 ## Final Checklist
 
 1. Replace ordinary engine calls with an explicit strict `Base64<Spec>` value.

@@ -360,11 +360,20 @@ pub trait CtDecodeSanitizationExt {
     /// decoded capacity and bytes are written directly into that mapping
     /// through `sanitization::LockedSecretVec::try_from_capacity`.
     ///
+    /// This compatibility convenience method rejects encoded input beyond the
+    /// ceiling derived from [`DEFAULT_SECRET_VEC_DECODE_MAX_LEN`] before full
+    /// validation. It also rejects valid decoded output larger than that
+    /// default. Use
+    /// [`CtDecodeSanitizationProtectedExt::decode_locked_secret_vec_checked_bounded`]
+    /// when the protocol requires a different public limit.
+    ///
     /// # Errors
     ///
-    /// Returns a `sanitization` memory error if locked storage cannot be
-    /// created. Returns [`base64_ng::DecodeError`] from the fill branch if
-    /// Base64 decoding fails.
+    /// Returns `LockedSecretVecFillError::Fill(DecodeError::InvalidLength)`
+    /// when encoded input exceeds the compatibility ceiling. Returns
+    /// `LockedSecretVecFillError::Length` when valid decoded output exceeds
+    /// [`DEFAULT_SECRET_VEC_DECODE_MAX_LEN`]. Returns the remaining memory,
+    /// integrity, and decoding failures from the locked-secret constructor.
     ///
     /// # Security
     ///
@@ -396,11 +405,22 @@ pub trait CtDecodeSanitizationExt {
 
     /// Decode into dynamic locked storage and reject degraded protection.
     ///
+    /// This compatibility convenience method rejects encoded input beyond the
+    /// ceiling derived from [`DEFAULT_SECRET_VEC_DECODE_MAX_LEN`] before full
+    /// validation. It also rejects valid decoded output larger than that
+    /// default. Use
+    /// [`CtDecodeSanitizationProtectedExt::decode_locked_secret_vec_checked_bounded`]
+    /// when the protocol requires a different public limit.
+    ///
     /// # Errors
     ///
-    /// In the built-in implementation, returns
-    /// [`LockedDecodeError::Operation`] for decode or length failures and
-    /// [`LockedDecodeError::DegradedProtection`] when a required control
+    /// In the built-in implementation, encoded input beyond the compatibility
+    /// ceiling returns [`LockedDecodeError::Operation`] containing
+    /// `LockedSecretVecFillError::Fill(DecodeError::InvalidLength)`. Valid
+    /// decoded output beyond [`DEFAULT_SECRET_VEC_DECODE_MAX_LEN`] returns
+    /// `Operation` containing `LockedSecretVecFillError::Length`. Other decode
+    /// or construction failures also return `Operation`, while
+    /// [`LockedDecodeError::DegradedProtection`] is returned when a required control
     /// cannot be established or integrity validation fails. The compatibility
     /// default also reports construction failures through `Operation`. Use
     /// [`CtDecodeSanitizationProtectedExt::decode_locked_secret_vec_checked_detailed`]
