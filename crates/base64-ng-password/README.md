@@ -70,4 +70,6 @@ budget. Every record scan, field validation, and encode/decode transform
 charges the same budget before that pass begins; a validation pass followed by
 a decode pass therefore charges the encoded field length twice. The
 no-default-features test matrix executes the caller-owned PBKDF2 and SHA-crypt
-APIs without enabling `alloc`.
+APIs without enabling `alloc`. Allocating generators admit every validation,
+size, and cumulative-work limit before reserving or initializing their output
+allocation.

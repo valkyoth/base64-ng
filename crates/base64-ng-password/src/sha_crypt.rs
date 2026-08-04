@@ -239,12 +239,26 @@ pub fn generate_sha_crypt_record_into(
     output: &mut [u8],
     limits: PasswordRecordLimits,
 ) -> Result<usize, PasswordRecordError> {
+    let required = preflight_sha_crypt_generation(algorithm, rounds, salt, digest, limits)?;
+    require_capacity(required, output.len())?;
+    Ok(generate_sha_crypt_record_prevalidated(
+        algorithm, rounds, salt, digest, output, required,
+    ))
+}
+
+pub(crate) fn preflight_sha_crypt_generation(
+    algorithm: ShaCryptAlgorithm,
+    rounds: ShaCryptRounds,
+    salt: &[u8],
+    digest: &[u8],
+    limits: PasswordRecordLimits,
+) -> Result<usize, PasswordRecordError> {
     let mut work = WorkBudget::new(limits);
     let required =
         sha_crypt_record_len_with_budget(algorithm, rounds, salt, digest, limits, &mut work)?;
-    generate_sha_crypt_record_prevalidated(
-        algorithm, rounds, salt, digest, output, required, &mut work,
-    )
+    work.charge(salt.len())?;
+    work.charge(digest.len())?;
+    Ok(required)
 }
 
 pub(crate) fn generate_sha_crypt_record_prevalidated(
@@ -254,12 +268,7 @@ pub(crate) fn generate_sha_crypt_record_prevalidated(
     digest: &[u8],
     output: &mut [u8],
     required: usize,
-    work: &mut WorkBudget,
-) -> Result<usize, PasswordRecordError> {
-    require_capacity(required, output.len())?;
-    work.charge(salt.len())?;
-    work.charge(digest.len())?;
-
+) -> usize {
     let mut cursor = 0;
     cursor += write_bytes(&mut output[cursor..required], algorithm.prefix());
     if rounds.is_explicit() {
@@ -272,7 +281,7 @@ pub(crate) fn generate_sha_crypt_record_prevalidated(
     output[cursor] = b'$';
     cursor += 1;
     encode_groups(digest, groups(algorithm), &mut output[cursor..required]);
-    Ok(required)
+    required
 }
 
 fn groups(algorithm: ShaCryptAlgorithm) -> &'static [(Option<usize>, Option<usize>, usize, usize)] {

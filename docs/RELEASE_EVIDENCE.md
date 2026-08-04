@@ -87,7 +87,9 @@ per-pass ceiling. Exact-boundary tests account for record, field, validation,
 and repeated decode passes and prove output rollback on exhaustion. A dedicated
 `--no-default-features --tests` matrix executes caller-owned PBKDF2 and
 SHA-crypt generation, parsing, decoding, and work-limit failure without
-enabling `alloc`.
+enabling `alloc`. Injected-reserver tests prove both allocating generators
+admit their complete cumulative generation budget before heap reservation;
+post-admission writers have no remaining fallible admission step.
 
 Commit 4 adds the exact RFC 4648 source lock, errata and requirements ledgers,
 independent test-only oracle, versioned cross-crate semantic corpus, and the

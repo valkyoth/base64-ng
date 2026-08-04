@@ -2,10 +2,9 @@ use alloc::{string::String, vec::Vec};
 
 use crate::{
     PasslibPbkdf2Algorithm, PasswordRecordError, PasswordRecordErrorKind, PasswordRecordLimits,
-    ShaCryptAlgorithm, ShaCryptRounds, generate_pbkdf2_record_into,
-    limits::WorkBudget,
-    pbkdf2_record_len,
-    sha_crypt::{generate_sha_crypt_record_prevalidated, sha_crypt_record_len_with_budget},
+    ShaCryptAlgorithm, ShaCryptRounds,
+    pbkdf2::{generate_pbkdf2_record_prevalidated, preflight_pbkdf2_generation},
+    sha_crypt::{generate_sha_crypt_record_prevalidated, preflight_sha_crypt_generation},
 };
 
 /// Generates one canonical Passlib PBKDF2 record into an exact allocation.
@@ -21,10 +20,7 @@ pub fn generate_pbkdf2_record(
     checksum: &[u8],
     limits: PasswordRecordLimits,
 ) -> Result<String, PasswordRecordError> {
-    let required = pbkdf2_record_len(algorithm, rounds, salt, checksum, limits)?;
-    generate_string(required, |output| {
-        generate_pbkdf2_record_into(algorithm, rounds, salt, checksum, output, limits)
-    })
+    generate_pbkdf2_record_with_reserver(algorithm, rounds, salt, checksum, limits, reserve_exact)
 }
 
 /// Generates one canonical SHA-crypt record into an exact allocation.
@@ -40,27 +36,110 @@ pub fn generate_sha_crypt_record(
     digest: &[u8],
     limits: PasswordRecordLimits,
 ) -> Result<String, PasswordRecordError> {
-    let mut work = WorkBudget::new(limits);
-    let required =
-        sha_crypt_record_len_with_budget(algorithm, rounds, salt, digest, limits, &mut work)?;
-    generate_string(required, move |output| {
-        generate_sha_crypt_record_prevalidated(
-            algorithm, rounds, salt, digest, output, required, &mut work,
+    generate_sha_crypt_record_with_reserver(algorithm, rounds, salt, digest, limits, reserve_exact)
+}
+
+fn generate_pbkdf2_record_with_reserver<R>(
+    algorithm: PasslibPbkdf2Algorithm,
+    rounds: u32,
+    salt: &[u8],
+    checksum: &[u8],
+    limits: PasswordRecordLimits,
+    reserve: R,
+) -> Result<String, PasswordRecordError>
+where
+    R: FnOnce(&mut Vec<u8>, usize) -> Result<(), PasswordRecordError>,
+{
+    let (required, salt_len) =
+        preflight_pbkdf2_generation(algorithm, rounds, salt, checksum, limits)?;
+    generate_string(required, reserve, |output| {
+        generate_pbkdf2_record_prevalidated(
+            algorithm, rounds, salt, checksum, output, required, salt_len,
         )
     })
 }
 
-fn generate_string(
-    required: usize,
-    generate: impl FnOnce(&mut [u8]) -> Result<usize, PasswordRecordError>,
-) -> Result<String, PasswordRecordError> {
-    let mut bytes = Vec::new();
+fn generate_sha_crypt_record_with_reserver<R>(
+    algorithm: ShaCryptAlgorithm,
+    rounds: ShaCryptRounds,
+    salt: &[u8],
+    digest: &[u8],
+    limits: PasswordRecordLimits,
+    reserve: R,
+) -> Result<String, PasswordRecordError>
+where
+    R: FnOnce(&mut Vec<u8>, usize) -> Result<(), PasswordRecordError>,
+{
+    let required = preflight_sha_crypt_generation(algorithm, rounds, salt, digest, limits)?;
+    generate_string(required, reserve, |output| {
+        generate_sha_crypt_record_prevalidated(algorithm, rounds, salt, digest, output, required)
+    })
+}
+
+fn reserve_exact(bytes: &mut Vec<u8>, required: usize) -> Result<(), PasswordRecordError> {
     bytes
         .try_reserve_exact(required)
-        .map_err(|_| PasswordRecordError::new(PasswordRecordErrorKind::AllocationFailed))?;
+        .map_err(|_| PasswordRecordError::new(PasswordRecordErrorKind::AllocationFailed))
+}
+
+fn generate_string<R, G>(
+    required: usize,
+    reserve: R,
+    generate: G,
+) -> Result<String, PasswordRecordError>
+where
+    R: FnOnce(&mut Vec<u8>, usize) -> Result<(), PasswordRecordError>,
+    G: FnOnce(&mut [u8]) -> usize,
+{
+    let mut bytes = Vec::new();
+    reserve(&mut bytes, required)?;
     bytes.resize(required, 0);
-    let written = generate(&mut bytes)?;
+    let written = generate(&mut bytes);
     bytes.truncate(written);
     String::from_utf8(bytes)
         .map_err(|_| PasswordRecordError::new(PasswordRecordErrorKind::BackendFailure))
+}
+
+#[cfg(test)]
+mod tests {
+    use core::cell::Cell;
+
+    use super::*;
+
+    #[test]
+    fn rejected_work_budget_never_reaches_reservation() {
+        let pbkdf2_reserve_called = Cell::new(false);
+        let pbkdf2_limits = PasswordRecordLimits::new(256, 128, 64, 64, 256, 35);
+        let error = generate_pbkdf2_record_with_reserver(
+            PasslibPbkdf2Algorithm::Sha256,
+            29_000,
+            b"salt",
+            &[0x42; 32],
+            pbkdf2_limits,
+            |_, _| {
+                pbkdf2_reserve_called.set(true);
+                Ok(())
+            },
+        )
+        .unwrap_err();
+        assert_eq!(error.kind(), PasswordRecordErrorKind::WorkLimitExceeded);
+        assert!(!pbkdf2_reserve_called.get());
+
+        let sha_reserve_called = Cell::new(false);
+        let sha_limits = PasswordRecordLimits::new(256, 128, 64, 64, 256, 39);
+        let error = generate_sha_crypt_record_with_reserver(
+            ShaCryptAlgorithm::Sha256,
+            ShaCryptRounds::implicit(),
+            b"salt",
+            &[0x24; 32],
+            sha_limits,
+            |_, _| {
+                sha_reserve_called.set(true);
+                Ok(())
+            },
+        )
+        .unwrap_err();
+        assert_eq!(error.kind(), PasswordRecordErrorKind::WorkLimitExceeded);
+        assert!(!sha_reserve_called.get());
+    }
 }

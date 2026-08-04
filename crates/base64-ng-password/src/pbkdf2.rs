@@ -190,15 +190,38 @@ pub fn generate_pbkdf2_record_into(
     output: &mut [u8],
     limits: PasswordRecordLimits,
 ) -> Result<usize, PasswordRecordError> {
+    let (required, salt_len) =
+        preflight_pbkdf2_generation(algorithm, rounds, salt, checksum, limits)?;
+    require_capacity(required, output.len())?;
+    Ok(generate_pbkdf2_record_prevalidated(
+        algorithm, rounds, salt, checksum, output, required, salt_len,
+    ))
+}
+
+pub(crate) fn preflight_pbkdf2_generation(
+    algorithm: PasslibPbkdf2Algorithm,
+    rounds: u32,
+    salt: &[u8],
+    checksum: &[u8],
+    limits: PasswordRecordLimits,
+) -> Result<(usize, usize), PasswordRecordError> {
     let required = pbkdf2_record_len(algorithm, rounds, salt, checksum, limits)?;
     let salt_len = encoded_len(salt.len())?;
-    require_capacity(required, output.len())?;
-    let work = salt
-        .len()
-        .checked_add(checksum.len())
-        .ok_or_else(|| PasswordRecordError::new(PasswordRecordErrorKind::LengthOverflow))?;
-    require_work(work, limits)?;
+    let mut work = WorkBudget::new(limits);
+    work.charge(salt.len())?;
+    work.charge(checksum.len())?;
+    Ok((required, salt_len))
+}
 
+pub(crate) fn generate_pbkdf2_record_prevalidated(
+    algorithm: PasslibPbkdf2Algorithm,
+    rounds: u32,
+    salt: &[u8],
+    checksum: &[u8],
+    output: &mut [u8],
+    required: usize,
+    salt_len: usize,
+) -> usize {
     let mut cursor = 0;
     cursor += write_bytes(&mut output[cursor..required], algorithm.prefix());
     cursor += write_decimal(rounds, &mut output[cursor..required]);
@@ -209,7 +232,7 @@ pub fn generate_pbkdf2_record_into(
     output[cursor] = b'$';
     cursor += 1;
     encode_adapted(checksum, &mut output[cursor..required]);
-    Ok(required)
+    required
 }
 
 fn validate_pbkdf2_salt(
@@ -324,13 +347,6 @@ pub(crate) fn require_record(
         ));
     }
     Ok(())
-}
-
-pub(crate) fn require_work(
-    length: usize,
-    limits: PasswordRecordLimits,
-) -> Result<(), PasswordRecordError> {
-    WorkBudget::new(limits).charge(length)
 }
 
 pub(crate) fn require_field(
