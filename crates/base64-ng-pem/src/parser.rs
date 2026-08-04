@@ -174,7 +174,9 @@ pub(crate) fn parse_raw_document(
     policy: PemParsePolicy,
     validate_base64: bool,
 ) -> Result<RawPemDocument, PemError> {
-    preflight_input(input, limits)?;
+    if input.len() > limits.max_input_bytes() {
+        return Err(PemError::new(PemErrorKind::InputLimitExceeded));
+    }
     let mut work = WorkBudget::new(limits);
     // The physical-line cursor inspects every source byte once.
     work.charge(input.len())?;
@@ -491,13 +493,6 @@ fn add_adjacent(
         .ok_or_else(|| PemError::new(PemErrorKind::LengthOverflow))?;
     if report.adjacent_text_bytes > limits.max_adjacent_text_bytes() {
         return Err(PemError::new(PemErrorKind::AdjacentTextLimitExceeded));
-    }
-    Ok(())
-}
-
-fn preflight_input(input: &[u8], limits: PemLimits) -> Result<(), PemError> {
-    if input.len() > limits.max_input_bytes() {
-        return Err(PemError::new(PemErrorKind::InputLimitExceeded));
     }
     Ok(())
 }

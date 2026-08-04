@@ -6,7 +6,28 @@ use base64_ng_pem::{
 };
 use libfuzzer_sys::fuzz_target;
 
-const LIMITS: PemLimits = PemLimits::new(8192, 16_384, 8192, 2048, 128, 16, 4096, 8192);
+const MAX_PAYLOAD: usize = 8192;
+const MAX_DOCUMENT: usize = 16_384;
+const GENERATION_LIMITS: PemLimits = PemLimits::new(
+    MAX_PAYLOAD,
+    MAX_DOCUMENT,
+    MAX_PAYLOAD,
+    2048,
+    128,
+    16,
+    4096,
+    MAX_PAYLOAD,
+);
+const PARSE_LIMITS: PemLimits = PemLimits::new(
+    MAX_DOCUMENT,
+    MAX_DOCUMENT,
+    MAX_PAYLOAD,
+    2048,
+    128,
+    16,
+    4096,
+    12 * MAX_DOCUMENT,
+);
 
 fuzz_target!(|data: &[u8]| {
     let seed = data.first().copied().unwrap_or(1);
@@ -14,21 +35,25 @@ fuzz_target!(|data: &[u8]| {
     let generated = encode_pem_block_to_string(
         &PemLabel::new("CERTIFICATE").unwrap(),
         payload,
-        LIMITS,
+        GENERATION_LIMITS,
         PemGenerationOptions::default(),
     );
     if payload.is_empty() {
         assert_eq!(generated.unwrap_err().kind(), PemErrorKind::InvalidBody);
     } else {
         let generated = generated.unwrap();
-        let parsed =
-            parse_pem_document(generated.as_bytes(), LIMITS, PemParsePolicy::Strict).unwrap();
+        let parsed = parse_pem_document(
+            generated.as_bytes(),
+            PARSE_LIMITS,
+            PemParsePolicy::Strict,
+        )
+        .unwrap();
         assert_eq!(parsed.blocks()[0].contents(), payload);
     }
 
     for policy in [PemParsePolicy::Strict, PemParsePolicy::Rfc7468Compatible] {
-        let one_shot = parse_pem_document(data, LIMITS, policy);
-        let mut incremental = PemDocumentParser::new(LIMITS, policy);
+        let one_shot = parse_pem_document(data, PARSE_LIMITS, policy);
+        let mut incremental = PemDocumentParser::new(PARSE_LIMITS, policy);
         let mut update_failed = false;
         for chunk in data.chunks(usize::from(seed % 31) + 1) {
             if incremental.update(chunk).is_err() {
@@ -37,7 +62,7 @@ fuzz_target!(|data: &[u8]| {
             }
         }
         if update_failed {
-            assert!(data.len() > LIMITS.max_input_bytes());
+            assert!(data.len() > PARSE_LIMITS.max_input_bytes());
         } else {
             let chunked = incremental.finish();
             match (one_shot, chunked) {

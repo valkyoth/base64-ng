@@ -19,6 +19,10 @@
   cumulative byte-pass budget across parsing and decode release, sizes padded
   secret output exactly at configured limits, and preserves operational Base64
   failure classes instead of reporting every failure as malformed input.
+- The PEM fuzz oracle now separates payload-generation limits from generated
+  document limits and carries the same twelve-pass parse headroom as the
+  published policy, preventing valid large documents from becoming false
+  libFuzzer crashes.
 - Commits 1-17 define validated alphabets and codec specifications, strict RFC
   4648 presets, transactional one-shot operations, heapless incremental states,
   bounded arrays, in-place transforms, formatting, append, chunks, exact WHATWG

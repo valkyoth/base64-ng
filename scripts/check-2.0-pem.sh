@@ -13,6 +13,19 @@ echo "2.0 PEM: lint and docs"
 cargo clippy --manifest-path "$manifest" --all-targets --all-features -- -D warnings
 cargo doc --manifest-path "$manifest" --no-deps --all-features
 
+echo "2.0 PEM: fuzz harness policy"
+cargo check --manifest-path fuzz/Cargo.toml --bin pem_document
+for required_fuzz_policy in \
+    "const GENERATION_LIMITS" \
+    "const PARSE_LIMITS" \
+    "12 * MAX_DOCUMENT"
+do
+    if ! grep -F -q "$required_fuzz_policy" fuzz/fuzz_targets/pem_document.rs; then
+        echo "2.0 PEM: missing fuzz policy: $required_fuzz_policy" >&2
+        exit 1
+    fi
+done
+
 echo "2.0 PEM: RFC source lock"
 BASE64_NG_RFC_SKIP_PACKAGE=1 scripts/verify-rfcs.sh
 
@@ -88,4 +101,4 @@ if grep -E '(^|/)rfc/' "$package_list"; then
     exit 1
 fi
 
-echo "2.0 PEM: RFC 7468 grammar, bounds, cleanup, interoperability, and package policy ok"
+echo "2.0 PEM: RFC 7468 grammar, bounds, cleanup, fuzz, interoperability, and package policy ok"

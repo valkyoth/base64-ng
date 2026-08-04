@@ -26,6 +26,8 @@
 - Hardens RFC 7468 parsing with pre-allocation limits on both labels,
   cumulative parse/decode work accounting, exact padded secret sizing, and
   distinct malformed-input, resource, and internal-fault error classes.
+- Keeps the PEM fuzz oracle aligned with cumulative work accounting through
+  separate payload and document limits, with release-gated parse headroom.
 - Adds locked RFC and registry sources, semantic and interoperability corpora,
   fuzzing, sanitizer, Miri, Kani, timing, assembly, QEMU, package, SBOM, and
   reproducibility gates.
