@@ -27,7 +27,8 @@
   cumulative parse/decode work accounting, exact padded secret sizing, and
   distinct malformed-input, resource, and internal-fault error classes.
 - Keeps the PEM fuzz oracle aligned with cumulative work accounting through
-  separate payload and document limits, with release-gated parse headroom.
+  separate payload and document limits, release-gated parse headroom, and a
+  deterministic oversized-seed regression test shared with the live target.
 - Adds locked RFC and registry sources, semantic and interoperability corpora,
   fuzzing, sanitizer, Miri, Kani, timing, assembly, QEMU, package, SBOM, and
   reproducibility gates.

@@ -15,12 +15,15 @@ cargo doc --manifest-path "$manifest" --no-deps --all-features
 
 echo "2.0 PEM: fuzz harness policy"
 cargo check --manifest-path fuzz/Cargo.toml --bin pem_document
+cargo test --manifest-path fuzz/Cargo.toml --lib \
+    pem_document::tests::oversized_payload_is_an_expected_generation_rejection
 for required_fuzz_policy in \
     "const GENERATION_LIMITS" \
     "const PARSE_LIMITS" \
-    "12 * MAX_DOCUMENT"
+    "12 * MAX_DOCUMENT" \
+    "payload.len() > MAX_PAYLOAD"
 do
-    if ! grep -F -q "$required_fuzz_policy" fuzz/fuzz_targets/pem_document.rs; then
+    if ! grep -F -q "$required_fuzz_policy" fuzz/src/pem_document.rs; then
         echo "2.0 PEM: missing fuzz policy: $required_fuzz_policy" >&2
         exit 1
     fi

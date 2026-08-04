@@ -1,55 +1,13 @@
 #![no_main]
 
-use base64_ng_pem::{
-    PemDocumentParser, PemErrorKind, PemGenerationOptions, PemLabel, PemLimits, PemParsePolicy,
-    encode_pem_block_to_string, parse_pem_document,
-};
+use base64_ng_fuzz::pem_document::{PARSE_LIMITS, assert_generation_round_trip};
+use base64_ng_pem::{PemDocumentParser, PemParsePolicy, parse_pem_document};
 use libfuzzer_sys::fuzz_target;
-
-const MAX_PAYLOAD: usize = 8192;
-const MAX_DOCUMENT: usize = 16_384;
-const GENERATION_LIMITS: PemLimits = PemLimits::new(
-    MAX_PAYLOAD,
-    MAX_DOCUMENT,
-    MAX_PAYLOAD,
-    2048,
-    128,
-    16,
-    4096,
-    MAX_PAYLOAD,
-);
-const PARSE_LIMITS: PemLimits = PemLimits::new(
-    MAX_DOCUMENT,
-    MAX_DOCUMENT,
-    MAX_PAYLOAD,
-    2048,
-    128,
-    16,
-    4096,
-    12 * MAX_DOCUMENT,
-);
 
 fuzz_target!(|data: &[u8]| {
     let seed = data.first().copied().unwrap_or(1);
     let payload = data.get(1..).unwrap_or_default();
-    let generated = encode_pem_block_to_string(
-        &PemLabel::new("CERTIFICATE").unwrap(),
-        payload,
-        GENERATION_LIMITS,
-        PemGenerationOptions::default(),
-    );
-    if payload.is_empty() {
-        assert_eq!(generated.unwrap_err().kind(), PemErrorKind::InvalidBody);
-    } else {
-        let generated = generated.unwrap();
-        let parsed = parse_pem_document(
-            generated.as_bytes(),
-            PARSE_LIMITS,
-            PemParsePolicy::Strict,
-        )
-        .unwrap();
-        assert_eq!(parsed.blocks()[0].contents(), payload);
-    }
+    assert_generation_round_trip(payload);
 
     for policy in [PemParsePolicy::Strict, PemParsePolicy::Rfc7468Compatible] {
         let one_shot = parse_pem_document(data, PARSE_LIMITS, policy);
