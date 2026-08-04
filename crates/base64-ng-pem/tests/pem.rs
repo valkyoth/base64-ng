@@ -209,6 +209,30 @@ fn strict_policy_rejects_mismatch_padding_layout_and_legacy_headers() {
 }
 
 #[test]
+fn end_label_limit_is_enforced_before_end_label_allocation() {
+    let input = b"-----BEGIN A-----\r\nZg==\r\n-----END OVERSIZED-----\r\n";
+    let limits = PemLimits::new(1024, 1024, 1024, 128, 1, 1, 1024, 12 * 1024);
+    for policy in [PemParsePolicy::Strict, PemParsePolicy::Rfc7468Compatible] {
+        assert_eq!(
+            parse_pem_document(input, limits, policy)
+                .unwrap_err()
+                .kind(),
+            PemErrorKind::LabelLimitExceeded
+        );
+    }
+
+    let matching = b"-----BEGIN OVERSIZED-----\r\nZg==\r\n-----END OVERSIZED-----\r\n";
+    for policy in [PemParsePolicy::Strict, PemParsePolicy::Rfc7468Compatible] {
+        assert_eq!(
+            parse_pem_document(matching, limits, policy)
+                .unwrap_err()
+                .kind(),
+            PemErrorKind::LabelLimitExceeded
+        );
+    }
+}
+
+#[test]
 fn multiple_blocks_preserve_order() {
     let first = encode_pem_block_to_string(
         &PemLabel::new("CERTIFICATE").unwrap(),
@@ -253,7 +277,7 @@ fn generation_is_transactional_on_every_preflight_error() {
 #[test]
 fn generation_checks_the_longest_line_actually_emitted() {
     let label = PemLabel::new("A").unwrap();
-    let limits = PemLimits::new(128, 128, 8, 17, 1, 1, 0, 128);
+    let limits = PemLimits::new(128, 128, 8, 17, 1, 1, 0, 12 * 128);
     let encoded =
         encode_pem_block_to_string(&label, b"payload", limits, PemGenerationOptions::default())
             .unwrap();
@@ -316,6 +340,37 @@ fn every_limit_has_a_deterministic_failure() {
             expected
         );
     }
+}
+
+#[test]
+fn work_limit_is_cumulative_across_parse_validation_and_decode() {
+    let document = b"-----BEGIN A-----\r\nZg==\r\n-----END A-----\r\n";
+    let source_extent_only =
+        PemLimits::new(document.len(), 1024, 1024, 128, 16, 1, 1024, document.len());
+    assert_eq!(
+        parse_pem_document(document, source_extent_only, PemParsePolicy::Strict)
+            .unwrap_err()
+            .kind(),
+        PemErrorKind::WorkLimitExceeded
+    );
+
+    let cumulative = PemLimits::new(
+        document.len(),
+        1024,
+        1024,
+        128,
+        16,
+        1,
+        1024,
+        document.len() * 12,
+    );
+    assert_eq!(
+        parse_pem_document(document, cumulative, PemParsePolicy::Strict)
+            .unwrap()
+            .blocks()[0]
+            .contents(),
+        b"f"
+    );
 }
 
 #[test]
@@ -402,4 +457,31 @@ fn secret_parser_requires_strict_single_expected_label_and_redacts() {
             .kind(),
         PemErrorKind::InvalidBody
     );
+}
+
+#[cfg(feature = "secrets")]
+#[test]
+fn secret_parser_uses_exact_padded_decoded_length_at_the_limit() {
+    use base64_ng_pem::parse_pem_secret_block;
+
+    let label = PemLabel::new("PRIVATE KEY").unwrap();
+    for (payload, exact_limit) in [(b"f".as_slice(), 1), (b"fo".as_slice(), 2)] {
+        let encoded =
+            encode_pem_block_to_string(&label, payload, LIMITS, PemGenerationOptions::default())
+                .unwrap();
+        let limits = PemLimits::new(
+            encoded.len(),
+            1024,
+            exact_limit,
+            128,
+            32,
+            1,
+            1024,
+            encoded.len() * 12,
+        );
+        let secret =
+            parse_pem_secret_block(encoded.as_bytes(), &label, limits, PemParsePolicy::Strict)
+                .unwrap();
+        assert_eq!(secret.contents().expose_secret().as_ref(), payload);
+    }
 }

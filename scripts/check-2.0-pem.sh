@@ -22,6 +22,7 @@ for required in \
     "does not parse ASN.1" \
     "Legacy OpenSSL encapsulated headers" \
     "parse_pem_secret_block" \
+    "cumulative" \
     "finite"
 do
     if ! grep -F -q "$required" crates/base64-ng-pem/README.md docs/2.0_PEM.md; then
@@ -35,6 +36,7 @@ for required_source in \
     "SecretVecFrame" \
     "PemParsePolicy::Strict" \
     "LegacyHeadersNotSupported" \
+    "WorkBudget" \
     "noncanonical_boundary_lines"
 do
     if ! grep -R -F -q "$required_source" crates/base64-ng-pem/src; then

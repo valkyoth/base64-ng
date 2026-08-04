@@ -130,6 +130,84 @@ impl core::fmt::Display for PemError {
 #[cfg(feature = "std")]
 impl std::error::Error for PemError {}
 
-pub(crate) fn map_base64(_: base64_ng::OneShotError) -> PemError {
-    PemError::new(PemErrorKind::InvalidBody)
+pub(crate) fn map_base64_decode(error: base64_ng::OneShotError) -> PemError {
+    use base64_ng::OneShotError;
+
+    let kind = match error {
+        OneShotError::Input(_) => PemErrorKind::InvalidBody,
+        OneShotError::LengthOverflow | OneShotError::PositionOverflow => {
+            PemErrorKind::LengthOverflow
+        }
+        OneShotError::AllocationLimitExceeded { .. } => PemErrorKind::DecodedOutputLimitExceeded,
+        OneShotError::AllocationFailed { .. } => PemErrorKind::AllocationFailed,
+        OneShotError::OutputTooSmall { .. } | OneShotError::Backend(_) => {
+            PemErrorKind::InternalInvariantViolation
+        }
+        _ => PemErrorKind::InternalInvariantViolation,
+    };
+    PemError::new(kind)
+}
+
+pub(crate) fn map_base64_decode_at(error: base64_ng::OneShotError, position: usize) -> PemError {
+    if matches!(error, base64_ng::OneShotError::Input(_)) {
+        PemError::at(PemErrorKind::InvalidBody, position)
+    } else {
+        map_base64_decode(error)
+    }
+}
+
+pub(crate) fn map_base64_encode(error: base64_ng::OneShotError) -> PemError {
+    use base64_ng::OneShotError;
+
+    let kind = match error {
+        OneShotError::LengthOverflow | OneShotError::PositionOverflow => {
+            PemErrorKind::LengthOverflow
+        }
+        OneShotError::AllocationLimitExceeded { .. } => PemErrorKind::EncodedOutputLimitExceeded,
+        OneShotError::AllocationFailed { .. } => PemErrorKind::AllocationFailed,
+        OneShotError::Input(_) | OneShotError::OutputTooSmall { .. } | OneShotError::Backend(_) => {
+            PemErrorKind::InternalInvariantViolation
+        }
+        _ => PemErrorKind::InternalInvariantViolation,
+    };
+    PemError::new(kind)
+}
+
+#[cfg(test)]
+mod tests {
+    use base64_ng::{BackendFault, InputError, OneShotError};
+
+    use super::{PemErrorKind, map_base64_decode, map_base64_encode};
+
+    #[test]
+    fn base64_failures_keep_operational_classification() {
+        assert_eq!(
+            map_base64_decode(OneShotError::Input(InputError::InvalidLength)).kind(),
+            PemErrorKind::InvalidBody
+        );
+        assert_eq!(
+            map_base64_decode(OneShotError::AllocationFailed { requested: 1 }).kind(),
+            PemErrorKind::AllocationFailed
+        );
+        assert_eq!(
+            map_base64_decode(OneShotError::LengthOverflow).kind(),
+            PemErrorKind::LengthOverflow
+        );
+        assert_eq!(
+            map_base64_decode(OneShotError::Backend(BackendFault::ImpossibleState)).kind(),
+            PemErrorKind::InternalInvariantViolation
+        );
+        assert_eq!(
+            map_base64_encode(OneShotError::AllocationLimitExceeded {
+                required: 2,
+                limit: 1,
+            })
+            .kind(),
+            PemErrorKind::EncodedOutputLimitExceeded
+        );
+        assert_eq!(
+            map_base64_encode(OneShotError::Input(InputError::InvalidLength)).kind(),
+            PemErrorKind::InternalInvariantViolation
+        );
+    }
 }

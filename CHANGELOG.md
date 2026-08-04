@@ -15,6 +15,10 @@
   caller-owned PBKDF2/SHA-crypt behavior is executed without `alloc` in the
   focused release gate. Allocating record generators complete work admission
   before reserving output storage.
+- PEM parsing now enforces END-label limits before allocation, charges one
+  cumulative byte-pass budget across parsing and decode release, sizes padded
+  secret output exactly at configured limits, and preserves operational Base64
+  failure classes instead of reporting every failure as malformed input.
 - Commits 1-17 define validated alphabets and codec specifications, strict RFC
   4648 presets, transactional one-shot operations, heapless incremental states,
   bounded arrays, in-place transforms, formatting, append, chunks, exact WHATWG

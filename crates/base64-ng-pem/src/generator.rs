@@ -188,7 +188,7 @@ pub fn encode_pem_block_into(
     body.resize(body_len, 0);
     base64_ng::STRICT_STANDARD_PADDED
         .encode_into(payload, &mut body)
-        .map_err(crate::error::map_base64)?;
+        .map_err(crate::error::map_base64_encode)?;
     write_validated(label, &body, &mut output[..required], options);
     Ok(required)
 }

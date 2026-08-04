@@ -82,6 +82,10 @@ memory locking or a formal constant-time claim.
 
 `PemLimits` always bounds input, generated output, decoded output, physical
 line length, label length, block count, adjacent text, and work before output.
+The work limit is a cumulative, conservative byte-pass budget across source
+scanning, boundary and label classification, body compaction, Base64
+validation, exact sizing, and decoding. It is therefore intentionally larger
+than the default input limit and is not merely a second input-length ceiling.
 Physical lines are consumed through a cursor without a document-wide line
 index, and body-layout validation retains only constant-size metadata.
 The parser never interprets payload bytes as certificates, keys, CMS, or any

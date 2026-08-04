@@ -80,7 +80,10 @@ impl PemLimits {
         self.max_adjacent_text_bytes
     }
 
-    /// Maximum source bytes inspected before decoded output is released.
+    /// Maximum cumulative byte-pass work before output is released.
+    ///
+    /// Parsing conservatively charges source scanning, boundary and label
+    /// classification, body compaction, validation, sizing, and decoding.
     #[must_use]
     pub const fn max_work_before_output(self) -> usize {
         self.max_work_before_output
@@ -97,7 +100,39 @@ impl Default for PemLimits {
             128,
             256,
             1024 * 1024,
-            16 * 1024 * 1024,
+            192 * 1024 * 1024,
         )
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) struct WorkBudget {
+    remaining: usize,
+}
+
+impl WorkBudget {
+    pub(crate) const fn new(limits: PemLimits) -> Self {
+        Self {
+            remaining: limits.max_work_before_output(),
+        }
+    }
+
+    pub(crate) fn charge(&mut self, amount: usize) -> Result<(), crate::PemError> {
+        self.remaining = self
+            .remaining
+            .checked_sub(amount)
+            .ok_or_else(|| crate::PemError::new(crate::PemErrorKind::WorkLimitExceeded))?;
+        Ok(())
+    }
+
+    pub(crate) fn charge_repeated(
+        &mut self,
+        amount: usize,
+        passes: usize,
+    ) -> Result<(), crate::PemError> {
+        let total = amount
+            .checked_mul(passes)
+            .ok_or_else(|| crate::PemError::new(crate::PemErrorKind::WorkLimitExceeded))?;
+        self.charge(total)
     }
 }

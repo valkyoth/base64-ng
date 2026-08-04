@@ -1,4 +1,4 @@
-use base64_ng::secret::{SecretInput, SecretVec, SecretVecFrame};
+use base64_ng::secret::{SecretDecodeError, SecretInput, SecretVec, SecretVecFrame};
 
 use crate::{
     PemError, PemErrorKind, PemLabel, PemLimits, PemParsePolicy, PemParseReport,
@@ -77,15 +77,15 @@ pub fn parse_pem_secret_block(
         return Err(PemError::new(PemErrorKind::SecretBlockSelection));
     };
     let encoded = SecretVec::from_vec(raw.take_body().into_vec());
-    let maximum = (encoded.len() / 4)
-        .checked_mul(3)
-        .ok_or_else(|| PemError::new(PemErrorKind::LengthOverflow))?;
-    if maximum > limits.max_decoded_output_bytes() {
+    document.work.charge(encoded.len())?;
+    let exposed = encoded.expose_secret();
+    let decoded_len = candidate_decoded_len(exposed.as_ref())?;
+    if decoded_len > limits.max_decoded_output_bytes() {
         return Err(PemError::new(PemErrorKind::DecodedOutputLimitExceeded));
     }
-    let mut frame = SecretVecFrame::new(&base64_ng::STRICT_STANDARD_PADDED, maximum)
-        .map_err(|_| PemError::new(PemErrorKind::AllocationFailed))?;
-    let exposed = encoded.expose_secret();
+    let mut frame = SecretVecFrame::new(&base64_ng::STRICT_STANDARD_PADDED, decoded_len)
+        .map_err(map_secret_frame_creation)?;
+    document.work.charge(encoded.len())?;
     frame
         .update(&SecretInput::new(exposed.as_ref()))
         .map_err(|_| PemError::new(PemErrorKind::InvalidBody))?;
@@ -97,4 +97,27 @@ pub fn parse_pem_secret_block(
         contents,
         report: document.report,
     })
+}
+
+fn candidate_decoded_len(encoded: &[u8]) -> Result<usize, PemError> {
+    if encoded.len() < 4 || !encoded.len().is_multiple_of(4) {
+        return Err(PemError::new(PemErrorKind::InvalidBody));
+    }
+    let padding = if encoded.ends_with(b"==") {
+        2
+    } else {
+        usize::from(encoded.ends_with(b"="))
+    };
+    (encoded.len() / 4)
+        .checked_mul(3)
+        .and_then(|length| length.checked_sub(padding))
+        .ok_or_else(|| PemError::new(PemErrorKind::LengthOverflow))
+}
+
+fn map_secret_frame_creation(error: SecretDecodeError) -> PemError {
+    match error {
+        SecretDecodeError::AllocationFailed => PemError::new(PemErrorKind::AllocationFailed),
+        SecretDecodeError::LengthOverflow => PemError::new(PemErrorKind::LengthOverflow),
+        _ => PemError::new(PemErrorKind::InternalInvariantViolation),
+    }
 }

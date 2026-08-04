@@ -23,6 +23,9 @@
 - Makes password-record work limits cumulative across validation and transform
   passes, admits generation work before allocation, and release-gates
   executable caller-owned behavior without `alloc`.
+- Hardens RFC 7468 parsing with pre-allocation limits on both labels,
+  cumulative parse/decode work accounting, exact padded secret sizing, and
+  distinct malformed-input, resource, and internal-fault error classes.
 - Adds locked RFC and registry sources, semantic and interoperability corpora,
   fuzzing, sanitizer, Miri, Kani, timing, assembly, QEMU, package, SBOM, and
   reproducibility gates.
