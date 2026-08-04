@@ -1,5 +1,13 @@
 //! Best-effort dependency-free memory cleanup helpers.
 
+/// Review identity for the volatile-byte overwrite and selected barrier.
+///
+/// Increment this whenever the overwrite loop, barrier selection, or ordering
+/// semantics change. Runtime assurance reports separately carry the mutable
+/// context generation that attestation must match.
+pub(crate) const WIPE_PRIMITIVE_REVISION: usize = 1;
+const _: usize = WIPE_PRIMITIVE_REVISION;
+
 #[inline(never)]
 #[allow(unsafe_code)]
 pub(crate) fn wipe_bytes(bytes: &mut [u8]) {

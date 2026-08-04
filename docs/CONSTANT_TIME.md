@@ -9,6 +9,11 @@ ordinary performance.
 This document defines the bar for strengthening the `ct` module into a
 cryptographic constant-time API claim.
 
+The exact 2.0 evidence boundary, including the fixed-work pre-result-gate
+scope, success-only post-gate release copy, target classification, and cleanup
+revision binding, is recorded in
+[`2.0_TIMING_AND_CODEGEN.md`](2.0_TIMING_AND_CODEGEN.md).
+
 ## Goal
 
 Provide a clearly named API for callers that handle secret-bearing Base64

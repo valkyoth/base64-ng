@@ -59,6 +59,7 @@ The release gate covers:
 - RustSec audit
 - license inventory
 - dudect-style timing harness compile and dependency checks
+- fixed-work timing/source-boundary policy checks
 - constant-time assembly evidence generation
 - SBOM generation
 - reproducible package/build check
@@ -169,6 +170,23 @@ collected with:
 ```sh
 BASE64_NG_RUN_DUDECT=1 scripts/check_dudect.sh
 ```
+
+The timing manifest distinguishes thresholded equal-work classes from
+informational public-length scaling. It binds a run to the source commit,
+lockfile, compiler, target, CPU, release feature set, flags, and output
+checksum. Run it on idle native hardware for each target included in a timing
+claim.
+
+Generate target-specific release/LTO code-generation evidence with:
+
+```sh
+BASE64_NG_CT_ASM_TARGET=aarch64-unknown-linux-gnu \
+  scripts/generate_ct_asm_evidence.sh
+```
+
+Cross-compiled assembly does not substitute for native timing evidence. The
+full claim boundary and reviewer procedure are in
+[`2.0_TIMING_AND_CODEGEN.md`](2.0_TIMING_AND_CODEGEN.md).
 
 ## Miri Setup
 

@@ -31,6 +31,13 @@ protocol companions, and volatile assurance teardown. See
 [`FUZZING.md`](FUZZING.md) for campaign commands, evidence records, and the
 explicit persistent-provider and wasm execution boundaries.
 
+Commit 52 completes the timing and generated-code evidence boundary. It binds
+release/LTO assembly to exact source, compiler, target, flags, barriers, wipe
+revision, and operation-specific runtime generation; expands equal-work and
+public-length timing classes; and mechanically preserves the scalar fixed-scan
+secret paths. See
+[`2.0_TIMING_AND_CODEGEN.md`](2.0_TIMING_AND_CODEGEN.md).
+
 ## Dependency Policy
 
 The default position is no external crates.

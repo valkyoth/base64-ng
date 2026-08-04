@@ -16,6 +16,9 @@ echo "dudect checks: dependency policy"
 scripts/cargo-deny-check.sh dudect/Cargo.toml dudect/deny.toml
 
 if [ "${BASE64_NG_RUN_DUDECT:-0}" = "1" ]; then
+    . scripts/evidence-source.sh
+    evidence_capture_source "dudect timing evidence"
+
     evidence_dir="target/release-evidence/dudect"
     output_file="$evidence_dir/dudect-output.txt"
     manifest="$evidence_dir/MANIFEST.txt"
@@ -36,9 +39,12 @@ if [ "${BASE64_NG_RUN_DUDECT:-0}" = "1" ]; then
         --warmup "$warmup" >"$output_file" 2>&1 || status="$?"
 
     cat "$output_file"
+    evidence_verify_source "dudect timing evidence"
 
     {
         echo "base64-ng dudect-style timing evidence"
+        echo
+        evidence_write_source_manifest
         echo
         echo "rustc:"
         rustc -Vv
@@ -53,6 +59,21 @@ if [ "${BASE64_NG_RUN_DUDECT:-0}" = "1" ]; then
             echo "uname unavailable"
         fi
         echo
+        echo "processor:"
+        if command -v lscpu >/dev/null 2>&1; then
+            lscpu
+        elif command -v sysctl >/dev/null 2>&1; then
+            sysctl -n machdep.cpu.brand_string 2>/dev/null || echo "processor identity unavailable"
+        else
+            echo "processor identity unavailable"
+        fi
+        echo
+        echo "build boundary:"
+        echo "target=$(rustc -vV | sed -n 's/^host: //p')"
+        echo "profile=release"
+        echo "features=secrets,simd (secret states remain scalar)"
+        echo "RUSTFLAGS=${RUSTFLAGS:-<unset>}"
+        echo
         echo "command:"
         echo "$command_line"
         echo
@@ -64,17 +85,14 @@ if [ "${BASE64_NG_RUN_DUDECT:-0}" = "1" ]; then
         echo "status=$status"
         echo
         echo "artifacts:"
-        if command -v sha256sum >/dev/null 2>&1; then
-            sha256sum "$output_file"
-        elif command -v shasum >/dev/null 2>&1; then
-            shasum -a 256 "$output_file"
-        else
-            cksum "$output_file"
-        fi
+        evidence_checksum_file "$output_file"
         echo
         echo "interpretation:"
         echo "This is empirical 2.0 secret-frame timing evidence for this binary and machine only."
-        echo "It compares valid contents, malformed positions/classes, and the pre-gate core."
+        echo "Equal-work cases compare valid contents, malformed positions/classes, the fixed-work pre-gate core, encode mappings, and equality mismatch positions."
+        echo "Public-length decode, encode, and equality cases are informational and may differ."
+        echo "Whole-call valid/invalid equality is not claimed because success performs a post-gate release copy."
+        echo "Ordinary SIMD is compiled into the binary, but reviewed secret states remain scalar and do not dispatch to it."
         echo "It does not replace generated-code review, Kani, Miri, fuzzing, or deterministic tests."
     } >"$manifest"
 

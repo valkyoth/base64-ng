@@ -80,6 +80,7 @@ test -s docs/2.0_DISPATCH_AND_PERFORMANCE_MATRIX.md
 test -s docs/2.0_DERIVE_HARDENING.md
 test -s docs/2.0_PROTOCOL_REGISTRY.md
 test -s docs/2.0_FORMAL_VERIFICATION.md
+test -s docs/2.0_TIMING_AND_CODEGEN.md
 test -s kani/harnesses.tsv
 test -s protocol-registry/v1/SHA256SUMS
 test -s protocol-registry/v1/protocols.tsv
@@ -224,6 +225,7 @@ for required_script in \
     "scripts/reproducible_build_check.sh" \
     "scripts/stable_release_gate.sh" \
     "scripts/validate-constant-time-policy.sh" \
+    "scripts/validate-2.0-timing-boundaries.sh" \
     "scripts/validate-dependencies.sh" \
     "scripts/validate-file-line-budget.sh" \
     "scripts/validate-doc-versions.sh" \
@@ -273,6 +275,33 @@ do
             exit 1
         fi
     done
+done
+
+for required_ct_evidence_text in \
+    'BASE64_NG_CT_ASM_TARGET' \
+    'WIPE_PRIMITIVE_REVISION' \
+    'runtime_wipe_generation=operation-report-specific' \
+    'wipe_scope=logical-range volatile overwrite' \
+    'require_reviewed_symbols' \
+    'decode_symbol'
+do
+    if ! grep -F -q -- "$required_ct_evidence_text" scripts/generate_ct_asm_evidence.sh; then
+        echo "release metadata: CT evidence boundary is missing: $required_ct_evidence_text" >&2
+        exit 1
+    fi
+done
+
+for required_dudect_evidence_text in \
+    'evidence_capture_source "dudect timing evidence"' \
+    'evidence_verify_source "dudect timing evidence"' \
+    'evidence_write_source_manifest' \
+    'public-length' \
+    'post-gate release copy'
+do
+    if ! grep -F -q -- "$required_dudect_evidence_text" scripts/check_dudect.sh dudect/src/main.rs; then
+        echo "release metadata: dudect evidence boundary is missing: $required_dudect_evidence_text" >&2
+        exit 1
+    fi
 done
 
 for required_provenance_text in \
@@ -428,6 +457,7 @@ for required_release_gate_command in \
     "scripts/check_simd_feature_bundles.sh" \
     "scripts/check_backend_evidence.sh" \
     "scripts/check_kani.sh" \
+    "scripts/validate-2.0-timing-boundaries.sh" \
     "scripts/generate_ct_asm_evidence.sh" \
     "scripts/generate-sbom.sh" \
     "scripts/reproducible_build_check.sh" \
@@ -631,6 +661,7 @@ for required_package_file in \
     "docs/2.0_PASSWORD_RECORDS.md" \
     "docs/2.0_PROTOCOL_REGISTRY.md" \
     "docs/2.0_FORMAL_VERIFICATION.md" \
+    "docs/2.0_TIMING_AND_CODEGEN.md" \
     "kani/README.md" \
     "kani/harnesses.tsv" \
     "docs/2.0_PEM.md" \
@@ -757,6 +788,7 @@ for required_package_file in \
     "scripts/stable_release_gate.sh" \
     "scripts/test-release-crates.py" \
     "scripts/validate-constant-time-policy.sh" \
+    "scripts/validate-2.0-timing-boundaries.sh" \
     "scripts/validate-dependencies.sh" \
     "scripts/validate-doc-versions.sh" \
     "scripts/validate-msrv-policy.sh" \

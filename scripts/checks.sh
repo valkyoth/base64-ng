@@ -1,6 +1,10 @@
 #!/usr/bin/env sh
 set -eu
 
+# One assurance regression intentionally aborts a confined child process.
+# Keep that proof without leaving host core files or triggering crash storage.
+ulimit -c 0 2>/dev/null || true
+
 echo "checks: formatting"
 cargo fmt --all --check
 
@@ -191,6 +195,9 @@ scripts/validate-panic-policy.sh
 
 echo "checks: constant-time policy"
 scripts/validate-constant-time-policy.sh
+
+echo "checks: 2.0 timing and generated-code boundaries"
+scripts/validate-2.0-timing-boundaries.sh
 
 echo "checks: 2.0 secret encoder"
 scripts/check-2.0-secret-encoder.sh

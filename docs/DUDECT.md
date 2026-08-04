@@ -6,15 +6,16 @@ dependencies to the root package. It depends on the local core and subtle
 companion plus the exact reviewed `subtle` version for Commit 41 equality
 evidence.
 
-The harness measures equal-public-length inputs through the 2.0 bounded
-`SecretArrayFrame` and `SecretArrayEncoder`. Decode reports separate Welch
-t-statistics for distinct valid contents, first-versus-last malformed
-positions, malformed byte classes, and the pre-gate core without successful
-declassification. Encode compares fixed and randomized classified input for
-both the built-in arithmetic mapper and one custom-alphabet fixed scan. It is
-also compares fixed and randomized equal-length contents through the sealed
-`SubtleSecretEq` path. It is empirical evidence for review, not a formal proof
-or standalone cryptographic constant-time claim.
+The harness measures the 2.0 bounded `SecretArrayFrame`,
+`SecretArrayEncoder`, and sealed `SubtleSecretEq` boundary with ordinary SIMD
+compiled into the binary but excluded from secret dispatch. Equal-work cases
+report separate Welch t-statistics for distinct valid contents,
+first-versus-last malformed positions, malformed byte classes, valid versus
+malformed fixed-work pre-gate processing, built-in and custom encode mapping,
+equality contents, and first-versus-last equality mismatch positions. Public
+decode, encode, and equality lengths are separate informational scaling cases
+where timing may differ. This is empirical evidence for review, not a formal
+proof or standalone cryptographic constant-time claim.
 
 ## Compile the Harness
 
@@ -45,11 +46,13 @@ scripts/check_dudect.sh
 ```
 
 The default threshold is `10`, matching the usual dudect convention that large
-absolute t-statistics require investigation. A passing run means this specific
+absolute t-statistics require investigation. It applies only to cases marked
+`expectation=equal-work`. Cases marked `expectation=public-length-may-differ`
+are reported but cannot fail that threshold. A passing run means this specific
 binary, on this machine, did not show a strong timing signal for the measured
-class pairs. It does not prove all targets or compiler modes. Whole-call valid
-versus invalid timing is deliberately not compared because successful release
-performs a documented post-gate copy.
+equal-work class pairs. It does not prove all targets or compiler modes.
+Whole-call valid versus invalid timing is deliberately not compared because
+successful release performs a documented post-gate copy.
 
 Opt-in timing runs write release evidence under:
 
@@ -60,7 +63,8 @@ target/release-evidence/dudect/
 Expected files:
 
 - `dudect-output.txt`: raw harness output.
-- `MANIFEST.txt`: rustc/cargo/system metadata, command line, parameters,
+- `MANIFEST.txt`: source commit/tree/lockfile provenance, rustc/cargo/CPU/system
+  metadata, target, feature and flag boundary, command line, parameters,
   status, checksum, and interpretation notes.
 
 ## Review Rules
@@ -72,3 +76,6 @@ Expected files:
   fuzzing, or scalar differential tests.
 - Archive `target/release-evidence/dudect/` when using dudect evidence for a
   release note or security review.
+- Keep fixed-work pre-result-gate claims separate from success-only
+  post-result-gate release behavior. See
+  [`2.0_TIMING_AND_CODEGEN.md`](2.0_TIMING_AND_CODEGEN.md).

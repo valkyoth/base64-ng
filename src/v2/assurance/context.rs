@@ -213,7 +213,7 @@ impl AssuranceContext {
         Self {
             ordinary_backend: AtomicUsize::new(1),
             secret_algorithm: AtomicUsize::new(1),
-            wipe_barrier: AtomicUsize::new(1),
+            wipe_barrier: AtomicUsize::new(crate::cleanup::WIPE_PRIMITIVE_REVISION),
             speculation: AtomicUsize::new(1),
         }
     }

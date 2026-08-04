@@ -14,44 +14,74 @@ enum TimingCase {
     MalformedPosition,
     MalformedClass,
     PreGateContents,
+    PreGateValidity,
     EncodeBuiltinContents,
     EncodeCustomContents,
     ReviewedEqualityContents,
+    ReviewedEqualityMismatchPosition,
+    DecodePublicLength,
+    EncodePublicLength,
+    EqualityPublicLength,
 }
 
 impl TimingCase {
-    const ALL: [Self; 7] = [
+    const ALL: [Self; 12] = [
         Self::ValidContents,
         Self::MalformedPosition,
         Self::MalformedClass,
         Self::PreGateContents,
+        Self::PreGateValidity,
         Self::EncodeBuiltinContents,
         Self::EncodeCustomContents,
         Self::ReviewedEqualityContents,
+        Self::ReviewedEqualityMismatchPosition,
+        Self::DecodePublicLength,
+        Self::EncodePublicLength,
+        Self::EqualityPublicLength,
     ];
 
     const fn label(self) -> &'static str {
         match self {
-            Self::ValidContents => "valid-contents-whole-call",
-            Self::MalformedPosition => "malformed-position-whole-call",
-            Self::MalformedClass => "malformed-class-whole-call",
-            Self::PreGateContents => "valid-contents-pre-gate",
+            Self::ValidContents => "valid-contents-whole-call-post-gate",
+            Self::MalformedPosition => "malformed-position-whole-call-no-release",
+            Self::MalformedClass => "malformed-class-whole-call-no-release",
+            Self::PreGateContents => "valid-contents-fixed-work-pre-gate",
+            Self::PreGateValidity => "valid-vs-invalid-fixed-work-pre-gate",
             Self::EncodeBuiltinContents => "encode-builtin-input-contents",
             Self::EncodeCustomContents => "encode-custom-input-contents",
             Self::ReviewedEqualityContents => "reviewed-equality-contents",
+            Self::ReviewedEqualityMismatchPosition => "reviewed-equality-mismatch-position",
+            Self::DecodePublicLength => "decode-public-length-scaling",
+            Self::EncodePublicLength => "encode-public-length-scaling",
+            Self::EqualityPublicLength => "equality-public-length-scaling",
         }
     }
 
     const fn stops_before_gate(self) -> bool {
-        matches!(self, Self::PreGateContents)
+        matches!(self, Self::PreGateContents | Self::PreGateValidity)
     }
 
     const fn encodes(self) -> bool {
-        matches!(self, Self::EncodeBuiltinContents | Self::EncodeCustomContents)
+        matches!(
+            self,
+            Self::EncodeBuiltinContents | Self::EncodeCustomContents | Self::EncodePublicLength
+        )
     }
 
     const fn compares_equality(self) -> bool {
-        matches!(self, Self::ReviewedEqualityContents)
+        matches!(
+            self,
+            Self::ReviewedEqualityContents
+                | Self::ReviewedEqualityMismatchPosition
+                | Self::EqualityPublicLength
+        )
+    }
+
+    const fn public_lengths_may_differ(self) -> bool {
+        matches!(
+            self,
+            Self::DecodePublicLength | Self::EncodePublicLength | Self::EqualityPublicLength
+        )
     }
 }
 
@@ -152,12 +182,17 @@ fn run_case(config: Config, case: TimingCase, rng: &mut XorShift64) -> Result<()
     let mut left = [b'A'; INPUT_LEN];
     let mut right = [b'A'; INPUT_LEN];
     prepare_classes(case, &mut left, &mut right, rng);
+    let (left_len, right_len) = class_lengths(case);
 
     let warmup_first = usize::from((rng.next() & 1) != 0);
     for index in 0..config.warmup {
         refresh_random_class(case, &mut right, rng);
         let class = (index & 1) ^ warmup_first;
-        let input = if class == 0 { &left } else { &right };
+        let input = if class == 0 {
+            &left[..left_len]
+        } else {
+            &right[..right_len]
+        };
         measure(input, config.iterations, case)?;
     }
 
@@ -168,7 +203,11 @@ fn run_case(config: Config, case: TimingCase, rng: &mut XorShift64) -> Result<()
     for index in 0..config.samples {
         refresh_random_class(case, &mut right, rng);
         let class = (index & 1) ^ sample_first;
-        let input = if class == 0 { &left } else { &right };
+        let input = if class == 0 {
+            &left[..left_len]
+        } else {
+            &right[..right_len]
+        };
         let elapsed = measure(input, config.iterations, case)?;
 
         if class == 0 {
@@ -184,8 +223,15 @@ fn run_case(config: Config, case: TimingCase, rng: &mut XorShift64) -> Result<()
 
     let t = welch_t(fixed_stats, random_stats);
     println!(
-        "dudect: case={} samples={} iterations={} fixed_n={} random_n={} fixed_mean_ns={:.3} random_mean_ns={:.3} t={:.3} threshold={:.3}",
+        "dudect: case={} expectation={} left_len={} right_len={} samples={} iterations={} fixed_n={} random_n={} fixed_mean_ns={:.3} random_mean_ns={:.3} t={:.3} threshold={:.3}",
         case.label(),
+        if case.public_lengths_may_differ() {
+            "public-length-may-differ"
+        } else {
+            "equal-work"
+        },
+        left_len,
+        right_len,
         config.samples,
         config.iterations,
         fixed_stats.count,
@@ -196,7 +242,7 @@ fn run_case(config: Config, case: TimingCase, rng: &mut XorShift64) -> Result<()
         config.threshold
     );
 
-    if t.abs() > config.threshold {
+    if !case.public_lengths_may_differ() && t.abs() > config.threshold {
         Err(format!(
             "{} absolute Welch t-statistic {:.3} exceeded threshold {:.3}",
             case.label(),
@@ -208,11 +254,7 @@ fn run_case(config: Config, case: TimingCase, rng: &mut XorShift64) -> Result<()
     }
 }
 
-fn measure(
-    input: &[u8; INPUT_LEN],
-    iterations: usize,
-    case: TimingCase,
-) -> Result<f64, String> {
+fn measure(input: &[u8], iterations: usize, case: TimingCase) -> Result<f64, String> {
     if case.encodes() {
         measure_encode(input, iterations, case)
     } else if case.compares_equality() {
@@ -222,7 +264,7 @@ fn measure(
     }
 }
 
-fn measure_equality(input: &[u8; INPUT_LEN], iterations: usize) -> Result<f64, String> {
+fn measure_equality(input: &[u8], iterations: usize) -> Result<f64, String> {
     use base64_ng_subtle::SubtleSecretEq;
 
     let secret = base64_ng::secret::SecretArray::from_array([0u8; INPUT_LEN], INPUT_LEN)
@@ -235,11 +277,7 @@ fn measure_equality(input: &[u8; INPUT_LEN], iterations: usize) -> Result<f64, S
     Ok(nanos / iterations as f64)
 }
 
-fn measure_decode(
-    input: &[u8; INPUT_LEN],
-    iterations: usize,
-    stop_before_gate: bool,
-) -> Result<f64, String> {
+fn measure_decode(input: &[u8], iterations: usize, stop_before_gate: bool) -> Result<f64, String> {
     let start = Instant::now();
     for _ in 0..iterations {
         let mut frame = base64_ng::secret::SecretArrayFrame::<OUTPUT_LEN>::new(
@@ -259,15 +297,11 @@ fn measure_decode(
     Ok(nanos / iterations as f64)
 }
 
-fn measure_encode(
-    input: &[u8; INPUT_LEN],
-    iterations: usize,
-    case: TimingCase,
-) -> Result<f64, String> {
+fn measure_encode(input: &[u8], iterations: usize, case: TimingCase) -> Result<f64, String> {
     let start = Instant::now();
     for _ in 0..iterations {
         let encoded = match case {
-            TimingCase::EncodeBuiltinContents => {
+            TimingCase::EncodeBuiltinContents | TimingCase::EncodePublicLength => {
                 base64_ng::secret::SecretArrayEncoder::<ENCODE_OUTPUT_LEN>::encode(
                     &base64_ng::STRICT_STANDARD_PADDED,
                     &base64_ng::secret::SecretInput::new(black_box(input)),
@@ -298,6 +332,9 @@ fn prepare_classes(
         TimingCase::ValidContents | TimingCase::PreGateContents => {
             fill_random_base64(right, rng);
         }
+        TimingCase::PreGateValidity => {
+            right[INPUT_LEN / 2] = b'!';
+        }
         TimingCase::MalformedPosition => {
             left[0] = b'!';
             right[INPUT_LEN - 1] = b'!';
@@ -312,14 +349,29 @@ fn prepare_classes(
             left.fill(0);
             fill_random_bytes(right, rng);
         }
+        TimingCase::ReviewedEqualityMismatchPosition => {
+            left.fill(0);
+            right.fill(0);
+            left[0] = 1;
+            right[INPUT_LEN - 1] = 1;
+        }
+        TimingCase::DecodePublicLength => {}
+        TimingCase::EncodePublicLength | TimingCase::EqualityPublicLength => {
+            left.fill(0);
+            right.fill(0);
+        }
     }
 }
 
-fn refresh_random_class(
-    case: TimingCase,
-    right: &mut [u8; INPUT_LEN],
-    rng: &mut XorShift64,
-) {
+const fn class_lengths(case: TimingCase) -> (usize, usize) {
+    if case.public_lengths_may_differ() {
+        (INPUT_LEN / 2, INPUT_LEN)
+    } else {
+        (INPUT_LEN, INPUT_LEN)
+    }
+}
+
+fn refresh_random_class(case: TimingCase, right: &mut [u8; INPUT_LEN], rng: &mut XorShift64) {
     match case {
         TimingCase::ValidContents | TimingCase::PreGateContents => {
             fill_random_base64(right, rng);
@@ -329,17 +381,23 @@ fn refresh_random_class(
         | TimingCase::ReviewedEqualityContents => {
             fill_random_bytes(right, rng);
         }
-        TimingCase::MalformedPosition | TimingCase::MalformedClass => {}
+        TimingCase::MalformedPosition
+        | TimingCase::MalformedClass
+        | TimingCase::PreGateValidity
+        | TimingCase::ReviewedEqualityMismatchPosition
+        | TimingCase::DecodePublicLength
+        | TimingCase::EncodePublicLength
+        | TimingCase::EqualityPublicLength => {}
     }
 }
 
-fn fill_random_bytes(output: &mut [u8; INPUT_LEN], rng: &mut XorShift64) {
+fn fill_random_bytes(output: &mut [u8], rng: &mut XorShift64) {
     for byte in output {
         *byte = rng.next() as u8;
     }
 }
 
-fn fill_random_base64(output: &mut [u8; INPUT_LEN], rng: &mut XorShift64) {
+fn fill_random_base64(output: &mut [u8], rng: &mut XorShift64) {
     for byte in output {
         let index = (rng.next() & 63) as usize;
         *byte = ALPHABET[index];
@@ -412,9 +470,10 @@ fn print_help() {
         "Usage: base64-ng-dudect [--samples N] [--iters N] [--threshold T] [--warmup N]\n\
          \n\
          Measures bounded 2.0 secret decode frames across valid contents,\n\
-         malformed positions, malformed classes, and the pre-gate core, plus\n\
-         built-in and custom-alphabet secret encoding input classes, and the\n\
-         reviewed subtle equality path across fixed and random contents. This is\n\
+         malformed positions/classes, valid-versus-invalid pre-gate work,\n\
+         public length scaling, built-in and custom-alphabet secret encoding,\n\
+         and reviewed subtle equality contents/mismatch positions. Public length\n\
+         cases are reported but do not use the equal-work threshold. This is\n\
          empirical evidence only."
     );
 }

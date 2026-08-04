@@ -92,6 +92,9 @@ scripts/check_backend_evidence.sh
 echo "stable release gate: Kani proofs"
 scripts/check_kani.sh
 
+echo "stable release gate: timing and generated-code boundaries"
+scripts/validate-2.0-timing-boundaries.sh
+
 echo "stable release gate: constant-time assembly evidence"
 scripts/generate_ct_asm_evidence.sh
 

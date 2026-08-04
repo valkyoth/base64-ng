@@ -1,6 +1,9 @@
 #!/usr/bin/env sh
 set -eu
 
+# The violating-provider subprocess is expected to abort during double panic.
+ulimit -c 0 2>/dev/null || true
+
 document="docs/2.0_ASSURANCE_AND_PROTECTED_MEMORY.md"
 workdir="target/2_0_assurance"
 mkdir -p "$workdir/src"

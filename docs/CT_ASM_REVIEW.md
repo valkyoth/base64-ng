@@ -17,6 +17,14 @@ Review these generated artifacts after running:
 scripts/generate_ct_asm_evidence.sh
 ```
 
+An installed target can be reviewed explicitly without changing the active
+host toolchain:
+
+```sh
+BASE64_NG_CT_ASM_TARGET=aarch64-unknown-linux-gnu \
+  scripts/generate_ct_asm_evidence.sh
+```
+
 The generator compiles each configuration in a fresh temporary Cargo target
 directory with incremental compilation disabled and `--locked`, and accepts
 exactly one newly produced crate assembly artifact. Its manifest records the
@@ -33,6 +41,10 @@ Expected artifacts:
 - `target/release-evidence/asm/base64_ng-all-features-lto.s`
 - `target/release-evidence/asm/MANIFEST.txt`
 
+Explicit-target artifacts use
+`target/release-evidence/asm/<target>/`. Cross-compiled output is code-generation
+evidence, not native timing or hardware evidence.
+
 Review focus:
 
 - `ct::CtEngine` decode entry points
@@ -44,8 +56,10 @@ Review focus:
 - `ct_mask_*` helpers
 - `ct_error_gate_barrier`
 - `constant_time_eq_public_len`
+- `ct_accumulate_u8`
 - `secret_encode_ascii`
 - `secret_encode_scan`
+- bounded 2.0 secret decoder `decode_symbol`
 - `wipe_bytes` and `wipe_barrier` cleanup call boundaries
 
 ## Review Questions
@@ -71,18 +85,25 @@ Review focus:
   alphabet load is indexed only by the public candidate counter?
 - Do `wipe_bytes` and `wipe_barrier` remain non-inlined cleanup call
   boundaries in release and LTO artifacts?
+- Does the manifest bind the overwrite boundary to its source commit,
+  lockfile, compiler, target, flags, target barrier, and
+  `WIPE_PRIMITIVE_REVISION`?
+- Is the operation-specific runtime wipe generation taken from the assurance
+  report rather than inferred from static assembly?
 - Are padding length, decoded length, and final success/failure still treated
   as public by documentation and API shape?
 
 ## Current Release Position
 
-For the `1.0.0` release:
+For the `2.0.0` release candidate:
 
 - Assembly evidence generation is release-gated.
 - Manual review is required before any future release that strengthens ct
   wording beyond "constant-time-oriented".
 - The public documentation continues to use "constant-time-oriented" wording.
 - No formally verified cryptographic constant-time guarantee is claimed.
+- The exact pre-gate, post-gate, cleanup, target, and residual-risk wording is
+  defined in [`2.0_TIMING_AND_CODEGEN.md`](2.0_TIMING_AND_CODEGEN.md).
 
 ## Reviewer Notes
 

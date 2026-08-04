@@ -39,6 +39,16 @@ assurance teardown. `scripts/check-2.0-fuzz-campaigns.sh` runs the deterministic
 property, panic, cancellation, cleanup, and unsafe-provider isolation suite;
 `scripts/check_fuzz.sh` records bounded or release-duration LibFuzzer evidence.
 
+Commit 52 completes the timing and generated-code evidence boundary.
+`scripts/validate-2.0-timing-boundaries.sh` preserves fixed-scan secret loops,
+the result gate, cleanup revision, scalar dispatch isolation, and exact claim
+wording. Release and fat-LTO assembly retain the equality, accumulation,
+secret encode/decode, gate, and cleanup symbols. The dudect-style harness
+separates thresholded equal-work classes from informational public-length
+scaling and records source, lockfile, compiler, target, CPU, flags, and binary
+checksums. See
+[`2.0_TIMING_AND_CODEGEN.md`](2.0_TIMING_AND_CODEGEN.md).
+
 Commit 2 freezes the machine-generated `v1.3.9` public API snapshots and the
 [`2.0_API_MIGRATION_LEDGER.md`](2.0_API_MIGRATION_LEDGER.md) disposition rules.
 `scripts/check-api-snapshots.sh`, `scripts/check-2.0-migration-smoke.sh`, and
@@ -847,6 +857,13 @@ for reliable side-channel statistics:
 BASE64_NG_RUN_DUDECT=1 scripts/check_dudect.sh
 ```
 
+Equal-work cases cover valid contents, malformed positions/classes, the
+fixed-work valid-versus-malformed pre-gate boundary, built-in/custom encoding,
+and equality mismatch positions. Public-length decode, encode, and equality
+comparisons are informational and are not thresholded. Whole-call
+valid-versus-invalid equality is not claimed because successful decode performs
+the documented post-gate release copy.
+
 Archive the raw output with CPU, OS, Rust version, sample count, and command
 line when using dudect-style evidence for a security review. Opt-in timing runs
 write `target/release-evidence/dudect/dudect-output.txt` and
@@ -858,6 +875,13 @@ with:
 
 ```sh
 scripts/generate_ct_asm_evidence.sh
+```
+
+Target-specific code-generation evidence uses an installed target:
+
+```sh
+BASE64_NG_CT_ASM_TARGET=aarch64-unknown-linux-gnu \
+  scripts/generate_ct_asm_evidence.sh
 ```
 
 The script writes `target/release-evidence/asm/base64_ng-no-default-features.s`,
@@ -873,6 +897,12 @@ and rechecked afterward; release generation rejects dirty or unavailable
 state. The LTO artifact exists so reviewers can check that cleanup
 primitives such as `wipe_bytes` and `wipe_barrier` remain visible call
 boundaries under aggressive optimization.
+The manifest also records the wipe primitive revision and target barrier.
+Operation-specific `WipedAttested` evidence must additionally carry the
+runtime wipe generation from its operation report; static assembly cannot
+infer it. The retained claim covers only the logical byte range and excludes
+registers, caches, allocator history, swap, snapshots, and compiler-created
+copies.
 
 Capture generated assembly evidence for x86 SIMD encode paths with:
 

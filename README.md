@@ -1510,7 +1510,9 @@ For the trust dashboard and CWE/security-control mapping, see
 For panic-free public API policy, see
 [docs/PANIC_POLICY.md](docs/PANIC_POLICY.md).
 For constant-time-oriented decode verification requirements, see
-[docs/CONSTANT_TIME.md](docs/CONSTANT_TIME.md).
+[docs/CONSTANT_TIME.md](docs/CONSTANT_TIME.md). The exact 2.0 pre-gate,
+post-gate, target, timing, and generated-code evidence boundary is in
+[docs/2.0_TIMING_AND_CODEGEN.md](docs/2.0_TIMING_AND_CODEGEN.md).
 For dependency admission rules, see [docs/DEPENDENCIES.md](docs/DEPENDENCIES.md).
 For adoption guidance from the established `base64` crate, see
 [docs/MIGRATION.md](docs/MIGRATION.md).

@@ -84,7 +84,10 @@ jobs:
         run: scripts/check_dudect.sh
 
       - name: Generate constant-time assembly evidence
-        run: scripts/generate_ct_asm_evidence.sh
+        run: |
+          scripts/generate_ct_asm_evidence.sh
+          BASE64_NG_CT_ASM_TARGET=aarch64-unknown-linux-gnu scripts/generate_ct_asm_evidence.sh
+          BASE64_NG_CT_ASM_TARGET=wasm32-unknown-unknown scripts/generate_ct_asm_evidence.sh
 
       - name: Generate SBOM
         run: scripts/generate-sbom.sh
@@ -201,6 +204,10 @@ jobs:
         if: startsWith(matrix.os, 'macos')
         run: scripts/check_macos.sh
 
+      - name: Generate native macOS constant-time assembly evidence
+        if: startsWith(matrix.os, 'macos')
+        run: scripts/generate_ct_asm_evidence.sh
+
       - name: Test default features
         if: ${{ !startsWith(matrix.os, 'macos') }}
         run: cargo test --all-targets
@@ -280,6 +287,11 @@ jobs:
       - name: Run both complete big-endian suites
         run: scripts/check_big_endian_qemu.sh --all
 
+      - name: Generate big-endian constant-time assembly evidence
+        run: |
+          BASE64_NG_CT_ASM_TARGET=s390x-unknown-linux-gnu scripts/generate_ct_asm_evidence.sh
+          BASE64_NG_CT_ASM_TARGET=powerpc64-unknown-linux-gnu scripts/generate_ct_asm_evidence.sh
+
   riscv-qemu:
     name: RISC-V QEMU and RVV candidate evidence
     runs-on: ubuntu-latest
@@ -311,6 +323,9 @@ jobs:
       - name: Generate RVV candidate assembly evidence
         run: scripts/generate_rvv_asm_evidence.sh
 
+      - name: Generate RISC-V constant-time assembly evidence
+        run: BASE64_NG_CT_ASM_TARGET=riscv64gc-unknown-linux-gnu scripts/generate_ct_asm_evidence.sh
+
   sve-qemu:
     name: AArch64 SVE QEMU candidate evidence
     runs-on: ubuntu-latest
@@ -339,6 +354,9 @@ jobs:
 
       - name: Generate SVE candidate assembly evidence
         run: scripts/generate_sve_asm_evidence.sh
+
+      - name: Generate AArch64 musl constant-time assembly evidence
+        run: BASE64_NG_CT_ASM_TARGET=aarch64-unknown-linux-musl scripts/generate_ct_asm_evidence.sh
 
   miri:
     name: Miri
