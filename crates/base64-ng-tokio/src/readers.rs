@@ -119,6 +119,8 @@ pub struct EncoderReader<R> {
     output_delivered: usize,
     finished: bool,
     failed: bool,
+    #[cfg(test)]
+    progress_fault: Option<tests::ProgressFault>,
 }
 
 impl<R> EncoderReader<R> {
@@ -157,6 +159,8 @@ impl<R> EncoderReader<R> {
             output_delivered: 0,
             finished: false,
             failed: false,
+            #[cfg(test)]
+            progress_fault: None,
         }
     }
 
@@ -205,6 +209,8 @@ impl<R> EncoderReader<R> {
         let step = result.map_err(operation_io_error)?;
         let progress = step.progress();
         let produced = progress.output_produced();
+        #[cfg(test)]
+        let produced = tests::update_produced(self.progress_fault, produced, self.output.len());
         if !valid_update_progress(read, progress.input_consumed(), produced, self.output.len()) {
             return Err(io::Error::other(
                 "base64-ng-tokio encoder reader made invalid progress",
@@ -222,7 +228,11 @@ impl<R> EncoderReader<R> {
             .finish(&mut self.output)
             .map_err(operation_io_error)?;
         let produced = step.progress().output_produced();
-        if !valid_finish_progress(produced, self.output.len(), step.status()) {
+        let status = step.status();
+        #[cfg(test)]
+        let (produced, status) =
+            tests::finish_progress(self.progress_fault, produced, self.output.len(), status);
+        if !valid_finish_progress(produced, self.output.len(), status) {
             return Err(io::Error::other(
                 "base64-ng-tokio encoder reader finalization made invalid progress",
             ));
@@ -253,6 +263,8 @@ pub struct DecoderReader<R> {
     output_delivered: usize,
     finished: bool,
     failed: bool,
+    #[cfg(test)]
+    progress_fault: Option<tests::ProgressFault>,
 }
 
 impl<R> DecoderReader<R> {
@@ -293,6 +305,8 @@ impl<R> DecoderReader<R> {
             output_delivered: 0,
             finished: false,
             failed: false,
+            #[cfg(test)]
+            progress_fault: None,
         }
     }
 
@@ -341,6 +355,8 @@ impl<R> DecoderReader<R> {
         let step = result.map_err(operation_io_error)?;
         let progress = step.progress();
         let produced = progress.output_produced();
+        #[cfg(test)]
+        let produced = tests::update_produced(self.progress_fault, produced, self.output.len());
         if !valid_update_progress(read, progress.input_consumed(), produced, self.output.len()) {
             return Err(io::Error::other(
                 "base64-ng-tokio decoder reader made invalid progress",
@@ -358,7 +374,11 @@ impl<R> DecoderReader<R> {
             .finish(&mut self.output)
             .map_err(operation_io_error)?;
         let produced = step.progress().output_produced();
-        if !valid_finish_progress(produced, self.output.len(), step.status()) {
+        let status = step.status();
+        #[cfg(test)]
+        let (produced, status) =
+            tests::finish_progress(self.progress_fault, produced, self.output.len(), status);
+        if !valid_finish_progress(produced, self.output.len(), status) {
             return Err(io::Error::other(
                 "base64-ng-tokio decoder reader finalization made invalid progress",
             ));
@@ -472,17 +492,5 @@ impl_async_read!(EncoderReader);
 impl_async_read!(DecoderReader);
 
 #[cfg(test)]
-mod tests {
-    use super::{Status, valid_finish_progress, valid_update_progress};
-
-    #[test]
-    fn progress_contract_rejects_untrusted_bounds_and_status() {
-        assert!(valid_update_progress(4, 4, 3, 3));
-        assert!(!valid_update_progress(4, 3, 3, 3));
-        assert!(!valid_update_progress(4, 4, 4, 3));
-
-        assert!(valid_finish_progress(3, 3, Status::Complete));
-        assert!(!valid_finish_progress(4, 3, Status::Complete));
-        assert!(!valid_finish_progress(3, 3, Status::NeedInput));
-    }
-}
+#[path = "readers_tests.rs"]
+mod tests;
