@@ -7,7 +7,7 @@ mod tests {
         CodecBuilder, CodecSettings, DecodeError, DecodedArray, EncodeError, EncodedArray, Engine,
         IMAP_MUTF7_ALPHABET_NO_PAD, LineEnding, LineWrap, MIME, MIME_BODY_STRICT,
         PBKDF2_ALPHABET_NO_PAD, PEM_BODY_CRLF, PEM_BODY_LF, Profile, SecretBuffer, Standard,
-        StrictStandardPadded, compat, legacy, secret::SecretArray, web, STANDARD,
+        Status, StrictStandardPadded, compat, legacy, secret::SecretArray, web, STANDARD,
         STRICT_STANDARD_PADDED,
     };
 
@@ -196,6 +196,27 @@ mod tests {
     }
 
     #[test]
+    fn incremental_2_0_surface_is_public_and_external() {
+        let mut encoder = STRICT_STANDARD_PADDED.encoder();
+        let mut encoded = [0u8; 8];
+        let step = encoder.update(b"hello", &mut encoded).unwrap();
+        let mut encoded_len = step.progress().output_produced();
+        let final_step = encoder.finish(&mut encoded[encoded_len..]).unwrap();
+        encoded_len += final_step.progress().output_produced();
+        assert_eq!(final_step.status(), Status::Complete);
+        assert_eq!(&encoded[..encoded_len], b"aGVsbG8=");
+
+        let mut decoder = STRICT_STANDARD_PADDED.decoder();
+        let mut decoded = [0u8; 5];
+        let step = decoder.update(&encoded, &mut decoded).unwrap();
+        let mut decoded_len = step.progress().output_produced();
+        let final_step = decoder.finish(&mut decoded[decoded_len..]).unwrap();
+        decoded_len += final_step.progress().output_produced();
+        assert_eq!(final_step.status(), Status::Complete);
+        assert_eq!(&decoded[..decoded_len], b"hello");
+    }
+
+    #[test]
     fn format_append_and_chunks_2_0_surface_is_public_and_external() {
         let display = STRICT_STANDARD_PADDED.display(b"hello").unwrap();
         assert_eq!(format!("{display}"), "aGVsbG8=");
@@ -274,6 +295,16 @@ mod tests {
 
         let binhex = CodecBuilder::new(BINHEX_ALPHABET).build().unwrap();
         assert_eq!(binhex.settings().alphabet(), &BINHEX_ALPHABET);
+
+        let runtime = CodecBuilder::from_table(
+            *b"./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",
+        )
+        .unwrap()
+        .build()
+        .unwrap();
+        let encoded = runtime.encode_to_string(b"hello").unwrap();
+        assert_eq!(runtime.decode_to_vec(encoded.as_bytes()).unwrap(), b"hello");
+
         assert_eq!(
             legacy::ASCII_WHITESPACE
                 .decode_into(&STRICT_STANDARD_PADDED, b" Z\tg\r=\n=", &mut [0u8; 1])

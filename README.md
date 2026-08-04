@@ -27,6 +27,9 @@
 
 Strict RFC 4648 behavior remains the default. Forgiving, wrapped, legacy, and protocol-specific behavior is explicitly named. Streaming is available through the core `stream` feature and the Tokio companion, fuzz and formal-verification harnesses are isolated from published packages, and SIMD execution is limited to backends with the documented admission evidence.
 
+Zero external runtime or development dependencies in `Cargo.toml`. Optional
+ecosystem dependencies remain isolated in companion packages.
+
 ## RFC 4648 Conformance
 
 The current `STANDARD`, `STANDARD_NO_PAD`, `URL_SAFE`, and
@@ -53,14 +56,16 @@ removals, capability edges, and companion boundaries before implementation.
 
 ## Current Status
 
-This source tree is the `2.0.0` package-family candidate. The latest published
-crates.io release remains `1.3.9` until the pre-seal correction series, final
-external review, exact-candidate evidence campaign, green required CI, and
-signed `v2.0.0` tag in Commit 55 are complete. The release helper refuses an
-untagged, dirty, or incorrectly signed source tree.
-The [2.0 release freeze](docs/2.0_RELEASE_FREEZE.md) and
-[2.0 release notes](release-notes/RELEASE_NOTES_2.0.0.md) describe the exact
-candidate presented for final review.
+This source tree is the `2.0.0` package-family candidate. The latest
+published release remains `1.3.9` until final external review, the
+exact-candidate evidence campaign, required green CI, and the signed
+`v2.0.0` tag are complete.
+
+The candidate includes the complete 2.0 API, synchronized companion crates,
+and the supported npm Wasm loader. See the
+[release freeze](docs/2.0_RELEASE_FREEZE.md),
+[release notes](release-notes/RELEASE_NOTES_2.0.0.md), and
+[migration guide](docs/MIGRATION.md) for the frozen scope and adoption path.
 
 Use the following Git dependency only when testing the exact candidate before
 the signed release:
@@ -68,37 +73,6 @@ the signed release:
 ```toml
 base64-ng = { git = "https://github.com/valkyoth/base64-ng", rev = "<reviewed-commit>" }
 ```
-
-The signed `1.3.9` release is the migration baseline. The 2.0 candidate adds
-validated specifications, transactional and incremental APIs, bounded secret
-states, runtime assurance, backend health, complete sync and async adapters,
-protocol companions, and a synchronized 13-crate package family while retaining
-the documented 1.x compatibility surface.
-
-Encode acceleration remains active only for admitted Standard and URL-safe
-fixed-block surfaces. Decode acceleration remains limited to normal strict
-decode, including the compacted strict stage used after wrapped line-profile
-validation and strict in-place decode after stack staging. Legacy whitespace
-compaction, custom alphabets, bcrypt-style and `crypt(3)` profiles, `no_std`,
-and constant-time-oriented secret decode remain scalar. In-place encode may
-use admitted encode backends only after stack staging protects unread input
-bytes. Wasm `simd128` is admitted only for Standard and URL-safe public encode
-and normal strict decode when the binary is compiled with
-`target-feature=+simd128`, the `simd` feature, and the explicit
-`allow-wasm32-best-effort-wipe` feature.
-
-The optional sanitization companion exact-pins `sanitization` `2.0.3` and
-provides protected-fill and integrity-aware comparison APIs without adding a
-dependency to the core package. Commit 32 adds a complete, isolated RVV 1.0
-encode/decode candidate and tests
-it under QEMU at VLEN 128 and 256. Normal published builds remain scalar on
-RISC-V: native correctness, ABI, signal-state, performance, assembly, and
-external pentest evidence are mandatory before production dispatch admission.
-Commit 33 adds the equivalent isolated, vector-length-independent AArch64 SVE
-candidate and tests it under QEMU at 128, 256, and 512 bits. It is not part of
-normal public dispatch: production AArch64 execution remains admitted NEON or
-scalar until two real SVE systems with different vector lengths provide the
-required correctness, ABI, signal-state, cleanup, and performance evidence.
 
 ## Backend Verification Status
 
@@ -122,126 +96,21 @@ normal public dispatch.
 | Big-endian acceleration | No backend implemented | Complete scalar suites under s390x and PowerPC64 QEMU only | `not admitted`; scalar only | No native hardware verification |
 
 The detailed evidence and non-claims are maintained in
-[the Trust Dashboard](docs/TRUST.md), [SIMD policy](docs/SIMD.md), and the
+[the Trust Dashboard](docs/TRUST.md), [SIMD policy](docs/SIMD.md),
 [RISC-V review](docs/RISCV_QEMU_REVIEW.md), and
 [SVE review](docs/SVE_QEMU_REVIEW.md). This table is updated whenever a backend
 implementation, execution environment, or admission decision changes.
 
-Implemented on this branch now:
+Before `2.0.0`, only release assurance remains: final external review, the
+exact-candidate evidence campaign, green required CI and CodeQL, the report-only
+Commit 55 seal, and the authorized signed tag. No additional runtime feature is
+planned for the 2.0 release candidate.
 
-- Commit 31 big-endian byte-order audit and complete s390x/PowerPC64 QEMU
-  scalar-fallback evidence, with a separate schema for real-hardware reports.
-- Commit 32 vector-length-independent RVV 1.0 Standard/URL-safe encode and
-  strict-decode candidate, fail-closed Linux capability probing, generated
-  assembly evidence, dual-VLEN QEMU tests, and a checked real-hardware report
-  contract. The candidate is deliberately non-dispatchable until native
-  evidence and external review pass.
-- Commit 33 vector-length-independent SVE Standard/URL-safe encode and
-  strict-decode candidate, fail-closed Linux/Android HWCAP and per-thread
-  vector-length probing, generated assembly evidence, QEMU tests at three
-  vector lengths, and a checked real-hardware report contract. The candidate
-  is deliberately non-dispatchable until native evidence and external review
-  pass.
-- `no_std` core with optional `alloc` and `std` features.
-- Zero external runtime or development dependencies in `Cargo.toml`.
-- Standard and URL-safe alphabets.
-- Padded and unpadded encoding into caller-provided output buffers.
-- Stable compile-time encoding into caller-sized arrays.
-- Strict decoding into caller-provided output buffers.
-- In-place encoding when the caller provides enough spare capacity.
-- Optional `alloc` vector and string helpers.
-- In-place decode API built on the same strict scalar decoder.
-- Explicit legacy decode APIs that ignore ASCII transport whitespace while
-  keeping alphabet and padding validation strict.
-- Validation-only APIs for strict and legacy profiles when callers need to
-  reject malformed input without materializing decoded bytes.
-- Line-wrapped encoding for MIME/PEM-style output and caller-selected wrapping
-  policies.
-- Strict line-wrapped validation and decoding profiles for MIME/PEM-style
-  input.
-- Custom alphabet validation helpers for user-defined 64-byte alphabets.
-- Named dependency-free profiles for MIME, PEM, bcrypt-style, and
-  `crypt(3)`-style Base64.
-- Stack-backed encoded output buffers for short values without `alloc`.
-- Redacted secret owned buffers for sensitive encoded or decoded bytes when
-  `alloc` is enabled.
-- Separate `ct` scalar validation and decode module for sensitive payloads
-  that avoids secret-indexed lookup tables during Base64 symbol mapping.
-- `std::io` streaming encoders and decoders behind the `stream` feature.
-- Focused unit and integration tests.
-- Isolated `cargo-fuzz` harnesses for decode, in-place decode, and stream
-  chunk-boundary behavior.
-- Isolated dudect-style timing harness for the constant-time-oriented scalar
-  decoder.
-- Bounded Kani proof harnesses that run with the documented Rust `1.90.0`
-  verifier pairing and `cargo-kani 0.67.0`.
-- Constant-time assembly evidence generation for reviewer inspection.
-- Runtime-dispatched std `x86`/`x86_64` AVX-512 VBMI fixed-block encode,
-  falling back to AVX2, then SSSE3/SSE4.1, and then scalar, plus
-  little-endian `aarch64` NEON fixed-block encode, for Standard and
-  URL-safe alphabets behind the SIMD admission boundary. Public slice,
-  clear-tail, alloc, and wrapped encode helpers can use admitted fixed-block
-  encode for their unwrapped encoding step. All input lengths are supported:
-  fixed blocks may be accelerated, while the final tail and padding are
-  completed by the scalar encoder. In-place encode may use admitted encode
-  backends only after stack staging protects unread input bytes. Unsupported
-  CPUs, custom alphabets, and line-ending insertion stay scalar. `no_std`
-  acceleration requires complete compile-time target features, the backend
-  health latch, and a `StaticBackendToken`; otherwise it stays scalar. The 2.0
-  Commit 29 implementation uses direct exact-width NEON kernels and clears
-  vector state once after each complete block loop.
-- Runtime-dispatched std `x86`/`x86_64` AVX-512 VBMI fixed-block strict decode
-  in the `1.3.0` line, falling back to AVX2, then
-  SSSE3/SSE4.1, and then scalar, plus little-endian `aarch64` NEON
-  fixed-block strict decode, limited to Standard and URL-safe alphabets after
-  whole-input scalar validation. Public strict decode supports every valid
-  encoded length: fixed blocks may be accelerated, while short inputs and
-  non-block tails are decoded by scalar code. Wrapped decode may use admitted
-  strict decode after scalar line-profile validation and line-ending
-  compaction; legacy whitespace decode may use admitted strict decode after
-  scalar whitespace compaction. Strict in-place decode may use admitted strict
-  decode backends only after stack staging. Unsupported CPUs, big-endian
-  AArch64, custom alphabets, and CT secret decode stay scalar. `no_std`
-  acceleration requires complete compile-time target features and backend
-  health support and a `StaticBackendToken`. The direct NEON block validates
-  every lane before its first exact-width output store; whole-input scalar
-  validation preserves the public strict error contract.
-- Direct wasm `simd128` fixed-block encode and normal strict decode for
-  Standard and URL-safe alphabets when built for `wasm32` with
-  `target-feature=+simd128` and `simd`. The 2.0 Commit 30 hot loops use exact
-  12-to-16 encode and 16-to-12 strict-decode blocks after one whole-input
-  scalar validation; tails and padding remain scalar. The supported
-  `base64-ng-wasm-loader` npm package ships separate scalar and SIMD artifacts,
-  selects before instantiation, and is tested from its exact npm tarball under
-  Node/V8, Wasmtime, Chromium/V8, Firefox/SpiderMonkey, and operator-run
-  Safari/WebKit evidence. Secret wasm builds remain governed by the separate
-  fail-closed wipe acknowledgement.
-- Optional `base64-ng-sanitization` companion crate for applications that
-  already admit `sanitization` and want direct CT decode helpers into
-  clear-on-drop secret containers.
-- Optional `base64-ng-derive` companion crate for fixed-size 2.0 secret
-  newtypes with explicit sealed-codec, exact-length, and exposure policy.
-- Optional `base64-ng-serde`, `base64-ng-bytes`, `base64-ng-subtle`, and
-  `base64-ng-tokio` companion crates for projects that explicitly admit those
-  ecosystem dependencies.
-- Local check scripts, release gate, dependency policy, audit config, CI, SBOM script, reproducible build check, and a 500-line production-source budget guard.
-
-Deliberately outside automatic admission:
-
-- Additional SIMD decode acceleration beyond the `1.3.0`
-  strict Standard and URL-safe decode scope only after separate admission
-  evidence is complete. The frozen first scope remains padded and unpadded
-  strict decode only after any scalar line or whitespace compaction: no
-  vectorized line wrapping, no vectorized legacy whitespace, no custom
-  alphabets, no bcrypt/crypt profiles, and no constant-time-oriented secret
-  decode. Default builds, unsupported runtime CPUs, `no_std` builds without
-  complete static feature and health evidence, and all out-of-scope decode
-  surfaces remain scalar.
-- Additional custom alphabet and broader wasm
-  runtime/browser fast paths only after separate SIMD admission evidence is
-  complete. Default builds and unsupported runtime CPUs remain scalar.
-- A clean Kani run proves only the scoped 43 normal and 19 advanced harness
-  properties, not whole-crate correctness or cryptographic constant time.
+RVV and SVE remain non-dispatchable candidates pending native hardware
+evidence. Big-endian execution remains scalar. Secret operations remain on the
+separate scalar fixed-work path. Project tests, Kani harnesses, timing evidence,
+and QEMU runs are scoped evidence, not certification or whole-crate formal
+proof.
 
 ## Trust Dashboard
 
@@ -266,8 +135,8 @@ and CWE mapping lives in [docs/SECURITY_CONTROLS.md](docs/SECURITY_CONTROLS.md).
 ## Rust Version Support
 
 The minimum supported Rust version is Rust `1.90.0`. New deployments should
-prefer the latest tested stable Rust; as of July 21, 2026, this project tests
-through Rust `1.97.1`.
+prefer the latest tested stable Rust; the 2.0 candidate is released with Rust
+`1.97.1` while retaining a separate MSRV gate.
 
 The active release toolchain is Rust `1.97.1`. MSRV remains Rust `1.90.0` and
 is checked separately in CI so the project can build and test with the latest
@@ -278,14 +147,7 @@ Compatibility evidence for the `2.0.0` workspace candidate:
 | Rust | Local Evidence |
 | --- | --- |
 | `1.90.0` | ✓ MSRV compatibility check |
-| `1.91.0` | ✓ `cargo check --all-features` |
-| `1.92.0` | ✓ `cargo check --all-features` |
-| `1.93.0` | ✓ `cargo check --all-features` |
-| `1.94.0` | ✓ `cargo check --all-features` |
-| `1.95.0` | ✓ `cargo check --all-features` |
-| `1.96.0` | ✓ `cargo check --all-features` |
-| `1.96.1` | ✓ `cargo check --all-features` |
-| `1.97.0` | ✓ `cargo check --all-features` |
+| `1.91.0` - `1.97.0` | ✓ `cargo check --all-features` |
 | `1.97.1` | ✓ active release toolchain and `cargo check --all-features` |
 
 ## Install
@@ -310,6 +172,34 @@ assert_eq!(decoded, b"hello");
 The historical `STANDARD` family remains as reviewed compatibility API.
 Forgiving web decode, legacy whitespace, line wrapping, and protocol-specific
 transforms require separately named opt-in APIs.
+
+## 2.0 API Guide
+
+The root crate documents and tests each 2.0 capability independently:
+
+| Capability | Primary guide |
+| --- | --- |
+| Validated alphabets, sealed codecs, strict presets, and custom policy builders | [Codec specifications](docs/2.0_CODEC_SPECIFICATIONS.md) |
+| Error, progress, lifecycle, atomicity, and rollback contracts | [Operation contracts](docs/2.0_OPERATION_CONTRACTS.md) |
+| Transactional caller-owned and allocating one-shot operations | [Transactional one-shot](docs/2.0_TRANSACTIONAL_ONE_SHOT.md) |
+| Heapless incremental encode and strict padded/unpadded decode | [Encoder](docs/2.0_INCREMENTAL_ENCODER.md), [padded decoder](docs/2.0_INCREMENTAL_PADDED_DECODER.md), [finalization](docs/2.0_INCREMENTAL_DECODER_FINALIZATION.md) |
+| Const transforms and fixed-capacity ordinary buffers | [Const and bounded buffers](docs/2.0_CONST_AND_BOUNDED_BUFFERS.md) |
+| Ordinary and staged secret-adjacent in-place transforms | [In-place operations](docs/2.0_IN_PLACE_OPERATIONS.md) |
+| Allocation-free formatting, rollback-safe append, and encoded chunk iteration | [Formatting, append, and chunks](docs/2.0_FORMAT_APPEND_CHUNKS.md) |
+| Validated line wrapping and accurately scoped body profiles | [Line wrapping](docs/2.0_LINE_WRAPPING.md), [profiles](docs/2.0_PROFILES_AND_TERMINOLOGY.md) |
+| Exact WHATWG forgiving decode and explicitly scoped compatibility policies | [Web forgiving Base64](docs/2.0_WEB_FORGIVING_BASE64.md), [profiles](docs/2.0_PROFILES_AND_TERMINOLOGY.md) |
+| Bounded secret owners, fixed-work encode/decode, and explicit exposure | [Secret storage](docs/2.0_SECRET_STORAGE_AND_EXPOSURE.md), [decode](docs/2.0_SECRET_DECODING.md), [encode](docs/2.0_SECRET_ENCODING.md) |
+| Protected allocations, assurance tokens, operation reports, and teardown | [Assurance and protected memory](docs/2.0_ASSURANCE_AND_PROTECTED_MEMORY.md), [reporting](docs/2.0_OPERATION_REPORTING.md) |
+| Runtime backend health, checked execution, quarantine, and dispatch reporting | [Backend health](docs/2.0_BACKEND_HEALTH.md), [dispatch matrix](docs/2.0_DISPATCH_AND_PERFORMANCE_MATRIX.md) |
+| Synchronous I/O and Tokio async I/O | [Synchronous I/O](docs/2.0_SYNCHRONOUS_IO.md), [async overview](docs/ASYNC.md) |
+| MIME, PEM, OpenPGP, IMAP, multibase, and password-record protocols | [Protocol registry](docs/2.0_PROTOCOL_REGISTRY.md), [companion crates](#companion-crates) |
+| Wasm package and runtime loading | [Wasm runtime review](docs/WASM_SIMD128_RUNTIME_REVIEW.md), [loader package](packages/base64-ng-wasm-loader/README.md) |
+| Serde, bytes, derive, subtle, sanitization, and Tokio integrations | [Companion crates](#companion-crates) and each package-local README |
+
+The [migration guide](docs/MIGRATION.md) contains compiled examples for the
+canonical one-shot, incremental, in-place, compatibility, secret, streaming,
+and companion boundaries. Each companion crate also carries a package-local
+README and runnable examples for its complete public scope.
 
 The crate is dual-licensed:
 
@@ -642,9 +532,9 @@ base64-ng = { version = "2.0.0", default-features = false }
 Enable admitted encode acceleration on supported `std` targets with the
 `simd` feature. The public encode APIs do not change; runtime dispatch selects
 an admitted backend only when the CPU and input shape match the admission
-scope, otherwise scalar encode is used. In the `1.3.0` line,
-the same feature also enables admitted strict decode acceleration for Standard
-and URL-safe alphabets after whole-input scalar validation:
+scope, otherwise scalar encode is used. The same feature enables admitted
+strict decode acceleration for Standard and URL-safe alphabets after
+whole-input scalar validation:
 
 ```toml
 [dependencies]
@@ -681,47 +571,108 @@ These helpers are intended for ordinary data and migration from simpler
 Base64 APIs. For secret-bearing payloads, use the explicit engine, profile, or
 `ct` APIs below so the security contract is visible at the call site.
 
-## Example
+## Canonical 2.0 Examples
 
 ```rust
-use base64_ng::{STANDARD, checked_encoded_len};
+use base64_ng::STRICT_STANDARD_PADDED;
 
 let input = b"hello";
-const ENCODED_CAPACITY: usize = match checked_encoded_len(5, true) {
-    Some(len) => len,
-    None => panic!("encoded length overflow"),
-};
-let mut encoded = [0u8; ENCODED_CAPACITY];
-let written = STANDARD.encode_slice(input, &mut encoded).unwrap();
+let mut encoded = [0u8; 8];
+let written = STRICT_STANDARD_PADDED
+    .encode_into(input, &mut encoded)
+    .unwrap();
 assert_eq!(&encoded[..written], b"aGVsbG8=");
 
 let mut decoded = [0u8; 5];
-let written = STANDARD.decode_slice(&encoded, &mut decoded).unwrap();
+let written = STRICT_STANDARD_PADDED
+    .decode_into(&encoded, &mut decoded)
+    .unwrap();
 assert_eq!(&decoded[..written], input);
 ```
 
 In-place encoding:
 
 ```rust
-use base64_ng::STANDARD;
+use base64_ng::STRICT_STANDARD_PADDED;
 
 let mut buffer = [0u8; 8];
 buffer[..5].copy_from_slice(b"hello");
-let encoded = STANDARD.encode_in_place(&mut buffer, 5).unwrap();
-assert_eq!(encoded, b"aGVsbG8=");
+let encoded_len = STRICT_STANDARD_PADDED
+    .encode_in_place(&mut buffer, 5)
+    .unwrap();
+assert_eq!(&buffer[..encoded_len], b"aGVsbG8=");
 ```
 
-For sensitive payloads, `encode_slice_clear_tail` and
-`encode_in_place_clear_tail` clear unused bytes after the encoded prefix and
-clear the caller-owned output buffer on encode error.
+Canonical `encode_into` and `decode_into` are transactional: every returned
+error leaves the complete destination unchanged. Incremental and in-place APIs
+instead report exact committed progress; choose the contract that matches the
+surrounding protocol.
+
+Heapless incremental encoding:
+
+```rust
+use base64_ng::{Status, STRICT_STANDARD_PADDED};
+
+let mut state = STRICT_STANDARD_PADDED.encoder();
+let mut output = [0u8; 8];
+let step = state.update(b"hello", &mut output).unwrap();
+let mut written = step.progress().output_produced();
+let final_step = state.finish(&mut output[written..]).unwrap();
+written += final_step.progress().output_produced();
+assert_eq!(final_step.status(), Status::Complete);
+assert_eq!(&output[..written], b"aGVsbG8=");
+```
+
+Heapless incremental strict decoding uses the same progress contract:
+
+```rust
+use base64_ng::{Status, STRICT_STANDARD_PADDED};
+
+let mut state = STRICT_STANDARD_PADDED.decoder();
+let mut output = [0u8; 5];
+let step = state.update(b"aGVsbG8=", &mut output).unwrap();
+let mut written = step.progress().output_produced();
+let final_step = state.finish(&mut output[written..]).unwrap();
+written += final_step.progress().output_produced();
+assert_eq!(final_step.status(), Status::Complete);
+assert_eq!(&output[..written], b"hello");
+```
+
+Allocation-free formatting, append rollback, and chunk iteration:
+
+```rust
+use base64_ng::STRICT_STANDARD_PADDED;
+
+let display = STRICT_STANDARD_PADDED.display(b"hello").unwrap();
+assert_eq!(format!("{display}"), "aGVsbG8=");
+
+let mut appended = String::from("prefix:");
+STRICT_STANDARD_PADDED
+    .encode_append(b"hello", &mut appended)
+    .unwrap();
+assert_eq!(appended, "prefix:aGVsbG8=");
+
+let chunks = STRICT_STANDARD_PADDED
+    .encoded_chunks(b"hello")
+    .unwrap()
+    .map(|chunk| chunk.as_bytes().to_vec())
+    .collect::<Vec<_>>();
+assert_eq!(chunks, [b"aGVs".as_slice(), b"bG8="].map(<[u8]>::to_vec));
+```
 
 Compile-time encoding:
 
 ```rust
-use base64_ng::{STANDARD, URL_SAFE_NO_PAD};
+use base64_ng::{STRICT_STANDARD_PADDED, STRICT_URL_SAFE_UNPADDED};
 
-const HELLO: [u8; 8] = STANDARD.encode_array(b"hello");
-const URL_BYTES: [u8; 3] = URL_SAFE_NO_PAD.encode_array(b"\xfb\xff");
+const HELLO: [u8; 8] = match STRICT_STANDARD_PADDED.encode_array(b"hello") {
+    Ok(output) => output,
+    Err(_) => panic!("reviewed const encode failed"),
+};
+const URL_BYTES: [u8; 3] = match STRICT_URL_SAFE_UNPADDED.encode_array(b"\xfb\xff") {
+    Ok(output) => output,
+    Err(_) => panic!("reviewed const encode failed"),
+};
 
 assert_eq!(&HELLO, b"aGVsbG8=");
 assert_eq!(&URL_BYTES, b"-_8");
@@ -729,29 +680,47 @@ assert_eq!(&URL_BYTES, b"-_8");
 
 Stable Rust cannot yet express the encoded length as the return array length
 directly, so `encode_array` uses the destination array type supplied by the
-caller. A wrong output length fails during const evaluation.
+caller. A wrong output length returns `ConstTransformError` and can fail during
+const evaluation when matched as above.
 Use `encode_array` for fixed-size static values, not for runtime data whose
 size is controlled by an attacker.
 
 Compile-time strict decoding:
 
 ```rust
-use base64_ng::{DecodeError, STANDARD, URL_SAFE_NO_PAD};
+use base64_ng::{STRICT_STANDARD_PADDED, STRICT_URL_SAFE_UNPADDED};
 
-const HELLO: Result<([u8; 5], usize), DecodeError> = STANDARD.decode_array(b"aGVsbG8=");
-const URL_BYTES: Result<([u8; 2], usize), DecodeError> =
-    URL_SAFE_NO_PAD.decode_array(b"-_8");
+const HELLO: [u8; 5] = match STRICT_STANDARD_PADDED.decode_array(b"aGVsbG8=") {
+    Ok(output) => output,
+    Err(_) => panic!("reviewed const decode failed"),
+};
+const URL_BYTES: [u8; 2] = match STRICT_URL_SAFE_UNPADDED.decode_array(b"-_8") {
+    Ok(output) => output,
+    Err(_) => panic!("reviewed const decode failed"),
+};
 
-let (hello, hello_len) = HELLO.unwrap();
-let (url_bytes, url_len) = URL_BYTES.unwrap();
-
-assert_eq!(&hello[..hello_len], b"hello");
-assert_eq!(&url_bytes[..url_len], b"\xfb\xff");
+assert_eq!(&HELLO, b"hello");
+assert_eq!(&URL_BYTES, b"\xfb\xff");
 ```
 
 `decode_array` is strict and returns `Result` for malformed input, padding
 errors, and undersized output arrays. It is useful for fixed static Base64
 literals and does not replace the `ct` APIs for secret-bearing decode.
+
+For runtime values with compile-time capacity ceilings, use ordinary bounded
+arrays:
+
+```rust
+use base64_ng::STRICT_STANDARD_PADDED;
+
+let encoded = STRICT_STANDARD_PADDED
+    .encode_bounded::<8>(b"hello")
+    .unwrap();
+let decoded = STRICT_STANDARD_PADDED
+    .decode_bounded::<5>(encoded.as_bytes())
+    .unwrap();
+assert_eq!(decoded.as_bytes(), b"hello");
+```
 
 For untrusted length metadata, use checked length calculation:
 
@@ -774,30 +743,40 @@ Use validation-only APIs when a protocol needs to sanitize input before storing,
 routing, or accounting for it:
 
 ```rust
-use base64_ng::{STANDARD, URL_SAFE_NO_PAD};
+use base64_ng::{STRICT_STANDARD_PADDED, STRICT_URL_SAFE_UNPADDED};
 
-assert!(STANDARD.validate(b"aGVsbG8="));
-assert!(!STANDARD.validate(b"aGVsbG8"));
-
-STANDARD.validate_result(b"aGVsbG8=").unwrap();
-
-assert!(URL_SAFE_NO_PAD.validate(b"-_8"));
-assert!(!URL_SAFE_NO_PAD.validate(b"+/8"));
+STRICT_STANDARD_PADDED.validate(b"aGVsbG8=").unwrap();
+assert!(STRICT_STANDARD_PADDED.validate(b"aGVsbG8").is_err());
+STRICT_URL_SAFE_UNPADDED.validate(b"-_8").unwrap();
+assert!(STRICT_URL_SAFE_UNPADDED.validate(b"+/8").is_err());
 ```
 
 For line-wrapped or spaced legacy inputs, use the explicit legacy profile:
 
 ```rust
-use base64_ng::STANDARD;
+use base64_ng::{STRICT_STANDARD_PADDED, legacy};
 
-assert!(STANDARD.validate_legacy(b" aG\r\nVsbG8= "));
-assert!(!STANDARD.validate_legacy(b" aG-V "));
-
-let decoded = STANDARD
-    .decode_buffer_legacy::<5>(b" aG\r\nVs\tbG8= ")
+let mut decoded = [0u8; 5];
+let written = legacy::ASCII_WHITESPACE
+    .decode_into(
+        &STRICT_STANDARD_PADDED,
+        b" aG\r\nVs\tbG8= ",
+        &mut decoded,
+    )
     .unwrap();
-assert_eq!(decoded.as_bytes(), b"hello");
+assert_eq!(&decoded[..written], b"hello");
 ```
+
+Exact WHATWG forgiving decode is a separate ordinary policy:
+
+```rust
+use base64_ng::{STRICT_STANDARD_PADDED, web};
+
+assert_eq!(web::FORGIVING.decode_to_vec(" Z h = = ").unwrap(), b"f");
+assert!(STRICT_STANDARD_PADDED.decode_to_vec(b" Z h = = ").is_err());
+```
+
+Forgiving and legacy policies are intentionally unavailable to secret frames.
 
 ## Line-Wrapped Encoding
 
@@ -878,9 +857,8 @@ use a fixed 64-entry scan. Encoded output stays redacted and wiping until the
 caller explicitly exposes or declassifies it. See
 [`docs/2.0_SECRET_ENCODING.md`](docs/2.0_SECRET_ENCODING.md).
 
-Commit 22 adds an allocation-specific assured path. A token and one protected
-owner are both required; an ordinary mutable slice cannot substitute for the
-owner:
+Allocation-specific assured operations require both a token and one protected
+owner; an ordinary mutable slice cannot substitute for that owner:
 
 ```rust
 use base64_ng::{
@@ -964,31 +942,31 @@ assert_eq!(decoded.as_bytes(), b"hello");
 
 ## Custom Alphabets
 
-User-defined alphabets can be generated and validated at compile time:
+New 2.0 code validates and owns custom alphabets before constructing a sealed
+runtime codec:
 
 ```rust
-base64_ng::define_alphabet! {
-    struct DotSlash = b"./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-}
+use base64_ng::CodecBuilder;
 
-use base64_ng::Alphabet;
-
-assert_eq!(DotSlash::decode(b'.'), Some(0));
+let codec = CodecBuilder::from_table(
+    *b"./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",
+)
+.unwrap()
+.build()
+.unwrap();
+let encoded = codec.encode_to_string(b"hello").unwrap();
+assert_eq!(codec.decode_to_vec(encoded.as_bytes()).unwrap(), b"hello");
 ```
 
-For custom tables, `Engine` uses a deliberately conservative fixed 64-entry
-scan for every emitted Base64 byte to avoid secret-indexed table lookups.
-Standard and URL-safe table families use crate-owned optimized arithmetic
-mappers selected as an associated compile-time constant. For very large
-payloads and custom alphabets, benchmark this tradeoff before using them on
+`ValidatedAlphabet` and `CodecBuilder` reject duplicate, forbidden, padded, or
+wrong-length tables before a codec exists. For custom tables, secret operations
+use a deliberately conservative fixed 64-entry scan for every emitted or
+decoded symbol. Benchmark this tradeoff before using custom alphabets for
 untrusted high-volume traffic.
 
-If you implement `Alphabet` manually, `Engine` treats `ENCODE` as the sole
-encoding and decoding definition and does not call overridden `encode` or
-`decode` methods. Direct calls to those low-level compatibility helpers retain
-the custom implementation's behavior and timing. Ordinary scalar, SIMD, and
-`ct` engine paths instead use crate-owned mappers derived from `ENCODE`, so a
-stateful override cannot create backend-dependent output.
+The historical `define_alphabet!` and `Alphabet` trait remain available only as
+reviewed 1.x compatibility surfaces. New code should use the validated 2.0
+value so policy construction and ownership are explicit.
 
 Built-in non-RFC alphabets are available for explicit interoperability:
 
@@ -1446,10 +1424,10 @@ Security commitments:
   Its `encode_standard` and `encode_url_safe` methods execute the rewritten
   SSSE3/SSE4.1, AVX2, or AVX-512 hot path when that exact token remains healthy.
   Its `decode_standard` and `decode_url_safe` methods execute direct
-  SSSE3/SSE4.1, AVX2, or AVX-512 strict decode. Commit 34 keeps automatic x86
-  strict decode on SSSE3/SSE4.1 or AVX2 because retained AVX-512 measurements
-  missed the frozen performance margin; exact static-token calls may still use
-  AVX-512 from one 64-byte encoded block. Other token backends and invalidated
+  SSSE3/SSE4.1, AVX2, or AVX-512 strict decode. Automatic x86 strict decode
+  remains on SSSE3/SSE4.1 or AVX2 because retained AVX-512 measurements missed
+  the frozen performance margin; exact static-token calls may still use AVX-512
+  from one 64-byte encoded block. Other token backends and invalidated
   generations use scalar execution. The complete frozen policy is in
   [`docs/2.0_DISPATCH_AND_PERFORMANCE_MATRIX.md`](docs/2.0_DISPATCH_AND_PERFORMANCE_MATRIX.md).
 - `runtime::require_backend_policy()` lets deployments assert scalar execution,
@@ -1594,8 +1572,8 @@ scripts/check_aarch64_linux.sh
 
 This runs the host tests, all-feature tests, clippy, direct NEON encode/decode
 evidence, backend evidence, SIMD feature-bundle checks, and SIMD admission
-validators on the real AArch64 host. For the Commit 29 measured campaign, run
-the device script with `BASE64_NG_RUN_COMMIT29_PERF=1`.
+validators on the real AArch64 host. To include the retained NEON performance
+campaign, set `BASE64_NG_RUN_COMMIT29_PERF=1`.
 
 Required security tools:
 
