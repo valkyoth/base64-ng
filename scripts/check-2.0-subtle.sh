@@ -139,7 +139,8 @@ echo "2.0 subtle equality: documentation"
 RUSTDOCFLAGS="-D warnings" cargo doc --manifest-path "$manifest" --no-deps --all-features
 
 echo "2.0 subtle equality: locked dudect harness"
-BASE64_NG_RUN_DUDECT=0 scripts/check_dudect.sh
+cargo check --locked --manifest-path dudect/Cargo.toml --bins
+cargo test --locked --manifest-path dudect/Cargo.toml --bins
 
 echo "2.0 subtle equality: optimized assembly"
 BASE64_NG_ALLOW_DIRTY_EVIDENCE=1 scripts/generate_subtle_asm_evidence.sh
