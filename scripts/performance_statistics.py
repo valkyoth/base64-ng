@@ -26,7 +26,9 @@ def validate_advantage(
     if ratio < minimum_ratio:
         raise ValueError(f"{label} ratio {ratio:.3f} is below {minimum_ratio:.3f}")
 
-    wins = sum(left > right for left, right in zip(candidate, fallback, strict=True))
+    # Equal lengths are checked above; avoid Python 3.10-only zip(strict=...) so
+    # native evidence capture also works with the Python 3.9 shipped by macOS.
+    wins = sum(left > right for left, right in zip(candidate, fallback))
     tied_or_worse = len(candidate) - wins
     one_sided_p = sum(
         math.comb(len(candidate), count)

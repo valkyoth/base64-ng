@@ -48,6 +48,11 @@ fi
 echo "stable release gate: standard checks"
 scripts/checks.sh
 
+if [ "$mode" = "release" ]; then
+    echo "stable release gate: completed 2.0 checkpoint record"
+    scripts/validate-2.0-checkpoint-record.py --final
+fi
+
 if cargo nextest --version >/dev/null 2>&1; then
     echo "stable release gate: nextest"
     cargo nextest run --all-features

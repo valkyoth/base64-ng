@@ -39,6 +39,11 @@ scripts/validate-doc-versions.sh
 
 echo "checks: 2.0 governance"
 scripts/validate-2.0-governance.sh
+scripts/validate-2.0-checkpoint-record.py
+scripts/test-2.0-checkpoint-record.py
+
+echo "checks: retained NEON evidence policy"
+scripts/test-neon-admission-bundle.py
 
 echo "checks: Kani proof inventory"
 scripts/validate-kani-proof-inventory.py

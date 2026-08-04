@@ -54,7 +54,21 @@ scripts/validate-x86-decode-performance.py \
 neon_apple="performance-baselines/dispatch-2.0-neon-apple-silicon"
 neon_linux="performance-baselines/dispatch-2.0-neon-aarch64-linux"
 neon_status="pending-native-performance"
-if [ -f "$neon_apple/MANIFEST.txt" ] && [ -f "$neon_linux/MANIFEST.txt" ]; then
+if [ -e "$neon_apple" ]; then
+    scripts/validate-neon-admission-bundle.py \
+        "$neon_apple" --platform apple-silicon
+fi
+if [ -e "$neon_linux" ]; then
+    scripts/validate-neon-admission-bundle.py \
+        "$neon_linux" --platform aarch64-linux
+fi
+if [ -d "$neon_apple" ] && [ -d "$neon_linux" ]; then
+    apple_source="$(sed -n 's/^source_commit=//p' "$neon_apple/MANIFEST.txt")"
+    linux_source="$(sed -n 's/^source_commit=//p' "$neon_linux/MANIFEST.txt")"
+    if [ "$apple_source" != "$linux_source" ]; then
+        echo "2.0 memory/hardware evidence: NEON bundles must test the same source commit" >&2
+        exit 1
+    fi
     neon_status="retained-native-performance"
 fi
 if [ "${BASE64_NG_REQUIRE_COMMIT53_NATIVE:-0}" = "1" ] && \

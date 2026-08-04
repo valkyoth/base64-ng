@@ -135,6 +135,10 @@ test -x scripts/test-ct-asm-symbols.sh
 test -x scripts/check-2.0-operation-reporting.sh
 test -x scripts/validate-2.0-dispatch-matrix.sh
 test -x scripts/capture-2.0-neon-admission.sh
+test -x scripts/validate-neon-admission-bundle.py
+test -x scripts/test-neon-admission-bundle.py
+test -x scripts/validate-2.0-checkpoint-record.py
+test -x scripts/test-2.0-checkpoint-record.py
 
 if [ "$(sed -n '1p' scripts/release_crates.py)" != "#!/usr/bin/env python3" ]; then
     echo "release metadata: scripts/release_crates.py must use #!/usr/bin/env python3" >&2
@@ -271,6 +275,22 @@ do
 
     if [ "$(sed -n '1p' "$required_script")" != "#!/usr/bin/env sh" ]; then
         echo "release metadata: $required_script must use #!/usr/bin/env sh" >&2
+        exit 1
+    fi
+done
+
+for required_python_script in \
+    "scripts/validate-neon-admission-bundle.py" \
+    "scripts/test-neon-admission-bundle.py" \
+    "scripts/validate-2.0-checkpoint-record.py" \
+    "scripts/test-2.0-checkpoint-record.py"
+do
+    if [ ! -x "$required_python_script" ]; then
+        echo "release metadata: $required_python_script must be executable" >&2
+        exit 1
+    fi
+    if [ "$(sed -n '1p' "$required_python_script")" != "#!/usr/bin/env python3" ]; then
+        echo "release metadata: $required_python_script must use #!/usr/bin/env python3" >&2
         exit 1
     fi
 done
@@ -809,6 +829,11 @@ for required_package_file in \
     "scripts/check-2.0-fuzz-campaigns.sh" \
     "scripts/check-2.0-release-freeze.sh" \
     "scripts/check-2.0-neon-hot-paths.sh" \
+    "scripts/capture-2.0-neon-admission.sh" \
+    "scripts/validate-neon-admission-bundle.py" \
+    "scripts/test-neon-admission-bundle.py" \
+    "scripts/validate-2.0-checkpoint-record.py" \
+    "scripts/test-2.0-checkpoint-record.py" \
     "scripts/check-2.0-one-shot.sh" \
     "scripts/check-2.0-profiles.sh" \
     "scripts/check-2.0-secret-capabilities.sh" \

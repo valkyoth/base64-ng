@@ -1363,8 +1363,8 @@ automatic strict decode; exact static/evidence calls retain the 64-byte
 AVX-512 minimum. Exhaustive lanes, malformed
 positions, tails, forced-backend fuzz, static execution, assembly, unsafe, and
 focused performance gates cover the rewrite. The first retained benchmark is
-from an AMD Ryzen 9 9950X3D; a second AVX-512 VBMI microarchitecture remains
-required before automatic selection can be reconsidered.
+from an AMD Ryzen 9 9950X3D; a second AVX-512 VBMI microarchitecture remains a
+2.0.1 corroboration target before automatic selection can be reconsidered.
 
 Commit 27 replaces the SSSE3/SSE4.1 and AVX2 strict-decode staging prototypes
 with direct vector ASCII classification, 6-bit mapping, multiply-add packing,
@@ -1384,8 +1384,8 @@ x86 encode uses SSSE3/SSE4.1 for 12–23 bytes, AVX2 for 24–191 bytes, and AVX
 from 192 bytes; exact static/evidence AVX-512 calls retain the 48-byte minimum.
 Exhaustive byte-position, tail, fuzz, static-token, assembly, and focused
 performance gates cover the implementation. The first retained benchmark is
-from an AMD Ryzen 9 9950X3D; a second AVX-512 microarchitecture remains required
-before 2.0 release performance wording can generalize the crossover.
+from an AMD Ryzen 9 9950X3D; a second AVX-512 microarchitecture remains a 2.0.1
+corroboration target before release wording can generalize the crossover.
 
 Commit 25 rewrites SSSE3/SSE4.1 and AVX2 ordinary encode with exact-width
 direct loads, byte-shuffle alphabet mapping, batched block loops, and static

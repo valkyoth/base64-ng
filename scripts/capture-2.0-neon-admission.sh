@@ -33,9 +33,8 @@ if [ -n "$(git status --porcelain=v1 --untracked-files=all)" ]; then
 fi
 
 source_commit="$(git rev-parse HEAD^{commit})"
-temporary="${output_dir}.tmp.$$"
+temporary="$(mktemp -d "${TMPDIR:-/tmp}/base64-ng-neon-admission.XXXXXX")"
 trap 'rm -rf "$temporary"' 0 1 2 15
-mkdir -p "$temporary"
 
 echo "NEON admission capture: correctness before measurement"
 cargo test --all-features --lib 'simd::neon_direct_tests'
@@ -90,6 +89,7 @@ EOF
     fi
 )
 
+scripts/validate-neon-admission-bundle.py "$temporary"
 mkdir -p "$(dirname "$output_dir")"
 mv "$temporary" "$output_dir"
 trap - 0 1 2 15

@@ -32,6 +32,7 @@ require_text "$plan" "External pentests may cover one checkpoint or"
 require_text "$plan" "Intermediate batches do not create permanent GitHub pentest reports."
 require_text "$plan" "Locally verified checkpoints may remain pentest-pending"
 require_text "$plan" "## Checkpoint Record"
+require_text "$plan" "Accepted pre-seal evidence amendment: the second, preferably Intel, AVX-512"
 
 commit_count="$(grep -E -c '^### Commit [0-9]+:' "$plan")"
 goal_count="$(grep -F -c '**Goal**' "$plan")"
@@ -73,6 +74,7 @@ require_text "$decision" 'The 1.x `STANDARD`, `STANDARD_NO_PAD`, `URL_SAFE`, and
 require_text "$decision" "obtain the exact unmodified RFC 4648 bytes"
 require_text "$decision" "exclude the RFC text and source-lock material from every crates.io and npm"
 require_text "$decision" "persistent teardown recovery without a separately named and admitted"
+require_text "$decision" "The accepted pre-seal evidence amendment classifies a second AVX-512 VBMI"
 
 require_text README.md "[2.0 commit plan](2.0.0-release-plan.md)"
 require_text README.md "[governance decision](docs/2.0_GOVERNANCE.md)"

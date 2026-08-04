@@ -87,7 +87,7 @@ normal public dispatch.
 | --- | --- | --- | --- | --- |
 | Portable scalar encode and strict decode | Complete | Native x86-64, Apple/AWS AArch64; QEMU s390x, PowerPC64, and RISC-V | `admitted` | Not independently verified |
 | x86 SSSE3/SSE4.1 and AVX2 encode/decode | Complete | Native x86-64 differential, direct-kernel, assembly, and benchmark gates | `admitted` | Not independently verified |
-| x86 AVX-512 VBMI encode/decode | Complete | Native AMD AVX-512 VBMI; second Intel performance confirmation remains outstanding | `admitted` with conservative measured thresholds | Not independently verified |
+| x86 AVX-512 VBMI encode/decode | Complete | Native AMD AVX-512 VBMI; second Intel performance corroboration is queued for 2.0.1, so no portable throughput claim is made | `admitted` with conservative exact-host thresholds; strict decode remains exact/static only | Not independently verified |
 | little-endian AArch64 NEON encode/decode | Complete | Prior native Apple M2 and AWS Neoverse-N1 correctness evidence plus assembly and direct-kernel gates; exact-candidate retained performance bundles are required before release | `admitted` only after the strict release gate accepts those retained bundles | Not independently verified |
 | wasm `simd128` encode/decode | Complete | Node/V8, Wasmtime, Chromium/V8, Firefox/SpiderMonkey, and Safari/WebKit package/runtime gates | `admitted` for the documented SIMD artifact | Not independently verified |
 | RISC-V RVV 1.0 encode/decode | Complete candidate | QEMU VLEN 128/256 plus generated assembly; no accepted native RVV report | `not admitted`; published execution remains scalar | Not independently verified |

@@ -89,7 +89,7 @@ QEMU plus SUSE-style cross compiler names:
 ```sh
 sudo zypper install qemu-linux-user
 sudo zypper install cross-s390x-gcc16 cross-s390x-binutils cross-s390x-glibc-devel cross-s390x-linux-glibc-devel
-sudo zypper install cross-ppc64-gcc16 cross-ppc64-binutils
+sudo zypper install cross-ppc64-gcc16 cross-ppc64-binutils cross-ppc64-glibc-devel cross-ppc64-linux-glibc-devel
 sudo zypper install cross-riscv64-gcc16 cross-riscv64-binutils cross-riscv64-glibc-devel cross-riscv64-linux-glibc-devel
 ```
 
@@ -345,7 +345,31 @@ For the 2.0 final candidate:
 7. Push Commit 55, require green CI and CodeQL, then run
    `scripts/stable_release_gate.sh release` from a clean checkout. Release mode
    repeats strict evidence on the exact tag candidate and validates the
-   report-only final commit.
+   report-only final commit. It also runs
+   `scripts/validate-2.0-checkpoint-record.py --final`, which rejects any
+   remaining `Pending` cell, non-`PASS` pentest disposition, or missing exact
+   Commit 1-54 hash. The self-referential Commit 55 row uses the frozen
+   `Report-only release commit (HEAD)` marker and is resolved by the separate
+   report-only-commit check.
+
+Before candidate mode, capture the two required native NEON bundles from the
+same clean frozen source commit:
+
+```sh
+# Apple Silicon macOS
+scripts/capture-2.0-neon-admission.sh \
+  performance-baselines/dispatch-2.0-neon-apple-silicon
+
+# Server-class AArch64 Linux
+scripts/capture-2.0-neon-admission.sh \
+  performance-baselines/dispatch-2.0-neon-aarch64-linux
+```
+
+Commit both complete directories before candidate mode. The strict hardware
+gate independently validates their schema, checksums, source ancestry,
+runtime-source identity, host class, statistical policy, and common source
+commit. The retained AMD AVX-512 campaign supports exact-host wording; a second
+AVX-512 microarchitecture is a 2.0.1 corroboration target, not a 2.0.0 claim.
 
 The permanent pentest report commit must only change the report file. The
 report must contain `Status: PASS`, `Reviewed-Commit:`, `Tester:`, `Scope:`,

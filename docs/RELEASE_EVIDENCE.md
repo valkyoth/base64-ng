@@ -214,9 +214,9 @@ SSSE3/SSE4.1 covers 12–23 bytes, AVX2 covers 24–191 bytes, and AVX-512 begin
 192 bytes. The exact static and evidence contracts retain a 48-byte AVX-512
 minimum. Local real-hardware evidence on an AMD Ryzen 9 9950X3D shows AVX2 is
 equal or slightly faster around one AVX-512 block while AVX-512 wins from two
-blocks and widens its advantage on larger inputs. A second AVX-512
-microarchitecture remains an explicit pre-release evidence requirement; no
-portable throughput claim is made from this single host.
+blocks and widens its advantage on larger inputs. A second, preferably Intel,
+AVX-512 microarchitecture is retained in the 2.0.1 evidence queue; 2.0.0 makes
+no portable throughput or frequency claim from this single host.
 
 Commit 27 replaces SSSE3/SSE4.1 and AVX2 strict-decode staging with direct
 vector classification, mapping, packing, and exact-width stores. Whole-input
