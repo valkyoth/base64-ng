@@ -1,7 +1,4 @@
-//! Internal ownership boundaries for the emerging 2.0 implementation.
-
-// Commit 5 establishes this internal value before Commit 6 wires it into the
-// public specification model.
+//! Internal ownership boundaries for the public 2.0 crate-root API.
 #[allow(dead_code)]
 pub(crate) mod alphabet;
 #[cfg(feature = "alloc")]

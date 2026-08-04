@@ -2,6 +2,10 @@
 set -eu
 
 if [ ! -d fuzz ]; then
+    if [ "${BASE64_NG_RUN_FUZZ_RELEASE:-0}" = "1" ]; then
+        echo "fuzz checks: fuzz/ is required for the release campaign" >&2
+        exit 1
+    fi
     echo "fuzz checks: skipping; fuzz/ is not present"
     exit 0
 fi
@@ -55,6 +59,16 @@ v2_assurance
 if [ "${BASE64_NG_RUN_FUZZ_RELEASE:-0}" = "1" ]; then
     mode="release-duration"
     duration="${BASE64_NG_FUZZ_SECONDS_PER_TARGET:-3600}"
+    case "$duration" in
+        '' | *[!0-9]*)
+            echo "fuzz checks: release duration must be an integer" >&2
+            exit 1
+            ;;
+    esac
+    if [ "$duration" -lt 3600 ]; then
+        echo "fuzz checks: release duration must be at least 3600 seconds per target" >&2
+        exit 1
+    fi
     campaign_argument="-max_total_time=$duration"
 else
     mode="bounded-smoke"
@@ -63,8 +77,13 @@ else
 fi
 mkdir -p "$evidence_dir"
 
+. scripts/evidence-source.sh
+evidence_capture_source "fuzz campaign evidence"
+
 {
-    echo "base64-ng fuzz smoke evidence"
+    echo "base64-ng fuzz campaign evidence"
+    echo
+    evidence_write_source_manifest
     echo
     echo "rustc:"
     rustc -Vv
@@ -110,6 +129,8 @@ for target in $targets; do
         exit 1
     fi
 done
+
+evidence_verify_source "fuzz campaign evidence"
 
 {
     echo

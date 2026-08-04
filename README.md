@@ -23,9 +23,9 @@
 
 # base64-ng
 
-`base64-ng` is a `no_std`-first Base64 crate focused on correctness, strict decoding, caller-owned buffers, and a security-heavy release process. The long-term goal is to provide modern hardware acceleration without making unsafe SIMD the foundation of trust.
+`base64-ng` is a `no_std`-first Base64 crate focused on correctness, strict decoding, caller-owned buffers, and a security-heavy release process. Its 2.0 family combines a safe scalar foundation with separately admitted hardware acceleration and optional integration and protocol companions.
 
-The crate starts conservative: a small scalar implementation, strict RFC 4648 behavior, and a test/release system modeled after hardened Rust service projects. Streaming is available behind an explicit feature, fuzz harnesses are isolated from the published crate, and SIMD and broader Kani work remain gated until they have evidence.
+Strict RFC 4648 behavior remains the default. Forgiving, wrapped, legacy, and protocol-specific behavior is explicitly named. Streaming is available through the core `stream` feature and the Tokio companion, fuzz and formal-verification harnesses are isolated from published packages, and SIMD execution is limited to backends with the documented admission evidence.
 
 ## RFC 4648 Conformance
 
@@ -53,11 +53,11 @@ removals, capability edges, and companion boundaries before implementation.
 
 ## Current Status
 
-This source tree is the frozen `2.0.0` package-family candidate. The latest
-published crates.io release remains `1.3.9` until the final external review,
-green required CI, and signed `v2.0.0` tag in Commit 55. The synchronized
-release plan is publishable, but the release helper still refuses an untagged,
-dirty, or incorrectly signed source tree.
+This source tree is the `2.0.0` package-family candidate. The latest published
+crates.io release remains `1.3.9` until the pre-seal correction series, final
+external review, exact-candidate evidence campaign, green required CI, and
+signed `v2.0.0` tag in Commit 55 are complete. The release helper refuses an
+untagged, dirty, or incorrectly signed source tree.
 The [2.0 release freeze](docs/2.0_RELEASE_FREEZE.md) and
 [2.0 release notes](release-notes/RELEASE_NOTES_2.0.0.md) describe the exact
 candidate presented for final review.
@@ -69,16 +69,11 @@ the signed release:
 base64-ng = { git = "https://github.com/valkyoth/base64-ng", rev = "<reviewed-commit>" }
 ```
 
-The signed `1.3.9` baseline was a dependency-migration and crate-family synchronization patch on top
-of the `1.3.0` implementation-completion release, the `1.3.1` Tokio
-writer patch, the `1.3.2` non-standard SIMD surface review, the `1.3.3`
-wasm SIMD runtime-dispatch and profile-ergonomics patch, the `1.3.4`
-big-endian QEMU evidence patch, the `1.3.5` RISC-V QEMU evidence patch, and
-the `1.3.6` documentation refresh and `1.3.7` maintenance patch.
-It keeps the admitted `1.2.x` native encode acceleration posture and the
-admitted `1.3.0` normal strict SIMD decode scope for Standard and URL-safe
-alphabet families on std `x86`/`x86_64` AVX-512 VBMI, AVX2, SSSE3/SSE4.1,
-and little-endian std `aarch64` NEON after whole-input scalar validation.
+The signed `1.3.9` release is the migration baseline. The 2.0 candidate adds
+validated specifications, transactional and incremental APIs, bounded secret
+states, runtime assurance, backend health, complete sync and async adapters,
+protocol companions, and a synchronized 13-crate package family while retaining
+the documented 1.x compatibility surface.
 
 Encode acceleration remains active only for admitted Standard and URL-safe
 fixed-block surfaces. Decode acceleration remains limited to normal strict
@@ -92,16 +87,10 @@ and normal strict decode when the binary is compiled with
 `target-feature=+simd128`, the `simd` feature, and the explicit
 `allow-wasm32-best-effort-wipe` feature.
 
-That baseline keeps all 1.x workspace crate
-versions aligned while migrating `base64-ng-sanitization` to exact-pinned
-`sanitization` `2.0.3`. Locked fixed-size decode adds the 2.0 fill-error
-model, locked comparisons have an integrity-checked extension API, and the
-companion's high-assurance feature includes strict random canaries and strict
-assembly comparison. The previous companion feature name `strict-ct` remains
-an alias for the renamed `strict-compare` feature during migration. New
-fail-closed fixed and dynamic locked decode establish required controls before
-plaintext materialization in the built-in `CtEngine` implementation.
-Commit 32 adds a complete, isolated RVV 1.0 encode/decode candidate and tests
+The optional sanitization companion exact-pins `sanitization` `2.0.3` and
+provides protected-fill and integrity-aware comparison APIs without adding a
+dependency to the core package. Commit 32 adds a complete, isolated RVV 1.0
+encode/decode candidate and tests
 it under QEMU at VLEN 128 and 256. Normal published builds remain scalar on
 RISC-V: native correctness, ABI, signal-state, performance, assembly, and
 external pentest evidence are mandatory before production dispatch admission.
@@ -125,7 +114,7 @@ normal public dispatch.
 | Portable scalar encode and strict decode | Complete | Native x86-64, Apple/AWS AArch64; QEMU s390x, PowerPC64, and RISC-V | `admitted` | Not independently verified |
 | x86 SSSE3/SSE4.1 and AVX2 encode/decode | Complete | Native x86-64 differential, direct-kernel, assembly, and benchmark gates | `admitted` | Not independently verified |
 | x86 AVX-512 VBMI encode/decode | Complete | Native AMD AVX-512 VBMI; second Intel performance confirmation remains outstanding | `admitted` with conservative measured thresholds | Not independently verified |
-| little-endian AArch64 NEON encode/decode | Complete | Native Apple M2 and AWS Neoverse-N1 plus assembly and direct-kernel gates | `admitted` | Not independently verified |
+| little-endian AArch64 NEON encode/decode | Complete | Prior native Apple M2 and AWS Neoverse-N1 correctness evidence plus assembly and direct-kernel gates; exact-candidate retained performance bundles are required before release | `admitted` only after the strict release gate accepts those retained bundles | Not independently verified |
 | wasm `simd128` encode/decode | Complete | Node/V8, Wasmtime, Chromium/V8, Firefox/SpiderMonkey, and Safari/WebKit package/runtime gates | `admitted` for the documented SIMD artifact | Not independently verified |
 | RISC-V RVV 1.0 encode/decode | Complete candidate | QEMU VLEN 128/256 plus generated assembly; no accepted native RVV report | `not admitted`; published execution remains scalar | Not independently verified |
 | AArch64 SVE encode/decode | Complete candidate | QEMU vector lengths 128/256/512 plus generated assembly; no accepted native SVE report | `not admitted`; public execution remains NEON or scalar | Not independently verified |
@@ -237,7 +226,7 @@ Implemented on this branch now:
   ecosystem dependencies.
 - Local check scripts, release gate, dependency policy, audit config, CI, SBOM script, reproducible build check, and a 500-line production-source budget guard.
 
-Planned behind admission evidence:
+Deliberately outside automatic admission:
 
 - Additional SIMD decode acceleration beyond the `1.3.0`
   strict Standard and URL-safe decode scope only after separate admission
@@ -251,14 +240,8 @@ Planned behind admission evidence:
 - Additional custom alphabet and broader wasm
   runtime/browser fast paths only after separate SIMD admission evidence is
   complete. Default builds and unsupported runtime CPUs remain scalar.
-- Async reader and writer streaming is available through the optional
-  `base64-ng-tokio` companion crate after cancellation-safety, accepted-byte,
-  and backpressure review. The core `tokio` feature remains inert; use the
-  companion crate for admitted async integration.
-- Additional Kani harnesses beyond the current bounded no-default-features
-  proof set. A clean Kani run proves only the scoped harness properties, not a
-  whole-crate or cryptographic constant-time guarantee.
-- Broader benchmark evidence against the established `base64` crate.
+- A clean Kani run proves only the scoped 43 normal and 19 advanced harness
+  properties, not whole-crate correctness or cryptographic constant time.
 
 ## Trust Dashboard
 
@@ -876,7 +859,7 @@ assert!(!profile.is_wrapped());
 assert_eq!(ct_decoder.decoded_len(b"aGVsbG8=").unwrap(), 5);
 ```
 
-The 2.0 development surface also keeps classified encoding in a separate
+The 2.0 secret surface keeps classified encoding in a separate
 bounded scalar state and wiping owner:
 
 ```rust
@@ -1451,8 +1434,8 @@ Security commitments:
 - `runtime::backend_report()` exposes the active admitted backend, detected
   candidate, candidate detection mode, SIMD feature status, security posture,
   and a conservative unsafe-boundary posture flag for audit logging. In the
-  `1.2.x` line, non-scalar active values describe admitted encode dispatch.
-  The `1.3.0` line exposes strict decode dispatch separately through
+  2.0, non-scalar active values describe admitted encode dispatch, and
+  strict decode dispatch is exposed separately through
   `BackendReport::active_decode_backend()`. The
   unsafe-boundary flag is true only when the reserved `simd` feature is
   disabled; SIMD-enabled builds must rely on the release evidence scripts for

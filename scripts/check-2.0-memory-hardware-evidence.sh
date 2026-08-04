@@ -6,6 +6,9 @@ evidence_dir="target/release-evidence/commit-53"
 manifest="$evidence_dir/MANIFEST.txt"
 mkdir -p "$evidence_dir"
 
+. scripts/evidence-source.sh
+evidence_capture_source "2.0 memory and hardware evidence"
+
 for required in \
     'NEON performance | native evidence required before 2.0.0' \
     'RVV and SVE remain non-dispatchable candidates' \
@@ -60,9 +63,11 @@ if [ "${BASE64_NG_REQUIRE_COMMIT53_NATIVE:-0}" = "1" ] && \
     exit 1
 fi
 
+evidence_verify_source "2.0 memory and hardware evidence"
+
 {
     echo "base64-ng Commit 53 evidence inventory"
-    echo "source_commit=$(git rev-parse HEAD)"
+    evidence_write_source_manifest
     echo "rustc=$(rustc -V)"
     echo "cargo=$(cargo -V)"
     echo "host=$(rustc -vV | sed -n 's/^host: //p')"

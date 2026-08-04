@@ -26,11 +26,19 @@ The 2.0 checkpoint program is governed by
 its exact commit, verification commands, tool and target identity, skips, and
 external pentest coverage in the authoritative
 [`2.0.0-release-plan.md`](../2.0.0-release-plan.md). Generated artifacts remain
-under `target/release-evidence/`; Commit 55 retains checksums or immutable
-workflow/artifact references for evidence too large to commit. Intermediate
+under `target/release-evidence/`; the final pre-seal checkpoint record retains
+checksums or immutable workflow/artifact references for evidence too large to
+commit. Commit 55 changes only the permanent pentest report. Intermediate
 pentests may cover contiguous checkpoint batches and remain working evidence;
 the normalized permanent GitHub pentest report is added for the final 2.0.0
 candidate.
+
+`scripts/stable_release_gate.sh candidate` runs the strict evidence campaign
+before Commit 55. `scripts/finalize-release-evidence.sh` rejects missing,
+dirty-tree, or stale-source Miri, sanitizer, release-duration fuzz, dudect,
+normal/advanced Kani, assembly, native-hardware, and SBOM artifacts and writes
+`target/release-evidence/FINAL-MANIFEST.txt`. Release mode repeats this exact
+campaign for the report-only Commit 55 tag candidate.
 
 Commit 51 completes the isolated fuzz and property inventory. Eighteen targets
 cover ordinary/runtime codecs, forced native backends, incremental/in-place
@@ -243,14 +251,16 @@ compilation. Evidence generation fails closed when Git inspection is
 unavailable or the tree is dirty. The explicit dirty-tree override is only for
 development checks and cannot pass through the stable release gate.
 
-Run the gate with:
+Run the strict pre-seal evidence gate with:
 
 ```sh
-scripts/stable_release_gate.sh release
+scripts/stable_release_gate.sh candidate
 ```
 
-`release` mode rejects pre-release Cargo versions. Use
-`scripts/stable_release_gate.sh check` for development snapshots.
+`candidate` and `release` reject pre-release Cargo versions and require the
+complete exact-source evidence set. `release` additionally validates the
+report-only final commit. Use `scripts/stable_release_gate.sh check` for
+development snapshots.
 
 The published crate package includes the core local gate scripts, Rust
 toolchain pin, and cargo-deny policy referenced by this document, so downstream
@@ -803,7 +813,7 @@ scripts/check-2.0-in-place-sanitizers.sh
 
 The script requires nightly `rust-src`, rebuilds the standard library with
 AddressSanitizer, and writes a manifest and complete log under
-`target/release-evidence/2.0-in-place-sanitizers/`. It detects observable
+`target/release-evidence/2.0-memory-sanitizers/`. It detects observable
 out-of-bounds and lifetime defects in those executions; it does not prove the
 logical fixed-work or cleanup contracts by itself.
 

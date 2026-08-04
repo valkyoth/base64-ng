@@ -2,9 +2,16 @@
 set -eu
 
 if ! rustup run nightly cargo miri --version >/dev/null 2>&1; then
+    if [ "${BASE64_NG_REQUIRE_MIRI:-0}" = "1" ]; then
+        echo "Miri checks: nightly Miri is required for this release gate" >&2
+        exit 1
+    fi
     echo "Miri checks: skipping; nightly Miri is not installed"
     exit 0
 fi
+
+. scripts/evidence-source.sh
+evidence_capture_source "Miri evidence"
 
 evidence_dir="target/release-evidence/miri"
 no_default_output="$evidence_dir/no-default-features.txt"
@@ -135,8 +142,12 @@ else
     fi
 fi
 
+evidence_verify_source "Miri evidence"
+
 {
     echo "base64-ng Miri evidence"
+    echo
+    evidence_write_source_manifest
     echo
     echo "rustc:"
     rustup run nightly rustc -Vv

@@ -18,17 +18,17 @@
 //! non-canonical unused trailing bits. Legacy whitespace and wrapped line
 //! handling remain separately named opt-in policies.
 //!
-//! # Emerging 2.0 API
+//! # 2.0 API
 //!
-//! The 2.0 development surface is available through [`Base64`] and the four
+//! The 2.0 surface is available through [`Base64`] and the four
 //! explicitly named `STRICT_*` presets. Its one-shot slice methods validate
 //! and size completely before writing, so every returned error leaves the
-//! destination unchanged. The published 1.3.9 API remains available during
-//! this migration. Exact const transforms and bounded ordinary storage are
-//! also available through the same validated codec values. The optional
-//! `secrets` capability publishes separate redacted storage under
-//! `base64_ng::secret`; its constant-time-oriented codecs arrive in later 2.0
-//! checkpoints.
+//! destination unchanged. The retained 1.x API remains available as the
+//! compatibility surface documented in the migration guide. Exact const
+//! transforms and bounded ordinary storage are available through the same
+//! validated codec values. The optional `secrets` capability publishes
+//! separate redacted storage and bounded constant-time-oriented codecs under
+//! `base64_ng::secret`.
 //! Finite-buffer in-place transforms use explicit input lengths, while secret
 //! in-place decode requires byte-disjoint private staging.
 //! Allocation-free display, exact counted sinks, rollback-capable append, and

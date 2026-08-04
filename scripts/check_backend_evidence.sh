@@ -8,6 +8,9 @@ manifest="$evidence_dir/MANIFEST.txt"
 
 mkdir -p "$evidence_dir"
 
+. scripts/evidence-source.sh
+evidence_capture_source "backend evidence"
+
 echo "backend evidence: runtime report"
 runtime_status=0
 cargo test --test rfc4648 --all-features runtime_backend_report_matches_admission_state -- --nocapture >"$runtime_output" 2>&1 || runtime_status="$?"
@@ -18,8 +21,12 @@ prototype_status=0
 cargo test --all-features simd:: -- --nocapture >"$prototype_output" 2>&1 || prototype_status="$?"
 cat "$prototype_output"
 
+evidence_verify_source "backend evidence"
+
 {
     echo "base64-ng backend evidence"
+    echo
+    evidence_write_source_manifest
     echo
     echo "rustc:"
     rustc -Vv

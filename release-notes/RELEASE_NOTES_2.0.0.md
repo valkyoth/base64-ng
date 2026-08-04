@@ -28,8 +28,9 @@
 
 ## Migration
 
-2.0 introduces the `base64_ng::v2` API. Prefer validated strict presets such as
-`STRICT_STANDARD_PADDED` and `STRICT_URL_SAFE_UNPADDED`. Forgiving web decode,
+2.0 introduces validated crate-root APIs such as `Base64`,
+`STRICT_STANDARD_PADDED`, and `STRICT_URL_SAFE_UNPADDED`. The internal `v2`
+module is not public. Forgiving web decode,
 legacy whitespace, wrapping, and protocol transforms remain explicitly named
 opt-in surfaces. See [`docs/MIGRATION.md`](../docs/MIGRATION.md) for examples
 and the complete 1.x-to-2.0 migration guide.

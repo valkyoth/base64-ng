@@ -240,7 +240,7 @@ def test_publish_sequence_dry_runs_dependents_after_index_wait() -> None:
     ]
 
 
-def test_post_tag_full_gate_uses_check_mode() -> None:
+def test_post_tag_full_gate_uses_candidate_mode() -> None:
     calls: list[tuple[str, ...]] = []
     original_run = release_crates.run
     try:
@@ -257,7 +257,7 @@ def test_post_tag_full_gate_uses_check_mode() -> None:
     finally:
         release_crates.run = original_run
 
-    assert calls == [("scripts/stable_release_gate.sh", "check")]
+    assert calls == [("scripts/stable_release_gate.sh", "candidate")]
 
 
 def test_release_tag_check_requires_valid_signature() -> None:
@@ -321,7 +321,7 @@ def run_tests() -> None:
         test_development_policy_requires_synced_unpublished_versions,
         test_synced_family_requires_every_changed_crate_to_publish,
         test_publish_sequence_dry_runs_dependents_after_index_wait,
-        test_post_tag_full_gate_uses_check_mode,
+        test_post_tag_full_gate_uses_candidate_mode,
         test_release_tag_check_requires_valid_signature,
         test_release_tag_check_rejects_unverified_required_tag,
     )

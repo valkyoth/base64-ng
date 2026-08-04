@@ -53,6 +53,17 @@ write_sbom() {
     printf '{"bomFormat":"CycloneDX"}\n' >target/release-evidence/base64-ng.cyclonedx.json
 }
 
+write_evidence_index() {
+    commit="$(git rev-parse HEAD)"
+    cat >target/release-evidence/FINAL-MANIFEST.txt <<EOF
+base64-ng final release evidence index
+
+source:
+commit=${commit}
+tree_state=clean
+EOF
+}
+
 write_pentest() {
     tag="$1"
     reviewed_commit="$2"
@@ -142,6 +153,7 @@ repo="$(make_fixture wrong-reviewed-commit)"
     write_pentest "v0.2.0" "$side_commit"
     git add "security/pentest/v0.2.0.md"
     git commit -q -m "report"
+    write_evidence_index
 
     assert_fails_with "does not match first parent" \
         scripts/validate-release-readiness.sh "v0.2.0"
@@ -157,6 +169,7 @@ repo="$(make_fixture mixed-report-commit)"
     printf 'changed\n' >>README.md
     git add README.md "security/pentest/v0.2.0.md"
     git commit -q -m "report plus code"
+    write_evidence_index
 
     assert_fails_with "release report commit may only change security/pentest/v0.2.0.md" \
         scripts/validate-release-readiness.sh "v0.2.0"
@@ -171,6 +184,7 @@ repo="$(make_fixture ready)"
     write_pentest "v0.2.0" "$reviewed_commit"
     git add "security/pentest/v0.2.0.md"
     git commit -q -m "report"
+    write_evidence_index
 
     scripts/validate-release-readiness.sh "v0.2.0"
 )

@@ -15,6 +15,7 @@ release_notes="release-notes/RELEASE_NOTES_${version}.md"
 pentest_report="security/pentest/${tag}.md"
 spdx="${BASE64_NG_SBOM_DIR:-target/release-evidence}/base64-ng.spdx.json"
 cyclonedx="${BASE64_NG_SBOM_DIR:-target/release-evidence}/base64-ng.cyclonedx.json"
+evidence_manifest="target/release-evidence/FINAL-MANIFEST.txt"
 
 if git rev-parse -q --verify "refs/tags/${tag}" >/dev/null; then
     echo "tag already exists locally: ${tag}" >&2
@@ -54,6 +55,19 @@ fi
 
 if [ ! -s "$cyclonedx" ]; then
     echo "missing or empty CycloneDX SBOM evidence: ${cyclonedx}" >&2
+    exit 1
+fi
+
+if [ ! -s "$evidence_manifest" ]; then
+    echo "missing exact-candidate release evidence index: ${evidence_manifest}" >&2
+    exit 1
+fi
+
+head_commit="$(git rev-parse HEAD)"
+if ! grep -F -q "commit=$head_commit" "$evidence_manifest" ||
+    ! grep -F -q 'tree_state=clean' "$evidence_manifest"
+then
+    echo "release evidence index is not bound to clean HEAD ${head_commit}" >&2
     exit 1
 fi
 

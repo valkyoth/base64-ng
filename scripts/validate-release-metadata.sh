@@ -120,6 +120,8 @@ test -s .github/workflows/security-audit.yml
 test -x scripts/release_crates.py
 test -x scripts/generate_release_history.py
 test -x scripts/validate-release-readiness.sh
+test -x scripts/finalize-release-evidence.sh
+test -x scripts/release_wasm_loader.sh
 test -s scripts/test-release-crates.py
 test -x scripts/test-release-readiness.sh
 test -s scripts/ct-asm-symbols.sh
@@ -235,6 +237,8 @@ for required_script in \
     "scripts/test-evidence-source.sh" \
     "scripts/reproducible_build_check.sh" \
     "scripts/stable_release_gate.sh" \
+    "scripts/finalize-release-evidence.sh" \
+    "scripts/release_wasm_loader.sh" \
     "scripts/validate-constant-time-policy.sh" \
     "scripts/validate-2.0-timing-boundaries.sh" \
     "scripts/validate-dependencies.sh" \
@@ -456,7 +460,10 @@ for required_release_gate_command in \
     "cargo nextest run --all-features" \
     "scripts/check_miri.sh" \
     "scripts/check-2.0-in-place-sanitizers.sh" \
-    "cargo +nightly fuzz build" \
+    "BASE64_NG_RUN_FUZZ_RELEASE=1" \
+    "scripts/check_fuzz.sh" \
+    "BASE64_NG_RUN_DUDECT=1" \
+    "scripts/check_dudect.sh" \
     "scripts/check_targets.sh" \
     "scripts/check_big_endian_qemu.sh --all" \
     "scripts/check_riscv_qemu.sh" \
@@ -468,10 +475,12 @@ for required_release_gate_command in \
     "scripts/check_simd_feature_bundles.sh" \
     "scripts/check_backend_evidence.sh" \
     "scripts/check_kani.sh" \
+    "scripts/check_kani_advanced.sh" \
     "scripts/validate-2.0-timing-boundaries.sh" \
     "scripts/generate_ct_asm_evidence.sh" \
     "scripts/generate-sbom.sh" \
     "scripts/reproducible_build_check.sh" \
+    "scripts/finalize-release-evidence.sh" \
     'scripts/validate-release-readiness.sh "v${cargo_version}"'
 do
     if ! grep -F -q "$required_release_gate_command" scripts/stable_release_gate.sh; then
@@ -480,10 +489,39 @@ do
     fi
 done
 
-if ! grep -F -q '["scripts/stable_release_gate.sh", "check"]' scripts/release_crates.py; then
-    echo "release metadata: post-tag full gate must use stable release check mode" >&2
+if ! grep -F -q '["scripts/stable_release_gate.sh", "candidate"]' scripts/release_crates.py; then
+    echo "release metadata: post-tag full gate must use strict candidate mode" >&2
     exit 1
 fi
+
+for required_strict_gate_text in \
+    'BASE64_NG_REQUIRE_MIRI=1' \
+    'BASE64_NG_REQUIRE_SANITIZERS=1' \
+    'BASE64_NG_FUZZ_SECONDS_PER_TARGET=3600' \
+    'BASE64_NG_DUDECT_RELEASE=1' \
+    'BASE64_NG_REQUIRE_KANI=1' \
+    'BASE64_NG_KANI_ALL_ADVANCED=1' \
+    'BASE64_NG_REQUIRE_COMMIT53_NATIVE=1' \
+    'scripts/finalize-release-evidence.sh'
+do
+    if ! grep -F -q "$required_strict_gate_text" scripts/stable_release_gate.sh; then
+        echo "release metadata: strict release gate is missing $required_strict_gate_text" >&2
+        exit 1
+    fi
+done
+
+for required_wasm_publish_text in \
+    'scripts/check-2.0-wasm-loader.sh' \
+    'git status --porcelain --untracked-files=all' \
+    'git tag -v' \
+    'npm publish --dry-run' \
+    'npm publish --provenance'
+do
+    if ! grep -F -q "$required_wasm_publish_text" scripts/release_wasm_loader.sh; then
+        echo "release metadata: wasm publisher is missing $required_wasm_publish_text" >&2
+        exit 1
+    fi
+done
 
 for required_trust_text in \
 	"Runtime dependencies | Zero external crates" \

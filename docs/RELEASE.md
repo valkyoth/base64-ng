@@ -22,18 +22,20 @@ tag.
 
 ## Required Gate
 
-Run:
-
-```sh
-scripts/stable_release_gate.sh release
-```
-
-`release` mode refuses pre-release Cargo versions such as `-alpha` builds.
-Use `check` mode during pre-release development:
+During development, run:
 
 ```sh
 scripts/stable_release_gate.sh check
 ```
+
+After the source and pentest fixes stop moving, run strict candidate evidence:
+
+```sh
+scripts/stable_release_gate.sh candidate
+```
+
+Commit 55 then runs `release` as described in the publish section. Both strict
+modes refuse pre-release versions and unavailable required evidence tools.
 
 The release gate covers:
 
@@ -52,8 +54,8 @@ The release gate covers:
 - fuzz-only dependency checks when `fuzz/` is present
 - clippy
 - feature-mode tests
-- Miri no-default-features tests when nightly Miri is installed
-- Miri evidence manifest generation when nightly Miri is installed
+- Miri no-default-features tests and exact-source manifests; unavailable Miri
+  is a hard failure in `candidate` and `release`
 - all-features and no-default-features doctests
 - all-features and no-default-features docs
 - packaged async admission policy while the `tokio` feature remains inert
@@ -322,19 +324,28 @@ equivalence output.
 
 Root `PENTEST.md` is temporary scratch input. Do not commit it.
 
-For every release candidate:
+For the 2.0 final candidate:
 
-1. Stop implementation at the exact commit to be reviewed.
-2. Run the local gates and push the candidate for GitHub CI.
-3. Run the external pentest and CodeQL/security review for that exact commit.
-4. Put temporary findings in root `PENTEST.md`.
-5. Fix or document every finding.
-6. Delete root `PENTEST.md`.
-7. Run the local gates again.
-8. Commit one permanent report at `security/pentest/vX.Y.Z.md`.
-9. Run `scripts/stable_release_gate.sh release`. Release mode invokes
-   `scripts/validate-release-readiness.sh vX.Y.Z` and fails unless the report
-   is the only change in the final candidate commit.
+1. Finish every pre-seal source, documentation, and checkpoint-record change.
+2. Run `scripts/stable_release_gate.sh check`, push, and require green CI.
+3. Run the requested recent-range pentests and a preliminary full-range review
+   against the exact pre-seal source. Fix every finding before moving forward.
+4. From a clean checkout of that accepted commit, run
+   `scripts/stable_release_gate.sh candidate`. Candidate mode fails closed on
+   missing Miri, sanitizer, release-duration fuzz, dudect, normal and advanced
+   Kani, native-backend, assembly, SBOM, and reproducibility evidence. It writes
+   `target/release-evidence/FINAL-MANIFEST.txt` bound to clean `HEAD`.
+5. Complete the checkpoint table and immutable workflow/evidence references,
+   then request final acceptance review of that exact pre-seal commit. The
+   pentester decides whether this is a full-range rerun or a focused delta over
+   the already accepted full review. Do not change those records in Commit 55.
+6. Fix every final-review finding, repeat steps 2-5 as needed, delete temporary
+   root `PENTEST.md`, and make Commit 55 add only the normalized
+   permanent report at `security/pentest/v2.0.0.md`.
+7. Push Commit 55, require green CI and CodeQL, then run
+   `scripts/stable_release_gate.sh release` from a clean checkout. Release mode
+   repeats strict evidence on the exact tag candidate and validates the
+   report-only final commit.
 
 The permanent pentest report commit must only change the report file. The
 report must contain `Status: PASS`, `Reviewed-Commit:`, `Tester:`, `Scope:`,
@@ -343,25 +354,31 @@ release decision belong in the same permanent report.
 
 ## Publish
 
-Run the full stable release gate before creating the tag:
+The strict pre-seal evidence command is:
+
+```sh
+scripts/stable_release_gate.sh candidate
+```
+
+After the report-only Commit 55 exists, run the exact-tag-candidate gate:
 
 ```sh
 scripts/stable_release_gate.sh release
 ```
 
-This is the expensive pre-tag gate. It includes Miri, Kani, generated assembly
-evidence, SBOM generation, reproducibility checks, and the standard local gate.
-It also enforces the permanent pentest-report metadata, reviewed-parent, and
-report-only final-commit rules. If this fails, fix the release candidate before
-tagging.
+Both strict modes are intentionally expensive. They require Miri, sanitizers,
+one-hour-per-target release fuzz campaigns, dudect timing, all normal and
+advanced Kani harnesses, native NEON evidence, generated assembly, SBOMs,
+reproducibility, and the standard local gate. `release` additionally enforces
+the permanent pentest metadata, reviewed-parent, and report-only Commit 55.
 
 After the full release gate passes, push the commit, wait for GitHub to become
 green, then create and push the immutable signed release tag:
 
 ```sh
-git tag -s v1.0.10 -m "base64-ng 1.0.10"
-git tag -v v1.0.10
-git push origin v1.0.10
+git tag -s v2.0.0 -m "base64-ng 2.0.0"
+git tag -v v2.0.0
+git push origin v2.0.0
 ```
 
 Publish only from the tagged commit:
@@ -376,9 +393,10 @@ scripts/release_crates.py
 crate versions and dependency order, refuses real publishing unless `HEAD`
 matches a verified signed `v<version>` tag, runs the standard local gate and
 `cargo publish --dry-run` for each selected crate, publishes `base64-ng` first,
-waits for crates.io visibility, and then publishes dependent companion crates
-such as `base64-ng-sanitization` and `base64-ng-derive`, `base64-ng-serde`,
-`base64-ng-bytes`, `base64-ng-subtle`, and `base64-ng-tokio`.
+waits for crates.io visibility, and then publishes all selected dependent
+companions in the order recorded by `release-crates.toml`: IMAP, MIME,
+multibase, password-record, OpenPGP, PEM, sanitization, derive, Serde, bytes,
+subtle, and Tokio.
 
 The publish helper intentionally does not rerun Kani by default. Kani belongs
 to the pre-tag stable release gate so a verifier failure does not happen after
@@ -389,16 +407,28 @@ rerun the expensive gate immediately before publishing, use:
 scripts/release_crates.py --full-gate
 ```
 
-This post-tag rerun uses `scripts/stable_release_gate.sh check`. Candidate-only
-pentest readiness is intentionally enforced by release mode before the
-immutable tag exists.
+This post-tag rerun uses `scripts/stable_release_gate.sh candidate`: it repeats
+strict evidence but intentionally does not require that the release tag be
+absent. Pentest readiness was already enforced by `release` before tagging.
 
 For manual fallback, publish the core package first, wait until crates.io serves
-the new `base64-ng` version, then verify and publish the companion package:
+the new version, then publish every companion in dependency order:
 
 ```sh
 cargo publish -p base64-ng --dry-run
 cargo publish -p base64-ng
+cargo publish -p base64-ng-imap --dry-run
+cargo publish -p base64-ng-imap
+cargo publish -p base64-ng-mime --dry-run
+cargo publish -p base64-ng-mime
+cargo publish -p base64-ng-multibase --dry-run
+cargo publish -p base64-ng-multibase
+cargo publish -p base64-ng-password --dry-run
+cargo publish -p base64-ng-password
+cargo publish -p base64-ng-openpgp --dry-run
+cargo publish -p base64-ng-openpgp
+cargo publish -p base64-ng-pem --dry-run
+cargo publish -p base64-ng-pem
 cargo package -p base64-ng-sanitization
 cargo publish -p base64-ng-sanitization --dry-run
 cargo publish -p base64-ng-sanitization
@@ -419,6 +449,19 @@ cargo publish -p base64-ng-tokio --dry-run
 cargo publish -p base64-ng-tokio
 ```
 
+Publish the supported JavaScript package separately from the signed tag after
+its exact tarball gate passes:
+
+```sh
+scripts/release_wasm_loader.sh check
+scripts/release_wasm_loader.sh dry-run
+scripts/release_wasm_loader.sh publish
+```
+
+Use npm trusted publishing or a short-lived password-manager token according to
+the release environment. Set `BASE64_NG_NPM_PROVENANCE=1` when the npm trusted
+publisher supports provenance. Never store an npm token in the repository.
+
 This order is required because companion crates depend on the same released
 `base64-ng` version from crates.io while using a local path only during
 repository development.
@@ -430,13 +473,14 @@ credential issue after the tag exists, keep the tag and rerun the publish
 helper. If publishing fails because the tagged source is wrong, do not move the
 tag; cut a new patch release.
 
-## Notes
+## Gate Modes
 
-Optional gates may be skipped until their harnesses exist:
-
-- nextest
-- Miri when the local nightly Miri component is not installed
-- cargo-fuzz
-- Kani
-
-When these become active release requirements, update this checklist and `scripts/stable_release_gate.sh` together.
+- `check` is the development gate. It may skip unavailable optional executors,
+  but prints every skip and never treats generated dirty-tree artifacts as
+  release evidence.
+- `candidate` is the strict pre-seal evidence gate. Required tools, full
+  campaigns, clean-source provenance, native backend evidence, and the final
+  evidence index are mandatory.
+- `release` repeats `candidate` requirements for Commit 55 and additionally
+  validates the final report-only commit. No required release campaign may be
+  skipped.

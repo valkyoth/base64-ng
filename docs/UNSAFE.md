@@ -1521,5 +1521,5 @@ evidence. This is a hard release blocker before dispatch, not an optional
 follow-up. Current admitted x86 encode and strict-decode backends load caller
 bytes into vector registers and include best-effort register cleanup plus
 generated-code evidence. Commit 24 additionally places ordinary accelerated
-execution behind direct KAT, generation, and quarantine checks; later 2.0
+execution behind direct KAT, generation, and quarantine checks; future
 architecture rewrites must renew the complete admission evidence.

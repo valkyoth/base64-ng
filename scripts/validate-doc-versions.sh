@@ -53,7 +53,7 @@ case "$cargo_version" in
         require_text docs/SIMD_ADMISSION.md "$cargo_version"
         ;;
     *)
-        require_text README.md "This source tree is the frozen \`$cargo_version\` package-family candidate."
+        require_text README.md "This source tree is the \`$cargo_version\` package-family candidate."
         if [ "$cargo_version" = "1.1.0" ]; then
             require_text docs/SIMD_ADMISSION.md "Release status: \`1.1.x\`"
         else
@@ -63,6 +63,10 @@ case "$cargo_version" in
         reject_text README.md "-alpha"
         reject_text docs/SIMD.md "-alpha"
         reject_text docs/SIMD_ADMISSION.md "-alpha"
+        reject_text src/lib.rs "Emerging 2.0 API"
+        reject_text src/lib.rs "constant-time-oriented codecs arrive in later 2.0"
+        reject_text release-notes/RELEASE_NOTES_2.0.0.md 'base64_ng::v2'
+        reject_text docs/RELEASE.md 'git tag -s v1.0.10'
         ;;
 esac
 

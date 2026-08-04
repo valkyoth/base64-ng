@@ -300,9 +300,9 @@ def run_preflight(args: argparse.Namespace, steps: tuple[str, ...]) -> None:
 
     parse_version(args.version)
     if args.full_gate:
-        # Publishing is post-tag. Candidate-only pentest readiness is enforced
-        # by stable_release_gate.sh release before the immutable tag is made.
-        run(["scripts/stable_release_gate.sh", "check"], dry_run=args.dry_run)
+        # Publishing is post-tag. Repeat strict evidence without the pre-tag
+        # rule that the release tag must still be absent.
+        run(["scripts/stable_release_gate.sh", "candidate"], dry_run=args.dry_run)
         return
 
     run(["scripts/checks.sh"], dry_run=args.dry_run)
@@ -401,7 +401,7 @@ def main() -> int:
         "--full-gate",
         action="store_true",
         help=(
-            "Run scripts/stable_release_gate.sh check before publishing. "
+            "Run scripts/stable_release_gate.sh candidate before publishing. "
             "By default, the publish helper assumes the full gate, including "
             "Kani and final pentest readiness, already passed before tagging."
         ),
@@ -504,12 +504,10 @@ def main() -> int:
     print("Release publish sequence completed.")
     print(f"Recommended follow-up: cargo info base64-ng@{args.version}")
     print("If companion crates were published, also run:")
-    print(f"  cargo info base64-ng-sanitization@{args.version}")
-    print(f"  cargo info base64-ng-derive@{args.version}")
-    print(f"  cargo info base64-ng-serde@{args.version}")
-    print(f"  cargo info base64-ng-bytes@{args.version}")
-    print(f"  cargo info base64-ng-subtle@{args.version}")
-    print(f"  cargo info base64-ng-tokio@{args.version}")
+    for package in PUBLISH_ORDER[1:]:
+        print(f"  cargo info {package}@{args.version}")
+    print("Publish base64-ng-wasm-loader separately from the same signed tag:")
+    print("  scripts/release_wasm_loader.sh publish")
     return 0
 
 

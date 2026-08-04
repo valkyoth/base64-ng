@@ -8,6 +8,19 @@
 - Commit 54 freezes the final public API snapshots, migration guide, package
   order, release documentation, crates.io contents, and wasm artifact source
   provenance.
+- Commits 1-17 define validated alphabets and codec specifications, strict RFC
+  4648 presets, transactional one-shot operations, heapless incremental states,
+  bounded arrays, in-place transforms, formatting, append, chunks, exact WHATWG
+  forgiving decode, and explicitly scoped profiles.
+- Commits 18-24 add redacted secret storage, bounded fixed-work secret encode
+  and decode, staged secret in-place operations, generation-bound assurance,
+  protected-memory provider capabilities, per-operation reporting, backend
+  health tests, quarantine, checked scalar retry, and explicit persistence and
+  cleanup non-claims.
+- Commits 25-30 implement and admit the documented x86, AArch64 NEON, and wasm
+  `simd128` Standard/URL-safe encode and strict-decode paths with direct
+  known-answer tests, scalar verification, fallback, register cleanup, and
+  runtime reporting.
 - See [`2.0.0-release-plan.md`](2.0.0-release-plan.md) for the complete ordered
   implementation and verification program.
 - Commit 31 audits portable byte-order assumptions, requires complete s390x
@@ -39,6 +52,10 @@
   adjacent-frame, fail-closed, and exact prefix-progress behavior. It documents
   non-rollbackable third-party writer side effects and keeps secret decoding on
   bounded complete-frame APIs.
+- Commits 36-44 rebuild bytes, Tokio AsyncRead/AsyncWrite, Serde,
+  sanitization, subtle equality, derive, MIME, and PEM integrations over the
+  final 2.0 contracts with bounded allocation, cancellation, cleanup,
+  canonicality, and interoperability evidence.
 - Commit 45 adds `base64-ng-multibase` with strict, bounded support for the
   pinned registry's `m`, `M`, `u`, and `U` Base64-family entries, including
   transactional one-shot APIs, heapless incremental states, official vectors,
@@ -55,6 +72,17 @@
   algorithm-specific SHA-crypt digest permutations, redacted diagnostics,
   interoperability and fuzz evidence, and no password hashing or verification
   surface.
+- Commit 48 implements pinned RFC 9580 OpenPGP ASCII armor with strict framing,
+  CRC-24, line limits, deferred secret-body validation, and GnuPG/Sequoia
+  interoperability evidence.
+- Commits 49-53 freeze the protocol registry and semantic corpus, expand 43
+  normal and 19 advanced Kani harnesses, complete 18-target fuzz/property
+  coverage, define exact timing and generated-code claims, and establish Miri,
+  sanitizer, resource, QEMU, native-hardware, and persistence evidence.
+- The pre-seal Commit 54 correction series makes strict evidence fail closed,
+  binds every required manifest to clean source, separates candidate and final
+  release modes, and corrects development-era public documentation before the
+  final pentest and report-only Commit 55.
 
 ## 1.3.9 - 2026-07-21
 

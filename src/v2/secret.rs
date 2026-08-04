@@ -1,9 +1,9 @@
 //! Redacted secret storage and explicit exposure.
 //!
 //! Secret owners require deliberately named exposure or declassification
-//! operations. Constant-time-oriented computation is introduced separately by
-//! later 2.0 checkpoints; storage alone does not make an ordinary codec safe
-//! for secret-bearing input.
+//! operations. Constant-time-oriented computation is provided by the bounded
+//! secret encoder and decoder states; storage alone does not make an ordinary
+//! codec safe for secret-bearing input.
 
 use super::alphabet::{ALPHABET_LEN, ValidatedAlphabet};
 use crate::ct_mask_eq_u8;

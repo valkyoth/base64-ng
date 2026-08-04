@@ -1,0 +1,63 @@
+#!/usr/bin/env sh
+set -eu
+
+mode="${1:-check}"
+case "$mode" in
+    check | dry-run | publish) ;;
+    *)
+        echo "usage: scripts/release_wasm_loader.sh [check|dry-run|publish]" >&2
+        exit 2
+        ;;
+esac
+
+package_dir="packages/base64-ng-wasm-loader"
+rust_version="$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | sed -n '1p')"
+
+if ! command -v node >/dev/null 2>&1 || ! command -v npm >/dev/null 2>&1; then
+    echo "wasm loader release: Node.js and npm are required" >&2
+    exit 1
+fi
+
+npm_version="$(node -p "require('./$package_dir/package.json').version")"
+if [ "$npm_version" != "$rust_version" ]; then
+    echo "wasm loader release: npm version $npm_version does not match Rust family $rust_version" >&2
+    exit 1
+fi
+
+scripts/check-2.0-wasm-loader.sh
+
+if [ "$mode" = "check" ]; then
+    echo "wasm loader release: package checks passed for $npm_version"
+    exit 0
+fi
+
+if [ -n "$(git status --porcelain --untracked-files=all)" ]; then
+    echo "wasm loader release: refusing publication from a dirty worktree" >&2
+    exit 1
+fi
+
+tag="v$npm_version"
+head="$(git rev-parse HEAD)"
+tagged="$(git rev-list -n 1 "$tag" 2>/dev/null || true)"
+if [ "$head" != "$tagged" ]; then
+    echo "wasm loader release: HEAD is not tagged as $tag" >&2
+    exit 1
+fi
+if ! git tag -v "$tag" >/dev/null 2>&1; then
+    echo "wasm loader release: $tag is not signed or cannot be verified" >&2
+    exit 1
+fi
+
+if [ "$mode" = "dry-run" ]; then
+    (cd "$package_dir" && npm publish --dry-run)
+    echo "wasm loader release: dry-run passed for $tag"
+    exit 0
+fi
+
+if [ "${BASE64_NG_NPM_PROVENANCE:-0}" = "1" ]; then
+    (cd "$package_dir" && npm publish --provenance)
+else
+    (cd "$package_dir" && npm publish)
+fi
+
+echo "wasm loader release: published $npm_version from verified $tag"

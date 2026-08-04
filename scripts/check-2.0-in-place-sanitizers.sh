@@ -4,6 +4,9 @@ set -eu
 toolchain="${BASE64_NG_SANITIZER_TOOLCHAIN:-nightly}"
 target="${BASE64_NG_SANITIZER_TARGET:-x86_64-unknown-linux-gnu}"
 
+. scripts/evidence-source.sh
+evidence_capture_source "2.0 sanitizer evidence"
+
 if ! rustup run "$toolchain" rustc -V >/dev/null 2>&1; then
     echo "2.0 in-place sanitizers: missing toolchain $toolchain" >&2
     exit 1
@@ -87,8 +90,12 @@ else
     printf '%s\n' "skipped: ThreadSanitizer campaign is admitted only on x86_64 Linux" >"$thread_log"
 fi
 
+evidence_verify_source "2.0 sanitizer evidence"
+
 {
     echo "base64-ng 2.0 in-place sanitizer evidence"
+    echo
+    evidence_write_source_manifest
     echo
     rustup run "$toolchain" rustc -Vv
     rustup run "$toolchain" cargo -V

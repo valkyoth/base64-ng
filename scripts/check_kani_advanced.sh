@@ -1,9 +1,19 @@
 #!/usr/bin/env sh
 set -eu
 
-if [ ! -d kani ]; then
-    echo "Advanced Kani checks: skipping; kani/ is not present"
+require_kani="${BASE64_NG_REQUIRE_KANI:-0}"
+
+skip_kani() {
+    if [ "$require_kani" = "1" ]; then
+        echo "Advanced Kani checks: $1; advanced Kani is required for this release gate" >&2
+        exit 1
+    fi
+    echo "Advanced Kani checks: skipping; $1"
     exit 0
+}
+
+if [ ! -d kani ]; then
+    skip_kani "kani/ is not present"
 fi
 
 scripts/validate-kani-proof-inventory.py
@@ -23,8 +33,7 @@ rm -f \
     "$evidence/unsupported-constructs.txt"
 
 if ! rustup toolchain list | grep -q "^$kani_toolchain"; then
-    echo "Advanced Kani checks: skipping; Rust toolchain $kani_toolchain is not installed"
-    exit 0
+    skip_kani "Rust toolchain $kani_toolchain is not installed"
 fi
 
 cargo_kani() {
@@ -32,9 +41,11 @@ cargo_kani() {
 }
 
 if ! cargo_kani --version >/dev/null 2>&1; then
-    echo "Advanced Kani checks: skipping; cargo kani is not installed"
-    exit 0
+    skip_kani "cargo kani is not installed"
 fi
+
+. scripts/evidence-source.sh
+evidence_capture_source "Kani advanced evidence"
 
 if [ -n "${RUSTFLAGS:-}" ]; then
     export RUSTFLAGS="$RUSTFLAGS --cfg base64_ng_kani_advanced"
@@ -98,6 +109,12 @@ run_kani() {
     fi
 
     if grep -q "Kani Rust Verifier" "$log" && grep -q "requires rustc" "$log"; then
+        if [ "$require_kani" = "1" ]; then
+            rm -f "$log"
+            echo "Advanced Kani checks: installed Kani compiler is incompatible and release evidence is required" >&2
+            printf '%s\n' FAIL >"$evidence/status.txt"
+            exit 1
+        fi
         rm -f "$log"
         echo "Advanced Kani checks: skipping; installed Kani compiler is older than this crate's rust-version"
         printf '%s\n' SKIP >"$evidence/status.txt"
@@ -197,5 +214,9 @@ else
     printf '%s\n' none >"$evidence/unsupported-constructs.txt"
 fi
 printf '%s\n' PASS >"$evidence/status.txt"
+evidence_verify_source "Kani advanced evidence"
+{
+    evidence_write_source_manifest
+} >"$evidence/source.txt"
 sha256sum "$evidence"/*.txt "$evidence/harnesses.tsv" >"$evidence/SHA256SUMS"
 echo "Advanced Kani checks: evidence written to $evidence"

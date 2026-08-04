@@ -26,6 +26,20 @@ if [ "${BASE64_NG_RUN_DUDECT:-0}" = "1" ]; then
     iterations="${BASE64_NG_DUDECT_ITERS:-64}"
     threshold="${BASE64_NG_DUDECT_THRESHOLD:-10}"
     warmup="${BASE64_NG_DUDECT_WARMUP:-1000}"
+    if [ "${BASE64_NG_DUDECT_RELEASE:-0}" = "1" ]; then
+        for value in "$samples" "$iterations" "$warmup"; do
+            case "$value" in
+                '' | *[!0-9]*)
+                    echo "dudect checks: release parameters must be integers" >&2
+                    exit 1
+                    ;;
+            esac
+        done
+        if [ "$samples" -lt 20000 ] || [ "$iterations" -lt 64 ] || [ "$warmup" -lt 1000 ]; then
+            echo "dudect checks: release evidence requires at least 20000 samples, 64 iterations, and 1000 warmups" >&2
+            exit 1
+        fi
+    fi
     command_line="cargo run --release --manifest-path dudect/Cargo.toml -- --samples $samples --iters $iterations --threshold $threshold --warmup $warmup"
 
     echo "dudect checks: run timing harness"

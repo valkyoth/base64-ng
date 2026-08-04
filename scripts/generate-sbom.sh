@@ -4,6 +4,9 @@ set -eu
 output_dir="${BASE64_NG_SBOM_DIR:-target/release-evidence}"
 mkdir -p "$output_dir"
 
+. scripts/evidence-source.sh
+evidence_capture_source "SBOM evidence"
+
 if ! cargo sbom --version >/dev/null 2>&1; then
     echo "cargo-sbom is required; install with: cargo install --locked cargo-sbom --version 0.10.0" >&2
     exit 1
@@ -21,8 +24,12 @@ test -s "$cyclonedx_output"
 grep -q '"spdxVersion"[[:space:]]*:[[:space:]]*"SPDX-2.3"' "$spdx_output"
 grep -q '"bomFormat"[[:space:]]*:[[:space:]]*"CycloneDX"' "$cyclonedx_output"
 
+evidence_verify_source "SBOM evidence"
+
 {
     echo "base64-ng SBOM evidence"
+    echo
+    evidence_write_source_manifest
     echo
     echo "rustc:"
     rustc -Vv
