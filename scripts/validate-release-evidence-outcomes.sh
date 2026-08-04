@@ -47,6 +47,7 @@ require_exact_key "$root/2.0-memory-sanitizers/MANIFEST.txt" leak_status 0
 require_exact_key "$root/2.0-memory-sanitizers/MANIFEST.txt" thread_status 0
 require_exact_key "$root/2.0-memory-sanitizers/MANIFEST.txt" target x86_64-unknown-linux-gnu
 require_exact_key "$root/dudect/MANIFEST.txt" status 0
+require_exact_key "$root/dudect/MANIFEST.txt" threshold 10
 require_exact_key "$root/backend/MANIFEST.txt" runtime_backend_report 0
 require_exact_key "$root/backend/MANIFEST.txt" simd_prototype_equivalence 0
 require_exact_key "$root/fuzz/MANIFEST.txt" mode release-duration

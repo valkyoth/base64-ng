@@ -92,6 +92,7 @@ if [ "$mode" = "check" ]; then
     scripts/check_dudect.sh
 else
     BASE64_NG_RUN_DUDECT=1 BASE64_NG_DUDECT_RELEASE=1 \
+        BASE64_NG_DUDECT_THRESHOLD=10 \
         run_evidence scripts/check_dudect.sh
 fi
 

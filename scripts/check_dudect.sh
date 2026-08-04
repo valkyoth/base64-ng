@@ -13,6 +13,20 @@ if [ "${BASE64_NG_RUN_DUDECT:-0}" = "1" ]; then
         target/release-evidence/dudect/MANIFEST.txt.tmp
 fi
 
+threshold="${BASE64_NG_DUDECT_THRESHOLD:-10}"
+if [ "${BASE64_NG_RUN_DUDECT:-0}" = "1" ] && \
+    [ "${BASE64_NG_DUDECT_RELEASE:-0}" = "1" ]; then
+    case "$threshold" in
+        10 | 10.0)
+            threshold=10
+            ;;
+        *)
+            echo "dudect checks: release threshold must be exactly 10" >&2
+            exit 1
+            ;;
+    esac
+fi
+
 echo "dudect checks: compile timing harness"
 cargo check --manifest-path dudect/Cargo.toml --bins
 
@@ -32,7 +46,6 @@ if [ "${BASE64_NG_RUN_DUDECT:-0}" = "1" ]; then
     manifest_tmp="$evidence_dir/MANIFEST.txt.tmp"
     samples="${BASE64_NG_DUDECT_SAMPLES:-20000}"
     iterations="${BASE64_NG_DUDECT_ITERS:-64}"
-    threshold="${BASE64_NG_DUDECT_THRESHOLD:-10}"
     warmup="${BASE64_NG_DUDECT_WARMUP:-1000}"
     if [ "${BASE64_NG_DUDECT_RELEASE:-0}" = "1" ]; then
         for value in "$samples" "$iterations" "$warmup"; do

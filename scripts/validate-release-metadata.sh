@@ -125,6 +125,7 @@ test -x scripts/release_wasm_loader.sh
 test -x scripts/verify-release-tag.sh
 test -x scripts/validate-release-evidence-outcomes.sh
 test -x scripts/test-release-evidence-outcomes.sh
+test -x scripts/test-dudect-release-policy.sh
 test -x scripts/test-release-tag-policy.sh
 test -s security/release-signers
 test -s scripts/test-release-crates.py
@@ -247,6 +248,7 @@ for required_script in \
     "scripts/verify-release-tag.sh" \
     "scripts/validate-release-evidence-outcomes.sh" \
     "scripts/test-release-evidence-outcomes.sh" \
+    "scripts/test-dudect-release-policy.sh" \
     "scripts/test-release-tag-policy.sh" \
     "scripts/validate-constant-time-policy.sh" \
     "scripts/validate-2.0-timing-boundaries.sh" \

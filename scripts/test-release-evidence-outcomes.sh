@@ -34,6 +34,7 @@ cat >"$root/dudect/MANIFEST.txt" <<'EOF'
 samples=20000
 iterations=64
 warmup=1000
+threshold=10
 status=0
 EOF
 cat >"$root/backend/MANIFEST.txt" <<'EOF'
@@ -65,6 +66,33 @@ if scripts/validate-release-evidence-outcomes.sh "$root" >/dev/null 2>&1; then
     echo "release evidence outcome tests: accepted failed dudect evidence" >&2
     exit 1
 fi
+mv "$root/dudect/MANIFEST.good" "$root/dudect/MANIFEST.txt"
+
+cp "$root/dudect/MANIFEST.txt" "$root/dudect/MANIFEST.good"
+for replacement in missing duplicate nonnumeric weakened; do
+    case "$replacement" in
+        missing)
+            sed '/^threshold=/d' "$root/dudect/MANIFEST.good" \
+                >"$root/dudect/MANIFEST.txt"
+            ;;
+        duplicate)
+            cp "$root/dudect/MANIFEST.good" "$root/dudect/MANIFEST.txt"
+            echo 'threshold=10' >>"$root/dudect/MANIFEST.txt"
+            ;;
+        nonnumeric)
+            sed 's/^threshold=10$/threshold=ten/' "$root/dudect/MANIFEST.good" \
+                >"$root/dudect/MANIFEST.txt"
+            ;;
+        weakened)
+            sed 's/^threshold=10$/threshold=1000000/' "$root/dudect/MANIFEST.good" \
+                >"$root/dudect/MANIFEST.txt"
+            ;;
+    esac
+    if scripts/validate-release-evidence-outcomes.sh "$root" >/dev/null 2>&1; then
+        echo "release evidence outcome tests: accepted $replacement dudect threshold" >&2
+        exit 1
+    fi
+done
 mv "$root/dudect/MANIFEST.good" "$root/dudect/MANIFEST.txt"
 
 cp "$root/2.0-memory-sanitizers/MANIFEST.txt" \

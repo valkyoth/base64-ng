@@ -17,6 +17,9 @@ scripts/test-evidence-source.sh
 echo "checks: release evidence outcomes"
 scripts/test-release-evidence-outcomes.sh
 
+echo "checks: dudect release policy"
+scripts/test-dudect-release-policy.sh
+
 echo "checks: authorized release signer policy"
 scripts/test-release-tag-policy.sh
 

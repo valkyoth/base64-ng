@@ -42,7 +42,9 @@ for every Miri and sanitizer scope, dudect, backend evidence, both Kani sets,
 and every named fuzz target. Fuzz, dudect, sanitizer, reproducibility, and final
 index manifests are published atomically only after successful completion, so
 an interrupted or failed run cannot leave a final-looking manifest. Release
-mode repeats this exact campaign for the report-only Commit 55 tag candidate.
+mode also pins the dudect acceptance threshold to `10`; the finalizer rejects
+missing, duplicate, malformed, or weakened threshold records. Release mode
+repeats this exact campaign for the report-only Commit 55 tag candidate.
 
 Commit 51 completes the isolated fuzz and property inventory. Eighteen targets
 cover ordinary/runtime codecs, forced native backends, incremental/in-place
