@@ -157,7 +157,38 @@ Compatibility evidence for the `2.0.0` workspace candidate:
 base64-ng = "2.0.0"
 ```
 
-For new code, use an explicit strict RFC 4648 preset:
+For ordinary public data, the shortest API uses strict RFC 4648 Standard
+Base64 with canonical padding:
+
+```rust
+let encoded = base64_ng::encode(b"hello").unwrap();
+assert_eq!(encoded, "aGVsbG8=");
+
+let decoded = base64_ng::decode(encoded.as_bytes()).unwrap();
+assert_eq!(decoded, b"hello");
+```
+
+These convenience functions use normal strict decoding with detailed errors.
+They are not the secret-bearing, fixed-work path. For keys, tokens, passwords,
+or other secrets, start with the
+[bounded secret decoder](docs/2.0_SECRET_DECODING.md) and the `secrets`
+feature. For Serde fields, use
+[`base64-ng-serde`](https://crates.io/crates/base64-ng-serde) instead of writing
+a custom serializer.
+
+Choose the narrowest API matching the surrounding contract:
+
+| Need | Start with |
+| --- | --- |
+| Ordinary owned Standard Base64 | `base64_ng::encode` and `base64_ng::decode` |
+| Explicit alphabet or padding policy | A `STRICT_*` preset with `encode_to_string` and `decode_to_vec` |
+| Transactional caller-owned buffers | `encode_into` and `decode_into` |
+| Heapless incremental processing | `encoder()` and `decoder()` |
+| Secret-bearing data | `secret::SecretArrayFrame` or `SecretVecFrame` |
+| Serde fields | `base64-ng-serde` |
+
+For example, an explicit strict preset makes the alphabet and padding policy
+visible at the call site:
 
 ```rust
 use base64_ng::STRICT_STANDARD_PADDED;
@@ -557,19 +588,6 @@ println!("secret decode: {}", report.secret_decode_backend.backend);
 println!("Wasm artifact: {}", report.wasm_artifact_posture.as_str());
 println!("Wasm runtime: {}", report.wasm_runtime_posture.as_str());
 ```
-
-## Convenience API
-
-For strict standard padded Base64 on `alloc` targets:
-
-```rust
-assert_eq!(base64_ng::encode(b"hello").unwrap(), "aGVsbG8=");
-assert_eq!(base64_ng::decode("aGVsbG8=").unwrap(), b"hello");
-```
-
-These helpers are intended for ordinary data and migration from simpler
-Base64 APIs. For secret-bearing payloads, use the explicit engine, profile, or
-`ct` APIs below so the security contract is visible at the call site.
 
 ## Canonical 2.0 Examples
 
