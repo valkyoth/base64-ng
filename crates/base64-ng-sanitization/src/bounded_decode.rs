@@ -1,23 +1,23 @@
-use crate::{SecretVecDecodeError, stack::enforce_stack_secret_capacity};
+use crate::{
+    SecretVecDecodeError, preflight::enforce_encoded_input_limit,
+    stack::enforce_stack_secret_capacity,
+};
 use base64_ng::{Alphabet, DecodeError, ct::CtEngine};
 use sanitization::{SecretVec, SecureSanitize};
-
-/// Default decoded-byte ceiling for heap-backed secret convenience methods.
-///
-/// Use [`CtDecodeSanitizationBoundedExt`] when a protocol requires a smaller
-/// or explicitly larger public limit.
-pub const DEFAULT_SECRET_VEC_DECODE_MAX_LEN: usize = 1024 * 1024;
 
 /// Explicitly bounded, fallibly allocated dynamic secret decode helpers.
 pub trait CtDecodeSanitizationBoundedExt {
     /// Decode into a clear-on-drop secret after enforcing `MAX` decoded bytes.
     ///
-    /// Capacity validation and fallible reservation complete before plaintext
-    /// can be written to the output allocation.
+    /// The public encoded-input limit is checked before constant-time-oriented
+    /// validation. Capacity validation and fallible reservation complete before
+    /// plaintext can be written to the output allocation.
     ///
     /// # Errors
     ///
-    /// Returns [`SecretVecDecodeError::Decode`] for malformed input,
+    /// Returns [`SecretVecDecodeError::EncodedInputLimit`] before validation
+    /// when input exceeds the public bound, [`SecretVecDecodeError::Decode`]
+    /// for malformed input,
     /// [`SecretVecDecodeError::CapacityLimit`] when decoded output exceeds
     /// `MAX`, or [`SecretVecDecodeError::AllocationFailed`] when reservation
     /// fails.
@@ -82,7 +82,7 @@ where
     A: Alphabet,
     F: FnOnce(usize) -> Result<alloc::vec::Vec<u8>, SecretVecDecodeError>,
 {
-    let required = preflight::<A, PAD, MAX>(engine, input)?;
+    let required = preflight(engine, input, MAX, MAX)?;
     let mut output = allocate(required)?;
     let written = engine
         .decode_slice_clear_tail(input, &mut output)
@@ -111,7 +111,7 @@ where
     A: Alphabet,
     F: FnOnce(usize) -> Result<alloc::vec::Vec<u8>, SecretVecDecodeError>,
 {
-    let required = preflight::<A, PAD, MAX>(engine, input)?;
+    let required = preflight(engine, input, core::cmp::min(MAX, STAGE), MAX)?;
     if required > STAGE {
         return Err(SecretVecDecodeError::Decode(DecodeError::StagingTooSmall {
             required,
@@ -134,19 +134,27 @@ where
     Ok(SecretVec::from_vec(output))
 }
 
-fn preflight<A, const PAD: bool, const MAX: usize>(
+fn preflight<A, const PAD: bool>(
     engine: &CtEngine<A, PAD>,
     input: &[u8],
+    encoded_limit_decoded: usize,
+    output_limit: usize,
 ) -> Result<usize, SecretVecDecodeError>
 where
     A: Alphabet,
 {
+    enforce_encoded_input_limit::<PAD>(encoded_limit_decoded, input.len()).map_err(|limit| {
+        SecretVecDecodeError::EncodedInputLimit {
+            maximum: limit.maximum,
+            actual: limit.actual,
+        }
+    })?;
     let required = engine
         .decoded_len(input)
         .map_err(SecretVecDecodeError::Decode)?;
-    if required > MAX {
+    if required > output_limit {
         return Err(SecretVecDecodeError::CapacityLimit {
-            maximum: MAX,
+            maximum: output_limit,
             actual: required,
         });
     }
@@ -190,6 +198,20 @@ mod tests {
             Err(SecretVecDecodeError::CapacityLimit {
                 maximum: 4,
                 actual: 5
+            })
+        ));
+    }
+
+    #[test]
+    fn encoded_input_limit_returns_without_calling_allocator() {
+        let result = decode_bounded_with::<_, true, 4, _>(&ct::STANDARD, b"!!!!!!!!!!!!", |_| {
+            panic!("allocator called after encoded-input rejection")
+        });
+        assert!(matches!(
+            result,
+            Err(SecretVecDecodeError::EncodedInputLimit {
+                maximum: 8,
+                actual: 12
             })
         ));
     }

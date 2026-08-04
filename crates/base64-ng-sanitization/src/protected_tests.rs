@@ -45,6 +45,34 @@ fn bounded_dynamic_decode_rejects_capacity_before_protection_setup() {
     ));
 }
 
+#[cfg(all(
+    any(
+        all(
+            target_os = "linux",
+            any(target_arch = "x86_64", target_arch = "aarch64")
+        ),
+        target_os = "macos",
+        target_os = "ios",
+        target_os = "android",
+        target_os = "windows",
+        target_os = "freebsd",
+        target_os = "openbsd",
+        target_os = "netbsd",
+        target_os = "dragonfly",
+    ),
+    not(miri)
+))]
+#[test]
+fn bounded_dynamic_decode_rejects_oversized_input_before_validation() {
+    assert!(matches!(
+        ct::STANDARD.decode_locked_secret_vec_checked_bounded::<4>(b"!!!!!!!!!!!!"),
+        Err(ProtectedSecretFillError::CapacityLimit {
+            maximum: 4,
+            actual: 9
+        })
+    ));
+}
+
 #[test]
 fn detailed_fixed_decode_preserves_decode_failure_class() {
     assert!(matches!(

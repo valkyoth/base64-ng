@@ -45,6 +45,9 @@ mod locked;
 mod locked_tests;
 #[cfg(feature = "memory-lock")]
 mod locked_vec;
+mod preflight;
+#[cfg(test)]
+mod preflight_tests;
 #[cfg(feature = "memory-lock")]
 mod protected_decode;
 #[cfg(test)]
@@ -71,9 +74,10 @@ mod stack;
 mod v2_protected;
 
 #[cfg(feature = "alloc")]
-pub use bounded_decode::{CtDecodeSanitizationBoundedExt, DEFAULT_SECRET_VEC_DECODE_MAX_LEN};
+pub use bounded_decode::CtDecodeSanitizationBoundedExt;
 pub use compare::{LockedSanitizationCtEqExt, SanitizationCtEqExt, sanitization_ct_eq_public_len};
 pub use error::{LockedDecodeError, SanitizationDecodeError, SecretVecDecodeError};
+pub use preflight::DEFAULT_SECRET_VEC_DECODE_MAX_LEN;
 #[cfg(feature = "memory-lock")]
 pub use protected_decode::CtDecodeSanitizationProtectedExt;
 use sanitization::SecretBytes;
@@ -164,6 +168,8 @@ pub trait CtDecodeSanitizationExt {
     ///
     /// # Errors
     ///
+    /// Returns [`SanitizationDecodeError::EncodedInputLimit`] before validation
+    /// if encoded input exceeds the public limit derived from `N`.
     /// Returns [`SanitizationDecodeError::Decode`] if Base64 decoding fails.
     /// Returns [`SanitizationDecodeError::LengthMismatch`] if the decoded
     /// length does not exactly equal `N`.
@@ -187,9 +193,11 @@ pub trait CtDecodeSanitizationExt {
     /// # Errors
     ///
     /// Returns a `sanitization` memory error if locked storage cannot be
-    /// created. Returns [`SanitizationDecodeError::Decode`] if Base64 decoding
-    /// fails, or [`SanitizationDecodeError::LengthMismatch`] if the decoded
-    /// length does not exactly equal `N`.
+    /// created. Returns [`SanitizationDecodeError::EncodedInputLimit`] before
+    /// allocation and validation if input exceeds the limit derived from `N`,
+    /// [`SanitizationDecodeError::Decode`] if Base64 decoding fails, or
+    /// [`SanitizationDecodeError::LengthMismatch`] if the decoded length does
+    /// not exactly equal `N`.
     ///
     /// # Security
     ///
@@ -233,8 +241,8 @@ pub trait CtDecodeSanitizationExt {
     /// # Errors
     ///
     /// Returns a `sanitization` memory or integrity error when locked storage
-    /// cannot be initialized. Decode and exact-length failures are returned in
-    /// the fill error's generator branch.
+    /// cannot be initialized. Encoded-input-limit, decode, and exact-length
+    /// failures are returned in the fill error's generator branch.
     #[cfg(all(
         feature = "memory-lock",
         any(
@@ -320,8 +328,9 @@ pub trait CtDecodeSanitizationExt {
     ///
     /// # Errors
     ///
-    /// Returns [`SecretVecDecodeError`] for malformed input, output above the
-    /// default ceiling, or allocation failure.
+    /// Returns [`SecretVecDecodeError`] for encoded input above the derived
+    /// public ceiling, malformed input, output above the default ceiling, or
+    /// allocation failure.
     #[cfg(feature = "alloc")]
     fn decode_secret_vec(&self, input: &[u8]) -> Result<SecretVec, SecretVecDecodeError>;
 
@@ -334,8 +343,9 @@ pub trait CtDecodeSanitizationExt {
     ///
     /// # Errors
     ///
-    /// Returns [`SecretVecDecodeError`] for malformed input, output above the
-    /// default ceiling, allocation failure, or insufficient staging capacity.
+    /// Returns [`SecretVecDecodeError`] for encoded input above the tighter
+    /// output/staging ceiling, malformed input, output above the default
+    /// ceiling, allocation failure, or insufficient staging capacity.
     #[cfg(feature = "alloc")]
     fn decode_secret_vec_staged<const STAGE: usize>(
         &self,

@@ -1,4 +1,6 @@
-use crate::{CtDecodeSanitizationExt, SanitizationDecodeError};
+use crate::{
+    CtDecodeSanitizationExt, SanitizationDecodeError, preflight::enforce_encoded_input_limit,
+};
 use base64_ng::{Alphabet, ct::CtEngine};
 use sanitization::{SecretBytes, SecureSanitize};
 
@@ -86,7 +88,9 @@ use sanitization::{LockedSecretVec, LockedSecretVecFillError};
     ),
     not(miri)
 ))]
-use crate::locked_vec::{map_protected_vec_error, validate_before_locked_vec_allocation};
+use crate::locked_vec::{
+    map_protected_vec_error, preflight_locked_vec, validate_before_locked_vec_allocation,
+};
 
 #[cfg(all(
     feature = "memory-lock",
@@ -136,6 +140,14 @@ where
     A: Alphabet,
     F: FnOnce() -> CheckedLockedFixedResult<T>,
 {
+    enforce_encoded_input_limit::<PAD>(N, input.len()).map_err(|limit| {
+        LockedDecodeError::Operation(LockedSecretBytesGenerateError::Generate(
+            SanitizationDecodeError::EncodedInputLimit {
+                maximum: limit.maximum,
+                actual: limit.actual,
+            },
+        ))
+    })?;
     let required = engine.decoded_len(input).map_err(|error| {
         LockedDecodeError::Operation(LockedSecretBytesGenerateError::Generate(error.into()))
     })?;
@@ -160,6 +172,12 @@ where
         input: &[u8],
     ) -> Result<SecretBytes<N>, SanitizationDecodeError> {
         const { crate::stack::enforce_stack_secret_capacity::<N>() }
+        enforce_encoded_input_limit::<PAD>(N, input.len()).map_err(|limit| {
+            SanitizationDecodeError::EncodedInputLimit {
+                maximum: limit.maximum,
+                actual: limit.actual,
+            }
+        })?;
         let required = self.decoded_len(input)?;
         if required != N {
             return Err(SanitizationDecodeError::LengthMismatch {
@@ -217,6 +235,12 @@ where
         input: &[u8],
     ) -> Result<LockedSecretBytes<N>, LockedSecretBytesGenerateError<SanitizationDecodeError>> {
         const { crate::stack::enforce_stack_secret_capacity::<N>() }
+        enforce_encoded_input_limit::<PAD>(N, input.len()).map_err(|limit| {
+            LockedSecretBytesGenerateError::Generate(SanitizationDecodeError::EncodedInputLimit {
+                maximum: limit.maximum,
+                actual: limit.actual,
+            })
+        })?;
         let required = self
             .decoded_len(input)
             .map_err(|error| LockedSecretBytesGenerateError::Generate(error.into()))?;
@@ -281,6 +305,12 @@ where
         input: &[u8],
     ) -> Result<LockedSecretBytes<N>, LockedSecretBytesFillError<SanitizationDecodeError>> {
         const { crate::stack::enforce_stack_secret_capacity::<N>() }
+        enforce_encoded_input_limit::<PAD>(N, input.len()).map_err(|limit| {
+            LockedSecretBytesFillError::Generate(SanitizationDecodeError::EncodedInputLimit {
+                maximum: limit.maximum,
+                actual: limit.actual,
+            })
+        })?;
         let required = self
             .decoded_len(input)
             .map_err(|error| LockedSecretBytesFillError::Generate(error.into()))?;
@@ -414,9 +444,7 @@ where
         &self,
         input: &[u8],
     ) -> Result<LockedSecretVec, LockedSecretVecFillError<base64_ng::DecodeError>> {
-        let required = self
-            .decoded_len(input)
-            .map_err(LockedSecretVecFillError::Fill)?;
+        let required = preflight_locked_vec(self, input)?;
         LockedSecretVec::try_from_capacity(required, |output| {
             self.decode_slice_clear_tail(input, output)
         })

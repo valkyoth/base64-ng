@@ -101,8 +101,10 @@
   sanitizer, resource, QEMU, native-hardware, and persistence evidence.
 - The pre-seal Commit 54 correction series makes strict evidence fail closed,
   binds every required manifest to clean source, separates candidate and final
-  release modes, and corrects development-era public documentation before the
-  final pentest and report-only Commit 55.
+  release modes, bounds sanitization companion allocation, stack use, and
+  constant-time-oriented validation work from public limits, and corrects
+  development-era public documentation before the final pentest and
+  report-only Commit 55.
 
 ## 1.3.9 - 2026-07-21
 

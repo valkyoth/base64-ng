@@ -15,7 +15,10 @@ use base64_ng::{Alphabet, ct::CtEngine};
     target_os = "dragonfly",
     all(target_arch = "wasm32", feature = "wasm-compat"),
 ))]
-use crate::{SanitizationDecodeError, locked};
+use crate::{
+    DEFAULT_SECRET_VEC_DECODE_MAX_LEN, SanitizationDecodeError, locked,
+    preflight::enforce_encoded_input_limit,
+};
 
 #[cfg(any(
     all(
@@ -86,8 +89,9 @@ pub trait CtDecodeSanitizationProtectedExt {
     ///
     /// Returns [`ProtectedSecretFillError::Protection`] when required controls
     /// cannot be established, [`ProtectedSecretFillError::Integrity`] when
-    /// canary validation fails, and [`ProtectedSecretFillError::Fill`] for
-    /// decode or exact-length failures.
+    /// canary validation fails, and [`ProtectedSecretFillError::Fill`] for an
+    /// encoded-input limit, decode, or exact-length failure. The encoded-input
+    /// limit is derived from `N` and checked before full validation.
     #[cfg(any(
         all(
             target_os = "linux",
@@ -113,7 +117,9 @@ pub trait CtDecodeSanitizationProtectedExt {
     /// # Errors
     ///
     /// Preserves every [`ProtectedSecretFillError`] failure class, including
-    /// distinct protection and integrity errors.
+    /// distinct protection and integrity errors. This compatibility helper
+    /// applies [`DEFAULT_SECRET_VEC_DECODE_MAX_LEN`] before full validation;
+    /// use the bounded method for a protocol-specific limit.
     #[cfg(all(
         any(
             all(
@@ -138,8 +144,9 @@ pub trait CtDecodeSanitizationProtectedExt {
 
     /// Decode a runtime-size secret with a pre-allocation capacity limit.
     ///
-    /// `MAX` is a public application limit on decoded bytes. Input whose exact
-    /// decoded length exceeds `MAX` is rejected before mapping allocation,
+    /// `MAX` is a public application limit on decoded bytes. Input beyond its
+    /// derived encoded ceiling is rejected before full validation. Input whose
+    /// exact decoded length exceeds `MAX` is rejected before mapping allocation,
     /// protection setup, or decoder invocation.
     ///
     /// # Errors
@@ -193,6 +200,12 @@ where
         &self,
         input: &[u8],
     ) -> Result<LockedSecretBytes<N>, ProtectedSecretFillError<SanitizationDecodeError>> {
+        enforce_encoded_input_limit::<PAD>(N, input.len()).map_err(|limit| {
+            ProtectedSecretFillError::Fill(SanitizationDecodeError::EncodedInputLimit {
+                maximum: limit.maximum,
+                actual: limit.actual,
+            })
+        })?;
         let required = self
             .decoded_len(input)
             .map_err(|error| ProtectedSecretFillError::Fill(error.into()))?;
@@ -250,9 +263,20 @@ where
         &self,
         input: &[u8],
     ) -> Result<LockedSecretVec, ProtectedSecretFillError<DecodeError>> {
+        enforce_encoded_input_limit::<PAD>(DEFAULT_SECRET_VEC_DECODE_MAX_LEN, input.len())
+            .map_err(|_| ProtectedSecretFillError::CapacityLimit {
+                maximum: DEFAULT_SECRET_VEC_DECODE_MAX_LEN,
+                actual: base64_ng::decoded_capacity(input.len()),
+            })?;
         let required = self
             .decoded_len(input)
             .map_err(ProtectedSecretFillError::Fill)?;
+        if required > DEFAULT_SECRET_VEC_DECODE_MAX_LEN {
+            return Err(ProtectedSecretFillError::CapacityLimit {
+                maximum: DEFAULT_SECRET_VEC_DECODE_MAX_LEN,
+                actual: required,
+            });
+        }
         LockedSecretVec::try_from_capacity_with_protection(
             required,
             locked::required_secret_protection(),
@@ -281,6 +305,12 @@ where
         &self,
         input: &[u8],
     ) -> Result<LockedSecretVec, ProtectedSecretFillError<DecodeError>> {
+        enforce_encoded_input_limit::<PAD>(MAX, input.len()).map_err(|_| {
+            ProtectedSecretFillError::CapacityLimit {
+                maximum: MAX,
+                actual: base64_ng::decoded_capacity(input.len()),
+            }
+        })?;
         let required = self
             .decoded_len(input)
             .map_err(ProtectedSecretFillError::Fill)?;

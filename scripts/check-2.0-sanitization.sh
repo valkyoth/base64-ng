@@ -14,6 +14,8 @@ for required in \
     'ProtectedAllocation::Staging' \
     'ProtectedAllocation::Destination' \
     'DEFAULT_SECRET_VEC_DECODE_MAX_LEN' \
+    'enforce_encoded_input_limit' \
+    'EncodedInputLimit' \
     'try_reserve_exact' \
     'enforce_stack_secret_capacity'
 do
@@ -54,6 +56,12 @@ cargo test --manifest-path "$manifest" --all-features \
     capacity_limit_returns_without_calling_allocator
 cargo test --manifest-path "$manifest" --all-features \
     staging_limit_returns_without_calling_allocator
+cargo test --manifest-path "$manifest" --all-features \
+    encoded_input_limit_returns_without_calling_allocator
+cargo test --manifest-path "$manifest" --all-features \
+    fixed_secret_bytes_reject_oversized_input_before_validation
+cargo test --manifest-path "$manifest" --all-features \
+    bounded_dynamic_decode_rejects_oversized_input_before_validation
 
 echo "2.0 sanitization: lint"
 cargo clippy --manifest-path "$manifest" --all-targets --all-features -- -D warnings

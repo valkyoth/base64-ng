@@ -58,8 +58,10 @@ base64-ng-sanitization = { version = "2.0.0", features = ["alloc"] }
 ```
 
 The convenience `decode_secret_vec` and `decode_secret_vec_staged` methods
-enforce a 1 MiB decoded-output ceiling and report allocation failure. Use an
-explicit protocol limit at untrusted boundaries:
+derive an encoded-input ceiling from their 1 MiB decoded-output ceiling before
+constant-time-oriented validation, and report allocation failure. The staged
+method uses the tighter staging ceiling for this preflight. Use an explicit
+protocol limit at untrusted boundaries:
 
 ```rust
 use base64_ng::ct;
@@ -71,10 +73,11 @@ secret.with_secret(|bytes| assert_eq!(bytes, b"hello"));
 # Ok::<(), Box<dyn std::error::Error>>(())
 ```
 
-Fixed-size and staged helpers allocate temporary arrays on the stack and
-reject capacities above 1,024 bytes at compile time. Larger values must use a
-bounded heap helper, caller-provided protected storage, or the protected
-mapping APIs below.
+Fixed-size and staged helpers reject encoded input larger than their public
+destination capacity before constant-time-oriented validation. They allocate
+temporary arrays on the stack and reject capacities above 1,024 bytes at
+compile time. Larger values must use a bounded heap helper, caller-provided
+protected storage, or the protected mapping APIs below.
 
 For high-assurance x86_64 or AArch64 native deployments, enable locked storage
 helpers. This
@@ -131,8 +134,9 @@ type for source compatibility.
 `CtDecodeSanitizationProtectedExt` preserves the upstream
 `ProtectedSecretFillError` categories so operators can distinguish unavailable
 protection controls from canary-integrity failures. Its bounded dynamic helper
-rejects decoded capacities above the const-generic application limit before
-mapping allocation or decoder invocation.
+rejects encoded input beyond the derived public ceiling before full validation,
+then rejects decoded capacities above the const-generic application limit
+before mapping allocation or decoder invocation.
 
 For the 2.0 codec, `SanitizationProtectedDecodeExt` accepts a classified
 `SecretInput` and protects both private staging and final destination before

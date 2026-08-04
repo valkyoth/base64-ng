@@ -30,6 +30,9 @@ impl core::marker::Copy for base64_ng_sanitization::ProtectedAllocation
 impl core::marker::StructuralPartialEq for base64_ng_sanitization::ProtectedAllocation
 pub enum base64_ng_sanitization::SanitizationDecodeError
 pub base64_ng_sanitization::SanitizationDecodeError::Decode(base64_ng::errors::DecodeError)
+pub base64_ng_sanitization::SanitizationDecodeError::EncodedInputLimit
+pub base64_ng_sanitization::SanitizationDecodeError::EncodedInputLimit::actual: usize
+pub base64_ng_sanitization::SanitizationDecodeError::EncodedInputLimit::maximum: usize
 pub base64_ng_sanitization::SanitizationDecodeError::LengthMismatch
 pub base64_ng_sanitization::SanitizationDecodeError::LengthMismatch::actual: usize
 pub base64_ng_sanitization::SanitizationDecodeError::LengthMismatch::expected: usize
@@ -78,6 +81,9 @@ pub base64_ng_sanitization::SecretVecDecodeError::CapacityLimit
 pub base64_ng_sanitization::SecretVecDecodeError::CapacityLimit::actual: usize
 pub base64_ng_sanitization::SecretVecDecodeError::CapacityLimit::maximum: usize
 pub base64_ng_sanitization::SecretVecDecodeError::Decode(base64_ng::errors::DecodeError)
+pub base64_ng_sanitization::SecretVecDecodeError::EncodedInputLimit
+pub base64_ng_sanitization::SecretVecDecodeError::EncodedInputLimit::actual: usize
+pub base64_ng_sanitization::SecretVecDecodeError::EncodedInputLimit::maximum: usize
 impl core::clone::Clone for base64_ng_sanitization::SecretVecDecodeError
 pub fn base64_ng_sanitization::SecretVecDecodeError::clone(&self) -> base64_ng_sanitization::SecretVecDecodeError
 impl core::cmp::Eq for base64_ng_sanitization::SecretVecDecodeError

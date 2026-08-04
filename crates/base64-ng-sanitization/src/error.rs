@@ -5,6 +5,13 @@ use base64_ng::DecodeError;
 pub enum SanitizationDecodeError {
     /// The Base64 decoder rejected the input.
     Decode(DecodeError),
+    /// Encoded input exceeds the public limit for the fixed-size destination.
+    EncodedInputLimit {
+        /// Maximum accepted encoded bytes.
+        maximum: usize,
+        /// Encoded bytes supplied by the caller.
+        actual: usize,
+    },
     /// The decoded byte length does not match the requested fixed-size secret.
     LengthMismatch {
         /// Expected decoded byte length.
@@ -18,6 +25,10 @@ impl core::fmt::Display for SanitizationDecodeError {
     fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Self::Decode(error) => error.fmt(formatter),
+            Self::EncodedInputLimit { maximum, actual } => write!(
+                formatter,
+                "encoded secret exceeds limit: maximum {maximum} bytes, received {actual}"
+            ),
             Self::LengthMismatch { expected, actual } => write!(
                 formatter,
                 "decoded Base64 length mismatch: expected {expected}, actual {actual}"
@@ -42,6 +53,13 @@ impl From<DecodeError> for SanitizationDecodeError {
 pub enum SecretVecDecodeError {
     /// The Base64 decoder rejected the input or staging capacity.
     Decode(DecodeError),
+    /// Encoded input exceeds the public limit derived from output capacity.
+    EncodedInputLimit {
+        /// Maximum accepted encoded bytes.
+        maximum: usize,
+        /// Encoded bytes supplied by the caller.
+        actual: usize,
+    },
     /// Decoded output exceeds the caller-selected public capacity limit.
     CapacityLimit {
         /// Maximum accepted decoded bytes.
@@ -60,6 +78,10 @@ impl core::fmt::Display for SecretVecDecodeError {
     fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Self::Decode(error) => error.fmt(formatter),
+            Self::EncodedInputLimit { maximum, actual } => write!(
+                formatter,
+                "encoded secret exceeds limit: maximum {maximum} bytes, received {actual}"
+            ),
             Self::CapacityLimit { maximum, actual } => write!(
                 formatter,
                 "decoded secret exceeds limit: maximum {maximum} bytes, requires {actual}"

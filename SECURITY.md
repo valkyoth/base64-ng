@@ -128,6 +128,9 @@ The allocation helpers allocate proportionally to accepted input size, and the
 `ct` decoder deliberately spends fixed work scanning all 64 alphabet entries
 per input symbol. Use streaming adapters, caller-owned slices, or stack-backed
 `decode_buffer::<MAX>()` APIs when a service needs bounded memory and CPU.
+The sanitization companion's fixed, staged, bounded, and default-limited secret
+helpers derive and enforce an encoded-input ceiling before entering that scan;
+custom direct uses of `ct::CtEngine` still require a caller-owned input limit.
 
 The redacted buffer comparison helpers are dependency-free best-effort
 equal-length scans, not audited MAC, bearer-token, password-hash, or

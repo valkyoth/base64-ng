@@ -249,11 +249,14 @@ path is the only single-allocation route carrying core generation, quarantine,
 and fallible-teardown claims.
 
 Legacy `decode_secret_vec` convenience calls now enforce a 1 MiB decoded
-ceiling and return `SecretVecDecodeError`, including allocation failure. Import
+ceiling and reject input beyond its derived encoded ceiling before the
+constant-time-oriented alphabet scan. They return `SecretVecDecodeError`,
+including encoded-input, capacity, and allocation failures. Import
 `CtDecodeSanitizationBoundedExt` and use `decode_secret_vec_bounded::<MAX>` for
 an application-specific public limit. Fixed-size and staged companion helpers
-reject stack capacities above 1,024 bytes at compile time; larger values must
-use bounded heap or protected storage.
+apply the same public-length preflight and reject stack capacities above 1,024
+bytes at compile time; larger values must use bounded heap or protected
+storage.
 
 ## Final Checklist
 
