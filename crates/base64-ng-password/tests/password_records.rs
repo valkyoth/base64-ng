@@ -1,5 +1,7 @@
 //! Exact format, limit, rollback, and redaction conformance tests.
 
+#![cfg(feature = "alloc")]
+
 use base64_ng_password::{
     PasslibPbkdf2Algorithm, PasswordRecordErrorKind, PasswordRecordLimits, ShaCryptAlgorithm,
     ShaCryptRounds, decode_pbkdf2_field_into, decode_sha_crypt_checksum_into,
@@ -317,6 +319,72 @@ fn every_finite_limit_has_a_distinct_failure_class() {
             .unwrap_err()
             .kind(),
         PasswordRecordErrorKind::WorkLimitExceeded
+    );
+}
+
+#[test]
+fn cumulative_work_budget_counts_every_validation_and_decode_pass() {
+    let pbkdf2 = b"$pbkdf2-sha256$1$c2FsdA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+    let pbkdf2_work = pbkdf2.len() + b"pbkdf2-sha256".len() + 1 + 6 + 43;
+    let below_pbkdf2 = PasswordRecordLimits::new(4096, 2048, 1024, 1024, 4096, pbkdf2_work - 1);
+    assert_eq!(
+        parse_pbkdf2_record(pbkdf2, below_pbkdf2)
+            .unwrap_err()
+            .kind(),
+        PasswordRecordErrorKind::WorkLimitExceeded
+    );
+    let exact_pbkdf2 = PasswordRecordLimits::new(4096, 2048, 1024, 1024, 4096, pbkdf2_work);
+    assert!(parse_pbkdf2_record(pbkdf2, exact_pbkdf2).is_ok());
+
+    let sha = b"$5$salt$5B8vYYiY.CVt1RlTTf8KbXBH3hsxY/GNooZaBBGWEc5";
+    let sha_work = sha.len() + 1 + b"salt".len() + b"salt".len() + 43;
+    let below_sha = PasswordRecordLimits::new(4096, 2048, 1024, 1024, 4096, sha_work - 1);
+    assert_eq!(
+        parse_sha_crypt_record(sha, below_sha).unwrap_err().kind(),
+        PasswordRecordErrorKind::WorkLimitExceeded
+    );
+    let exact_sha = PasswordRecordLimits::new(4096, 2048, 1024, 1024, 4096, sha_work);
+    assert!(parse_sha_crypt_record(sha, exact_sha).is_ok());
+
+    let mut pbkdf2_output = [0xa5_u8; 3];
+    let below_two_pass = PasswordRecordLimits::new(64, 64, 64, 64, 64, 7);
+    assert_eq!(
+        decode_pbkdf2_field_into(b".///", &mut pbkdf2_output, below_two_pass)
+            .unwrap_err()
+            .kind(),
+        PasswordRecordErrorKind::WorkLimitExceeded
+    );
+    assert_eq!(pbkdf2_output, [0xa5; 3]);
+    let exact_two_pass = PasswordRecordLimits::new(64, 64, 64, 64, 64, 8);
+    assert_eq!(
+        decode_pbkdf2_field_into(b".///", &mut pbkdf2_output, exact_two_pass),
+        Ok(3)
+    );
+
+    let checksum = b"5B8vYYiY.CVt1RlTTf8KbXBH3hsxY/GNooZaBBGWEc5";
+    let mut digest = [0xa5_u8; 32];
+    let below_checksum = PasswordRecordLimits::new(128, 128, 64, 64, 128, 85);
+    assert_eq!(
+        decode_sha_crypt_checksum_into(
+            ShaCryptAlgorithm::Sha256,
+            checksum,
+            &mut digest,
+            below_checksum,
+        )
+        .unwrap_err()
+        .kind(),
+        PasswordRecordErrorKind::WorkLimitExceeded
+    );
+    assert_eq!(digest, [0xa5; 32]);
+    let exact_checksum = PasswordRecordLimits::new(128, 128, 64, 64, 128, 86);
+    assert_eq!(
+        decode_sha_crypt_checksum_into(
+            ShaCryptAlgorithm::Sha256,
+            checksum,
+            &mut digest,
+            exact_checksum,
+        ),
+        Ok(32)
     );
 }
 

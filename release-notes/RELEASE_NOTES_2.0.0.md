@@ -20,6 +20,8 @@
   recovery semantics.
 - Publishes synchronized Serde, bytes, subtle, derive, sanitization, Tokio,
   MIME, PEM, multibase, IMAP, password-record, and OpenPGP companions.
+- Makes password-record work limits cumulative across validation and transform
+  passes and release-gates executable caller-owned behavior without `alloc`.
 - Adds locked RFC and registry sources, semantic and interoperability corpora,
   fuzzing, sanitizer, Miri, Kani, timing, assembly, QEMU, package, SBOM, and
   reproducibility gates.

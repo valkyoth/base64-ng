@@ -1,5 +1,7 @@
 //! Differential checks against Python Base64 and OpenSSL SHA-crypt.
 
+#![cfg(feature = "alloc")]
+
 use std::io::Write;
 use std::process::Command;
 

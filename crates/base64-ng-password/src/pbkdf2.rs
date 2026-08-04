@@ -1,6 +1,6 @@
 use crate::{
     PasslibPbkdf2Algorithm, PasslibPbkdf2Record, PasswordRecordError, PasswordRecordErrorKind,
-    PasswordRecordLimits, error::map_base64,
+    PasswordRecordLimits, error::map_base64, limits::WorkBudget,
 };
 
 const ADAPTED_ALPHABET: &[u8; 64] =
@@ -17,7 +17,8 @@ pub fn encode_pbkdf2_field_into(
     output: &mut [u8],
     limits: PasswordRecordLimits,
 ) -> Result<usize, PasswordRecordError> {
-    require_work(input.len(), limits)?;
+    let mut work = WorkBudget::new(limits);
+    work.charge(input.len())?;
     if input.len() > limits.max_decoded_output_bytes() {
         return Err(PasswordRecordError::new(
             PasswordRecordErrorKind::DecodedOutputLimitExceeded,
@@ -41,8 +42,9 @@ pub fn decode_pbkdf2_field_into(
     output: &mut [u8],
     limits: PasswordRecordLimits,
 ) -> Result<usize, PasswordRecordError> {
-    require_work(input.len(), limits)?;
+    let mut work = WorkBudget::new(limits);
     require_field(input.len(), limits)?;
+    work.charge(input.len())?;
     let required = base64_ng::PBKDF2_ALPHABET_NO_PAD
         .decoded_len(input)
         .map_err(|error| map_base64(error, PasswordRecordErrorKind::InvalidField))?;
@@ -52,6 +54,7 @@ pub fn decode_pbkdf2_field_into(
         ));
     }
     require_capacity(required, output.len())?;
+    work.charge(input.len())?;
     base64_ng::PBKDF2_ALPHABET_NO_PAD
         .decode_into(input, &mut output[..required])
         .map_err(|error| map_base64(error, PasswordRecordErrorKind::InvalidField))
@@ -69,16 +72,22 @@ pub fn parse_pbkdf2_record(
     limits: PasswordRecordLimits,
 ) -> Result<PasslibPbkdf2Record<'_>, PasswordRecordError> {
     require_record(record.len(), limits)?;
+    let mut work = WorkBudget::new(limits);
+    work.charge(record.len())?;
     let mut fields = record.split(|byte| *byte == b'$');
     if fields.next() != Some(&b""[..]) {
         return Err(PasswordRecordError::new(
             PasswordRecordErrorKind::InvalidStructure,
         ));
     }
-    let algorithm = match fields.next() {
-        Some(b"pbkdf2") => PasslibPbkdf2Algorithm::Sha1,
-        Some(b"pbkdf2-sha256") => PasslibPbkdf2Algorithm::Sha256,
-        Some(b"pbkdf2-sha512") => PasslibPbkdf2Algorithm::Sha512,
+    let algorithm_field = fields
+        .next()
+        .ok_or_else(|| PasswordRecordError::new(PasswordRecordErrorKind::InvalidStructure))?;
+    work.charge(algorithm_field.len())?;
+    let algorithm = match algorithm_field {
+        b"pbkdf2" => PasslibPbkdf2Algorithm::Sha1,
+        b"pbkdf2-sha256" => PasslibPbkdf2Algorithm::Sha256,
+        b"pbkdf2-sha512" => PasslibPbkdf2Algorithm::Sha512,
         _ => {
             return Err(PasswordRecordError::new(
                 PasswordRecordErrorKind::InvalidPrefix,
@@ -102,9 +111,10 @@ pub fn parse_pbkdf2_record(
 
     require_field(salt.len(), limits)?;
     require_field(checksum.len(), limits)?;
+    work.charge(rounds.len())?;
     let rounds = parse_decimal(rounds, 1, u32::MAX)?;
-    validate_pbkdf2_salt(salt, limits)?;
-    validate_pbkdf2_checksum(algorithm, checksum, limits)?;
+    validate_pbkdf2_salt(salt, limits, &mut work)?;
+    validate_pbkdf2_checksum(algorithm, checksum, limits, &mut work)?;
     Ok(PasslibPbkdf2Record {
         algorithm,
         rounds,
@@ -141,11 +151,6 @@ pub fn pbkdf2_record_len(
             PasswordRecordErrorKind::InvalidChecksum,
         ));
     }
-    let work = salt
-        .len()
-        .checked_add(checksum.len())
-        .ok_or_else(|| PasswordRecordError::new(PasswordRecordErrorKind::LengthOverflow))?;
-    require_work(work, limits)?;
     if checksum.len() > limits.max_decoded_output_bytes() {
         return Err(PasswordRecordError::new(
             PasswordRecordErrorKind::DecodedOutputLimitExceeded,
@@ -188,6 +193,11 @@ pub fn generate_pbkdf2_record_into(
     let required = pbkdf2_record_len(algorithm, rounds, salt, checksum, limits)?;
     let salt_len = encoded_len(salt.len())?;
     require_capacity(required, output.len())?;
+    let work = salt
+        .len()
+        .checked_add(checksum.len())
+        .ok_or_else(|| PasswordRecordError::new(PasswordRecordErrorKind::LengthOverflow))?;
+    require_work(work, limits)?;
 
     let mut cursor = 0;
     cursor += write_bytes(&mut output[cursor..required], algorithm.prefix());
@@ -205,7 +215,9 @@ pub fn generate_pbkdf2_record_into(
 fn validate_pbkdf2_salt(
     salt: &[u8],
     limits: PasswordRecordLimits,
+    work: &mut WorkBudget,
 ) -> Result<(), PasswordRecordError> {
+    work.charge(salt.len())?;
     let decoded = base64_ng::PBKDF2_ALPHABET_NO_PAD
         .decoded_len(salt)
         .map_err(|error| map_base64(error, PasswordRecordErrorKind::InvalidSalt))?;
@@ -221,12 +233,14 @@ fn validate_pbkdf2_checksum(
     algorithm: PasslibPbkdf2Algorithm,
     checksum: &[u8],
     limits: PasswordRecordLimits,
+    work: &mut WorkBudget,
 ) -> Result<(), PasswordRecordError> {
     if checksum.len() != algorithm.encoded_checksum_len() {
         return Err(PasswordRecordError::new(
             PasswordRecordErrorKind::InvalidChecksum,
         ));
     }
+    work.charge(checksum.len())?;
     let decoded = base64_ng::PBKDF2_ALPHABET_NO_PAD
         .decoded_len(checksum)
         .map_err(|error| map_base64(error, PasswordRecordErrorKind::InvalidChecksum))?;
@@ -309,20 +323,14 @@ pub(crate) fn require_record(
             PasswordRecordErrorKind::InputLimitExceeded,
         ));
     }
-    require_work(length, limits)
+    Ok(())
 }
 
 pub(crate) fn require_work(
     length: usize,
     limits: PasswordRecordLimits,
 ) -> Result<(), PasswordRecordError> {
-    if length > limits.max_work_before_output() {
-        Err(PasswordRecordError::new(
-            PasswordRecordErrorKind::WorkLimitExceeded,
-        ))
-    } else {
-        Ok(())
-    }
+    WorkBudget::new(limits).charge(length)
 }
 
 pub(crate) fn require_field(

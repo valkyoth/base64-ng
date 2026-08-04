@@ -22,7 +22,7 @@ pub enum PasswordRecordErrorKind {
     DecodedOutputLimitExceeded,
     /// Generated output exceeded its finite limit.
     OutputLimitExceeded,
-    /// Work before completion exceeded its finite limit.
+    /// Cumulative input-byte work before completion exceeded its finite limit.
     WorkLimitExceeded,
     /// Caller-owned output storage was too small.
     OutputTooSmall,

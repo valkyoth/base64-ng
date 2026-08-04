@@ -1,9 +1,10 @@
 use crate::{
     PasswordRecordError, PasswordRecordErrorKind, PasswordRecordLimits, ShaCryptAlgorithm,
     ShaCryptRecord, ShaCryptRounds,
+    limits::WorkBudget,
     pbkdf2::{
         decimal_len, parse_decimal, require_capacity, require_field, require_generated,
-        require_record, require_work, write_bytes, write_decimal,
+        require_record, write_bytes, write_decimal,
     },
 };
 
@@ -64,7 +65,8 @@ pub fn encode_sha_crypt_checksum_into(
             PasswordRecordErrorKind::InvalidChecksum,
         ));
     }
-    require_work(digest.len(), limits)?;
+    let mut work = WorkBudget::new(limits);
+    work.charge(digest.len())?;
     if digest.len() > limits.max_decoded_output_bytes() {
         return Err(PasswordRecordError::new(
             PasswordRecordErrorKind::DecodedOutputLimitExceeded,
@@ -89,9 +91,11 @@ pub fn decode_sha_crypt_checksum_into(
     output: &mut [u8],
     limits: PasswordRecordLimits,
 ) -> Result<usize, PasswordRecordError> {
-    validate_checksum(algorithm, checksum, limits)?;
+    let mut work = WorkBudget::new(limits);
+    validate_checksum(algorithm, checksum, limits, &mut work)?;
     let required = algorithm.digest_len();
     require_capacity(required, output.len())?;
+    work.charge(checksum.len())?;
     decode_groups(checksum, groups(algorithm), &mut output[..required])?;
     Ok(required)
 }
@@ -107,15 +111,21 @@ pub fn parse_sha_crypt_record(
     limits: PasswordRecordLimits,
 ) -> Result<ShaCryptRecord<'_>, PasswordRecordError> {
     require_record(record.len(), limits)?;
+    let mut work = WorkBudget::new(limits);
+    work.charge(record.len())?;
     let mut fields = record.split(|byte| *byte == b'$');
     if fields.next() != Some(&b""[..]) {
         return Err(PasswordRecordError::new(
             PasswordRecordErrorKind::InvalidStructure,
         ));
     }
-    let algorithm = match fields.next() {
-        Some(b"5") => ShaCryptAlgorithm::Sha256,
-        Some(b"6") => ShaCryptAlgorithm::Sha512,
+    let algorithm_field = fields
+        .next()
+        .ok_or_else(|| PasswordRecordError::new(PasswordRecordErrorKind::InvalidStructure))?;
+    work.charge(algorithm_field.len())?;
+    let algorithm = match algorithm_field {
+        b"5" => ShaCryptAlgorithm::Sha256,
+        b"6" => ShaCryptAlgorithm::Sha512,
         _ => {
             return Err(PasswordRecordError::new(
                 PasswordRecordErrorKind::InvalidPrefix,
@@ -125,7 +135,9 @@ pub fn parse_sha_crypt_record(
     let first = fields
         .next()
         .ok_or_else(|| PasswordRecordError::new(PasswordRecordErrorKind::InvalidStructure))?;
+    work.charge(first.len())?;
     let (rounds, salt) = if let Some(decimal) = first.strip_prefix(b"rounds=") {
+        work.charge(decimal.len())?;
         let value = parse_decimal(decimal, 1000, 999_999_999)?;
         let salt = fields
             .next()
@@ -142,8 +154,8 @@ pub fn parse_sha_crypt_record(
             PasswordRecordErrorKind::InvalidStructure,
         ));
     }
-    validate_salt(salt, limits)?;
-    validate_checksum(algorithm, checksum, limits)?;
+    validate_salt(salt, limits, &mut work)?;
+    validate_checksum(algorithm, checksum, limits, &mut work)?;
     Ok(ShaCryptRecord {
         algorithm,
         rounds,
@@ -165,7 +177,19 @@ pub fn sha_crypt_record_len(
     digest: &[u8],
     limits: PasswordRecordLimits,
 ) -> Result<usize, PasswordRecordError> {
-    validate_salt(salt, limits)?;
+    let mut work = WorkBudget::new(limits);
+    sha_crypt_record_len_with_budget(algorithm, rounds, salt, digest, limits, &mut work)
+}
+
+pub(crate) fn sha_crypt_record_len_with_budget(
+    algorithm: ShaCryptAlgorithm,
+    rounds: ShaCryptRounds,
+    salt: &[u8],
+    digest: &[u8],
+    limits: PasswordRecordLimits,
+    work: &mut WorkBudget,
+) -> Result<usize, PasswordRecordError> {
+    validate_salt(salt, limits, work)?;
     if digest.len() != algorithm.digest_len() {
         return Err(PasswordRecordError::new(
             PasswordRecordErrorKind::InvalidChecksum,
@@ -176,11 +200,6 @@ pub fn sha_crypt_record_len(
             PasswordRecordErrorKind::InvalidRounds,
         ));
     }
-    let work = salt
-        .len()
-        .checked_add(digest.len())
-        .ok_or_else(|| PasswordRecordError::new(PasswordRecordErrorKind::LengthOverflow))?;
-    require_work(work, limits)?;
     if digest.len() > limits.max_decoded_output_bytes() {
         return Err(PasswordRecordError::new(
             PasswordRecordErrorKind::DecodedOutputLimitExceeded,
@@ -220,8 +239,26 @@ pub fn generate_sha_crypt_record_into(
     output: &mut [u8],
     limits: PasswordRecordLimits,
 ) -> Result<usize, PasswordRecordError> {
-    let required = sha_crypt_record_len(algorithm, rounds, salt, digest, limits)?;
+    let mut work = WorkBudget::new(limits);
+    let required =
+        sha_crypt_record_len_with_budget(algorithm, rounds, salt, digest, limits, &mut work)?;
+    generate_sha_crypt_record_prevalidated(
+        algorithm, rounds, salt, digest, output, required, &mut work,
+    )
+}
+
+pub(crate) fn generate_sha_crypt_record_prevalidated(
+    algorithm: ShaCryptAlgorithm,
+    rounds: ShaCryptRounds,
+    salt: &[u8],
+    digest: &[u8],
+    output: &mut [u8],
+    required: usize,
+    work: &mut WorkBudget,
+) -> Result<usize, PasswordRecordError> {
     require_capacity(required, output.len())?;
+    work.charge(salt.len())?;
+    work.charge(digest.len())?;
 
     let mut cursor = 0;
     cursor += write_bytes(&mut output[cursor..required], algorithm.prefix());
@@ -245,13 +282,18 @@ fn groups(algorithm: ShaCryptAlgorithm) -> &'static [(Option<usize>, Option<usiz
     }
 }
 
-fn validate_salt(salt: &[u8], limits: PasswordRecordLimits) -> Result<(), PasswordRecordError> {
+fn validate_salt(
+    salt: &[u8],
+    limits: PasswordRecordLimits,
+    work: &mut WorkBudget,
+) -> Result<(), PasswordRecordError> {
     require_field(salt.len(), limits)?;
     if salt.len() > 16 {
         return Err(PasswordRecordError::new(
             PasswordRecordErrorKind::InvalidSalt,
         ));
     }
+    work.charge(salt.len())?;
     if let Some(index) = salt.iter().position(|byte| decode_crypt(*byte).is_none()) {
         return Err(PasswordRecordError::at(
             PasswordRecordErrorKind::InvalidSalt,
@@ -265,8 +307,8 @@ fn validate_checksum(
     algorithm: ShaCryptAlgorithm,
     checksum: &[u8],
     limits: PasswordRecordLimits,
+    work: &mut WorkBudget,
 ) -> Result<(), PasswordRecordError> {
-    require_work(checksum.len(), limits)?;
     require_field(checksum.len(), limits)?;
     if checksum.len() != algorithm.encoded_checksum_len() {
         return Err(PasswordRecordError::new(
@@ -278,6 +320,7 @@ fn validate_checksum(
             PasswordRecordErrorKind::DecodedOutputLimitExceeded,
         ));
     }
+    work.charge(checksum.len())?;
     let mut scratch = [0_u8; 64];
     decode_groups(
         checksum,

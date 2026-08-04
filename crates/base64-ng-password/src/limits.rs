@@ -1,3 +1,5 @@
+use crate::error::{PasswordRecordError, PasswordRecordErrorKind};
+
 /// Finite limits for one password-record transform.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[allow(clippy::struct_field_names)]
@@ -61,10 +63,34 @@ impl PasswordRecordLimits {
         self.max_generated_bytes
     }
 
-    /// Maximum bytes inspected before success or output.
+    /// Maximum cumulative input-byte work charged before success or output.
+    ///
+    /// Every complete scan or transform charges the same per-operation budget.
+    /// A validation pass followed by a decode pass therefore charges the input
+    /// length twice.
     #[must_use]
     pub const fn max_work_before_output(self) -> usize {
         self.max_work_before_output
+    }
+}
+
+pub(crate) struct WorkBudget {
+    remaining: usize,
+}
+
+impl WorkBudget {
+    pub(crate) const fn new(limits: PasswordRecordLimits) -> Self {
+        Self {
+            remaining: limits.max_work_before_output(),
+        }
+    }
+
+    pub(crate) fn charge(&mut self, amount: usize) -> Result<(), PasswordRecordError> {
+        self.remaining = self
+            .remaining
+            .checked_sub(amount)
+            .ok_or_else(|| PasswordRecordError::new(PasswordRecordErrorKind::WorkLimitExceeded))?;
+        Ok(())
     }
 }
 

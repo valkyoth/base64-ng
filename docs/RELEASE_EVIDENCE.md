@@ -81,6 +81,14 @@ and the secret-storage gate proves `SecretInput` cannot enter the new ordinary
 owner without explicit exposure. The regenerated 2.0 snapshot records the
 exact added API before the final full-range pentest.
 
+The password companion's follow-up pentest gate treats
+`max_work_before_output` as one cumulative per-operation budget rather than a
+per-pass ceiling. Exact-boundary tests account for record, field, validation,
+and repeated decode passes and prove output rollback on exhaustion. A dedicated
+`--no-default-features --tests` matrix executes caller-owned PBKDF2 and
+SHA-crypt generation, parsing, decoding, and work-limit failure without
+enabling `alloc`.
+
 Commit 4 adds the exact RFC 4648 source lock, errata and requirements ledgers,
 independent test-only oracle, versioned cross-crate semantic corpus, and the
 complete Rust 1.90.0 capability matrix. `scripts/verify-rfcs.sh` is offline;

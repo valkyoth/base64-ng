@@ -11,6 +11,9 @@
 - The explicitly approved pre-seal usability reopening adds an `alloc`-only
   `Base64String<S>` that retains its exact codec policy and a deliberately
   small ordinary prelude. Secret and compatibility APIs remain explicit.
+- Password-record work limits are cumulative across repeated input passes, and
+  caller-owned PBKDF2/SHA-crypt behavior is executed without `alloc` in the
+  focused release gate.
 - Commits 1-17 define validated alphabets and codec specifications, strict RFC
   4648 presets, transactional one-shot operations, heapless incremental states,
   bounded arrays, in-place transforms, formatting, append, chunks, exact WHATWG

@@ -2,8 +2,10 @@ use alloc::{string::String, vec::Vec};
 
 use crate::{
     PasslibPbkdf2Algorithm, PasswordRecordError, PasswordRecordErrorKind, PasswordRecordLimits,
-    ShaCryptAlgorithm, ShaCryptRounds, generate_pbkdf2_record_into, generate_sha_crypt_record_into,
-    pbkdf2_record_len, sha_crypt_record_len,
+    ShaCryptAlgorithm, ShaCryptRounds, generate_pbkdf2_record_into,
+    limits::WorkBudget,
+    pbkdf2_record_len,
+    sha_crypt::{generate_sha_crypt_record_prevalidated, sha_crypt_record_len_with_budget},
 };
 
 /// Generates one canonical Passlib PBKDF2 record into an exact allocation.
@@ -38,9 +40,13 @@ pub fn generate_sha_crypt_record(
     digest: &[u8],
     limits: PasswordRecordLimits,
 ) -> Result<String, PasswordRecordError> {
-    let required = sha_crypt_record_len(algorithm, rounds, salt, digest, limits)?;
-    generate_string(required, |output| {
-        generate_sha_crypt_record_into(algorithm, rounds, salt, digest, output, limits)
+    let mut work = WorkBudget::new(limits);
+    let required =
+        sha_crypt_record_len_with_budget(algorithm, rounds, salt, digest, limits, &mut work)?;
+    generate_string(required, move |output| {
+        generate_sha_crypt_record_prevalidated(
+            algorithm, rounds, salt, digest, output, required, &mut work,
+        )
     })
 }
 

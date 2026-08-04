@@ -7,8 +7,8 @@ msrv_toolchain="${BASE64_NG_MSRV_TOOLCHAIN:-1.90.0}"
 echo "2.0 password records: exact source lock"
 scripts/validate-password-spec.py
 
-echo "2.0 password records: no-default compile"
-cargo check --manifest-path "$manifest" --no-default-features
+echo "2.0 password records: no-default behavior"
+cargo test --manifest-path "$manifest" --no-default-features --tests
 
 echo "2.0 password records: exact formats and interoperability"
 cargo test --manifest-path "$manifest" --all-features
@@ -38,6 +38,7 @@ for required in \
     "src/pbkdf2.rs" \
     "src/sha_crypt.rs" \
     "tests/interoperability.rs" \
+    "tests/no_alloc.rs" \
     "tests/password_records.rs"
 do
     if ! grep -F -x -q "$required" "$package_list"; then
@@ -60,7 +61,8 @@ done
 for required in \
     "does not accept passwords" \
     "performs no password hashing" \
-    "field-selective redacted"
+    "field-selective redacted" \
+    "cumulative per-operation"
 do
     if ! grep -R -i -F -q "$required" crates/base64-ng-password/README.md docs/2.0_PASSWORD_RECORDS.md crates/base64-ng-password/src; then
         echo "2.0 password records: missing scope text: $required" >&2

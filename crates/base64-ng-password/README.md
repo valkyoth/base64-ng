@@ -64,3 +64,10 @@ Parsed records use field-selective redacted `Debug`; salts and checksums are
 available only through explicitly named exposure/decode methods. Errors never
 format malformed raw record fragments. This is an ordinary interoperability
 API, not a constant-time secret processing or password verification API.
+
+`PasswordRecordLimits::max_work_before_output` is a cumulative per-operation
+budget. Every record scan, field validation, and encode/decode transform
+charges the same budget before that pass begins; a validation pass followed by
+a decode pass therefore charges the encoded field length twice. The
+no-default-features test matrix executes the caller-owned PBKDF2 and SHA-crypt
+APIs without enabling `alloc`.
