@@ -76,9 +76,10 @@ The release-owner-approved pre-seal usability reopening adds the ordinary
 policy-carrying `Base64String<S>` and focused ordinary prelude. Focused tests
 cover strict and runtime policies, malformed text, output limits, visible
 formatting, and policy retention. The migration smoke compiles the external
-surface, while the secret-storage gate proves `SecretInput` cannot enter the
-new ordinary owner without explicit exposure. The regenerated 2.0 snapshot
-records the exact added API before the final full-range pentest.
+surface, a separate downstream fixture executes it with only `no_std + alloc`,
+and the secret-storage gate proves `SecretInput` cannot enter the new ordinary
+owner without explicit exposure. The regenerated 2.0 snapshot records the
+exact added API before the final full-range pentest.
 
 Commit 4 adds the exact RFC 4648 source lock, errata and requirements ledgers,
 independent test-only oracle, versioned cross-crate semantic corpus, and the

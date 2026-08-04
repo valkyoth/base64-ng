@@ -65,9 +65,29 @@ done
 
 run_cargo test --lib 'v2::one_shot_tests'
 run_cargo test --no-default-features --lib 'v2::one_shot_tests'
+run_cargo test --locked --lib 'v2::ordinary_string_tests'
 scripts/check-2.0-migration-smoke.sh
-run_cargo test --offline --manifest-path target/2_0_migration_smoke/Cargo.toml \
+run_cargo test --locked --offline --manifest-path target/2_0_migration_smoke/Cargo.toml \
     transactional_2_0_surface_is_public_and_external
+run_cargo test --locked --offline --manifest-path target/2_0_migration_smoke/Cargo.toml \
+    ordinary_string_and_prelude_are_public_and_external
+
+no_std_alloc_workdir="target/2_0_no_std_alloc_smoke"
+mkdir -p "$no_std_alloc_workdir/src"
+cp portability/2_0_no_std_alloc_smoke/src/lib.rs "$no_std_alloc_workdir/src/lib.rs"
+cat >"$no_std_alloc_workdir/Cargo.toml" <<'MANIFEST'
+[package]
+name = "base64-ng-2-0-no-std-alloc-smoke"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[dependencies]
+base64-ng = { path = "../..", default-features = false, features = ["alloc"] }
+MANIFEST
+run_cargo test --offline --manifest-path "$no_std_alloc_workdir/Cargo.toml"
 run_cargo clippy --lib --tests --all-features -- -D warnings
 
-echo "2.0 one-shot: transactional slices, allocations, and public boundary ok"
+echo "2.0 one-shot: transactional slices, policy strings, no_std + alloc, and public boundary ok"

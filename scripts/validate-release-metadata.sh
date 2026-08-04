@@ -779,6 +779,7 @@ for required_package_file in \
     "portability/no_alloc_smoke/src/lib.rs" \
     "portability/migration_smoke/src/lib.rs" \
     "portability/2_0_migration_smoke/src/lib.rs" \
+    "portability/2_0_no_std_alloc_smoke/src/lib.rs" \
     "portability/feature_contract_smoke/src/main.rs" \
     "portability/feature_unification_smoke/src/lib.rs" \
     "portability/aarch64_static_neon_smoke/src/main.rs" \

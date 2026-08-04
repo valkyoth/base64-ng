@@ -20,6 +20,7 @@ include = [
     "kani/**",
     "api-snapshots/**",
     "portability/2_0_migration_smoke/src/**",
+    "portability/2_0_no_std_alloc_smoke/src/**",
     "portability/aarch64_static_neon_smoke/src/**",
     "portability/feature_contract_smoke/src/**",
     "portability/feature_unification_smoke/src/**",
