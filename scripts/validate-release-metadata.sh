@@ -122,6 +122,11 @@ test -x scripts/generate_release_history.py
 test -x scripts/validate-release-readiness.sh
 test -x scripts/finalize-release-evidence.sh
 test -x scripts/release_wasm_loader.sh
+test -x scripts/verify-release-tag.sh
+test -x scripts/validate-release-evidence-outcomes.sh
+test -x scripts/test-release-evidence-outcomes.sh
+test -x scripts/test-release-tag-policy.sh
+test -s security/release-signers
 test -s scripts/test-release-crates.py
 test -x scripts/test-release-readiness.sh
 test -s scripts/ct-asm-symbols.sh
@@ -239,6 +244,10 @@ for required_script in \
     "scripts/stable_release_gate.sh" \
     "scripts/finalize-release-evidence.sh" \
     "scripts/release_wasm_loader.sh" \
+    "scripts/verify-release-tag.sh" \
+    "scripts/validate-release-evidence-outcomes.sh" \
+    "scripts/test-release-evidence-outcomes.sh" \
+    "scripts/test-release-tag-policy.sh" \
     "scripts/validate-constant-time-policy.sh" \
     "scripts/validate-2.0-timing-boundaries.sh" \
     "scripts/validate-dependencies.sh" \
@@ -513,7 +522,7 @@ done
 for required_wasm_publish_text in \
     'scripts/check-2.0-wasm-loader.sh' \
     'git status --porcelain --untracked-files=all' \
-    'git tag -v' \
+    'scripts/verify-release-tag.sh "$tag"' \
     'npm publish --dry-run' \
     'npm publish --provenance'
 do

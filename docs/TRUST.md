@@ -57,7 +57,8 @@ of the published runtime trusted computing base.
 | Audit | RustSec and cargo-deny advisory checks required on every change and daily while the repository is dormant | `cargo audit`, `scripts/checks.sh`, `scripts/check_scheduled_advisories.sh`, scheduled security-audit workflow |
 | License policy | `cargo deny` and `cargo license --json` required | `deny.toml`, `scripts/checks.sh` |
 | SBOM | SPDX and CycloneDX SBOM generation in release evidence | `scripts/generate-sbom.sh` |
-| Reproducibility | Package/build reproducibility check in release gate | `scripts/stable_release_gate.sh` |
+| Reproducibility | Package/build reproducibility check uses tool-created temporary targets and atomically records compared `.rlib`, package-list, and `.crate` artifacts | `scripts/reproducible_build_check.sh`, `scripts/stable_release_gate.sh` |
+| Release authorization | Rust and npm publishers require an immutable tag signed by the pinned project SSH principal/key; npm publication additionally requires registry provenance | `security/release-signers`, `scripts/verify-release-tag.sh`, `scripts/release_crates.py`, `scripts/release_wasm_loader.sh` |
 | CI bootstrap | Runner-provided `rustup`/`cargo` required; CI refuses `curl \| sh` rustup bootstrap | `scripts/ci_install_rust.sh` |
 
 ## Deployment Checks

@@ -7,6 +7,7 @@ const packageRoot = fileURLToPath(new URL("../", import.meta.url));
 const repositoryRoot = await realpath(fileURLToPath(new URL("../../../", import.meta.url)));
 const manifest = fileURLToPath(new URL("../wasm/Cargo.toml", import.meta.url));
 const artifacts = fileURLToPath(new URL("../artifacts/", import.meta.url));
+const sourceCommit = await resolveSourceCommit();
 
 await rm(artifacts, { recursive: true, force: true });
 await mkdir(artifacts, { recursive: true });
@@ -14,7 +15,7 @@ await mkdir(artifacts, { recursive: true });
 await build("scalar", [], "");
 await build("simd128", ["--features", "simd"], "target-feature=+simd128");
 await writeChecksums();
-await writeProvenance();
+await writeProvenance(sourceCommit);
 
 async function build(name, features, targetFeatures) {
   const targetDir = fileURLToPath(new URL(`../target-${name}/`, import.meta.url));
@@ -59,16 +60,10 @@ async function writeChecksums() {
   await writeFile(`${artifacts}/SHA256SUMS`, `${lines.join("\n")}\n`);
 }
 
-async function writeProvenance() {
+async function writeProvenance(sourceCommit) {
   const packageMetadata = JSON.parse(
     await readFile(`${packageRoot}/package.json`, "utf8"),
   );
-  const sourceCommit = process.env.BASE64_NG_SOURCE_COMMIT
-    ?? await capture("git", ["rev-parse", "HEAD"], repositoryRoot);
-  if (!/^[0-9a-f]{40}$/u.test(sourceCommit)) {
-    throw new Error("BASE64_NG_SOURCE_COMMIT must be a full lowercase Git commit");
-  }
-
   const artifactsByName = {};
   for (const name of ["base64-ng-scalar.wasm", "base64-ng-simd128.wasm"]) {
     const bytes = await readFile(`${artifacts}/${name}`);
@@ -85,6 +80,37 @@ async function writeProvenance() {
     `${artifacts}/PROVENANCE.json`,
     `${JSON.stringify(provenance, null, 2)}\n`,
   );
+}
+
+async function resolveSourceCommit() {
+  const requested = process.env.BASE64_NG_SOURCE_COMMIT;
+  if (requested !== undefined && !/^[0-9a-f]{40}$/u.test(requested)) {
+    throw new Error("BASE64_NG_SOURCE_COMMIT must be a full lowercase Git commit");
+  }
+
+  let head;
+  try {
+    head = await capture("git", ["rev-parse", "--verify", "HEAD"], repositoryRoot);
+  } catch (error) {
+    if (process.env.BASE64_NG_ALLOW_SOURCE_COMMIT_WITHOUT_GIT !== "1") {
+      throw error;
+    }
+  }
+
+  if (head !== undefined) {
+    if (requested !== undefined && requested !== head) {
+      throw new Error(
+        `BASE64_NG_SOURCE_COMMIT ${requested} does not match HEAD ${head}`,
+      );
+    }
+    return head;
+  }
+  if (requested === undefined) {
+    throw new Error(
+      "BASE64_NG_SOURCE_COMMIT is required only for an explicitly approved Git-free build",
+    );
+  }
+  return requested;
 }
 
 function run(command, args, env) {

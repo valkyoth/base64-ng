@@ -377,7 +377,7 @@ green, then create and push the immutable signed release tag:
 
 ```sh
 git tag -s v2.0.0 -m "base64-ng 2.0.0"
-git tag -v v2.0.0
+scripts/verify-release-tag.sh v2.0.0
 git push origin v2.0.0
 ```
 
@@ -458,9 +458,12 @@ scripts/release_wasm_loader.sh dry-run
 scripts/release_wasm_loader.sh publish
 ```
 
-Use npm trusted publishing or a short-lived password-manager token according to
-the release environment. Set `BASE64_NG_NPM_PROVENANCE=1` when the npm trusted
-publisher supports provenance. Never store an npm token in the repository.
+Real npm publication always uses `npm publish --provenance`; provenance is not
+an optional release-manager toggle. Configure npm trusted publishing in the
+release environment. Never store an npm token in the repository. Both the npm
+and crates.io publishers verify the signed tag against the exact SSH principal
+and public key in `security/release-signers`; a signature that is merely valid
+under a maintainer's ambient keyring is insufficient.
 
 This order is required because companion crates depend on the same released
 `base64-ng` version from crates.io while using a local path only during

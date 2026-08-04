@@ -24,6 +24,8 @@ if [ "$npm_version" != "$rust_version" ]; then
     exit 1
 fi
 
+head="$(git rev-parse --verify HEAD)"
+export BASE64_NG_SOURCE_COMMIT="$head"
 scripts/check-2.0-wasm-loader.sh
 
 if [ "$mode" = "check" ]; then
@@ -37,16 +39,12 @@ if [ -n "$(git status --porcelain --untracked-files=all)" ]; then
 fi
 
 tag="v$npm_version"
-head="$(git rev-parse HEAD)"
 tagged="$(git rev-list -n 1 "$tag" 2>/dev/null || true)"
 if [ "$head" != "$tagged" ]; then
     echo "wasm loader release: HEAD is not tagged as $tag" >&2
     exit 1
 fi
-if ! git tag -v "$tag" >/dev/null 2>&1; then
-    echo "wasm loader release: $tag is not signed or cannot be verified" >&2
-    exit 1
-fi
+scripts/verify-release-tag.sh "$tag"
 
 if [ "$mode" = "dry-run" ]; then
     (cd "$package_dir" && npm publish --dry-run)
@@ -54,10 +52,6 @@ if [ "$mode" = "dry-run" ]; then
     exit 0
 fi
 
-if [ "${BASE64_NG_NPM_PROVENANCE:-0}" = "1" ]; then
-    (cd "$package_dir" && npm publish --provenance)
-else
-    (cd "$package_dir" && npm publish)
-fi
+(cd "$package_dir" && npm publish --provenance)
 
 echo "wasm loader release: published $npm_version from verified $tag"

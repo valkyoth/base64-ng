@@ -248,7 +248,7 @@ def check_release_tag(version: str, *, require_tag: bool) -> None:
         return
 
     tag_signature = subprocess.run(
-        ["git", "tag", "-v", tag],
+        [str(ROOT / "scripts" / "verify-release-tag.sh"), tag],
         cwd=ROOT,
         check=False,
         stdout=subprocess.PIPE,
@@ -266,7 +266,7 @@ def check_release_tag(version: str, *, require_tag: bool) -> None:
         print(f"Warning: {message}.", file=sys.stderr)
         return
 
-    print(f"Release tag {tag} points at HEAD and has a valid signature.")
+    print(f"Release tag {tag} points at HEAD and has an authorized signature.")
 
 
 def confirm_no_verify(args: argparse.Namespace) -> int:

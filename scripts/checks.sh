@@ -14,6 +14,12 @@ scripts/validate-release-metadata.sh
 echo "checks: generated-evidence source provenance"
 scripts/test-evidence-source.sh
 
+echo "checks: release evidence outcomes"
+scripts/test-release-evidence-outcomes.sh
+
+echo "checks: authorized release signer policy"
+scripts/test-release-tag-policy.sh
+
 echo "checks: portable CT assembly symbol matching"
 scripts/test-ct-asm-symbols.sh
 

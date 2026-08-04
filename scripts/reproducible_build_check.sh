@@ -4,18 +4,22 @@ set -eu
 . scripts/evidence-source.sh
 evidence_capture_source "reproducible build evidence"
 
-first_target="${BASE64_NG_REPRO_TARGET_A:-target/reproducible-a}"
-second_target="${BASE64_NG_REPRO_TARGET_B:-target/reproducible-b}"
 evidence_dir="target/release-evidence/reproducible"
 manifest="$evidence_dir/MANIFEST.txt"
+mkdir -p target "$evidence_dir"
+rm -f "$manifest"
+first_target="$(mktemp -d target/base64-ng-repro-a.XXXXXX)"
+second_target="$(mktemp -d target/base64-ng-repro-b.XXXXXX)"
 scratch="$(mktemp -d "${TMPDIR:-/tmp}/base64-ng-reproducible.XXXXXX")"
-trap 'rm -rf "$scratch"' EXIT INT TERM
+manifest_tmp="$scratch/MANIFEST.txt"
+
+cleanup() {
+    rm -rf "$first_target" "$second_target" "$scratch"
+}
+trap cleanup EXIT INT TERM
 
 SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-$(git log -1 --format=%ct)}"
 export SOURCE_DATE_EPOCH
-
-rm -rf "$first_target" "$second_target"
-mkdir -p "$evidence_dir"
 
 CARGO_TARGET_DIR="$first_target" cargo build --release --locked
 CARGO_TARGET_DIR="$second_target" cargo build --release --locked
@@ -42,6 +46,13 @@ test -s "$first_crate"
 test -s "$second_crate"
 cmp "$first_crate" "$second_crate"
 
+cp "$first_library" "$evidence_dir/release-a.rlib"
+cp "$second_library" "$evidence_dir/release-b.rlib"
+cp "$scratch/package-files-a.txt" "$evidence_dir/package-files-a.txt"
+cp "$scratch/package-files-b.txt" "$evidence_dir/package-files-b.txt"
+cp "$first_crate" "$evidence_dir/base64-ng-a.crate"
+cp "$second_crate" "$evidence_dir/base64-ng-b.crate"
+
 evidence_verify_source "reproducible build evidence"
 
 {
@@ -53,12 +64,13 @@ evidence_verify_source "reproducible build evidence"
     echo "comparisons=release-rlib,package-file-list,crate-archive"
     echo
     echo "artifacts:"
-    evidence_checksum_file "$first_library"
-    evidence_checksum_file "$second_library"
-    evidence_checksum_file "$scratch/package-files-a.txt"
-    evidence_checksum_file "$scratch/package-files-b.txt"
-    evidence_checksum_file "$first_crate"
-    evidence_checksum_file "$second_crate"
-} >"$manifest"
+    evidence_checksum_file "$evidence_dir/release-a.rlib"
+    evidence_checksum_file "$evidence_dir/release-b.rlib"
+    evidence_checksum_file "$evidence_dir/package-files-a.txt"
+    evidence_checksum_file "$evidence_dir/package-files-b.txt"
+    evidence_checksum_file "$evidence_dir/base64-ng-a.crate"
+    evidence_checksum_file "$evidence_dir/base64-ng-b.crate"
+} >"$manifest_tmp"
+mv "$manifest_tmp" "$manifest"
 
 echo "reproducible build check: ok"

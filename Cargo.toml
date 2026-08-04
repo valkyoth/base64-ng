@@ -36,6 +36,7 @@ include = [
     "CONTRIBUTING.md",
     "CHANGELOG.md",
     "release-notes/RELEASE_NOTES_2.0.0.md",
+    "security/release-signers",
     "SECURITY.md",
     "LICENSE-*",
 ]

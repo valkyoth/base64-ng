@@ -10,6 +10,14 @@ if [ ! -d fuzz ]; then
     exit 0
 fi
 
+if [ "${BASE64_NG_RUN_FUZZ_SMOKE:-0}" = "1" ] || \
+    [ "${BASE64_NG_RUN_FUZZ_RELEASE:-0}" = "1" ]; then
+    mkdir -p target/release-evidence/fuzz
+    rm -f \
+        target/release-evidence/fuzz/MANIFEST.txt \
+        target/release-evidence/fuzz/MANIFEST.txt.tmp
+fi
+
 echo "fuzz checks: compile harnesses"
 cargo check --manifest-path fuzz/Cargo.toml --bins
 
@@ -36,6 +44,7 @@ fi
 
 evidence_dir="target/release-evidence/fuzz"
 manifest="$evidence_dir/MANIFEST.txt"
+manifest_tmp="$evidence_dir/MANIFEST.txt.tmp"
 targets="
 decode
 in_place
@@ -77,6 +86,11 @@ else
 fi
 mkdir -p "$evidence_dir"
 
+cleanup_manifest() {
+    rm -f "$manifest_tmp"
+}
+trap cleanup_manifest EXIT INT TERM
+
 . scripts/evidence-source.sh
 evidence_capture_source "fuzz campaign evidence"
 
@@ -101,7 +115,7 @@ evidence_capture_source "fuzz campaign evidence"
     echo "artifact_oracle=zero artifacts required"
     echo
     echo "targets:"
-} >"$manifest"
+} >"$manifest_tmp"
 
 for target in $targets; do
     output="$evidence_dir/$target.txt"
@@ -121,11 +135,10 @@ for target in $targets; do
             exit 1
         fi
         printf '%s=%s corpus=%s artifacts=%s\n' \
-            "$target" "ok" "$corpus_count" "$artifact_count" >>"$manifest"
-        grep '^stat::' "$output" >>"$manifest" || true
+            "$target" "ok" "$corpus_count" "$artifact_count" >>"$manifest_tmp"
+        grep '^stat::' "$output" >>"$manifest_tmp" || true
     else
         cat "$output"
-        printf '%s=%s\n' "$target" "failed" >>"$manifest"
         exit 1
     fi
 done
@@ -156,6 +169,9 @@ evidence_verify_source "fuzz campaign evidence"
     fi
     echo
     echo "minimization: no crashing artifact remained; no crash minimization required"
-} >>"$manifest"
+} >>"$manifest_tmp"
+
+mv "$manifest_tmp" "$manifest"
+trap - EXIT INT TERM
 
 echo "fuzz checks: wrote $evidence_dir"

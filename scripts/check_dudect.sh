@@ -6,6 +6,13 @@ if [ ! -d dudect ]; then
     exit 0
 fi
 
+if [ "${BASE64_NG_RUN_DUDECT:-0}" = "1" ]; then
+    mkdir -p target/release-evidence/dudect
+    rm -f \
+        target/release-evidence/dudect/MANIFEST.txt \
+        target/release-evidence/dudect/MANIFEST.txt.tmp
+fi
+
 echo "dudect checks: compile timing harness"
 cargo check --manifest-path dudect/Cargo.toml --bins
 
@@ -22,6 +29,7 @@ if [ "${BASE64_NG_RUN_DUDECT:-0}" = "1" ]; then
     evidence_dir="target/release-evidence/dudect"
     output_file="$evidence_dir/dudect-output.txt"
     manifest="$evidence_dir/MANIFEST.txt"
+    manifest_tmp="$evidence_dir/MANIFEST.txt.tmp"
     samples="${BASE64_NG_DUDECT_SAMPLES:-20000}"
     iterations="${BASE64_NG_DUDECT_ITERS:-64}"
     threshold="${BASE64_NG_DUDECT_THRESHOLD:-10}"
@@ -45,6 +53,11 @@ if [ "${BASE64_NG_RUN_DUDECT:-0}" = "1" ]; then
     echo "dudect checks: run timing harness"
     mkdir -p "$evidence_dir"
 
+    cleanup_manifest() {
+        rm -f "$manifest_tmp"
+    }
+    trap cleanup_manifest EXIT INT TERM
+
     status=0
     cargo run --release --manifest-path dudect/Cargo.toml -- \
         --samples "$samples" \
@@ -54,6 +67,10 @@ if [ "${BASE64_NG_RUN_DUDECT:-0}" = "1" ]; then
 
     cat "$output_file"
     evidence_verify_source "dudect timing evidence"
+
+    if [ "$status" -ne 0 ]; then
+        exit "$status"
+    fi
 
     {
         echo "base64-ng dudect-style timing evidence"
@@ -108,13 +125,13 @@ if [ "${BASE64_NG_RUN_DUDECT:-0}" = "1" ]; then
         echo "Whole-call valid/invalid equality is not claimed because success performs a post-gate release copy."
         echo "Ordinary SIMD is compiled into the binary, but reviewed secret states remain scalar and do not dispatch to it."
         echo "It does not replace generated-code review, Kani, Miri, fuzzing, or deterministic tests."
-    } >"$manifest"
+    } >"$manifest_tmp"
+
+    mv "$manifest_tmp" "$manifest"
+    trap - EXIT INT TERM
 
     echo "dudect checks: wrote $evidence_dir"
 
-    if [ "$status" -ne 0 ]; then
-        exit "$status"
-    fi
 else
     echo "dudect checks: timing run skipped; set BASE64_NG_RUN_DUDECT=1 to execute it"
 fi

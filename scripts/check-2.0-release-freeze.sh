@@ -73,8 +73,8 @@ grep -F -q 'base64-ng-wasm-provenance-v1' \
     fail "wasm build does not emit source provenance"
 grep -F -q 'BASE64_NG_SOURCE_COMMIT' scripts/check-2.0-wasm-loader.sh ||
     fail "wasm package gate does not bind the source commit"
-grep -F -q 'git tag -v' scripts/release_wasm_loader.sh ||
-    fail "wasm package publisher does not verify the signed release tag"
+grep -F -q 'scripts/verify-release-tag.sh "$tag"' scripts/release_wasm_loader.sh ||
+    fail "wasm package publisher does not verify the authorized release signer"
 
 scripts/check-2.0-migration-smoke.sh
 scripts/check_migration_smoke.sh

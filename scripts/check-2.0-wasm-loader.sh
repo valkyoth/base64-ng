@@ -60,6 +60,13 @@ RUSTFLAGS='-C target-feature=+simd128' \
 
 echo "2.0 wasm loader: deterministic scalar and simd128 artifacts"
 (cd "$package_dir" && npm ci --ignore-scripts && npm run build)
+if (cd "$package_dir" && \
+    BASE64_NG_SOURCE_COMMIT=0000000000000000000000000000000000000000 \
+    npm run build >/dev/null 2>&1)
+then
+    echo "2.0 wasm loader: build accepted provenance that did not match HEAD" >&2
+    exit 1
+fi
 (cd "$package_dir/artifacts" && sha256sum -c SHA256SUMS)
 python3 - "$package_dir/artifacts/PROVENANCE.json" "$source_commit" <<'PY'
 import json
@@ -95,7 +102,8 @@ git ls-files --cached --others --exclude-standard | while IFS= read -r tracked_f
     mkdir -p "$alternate_root/$(dirname "$tracked_file")"
     cp "$tracked_file" "$alternate_root/$tracked_file"
 done
-(cd "$alternate_root/$package_dir" && npm run build)
+(cd "$alternate_root/$package_dir" && \
+    BASE64_NG_ALLOW_SOURCE_COMMIT_WITHOUT_GIT=1 npm run build)
 sha256sum "$alternate_root/$package_dir"/artifacts/*.wasm \
     | awk '{ print $1 }' >"$evidence_dir/artifacts-alternate-path.sha256"
 sha256sum "$package_dir"/artifacts/*.wasm \
@@ -112,7 +120,8 @@ done
 
 echo "2.0 wasm loader: Node/V8 differential and hostile-input tests"
 (cd "$package_dir" && npm test)
-(cd "$package_dir" && node test/benchmark.mjs) | tee "$evidence_dir/node-benchmark.json"
+(cd "$package_dir" && node test/benchmark.mjs) >"$evidence_dir/node-benchmark.json"
+cat "$evidence_dir/node-benchmark.json"
 
 if command -v wasmtime >/dev/null 2>&1; then
     echo "2.0 wasm loader: Wasmtime scalar and simd128 self-tests"

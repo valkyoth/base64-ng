@@ -4,6 +4,11 @@ set -eu
 toolchain="${BASE64_NG_SANITIZER_TOOLCHAIN:-nightly}"
 target="${BASE64_NG_SANITIZER_TARGET:-x86_64-unknown-linux-gnu}"
 
+mkdir -p target/release-evidence/2.0-memory-sanitizers
+rm -f \
+    target/release-evidence/2.0-memory-sanitizers/MANIFEST.txt \
+    target/release-evidence/2.0-memory-sanitizers/MANIFEST.txt.tmp
+
 . scripts/evidence-source.sh
 evidence_capture_source "2.0 sanitizer evidence"
 
@@ -22,7 +27,13 @@ address_log="$evidence_dir/address-sanitizer.txt"
 leak_log="$evidence_dir/leak-sanitizer.txt"
 thread_log="$evidence_dir/thread-sanitizer.txt"
 manifest="$evidence_dir/MANIFEST.txt"
+manifest_tmp="$evidence_dir/MANIFEST.txt.tmp"
 mkdir -p "$evidence_dir"
+
+cleanup_manifest() {
+    rm -f "$manifest_tmp"
+}
+trap cleanup_manifest EXIT INT TERM
 
 echo "2.0 in-place sanitizers: AddressSanitizer overlap and cursor suite"
 if env \
@@ -92,6 +103,12 @@ fi
 
 evidence_verify_source "2.0 sanitizer evidence"
 
+for status in "$address_status" "$leak_status" "$thread_status"; do
+    if [ "$status" -ne 0 ]; then
+        exit "$status"
+    fi
+done
+
 {
     echo "base64-ng 2.0 in-place sanitizer evidence"
     echo
@@ -109,12 +126,9 @@ evidence_verify_source "2.0 sanitizer evidence"
     else
         shasum -a 256 "$address_log" "$leak_log" "$thread_log"
     fi
-} >"$manifest"
+} >"$manifest_tmp"
 
-for status in "$address_status" "$leak_status" "$thread_status"; do
-    if [ "$status" -ne 0 ]; then
-        exit "$status"
-    fi
-done
+mv "$manifest_tmp" "$manifest"
+trap - EXIT INT TERM
 
 echo "2.0 memory sanitizers: ok"

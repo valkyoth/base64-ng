@@ -282,7 +282,10 @@ def test_release_tag_check_requires_valid_signature() -> None:
         release_crates.try_capture = original_try_capture
         release_crates.subprocess.run = original_run
 
-    assert ("git", "tag", "-v", "v1.0.10") in calls
+    assert (
+        str(release_crates.ROOT / "scripts" / "verify-release-tag.sh"),
+        "v1.0.10",
+    ) in calls
 
 
 def test_release_tag_check_rejects_unverified_required_tag() -> None:

@@ -154,8 +154,9 @@ record.
 `scripts/check-2.0-wasm-loader.sh`. It measures scalar and `simd128` artifact
 behavior under the installed Node/V8 runtime using a 768 KiB payload whose
 encoded form reaches the 1 MiB input ceiling. Correctness is checked before
-timing. The local gate requires SIMD encode and decode to beat scalar in that
-exact run and records runtime version, durations, and ratios in
+timing. Seven alternating scalar/SIMD samples suppress isolated JIT, scheduler,
+or garbage-collection outliers; the local gate requires the SIMD encode and
+decode medians to beat scalar and records runtime version, durations, and ratios in
 `target/release-evidence/wasm-loader/node-benchmark.json`.
 
 Browser smoke reports observational scalar/SIMD encode timing but does not use

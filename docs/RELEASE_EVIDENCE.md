@@ -37,8 +37,12 @@ candidate.
 before Commit 55. `scripts/finalize-release-evidence.sh` rejects missing,
 dirty-tree, or stale-source Miri, sanitizer, release-duration fuzz, dudect,
 normal/advanced Kani, assembly, native-hardware, and SBOM artifacts and writes
-`target/release-evidence/FINAL-MANIFEST.txt`. Release mode repeats this exact
-campaign for the report-only Commit 55 tag candidate.
+`target/release-evidence/FINAL-MANIFEST.txt`. It also requires explicit success
+for every Miri and sanitizer scope, dudect, backend evidence, both Kani sets,
+and every named fuzz target. Fuzz, dudect, sanitizer, reproducibility, and final
+index manifests are published atomically only after successful completion, so
+an interrupted or failed run cannot leave a final-looking manifest. Release
+mode repeats this exact campaign for the report-only Commit 55 tag candidate.
 
 Commit 51 completes the isolated fuzz and property inventory. Eighteen targets
 cover ordinary/runtime codecs, forced native backends, incremental/in-place
