@@ -35,7 +35,9 @@ The compatibility wrapper types clear their initialized bytes on drop as a
 retention-reduction measure, but they remain ordinary interoperability types.
 Human-readable formats receive a string; binary formats receive a byte string
 containing the same Base64 text. Deserialization prefers borrowed encoded
-input and allocates only the exact decoded vector.
+input and allocates only the exact decoded vector. Compatibility adapters cap
+decoded output at 1 MiB by default and reject encoded input beyond the derived
+ceiling before full validation.
 
 ```rust
 use base64_ng_serde::Base64Standard;
@@ -58,7 +60,23 @@ struct Message {
 Available field modules are `standard`, `standard_no_pad`, `url_safe`,
 `url_safe_no_pad`, `mime`, and `pem`. MIME and PEM use the strict wrapping
 profiles from `base64-ng` and stream body bytes without a compacted encoded
-copy.
+copy. Protocols should select their own smaller limit with
+`deserialize_with_limit`:
+
+```rust
+fn deserialize_payload<'de, D>(deserializer: D) -> Result<Vec<u8>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    base64_ng_serde::standard::deserialize_with_limit::<D, 4096>(deserializer)
+}
+
+#[derive(serde::Deserialize)]
+struct LimitedMessage {
+    #[serde(deserialize_with = "deserialize_payload")]
+    payload: Vec<u8>,
+}
+```
 
 Fixed-capacity ordinary fields use matching modules below `bounded`:
 
@@ -71,6 +89,11 @@ struct BoundedMessage {
     payload: DecodedArray<32>,
 }
 ```
+
+`DecodedArray<CAP>` field adapters support capacities through 4096 bytes and
+reject larger capacities at compile time. Their encoded-input ceiling is also
+checked before full validation. Neither limit can prevent a JSON, CBOR, or
+other upstream Serde format from allocating while parsing the encoded value.
 
 Enable `secrets` for fixed-work Standard and URL-safe deserialization into
 wiping `base64_ng::secret::SecretArray<CAP>`. Serde format parsing before the

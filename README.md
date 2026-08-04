@@ -487,10 +487,14 @@ struct Message {
 
 Field-level modules are available for `standard`, `standard_no_pad`,
 `url_safe`, `url_safe_no_pad`, `mime`, and `pem`. Matching `bounded::*`
-modules decode into fixed-capacity `DecodedArray<CAP>` values. The optional
-`secret::*` modules decode strict Standard and URL-safe fields through
-fixed-work frames into wiping `SecretArray<CAP>` storage. General Serde format
-parsing remains timing-variable and outside that secret boundary.
+modules decode into fixed-capacity `DecodedArray<CAP>` values. Allocating
+compatibility adapters enforce a 1 MiB decoded default; every ordinary field
+module also offers `deserialize_with_limit::<D, MAX>`, while stack-backed
+adapters cap `CAP` at 4096 bytes. Derived encoded-input ceilings run before
+full validation. The optional `secret::*` modules decode strict Standard and
+URL-safe fields through fixed-work frames into wiping `SecretArray<CAP>`
+storage. General Serde format parsing and any parser-owned allocation remain
+outside these boundaries.
 
 `base64-ng-bytes` provides fragment-preserving `Bytes`, `Buf`, and `BufMut`
 helpers over the sealed 2.0 codec. Owned results are transactional, while

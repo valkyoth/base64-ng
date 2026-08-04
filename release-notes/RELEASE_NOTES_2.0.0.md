@@ -27,6 +27,9 @@
   recovery semantics.
 - Publishes synchronized Serde, bytes, subtle, derive, sanitization, Tokio,
   MIME, PEM, multibase, IMAP, password-record, and OpenPGP companions.
+- Bounds ordinary Serde compatibility decode to 1 MiB by default, adds
+  protocol-selected const-generic limits, rejects oversized encoded input
+  before full validation, and caps stack-backed ordinary fields at 4096 bytes.
 - Makes password-record work limits cumulative across validation and transform
   passes, admits generation work before allocation, and release-gates
   executable caller-owned behavior without `alloc`.

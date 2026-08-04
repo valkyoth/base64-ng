@@ -47,6 +47,11 @@ The current reviewed exceptions are:
   an inline const assertion that rejects stack capacities above 1,024 bytes.
   The capacity is selected at compile time, not derived from runtime input;
   larger secrets must use bounded fallible heap or protected-mapping helpers.
+- `base64-ng-serde` bounded ordinary adapters evaluate an inline const
+  assertion that rejects stack capacities above 4,096 bytes. The Serde release
+  gate builds a `CAP = 4097` fixture and requires that exact const-evaluation
+  failure. Runtime input cannot select this type-level capacity; larger
+  ordinary values must use an allocating adapter with an explicit limit.
 - `Engine::encode_array` may panic during const evaluation when the caller
   supplies an output array length that does not match the compile-time encoded
   length, or when that const length calculation overflows. This is documented

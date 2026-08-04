@@ -132,6 +132,14 @@ The sanitization companion's fixed, staged, bounded, and default-limited secret
 helpers derive and enforce an encoded-input ceiling before entering that scan;
 custom direct uses of `ct::CtEngine` still require a caller-owned input limit.
 
+The Serde companion's ordinary compatibility adapters enforce a 1 MiB decoded
+default, expose protocol-specific const-generic limits, and reject encoded
+input beyond the derived ceiling before full validation or decoded-output
+allocation. Its stack-backed ordinary adapters reject capacities above 4096
+bytes at compile time. These controls do not bound allocations made by the
+upstream Serde data format before it delivers the encoded value; configure
+parser-level input and nesting limits separately.
+
 The redacted buffer comparison helpers are dependency-free best-effort
 equal-length scans, not audited MAC, bearer-token, password-hash, or
 authentication-secret comparison primitives. High-assurance applications that

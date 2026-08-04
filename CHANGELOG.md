@@ -11,6 +11,9 @@
 - The explicitly approved pre-seal usability reopening adds an `alloc`-only
   `Base64String<S>` that retains its exact codec policy and a deliberately
   small ordinary prelude. Secret and compatibility APIs remain explicit.
+- Serde compatibility deserialization now has a 1 MiB decoded default,
+  protocol-specific const-generic limits, pre-validation encoded-input
+  ceilings, and a 4096-byte compile-time ceiling for ordinary stack adapters.
 - Sanitization dynamic secret decode now enforces a 1 MiB safe default or an
   explicit const-generic output limit, reserves fallibly, and rejects
   insufficient staging before allocation. Companion stack secret arrays are

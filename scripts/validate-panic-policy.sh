@@ -66,6 +66,9 @@ check_file() {
             if ($0 ~ /panic!\("sanitization secret staging exceeds the 1024-byte stack limit"\)/) {
                 allowed = 1
             }
+            if ($0 ~ /panic!\("Serde decoded capacity exceeds the supported 4096-byte stack limit"\)/) {
+                allowed = 1
+            }
             if ($0 ~ /panic!\("base64-ng-sanitization locked secret integrity failure: \{error\}"\)/) {
                 allowed = 1
             }

@@ -221,6 +221,13 @@ Panics from caller-provided I/O or trait implementations may propagate after
 crate-owned state is latched and cleaned; side effects already performed by
 the caller implementation cannot be rolled back.
 
+Serde compatibility adapters now default to a 1 MiB decoded-output limit.
+Use each field module's `deserialize_with_limit::<D, MAX>` for a protocol
+ceiling, or `bounded::*` with `DecodedArray<CAP>` for ordinary stack-backed
+output through 4096 bytes. These adapters reject encoded input beyond the
+derived ceiling before full validation, but upstream parser allocation remains
+the application's responsibility.
+
 ## Protocol Companions
 
 Use the scoped package instead of combining ordinary Base64 helpers into a

@@ -1,8 +1,10 @@
 //! Fixed-capacity ordinary Serde field adapters.
 //!
-//! These modules keep Base64-owned decoded storage on the stack. They do not
-//! bound allocation performed by the upstream data format before the encoded
-//! value reaches this crate.
+//! These modules keep Base64-owned decoded storage on the stack, reject
+//! capacities above [`crate::MAX_SERDE_STACK_DECODED_BYTES`] at compile time,
+//! and reject encoded input beyond the derived public ceiling before full
+//! validation. They do not bound allocation performed by the upstream data
+//! format before the encoded value reaches this crate.
 
 use base64_ng::{
     DecodedArray, MIME_BODY_STRICT, PEM_BODY_LF, STRICT_STANDARD_PADDED, STRICT_STANDARD_UNPADDED,
@@ -34,6 +36,10 @@ macro_rules! bounded_codec_module {
             }
 
             /// Deserializes into fixed-capacity ordinary decoded storage.
+            ///
+            /// `CAP` may not exceed
+            /// [`crate::MAX_SERDE_STACK_DECODED_BYTES`]. Encoded input beyond
+            /// its derived public ceiling is rejected before full validation.
             ///
             /// # Errors
             ///
@@ -97,6 +103,11 @@ macro_rules! bounded_body_module {
             }
 
             /// Deserializes wrapped Base64 into fixed-capacity ordinary storage.
+            ///
+            /// `CAP` may not exceed
+            /// [`crate::MAX_SERDE_STACK_DECODED_BYTES`]. Encoded body input
+            /// beyond its derived wrapped ceiling is rejected before layout
+            /// validation.
             ///
             /// # Errors
             ///

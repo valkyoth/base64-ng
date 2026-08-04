@@ -18,7 +18,11 @@
 //!
 //! # Bounds and secrecy
 //!
-//! Limits in this crate cover Base64-owned decoded output and intermediate
+//! Allocating compatibility adapters enforce
+//! [`DEFAULT_SERDE_DECODE_MAX_LEN`] by default and expose caller-selected
+//! `deserialize_with_limit` functions. Stack-backed adapters reject capacities
+//! above [`MAX_SERDE_STACK_DECODED_BYTES`] at compile time. These limits cover
+//! Base64-owned validation work, decoded output, and intermediate
 //! materialization only. A data format may allocate while parsing before its
 //! Serde deserializer delivers a string or byte slice; that allocation is
 //! outside this crate's control.
@@ -36,6 +40,8 @@ extern crate alloc;
 
 #[cfg(feature = "alloc")]
 mod adapter;
+#[cfg(feature = "alloc")]
+mod adapter_decode;
 #[cfg(feature = "secrets")]
 mod adapter_secret;
 #[cfg(all(test, feature = "secrets"))]
@@ -44,6 +50,8 @@ mod adapter_tests;
 pub mod bounded;
 #[cfg(feature = "alloc")]
 mod fields;
+#[cfg(feature = "alloc")]
+mod limits;
 #[cfg(feature = "secrets")]
 pub mod secret;
 
@@ -56,6 +64,8 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 #[cfg(feature = "alloc")]
 pub use fields::{mime, pem, standard, standard_no_pad, url_safe, url_safe_no_pad};
+#[cfg(feature = "alloc")]
+pub use limits::{DEFAULT_SERDE_DECODE_MAX_LEN, MAX_SERDE_STACK_DECODED_BYTES};
 
 /// Owned bytes serialized as strict Standard padded Base64.
 ///

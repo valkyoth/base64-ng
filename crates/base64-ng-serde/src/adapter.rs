@@ -8,6 +8,9 @@ use base64_ng::{
 };
 use serde::{Deserializer, Serializer, de::Visitor};
 
+use crate::adapter_decode::{BodyBoundedDecoder, BodyVecDecoder, BoundedDecoder, VecDecoder};
+use crate::limits::{DEFAULT_SERDE_DECODE_MAX_LEN, enforce_stack_capacity};
+
 #[cfg(feature = "secrets")]
 use crate::adapter_secret::{SecretInputVisitor, WipingOwnedInput};
 
@@ -36,7 +39,7 @@ impl fmt::Display for AdapterError {
     }
 }
 
-fn map_one_shot(error: OneShotError) -> AdapterError {
+pub(crate) fn map_one_shot(error: OneShotError) -> AdapterError {
     match error {
         OneShotError::Input(error) => AdapterError::InvalidInput(error.kind().as_str()),
         OneShotError::OutputTooSmall { .. } | OneShotError::AllocationLimitExceeded { .. } => {
@@ -115,7 +118,25 @@ where
     C: Codec,
     D: Deserializer<'de>,
 {
-    deserialize_input(deserializer, InputVisitor(VecDecoder { codec }))
+    deserialize_vec_with_limit(codec, deserializer, DEFAULT_SERDE_DECODE_MAX_LEN)
+}
+
+pub(crate) fn deserialize_vec_with_limit<'de, C, D>(
+    codec: &Base64<C>,
+    deserializer: D,
+    maximum_decoded: usize,
+) -> Result<Vec<u8>, D::Error>
+where
+    C: Codec,
+    D: Deserializer<'de>,
+{
+    deserialize_input(
+        deserializer,
+        InputVisitor(VecDecoder {
+            codec,
+            maximum_decoded,
+        }),
+    )
 }
 
 pub(crate) fn deserialize_body_vec<'de, C, D>(
@@ -126,7 +147,25 @@ where
     C: Codec,
     D: Deserializer<'de>,
 {
-    deserialize_input(deserializer, InputVisitor(BodyVecDecoder { body }))
+    deserialize_body_vec_with_limit(body, deserializer, DEFAULT_SERDE_DECODE_MAX_LEN)
+}
+
+pub(crate) fn deserialize_body_vec_with_limit<'de, C, D>(
+    body: &BodyCodec<C>,
+    deserializer: D,
+    maximum_decoded: usize,
+) -> Result<Vec<u8>, D::Error>
+where
+    C: Codec,
+    D: Deserializer<'de>,
+{
+    deserialize_input(
+        deserializer,
+        InputVisitor(BodyVecDecoder {
+            body,
+            maximum_decoded,
+        }),
+    )
 }
 
 pub(crate) fn deserialize_bounded<'de, C, D, const CAP: usize>(
@@ -137,6 +176,7 @@ where
     C: Codec,
     D: Deserializer<'de>,
 {
+    const { enforce_stack_capacity::<CAP>() }
     deserialize_input(
         deserializer,
         InputVisitor(BoundedDecoder::<C, CAP> { codec }),
@@ -151,6 +191,7 @@ where
     C: Codec,
     D: Deserializer<'de>,
 {
+    const { enforce_stack_capacity::<CAP>() }
     deserialize_input(
         deserializer,
         InputVisitor(BodyBoundedDecoder::<C, CAP> { body }),
@@ -224,67 +265,6 @@ impl<'de, T: DecodeInput> Visitor<'de> for InputVisitor<T> {
     }
 }
 
-struct VecDecoder<'a, C> {
-    codec: &'a Base64<C>,
-}
-
-impl<C: Codec> DecodeInput for VecDecoder<'_, C> {
-    type Output = Vec<u8>;
-
-    fn decode(self, input: &[u8]) -> Result<Self::Output, AdapterError> {
-        self.codec.decode_to_vec(input).map_err(map_one_shot)
-    }
-}
-
-struct BoundedDecoder<'a, C, const CAP: usize> {
-    codec: &'a Base64<C>,
-}
-
-impl<C: Codec, const CAP: usize> DecodeInput for BoundedDecoder<'_, C, CAP> {
-    type Output = DecodedArray<CAP>;
-
-    fn decode(self, input: &[u8]) -> Result<Self::Output, AdapterError> {
-        self.codec.decode_bounded(input).map_err(map_one_shot)
-    }
-}
-
-struct BodyVecDecoder<'a, C> {
-    body: &'a BodyCodec<C>,
-}
-
-impl<C: Codec> DecodeInput for BodyVecDecoder<'_, C> {
-    type Output = Vec<u8>;
-
-    fn decode(self, input: &[u8]) -> Result<Self::Output, AdapterError> {
-        let required = body_decoded_len(self.body, input)?;
-        let mut output = Vec::new();
-        output
-            .try_reserve_exact(required)
-            .map_err(|_| AdapterError::AllocationFailed)?;
-        output.resize(required, 0);
-        decode_body_into(self.body, input, &mut output)?;
-        Ok(output)
-    }
-}
-
-struct BodyBoundedDecoder<'a, C, const CAP: usize> {
-    body: &'a BodyCodec<C>,
-}
-
-impl<C: Codec, const CAP: usize> DecodeInput for BodyBoundedDecoder<'_, C, CAP> {
-    type Output = DecodedArray<CAP>;
-
-    fn decode(self, input: &[u8]) -> Result<Self::Output, AdapterError> {
-        let required = body_decoded_len(self.body, input)?;
-        if required > CAP {
-            return Err(AdapterError::OutputLimit);
-        }
-        let mut output = [0u8; CAP];
-        let written = decode_body_into(self.body, input, &mut output)?;
-        DecodedArray::from_array(output, written).map_err(|_| AdapterError::InternalFailure)
-    }
-}
-
 #[cfg(feature = "secrets")]
 struct SecretDecoder<'a, C, const CAP: usize> {
     codec: &'a Base64<C>,
@@ -342,7 +322,10 @@ fn encode_body<C: Codec>(body: &BodyCodec<C>, input: &[u8]) -> Result<String, Ad
     String::from_utf8(output).map_err(|_| AdapterError::InternalFailure)
 }
 
-fn body_decoded_len<C: Codec>(body: &BodyCodec<C>, input: &[u8]) -> Result<usize, AdapterError> {
+pub(crate) fn body_decoded_len<C: Codec>(
+    body: &BodyCodec<C>,
+    input: &[u8],
+) -> Result<usize, AdapterError> {
     require_body_layout(body, input)?;
     let mut decoder = body.codec().decoder();
     let mut scratch = [0u8; 3];
@@ -378,7 +361,7 @@ fn body_decoded_len<C: Codec>(body: &BodyCodec<C>, input: &[u8]) -> Result<usize
     Ok(written)
 }
 
-fn decode_body_into<C: Codec>(
+pub(crate) fn decode_body_into<C: Codec>(
     body: &BodyCodec<C>,
     input: &[u8],
     output: &mut [u8],

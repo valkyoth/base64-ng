@@ -41,6 +41,24 @@ macro_rules! codec_field_module {
             {
                 crate::adapter::deserialize_vec(&$codec, deserializer)
             }
+
+            /// Deserializes Base64 text with a caller-selected decoded limit.
+            ///
+            /// Encoded input beyond the derived public ceiling is rejected
+            /// before full validation or decoded-output allocation.
+            ///
+            /// # Errors
+            ///
+            /// Returns a redacted deserializer error for a limit violation,
+            /// malformed input, allocation failure, or transform failure.
+            pub fn deserialize_with_limit<'de, D, const MAX: usize>(
+                deserializer: D,
+            ) -> Result<Vec<u8>, D::Error>
+            where
+                D: Deserializer<'de>,
+            {
+                crate::adapter::deserialize_vec_with_limit(&$codec, deserializer, MAX)
+            }
         }
     };
 }
@@ -79,6 +97,25 @@ macro_rules! body_field_module {
                 D: Deserializer<'de>,
             {
                 crate::adapter::deserialize_body_vec(&$body, deserializer)
+            }
+
+            /// Deserializes wrapped Base64 with a caller-selected decoded limit.
+            ///
+            /// Encoded body input beyond the derived wrapped ceiling is
+            /// rejected before layout validation or decoded-output allocation.
+            ///
+            /// # Errors
+            ///
+            /// Returns a redacted deserializer error for a limit violation,
+            /// malformed input or layout, allocation failure, or transform
+            /// failure.
+            pub fn deserialize_with_limit<'de, D, const MAX: usize>(
+                deserializer: D,
+            ) -> Result<Vec<u8>, D::Error>
+            where
+                D: Deserializer<'de>,
+            {
+                crate::adapter::deserialize_body_vec_with_limit(&$body, deserializer, MAX)
             }
         }
     };

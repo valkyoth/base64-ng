@@ -26,9 +26,11 @@ pub fn base64_ng_serde::bounded::url_safe_no_pad::deserialize_exact<'de, D, cons
 pub fn base64_ng_serde::bounded::url_safe_no_pad::serialize<S, const CAP: usize>(&base64_ng::v2::bounded::DecodedArray<CAP>, S) -> core::result::Result<<S as serde_core::ser::Serializer>::Ok, <S as serde_core::ser::Serializer>::Error> where S: serde_core::ser::Serializer
 pub mod base64_ng_serde::mime
 pub fn base64_ng_serde::mime::deserialize<'de, D>(D) -> core::result::Result<alloc::vec::Vec<u8>, <D as serde_core::de::Deserializer>::Error> where D: serde_core::de::Deserializer<'de>
+pub fn base64_ng_serde::mime::deserialize_with_limit<'de, D, const MAX: usize>(D) -> core::result::Result<alloc::vec::Vec<u8>, <D as serde_core::de::Deserializer>::Error> where D: serde_core::de::Deserializer<'de>
 pub fn base64_ng_serde::mime::serialize<S>(impl core::convert::AsRef<[u8]>, S) -> core::result::Result<<S as serde_core::ser::Serializer>::Ok, <S as serde_core::ser::Serializer>::Error> where S: serde_core::ser::Serializer
 pub mod base64_ng_serde::pem
 pub fn base64_ng_serde::pem::deserialize<'de, D>(D) -> core::result::Result<alloc::vec::Vec<u8>, <D as serde_core::de::Deserializer>::Error> where D: serde_core::de::Deserializer<'de>
+pub fn base64_ng_serde::pem::deserialize_with_limit<'de, D, const MAX: usize>(D) -> core::result::Result<alloc::vec::Vec<u8>, <D as serde_core::de::Deserializer>::Error> where D: serde_core::de::Deserializer<'de>
 pub fn base64_ng_serde::pem::serialize<S>(impl core::convert::AsRef<[u8]>, S) -> core::result::Result<<S as serde_core::ser::Serializer>::Ok, <S as serde_core::ser::Serializer>::Error> where S: serde_core::ser::Serializer
 pub mod base64_ng_serde::secret
 pub mod base64_ng_serde::secret::standard
@@ -49,15 +51,19 @@ pub fn base64_ng_serde::secret::url_safe_no_pad::deserialize_exact<'de, D, const
 pub fn base64_ng_serde::secret::url_safe_no_pad::serialize<S, const CAP: usize>(&base64_ng::v2::secret::owned::SecretArray<CAP>, S) -> core::result::Result<<S as serde_core::ser::Serializer>::Ok, <S as serde_core::ser::Serializer>::Error> where S: serde_core::ser::Serializer
 pub mod base64_ng_serde::standard
 pub fn base64_ng_serde::standard::deserialize<'de, D>(D) -> core::result::Result<alloc::vec::Vec<u8>, <D as serde_core::de::Deserializer>::Error> where D: serde_core::de::Deserializer<'de>
+pub fn base64_ng_serde::standard::deserialize_with_limit<'de, D, const MAX: usize>(D) -> core::result::Result<alloc::vec::Vec<u8>, <D as serde_core::de::Deserializer>::Error> where D: serde_core::de::Deserializer<'de>
 pub fn base64_ng_serde::standard::serialize<S>(impl core::convert::AsRef<[u8]>, S) -> core::result::Result<<S as serde_core::ser::Serializer>::Ok, <S as serde_core::ser::Serializer>::Error> where S: serde_core::ser::Serializer
 pub mod base64_ng_serde::standard_no_pad
 pub fn base64_ng_serde::standard_no_pad::deserialize<'de, D>(D) -> core::result::Result<alloc::vec::Vec<u8>, <D as serde_core::de::Deserializer>::Error> where D: serde_core::de::Deserializer<'de>
+pub fn base64_ng_serde::standard_no_pad::deserialize_with_limit<'de, D, const MAX: usize>(D) -> core::result::Result<alloc::vec::Vec<u8>, <D as serde_core::de::Deserializer>::Error> where D: serde_core::de::Deserializer<'de>
 pub fn base64_ng_serde::standard_no_pad::serialize<S>(impl core::convert::AsRef<[u8]>, S) -> core::result::Result<<S as serde_core::ser::Serializer>::Ok, <S as serde_core::ser::Serializer>::Error> where S: serde_core::ser::Serializer
 pub mod base64_ng_serde::url_safe
 pub fn base64_ng_serde::url_safe::deserialize<'de, D>(D) -> core::result::Result<alloc::vec::Vec<u8>, <D as serde_core::de::Deserializer>::Error> where D: serde_core::de::Deserializer<'de>
+pub fn base64_ng_serde::url_safe::deserialize_with_limit<'de, D, const MAX: usize>(D) -> core::result::Result<alloc::vec::Vec<u8>, <D as serde_core::de::Deserializer>::Error> where D: serde_core::de::Deserializer<'de>
 pub fn base64_ng_serde::url_safe::serialize<S>(impl core::convert::AsRef<[u8]>, S) -> core::result::Result<<S as serde_core::ser::Serializer>::Ok, <S as serde_core::ser::Serializer>::Error> where S: serde_core::ser::Serializer
 pub mod base64_ng_serde::url_safe_no_pad
 pub fn base64_ng_serde::url_safe_no_pad::deserialize<'de, D>(D) -> core::result::Result<alloc::vec::Vec<u8>, <D as serde_core::de::Deserializer>::Error> where D: serde_core::de::Deserializer<'de>
+pub fn base64_ng_serde::url_safe_no_pad::deserialize_with_limit<'de, D, const MAX: usize>(D) -> core::result::Result<alloc::vec::Vec<u8>, <D as serde_core::de::Deserializer>::Error> where D: serde_core::de::Deserializer<'de>
 pub fn base64_ng_serde::url_safe_no_pad::serialize<S>(impl core::convert::AsRef<[u8]>, S) -> core::result::Result<<S as serde_core::ser::Serializer>::Ok, <S as serde_core::ser::Serializer>::Error> where S: serde_core::ser::Serializer
 pub struct base64_ng_serde::Base64Standard(_)
 impl base64_ng_serde::Base64Standard
@@ -95,3 +101,5 @@ impl serde_core::ser::Serialize for base64_ng_serde::Base64UrlSafeNoPad
 pub fn base64_ng_serde::Base64UrlSafeNoPad::serialize<S>(&self, S) -> core::result::Result<<S as serde_core::ser::Serializer>::Ok, <S as serde_core::ser::Serializer>::Error> where S: serde_core::ser::Serializer
 impl<'de> serde_core::de::Deserialize<'de> for base64_ng_serde::Base64UrlSafeNoPad
 pub fn base64_ng_serde::Base64UrlSafeNoPad::deserialize<D>(D) -> core::result::Result<Self, <D as serde_core::de::Deserializer>::Error> where D: serde_core::de::Deserializer<'de>
+pub const base64_ng_serde::DEFAULT_SERDE_DECODE_MAX_LEN: usize
+pub const base64_ng_serde::MAX_SERDE_STACK_DECODED_BYTES: usize
