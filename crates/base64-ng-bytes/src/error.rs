@@ -33,7 +33,12 @@ impl BytesLimits {
     }
 }
 
-/// Exact prefix progress committed by one bytes-adapter call.
+/// Exact transform progress committed by one bytes-adapter call.
+///
+/// `input_consumed` records bytes accepted by the transform. On an error caused
+/// by an invalid custom [`bytes::Buf`], consult
+/// [`BytesError::input_cursor_progress`] before treating that value as external
+/// cursor movement.
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
 pub struct BytesProgress {
     input_consumed: usize,
@@ -51,7 +56,7 @@ impl BytesProgress {
         }
     }
 
-    /// Returns input bytes irrevocably advanced by this call.
+    /// Returns input bytes accepted by the transform during this call.
     #[must_use]
     pub const fn input_consumed(self) -> usize {
         self.input_consumed
@@ -78,6 +83,16 @@ impl BytesProgress {
         self.output_committed = value;
         true
     }
+}
+
+/// Knowledge of external [`bytes::Buf`] cursor movement before an error.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[non_exhaustive]
+pub enum InputCursorProgress {
+    /// The external cursor advanced exactly this many bytes.
+    Exact(usize),
+    /// A violated `Buf` contract made the external cursor position unknowable.
+    Indeterminate,
 }
 
 /// A successful stateful bytes-adapter call.
@@ -141,22 +156,48 @@ pub enum BytesErrorKind {
     ImpossibleState,
 }
 
-/// Error with exact progress committed before failure.
+/// Error with exact transform and output progress committed before failure.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct BytesError {
     progress: BytesProgress,
+    input_cursor_progress: InputCursorProgress,
     kind: BytesErrorKind,
 }
 
 impl BytesError {
     pub(crate) const fn new(progress: BytesProgress, kind: BytesErrorKind) -> Self {
-        Self { progress, kind }
+        Self {
+            progress,
+            input_cursor_progress: InputCursorProgress::Exact(progress.input_consumed()),
+            kind,
+        }
     }
 
-    /// Returns exact input/output progress committed before the error.
+    pub(crate) const fn with_indeterminate_input_cursor(
+        progress: BytesProgress,
+        kind: BytesErrorKind,
+    ) -> Self {
+        Self {
+            progress,
+            input_cursor_progress: InputCursorProgress::Indeterminate,
+            kind,
+        }
+    }
+
+    /// Returns exact transform/output progress committed before the error.
     #[must_use]
     pub const fn progress(self) -> BytesProgress {
         self.progress
+    }
+
+    /// Returns knowledge of the caller's external input cursor movement.
+    ///
+    /// [`InputCursorProgress::Indeterminate`] means a custom `Buf` violated its
+    /// contract after input was accepted. Discard that cursor, this adapter,
+    /// and any prefix output instead of attempting offset-based recovery.
+    #[must_use]
+    pub const fn input_cursor_progress(self) -> InputCursorProgress {
+        self.input_cursor_progress
     }
 
     /// Returns the stable error classification.

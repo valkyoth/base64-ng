@@ -221,12 +221,15 @@ impl Driver {
 
             input.advance(consumed);
             if !progress.add_input(consumed) {
-                return Err(BytesError::new(progress, BytesErrorKind::ImpossibleState));
+                return Err(BytesError::with_indeterminate_input_cursor(
+                    progress,
+                    BytesErrorKind::ImpossibleState,
+                ));
             }
             let actual_remaining = input.remaining();
             let expected_remaining = reported_remaining - consumed;
             if actual_remaining != expected_remaining {
-                return Err(BytesError::new(
+                return Err(BytesError::with_indeterminate_input_cursor(
                     progress,
                     BytesErrorKind::InvalidInputBuffer {
                         remaining: actual_remaining,

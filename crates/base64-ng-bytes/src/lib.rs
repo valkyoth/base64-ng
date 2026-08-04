@@ -8,8 +8,10 @@
 //!
 //! Transactional helpers return crate-owned [`Bytes`] values. Stateful
 //! [`BytesEncoder`] and [`BytesDecoder`] adapters write directly to arbitrary
-//! [`bytes::BufMut`] destinations and report exactly committed prefixes. No API in
-//! this crate coalesces the complete input into a temporary buffer.
+//! [`bytes::BufMut`] destinations and report exactly committed transform/output
+//! prefixes. Invalid custom [`bytes::Buf`] implementations can make their own
+//! external cursor movement indeterminate. No API in this crate coalesces the
+//! complete input into a temporary buffer.
 
 extern crate alloc;
 
@@ -21,7 +23,9 @@ use base64_ng::{Base64, Codec};
 use bytes::{Buf, Bytes};
 
 pub use driver::{BytesDecoder, BytesEncoder};
-pub use error::{BytesError, BytesErrorKind, BytesLimits, BytesProgress, BytesStep};
+pub use error::{
+    BytesError, BytesErrorKind, BytesLimits, BytesProgress, BytesStep, InputCursorProgress,
+};
 
 /// Extension methods for a sealed `base64-ng` 2.0 codec.
 pub trait Base64BytesExt<S>

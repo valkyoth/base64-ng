@@ -69,5 +69,12 @@ plaintext committed before a malformed later fragment cannot be withdrawn;
 use bounded secret APIs from the core `secrets` capability for secret-bearing
 frames.
 
+`BytesProgress::input_consumed()` records bytes accepted by the transform. A
+normal error also reports exact external `Buf` cursor movement through
+`BytesError::input_cursor_progress()`. If a custom `Buf` violates its safe trait
+contract during `advance`, that cursor result is `Indeterminate`; discard the
+cursor, failed adapter, and committed prefix instead of attempting recovery by
+offset.
+
 The complete contracts and evidence are documented in
 [`docs/2.0_BYTES_INTEGRATION.md`](https://github.com/valkyoth/base64-ng/blob/main/docs/2.0_BYTES_INTEGRATION.md).

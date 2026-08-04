@@ -24,6 +24,20 @@ impl core::hash::Hash for base64_ng_bytes::BytesErrorKind
 pub fn base64_ng_bytes::BytesErrorKind::hash<__H: core::hash::Hasher>(&self, &mut __H)
 impl core::marker::Copy for base64_ng_bytes::BytesErrorKind
 impl core::marker::StructuralPartialEq for base64_ng_bytes::BytesErrorKind
+#[non_exhaustive] pub enum base64_ng_bytes::InputCursorProgress
+pub base64_ng_bytes::InputCursorProgress::Exact(usize)
+pub base64_ng_bytes::InputCursorProgress::Indeterminate
+impl core::clone::Clone for base64_ng_bytes::InputCursorProgress
+pub fn base64_ng_bytes::InputCursorProgress::clone(&self) -> base64_ng_bytes::InputCursorProgress
+impl core::cmp::Eq for base64_ng_bytes::InputCursorProgress
+impl core::cmp::PartialEq for base64_ng_bytes::InputCursorProgress
+pub fn base64_ng_bytes::InputCursorProgress::eq(&self, &base64_ng_bytes::InputCursorProgress) -> bool
+impl core::fmt::Debug for base64_ng_bytes::InputCursorProgress
+pub fn base64_ng_bytes::InputCursorProgress::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng_bytes::InputCursorProgress
+pub fn base64_ng_bytes::InputCursorProgress::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng_bytes::InputCursorProgress
+impl core::marker::StructuralPartialEq for base64_ng_bytes::InputCursorProgress
 pub struct base64_ng_bytes::BytesDecoder
 impl base64_ng_bytes::BytesDecoder
 pub fn base64_ng_bytes::BytesDecoder::finish<M>(&mut self, &mut M) -> core::result::Result<base64_ng_bytes::BytesStep, base64_ng_bytes::BytesError> where M: bytes::buf::buf_mut::BufMut
@@ -46,6 +60,7 @@ impl core::fmt::Debug for base64_ng_bytes::BytesEncoder
 pub fn base64_ng_bytes::BytesEncoder::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub struct base64_ng_bytes::BytesError
 impl base64_ng_bytes::BytesError
+pub const fn base64_ng_bytes::BytesError::input_cursor_progress(self) -> base64_ng_bytes::InputCursorProgress
 pub const fn base64_ng_bytes::BytesError::kind(self) -> base64_ng_bytes::BytesErrorKind
 pub const fn base64_ng_bytes::BytesError::progress(self) -> base64_ng_bytes::BytesProgress
 impl core::clone::Clone for base64_ng_bytes::BytesError

@@ -9,7 +9,9 @@ use std::{
 use base64_ng::{
     Failure, OperationError, STRICT_STANDARD_PADDED, STRICT_URL_SAFE_UNPADDED, Status,
 };
-use base64_ng_bytes::{Base64BytesExt, BytesErrorKind, BytesLimits, BytesProgress};
+use base64_ng_bytes::{
+    Base64BytesExt, BytesErrorKind, BytesLimits, BytesProgress, InputCursorProgress,
+};
 use bytes::{Buf, BufMut, Bytes, buf::UninitSlice};
 
 #[test]
@@ -118,6 +120,7 @@ fn malformed_suffix_reports_only_previously_committed_prefix() {
 
     assert_eq!(error.progress().input_consumed(), 8);
     assert_eq!(error.progress().output_committed(), 5);
+    assert_eq!(error.input_cursor_progress(), InputCursorProgress::Exact(8));
     assert_eq!(output, b"hello");
     assert!(matches!(
         error.kind(),
@@ -209,6 +212,7 @@ fn invalid_safe_buf_contract_is_rejected_and_latched() {
         error.kind(),
         BytesErrorKind::InvalidInputBuffer { remaining: 4 }
     );
+    assert_eq!(error.input_cursor_progress(), InputCursorProgress::Exact(0));
     assert!(encoder.is_failed());
 }
 
@@ -245,10 +249,37 @@ fn inconsistent_post_advance_remaining_reports_committed_progress() {
     assert_eq!(input.advanced, 3);
     assert_eq!(error.progress().input_consumed(), 3);
     assert_eq!(error.progress().output_committed(), 4);
+    assert_eq!(
+        error.input_cursor_progress(),
+        InputCursorProgress::Indeterminate
+    );
     assert_eq!(output, b"YWJj");
     assert_eq!(
         error.kind(),
         BytesErrorKind::InvalidInputBuffer { remaining: 1 }
+    );
+    assert!(encoder.is_failed());
+}
+
+#[test]
+fn no_op_advance_reports_indeterminate_cursor_progress() {
+    let mut input = NoOpAdvanceBuf;
+    let mut output = Vec::new();
+    let mut encoder = STRICT_STANDARD_PADDED.bytes_encoder();
+
+    let error = encoder.update(&mut input, &mut output).unwrap_err();
+
+    assert_eq!(input.remaining(), 3);
+    assert_eq!(error.progress().input_consumed(), 3);
+    assert_eq!(error.progress().output_committed(), 4);
+    assert_eq!(
+        error.input_cursor_progress(),
+        InputCursorProgress::Indeterminate
+    );
+    assert_eq!(output, b"YWJj");
+    assert_eq!(
+        error.kind(),
+        BytesErrorKind::InvalidInputBuffer { remaining: 3 }
     );
     assert!(encoder.is_failed());
 }
@@ -331,6 +362,20 @@ struct EmptyChunkBuf {
 struct InconsistentAfterAdvanceBuf {
     bytes: Bytes,
     advanced: usize,
+}
+
+struct NoOpAdvanceBuf;
+
+impl Buf for NoOpAdvanceBuf {
+    fn remaining(&self) -> usize {
+        3
+    }
+
+    fn chunk(&self) -> &[u8] {
+        b"abc"
+    }
+
+    fn advance(&mut self, _count: usize) {}
 }
 
 impl InconsistentAfterAdvanceBuf {
