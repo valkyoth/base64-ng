@@ -1,4 +1,4 @@
-use base64_ng::{Base64, Codec, DecoderState, EncoderState};
+use base64_ng::{Base64, Codec, DecoderState, EncoderState, Status};
 use core::{
     cmp,
     pin::Pin,
@@ -13,6 +13,19 @@ const ENCODE_INPUT_CAP: usize = 768;
 const ENCODE_OUTPUT_CAP: usize = 1024;
 const DECODE_INPUT_CAP: usize = 1024;
 const DECODE_OUTPUT_CAP: usize = 768;
+
+const fn valid_update_progress(
+    expected_input: usize,
+    consumed: usize,
+    produced: usize,
+    output_capacity: usize,
+) -> bool {
+    consumed == expected_input && produced <= output_capacity
+}
+
+const fn valid_finish_progress(produced: usize, output_capacity: usize, status: Status) -> bool {
+    produced <= output_capacity && matches!(status, Status::Complete)
+}
 
 macro_rules! reader_observers {
     () => {
@@ -190,13 +203,15 @@ impl<R> EncoderReader<R> {
         let result = self.state.update(&self.input[..read], &mut self.output);
         wipe_bytes(&mut self.input[..read]);
         let step = result.map_err(operation_io_error)?;
-        if step.progress().input_consumed() != read {
+        let progress = step.progress();
+        let produced = progress.output_produced();
+        if !valid_update_progress(read, progress.input_consumed(), produced, self.output.len()) {
             return Err(io::Error::other(
-                "base64-ng-tokio encoder made partial progress",
+                "base64-ng-tokio encoder reader made invalid progress",
             ));
         }
         self.output_pos = 0;
-        self.output_len = step.progress().output_produced();
+        self.output_len = produced;
         self.source_accepted = self.state.source_position();
         Ok(())
     }
@@ -206,8 +221,14 @@ impl<R> EncoderReader<R> {
             .state
             .finish(&mut self.output)
             .map_err(operation_io_error)?;
+        let produced = step.progress().output_produced();
+        if !valid_finish_progress(produced, self.output.len(), step.status()) {
+            return Err(io::Error::other(
+                "base64-ng-tokio encoder reader finalization made invalid progress",
+            ));
+        }
         self.output_pos = 0;
-        self.output_len = step.progress().output_produced();
+        self.output_len = produced;
         self.finished = true;
         Ok(())
     }
@@ -318,13 +339,15 @@ impl<R> DecoderReader<R> {
         let result = self.state.update(&self.input[..read], &mut self.output);
         wipe_bytes(&mut self.input[..read]);
         let step = result.map_err(operation_io_error)?;
-        if step.progress().input_consumed() != read {
+        let progress = step.progress();
+        let produced = progress.output_produced();
+        if !valid_update_progress(read, progress.input_consumed(), produced, self.output.len()) {
             return Err(io::Error::other(
-                "base64-ng-tokio decoder made partial progress",
+                "base64-ng-tokio decoder reader made invalid progress",
             ));
         }
         self.output_pos = 0;
-        self.output_len = step.progress().output_produced();
+        self.output_len = produced;
         self.source_accepted = self.state.source_position();
         Ok(())
     }
@@ -334,8 +357,14 @@ impl<R> DecoderReader<R> {
             .state
             .finish(&mut self.output)
             .map_err(operation_io_error)?;
+        let produced = step.progress().output_produced();
+        if !valid_finish_progress(produced, self.output.len(), step.status()) {
+            return Err(io::Error::other(
+                "base64-ng-tokio decoder reader finalization made invalid progress",
+            ));
+        }
         self.output_pos = 0;
-        self.output_len = step.progress().output_produced();
+        self.output_len = produced;
         self.finished = true;
         Ok(())
     }
@@ -441,3 +470,19 @@ macro_rules! impl_async_read {
 
 impl_async_read!(EncoderReader);
 impl_async_read!(DecoderReader);
+
+#[cfg(test)]
+mod tests {
+    use super::{Status, valid_finish_progress, valid_update_progress};
+
+    #[test]
+    fn progress_contract_rejects_untrusted_bounds_and_status() {
+        assert!(valid_update_progress(4, 4, 3, 3));
+        assert!(!valid_update_progress(4, 3, 3, 3));
+        assert!(!valid_update_progress(4, 4, 4, 3));
+
+        assert!(valid_finish_progress(3, 3, Status::Complete));
+        assert!(!valid_finish_progress(4, 3, Status::Complete));
+        assert!(!valid_finish_progress(3, 3, Status::NeedInput));
+    }
+}
