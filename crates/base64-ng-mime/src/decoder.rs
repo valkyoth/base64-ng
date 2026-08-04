@@ -127,7 +127,10 @@ impl MimeBodyDecoder {
         }
         if self.compatible_previous_cr {
             self.compatible_previous_cr = false;
-            self.bare_line_endings += 1;
+            let Some(next) = self.bare_line_endings.checked_add(1) else {
+                return self.fail(MimeBodyError::new(MimeBodyErrorKind::LengthOverflow));
+            };
+            self.bare_line_endings = next;
         }
         self.complete = true;
         Ok(MimeBodyStep::new(
@@ -149,10 +152,10 @@ impl MimeBodyDecoder {
 
     fn accept_input_byte(&mut self, byte: u8, index: usize) -> Result<(), MimeBodyError> {
         self.require_input_capacity(index)?;
-        self.work_before_output = self
-            .work_before_output
-            .checked_add(1)
-            .ok_or_else(|| MimeBodyError::new(MimeBodyErrorKind::LengthOverflow))?;
+        let Some(next_work) = self.work_before_output.checked_add(1) else {
+            return self.fail(MimeBodyError::new(MimeBodyErrorKind::LengthOverflow));
+        };
+        self.work_before_output = next_work;
         if self.work_before_output > self.limits.max_work_before_output() {
             return self.fail(MimeBodyError::at(
                 MimeBodyErrorKind::WorkBeforeOutputLimitExceeded,
@@ -204,8 +207,14 @@ impl MimeBodyDecoder {
                 index,
             ));
         }
-        self.canonical_line_symbols += 1;
-        self.physical_line_bytes += 1;
+        let Some(next_symbols) = self.canonical_line_symbols.checked_add(1) else {
+            return self.fail(MimeBodyError::new(MimeBodyErrorKind::LengthOverflow));
+        };
+        let Some(next_physical) = self.physical_line_bytes.checked_add(1) else {
+            return self.fail(MimeBodyError::new(MimeBodyErrorKind::LengthOverflow));
+        };
+        self.canonical_line_symbols = next_symbols;
+        self.physical_line_bytes = next_physical;
         if self.canonical_line_symbols > CANONICAL_LINE_WIDTH
             || self.physical_line_bytes > self.limits.max_physical_line_bytes()
         {
@@ -220,14 +229,20 @@ impl MimeBodyDecoder {
     fn accept_compatible(&mut self, byte: u8, index: usize) -> Result<(), MimeBodyError> {
         if self.compatible_previous_cr && byte != b'\n' {
             self.compatible_previous_cr = false;
-            self.bare_line_endings += 1;
+            let Some(next) = self.bare_line_endings.checked_add(1) else {
+                return self.fail(MimeBodyError::new(MimeBodyErrorKind::LengthOverflow));
+            };
+            self.bare_line_endings = next;
         }
         if byte == b'\n' {
             if self.compatible_previous_cr {
                 self.compatible_previous_cr = false;
                 self.record_skipped(byte, index)?;
             } else {
-                self.bare_line_endings += 1;
+                let Some(next) = self.bare_line_endings.checked_add(1) else {
+                    return self.fail(MimeBodyError::new(MimeBodyErrorKind::LengthOverflow));
+                };
+                self.bare_line_endings = next;
                 self.record_skipped(byte, index)?;
             }
             self.physical_line_bytes = 0;
@@ -240,10 +255,10 @@ impl MimeBodyDecoder {
             return Ok(());
         }
         self.compatible_previous_cr = false;
-        self.physical_line_bytes = self
-            .physical_line_bytes
-            .checked_add(1)
-            .ok_or_else(|| MimeBodyError::new(MimeBodyErrorKind::LengthOverflow))?;
+        let Some(next_physical) = self.physical_line_bytes.checked_add(1) else {
+            return self.fail(MimeBodyError::new(MimeBodyErrorKind::LengthOverflow));
+        };
+        self.physical_line_bytes = next_physical;
         if self.physical_line_bytes > self.limits.max_physical_line_bytes() {
             return self.fail(MimeBodyError::at(
                 MimeBodyErrorKind::PhysicalLineTooLong,
@@ -271,10 +286,9 @@ impl MimeBodyDecoder {
         let Ok(written) = STRICT_STANDARD_PADDED.decode_into(&self.quantum, &mut decoded) else {
             return self.fail(MimeBodyError::at(MimeBodyErrorKind::InvalidBase64, index));
         };
-        let next_output = self
-            .output_bytes
-            .checked_add(written)
-            .ok_or_else(|| MimeBodyError::new(MimeBodyErrorKind::LengthOverflow))?;
+        let Some(next_output) = self.output_bytes.checked_add(written) else {
+            return self.fail(MimeBodyError::new(MimeBodyErrorKind::LengthOverflow));
+        };
         if next_output > self.limits.max_decoded_output_bytes() {
             return self.fail(MimeBodyError::at(
                 MimeBodyErrorKind::OutputLimitExceeded,
@@ -292,12 +306,15 @@ impl MimeBodyDecoder {
     }
 
     fn record_skipped(&mut self, byte: u8, index: usize) -> Result<(), MimeBodyError> {
-        self.skipped = self
-            .skipped
-            .checked_add(1)
-            .ok_or_else(|| MimeBodyError::new(MimeBodyErrorKind::LengthOverflow))?;
+        let Some(next_skipped) = self.skipped.checked_add(1) else {
+            return self.fail(MimeBodyError::new(MimeBodyErrorKind::LengthOverflow));
+        };
+        self.skipped = next_skipped;
         if !matches!(byte, b' ' | b'\t' | b'\r' | b'\n') {
-            self.skipped_non_whitespace += 1;
+            let Some(next_non_whitespace) = self.skipped_non_whitespace.checked_add(1) else {
+                return self.fail(MimeBodyError::new(MimeBodyErrorKind::LengthOverflow));
+            };
+            self.skipped_non_whitespace = next_non_whitespace;
         }
         if self.skipped > self.limits.max_skipped_nonalphabet_bytes() {
             self.fail(MimeBodyError::at(
@@ -348,4 +365,48 @@ impl MimeBodyDecoder {
 
 pub(crate) const fn is_table_one(byte: u8) -> bool {
     matches!(byte, b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'+' | b'/' | b'=')
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const UNBOUNDED: MimeBodyLimits = MimeBodyLimits::new(
+        usize::MAX,
+        usize::MAX,
+        usize::MAX,
+        usize::MAX,
+        usize::MAX,
+        usize::MAX,
+    );
+
+    #[test]
+    fn output_length_overflow_latches_complete_quantum() {
+        let mut decoder = MimeBodyDecoder::new(MimeBodyDecodePolicy::Canonical, UNBOUNDED);
+        decoder.quantum[..3].copy_from_slice(b"Zm9");
+        decoder.quantum_len = 3;
+        decoder.output_bytes = usize::MAX - 1;
+
+        let error = decoder.update(b"v", &mut []).unwrap_err();
+
+        assert_eq!(error.kind(), MimeBodyErrorKind::LengthOverflow);
+        assert_eq!(decoder.quantum_len, INPUT_QUANTUM);
+        assert!(decoder.failed);
+        assert_eq!(
+            decoder.update(b"Z", &mut []).unwrap_err().kind(),
+            MimeBodyErrorKind::TerminalState
+        );
+    }
+
+    #[test]
+    fn work_counter_overflow_latches_before_symbol_state_changes() {
+        let mut decoder = MimeBodyDecoder::new(MimeBodyDecodePolicy::Canonical, UNBOUNDED);
+        decoder.work_before_output = usize::MAX;
+
+        let error = decoder.update(b"Z", &mut []).unwrap_err();
+
+        assert_eq!(error.kind(), MimeBodyErrorKind::LengthOverflow);
+        assert_eq!(decoder.quantum_len, 0);
+        assert!(decoder.failed);
+    }
 }

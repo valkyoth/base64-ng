@@ -71,8 +71,10 @@ assert!(!report.has_transport_warning());
 
 `MimeBodyEncoder` and `MimeBodyDecoder` preserve state across arbitrary
 transport chunk boundaries and short output buffers. Their output is
-prefix-committing. The one-shot decode helper performs a complete validation
-pass before writing and is transactional for caller-owned output.
+prefix-committing. Malformed input, limit failures, arithmetic overflow, and
+internal core failures permanently close the affected state. The one-shot
+decode helper performs a complete validation pass before writing and is
+transactional for caller-owned output.
 
 These are ordinary, non-secret APIs. They do not provide constant-time
 processing, protected memory, or plaintext cleanup guarantees.

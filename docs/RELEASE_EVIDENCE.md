@@ -349,8 +349,9 @@ The release gate runs:
 - RFC 2045 Base64 content-transfer body integration through
   `scripts/check-2.0-mime-body.sh`, including canonical and bounded-compatible
   policies, finite input/output/line/skip/work limits, transactional one-shot
-  output, one-byte chunk schedules, Python `email.base64mime` and OpenSSL
-  interoperability, package scope, and immutable Section 6.8 evidence
+  output, one-byte chunk schedules, near-`usize::MAX` absorbing arithmetic
+  failures, Python `email.base64mime` and OpenSSL interoperability, package
+  scope, and immutable Section 6.8 evidence
 - RFC 7468 textual encoding integration through `scripts/check-2.0-pem.sh`,
   including strict and bounded-compatible document grammar, exact labels and
   boundaries, multiple blocks, adjacent text, secret-frame release, the
