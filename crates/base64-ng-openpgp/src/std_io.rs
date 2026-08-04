@@ -30,6 +30,9 @@ pub fn read_armor_document<R: Read>(
         let read = reader
             .read(&mut chunk)
             .map_err(|_| OpenPgpError::new(OpenPgpErrorKind::Io))?;
+        if read > chunk.len() {
+            return Err(OpenPgpError::new(OpenPgpErrorKind::Io));
+        }
         if read == 0 {
             break;
         }
@@ -51,8 +54,8 @@ pub fn read_armor_document<R: Read>(
 /// Generates and writes one bounded armor block.
 ///
 /// Generation is fully validated before the first writer call. An underlying
-/// writer error can still leave an externally visible committed prefix, as is
-/// inherent to [`Write::write_all`].
+/// writer error or contract violation can still leave an externally visible
+/// committed prefix.
 ///
 /// # Errors
 ///
@@ -66,8 +69,17 @@ pub fn write_armor_block<W: Write>(
     options: GenerationOptions,
 ) -> Result<usize, OpenPgpError> {
     let text = encode_armor_to_string(kind, headers, payload, limits, options)?;
-    writer
-        .write_all(text.as_bytes())
-        .map_err(|_| OpenPgpError::new(OpenPgpErrorKind::Io))?;
+    let mut remaining = text.as_bytes();
+    while !remaining.is_empty() {
+        match writer.write(remaining) {
+            Ok(0) => return Err(OpenPgpError::new(OpenPgpErrorKind::Io)),
+            Ok(written) if written > remaining.len() => {
+                return Err(OpenPgpError::new(OpenPgpErrorKind::Io));
+            }
+            Ok(written) => remaining = &remaining[written..],
+            Err(error) if error.kind() == std::io::ErrorKind::Interrupted => {}
+            Err(_) => return Err(OpenPgpError::new(OpenPgpErrorKind::Io)),
+        }
+    }
     Ok(text.len())
 }

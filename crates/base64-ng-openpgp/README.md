@@ -61,3 +61,7 @@ assert_eq!(document.blocks()[0].contents(), b"packet bytes");
 All ordinary payload-returning APIs use normal memory. Enable `secrets` and
 use `parse_secret_armor_block` for bounded, clear-on-drop secret payload
 release.
+
+The `std` reader and writer helpers reject impossible over-reported byte counts
+from contract-violating in-process `Read` or `Write` implementations as I/O
+errors. A writer failure can still leave an externally committed prefix.

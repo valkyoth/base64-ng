@@ -409,43 +409,6 @@ fn every_resource_dimension_is_enforced() {
     );
 }
 
-#[cfg(feature = "std")]
-#[test]
-fn bounded_reader_and_writer_round_trip_short_io() {
-    use std::io::{Cursor, Write};
-
-    struct ShortWriter(Vec<u8>);
-    impl Write for ShortWriter {
-        fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
-            let take = bytes.len().min(3);
-            self.0.extend_from_slice(&bytes[..take]);
-            Ok(take)
-        }
-        fn flush(&mut self) -> std::io::Result<()> {
-            Ok(())
-        }
-    }
-
-    let payload = pattern(1025);
-    let mut writer = ShortWriter(Vec::new());
-    base64_ng_openpgp::write_armor_block(
-        &mut writer,
-        ArmorType::Message,
-        &[],
-        &payload,
-        OpenPgpLimits::default(),
-        GenerationOptions::new(ChecksumGeneration::LegacyCrc24),
-    )
-    .unwrap();
-    let document = base64_ng_openpgp::read_armor_document(
-        Cursor::new(writer.0),
-        OpenPgpLimits::default(),
-        ChecksumPolicy::RequireValidCrc24,
-    )
-    .unwrap();
-    assert_eq!(document.blocks()[0].contents(), payload);
-}
-
 #[cfg(feature = "secrets")]
 #[test]
 fn secret_parser_selects_exact_type_and_redacts() {

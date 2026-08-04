@@ -85,7 +85,8 @@ for required in \
     "src/parser.rs" \
     "src/generator.rs" \
     "tests/interoperability.rs" \
-    "tests/openpgp.rs"
+    "tests/openpgp.rs" \
+    "tests/std_io.rs"
 do
     if ! grep -F -x -q "$required" "$package_list"; then
         echo "2.0 OpenPGP: package is missing $required" >&2
