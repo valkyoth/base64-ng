@@ -30,6 +30,9 @@
 - Bounds ordinary Serde compatibility decode to 1 MiB by default, adds
   protocol-selected const-generic limits, rejects oversized encoded input
   before full validation, and caps stack-backed ordinary fields at 4096 bytes.
+- Makes dudect-style Welch evaluation fail closed on non-finite states and
+  unequal zero-variance means, exact-pins `subtle` 2.6.1, and binds the locked
+  harness tests into the subtle companion's focused release gate.
 - Makes password-record work limits cumulative across validation and transform
   passes, admits generation work before allocation, and release-gates
   executable caller-owned behavior without `alloc`.

@@ -28,7 +28,10 @@ if [ "${BASE64_NG_RUN_DUDECT:-0}" = "1" ] && \
 fi
 
 echo "dudect checks: compile timing harness"
-cargo check --manifest-path dudect/Cargo.toml --bins
+cargo check --locked --manifest-path dudect/Cargo.toml --bins
+
+echo "dudect checks: deterministic statistic tests"
+cargo test --locked --manifest-path dudect/Cargo.toml --bins
 
 echo "dudect checks: RustSec advisories"
 cargo audit --file dudect/Cargo.lock
@@ -61,7 +64,7 @@ if [ "${BASE64_NG_RUN_DUDECT:-0}" = "1" ]; then
             exit 1
         fi
     fi
-    command_line="cargo run --release --manifest-path dudect/Cargo.toml -- --samples $samples --iters $iterations --threshold $threshold --warmup $warmup"
+    command_line="cargo run --locked --release --manifest-path dudect/Cargo.toml -- --samples $samples --iters $iterations --threshold $threshold --warmup $warmup"
 
     echo "dudect checks: run timing harness"
     mkdir -p "$evidence_dir"
@@ -72,7 +75,7 @@ if [ "${BASE64_NG_RUN_DUDECT:-0}" = "1" ]; then
     trap cleanup_manifest EXIT INT TERM
 
     status=0
-    cargo run --release --manifest-path dudect/Cargo.toml -- \
+    cargo run --locked --release --manifest-path dudect/Cargo.toml -- \
         --samples "$samples" \
         --iters "$iterations" \
         --threshold "$threshold" \

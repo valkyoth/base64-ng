@@ -359,8 +359,9 @@ The release gate runs:
   fixed-size and bounded dynamic output, redacted failures, clippy, and docs
 - reviewed equality integration through `scripts/check-2.0-subtle.sh`,
   including every final 2.0 secret owner/view, equal and unequal contents,
-  public-length mismatch, compile-fail misuse cases, optimized assembly, and
-  the isolated dudect equality class
+  public-length mismatch, compile-fail misuse cases, optimized assembly, the
+  exact-pinned `subtle` dependency, and the locked isolated dudect equality
+  class with fail-closed statistic tests
 - hardened derive integration through `scripts/check-2.0-derive.sh`, including
   every sealed alphabet/padding/exposure combination, exact-length and
   redaction behavior, stable malformed-declaration diagnostics, implicit-trait

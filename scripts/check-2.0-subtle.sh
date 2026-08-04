@@ -24,6 +24,11 @@ do
     fi
 done
 
+if ! grep -F -q 'subtle = { version = "=2.6.1", default-features = false }' "$manifest"; then
+    echo "2.0 subtle equality: subtle dependency must remain exact-pinned to 2.6.1" >&2
+    exit 1
+fi
+
 if grep -F -q 'fn subtle_verify' "$source_file" || \
    grep -F -q 'impl SubtleSecretEq for DecodedBuffer' "$source_file" || \
    grep -F -q 'impl SubtleSecretEq for EncodedBuffer' "$source_file"; then
@@ -132,6 +137,9 @@ cargo clippy --manifest-path "$manifest" --all-targets --all-features -- -D warn
 
 echo "2.0 subtle equality: documentation"
 RUSTDOCFLAGS="-D warnings" cargo doc --manifest-path "$manifest" --no-deps --all-features
+
+echo "2.0 subtle equality: locked dudect harness"
+BASE64_NG_RUN_DUDECT=0 scripts/check_dudect.sh
 
 echo "2.0 subtle equality: optimized assembly"
 BASE64_NG_ALLOW_DIRTY_EVIDENCE=1 scripts/generate_subtle_asm_evidence.sh

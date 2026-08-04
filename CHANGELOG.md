@@ -14,6 +14,10 @@
 - Serde compatibility deserialization now has a 1 MiB decoded default,
   protocol-specific const-generic limits, pre-validation encoded-input
   ceilings, and a 4096-byte compile-time ceiling for ordinary stack adapters.
+- Dudect-style Welch evaluation now rejects every non-finite numeric state and
+  unequal zero-variance class means, with deterministic regression tests. The
+  subtle companion exact-pins `subtle` 2.6.1, and its focused release gate now
+  runs the locked isolated timing-harness build and tests.
 - Sanitization dynamic secret decode now enforces a 1 MiB safe default or an
   explicit const-generic output limit, reserves fallibly, and rejects
   insufficient staging before allocation. Companion stack secret arrays are

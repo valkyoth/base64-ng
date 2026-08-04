@@ -32,7 +32,9 @@ The core `base64-ng` crate stays zero-runtime-dependency. This companion crate
 is for applications that admit `subtle` and want one explicit comparison
 boundary for decoded tokens, MACs, and fixed-width keys. The sealed
 `SubtleSecretEq` trait is implemented only for the final 2.0 secret owners and
-views.
+views. This package requires exactly `subtle` 2.6.1 so downstream resolution
+cannot silently move beyond the implementation used for the reviewed assembly
+and timing evidence.
 
 ```toml
 [dependencies]

@@ -17,16 +17,21 @@ decode, encode, and equality lengths are separate informational scaling cases
 where timing may differ. This is empirical evidence for review, not a formal
 proof or standalone cryptographic constant-time claim.
 
+Statistic evaluation fails closed for insufficient samples, non-finite means,
+invalid or non-finite variances, non-finite results, and unequal class means
+when both classes have zero variance. Deterministic unit tests cover these
+numeric edge cases without relying on noisy clock measurements.
+
 ## Compile the Harness
 
 ```sh
 scripts/check_dudect.sh
 ```
 
-By default this compiles the harness and checks its isolated dependency policy.
-Normal CI runs this compile/dependency check. It deliberately does not run the
-timing test in normal CI because timing measurements are noisy on shared
-runners.
+By default this performs a locked harness build, runs deterministic statistic
+tests, and checks its isolated dependency policy. Normal CI runs these checks.
+It deliberately does not run the timing measurement in normal CI because
+timing measurements are noisy on shared runners.
 
 ## Run Local Timing Evidence
 

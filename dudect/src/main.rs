@@ -221,7 +221,7 @@ fn run_case(config: Config, case: TimingCase, rng: &mut XorShift64) -> Result<()
         return Err("both timing classes need at least two samples".to_owned());
     }
 
-    let t = welch_t(fixed_stats, random_stats);
+    let t = welch_t(fixed_stats, random_stats)?;
     println!(
         "dudect: case={} expectation={} left_len={} right_len={} samples={} iterations={} fixed_n={} random_n={} fixed_mean_ns={:.3} random_mean_ns={:.3} t={:.3} threshold={:.3}",
         case.label(),
@@ -404,17 +404,41 @@ fn fill_random_base64(output: &mut [u8], rng: &mut XorShift64) {
     }
 }
 
-fn welch_t(left: Accumulator, right: Accumulator) -> f64 {
+fn welch_t(left: Accumulator, right: Accumulator) -> Result<f64, String> {
+    if left.count < 2 || right.count < 2 {
+        return Err("Welch statistic requires at least two samples per class".to_owned());
+    }
+    if !left.mean.is_finite() || !right.mean.is_finite() {
+        return Err("Welch statistic received a non-finite class mean".to_owned());
+    }
+
     let left_variance = left.variance();
     let right_variance = right.variance();
-    let denominator =
-        (left_variance / left.count as f64 + right_variance / right.count as f64).sqrt();
-
-    if denominator == 0.0 {
-        0.0
-    } else {
-        (left.mean - right.mean) / denominator
+    if !left_variance.is_finite()
+        || !right_variance.is_finite()
+        || left_variance < 0.0
+        || right_variance < 0.0
+    {
+        return Err("Welch statistic received an invalid class variance".to_owned());
     }
+
+    let variance_term = left_variance / left.count as f64 + right_variance / right.count as f64;
+    if !variance_term.is_finite() || variance_term < 0.0 {
+        return Err("Welch statistic produced an invalid variance term".to_owned());
+    }
+    if variance_term == 0.0 {
+        return if left.mean == right.mean {
+            Ok(0.0)
+        } else {
+            Err("timing classes have unequal means and zero variance".to_owned())
+        };
+    }
+
+    let statistic = (left.mean - right.mean) / variance_term.sqrt();
+    if !statistic.is_finite() {
+        return Err("Welch statistic produced a non-finite result".to_owned());
+    }
+    Ok(statistic)
 }
 
 fn parse_args() -> Result<Config, String> {
@@ -476,4 +500,34 @@ fn print_help() {
          cases are reported but do not use the equal-work threshold. This is\n\
          empirical evidence only."
     );
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Accumulator, welch_t};
+
+    const fn accumulator(mean: f64, m2: f64) -> Accumulator {
+        Accumulator { count: 2, mean, m2 }
+    }
+
+    #[test]
+    fn equal_zero_variance_classes_return_zero() {
+        assert_eq!(
+            welch_t(accumulator(42.0, 0.0), accumulator(42.0, 0.0)).unwrap(),
+            0.0
+        );
+    }
+
+    #[test]
+    fn unequal_zero_variance_classes_fail_closed() {
+        let error = welch_t(accumulator(41.0, 0.0), accumulator(42.0, 0.0)).unwrap_err();
+        assert!(error.contains("unequal means and zero variance"));
+    }
+
+    #[test]
+    fn non_finite_inputs_and_results_fail_closed() {
+        assert!(welch_t(accumulator(f64::NAN, 0.0), accumulator(0.0, 0.0)).is_err());
+        assert!(welch_t(accumulator(0.0, f64::INFINITY), accumulator(0.0, 0.0)).is_err());
+        assert!(welch_t(accumulator(f64::MAX, 1.0), accumulator(-f64::MAX, 1.0)).is_err());
+    }
 }
