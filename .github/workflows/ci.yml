@@ -380,7 +380,7 @@ jobs:
         run: scripts/check_miri.sh
 
   in-place-sanitizers:
-    name: In-place AddressSanitizer
+    name: Address, Leak, and Thread Sanitizers
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
@@ -395,5 +395,5 @@ jobs:
       - name: Install nightly sanitizer support
         run: rustup toolchain install nightly --component rust-src
 
-      - name: Run in-place sanitizer suite
+      - name: Run memory sanitizer suites
         run: scripts/check-2.0-in-place-sanitizers.sh

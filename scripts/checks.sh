@@ -118,6 +118,9 @@ scripts/check-rfc-source-mutations.py
 echo "checks: cross-crate semantic corpus"
 scripts/check-semantic-corpus.sh
 
+echo "checks: 2.0 memory, resource, and hardware evidence contract"
+scripts/check-2.0-memory-hardware-evidence.sh
+
 echo "checks: protocol and interoperability registry"
 scripts/check-protocol-registry.sh
 

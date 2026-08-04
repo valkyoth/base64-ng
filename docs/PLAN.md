@@ -38,6 +38,15 @@ public-length timing classes; and mechanically preserves the scalar fixed-scan
 secret paths. See
 [`2.0_TIMING_AND_CODEGEN.md`](2.0_TIMING_AND_CODEGEN.md).
 
+Commit 53 completes the memory, sanitizer, resource, and hardware evidence
+contract. Heap secret frames prove stable preallocation after classified input,
+the volatile provider wipes quarantined storage on provider drop and proves
+restart is not recovery, and the shared corpus also exercises 2.0 one-shot and
+incremental states. Release mode intentionally fails until both Apple Silicon
+and server AArch64 NEON performance bundles are retained. RVV, SVE, and
+big-endian QEMU evidence cannot satisfy that native admission boundary. See
+[`2.0_MEMORY_SANITIZER_HARDWARE_EVIDENCE.md`](2.0_MEMORY_SANITIZER_HARDWARE_EVIDENCE.md).
+
 ## Dependency Policy
 
 The default position is no external crates.

@@ -166,6 +166,57 @@ fn bounded_recovery_exhaustion_retains_quarantine_and_shuts_down() {
 }
 
 #[test]
+fn active_and_quarantined_allocations_share_every_provider_budget() {
+    let context = AssuranceContext::new();
+    let token = context.best_effort_token();
+    let mut provider_limits = limits();
+    provider_limits.max_identities = 2;
+    provider_limits.max_registry_entries = 2;
+    provider_limits.max_logical_bytes = 16;
+    provider_limits.max_effective_pages = 4;
+    let provider = BestEffortProvider::<2>::new(provider_limits).unwrap();
+    let first = ProtectedSecret::try_new(&provider, &token, 8).unwrap();
+    let second = ProtectedSecret::try_new(&provider, &token, 8).unwrap();
+
+    context.invalidate_wipe_barrier();
+    drop(first);
+    let report = provider.report();
+    assert_eq!(report.active_and_reserved, 1);
+    assert_eq!(report.quarantined, 1);
+    assert_eq!(report.charged_logical_bytes, 16);
+    assert!(report.charged_effective_pages <= provider_limits.max_effective_pages);
+    assert_eq!(
+        ProtectedSecret::try_new(&provider, &token, 1).unwrap_err(),
+        ProtectionError::StaleAssurance
+    );
+    drop(second);
+}
+
+#[test]
+fn fresh_volatile_provider_never_recovers_prior_instance_state() {
+    let context = AssuranceContext::new();
+    let token = context.best_effort_token();
+    let mut provider_limits = limits();
+    provider_limits.max_identities = 1;
+    provider_limits.max_registry_entries = 1;
+    let provider = BestEffortProvider::<1>::new(provider_limits).unwrap();
+    let identity = provider.provider_identity();
+    let allocation = ProtectedSecret::try_new(&provider, &token, 8).unwrap();
+    context.invalidate_wipe_barrier();
+    drop(allocation);
+    assert_eq!(provider.report().quarantined, 1);
+    drop(provider);
+
+    let fresh = BestEffortProvider::<1>::new(provider_limits).unwrap();
+    assert_ne!(fresh.provider_identity(), identity);
+    assert_eq!(fresh.report().active_and_reserved, 0);
+    assert_eq!(fresh.report().quarantined, 0);
+    assert_eq!(fresh.report().permanently_quarantined, 0);
+    assert_eq!(fresh.report().charged_logical_bytes, 0);
+    assert_eq!(fresh.report().charged_effective_pages, 0);
+}
+
+#[test]
 fn assert_unwind_safe_bypass_still_runs_cleanup_for_each_typestate() {
     let context = AssuranceContext::new();
     let token = context.best_effort_token();

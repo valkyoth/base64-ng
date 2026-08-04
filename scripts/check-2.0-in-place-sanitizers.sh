@@ -14,8 +14,10 @@ if ! rustup component list --toolchain "$toolchain" --installed | grep -q '^rust
     exit 1
 fi
 
-evidence_dir="target/release-evidence/2.0-in-place-sanitizers"
-log="$evidence_dir/address-sanitizer.txt"
+evidence_dir="target/release-evidence/2.0-memory-sanitizers"
+address_log="$evidence_dir/address-sanitizer.txt"
+leak_log="$evidence_dir/leak-sanitizer.txt"
+thread_log="$evidence_dir/thread-sanitizer.txt"
 manifest="$evidence_dir/MANIFEST.txt"
 mkdir -p "$evidence_dir"
 
@@ -26,22 +28,64 @@ if env \
     rustup run "$toolchain" cargo test \
         -Zbuild-std \
         --target "$target" \
+        --all-features \
         --lib \
-        'v2::in_place_tests' >"$log" 2>&1 && \
+        'v2::in_place_tests' >"$address_log" 2>&1 && \
     env \
         RUSTFLAGS="-Zsanitizer=address" \
         RUSTDOCFLAGS="-Zsanitizer=address" \
         rustup run "$toolchain" cargo test \
             -Zbuild-std \
             --target "$target" \
+            --all-features \
             --lib \
-            'v2::secret_in_place_tests' >>"$log" 2>&1
+            'v2::secret_in_place_tests' >>"$address_log" 2>&1
 then
-    status=0
+    address_status=0
 else
-    status="$?"
+    address_status="$?"
 fi
-cat "$log"
+cat "$address_log"
+
+leak_status=0
+thread_status=0
+if [ "$target" = "x86_64-unknown-linux-gnu" ]; then
+    echo "2.0 memory sanitizers: LeakSanitizer secret ownership suite"
+    if env \
+        RUSTFLAGS="-Zsanitizer=leak" \
+        rustup run "$toolchain" cargo test \
+            -Zbuild-std \
+            --target "$target" \
+            --all-features \
+            --lib \
+            'v2::secret_' >"$leak_log" 2>&1
+    then
+        leak_status=0
+    else
+        leak_status="$?"
+    fi
+    cat "$leak_log"
+
+    echo "2.0 memory sanitizers: ThreadSanitizer backend-health convergence"
+    if env \
+        RUSTFLAGS="-Zsanitizer=thread" \
+        rustup run "$toolchain" cargo test \
+            -Zbuild-std \
+            --target "$target" \
+            --all-features \
+            --lib \
+            'v2::backend_health::tests::concurrent_first_use_converges_without_waiting_on_testing' \
+            -- --exact >"$thread_log" 2>&1
+    then
+        thread_status=0
+    else
+        thread_status="$?"
+    fi
+    cat "$thread_log"
+else
+    printf '%s\n' "skipped: LeakSanitizer campaign is admitted only on x86_64 Linux" >"$leak_log"
+    printf '%s\n' "skipped: ThreadSanitizer campaign is admitted only on x86_64 Linux" >"$thread_log"
+fi
 
 {
     echo "base64-ng 2.0 in-place sanitizer evidence"
@@ -49,16 +93,21 @@ cat "$log"
     rustup run "$toolchain" rustc -Vv
     rustup run "$toolchain" cargo -V
     echo "target=$target"
-    echo "status=$status"
+    echo "address_status=$address_status"
+    echo "leak_status=$leak_status"
+    echo "thread_status=$thread_status"
+    echo "undefined_behavior_status=not-separately-supported-by-rustc-sanitizers"
     if command -v sha256sum >/dev/null 2>&1; then
-        sha256sum "$log"
+        sha256sum "$address_log" "$leak_log" "$thread_log"
     else
-        shasum -a 256 "$log"
+        shasum -a 256 "$address_log" "$leak_log" "$thread_log"
     fi
 } >"$manifest"
 
-if [ "$status" -ne 0 ]; then
-    exit "$status"
-fi
+for status in "$address_status" "$leak_status" "$thread_status"; do
+    if [ "$status" -ne 0 ]; then
+        exit "$status"
+    fi
+done
 
-echo "2.0 in-place sanitizers: ok"
+echo "2.0 memory sanitizers: ok"

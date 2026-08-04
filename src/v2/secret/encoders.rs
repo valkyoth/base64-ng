@@ -278,6 +278,11 @@ impl SecretVecEncoder {
         &self.state
     }
 
+    #[cfg(test)]
+    pub(crate) fn allocation_snapshot(&self) -> (*const u8, usize) {
+        (self.output.as_ptr(), self.output.capacity())
+    }
+
     fn fail_storage(&mut self) {
         crate::wipe_bytes(&mut self.output);
     }

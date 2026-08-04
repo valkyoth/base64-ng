@@ -285,6 +285,14 @@ impl SecretVecFrame {
         &self.state
     }
 
+    #[cfg(test)]
+    pub(crate) fn allocation_snapshot(&self) -> ((*const u8, usize), (*const u8, usize)) {
+        (
+            (self.staging.as_ptr(), self.staging.capacity()),
+            (self.output.as_ptr(), self.output.capacity()),
+        )
+    }
+
     fn fail_storage(&mut self) {
         crate::wipe_bytes(&mut self.staging);
         crate::wipe_bytes(&mut self.output);

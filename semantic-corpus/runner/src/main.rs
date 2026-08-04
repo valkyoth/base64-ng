@@ -10,6 +10,8 @@ use base64_ng_serde::{Base64Standard, Base64UrlSafeNoPad};
 use bytes::Bytes;
 use std::io::Write;
 
+mod v2;
+
 const CORPUS: &str = include_str!("../../v1/cases.tsv");
 const EXPECTED_HEADER: &str = "id\tprofile\toperation\tinput_hex\tencoded\tdecision\t\
 error_class\terror_offset\teof\tpartitions\tcommitted_prefix_hex\tcore_one_shot\t\
@@ -93,6 +95,8 @@ where
     assert_eq!(case.bytes_contract, "byte-identical", "{}", case.id);
     assert_eq!(case.tokio_contract, "byte-identical", "{}", case.id);
 
+    v2::exercise_success(case, &codec);
+
     assert_eq!(
         engine.encode_vec(&case.input).unwrap(),
         case.encoded,
@@ -155,6 +159,8 @@ where
     A: Alphabet,
     S: Codec,
 {
+    v2::exercise_failure(case, &codec);
+
     let error = engine.decode_vec(case.encoded).unwrap_err();
     assert_error(case, error);
 

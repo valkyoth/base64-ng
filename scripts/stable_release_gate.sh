@@ -47,8 +47,16 @@ fi
 echo "stable release gate: Miri"
 scripts/check_miri.sh
 
-echo "stable release gate: in-place AddressSanitizer"
+echo "stable release gate: address, leak, and thread sanitizers"
 scripts/check-2.0-in-place-sanitizers.sh
+
+echo "stable release gate: final native hardware evidence"
+if [ "$mode" = "release" ]; then
+    BASE64_NG_REQUIRE_COMMIT53_NATIVE=1 \
+        scripts/check-2.0-memory-hardware-evidence.sh
+else
+    scripts/check-2.0-memory-hardware-evidence.sh
+fi
 
 if cargo fuzz --version >/dev/null 2>&1 && [ -d fuzz ]; then
     echo "stable release gate: fuzz target compile check"

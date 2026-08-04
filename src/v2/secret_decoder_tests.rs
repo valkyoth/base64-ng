@@ -305,3 +305,18 @@ fn vector_frame_preallocates_and_preserves_zero_spare_capacity() {
     let ordinary = secret.declassify_into_unprotected_vec();
     assert_eq!(ordinary, std::vec![b's', b'e', b'c', b'r', b'e', b't']);
 }
+
+#[cfg(feature = "alloc")]
+#[test]
+fn vector_frame_never_reallocates_after_classified_input() {
+    use super::secret::SecretVecFrame;
+
+    let mut frame = SecretVecFrame::new(&STRICT_STANDARD_PADDED, 32).unwrap();
+    let before = frame.allocation_snapshot();
+    for chunk in [b"c2".as_slice(), b"Vj".as_slice(), b"cmV0".as_slice()] {
+        frame.update(&SecretInput::new(chunk)).unwrap();
+        assert_eq!(frame.allocation_snapshot(), before);
+    }
+    let secret = frame.finish().unwrap();
+    assert_eq!(secret.expose_secret().as_bytes(), b"secret");
+}

@@ -15,6 +15,9 @@ use super::{
     secret_encoder::{map_value_for_test, require_disjoint_ranges_for_test},
 };
 
+#[cfg(feature = "alloc")]
+use super::secret::SecretVecEncoder;
+
 fn encode_array<const CAP: usize, S: Codec>(
     codec: &Base64<S>,
     chunks: &[&[u8]],
@@ -247,4 +250,17 @@ fn vector_encoder_preallocates_and_returns_wiping_storage() {
         .unwrap();
     assert_eq!(encoded.expose_secret().as_bytes(), b"-_8");
     assert!(encoded.capacity() >= 3);
+}
+
+#[cfg(feature = "alloc")]
+#[test]
+fn vector_encoder_never_reallocates_after_classified_input() {
+    let mut encoder = SecretVecEncoder::new(&STRICT_STANDARD_PADDED, 6).unwrap();
+    let before = encoder.allocation_snapshot();
+    for chunk in [b"se".as_slice(), b"cr".as_slice(), b"et".as_slice()] {
+        encoder.update(&SecretInput::new(chunk)).unwrap();
+        assert_eq!(encoder.allocation_snapshot(), before);
+    }
+    let secret = encoder.finish().unwrap();
+    assert_eq!(secret.expose_secret().as_bytes(), b"c2VjcmV0");
 }
