@@ -39,12 +39,15 @@ dirty-tree, or stale-source Miri, sanitizer, release-duration fuzz, dudect,
 normal/advanced Kani, assembly, native-hardware, and SBOM artifacts and writes
 `target/release-evidence/FINAL-MANIFEST.txt`. It also requires explicit success
 for every Miri and sanitizer scope, dudect, backend evidence, both Kani sets,
-and every named fuzz target. Fuzz, dudect, sanitizer, reproducibility, and final
-index manifests are published atomically only after successful completion, so
-an interrupted or failed run cannot leave a final-looking manifest. Release
-mode also pins the dudect acceptance threshold to `10`; the finalizer rejects
-missing, duplicate, malformed, or weakened threshold records. Release mode
-repeats this exact campaign for the report-only Commit 55 tag candidate.
+and every named fuzz target. The source section must occur exactly once, and
+its commit and tree-state keys must be exact, anchored, singleton values;
+duplicate, conflicting, prefixed, suffixed, or substring matches fail closed.
+Fuzz, dudect, sanitizer, reproducibility, and final index manifests are
+published atomically only after successful completion, so an interrupted or
+failed run cannot leave a final-looking manifest. Release mode also pins the
+dudect acceptance threshold to `10`; the finalizer rejects missing, duplicate,
+malformed, or weakened threshold records. Release mode repeats this exact
+campaign for the report-only Commit 55 tag candidate.
 
 Commit 51 completes the isolated fuzz and property inventory. Eighteen targets
 cover ordinary/runtime codecs, forced native backends, incremental/in-place
@@ -929,8 +932,9 @@ scripts/generate_simd_asm_evidence.sh
 On x86/x86_64 hosts, the script emits release test-harness assembly for the
 admitted AVX-512 VBMI, AVX2, and SSSE3/SSE4.1 encode paths, then checks for the
 expected byte-shuffle, byte-permute, vector-register, and transition/cleanup
-instructions. Commit 25 also checks exact-width SSSE3/AVX2 loads and rejects
-per-block wipe or full-register cleanup in ordinary encode.
+instructions. Commit 25 also checks exact-width SSSE3/AVX2 loads, rejects
+per-block wipe overhead, and requires one explicit register cleanup at each
+complete block-loop boundary.
 When the `aarch64-unknown-linux-gnu` target is installed, it also emits AArch64
 NEON release assembly and checks for table lookup, bit-select, and
 register-cleanup instructions. Cross-host runs record NEON library assembly

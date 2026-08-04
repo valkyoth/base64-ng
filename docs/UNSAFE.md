@@ -521,8 +521,9 @@ Unsafe operation:
   subtraction, a class comparison, and a lane-local 16-entry byte-shuffle
   lookup.
 - `_mm256_storeu_si256` stores the 32 encoded bytes into the output buffer.
-- LLVM emits `vzeroupper` at the AVX2 target-feature return boundary after the
-  complete block loop, not once per block; assembly evidence enforces it.
+- The complete block loop calls `clear_ymm_registers_after_encode_block` once
+  after its final store. That helper clears lower XMM state and emits
+  `vzeroupper`; assembly evidence enforces both sequences.
 
 Safety argument:
 
@@ -537,9 +538,9 @@ Safety argument:
   target features and the generation-bound `StaticBackendToken`, including a
   passing direct KAT and non-quarantined health state.
 - Ordinary encode input is classified as public data. The path does not claim
-  secret zeroization and does not clear lower vector registers per block.
-  `vzeroupper` is retained only for ISA-transition performance. Secret encode
-  remains in the separate scalar secret API.
+  secret zeroization, but it performs best-effort register cleanup once at the
+  complete block-loop boundary. Secret encode remains in the separate scalar
+  secret API.
 
 ### `encode_standard_family_indices_avx2`
 
@@ -577,12 +578,12 @@ Safety argument:
 
 Location: `src/simd/x86/cleanup.rs`
 
-Status: retained private helper for the current AVX2 strict-decode path.
+Status: private helper for admitted AVX2 encode and strict-decode paths.
 
 Purpose:
 
-- Clear lower XMM state and upper YMM state before returning from the current
-  AVX2 strict-decode block.
+- Clear lower XMM state and upper YMM state before returning from an admitted
+  AVX2 encode or strict-decode block loop.
 
 Preconditions:
 
@@ -598,10 +599,10 @@ Unsafe operation:
 Safety argument:
 
 - The helper does not read or write memory.
-- The helper runs at the end of the current AVX2 decode block path.
+- The helper runs at the end of an admitted AVX2 encode or decode block path.
 - `vzeroupper` is valid under the AVX2 target-feature precondition inherited
   from the caller.
-- This is best-effort register-retention reduction for test evidence, not a
+- This is best-effort register-retention reduction, not a
   guarantee that historical register, stack, cache, or microarchitectural
   copies do not exist.
 
@@ -640,6 +641,8 @@ Unsafe operation:
   saturated subtraction, a class comparison, and a 16-entry byte-shuffle
   lookup.
 - `_mm_storeu_si128` stores the 16 encoded bytes into the output buffer.
+- The complete block loop calls `clear_xmm_registers_after_encode_block` once
+  after its final store.
 
 Safety argument:
 
@@ -654,8 +657,9 @@ Safety argument:
   target features and the generation-bound `StaticBackendToken`, including a
   passing direct KAT and non-quarantined health state.
 - Ordinary encode input is public data. The path does not claim secret
-  zeroization and does not clear vector registers per block. Secret encode
-  remains in the separate scalar secret API.
+  zeroization, but it performs best-effort XMM cleanup once at the complete
+  block-loop boundary. Secret encode remains in the separate scalar secret
+  API.
 
 ### `encode_standard_family_indices_ssse3_sse41`
 

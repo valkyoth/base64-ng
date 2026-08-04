@@ -335,10 +335,23 @@ for required_provenance_text in \
     'refusing to generate release evidence from a dirty tree' \
     'source or lockfile changed during evidence generation' \
     'dirty-development-only' \
-    'EVIDENCE_LOCK_RECORD="$(evidence_checksum_file Cargo.lock)"'
+    'EVIDENCE_LOCK_RECORD="$(evidence_checksum_file Cargo.lock)"' \
+    'evidence_require_exact_manifest_key' \
+    'evidence_require_singleton_manifest_line' \
+    'evidence_require_clean_source_manifest'
 do
     if ! grep -F -q -- "$required_provenance_text" scripts/evidence-source.sh; then
         echo "release metadata: evidence source boundary is missing: $required_provenance_text" >&2
+        exit 1
+    fi
+done
+
+for required_finalizer_text in \
+    'evidence_require_clean_source_manifest' \
+    '"$file" "$EVIDENCE_SOURCE_COMMIT" "final release evidence"'
+do
+    if ! grep -F -q -- "$required_finalizer_text" scripts/finalize-release-evidence.sh; then
+        echo "release metadata: final evidence provenance validation is missing: $required_finalizer_text" >&2
         exit 1
     fi
 done

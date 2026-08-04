@@ -9,13 +9,11 @@ mod test_probes;
 use crate::{Alphabet, EncodeError, checked_encoded_len, scalar};
 
 use cleanup::clear_zmm_registers_after_encode_block;
-pub(crate) use decode::decode_slice_avx2;
-pub(crate) use decode::decode_slice_avx512;
-pub(crate) use decode::decode_slice_ssse3_sse41;
 #[cfg(all(feature = "std", test))]
 pub(crate) use decode::{
     decode_16_bytes_ssse3_sse41, decode_32_bytes_avx2, decode_64_bytes_avx512,
 };
+pub(crate) use decode::{decode_slice_avx2, decode_slice_avx512, decode_slice_ssse3_sse41};
 
 #[cfg(all(test, feature = "std"))]
 pub(in crate::simd) use test_probes::{
@@ -375,6 +373,8 @@ where
         read += 24;
         write += 32;
     }
+    // SAFETY: The caller guarantees one block and no vector value remains live.
+    unsafe { cleanup::clear_ymm_registers_after_encode_block() };
     (read, write)
 }
 
@@ -443,13 +443,12 @@ where
         read += 12;
         write += 16;
     }
+    // SAFETY: The caller guarantees one block and no vector value remains live.
+    unsafe { cleanup::clear_xmm_registers_after_encode_block() };
     (read, write)
 }
 
-pub(super) fn is_standard_or_url_safe_family<A>() -> bool
-where
-    A: Alphabet,
-{
+pub(super) fn is_standard_or_url_safe_family<A: Alphabet>() -> bool {
     const STANDARD_PREFIX: [u8; 62] =
         *b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 

@@ -73,4 +73,69 @@ then
 fi
 grep -F -q 'evidence generation requires a Git worktree' "$workdir/missing-git.log"
 
+manifest="$workdir/source-manifest.txt"
+commit="0123456789abcdef0123456789abcdef01234567"
+
+assert_manifest_accepted() {
+    if ! (
+        . "$root/scripts/evidence-source.sh"
+        evidence_require_clean_source_manifest \
+            "$manifest" "$commit" "evidence manifest test"
+    ) >"$workdir/manifest-accepted.log" 2>&1
+    then
+        echo "evidence source test: canonical source manifest was rejected" >&2
+        cat "$workdir/manifest-accepted.log" >&2
+        exit 1
+    fi
+}
+
+assert_manifest_rejected() {
+    mutation="$1"
+    if (
+        . "$root/scripts/evidence-source.sh"
+        evidence_require_clean_source_manifest \
+            "$manifest" "$commit" "evidence manifest test"
+    ) >"$workdir/manifest-$mutation.log" 2>&1
+    then
+        echo "evidence source test: $mutation source manifest unexpectedly passed" >&2
+        exit 1
+    fi
+    grep -E -q 'invalid or duplicate|missing or duplicate' \
+        "$workdir/manifest-$mutation.log"
+}
+
+printf 'source:\ncommit=%s\ntree_state=clean\n' "$commit" >"$manifest"
+assert_manifest_accepted
+
+printf 'source:\ncommit=%s\ncommit=%s\ntree_state=clean\n' \
+    "$commit" "$commit" >"$manifest"
+assert_manifest_rejected duplicate-identical-key
+
+printf 'source:\ncommit=stale\ncommit=%s\ntree_state=clean\n' \
+    "$commit" >"$manifest"
+assert_manifest_rejected conflicting-key
+
+printf 'source:\ncommit=%s\ntree_state=clean\nsource:\ncommit=%s\ntree_state=clean\n' \
+    "$commit" "$commit" >"$manifest"
+assert_manifest_rejected duplicate-source-section
+
+printf 'source:\nsource:\ncommit=%s\ntree_state=clean\n' "$commit" >"$manifest"
+assert_manifest_rejected duplicate-source-header
+
+printf 'source:\nprefix_commit=%s\ntree_state=clean\n' "$commit" >"$manifest"
+assert_manifest_rejected prefixed-key
+
+printf 'source:\ncommit_suffix=%s\ntree_state=clean\n' "$commit" >"$manifest"
+assert_manifest_rejected suffixed-key
+
+printf 'source:\ncommit=%s-suffix\ntree_state=clean\n' "$commit" >"$manifest"
+assert_manifest_rejected suffixed-value
+
+printf 'source:\ncommit=%s\ntree_state=clean-but-untrusted\n' "$commit" >"$manifest"
+assert_manifest_rejected suffixed-tree-state
+
+printf 'source:\ncommit=stale\ntree_state=dirty-development-only\ncommit=%s\ntree_state=clean\n' \
+    "$commit" >"$manifest"
+assert_manifest_rejected stale-followed-by-current
+
 echo "evidence source test: ok"

@@ -43,6 +43,17 @@ require_pattern() {
     fi
 }
 
+require_source_text() {
+    file="$1"
+    text="$2"
+    description="$3"
+
+    if ! grep -F -q "$text" "$file"; then
+        echo "simd asm evidence: missing $description in $file" >&2
+        exit 1
+    fi
+}
+
 host_triple="$(rustc -vV | sed -n 's/^host: //p')"
 case "$host_triple" in
     x86_64-*|i686-*|i586-*|i486-*|i386-*) ;;
@@ -60,6 +71,15 @@ case "$host_triple" in
         ;;
 esac
 
+require_source_text \
+    src/simd/x86/mod.rs \
+    'unsafe { cleanup::clear_xmm_registers_after_encode_block() };' \
+    'SSSE3/SSE4.1 encode loop cleanup call'
+require_source_text \
+    src/simd/x86/mod.rs \
+    'unsafe { cleanup::clear_ymm_registers_after_encode_block() };' \
+    'AVX2 encode loop cleanup call'
+
 echo "simd asm evidence: SSSE3/SSE4.1 release test assembly"
 CARGO_INCREMENTAL=0 \
 CARGO_TARGET_DIR="$audit_root/ssse3-sse41" \
@@ -70,6 +90,7 @@ require_pattern "$output_dir/base64_ng-ssse3-sse41-test.s" "vpshufb" "SSSE3 byte
 require_pattern "$output_dir/base64_ng-ssse3-sse41-test.s" "vpmaddubsw" "SSSE3 strict-decode byte packing"
 require_pattern "$output_dir/base64_ng-ssse3-sse41-test.s" "vpmaddwd" "SSSE3 strict-decode word packing"
 require_pattern "$output_dir/base64_ng-ssse3-sse41-test.s" "xmm" "XMM register use"
+require_pattern "$output_dir/base64_ng-ssse3-sse41-test.s" "pxor[[:space:]]+%xmm0,[[:space:]]+%xmm0" "XMM cleanup sequence"
 
 echo "simd asm evidence: AVX2 release test assembly"
 CARGO_INCREMENTAL=0 \
@@ -81,6 +102,7 @@ require_pattern "$output_dir/base64_ng-avx2-test.s" "vpshufb" "AVX2 byte-shuffle
 require_pattern "$output_dir/base64_ng-avx2-test.s" "vpmaddubsw" "AVX2 strict-decode byte packing"
 require_pattern "$output_dir/base64_ng-avx2-test.s" "vpmaddwd" "AVX2 strict-decode word packing"
 require_pattern "$output_dir/base64_ng-avx2-test.s" "ymm" "YMM register use"
+require_pattern "$output_dir/base64_ng-avx2-test.s" "v?pxor[[:space:]]+%xmm0,[[:space:]]+%xmm0" "lower XMM cleanup sequence"
 require_pattern "$output_dir/base64_ng-avx2-test.s" "vzeroupper" "AVX upper-state cleanup"
 
 echo "simd asm evidence: AVX-512 VBMI release test assembly"
@@ -162,9 +184,9 @@ evidence_verify_source "simd asm evidence"
     fi
     echo
     echo "review focus:"
-    echo "- SSSE3/SSE4.1 admitted encode path contains exact-width input reads, byte shuffle, XMM operations, and no per-block cleanup"
+    echo "- SSSE3/SSE4.1 admitted encode path contains exact-width input reads, byte shuffle, XMM operations, and one cleanup at the block-loop boundary"
     echo "- SSSE3/SSE4.1 admitted strict decode path contains direct ASCII classification, 6-bit mapping, multiply-add packing, exact 12-byte stores, XMM operations, and one cleanup at the block-loop boundary"
-    echo "- AVX2 admitted encode path contains exact-width input reads, byte shuffle, YMM operations, and one-per-call vzeroupper"
+    echo "- AVX2 admitted encode path contains exact-width input reads, byte shuffle, YMM operations, lower-register cleanup, and one-per-call vzeroupper"
     echo "- AVX2 admitted strict decode path contains direct ASCII classification, 6-bit mapping, exact per-lane 12-byte stores, YMM operations, and one cleanup at the block-loop boundary"
     echo "- AVX-512 admitted encode path contains an exact 48-lane masked load, direct VBMI expansion and alphabet permutes, ZMM operations, one-per-call ZMM cleanup, and vzeroupper"
     echo "- AVX-512 VBMI admitted strict decode path contains byte shuffle, multiply-add packing, VBMI lane compaction, ZMM operations, ZMM cleanup, and vzeroupper"

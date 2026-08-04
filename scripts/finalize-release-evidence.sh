@@ -25,12 +25,8 @@ require_file() {
 require_source_manifest() {
     file="$1"
     require_file "$file"
-    if ! grep -F -q "commit=$EVIDENCE_SOURCE_COMMIT" "$file" ||
-        ! grep -F -q 'tree_state=clean' "$file"
-    then
-        echo "final release evidence: stale or dirty source manifest: $file" >&2
-        exit 1
-    fi
+    evidence_require_clean_source_manifest \
+        "$file" "$EVIDENCE_SOURCE_COMMIT" "final release evidence"
 }
 
 for file in \

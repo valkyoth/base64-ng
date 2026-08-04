@@ -67,3 +67,55 @@ evidence_write_source_manifest() {
     echo "tree_state=$EVIDENCE_TREE_STATE"
     printf '%s\n' "$EVIDENCE_LOCK_RECORD"
 }
+
+evidence_require_exact_manifest_key() {
+    evidence_manifest_file="$1"
+    evidence_manifest_key="$2"
+    evidence_manifest_expected="$3"
+    evidence_manifest_label="$4"
+
+    evidence_manifest_actual="$(
+        awk -v key="$evidence_manifest_key" '
+            index($0, key "=") == 1 && substr($0, 1, length(key) + 1) == key "=" {
+                print substr($0, length(key) + 2)
+            }
+        ' "$evidence_manifest_file"
+    )"
+
+    if [ "$evidence_manifest_actual" != "$evidence_manifest_expected" ]; then
+        echo "$evidence_manifest_label: invalid or duplicate $evidence_manifest_key in $evidence_manifest_file" >&2
+        exit 1
+    fi
+}
+
+evidence_require_singleton_manifest_line() {
+    evidence_manifest_file="$1"
+    evidence_manifest_expected="$2"
+    evidence_manifest_description="$3"
+    evidence_manifest_label="$4"
+
+    evidence_manifest_count="$(
+        awk -v expected="$evidence_manifest_expected" '
+            $0 == expected { count += 1 }
+            END { print count + 0 }
+        ' "$evidence_manifest_file"
+    )"
+
+    if [ "$evidence_manifest_count" -ne 1 ]; then
+        echo "$evidence_manifest_label: missing or duplicate $evidence_manifest_description in $evidence_manifest_file" >&2
+        exit 1
+    fi
+}
+
+evidence_require_clean_source_manifest() {
+    evidence_manifest_file="$1"
+    evidence_manifest_commit="$2"
+    evidence_manifest_label="$3"
+
+    evidence_require_singleton_manifest_line \
+        "$evidence_manifest_file" 'source:' 'source section' "$evidence_manifest_label"
+    evidence_require_exact_manifest_key \
+        "$evidence_manifest_file" commit "$evidence_manifest_commit" "$evidence_manifest_label"
+    evidence_require_exact_manifest_key \
+        "$evidence_manifest_file" tree_state clean "$evidence_manifest_label"
+}

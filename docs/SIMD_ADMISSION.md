@@ -225,8 +225,10 @@ or unpadded output.
 Commit 25 rewrites SSSE3/SSE4.1 and AVX2 encode as direct production hot paths.
 They read exactly 12 and 24 caller bytes respectively, use lane-local
 byte-shuffle alphabet mapping, and avoid prototype staging, scalar comparison,
-and per-block register clearing. Generated assembly must retain `vzeroupper`
-at the AVX2 return boundary. `StaticBackendToken::encode_standard` and
+and per-block register clearing. Each complete block loop performs one
+best-effort XMM/YMM cleanup before return; generated assembly must retain the
+lower-register clear and `vzeroupper` at the AVX2 return boundary.
+`StaticBackendToken::encode_standard` and
 `StaticBackendToken::encode_url_safe` expose these kernels to admitted
 `no_std` deployments; invalidated tokens use scalar. With `checked-backend`,
 static-token calls retain bounded scalar comparison, suspect-output
