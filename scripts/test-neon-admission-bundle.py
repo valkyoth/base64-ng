@@ -34,6 +34,14 @@ def write_csv(path: Path) -> None:
                                 )
 
 
+def write_checksums(path: Path) -> None:
+    checksums = "".join(
+        f"{hashlib.sha256((path / name).read_bytes()).hexdigest()}  {name}\n"
+        for name in FILES
+    )
+    (path / "CHECKSUMS.sha256").write_text(checksums, encoding="utf-8")
+
+
 def write_bundle(path: Path) -> None:
     path.mkdir()
     source = subprocess.run(
@@ -42,10 +50,11 @@ def write_bundle(path: Path) -> None:
     (path / "MANIFEST.txt").write_text(
         "\n".join(
             (
-                "schema=base64-ng-neon-performance-v1",
+                "schema=base64-ng-neon-performance-v2",
                 f"source_commit={source}",
                 "source_status=clean",
                 "host=aarch64-unknown-linux-gnu",
+                "host_metadata_policy=allowlisted-v1",
                 "samples_per_cell=15",
                 "target_bytes_per_sample=16777216",
                 "median_minimum_ratio=1.02",
@@ -55,15 +64,18 @@ def write_bundle(path: Path) -> None:
         + "\n",
         encoding="utf-8",
     )
-    (path / "cpu.txt").write_text("fixture CPU\n", encoding="utf-8")
-    (path / "rustc.txt").write_text("rustc fixture\n", encoding="utf-8")
-    (path / "uname.txt").write_text("Linux fixture\n", encoding="utf-8")
-    write_csv(path / "neon.csv")
-    checksums = "".join(
-        f"{hashlib.sha256((path / name).read_bytes()).hexdigest()}  {name}\n"
-        for name in FILES
+    (path / "cpu.txt").write_text(
+        "Architecture: aarch64\n"
+        "Byte Order: Little Endian\n"
+        "CPU(s): 8\n"
+        "Model name: fixture\n"
+        "Flags: fp asimd\n",
+        encoding="utf-8",
     )
-    (path / "CHECKSUMS.sha256").write_text(checksums, encoding="utf-8")
+    (path / "rustc.txt").write_text("rustc fixture\n", encoding="utf-8")
+    (path / "uname.txt").write_text("Linux 1.0.0 aarch64\n", encoding="utf-8")
+    write_csv(path / "neon.csv")
+    write_checksums(path)
 
 
 def run(path: Path, success: bool) -> None:
@@ -95,6 +107,14 @@ def main() -> None:
             encoding="utf-8",
         )
         run(wrong_host, False)
+
+        identifying_metadata = root / "identifying-metadata"
+        write_bundle(identifying_metadata)
+        (identifying_metadata / "uname.txt").write_text(
+            "Linux ip-10-0-0-1 1.0.0 aarch64\n", encoding="utf-8"
+        )
+        write_checksums(identifying_metadata)
+        run(identifying_metadata, False)
 
     print("NEON admission bundle: mutation checks ok")
 

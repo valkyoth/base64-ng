@@ -367,9 +367,11 @@ scripts/capture-2.0-neon-admission.sh \
 
 Commit both complete directories before candidate mode. The strict hardware
 gate independently validates their schema, checksums, source ancestry,
-runtime-source identity, host class, statistical policy, and common source
-commit. The retained AMD AVX-512 campaign supports exact-host wording; a second
-AVX-512 microarchitecture is a 2.0.1 corroboration target, not a 2.0.0 claim.
+runtime-source identity, host class, metadata allowlist, statistical policy,
+and common source commit. Publishable bundles exclude hostnames, UUIDs, home
+paths, and unrelated system-wide `sysctl` state. The retained AMD AVX-512
+campaign supports exact-host wording; a second AVX-512 microarchitecture is a
+2.0.1 corroboration target, not a 2.0.0 claim.
 
 The permanent pentest report commit must only change the report file. The
 report must contain `Status: PASS`, `Reviewed-Commit:`, `Tester:`, `Scope:`,

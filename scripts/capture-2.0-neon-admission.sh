@@ -60,18 +60,46 @@ if [ "$source_commit" != "$(git rev-parse HEAD^{commit})" ] \
 fi
 
 rustc -Vv >"$temporary/rustc.txt"
-uname -a >"$temporary/uname.txt"
+uname -srm >"$temporary/uname.txt"
 if command -v lscpu >/dev/null 2>&1; then
-    lscpu >"$temporary/cpu.txt"
+    LC_ALL=C lscpu | sed -n \
+        -e '/^Architecture:/p' \
+        -e '/^CPU op-mode(s):/p' \
+        -e '/^Byte Order:/p' \
+        -e '/^CPU(s):/p' \
+        -e '/^On-line CPU(s) list:/p' \
+        -e '/^Vendor ID:/p' \
+        -e '/^Model name:/p' \
+        -e '/^Model:/p' \
+        -e '/^Thread(s) per core:/p' \
+        -e '/^Core(s) per socket:/p' \
+        -e '/^Socket(s):/p' \
+        -e '/^Stepping:/p' \
+        -e '/^BogoMIPS:/p' \
+        -e '/^Flags:/p' \
+        -e '/^L1d cache:/p' \
+        -e '/^L1i cache:/p' \
+        -e '/^L2 cache:/p' \
+        -e '/^L3 cache:/p' \
+        -e '/^Virtualization:/p' \
+        -e '/^Hypervisor vendor:/p' \
+        >"$temporary/cpu.txt"
 elif command -v sysctl >/dev/null 2>&1; then
-    sysctl -a >"$temporary/cpu.txt" 2>/dev/null || true
+    for key in \
+        hw.machine hw.model hw.ncpu hw.physicalcpu hw.logicalcpu \
+        hw.memsize hw.byteorder hw.optional.neon hw.optional.arm64 \
+        machdep.cpu.brand_string
+    do
+        sysctl "$key" 2>/dev/null || true
+    done >"$temporary/cpu.txt"
 fi
 
 cat >"$temporary/MANIFEST.txt" <<EOF
-schema=base64-ng-neon-performance-v1
+schema=base64-ng-neon-performance-v2
 source_commit=$source_commit
 source_status=clean
 host=$host
+host_metadata_policy=allowlisted-v1
 samples_per_cell=$samples
 target_bytes_per_sample=$target_bytes
 median_minimum_ratio=1.02

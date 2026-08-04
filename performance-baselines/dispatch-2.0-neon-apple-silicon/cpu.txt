@@ -1,0 +1,8 @@
+hw.ncpu: 10
+hw.byteorder: 1234
+hw.memsize: 17179869184
+hw.optional.neon: 1
+hw.optional.arm64: 1
+hw.physicalcpu: 10
+hw.logicalcpu: 10
+machdep.cpu.brand_string: Apple M2 Pro

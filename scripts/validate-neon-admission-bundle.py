@@ -25,11 +25,54 @@ KEYS = {
     "source_commit",
     "source_status",
     "host",
+    "host_metadata_policy",
     "samples_per_cell",
     "target_bytes_per_sample",
     "median_minimum_ratio",
     "one_sided_sign_test_maximum_p",
 }
+APPLE_CPU_KEYS = {
+    "hw.machine",
+    "hw.model",
+    "hw.ncpu",
+    "hw.physicalcpu",
+    "hw.logicalcpu",
+    "hw.memsize",
+    "hw.byteorder",
+    "hw.optional.neon",
+    "hw.optional.arm64",
+    "machdep.cpu.brand_string",
+}
+APPLE_CPU_REQUIRED = {
+    "hw.ncpu",
+    "hw.byteorder",
+    "hw.optional.neon",
+    "hw.optional.arm64",
+    "machdep.cpu.brand_string",
+}
+LINUX_CPU_KEYS = {
+    "Architecture",
+    "CPU op-mode(s)",
+    "Byte Order",
+    "CPU(s)",
+    "On-line CPU(s) list",
+    "Vendor ID",
+    "Model name",
+    "Model",
+    "Thread(s) per core",
+    "Core(s) per socket",
+    "Socket(s)",
+    "Stepping",
+    "BogoMIPS",
+    "Flags",
+    "L1d cache",
+    "L1i cache",
+    "L2 cache",
+    "L3 cache",
+    "Virtualization",
+    "Hypervisor vendor",
+}
+LINUX_CPU_REQUIRED = {"Architecture", "Byte Order", "CPU(s)", "Model name", "Flags"}
 RUNTIME_PATHS = (
     "Cargo.toml",
     "Cargo.lock",
@@ -101,6 +144,35 @@ def check_git_source(source: str) -> None:
         fail(f"runtime source changed after capture:\n{changed}")
 
 
+def validate_host_metadata(directory: Path, host: str) -> None:
+    cpu = (directory / "cpu.txt").read_text(encoding="utf-8")
+    uname = (directory / "uname.txt").read_text(encoding="utf-8").strip()
+    lines = cpu.splitlines()
+    if any(":" not in line for line in lines):
+        fail("CPU metadata contains a malformed line")
+    keys = {line.split(":", 1)[0] for line in lines}
+
+    if host == "aarch64-apple-darwin":
+        if not APPLE_CPU_REQUIRED <= keys or not keys <= APPLE_CPU_KEYS:
+            fail("Apple CPU metadata does not match the allowlist")
+        if re.fullmatch(r"Darwin [0-9][A-Za-z0-9._-]* arm64", uname) is None:
+            fail("Apple OS metadata is not minimized")
+    else:
+        if not LINUX_CPU_REQUIRED <= keys or not keys <= LINUX_CPU_KEYS:
+            fail("Linux CPU metadata does not match the allowlist")
+        if re.fullmatch(r"Linux [0-9][A-Za-z0-9._+-]* aarch64", uname) is None:
+            fail("Linux OS metadata is not minimized")
+
+    combined = f"{cpu}\n{uname}"
+    forbidden = re.compile(
+        r"(?i)(hostname|bootuuid|bootsessionuuid|machine.?id|/users/|/home/|"
+        r"ip-[0-9]+-[0-9]+-[0-9]+-[0-9]+|"
+        r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})"
+    )
+    if forbidden.search(combined):
+        fail("host metadata contains a machine-specific identifier")
+
+
 def validate(directory: Path, platform: str | None) -> None:
     if not directory.is_dir():
         fail(f"bundle directory is missing: {directory}")
@@ -112,10 +184,12 @@ def validate(directory: Path, platform: str | None) -> None:
             fail(f"bundle artifact is empty: {name}")
 
     manifest = parse_manifest(directory / "MANIFEST.txt")
-    if manifest["schema"] != "base64-ng-neon-performance-v1":
+    if manifest["schema"] != "base64-ng-neon-performance-v2":
         fail("unsupported schema")
     if manifest["source_status"] != "clean":
         fail("capture source was not clean")
+    if manifest["host_metadata_policy"] != "allowlisted-v1":
+        fail("host metadata policy does not match the frozen allowlist")
     if int(manifest["samples_per_cell"]) < 15:
         fail("fewer than 15 samples per cell")
     if int(manifest["target_bytes_per_sample"]) <= 0:
@@ -134,6 +208,7 @@ def validate(directory: Path, platform: str | None) -> None:
         fail(f"{platform} bundle has unexpected host: {host}")
     if host not in expected.values():
         fail(f"host is not an admitted native NEON evidence host: {host}")
+    validate_host_metadata(directory, host)
 
     checksums = parse_checksums(directory / "CHECKSUMS.sha256")
     for name, expected_digest in checksums.items():
