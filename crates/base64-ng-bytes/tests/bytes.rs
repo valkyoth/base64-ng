@@ -235,6 +235,25 @@ fn changing_remaining_cannot_bypass_the_cumulative_input_limit() {
 }
 
 #[test]
+fn inconsistent_post_advance_remaining_reports_committed_progress() {
+    let mut input = InconsistentAfterAdvanceBuf::new(b"abc");
+    let mut output = Vec::new();
+    let mut encoder = STRICT_STANDARD_PADDED.bytes_encoder();
+
+    let error = encoder.update(&mut input, &mut output).unwrap_err();
+
+    assert_eq!(input.advanced, 3);
+    assert_eq!(error.progress().input_consumed(), 3);
+    assert_eq!(error.progress().output_committed(), 4);
+    assert_eq!(output, b"YWJj");
+    assert_eq!(
+        error.kind(),
+        BytesErrorKind::InvalidInputBuffer { remaining: 1 }
+    );
+    assert!(encoder.is_failed());
+}
+
+#[test]
 fn downstream_panic_latches_state_until_reset() {
     let mut input = Bytes::from_static(b"abc");
     let mut output = PanicAfterWrite::default();
@@ -307,6 +326,35 @@ impl Buf for OneByteBuf {
 
 struct EmptyChunkBuf {
     remaining: usize,
+}
+
+struct InconsistentAfterAdvanceBuf {
+    bytes: Bytes,
+    advanced: usize,
+}
+
+impl InconsistentAfterAdvanceBuf {
+    fn new(bytes: &[u8]) -> Self {
+        Self {
+            bytes: Bytes::copy_from_slice(bytes),
+            advanced: 0,
+        }
+    }
+}
+
+impl Buf for InconsistentAfterAdvanceBuf {
+    fn remaining(&self) -> usize {
+        self.bytes.remaining() + usize::from(self.advanced != 0)
+    }
+
+    fn chunk(&self) -> &[u8] {
+        self.bytes.chunk()
+    }
+
+    fn advance(&mut self, count: usize) {
+        self.bytes.advance(count);
+        self.advanced += count;
+    }
 }
 
 struct ExpandingRemainingBuf {

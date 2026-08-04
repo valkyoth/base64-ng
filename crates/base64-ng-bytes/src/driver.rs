@@ -220,11 +220,16 @@ impl Driver {
             }
 
             input.advance(consumed);
-            if input.remaining() != reported_remaining - consumed || !progress.add_input(consumed) {
+            if !progress.add_input(consumed) {
+                return Err(BytesError::new(progress, BytesErrorKind::ImpossibleState));
+            }
+            let actual_remaining = input.remaining();
+            let expected_remaining = reported_remaining - consumed;
+            if actual_remaining != expected_remaining {
                 return Err(BytesError::new(
                     progress,
                     BytesErrorKind::InvalidInputBuffer {
-                        remaining: input.remaining(),
+                        remaining: actual_remaining,
                     },
                 ));
             }
