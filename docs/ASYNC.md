@@ -26,6 +26,11 @@ and the complete staging array on cancellation or drop. When a read-all vector
 must grow, the helper copies into a guarded replacement and wipes the previous
 allocation before deallocation so historical growth buffers are not released
 with live frame contents.
+Collection, incremental transformation, and output delivery consume Tokio's
+cooperative budget after every bounded chunk. This gives other ready tasks an
+opportunity to run even when custom `AsyncRead` or `AsyncWrite` implementations
+always return `Poll::Ready` with minimal progress. It does not impose a time or
+size ceiling: peer-controlled sources must still use a finite framing limit.
 
 ## Current Status
 
@@ -37,7 +42,8 @@ with live frame contents.
   the dependency-free core crate today.
 - `base64-ng-tokio` provides optional read-all/write-all helpers for projects
   that already admit Tokio. Prefer its limited helpers for peer-controlled
-  input. Their temporary allocations use cancellation-safe RAII cleanup.
+  input. Their temporary allocations use cancellation-safe RAII cleanup, and
+  the companion enables Tokio's `rt` capability for cooperative budget checks.
 - `base64-ng-tokio` also provides streaming adapters: `EncoderReader`,
   `DecoderReader`, `EncoderWriter`, and `DecoderWriter`.
 - Commit 37 reader adapters use the shared 2.0 incremental state and distinguish

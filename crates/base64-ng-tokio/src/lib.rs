@@ -32,6 +32,9 @@
 //! On unwind-capable builds, panics from wrapped I/O are resumed only after the
 //! adapter latches failure and clears retained state. Effects completed by the
 //! wrapped I/O object before its panic remain outside rollback guarantees.
+//! Read-all collection, incremental transformation, and output delivery consume
+//! Tokio cooperative budget after each bounded chunk so an always-ready custom
+//! I/O object cannot monopolize a runtime worker indefinitely.
 
 mod decoder_writer;
 mod encoder_writer;
@@ -64,14 +67,9 @@ where
     W: AsyncWrite + Unpin + ?Sized,
 {
     let input = read_to_end_guarded(reader).await?;
-    let output = WipingVec::from_vec(
-        codec
-            .encode_to_string(input.as_slice())
-            .map_err(one_shot_encode_io_error)?
-            .into_bytes(),
-    );
+    let output = encode_frame_guarded(codec, input.as_slice()).await?;
     let written = output.len() as u64;
-    writer.write_all(output.as_slice()).await?;
+    write_all_cooperative(writer, output.as_slice()).await?;
     Ok(written)
 }
 
@@ -98,14 +96,9 @@ where
     W: AsyncWrite + Unpin + ?Sized,
 {
     let input = read_to_end_limited(reader, max_input_len).await?;
-    let output = WipingVec::from_vec(
-        codec
-            .encode_to_string(input.as_slice())
-            .map_err(one_shot_encode_io_error)?
-            .into_bytes(),
-    );
+    let output = encode_frame_guarded(codec, input.as_slice()).await?;
     let written = output.len() as u64;
-    writer.write_all(output.as_slice()).await?;
+    write_all_cooperative(writer, output.as_slice()).await?;
     Ok(written)
 }
 
@@ -129,13 +122,9 @@ where
     W: AsyncWrite + Unpin + ?Sized,
 {
     let input = read_to_end_guarded(reader).await?;
-    let output = WipingVec::from_vec(
-        codec
-            .decode_to_vec(input.as_slice())
-            .map_err(one_shot_decode_io_error)?,
-    );
+    let output = decode_frame_guarded(codec, input.as_slice()).await?;
     let written = output.len() as u64;
-    writer.write_all(output.as_slice()).await?;
+    write_all_cooperative(writer, output.as_slice()).await?;
     Ok(written)
 }
 
@@ -162,13 +151,9 @@ where
     W: AsyncWrite + Unpin + ?Sized,
 {
     let input = read_to_end_limited(reader, max_input_len).await?;
-    let output = WipingVec::from_vec(
-        codec
-            .decode_to_vec(input.as_slice())
-            .map_err(one_shot_decode_io_error)?,
-    );
+    let output = decode_frame_guarded(codec, input.as_slice()).await?;
     let written = output.len() as u64;
-    writer.write_all(output.as_slice()).await?;
+    write_all_cooperative(writer, output.as_slice()).await?;
     Ok(written)
 }
 
@@ -235,10 +220,6 @@ impl WipingVec {
 
     fn with_capacity(capacity: usize) -> Self {
         Self(Vec::with_capacity(capacity))
-    }
-
-    fn from_vec(bytes: Vec<u8>) -> Self {
-        Self(bytes)
     }
 
     fn as_slice(&self) -> &[u8] {
@@ -322,6 +303,7 @@ where
 
         input.extend_from_slice_wiping_old(&chunk.0[..read], usize::MAX)?;
         wipe_bytes(&mut chunk.0[..read]);
+        tokio::task::coop::consume_budget().await;
     }
 }
 
@@ -353,5 +335,64 @@ where
 
         input.extend_from_slice_wiping_old(&chunk.0[..read], max_input_len)?;
         wipe_bytes(&mut chunk.0[..read]);
+        tokio::task::coop::consume_budget().await;
     }
+}
+
+async fn encode_frame_guarded<S>(codec: &Base64<S>, input: &[u8]) -> io::Result<WipingVec>
+where
+    S: Codec,
+{
+    let mut reader = EncoderReader::new_exact(input, codec, input.len());
+    collect_transformed_guarded(&mut reader).await
+}
+
+async fn decode_frame_guarded<S>(codec: &Base64<S>, input: &[u8]) -> io::Result<WipingVec>
+where
+    S: Codec,
+{
+    let mut reader = DecoderReader::new_exact(input, codec, input.len());
+    collect_transformed_guarded(&mut reader).await
+}
+
+async fn collect_transformed_guarded<R>(reader: &mut R) -> io::Result<WipingVec>
+where
+    R: AsyncRead + Unpin + ?Sized,
+{
+    let mut output = WipingVec::new();
+    let mut chunk = WipingArray::<8192>::new();
+
+    loop {
+        let read = reader.read(&mut chunk.0).await?;
+        if read == 0 {
+            return Ok(output);
+        }
+
+        output.extend_from_slice_wiping_old(&chunk.0[..read], usize::MAX)?;
+        wipe_bytes(&mut chunk.0[..read]);
+        tokio::task::coop::consume_budget().await;
+    }
+}
+
+async fn write_all_cooperative<W>(writer: &mut W, mut output: &[u8]) -> io::Result<()>
+where
+    W: AsyncWrite + Unpin + ?Sized,
+{
+    while !output.is_empty() {
+        let written = writer.write(output).await?;
+        if written == 0 {
+            return Err(io::Error::new(
+                io::ErrorKind::WriteZero,
+                "base64-ng-tokio writer made no progress",
+            ));
+        }
+        if written > output.len() {
+            return Err(io::Error::other(
+                "base64-ng-tokio writer reported invalid progress",
+            ));
+        }
+        output = &output[written..];
+        tokio::task::coop::consume_budget().await;
+    }
+    Ok(())
 }

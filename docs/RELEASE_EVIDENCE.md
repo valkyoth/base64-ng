@@ -340,7 +340,8 @@ The release gate runs:
   `scripts/check-2.0-tokio-readers.sh`, including one-byte destinations,
   arbitrary deterministic chunk/`Pending` schedules, cancellation/resume,
   exact-frame adjacent-byte preservation, irrevocable plaintext-prefix
-  behavior, wrapped-reader unwind cleanup, release tests, Miri coverage, and
+  behavior, wrapped-reader unwind cleanup, current-thread cooperative fairness
+  across collection/transformation/delivery, release tests, Miri coverage, and
   shared-state routing checks
 - Tokio `AsyncWrite` integration through `scripts/check-2.0-tokio-writers.sh`,
   including bounded acceptance, short writes, arbitrary deterministic

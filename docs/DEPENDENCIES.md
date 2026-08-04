@@ -122,7 +122,9 @@ Current decisions:
   frame boundaries, and manual `AsyncRead`/`AsyncWrite` streaming adapters with
   fixed buffers and drop cleanup. Writer adapters finalize pending Base64 tails
   during `AsyncWrite::poll_shutdown`; callers must drive shutdown to completion
-  before extracting the wrapped writer.
+  before extracting the wrapped writer. It enables only Tokio `io-util` and
+  `rt`: `rt` is required for cooperative budget consumption between bounded
+  collection, transformation, and delivery chunks.
 - `base64-ng-imap` is admitted as a companion because the obsolete RFC 3501
   modified-Base64 payload is legacy protocol grammar rather than core RFC 4648
   behavior. It depends only on the core crate, requires finite limits, accepts

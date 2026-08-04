@@ -44,7 +44,11 @@ byte used to detect overflow. Use `new_exact` when an adjacent frame's first
 byte must remain unread. Their eager
 allocation is capped at 8 KiB so cleanup work stays proportional to accepted
 input rather than the caller's maximum alone. Guarded vector growth wipes each
-replaced allocation before it is returned to the allocator.
+replaced allocation before it is returned to the allocator. Collection,
+incremental transformation, and output delivery consume Tokio cooperative
+budget between bounded chunks. This keeps always-ready custom readers and
+short-writing writers from monopolizing a runtime worker, but unlimited helpers
+still require a trusted finite source.
 
 ```rust
 use base64_ng::STRICT_STANDARD_PADDED;

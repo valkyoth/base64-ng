@@ -3,6 +3,7 @@ set -eu
 
 manifest="crates/base64-ng-tokio/Cargo.toml"
 reader_source="crates/base64-ng-tokio/src/readers.rs"
+helper_source="crates/base64-ng-tokio/src/lib.rs"
 
 fail() {
     echo "2.0 Tokio readers: $1" >&2
@@ -17,6 +18,21 @@ for forbidden in \
 do
     if grep -F -q "$forbidden" "$reader_source"; then
         fail "independent legacy codec boundary remains: $forbidden"
+    fi
+done
+
+if ! grep -F -q 'features = ["io-util", "rt"]' "$manifest"; then
+    fail "Tokio runtime support for cooperative budgeting is missing"
+fi
+
+for required in \
+    'encode_frame_guarded(codec, input.as_slice()).await?' \
+    'decode_frame_guarded(codec, input.as_slice()).await?' \
+    'write_all_cooperative(writer, output.as_slice()).await?' \
+    'tokio::task::coop::consume_budget().await'
+do
+    if ! grep -F -q "$required" "$helper_source"; then
+        fail "cooperative read-all boundary is missing: $required"
     fi
 done
 
@@ -42,9 +58,10 @@ cargo test --manifest-path "$manifest" --all-features
 
 echo "2.0 Tokio readers: release-mode state-machine tests"
 cargo test --manifest-path "$manifest" --all-features --release --test tokio_reader_adversarial
+cargo test --manifest-path "$manifest" --all-features --release --test tokio_cooperative
 
 echo "2.0 Tokio readers: lint and documentation"
 cargo clippy --manifest-path "$manifest" --all-targets --all-features -- -D warnings
 RUSTDOCFLAGS="-D warnings" cargo doc --manifest-path "$manifest" --no-deps --all-features
 
-echo "2.0 Tokio readers: shared state, exact boundaries, cancellation, and cleanup ok"
+echo "2.0 Tokio readers: shared state, exact boundaries, cooperative fairness, cancellation, and cleanup ok"

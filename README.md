@@ -550,7 +550,10 @@ whose adjacent bytes must remain unread. The transactional `*_limited`
 read-all helpers may consume one overflow lookahead byte and wipe their private
 allocations on return, error, and cancellation. Writer adapters retain accepted
 input across backpressure; call `shutdown` to finalize tails before checked
-inner recovery:
+inner recovery. Read-all collection, incremental transformation, and output
+delivery consume Tokio cooperative budget between bounded chunks so an
+always-ready custom I/O object cannot indefinitely monopolize a runtime worker.
+Unlimited helpers still require a trusted finite source:
 
 ```toml
 [dependencies]

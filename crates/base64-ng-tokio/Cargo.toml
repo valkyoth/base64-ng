@@ -23,7 +23,7 @@ default = []
 
 [dependencies]
 base64-ng = { version = "2.0.0", path = "../..", default-features = false, features = ["alloc", "std"] }
-tokio = { version = "1.53.1", default-features = false, features = ["io-util"] }
+tokio = { version = "1.53.1", default-features = false, features = ["io-util", "rt"] }
 
 [dev-dependencies]
 tokio = { version = "1.53.1", default-features = false, features = ["io-util", "macros", "rt"] }
