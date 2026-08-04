@@ -8,14 +8,25 @@ use base64_ng_password::{
 
 const LIMITS: PasswordRecordLimits = PasswordRecordLimits::new(512, 128, 64, 64, 512, 512);
 
+fn runtime_fixture_bytes<const N: usize>(domain: u8) -> [u8; N] {
+    let process = std::process::id().to_le_bytes();
+    core::array::from_fn(|index| {
+        b'a' + process[index % process.len()]
+            .wrapping_add(domain)
+            .wrapping_add(u8::try_from(index % 251).unwrap())
+            % 26
+    })
+}
+
 #[test]
 fn no_alloc_pbkdf2_record_round_trip_uses_caller_owned_storage() {
-    let checksum = [0x42_u8; 32];
-    let mut record = [0_u8; 256];
+    let salt = runtime_fixture_bytes::<4>(0x19);
+    let checksum = runtime_fixture_bytes::<32>(0x2b);
+    let mut record = runtime_fixture_bytes::<256>(0x3d);
     let written = generate_pbkdf2_record_into(
         PasslibPbkdf2Algorithm::Sha256,
         29_000,
-        b"salt",
+        &salt,
         &checksum,
         &mut record,
         LIMITS,
@@ -34,12 +45,13 @@ fn no_alloc_pbkdf2_record_round_trip_uses_caller_owned_storage() {
 
 #[test]
 fn no_alloc_sha_crypt_record_round_trip_uses_caller_owned_storage() {
-    let digest = [0x24_u8; 32];
-    let mut record = [0_u8; 128];
+    let salt = runtime_fixture_bytes::<4>(0x4f);
+    let digest = runtime_fixture_bytes::<32>(0x61);
+    let mut record = runtime_fixture_bytes::<128>(0x73);
     let written = generate_sha_crypt_record_into(
         ShaCryptAlgorithm::Sha256,
         ShaCryptRounds::implicit(),
-        b"salt",
+        &salt,
         &digest,
         &mut record,
         LIMITS,
@@ -62,7 +74,8 @@ fn no_alloc_sha_crypt_record_round_trip_uses_caller_owned_storage() {
 
 #[test]
 fn no_alloc_work_failure_leaves_output_unchanged() {
-    let mut output = [0xa5_u8; 32];
+    let mut output = runtime_fixture_bytes::<32>(0x85);
+    let expected = output;
     let limits = PasswordRecordLimits::new(128, 128, 64, 64, 128, 85);
     assert!(
         decode_sha_crypt_checksum_into(
@@ -73,5 +86,5 @@ fn no_alloc_work_failure_leaves_output_unchanged() {
         )
         .is_err()
     );
-    assert_eq!(output, [0xa5; 32]);
+    assert_eq!(output, expected);
 }

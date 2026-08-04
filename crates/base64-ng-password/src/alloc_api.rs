@@ -106,15 +106,24 @@ mod tests {
 
     use super::*;
 
+    fn runtime_fixture_bytes<const N: usize>(domain: u8) -> [u8; N] {
+        let seed = core::hint::black_box(domain);
+        core::array::from_fn(|index| {
+            b'a' + seed.wrapping_add(u8::try_from(index % 251).unwrap()) % 26
+        })
+    }
+
     #[test]
     fn rejected_work_budget_never_reaches_reservation() {
+        let pbkdf2_salt = runtime_fixture_bytes::<4>(0x19);
+        let pbkdf2_checksum = runtime_fixture_bytes::<32>(0x2b);
         let pbkdf2_reserve_called = Cell::new(false);
         let pbkdf2_limits = PasswordRecordLimits::new(256, 128, 64, 64, 256, 35);
         let error = generate_pbkdf2_record_with_reserver(
             PasslibPbkdf2Algorithm::Sha256,
             29_000,
-            b"salt",
-            &[0x42; 32],
+            &pbkdf2_salt,
+            &pbkdf2_checksum,
             pbkdf2_limits,
             |_, _| {
                 pbkdf2_reserve_called.set(true);
@@ -125,13 +134,15 @@ mod tests {
         assert_eq!(error.kind(), PasswordRecordErrorKind::WorkLimitExceeded);
         assert!(!pbkdf2_reserve_called.get());
 
+        let sha_salt = runtime_fixture_bytes::<4>(0x3d);
+        let sha_digest = runtime_fixture_bytes::<32>(0x4f);
         let sha_reserve_called = Cell::new(false);
         let sha_limits = PasswordRecordLimits::new(256, 128, 64, 64, 256, 39);
         let error = generate_sha_crypt_record_with_reserver(
             ShaCryptAlgorithm::Sha256,
             ShaCryptRounds::implicit(),
-            b"salt",
-            &[0x24; 32],
+            &sha_salt,
+            &sha_digest,
             sha_limits,
             |_, _| {
                 sha_reserve_called.set(true);
