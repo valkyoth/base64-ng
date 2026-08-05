@@ -136,6 +136,15 @@ test -x scripts/check-2.0-operation-reporting.sh
 test -x scripts/validate-2.0-dispatch-matrix.sh
 test -x scripts/capture-2.0-neon-admission.sh
 test -x scripts/validate-neon-admission-bundle.py
+if ! awk '
+    /name: Format, lint, test, and audit/ { in_checks = 1 }
+    in_checks && /fetch-depth: 0/ { found = 1 }
+    in_checks && /^  [A-Za-z0-9_-]+:/ && !/name: Format, lint, test, and audit/ { exit }
+    END { exit(found ? 0 : 1) }
+' .github/workflows/ci.yml; then
+    echo "release metadata: main checks job must fetch full Git history for retained evidence provenance" >&2
+    exit 1
+fi
 test -x scripts/test-neon-admission-bundle.py
 test -x scripts/validate-2.0-checkpoint-record.py
 test -x scripts/test-2.0-checkpoint-record.py
