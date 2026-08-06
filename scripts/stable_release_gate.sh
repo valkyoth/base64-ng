@@ -86,6 +86,9 @@ fi
 if [ "$mode" = "check" ]; then
     echo "stable release gate: fuzz compile and policy checks"
     scripts/check_fuzz.sh
+elif [ -n "${BASE64_NG_FUZZ_SHARD_DIR:-}" ]; then
+    echo "stable release gate: verified distributed release-duration fuzz campaigns"
+    run_evidence scripts/aggregate-fuzz-shards.sh "$BASE64_NG_FUZZ_SHARD_DIR"
 else
     echo "stable release gate: release-duration fuzz campaigns"
     BASE64_NG_RUN_FUZZ_RELEASE=1 BASE64_NG_FUZZ_SECONDS_PER_TARGET=3600 \

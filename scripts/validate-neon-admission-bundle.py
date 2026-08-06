@@ -139,9 +139,44 @@ def check_git_source(source: str) -> None:
         check=True,
         capture_output=True,
         text=True,
-    ).stdout.strip()
-    if changed:
-        fail(f"runtime source changed after capture:\n{changed}")
+    ).stdout.splitlines()
+    runtime_changed = [path for path in changed if not is_nonruntime_change(path, source)]
+    if runtime_changed:
+        details = "\n".join(runtime_changed)
+        fail(f"runtime source changed after capture:\n{details}")
+
+
+def git_file(revision: str, path: str) -> str | None:
+    result = subprocess.run(
+        ["git", "show", f"{revision}:{path}"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    return result.stdout if result.returncode == 0 else None
+
+
+def test_only_module_at(path: str, revision: str) -> bool:
+    file = Path(path)
+    if file.suffix != ".rs" or not file.name.endswith("_tests.rs"):
+        return False
+    module = file.stem
+    parent = "src/lib.rs" if file.parent == Path("src") else str(file.parent / "mod.rs")
+    parent_source = git_file(revision, parent)
+    if parent_source is None:
+        return False
+    declaration = re.compile(
+        rf"#\[cfg\([^\]]*\btest\b[^\]]*\)\]\s*"
+        rf"(?:#\[[^\]]+\]\s*)*mod\s+{re.escape(module)}\s*;",
+        re.MULTILINE,
+    )
+    return declaration.search(parent_source) is not None
+
+
+def is_nonruntime_change(path: str, source: str) -> bool:
+    if path.startswith("fuzz/"):
+        return True
+    return test_only_module_at(path, source) and test_only_module_at(path, "HEAD")
 
 
 def validate_host_metadata(directory: Path, host: str) -> None:

@@ -17,6 +17,9 @@ scripts/test-evidence-source.sh
 echo "checks: release evidence outcomes"
 scripts/test-release-evidence-outcomes.sh
 
+echo "checks: distributed fuzz evidence"
+python3 scripts/test-fuzz-shard-evidence.py
+
 echo "checks: dudect release policy"
 scripts/test-dudect-release-policy.sh
 

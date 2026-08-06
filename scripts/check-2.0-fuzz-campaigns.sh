@@ -1,33 +1,14 @@
 #!/usr/bin/env sh
 set -eu
 
-targets="
-decode
-in_place
-stream_chunks
-differential
-profiles
-x86_encode
-x86_decode
-neon
-mime_body
-pem_document
-multibase_family
-imap_payload
-password_records
-openpgp_armor
-v2_runtime_codec
-v2_incremental
-v2_async
-v2_assurance
-"
+targets="$(cat scripts/fuzz-release-targets.txt)"
 
 echo "2.0 fuzz campaigns: complete target inventory"
+grep -F -q 'scripts/fuzz-release-targets.txt' scripts/check_fuzz.sh
+grep -F -q 'scripts/fuzz-release-targets.txt' scripts/check_fuzz_corpus.sh
 for target in $targets; do
     grep -F -q "name = \"$target\"" fuzz/Cargo.toml
     test -s "fuzz/fuzz_targets/$target.rs"
-    grep -F -q "$target" scripts/check_fuzz.sh
-    grep -F -q "$target" scripts/check_fuzz_corpus.sh
 done
 
 echo "2.0 fuzz campaigns: target compilation"
@@ -74,5 +55,18 @@ for evidence in \
 do
     grep -F -q -- "$evidence" scripts/check_fuzz.sh
 done
+for distributed_evidence in \
+    'duration_seconds' \
+    'source_tree' \
+    'architecture_class' \
+    'artifact_count' \
+    'BASE64_NG_FUZZ_SHARD_DIR'
+do
+    grep -F -q -- "$distributed_evidence" \
+        scripts/capture-fuzz-shard.sh \
+        scripts/fuzz_shard_evidence.py \
+        scripts/stable_release_gate.sh
+done
+grep -F -q 'scripts/test-fuzz-shard-evidence.py' scripts/checks.sh
 
 echo "2.0 fuzz campaigns: complete adversarial target and property evidence ok"

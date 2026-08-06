@@ -55,6 +55,12 @@ state, sync and async adapters, every protocol companion, and volatile
 assurance teardown. `scripts/check-2.0-fuzz-campaigns.sh` runs the deterministic
 property, panic, cancellation, cleanup, and unsafe-provider isolation suite;
 `scripts/check_fuzz.sh` records bounded or release-duration LibFuzzer evidence.
+For resource-isolated release campaigns, `scripts/capture-fuzz-shard.sh`
+records one portable exact-source bundle at a time and
+`scripts/aggregate-fuzz-shards.sh` reconstructs the same mandatory fuzz
+manifest only after all 18 bundles validate. Campaigns need not be concurrent
+or continuous; source identity, per-target duration, architecture, logs,
+environment, corpus, and zero-artifact results must remain exact.
 
 Commit 52 completes the timing and generated-code evidence boundary.
 `scripts/validate-2.0-timing-boundaries.sh` preserves fixed-scan secret loops,

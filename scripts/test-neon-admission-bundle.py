@@ -5,7 +5,9 @@ from __future__ import annotations
 
 import csv
 import hashlib
+import importlib.util
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -13,6 +15,11 @@ from pathlib import Path
 LENGTHS = (12, 24, 48, 64, 96, 192, 384, 768, 1024, 4096, 64 * 1024)
 FILES = ("MANIFEST.txt", "cpu.txt", "neon.csv", "rustc.txt", "uname.txt")
 VALIDATOR = Path("scripts/validate-neon-admission-bundle.py").resolve()
+SPEC = importlib.util.spec_from_file_location("neon_bundle_validator", VALIDATOR)
+assert SPEC is not None and SPEC.loader is not None
+VALIDATOR_MODULE = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = VALIDATOR_MODULE
+SPEC.loader.exec_module(VALIDATOR_MODULE)
 
 
 def write_csv(path: Path) -> None:
@@ -90,6 +97,14 @@ def run(path: Path, success: bool) -> None:
 
 
 def main() -> None:
+    source = subprocess.run(
+        ["git", "rev-parse", "HEAD"], check=True, capture_output=True, text=True
+    ).stdout.strip()
+    assert VALIDATOR_MODULE.is_nonruntime_change("fuzz/fuzz_targets/decode.rs", source)
+    assert VALIDATOR_MODULE.is_nonruntime_change("src/v2/formatting_tests.rs", source)
+    assert not VALIDATOR_MODULE.is_nonruntime_change("src/v2/formatting.rs", source)
+    assert not VALIDATOR_MODULE.is_nonruntime_change("src/v2/mod.rs", source)
+
     with tempfile.TemporaryDirectory() as directory:
         root = Path(directory)
         valid = root / "valid"

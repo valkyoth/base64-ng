@@ -51,26 +51,7 @@ fi
 evidence_dir="target/release-evidence/fuzz"
 manifest="$evidence_dir/MANIFEST.txt"
 manifest_tmp="$evidence_dir/MANIFEST.txt.tmp"
-targets="
-decode
-in_place
-stream_chunks
-differential
-profiles
-x86_encode
-x86_decode
-neon
-mime_body
-pem_document
-multibase_family
-imap_payload
-password_records
-openpgp_armor
-v2_runtime_codec
-v2_incremental
-v2_async
-v2_assurance
-"
+targets="$(cat scripts/fuzz-release-targets.txt)"
 if [ "${BASE64_NG_RUN_FUZZ_RELEASE:-0}" = "1" ]; then
     mode="release-duration"
     duration="${BASE64_NG_FUZZ_SECONDS_PER_TARGET:-3600}"

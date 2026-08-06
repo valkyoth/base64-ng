@@ -8,26 +8,7 @@ fi
 
 test -s docs/FUZZING.md
 
-targets="
-decode
-in_place
-stream_chunks
-differential
-profiles
-x86_encode
-x86_decode
-neon
-mime_body
-pem_document
-multibase_family
-imap_payload
-password_records
-openpgp_armor
-v2_runtime_codec
-v2_incremental
-v2_async
-v2_assurance
-"
+targets="$(cat scripts/fuzz-release-targets.txt)"
 
 for target in $targets; do
     mkdir -p "fuzz/corpus/$target"

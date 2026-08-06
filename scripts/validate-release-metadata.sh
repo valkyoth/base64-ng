@@ -231,6 +231,9 @@ for required_script in \
     "scripts/validate-big-endian-byte-order.sh" \
     "scripts/validate-riscv-posture.sh" \
     "scripts/check_dudect.sh" \
+    "scripts/capture-fuzz-shard.sh" \
+    "scripts/check-fuzz-shard-progress.sh" \
+    "scripts/aggregate-fuzz-shards.sh" \
     "scripts/check_fuzz.sh" \
     "scripts/check_fuzz_corpus.sh" \
     "scripts/check_kani.sh" \
@@ -289,6 +292,8 @@ do
 done
 
 for required_python_script in \
+    "scripts/fuzz_shard_evidence.py" \
+    "scripts/test-fuzz-shard-evidence.py" \
     "scripts/validate-neon-admission-bundle.py" \
     "scripts/test-neon-admission-bundle.py" \
     "scripts/validate-2.0-checkpoint-record.py" \
@@ -873,6 +878,12 @@ for required_package_file in \
     "scripts/validate-sve-hardware-evidence.py" \
     "scripts/test-sve-hardware-evidence.py" \
     "scripts/check_dudect.sh" \
+    "scripts/capture-fuzz-shard.sh" \
+    "scripts/check-fuzz-shard-progress.sh" \
+    "scripts/aggregate-fuzz-shards.sh" \
+    "scripts/fuzz_shard_evidence.py" \
+    "scripts/test-fuzz-shard-evidence.py" \
+    "scripts/fuzz-release-targets.txt" \
     "scripts/check_fuzz.sh" \
     "scripts/check_fuzz_corpus.sh" \
     "scripts/check_kani.sh" \

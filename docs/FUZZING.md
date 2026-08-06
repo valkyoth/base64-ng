@@ -139,6 +139,47 @@ BASE64_NG_FUZZ_SECONDS_PER_TARGET=3600 \
 scripts/check_fuzz.sh
 ```
 
+The same campaign may be distributed across machines without weakening its
+one-hour-per-target policy. Every worker must use the same clean Git commit.
+Capture one target into an ignored collection with:
+
+```sh
+BASE64_NG_FUZZ_MACHINE_LABEL=worker-name \
+scripts/capture-fuzz-shard.sh decode target/fuzz-shards 3600
+```
+
+The capture script refuses unknown targets, dirty source, durations below one
+hour, pre-existing output, crash artifacts, missing final LibFuzzer statistics,
+and source changes during execution. `x86_encode` and `x86_decode` additionally
+require native AVX-512F, BW, VL, and VBMI; `neon` requires native
+little-endian AArch64. All other targets are portable native-host campaigns.
+
+Copy each completed target directory to one coordinator's collection using an
+integrity-preserving transport such as `rsync -a`. Workers may run at different
+times and in any order. Inspect resumable progress and build the compatible
+release manifest with:
+
+```sh
+scripts/check-fuzz-shard-progress.sh target/fuzz-shards
+scripts/aggregate-fuzz-shards.sh target/fuzz-shards
+```
+
+Aggregation requires all 18 targets exactly once and binds every bundle to the
+coordinator's current commit, Git tree, lockfiles, fuzz manifest, and individual
+harness hash. It rechecks timing, architecture, zero artifacts, corpus archive,
+environment, and campaign-log hashes before writing
+`target/release-evidence/fuzz/MANIFEST.txt` atomically. Missing, duplicate-like,
+unknown, altered, shortened, dirty, mixed-commit, or wrong-architecture evidence
+fails closed.
+
+After all bundles validate, import them into the strict candidate gate instead
+of rerunning the monolithic campaign:
+
+```sh
+BASE64_NG_FUZZ_SHARD_DIR=target/fuzz-shards \
+scripts/stable_release_gate.sh candidate
+```
+
 The release mode defaults to one hour per target. Both modes require zero
 crash artifacts and record tool identities, parameters, final LibFuzzer
 statistics, corpus counts and hashes, output hashes, and minimization status in

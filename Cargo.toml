@@ -29,6 +29,7 @@ include = [
     "portability/migration_smoke/src/**",
     "scripts/*.py",
     "scripts/*.sh",
+    "scripts/*.txt",
     "Cargo.toml",
     "release-crates.toml",
     "rust-toolchain.toml",
