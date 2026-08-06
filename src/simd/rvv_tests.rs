@@ -1,8 +1,9 @@
 use crate::runtime::{Backend, CandidateDetectionMode, SecurityPosture};
 use crate::{Alphabet, Standard, UrlSafe, checked_encoded_len, scalar};
-use core::sync::atomic::{AtomicBool, Ordering};
+use core::sync::atomic::{AtomicU32, Ordering};
 
-pub(super) static SIGNAL_DELIVERED: AtomicBool = AtomicBool::new(false);
+pub(super) static SIGNAL_ARMED: AtomicU32 = AtomicU32::new(0);
+pub(super) static SIGNAL_DELIVERED: AtomicU32 = AtomicU32::new(0);
 
 #[test]
 fn qemu_runtime_detects_rvv_but_keeps_public_dispatch_scalar() {
@@ -97,24 +98,71 @@ fn unavailable_rvv_candidate_falls_back_to_scalar_without_assembly_entry() {
 #[test]
 #[ignore = "requires native RVV hardware and a real Linux signal frame"]
 fn rvv_state_survives_linux_signal_delivery() {
-    const SIGUSR1: i32 = 10;
+    const ITIMER_REAL: i32 = 0;
+    const SIGALRM: i32 = 14;
     const SIG_ERR: usize = usize::MAX;
+    #[repr(C)]
+    struct TimeVal {
+        seconds: i64,
+        microseconds: i64,
+    }
+    #[repr(C)]
+    struct IntervalTimer {
+        interval: TimeVal,
+        value: TimeVal,
+    }
     unsafe extern "C" {
         fn signal(signal: i32, handler: usize) -> usize;
+        fn setitimer(which: i32, value: *const IntervalTimer, old: *mut IntervalTimer) -> i32;
     }
 
     assert!(super::rvv::available());
-    SIGNAL_DELIVERED.store(false, Ordering::SeqCst);
-    // SAFETY: This test serially replaces SIGUSR1, invokes a signal-safe RVV
-    // leaf, and restores the prior handler before returning.
+    SIGNAL_ARMED.store(0, Ordering::SeqCst);
+    SIGNAL_DELIVERED.store(0, Ordering::SeqCst);
+    let timer = IntervalTimer {
+        interval: TimeVal {
+            seconds: 0,
+            microseconds: 0,
+        },
+        value: TimeVal {
+            seconds: 0,
+            microseconds: 10_000,
+        },
+    };
+    let disabled = IntervalTimer {
+        interval: TimeVal {
+            seconds: 0,
+            microseconds: 0,
+        },
+        value: TimeVal {
+            seconds: 0,
+            microseconds: 0,
+        },
+    };
+    // SAFETY: This test serially replaces SIGALRM, arms a one-shot timer,
+    // invokes a syscall-free RVV leaf, disables the timer, and restores the
+    // prior handler before inspecting the result.
     unsafe {
-        let old = signal(SIGUSR1, super::rvv::signal_clobber as *const () as usize);
+        let old = signal(SIGALRM, super::rvv::signal_clobber as *const () as usize);
         assert_ne!(old, SIG_ERR);
+        assert_eq!(
+            setitimer(ITIMER_REAL, &raw const timer, core::ptr::null_mut()),
+            0
+        );
         let mut observed = [0u8; 16];
-        super::rvv::signal_context_round_trip(observed.as_mut_ptr());
-        let restored = signal(SIGUSR1, old);
+        super::rvv::signal_context_round_trip(
+            observed.as_mut_ptr(),
+            SIGNAL_ARMED.as_ptr(),
+            SIGNAL_DELIVERED.as_ptr(),
+        );
+        assert_eq!(
+            setitimer(ITIMER_REAL, &raw const disabled, core::ptr::null_mut()),
+            0
+        );
+        let restored = signal(SIGALRM, old);
         assert_ne!(restored, SIG_ERR);
-        assert!(SIGNAL_DELIVERED.load(Ordering::SeqCst));
+        assert_eq!(SIGNAL_ARMED.load(Ordering::SeqCst), 0);
+        assert_eq!(SIGNAL_DELIVERED.load(Ordering::SeqCst), 1);
         assert_eq!(observed, [0x5a; 16]);
     }
 }

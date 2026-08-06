@@ -94,7 +94,7 @@ def write_bundle(directory: Path) -> None:
         "base64_ng_rvv_decode_standard_16\n"
         "base64_ng_rvv_signal_context_round_trip\n"
         "base64_ng_rvv_signal_clobber\n"
-        "ecall\n"
+        "amoswap.w\n"
         "vmv.v.i v15,0\n"
     )
     (directory / "asm-manifest.txt").write_text("production_admission=false\n")

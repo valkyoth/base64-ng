@@ -80,7 +80,7 @@ require_pattern 'vlseg4e8\.v' 'four-segment decode load'
 require_pattern 'vsseg3e8\.v' 'three-segment decode store'
 require_pattern 'vmseq\.vx' 'alphabet-special classification masks'
 require_pattern 'vmv\.v\.i[[:space:]]+v15,0' 'full used-register cleanup tail'
-require_pattern 'ecall' 'native signal-delivery syscall boundary'
+require_pattern 'amoswap\.w' 'syscall-free native signal-test synchronization'
 
 if grep -E -q '[[:space:]]jal[[:space:]]' "$output_dir/disassembly.txt"; then
     echo "RVV asm evidence: leaf candidate contains an unexpected call" >&2

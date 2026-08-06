@@ -55,7 +55,10 @@ temporary="$(mktemp -d "${TMPDIR:-/tmp}/base64-ng-rvv-admission.XXXXXX")"
 trap 'rm -rf "$temporary"' EXIT INT TERM
 
 echo "RVV admission capture: native correctness, signal, thread, and assembly evidence"
-scripts/check_riscv_hardware.sh >"$temporary/correctness.txt" 2>&1
+if ! scripts/check_riscv_hardware.sh >"$temporary/correctness.txt" 2>&1; then
+    cat "$temporary/correctness.txt" >&2
+    exit 1
+fi
 cat "$temporary/correctness.txt"
 
 echo "RVV admission capture: 15-sample exact-backend matrix"

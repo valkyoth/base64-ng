@@ -1442,11 +1442,12 @@ Unsafe operations:
 - four leaf `global_asm!` functions load exact 12/16-byte blocks, execute RVV
   arithmetic and segmented stores, and clear `v0..v15` at VLMAX;
 - one leaf reads the architectural `vlenb` CSR for evidence reporting;
-- one native-only leaf preserves an output pointer across Linux `getpid` and
-  `kill(SIGUSR1)` syscalls, then stores the interrupted `v8` contents after the
-  signal frame returns;
+- one native-only leaf keeps a known value in `v8` while waiting without a
+  syscall for a one-shot timer signal, then stores the interrupted register
+  contents after the signal frame returns;
 - one native-only signal-handler leaf deliberately clobbers `v8`, while its
-  Rust wrapper records signal delivery through an `AtomicBool` before return;
+  Rust wrapper records armed signal delivery through an `AtomicU32` before
+  return;
 - test-only unsafe wrappers `signal_context_round_trip` and `signal_clobber`
   expose those two exact leaf ABIs only to the native evidence harness;
 - Rust wrappers `encode_block` and `decode_block` call those symbols through
@@ -1467,9 +1468,11 @@ bit.
 Generated disassembly, ELF attributes, VLEN 128/256 QEMU execution, and pure
 probe-result tests are required by the Commit 32 gates. The signal test is
 ignored by QEMU and ordinary suites and invoked by exact name only on native
-hardware. Its process-global handler is installed and restored by the sole
-test in that harness; the helper confirms both delivery and restoration of the
-interrupted vector register. These remain pre-admission candidate evidence.
+hardware. Its process-global handler and one-shot timer are installed,
+disabled, and restored by the sole test in that harness. The helper uses
+aligned atomic words for its bounded wait and confirms both armed delivery and
+restoration of the interrupted vector register without expecting vector state
+to survive a Linux syscall. These remain pre-admission candidate evidence.
 Accepted native correctness, ABI/signal preservation, performance,
 register-cleanup review, exact-profile dispatch integration, and an external
 pentest remain hard requirements before production admission.

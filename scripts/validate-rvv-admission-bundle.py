@@ -148,7 +148,7 @@ def validate(directory: Path) -> None:
         "base64_ng_rvv_signal_context_round_trip",
         "base64_ng_rvv_signal_clobber",
         "vmv.v.i",
-        "ecall",
+        "amoswap.w",
     ):
         if marker not in assembly:
             fail(f"assembly evidence is missing {marker}")

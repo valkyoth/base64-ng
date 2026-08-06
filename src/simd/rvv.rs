@@ -183,14 +183,21 @@ base64_ng_rvv_vlenb:
 base64_ng_rvv_signal_context_round_trip:
     .cfi_startproc
     mv t1, a0
+    mv t2, a1
+    mv t3, a2
     vsetivli zero, 16, e8, m1, ta, ma
     li t0, 90
     vmv.v.x v8, t0
-    li a7, 172
-    ecall
-    li a1, 10
-    li a7, 129
-    ecall
+    li t0, 1
+    amoswap.w.rl zero, t0, (t2)
+    li t0, 250000000
+.Lbase64_ng_rvv_signal_wait:
+    amoadd.w.aq t4, zero, (t3)
+    bnez t4, .Lbase64_ng_rvv_signal_done
+    addi t0, t0, -1
+    bnez t0, .Lbase64_ng_rvv_signal_wait
+.Lbase64_ng_rvv_signal_done:
+    amoswap.w.rl zero, zero, (t2)
     vse8.v v8, (t1)
     base64_ng_rvv_clear
     ret
@@ -221,7 +228,11 @@ unsafe extern "C" {
     fn base64_ng_rvv_decode_standard_16(input: *const u8, output: *mut u8);
     fn base64_ng_rvv_decode_url_safe_16(input: *const u8, output: *mut u8);
     fn base64_ng_rvv_vlenb() -> usize;
-    fn base64_ng_rvv_signal_context_round_trip(output: *mut u8);
+    fn base64_ng_rvv_signal_context_round_trip(
+        output: *mut u8,
+        armed: *mut u32,
+        delivered: *mut u32,
+    );
     fn base64_ng_rvv_signal_clobber();
 }
 
@@ -233,18 +244,25 @@ pub(super) fn vector_length_bytes() -> usize {
 }
 
 #[cfg(test)]
-pub(super) unsafe fn signal_context_round_trip(output: *mut u8) {
-    // SAFETY: The caller provides 16 writable bytes and installs the reviewed
-    // signal handler before this Linux-only evidence helper executes.
-    unsafe { base64_ng_rvv_signal_context_round_trip(output) };
+pub(super) unsafe fn signal_context_round_trip(
+    output: *mut u8,
+    armed: *mut u32,
+    delivered: *mut u32,
+) {
+    // SAFETY: The caller provides 16 writable output bytes, aligned atomic
+    // words, and installs the reviewed timer handler before this helper runs.
+    unsafe { base64_ng_rvv_signal_context_round_trip(output, armed, delivered) };
 }
 
 #[cfg(test)]
 pub(super) unsafe extern "C" fn signal_clobber(_signal: i32) {
+    if super::rvv_tests::SIGNAL_ARMED.load(core::sync::atomic::Ordering::Acquire) == 0 {
+        return;
+    }
     // SAFETY: The native evidence gate proves vector state is enabled before
     // installing this signal handler.
     unsafe { base64_ng_rvv_signal_clobber() };
-    super::rvv_tests::SIGNAL_DELIVERED.store(true, core::sync::atomic::Ordering::SeqCst);
+    super::rvv_tests::SIGNAL_DELIVERED.store(1, core::sync::atomic::Ordering::Release);
 }
 
 pub(crate) fn available() -> bool {
