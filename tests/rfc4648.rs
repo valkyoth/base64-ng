@@ -553,7 +553,11 @@ fn runtime_backend_report_matches_admission_state() {
     }
     if cfg!(feature = "simd")
         && cfg!(feature = "std")
-        && cfg!(any(target_arch = "x86", target_arch = "x86_64"))
+        && cfg!(any(
+            target_arch = "x86",
+            target_arch = "x86_64",
+            all(target_arch = "riscv64", target_os = "linux")
+        ))
     {
         assert_eq!(
             report.candidate_detection_mode,
