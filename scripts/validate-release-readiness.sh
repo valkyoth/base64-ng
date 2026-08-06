@@ -16,6 +16,16 @@ pentest_report="security/pentest/${tag}.md"
 spdx="${BASE64_NG_SBOM_DIR:-target/release-evidence}/base64-ng.spdx.json"
 cyclonedx="${BASE64_NG_SBOM_DIR:-target/release-evidence}/base64-ng.cyclonedx.json"
 evidence_manifest="target/release-evidence/FINAL-MANIFEST.txt"
+equivalence_manifest="target/release-evidence/EQUIVALENCE-MANIFEST.txt"
+
+exact_key() {
+    file="$1"
+    key="$2"
+    awk -v key="$key" '
+        index($0, key "=") == 1 { count += 1; value = substr($0, length(key) + 2) }
+        END { if (count == 1) print value; else exit 1 }
+    ' "$file"
+}
 
 if git rev-parse -q --verify "refs/tags/${tag}" >/dev/null; then
     echo "tag already exists locally: ${tag}" >&2
@@ -70,6 +80,66 @@ then
     echo "release evidence index is not bound to clean HEAD ${head_commit}" >&2
     exit 1
 fi
+
+evidence_mode="$(exact_key "$evidence_manifest" evidence_mode)" || {
+    echo "release evidence index has no singleton evidence_mode" >&2
+    exit 1
+}
+campaign_commit="$(exact_key "$evidence_manifest" campaign_commit)" || {
+    echo "release evidence index has no singleton campaign_commit" >&2
+    exit 1
+}
+release_commit="$(exact_key "$evidence_manifest" release_commit)" || {
+    echo "release evidence index has no singleton release_commit" >&2
+    exit 1
+}
+if [ "$release_commit" != "$head_commit" ]; then
+    echo "release evidence release_commit does not match HEAD ${head_commit}" >&2
+    exit 1
+fi
+
+case "$evidence_mode" in
+    exact)
+        if [ "$campaign_commit" != "$head_commit" ]; then
+            echo "exact evidence campaign_commit does not match HEAD ${head_commit}" >&2
+            exit 1
+        fi
+        ;;
+    metadata-equivalent)
+        if [ ! -s "$equivalence_manifest" ]; then
+            echo "metadata-equivalent release lacks ${equivalence_manifest}" >&2
+            exit 1
+        fi
+        equivalence_tmp="$(mktemp target/release-evidence/.equivalence.XXXXXX)"
+        trap 'rm -f "$equivalence_tmp"' EXIT INT TERM
+        python3 scripts/evidence-equivalence.py \
+            --evidence-commit "$campaign_commit" \
+            --release-commit "$head_commit" \
+            --output "$equivalence_tmp"
+        if ! cmp -s "$equivalence_tmp" "$equivalence_manifest"; then
+            echo "release evidence equivalence manifest is stale or altered" >&2
+            exit 1
+        fi
+        rm -f "$equivalence_tmp"
+        trap - EXIT INT TERM
+        ;;
+    *)
+        echo "unsupported release evidence mode: ${evidence_mode}" >&2
+        exit 1
+        ;;
+esac
+
+for current_manifest in \
+    target/release-evidence/sbom-MANIFEST.txt \
+    target/release-evidence/reproducible/MANIFEST.txt
+do
+    if [ "$(exact_key "$current_manifest" commit 2>/dev/null || true)" != "$head_commit" ] ||
+        [ "$(exact_key "$current_manifest" tree_state 2>/dev/null || true)" != clean ]
+    then
+        echo "candidate package evidence is not bound to clean HEAD: ${current_manifest}" >&2
+        exit 1
+    fi
+done
 
 reviewed_commit="$(sed -n 's/^Reviewed-Commit: //p' "$pentest_report")"
 if ! git cat-file -e "${reviewed_commit}^{commit}" 2>/dev/null; then

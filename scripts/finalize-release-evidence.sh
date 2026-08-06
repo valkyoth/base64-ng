@@ -6,7 +6,25 @@ evidence_capture_source "final release evidence"
 
 root="target/release-evidence"
 manifest="$root/FINAL-MANIFEST.txt"
+equivalence_manifest="$root/EQUIVALENCE-MANIFEST.txt"
+campaign_commit="${BASE64_NG_REUSE_EVIDENCE_FROM:-$EVIDENCE_SOURCE_COMMIT}"
 mkdir -p "$root"
+
+if [ "$campaign_commit" != "$EVIDENCE_SOURCE_COMMIT" ]; then
+    require_retained_manifest="$manifest"
+    if [ ! -s "$require_retained_manifest" ]; then
+        echo "final release evidence: retained FINAL-MANIFEST is required for evidence reuse" >&2
+        exit 1
+    fi
+    python3 scripts/evidence-equivalence.py \
+        --evidence-commit "$campaign_commit" \
+        --release-commit "$EVIDENCE_SOURCE_COMMIT" \
+        --retained-manifest "$require_retained_manifest" \
+        --output "$equivalence_manifest"
+else
+    rm -f "$equivalence_manifest"
+fi
+
 rm -f "$manifest"
 manifest_tmp="$(mktemp "$root/.FINAL-MANIFEST.XXXXXX")"
 
@@ -22,11 +40,24 @@ require_file() {
     fi
 }
 
-require_source_manifest() {
+require_source_manifest_for() {
     file="$1"
+    expected_primary="$2"
+    expected_secondary="${3:-}"
     require_file "$file"
-    evidence_require_clean_source_manifest \
-        "$file" "$EVIDENCE_SOURCE_COMMIT" "final release evidence"
+    evidence_require_singleton_manifest_line \
+        "$file" 'source:' 'source section' "final release evidence"
+    evidence_require_exact_manifest_key \
+        "$file" tree_state clean "final release evidence"
+    actual_commit="$(sed -n 's/^commit=//p' "$file")"
+    if [ "$actual_commit" != "$expected_primary" ] && \
+        { [ -z "$expected_secondary" ] || [ "$actual_commit" != "$expected_secondary" ]; }
+    then
+        echo "final release evidence: invalid campaign commit in $file: ${actual_commit:-missing}" >&2
+        exit 1
+    fi
+    evidence_require_exact_manifest_key \
+        "$file" commit "$actual_commit" "final release evidence"
 }
 
 for file in \
@@ -43,11 +74,19 @@ for file in \
     "$root/rvv-asm/MANIFEST.txt" \
     "$root/sve-asm/MANIFEST.txt" \
     "$root/wasm-simd/MANIFEST.txt" \
-    "$root/commit-53/MANIFEST.txt" \
+    "$root/commit-53/MANIFEST.txt"
+do
+    require_source_manifest_for "$file" "$campaign_commit" "$EVIDENCE_SOURCE_COMMIT"
+done
+
+# Package composition can change when release-process files change. These
+# artifacts are therefore always regenerated for the tag candidate even when
+# expensive runtime campaigns are reused.
+for file in \
     "$root/sbom-MANIFEST.txt" \
     "$root/reproducible/MANIFEST.txt"
 do
-    require_source_manifest "$file"
+    require_source_manifest_for "$file" "$EVIDENCE_SOURCE_COMMIT"
 done
 
 require_file "$root/base64-ng.spdx.json"
@@ -66,6 +105,14 @@ fi
     echo "base64-ng final release evidence index"
     echo
     evidence_write_source_manifest
+    echo
+    if [ "$campaign_commit" = "$EVIDENCE_SOURCE_COMMIT" ]; then
+        echo "evidence_mode=exact"
+    else
+        echo "evidence_mode=metadata-equivalent"
+    fi
+    echo "campaign_commit=$campaign_commit"
+    echo "release_commit=$EVIDENCE_SOURCE_COMMIT"
     echo
     echo "required_campaigns=miri,sanitizers,fuzz-release,dudect-release,kani-normal,kani-advanced,assembly,native-hardware,sbom"
     echo

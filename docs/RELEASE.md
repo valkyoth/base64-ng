@@ -36,6 +36,9 @@ scripts/stable_release_gate.sh candidate
 
 Commit 55 then runs `release` as described in the publish section. Both strict
 modes refuse pre-release versions and unavailable required evidence tools.
+Candidate or release mode may reuse an accepted expensive campaign only when
+`BASE64_NG_REUSE_EVIDENCE_FROM` names a clean ancestor and the metadata-only
+equivalence gate accepts every intervening path and protected-tree hash.
 
 The release gate covers:
 
@@ -342,10 +345,14 @@ For the 2.0 final candidate:
 6. Fix every final-review finding, repeat steps 2-5 as needed, delete temporary
    root `PENTEST.md`, and make Commit 55 add only the normalized
    permanent report at `security/pentest/v2.0.0.md`.
-7. Push Commit 55, require green CI and CodeQL, then run
-   `scripts/stable_release_gate.sh release` from a clean checkout. Release mode
-   repeats strict evidence on the exact tag candidate and validates the
-   report-only final commit. It also runs
+7. Push Commit 55, require green CI and CodeQL, then run release mode from a
+   clean checkout. A new exact campaign uses
+   `scripts/stable_release_gate.sh release`. When all intervening commits are
+   reviewed release-process metadata and protected repository contents are
+   unchanged, set `BASE64_NG_REUSE_EVIDENCE_FROM=<campaign-commit>`. The reuse
+   path preserves original campaign provenance and regenerates package, SBOM,
+   and reproducibility evidence for the tag candidate. Both paths validate the
+   report-only final commit and run
    `scripts/validate-2.0-checkpoint-record.py --final`, which rejects any
    remaining `Pending` cell, non-`PASS` pentest disposition, or missing exact
    Commit 1-54 hash. The self-referential Commit 55 row uses the frozen
@@ -386,17 +393,23 @@ The strict pre-seal evidence command is:
 scripts/stable_release_gate.sh candidate
 ```
 
-After the report-only Commit 55 exists, run the exact-tag-candidate gate:
+After the report-only Commit 55 exists, run the exact-tag-candidate gate or
+the fail-closed metadata-equivalent form:
 
 ```sh
 scripts/stable_release_gate.sh release
+
+BASE64_NG_REUSE_EVIDENCE_FROM=<campaign-commit> \
+  scripts/stable_release_gate.sh release
 ```
 
-Both strict modes are intentionally expensive. They require Miri, sanitizers,
+An exact strict campaign is intentionally expensive. It requires Miri, sanitizers,
 one-hour-per-target release fuzz campaigns, dudect timing, all normal and
 advanced Kani harnesses, native NEON evidence, generated assembly, SBOMs,
-reproducibility, and the standard local gate. `release` additionally enforces
-the permanent pentest metadata, reviewed-parent, and report-only Commit 55.
+reproducibility, and the standard local gate. Metadata-equivalent mode reuses
+only unchanged expensive campaigns, reruns ordinary checks and current package
+evidence, and records both commits. `release` additionally enforces the
+permanent pentest metadata, reviewed-parent, and report-only Commit 55.
 
 After the full release gate passes, push the commit, wait for GitHub to become
 green, then create and push the immutable signed release tag:
@@ -435,7 +448,9 @@ scripts/release_crates.py --full-gate
 
 This post-tag rerun uses `scripts/stable_release_gate.sh candidate`: it repeats
 strict evidence but intentionally does not require that the release tag be
-absent. Pentest readiness was already enforced by `release` before tagging.
+absent. The same evidence-reuse environment variable may be used when the
+signed tag still satisfies the metadata-only equivalence policy. Pentest
+readiness was already enforced by `release` before tagging.
 
 For manual fallback, publish the core package first, wait until crates.io serves
 the new version, then publish every companion in dependency order:
@@ -510,6 +525,6 @@ tag; cut a new patch release.
 - `candidate` is the strict pre-seal evidence gate. Required tools, full
   campaigns, clean-source provenance, native backend evidence, and the final
   evidence index are mandatory.
-- `release` repeats `candidate` requirements for Commit 55 and additionally
-  validates the final report-only commit. No required release campaign may be
-  skipped.
+- `release` enforces candidate requirements and additionally validates the
+  final report-only commit. Expensive campaigns may be retained only through
+  the explicit metadata-equivalence gate; no required outcome may be skipped.

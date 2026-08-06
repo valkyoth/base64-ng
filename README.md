@@ -58,7 +58,7 @@ removals, capability edges, and companion boundaries before implementation.
 
 This source tree is the `2.0.0` package-family candidate. The latest
 published release remains `1.3.9` until final external review, the
-exact-candidate evidence campaign, required green CI, and the signed
+exact or metadata-equivalent evidence campaign, required green CI, and the signed
 `v2.0.0` tag are complete.
 
 The candidate includes the complete 2.0 API, synchronized companion crates,
@@ -102,7 +102,7 @@ The detailed evidence and non-claims are maintained in
 implementation, execution environment, or admission decision changes.
 
 Before `2.0.0`, only release assurance remains: final external review, the
-exact-candidate evidence campaign, green required CI and CodeQL, the report-only
+exact or fail-closed metadata-equivalent evidence campaign, green required CI and CodeQL, the report-only
 Commit 55 seal, and the authorized signed tag. No additional runtime feature is
 planned for the 2.0 release candidate.
 

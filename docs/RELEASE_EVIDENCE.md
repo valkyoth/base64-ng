@@ -46,8 +46,26 @@ Fuzz, dudect, sanitizer, reproducibility, and final index manifests are
 published atomically only after successful completion, so an interrupted or
 failed run cannot leave a final-looking manifest. Release mode also pins the
 dudect acceptance threshold to `10`; the finalizer rejects missing, duplicate,
-malformed, or weakened threshold records. Release mode repeats this exact
-campaign for the report-only Commit 55 tag candidate.
+malformed, or weakened threshold records.
+
+An expensive campaign does not need to be repeated solely because later
+commits change reviewed release-process metadata. Set
+`BASE64_NG_REUSE_EVIDENCE_FROM` to the original campaign commit when running
+candidate or release mode. `scripts/evidence-equivalence.py` then requires a
+clean linear descendant, an exact path allowlist, an unchanged protected Git
+tree, and a retained clean `FINAL-MANIFEST.txt` bound to the original commit.
+The final index records both campaign and release commits and includes an
+`EQUIVALENCE-MANIFEST.txt`; original campaign manifests are never relabeled.
+Any runtime, crate, test, fuzz harness, lockfile, workflow, toolchain, corpus,
+or hardware-evidence change fails closed and requires a new campaign.
+
+Release-process scripts are included in the core source package. Therefore
+metadata-equivalent release mode still regenerates current-commit SBOM and
+reproducible package/build evidence, reruns ordinary checks, and refreshes the
+small candidate-bound hardware inventory and NEON/wasm assembly manifests.
+This avoids repeating long-running Miri, sanitizer, fuzz, dudect, Kani, and
+unchanged generated-code campaigns when they would exercise identical product
+and harness bytes.
 
 Commit 51 completes the isolated fuzz and property inventory. Eighteen targets
 cover ordinary/runtime codecs, forced native backends, incremental/in-place

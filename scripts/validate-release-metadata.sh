@@ -385,11 +385,25 @@ do
 done
 
 for required_finalizer_text in \
-    'evidence_require_clean_source_manifest' \
-    '"$file" "$EVIDENCE_SOURCE_COMMIT" "final release evidence"'
+    'require_source_manifest_for' \
+    'campaign_commit="${BASE64_NG_REUSE_EVIDENCE_FROM:-$EVIDENCE_SOURCE_COMMIT}"' \
+    'evidence_mode=metadata-equivalent'
 do
     if ! grep -F -q -- "$required_finalizer_text" scripts/finalize-release-evidence.sh; then
         echo "release metadata: final evidence provenance validation is missing: $required_finalizer_text" >&2
+        exit 1
+    fi
+done
+
+for required_equivalence_text in \
+    'merge-base' \
+    'non-metadata paths changed' \
+    'protected repository contents differ' \
+    'retained FINAL-MANIFEST is not bound to the clean evidence commit' \
+    'package_evidence=must-be-regenerated'
+do
+    if ! grep -F -q -- "$required_equivalence_text" scripts/evidence-equivalence.py; then
+        echo "release metadata: evidence equivalence gate is missing: $required_equivalence_text" >&2
         exit 1
     fi
 done
@@ -400,6 +414,8 @@ for required_release_provenance_text in \
     'scripts/generate_ct_asm_evidence.sh' \
     'scripts/generate_simd_asm_evidence.sh' \
     'scripts/generate_wasm_simd_evidence.sh' \
+    'BASE64_NG_REUSE_EVIDENCE_FROM' \
+    'scripts/evidence-equivalence.py' \
     'evidence_verify_source "stable release gate"'
 do
     if ! grep -F -q -- "$required_release_provenance_text" scripts/stable_release_gate.sh; then

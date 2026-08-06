@@ -2,6 +2,7 @@
 set -eu
 
 mode="${1:-check}"
+reuse_evidence_from="${BASE64_NG_REUSE_EVIDENCE_FROM:-}"
 
 case "$mode" in
     check | candidate | release)
@@ -22,6 +23,11 @@ else
     export BASE64_NG_RUN_COMMIT54_PUBLISH_DRY_RUN
     . scripts/evidence-source.sh
     evidence_capture_source "stable release gate"
+fi
+
+if [ "$mode" = "check" ] && [ -n "$reuse_evidence_from" ]; then
+    echo "stable release gate: evidence reuse applies only to candidate or release mode" >&2
+    exit 2
 fi
 
 run_evidence() {
@@ -58,6 +64,46 @@ if cargo nextest --version >/dev/null 2>&1; then
     cargo nextest run --all-features
 else
     echo "stable release gate: skipping nextest; cargo nextest is not installed"
+fi
+
+if [ -n "$reuse_evidence_from" ]; then
+    echo "stable release gate: verify metadata-only retained evidence"
+    python3 scripts/evidence-equivalence.py \
+        --evidence-commit "$reuse_evidence_from" \
+        --retained-manifest target/release-evidence/FINAL-MANIFEST.txt
+
+    # Refresh relatively small evidence that was either affected by release
+    # process packaging or may have been overwritten by ordinary dirty-tree
+    # development checks. Long-running runtime campaigns retain their original
+    # manifests and commit provenance.
+    echo "stable release gate: refresh candidate-bound native inventory"
+    BASE64_NG_REQUIRE_COMMIT53_NATIVE=1 \
+        run_evidence scripts/check-2.0-memory-hardware-evidence.sh
+    echo "stable release gate: refresh candidate-bound NEON assembly"
+    run_evidence scripts/generate_neon_asm_evidence.sh
+    echo "stable release gate: refresh candidate-bound wasm assembly"
+    run_evidence scripts/generate_wasm_simd_evidence.sh
+
+    echo "stable release gate: validate retained campaign outcomes"
+    scripts/validate-release-evidence-outcomes.sh target/release-evidence
+    echo "stable release gate: regenerate candidate SBOM"
+    run_evidence scripts/generate-sbom.sh
+    echo "stable release gate: regenerate candidate package/build evidence"
+    run_evidence scripts/reproducible_build_check.sh
+
+    evidence_verify_source "stable release gate"
+    echo "stable release gate: metadata-equivalent evidence index"
+    scripts/finalize-release-evidence.sh
+    evidence_verify_source "stable release gate"
+
+    if [ "$mode" = "release" ]; then
+        echo "stable release gate: final pentest report"
+        scripts/validate-release-readiness.sh "v${cargo_version}"
+        evidence_verify_source "stable release gate"
+    fi
+
+    echo "stable release gate: ok ($mode, metadata-equivalent evidence)"
+    exit 0
 fi
 
 echo "stable release gate: Miri"
