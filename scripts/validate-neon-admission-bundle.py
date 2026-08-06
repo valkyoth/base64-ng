@@ -8,6 +8,7 @@ import hashlib
 import re
 import subprocess
 import sys
+import tomllib
 from pathlib import Path
 
 
@@ -176,7 +177,22 @@ def test_only_module_at(path: str, revision: str) -> bool:
 def is_nonruntime_change(path: str, source: str) -> bool:
     if path.startswith("fuzz/"):
         return True
+    if path == "Cargo.toml":
+        before = git_file(source, path)
+        after = git_file("HEAD", path)
+        return before is not None and after is not None and packaging_manifest_equal(
+            before, after
+        )
     return test_only_module_at(path, source) and test_only_module_at(path, "HEAD")
+
+
+def packaging_manifest_equal(before: str, after: str) -> bool:
+    manifests = [tomllib.loads(value) for value in (before, after)]
+    for manifest in manifests:
+        package = manifest.get("package")
+        if isinstance(package, dict):
+            package.pop("include", None)
+    return manifests[0] == manifests[1]
 
 
 def validate_host_metadata(directory: Path, host: str) -> None:

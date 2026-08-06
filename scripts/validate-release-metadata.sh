@@ -294,6 +294,10 @@ done
 for required_python_script in \
     "scripts/fuzz_shard_evidence.py" \
     "scripts/test-fuzz-shard-evidence.py" \
+    "scripts/fuzz_evidence_session.py" \
+    "scripts/fuzz_evidence_jobs.py" \
+    "scripts/manage-fuzz-evidence.py" \
+    "scripts/test-fuzz-evidence-manager.py" \
     "scripts/validate-neon-admission-bundle.py" \
     "scripts/test-neon-admission-bundle.py" \
     "scripts/validate-2.0-checkpoint-record.py" \
@@ -884,6 +888,11 @@ for required_package_file in \
     "scripts/fuzz_shard_evidence.py" \
     "scripts/test-fuzz-shard-evidence.py" \
     "scripts/fuzz-release-targets.txt" \
+    "scripts/fuzz-cargo-version.txt" \
+    "scripts/fuzz_evidence_session.py" \
+    "scripts/fuzz_evidence_jobs.py" \
+    "scripts/manage-fuzz-evidence.py" \
+    "scripts/test-fuzz-evidence-manager.py" \
     "scripts/check_fuzz.sh" \
     "scripts/check_fuzz_corpus.sh" \
     "scripts/check_kani.sh" \

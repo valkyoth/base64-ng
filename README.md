@@ -1673,6 +1673,16 @@ Validate the committed fuzz corpus policy directly:
 scripts/check_fuzz_corpus.sh
 ```
 
+Manage resumable one-hour release campaigns across local and SSH workers:
+
+```sh
+scripts/manage-fuzz-evidence.py
+```
+
+The ignored SQLite session pins one clean commit, tracks all 18 targets, and
+retrieves and validates remote evidence before final aggregation. See
+[docs/FUZZING.md](docs/FUZZING.md) for the operator workflow and trust boundary.
+
 Compile and audit the isolated performance harness directly:
 
 ```sh

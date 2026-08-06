@@ -104,6 +104,14 @@ def main() -> None:
     assert VALIDATOR_MODULE.is_nonruntime_change("src/v2/formatting_tests.rs", source)
     assert not VALIDATOR_MODULE.is_nonruntime_change("src/v2/formatting.rs", source)
     assert not VALIDATOR_MODULE.is_nonruntime_change("src/v2/mod.rs", source)
+    assert VALIDATOR_MODULE.packaging_manifest_equal(
+        '[package]\nname = "fixture"\ninclude = ["src/**"]\n',
+        '[package]\nname = "fixture"\ninclude = ["src/**", "scripts/*.txt"]\n',
+    )
+    assert not VALIDATOR_MODULE.packaging_manifest_equal(
+        '[package]\nname = "fixture"\n[features]\ndefault = []\n',
+        '[package]\nname = "fixture"\n[features]\ndefault = ["std"]\n',
+    )
 
     with tempfile.TemporaryDirectory() as directory:
         root = Path(directory)

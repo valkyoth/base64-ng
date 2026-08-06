@@ -50,8 +50,11 @@ if [ -e "$collection/$target" ]; then
     exit 1
 fi
 
-if ! cargo +nightly fuzz --version >/dev/null 2>&1; then
+required_fuzz_version="$(cat scripts/fuzz-cargo-version.txt)"
+actual_fuzz_version="$(cargo +nightly fuzz --version 2>/dev/null || true)"
+if [ "$actual_fuzz_version" != "cargo-fuzz $required_fuzz_version" ]; then
     echo "fuzz shard capture: nightly and cargo-fuzz are required" >&2
+    echo "fuzz shard capture: expected cargo-fuzz $required_fuzz_version, got ${actual_fuzz_version:-missing}" >&2
     exit 1
 fi
 

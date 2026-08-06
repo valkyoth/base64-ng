@@ -141,6 +141,50 @@ scripts/check_fuzz.sh
 
 The same campaign may be distributed across machines without weakening its
 one-hour-per-target policy. Every worker must use the same clean Git commit.
+The recommended operator interface is the persistent session manager:
+
+```sh
+scripts/manage-fuzz-evidence.py
+```
+
+Its numbered menu records the exact source identity and all 18 target states in
+`target/fuzz-manager/state.sqlite3`. On a later invocation it offers to continue
+that session or start a new one. A target can run locally or over SSH. Local
+workers remain detached after the menu exits, with an atomic lock preventing a
+second local campaign. Remote setup clones the exact session commit, installs
+the pinned Rust toolchain and `cargo-fuzz` version, starts a detached worker,
+and records its host, PID, work directory, and start time. If rustup is absent,
+the official TLS bootstrap is used only after explicit operator approval.
+
+Selecting a running target checks its persisted status. Successful remote
+evidence is copied back and passed through the exact-source shard validator
+before the menu marks it complete; the remote machine can then be terminated.
+Failed and interrupted jobs remain visible and can be retried. One remote host
+and the coordinator can each run at most one managed target at a time. The
+private key is never copied or read by the manager: only its local path is
+stored in the ignored SQLite database. Set reusable defaults without modifying
+the repository:
+
+```sh
+export BASE64_NG_FUZZ_SSH_USER=ubuntu
+export BASE64_NG_FUZZ_SSH_KEY="$HOME/.ssh/fuzz-worker.pem"
+```
+
+When all targets are locally verified, the menu exposes final aggregation.
+Headless status and finalization are also available:
+
+```sh
+scripts/manage-fuzz-evidence.py --status
+scripts/manage-fuzz-evidence.py --finalize
+```
+
+Starting a new session replaces only the active SQLite state. Prior ignored
+session directories are preserved for operator-controlled retention. A reset is
+refused while jobs are marked running. SSH uses the normal local `known_hosts`
+database with accept-new behavior; high-assurance operators should verify a new
+worker's host-key fingerprint out of band before launching evidence.
+
+The lower-level per-target interface remains available for manual orchestration.
 Capture one target into an ignored collection with:
 
 ```sh

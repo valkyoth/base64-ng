@@ -68,5 +68,17 @@ do
         scripts/stable_release_gate.sh
 done
 grep -F -q 'scripts/test-fuzz-shard-evidence.py' scripts/checks.sh
+grep -F -q 'scripts/test-fuzz-evidence-manager.py' scripts/checks.sh
+for manager_contract in \
+    'sqlite3' \
+    'only one local fuzz target may run at a time' \
+    'all 18 targets must be complete before final verification' \
+    'StrictHostKeyChecking=accept-new'
+do
+    grep -F -q -- "$manager_contract" \
+        scripts/fuzz_evidence_session.py \
+        scripts/fuzz_evidence_jobs.py \
+        scripts/manage-fuzz-evidence.py
+done
 
 echo "2.0 fuzz campaigns: complete adversarial target and property evidence ok"

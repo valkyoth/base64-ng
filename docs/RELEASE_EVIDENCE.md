@@ -61,6 +61,16 @@ records one portable exact-source bundle at a time and
 manifest only after all 18 bundles validate. Campaigns need not be concurrent
 or continuous; source identity, per-target duration, architecture, logs,
 environment, corpus, and zero-artifact results must remain exact.
+`scripts/manage-fuzz-evidence.py` is the persistent operator layer over those
+primitives. Its ignored SQLite session tracks detached local and SSH workers,
+resumes progress checks across invocations, retrieves successful remote output,
+and exposes aggregation only after every bundle validates locally. SQLite state
+is orchestration metadata, not evidence; the signed bundle manifests and final
+aggregate remain the release trust boundary.
+Retained native-performance bundles may survive test-only fuzz harness changes
+and publish-file inventory changes. The NEON validator compares parsed Cargo
+manifests after removing only `package.include`; feature, dependency, profile,
+build, or other manifest changes still invalidate retained hardware evidence.
 
 Commit 52 completes the timing and generated-code evidence boundary.
 `scripts/validate-2.0-timing-boundaries.sh` preserves fixed-scan secret loops,
