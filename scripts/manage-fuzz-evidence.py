@@ -154,7 +154,12 @@ def start_pending(store: Store, controller: JobController, target: str) -> None:
         bootstrap = confirm(
             "If rustup is absent, download the official rustup installer over TLS"
         )
-        controller.start_remote(target, user, host, key, bootstrap)
+        install_prerequisites = confirm(
+            "Install missing remote system build prerequisites with passwordless sudo"
+        )
+        controller.start_remote(
+            target, user, host, key, bootstrap, install_prerequisites
+        )
         print(f"{target} is running remotely. The SSH session is now detached.")
 
 

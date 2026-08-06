@@ -88,6 +88,28 @@ def main() -> None:
             ),
             "traversal in a returned remote work directory",
         )
+        managed_known_hosts = temporary / "known_hosts"
+        host_key = temporary / "host-key"
+        subprocess.run(
+            ["ssh-keygen", "-q", "-t", "ed25519", "-N", "", "-f", str(host_key)],
+            check=True,
+        )
+        algorithm, public_key, *_ = host_key.with_suffix(".pub").read_text().split()
+        managed_known_hosts.write_text(
+            f"192.0.2.10 {algorithm} {public_key}\n"
+            f"192.0.2.11 {algorithm} {public_key}\n"
+        )
+        original_known_hosts = session.MANAGED_KNOWN_HOSTS
+        session.MANAGED_KNOWN_HOSTS = managed_known_hosts
+        try:
+            session.reset_managed_known_host("192.0.2.10")
+            assert managed_known_hosts.is_file()
+            assert managed_known_hosts.stat().st_mode & 0o777 == 0o600
+            known_hosts_text = managed_known_hosts.read_text()
+            assert "192.0.2.10 " not in known_hosts_text
+            assert "192.0.2.11 " in known_hosts_text
+        finally:
+            session.MANAGED_KNOWN_HOSTS = original_known_hosts
 
         store.update(
             second,
@@ -130,12 +152,27 @@ def main() -> None:
         assert f"cargo-fuzz {session.FUZZ_VERSION}" in jobs.REMOTE_BOOTSTRAP
         assert "scripts/ci_install_rust.sh" in jobs.REMOTE_BOOTSTRAP
         assert "base64-ng-fuzz-$session-$target-$attempt" in jobs.REMOTE_BOOTSTRAP
+        assert "missing_commands" in jobs.REMOTE_BOOTSTRAP
+        assert "build-essential pkg-config" in jobs.REMOTE_BOOTSTRAP
+        assert "pkgconf-pkg-config" in jobs.REMOTE_BOOTSTRAP
+        assert "run_root zypper --non-interactive" in jobs.REMOTE_BOOTSTRAP
+        assert "run_root apk add build-base" in jobs.REMOTE_BOOTSTRAP
+        assert jobs.REMOTE_BOOTSTRAP.index('export PATH="$HOME/.cargo/bin:$PATH"') < (
+            jobs.REMOTE_BOOTSTRAP.index("command -v rustup")
+        )
+        assert jobs.REMOTE_BOOTSTRAP.count('missing="$(missing_commands)"') == 2
         subprocess.run(
             ["bash", "-n"], input=jobs.REMOTE_BOOTSTRAP, text=True, check=True
         )
         subprocess.run(["bash", "-n"], input=jobs.REMOTE_STATUS, text=True, check=True)
         subprocess.run(["sh", "-n", str(runner)], check=True)
         assert "StrictHostKeyChecking=accept-new" in session.ssh_command(
+            "ubuntu", "192.0.2.10", key
+        )
+        assert f"UserKnownHostsFile={session.MANAGED_KNOWN_HOSTS}" in session.ssh_command(
+            "ubuntu", "192.0.2.10", key
+        )
+        assert "GlobalKnownHostsFile=/dev/null" in session.scp_command(
             "ubuntu", "192.0.2.10", key
         )
         assert key.read_text() not in " ".join(

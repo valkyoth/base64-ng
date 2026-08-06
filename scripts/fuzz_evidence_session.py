@@ -16,6 +16,7 @@ from pathlib import Path, PurePosixPath
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_STATE = ROOT / "target" / "fuzz-manager" / "state.sqlite3"
+MANAGED_KNOWN_HOSTS = ROOT / "target" / "fuzz-manager" / "known_hosts"
 TARGET_FILE = ROOT / "scripts" / "fuzz-release-targets.txt"
 FUZZ_SECONDS = 3600
 FUZZ_VERSION = (ROOT / "scripts" / "fuzz-cargo-version.txt").read_text().strip()
@@ -86,6 +87,25 @@ def validate_remote_work_dir(value: str, expected_prefix: str) -> str:
     ):
         raise ManagerError("remote setup returned an invalid work directory")
     return value
+
+
+def reset_managed_known_host(host: str) -> None:
+    if VALID_HOST.fullmatch(host) is None or ".." in host or host.startswith("-"):
+        raise ManagerError("remote host must be an IPv4 address or DNS hostname")
+    MANAGED_KNOWN_HOSTS.parent.mkdir(parents=True, exist_ok=True)
+    if MANAGED_KNOWN_HOSTS.is_symlink():
+        raise ManagerError("refusing a symlinked managed known_hosts file")
+    MANAGED_KNOWN_HOSTS.touch(mode=0o600, exist_ok=True)
+    MANAGED_KNOWN_HOSTS.chmod(0o600)
+    try:
+        subprocess.run(
+            ["ssh-keygen", "-R", host, "-f", str(MANAGED_KNOWN_HOSTS)],
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except FileNotFoundError as error:
+        raise ManagerError("ssh-keygen is required for managed host-key rotation") from error
 
 
 class Store:
@@ -263,6 +283,10 @@ def ssh_command(user: str, host: str, key_path: Path) -> list[str]:
         "-o",
         "StrictHostKeyChecking=accept-new",
         "-o",
+        f"UserKnownHostsFile={MANAGED_KNOWN_HOSTS}",
+        "-o",
+        "GlobalKnownHostsFile=/dev/null",
+        "-o",
         "ConnectTimeout=15",
         "-o",
         "ServerAliveInterval=30",
@@ -280,6 +304,10 @@ def scp_command(user: str, host: str, key_path: Path) -> list[str]:
         "BatchMode=yes",
         "-o",
         "StrictHostKeyChecking=accept-new",
+        "-o",
+        f"UserKnownHostsFile={MANAGED_KNOWN_HOSTS}",
+        "-o",
+        "GlobalKnownHostsFile=/dev/null",
         "-o",
         "ConnectTimeout=15",
     ]

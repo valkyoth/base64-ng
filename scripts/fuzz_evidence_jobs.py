@@ -18,6 +18,7 @@ from fuzz_evidence_session import (
     Store,
     acquire_local_lock,
     pid_alive,
+    reset_managed_known_host,
     scp_command,
     ssh_command,
     validate_remote,
@@ -32,14 +33,67 @@ commit="$2"
 session="$3"
 repository="$4"
 bootstrap_rustup="$5"
-attempt="$6"
+install_prerequisites="$6"
+attempt="$7"
 case "$target$session$commit$attempt" in *[!A-Za-z0-9._-]*) exit 64;; esac
-for required in git curl python3 tar awk sed grep find wc; do
-    command -v "$required" >/dev/null 2>&1 || {
-        echo "remote worker: missing required command: $required" >&2
+export PATH="$HOME/.cargo/bin:$PATH"
+
+missing_commands() {
+    missing=""
+    for required in cc git curl python3 tar gzip awk sed grep find wc; do
+        if ! command -v "$required" >/dev/null 2>&1; then
+            missing="${missing}${missing:+ }$required"
+        fi
+    done
+    printf '%s\n' "$missing"
+}
+
+run_root() {
+    if [ "$(id -u)" -eq 0 ]; then
+        "$@"
+    else
+        command -v sudo >/dev/null 2>&1 || {
+            echo "remote worker: sudo is required to install system prerequisites" >&2
+            exit 69
+        }
+        sudo -n "$@"
+    fi
+}
+
+missing="$(missing_commands)"
+if [ -n "$missing" ]; then
+    if [ "$install_prerequisites" != "yes" ]; then
+        echo "remote worker: missing system prerequisites: $missing" >&2
+        echo "remote worker: approve prerequisite installation or provision the host manually" >&2
         exit 69
-    }
-done
+    fi
+    if command -v apt-get >/dev/null 2>&1; then
+        run_root apt-get update
+        run_root env DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            build-essential pkg-config git curl python3 tar gzip ca-certificates \
+            gawk sed grep findutils coreutils
+    elif command -v dnf >/dev/null 2>&1; then
+        run_root dnf install -y gcc gcc-c++ make pkgconf-pkg-config git curl \
+            python3 tar gzip ca-certificates gawk sed grep findutils coreutils
+    elif command -v yum >/dev/null 2>&1; then
+        run_root yum install -y gcc gcc-c++ make pkgconfig git curl python3 tar \
+            gzip ca-certificates gawk sed grep findutils coreutils
+    elif command -v zypper >/dev/null 2>&1; then
+        run_root zypper --non-interactive install gcc gcc-c++ make pkg-config \
+            git curl python3 tar gzip ca-certificates gawk sed grep findutils coreutils
+    elif command -v apk >/dev/null 2>&1; then
+        run_root apk add build-base pkgconf git curl python3 tar gzip \
+            ca-certificates gawk sed grep findutils coreutils bash
+    else
+        echo "remote worker: no supported system package manager was found" >&2
+        exit 69
+    fi
+fi
+missing="$(missing_commands)"
+if [ -n "$missing" ]; then
+    echo "remote worker: prerequisites remain missing after installation: $missing" >&2
+    exit 69
+fi
 if ! command -v rustup >/dev/null 2>&1; then
     if [ "$bootstrap_rustup" != "yes" ]; then
         echo "remote worker: rustup is missing and bootstrap was not approved" >&2
@@ -52,7 +106,6 @@ if ! command -v rustup >/dev/null 2>&1; then
     rm -f "$installer"
     trap - EXIT
 fi
-export PATH="$HOME/.cargo/bin:$PATH"
 work="$HOME/base64-ng-fuzz-$session-$target-$attempt"
 if [ -e "$work" ]; then
     echo "remote worker: refusing existing work directory: $work" >&2
@@ -202,6 +255,7 @@ class JobController:
         host: str,
         key_path: Path,
         bootstrap_rustup: bool,
+        install_prerequisites: bool,
     ) -> None:
         self.validate_source()
         validate_remote(user, host, key_path)
@@ -211,6 +265,7 @@ class JobController:
         if row["status"] != "pending":
             raise ManagerError(f"{target} is not pending")
         attempt = f"{int(time.time())}-{os.getpid()}"
+        reset_managed_known_host(host)
         command = ssh_command(user, host, key_path) + [
             "bash",
             "-s",
@@ -220,6 +275,7 @@ class JobController:
             self.session.identifier,
             self.session.repository,
             "yes" if bootstrap_rustup else "no",
+            "yes" if install_prerequisites else "no",
             attempt,
         ]
         output = stream_command(command, REMOTE_BOOTSTRAP)

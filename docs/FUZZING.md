@@ -154,7 +154,12 @@ workers remain detached after the menu exits, with an atomic lock preventing a
 second local campaign. Remote setup clones the exact session commit, installs
 the pinned Rust toolchain and `cargo-fuzz` version, starts a detached worker,
 and records its host, PID, work directory, and start time. If rustup is absent,
-the official TLS bootstrap is used only after explicit operator approval.
+the official TLS bootstrap is used only after explicit operator approval. The
+manager separately checks for the C compiler and command-line tools needed to
+build `cargo-fuzz`. With explicit approval, it installs a fixed prerequisite
+set through `apt-get`, `dnf`, `yum`, `zypper`, or `apk`, using root directly or
+passwordless `sudo`. It rechecks every command and fails before cloning or
+starting a campaign if the host remains incomplete.
 
 Selecting a running target checks its persisted status. Successful remote
 evidence is copied back and passed through the exact-source shard validator
@@ -180,9 +185,13 @@ scripts/manage-fuzz-evidence.py --finalize
 
 Starting a new session replaces only the active SQLite state. Prior ignored
 session directories are preserved for operator-controlled retention. A reset is
-refused while jobs are marked running. SSH uses the normal local `known_hosts`
-database with accept-new behavior; high-assurance operators should verify a new
-worker's host-key fingerprint out of band before launching evidence.
+refused while jobs are marked running. SSH uses accept-new host-key checking
+with a manager-owned ignored file under `target/fuzz-manager/`. Before a new
+job, any stale entry for the selected ephemeral cloud IP is removed from that
+file; the newly observed key is then pinned for all progress checks and downloads
+during the job. The manager does not alter `~/.ssh/known_hosts`.
+High-assurance operators should verify each new worker's host-key fingerprint
+out of band before launching evidence.
 
 The lower-level per-target interface remains available for manual orchestration.
 Capture one target into an ignored collection with:
