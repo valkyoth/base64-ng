@@ -20,6 +20,8 @@ MANAGED_KNOWN_HOSTS = ROOT / "target" / "fuzz-manager" / "known_hosts"
 TARGET_FILE = ROOT / "scripts" / "fuzz-release-targets.txt"
 FUZZ_SECONDS = 3600
 FUZZ_VERSION = (ROOT / "scripts" / "fuzz-cargo-version.txt").read_text().strip()
+FUZZ_TARGET_COUNT = 18
+HARDWARE_TARGET = "riscv_hardware"
 VALID_USER = re.compile(r"[A-Za-z_][A-Za-z0-9_-]*")
 VALID_HOST = re.compile(r"[A-Za-z0-9.-]+")
 VALID_REMOTE_PATH = re.compile(r"/[A-Za-z0-9._/-]+")
@@ -63,16 +65,30 @@ def source_identity(require_clean: bool = True, root: Path = ROOT) -> Source:
 
 def release_targets() -> list[str]:
     values = [line.strip() for line in TARGET_FILE.read_text().splitlines() if line.strip()]
-    if len(values) != 18 or len(values) != len(set(values)):
+    if len(values) != FUZZ_TARGET_COUNT or len(values) != len(set(values)):
         raise ManagerError("release fuzz inventory must contain 18 unique targets")
-    return values
+    return [*values, HARDWARE_TARGET]
 
 
-def validate_remote(user: str, host: str, key_path: Path) -> None:
+def fuzz_targets() -> list[str]:
+    return release_targets()[:-1]
+
+
+def hardware_bundle(collection: Path) -> Path:
+    return collection.parent / "hardware" / HARDWARE_TARGET
+
+
+def validate_port(port: int) -> None:
+    if isinstance(port, bool) or not isinstance(port, int) or not 1 <= port <= 65535:
+        raise ManagerError("remote SSH port must be an integer from 1 through 65535")
+
+
+def validate_remote(user: str, host: str, port: int, key_path: Path) -> None:
     if VALID_USER.fullmatch(user) is None:
         raise ManagerError("remote user contains unsupported characters")
     if VALID_HOST.fullmatch(host) is None or ".." in host or host.startswith("-"):
         raise ManagerError("remote host must be an IPv4 address or DNS hostname")
+    validate_port(port)
     if not key_path.is_file():
         raise ManagerError(f"SSH private key does not exist: {key_path}")
 
@@ -89,17 +105,19 @@ def validate_remote_work_dir(value: str, expected_prefix: str) -> str:
     return value
 
 
-def reset_managed_known_host(host: str) -> None:
+def reset_managed_known_host(host: str, port: int) -> None:
     if VALID_HOST.fullmatch(host) is None or ".." in host or host.startswith("-"):
         raise ManagerError("remote host must be an IPv4 address or DNS hostname")
+    validate_port(port)
     MANAGED_KNOWN_HOSTS.parent.mkdir(parents=True, exist_ok=True)
     if MANAGED_KNOWN_HOSTS.is_symlink():
         raise ManagerError("refusing a symlinked managed known_hosts file")
     MANAGED_KNOWN_HOSTS.touch(mode=0o600, exist_ok=True)
     MANAGED_KNOWN_HOSTS.chmod(0o600)
     try:
+        host_key = host if port == 22 else f"[{host}]:{port}"
         subprocess.run(
-            ["ssh-keygen", "-R", host, "-f", str(MANAGED_KNOWN_HOSTS)],
+            ["ssh-keygen", "-R", host_key, "-f", str(MANAGED_KNOWN_HOSTS)],
             check=False,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
@@ -145,6 +163,7 @@ class Store:
                 ),
                 mode TEXT CHECK (mode IN ('local', 'remote') OR mode IS NULL),
                 host TEXT,
+                port INTEGER CHECK (port BETWEEN 1 AND 65535),
                 remote_user TEXT,
                 key_path TEXT,
                 work_dir TEXT,
@@ -156,6 +175,20 @@ class Store:
             );
             """
         )
+        columns = {
+            row[1] for row in self.connection.execute("PRAGMA table_info(jobs)")
+        }
+        if "port" not in columns:
+            self.connection.execute("ALTER TABLE jobs ADD COLUMN port INTEGER")
+        self.connection.execute(
+            "UPDATE jobs SET port=22 WHERE mode='remote' AND port IS NULL"
+        )
+        if self.connection.execute("SELECT 1 FROM session").fetchone() is not None:
+            self.connection.execute(
+                """INSERT OR IGNORE INTO jobs(target, ordinal, status)
+                VALUES (?, ?, 'pending')""",
+                (HARDWARE_TARGET, FUZZ_TARGET_COUNT + 1),
+            )
         self.connection.commit()
 
     def has_session(self) -> bool:
@@ -206,6 +239,7 @@ class Store:
             "status",
             "mode",
             "host",
+            "port",
             "remote_user",
             "key_path",
             "work_dir",
@@ -228,7 +262,7 @@ class Store:
         with self.connection:
             self.connection.execute(
                 """UPDATE jobs SET status='pending', mode=NULL, host=NULL,
-                remote_user=NULL, key_path=NULL, work_dir=NULL, pid=NULL,
+                port=NULL, remote_user=NULL, key_path=NULL, work_dir=NULL, pid=NULL,
                 started_at=NULL, finished_at=NULL, exit_code=NULL, message=''
                 WHERE target=?""",
                 (target,),
@@ -242,11 +276,13 @@ class Store:
             is not None
         )
 
-    def remote_host_running(self, host: str) -> bool:
+    def remote_host_running(self, host: str, port: int) -> bool:
+        validate_port(port)
         return (
             self.connection.execute(
-                "SELECT 1 FROM jobs WHERE status='running' AND mode='remote' AND host=?",
-                (host,),
+                """SELECT 1 FROM jobs
+                WHERE status='running' AND mode='remote' AND host=? AND port=?""",
+                (host, port),
             ).fetchone()
             is not None
         )
@@ -267,15 +303,17 @@ class Store:
 
     def last_remote(self) -> sqlite3.Row | None:
         return self.connection.execute(
-            """SELECT remote_user, key_path FROM jobs
+            """SELECT remote_user, key_path, port FROM jobs
             WHERE mode='remote' ORDER BY started_at DESC LIMIT 1"""
         ).fetchone()
 
 
-def ssh_command(user: str, host: str, key_path: Path) -> list[str]:
-    validate_remote(user, host, key_path)
+def ssh_command(user: str, host: str, port: int, key_path: Path) -> list[str]:
+    validate_remote(user, host, port, key_path)
     return [
         "ssh",
+        "-p",
+        str(port),
         "-i",
         str(key_path),
         "-o",
@@ -294,10 +332,12 @@ def ssh_command(user: str, host: str, key_path: Path) -> list[str]:
     ]
 
 
-def scp_command(user: str, host: str, key_path: Path) -> list[str]:
-    validate_remote(user, host, key_path)
+def scp_command(user: str, host: str, port: int, key_path: Path) -> list[str]:
+    validate_remote(user, host, port, key_path)
     return [
         "scp",
+        "-P",
+        str(port),
         "-i",
         str(key_path),
         "-o",
@@ -314,11 +354,17 @@ def scp_command(user: str, host: str, key_path: Path) -> list[str]:
 
 
 def write_local_runner(path: Path, target: str, collection: Path, label: str) -> None:
-    command = (
-        f"BASE64_NG_FUZZ_MACHINE_LABEL={shlex.quote(label)} "
-        f"scripts/capture-fuzz-shard.sh {shlex.quote(target)} "
-        f"{shlex.quote(str(collection))} {FUZZ_SECONDS}"
-    )
+    if target == HARDWARE_TARGET:
+        command = (
+            "scripts/capture-2.0-riscv-admission.sh "
+            f"{shlex.quote(str(hardware_bundle(collection)))}"
+        )
+    else:
+        command = (
+            f"BASE64_NG_FUZZ_MACHINE_LABEL={shlex.quote(label)} "
+            f"scripts/capture-fuzz-shard.sh {shlex.quote(target)} "
+            f"{shlex.quote(str(collection))} {FUZZ_SECONDS}"
+        )
     path.write_text(
         "#!/usr/bin/env sh\nset +e\n"
         'printf "%s\\n" "$$" > "$2/pid"\n'

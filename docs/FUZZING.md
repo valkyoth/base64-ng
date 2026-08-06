@@ -147,13 +147,16 @@ The recommended operator interface is the persistent session manager:
 scripts/manage-fuzz-evidence.py
 ```
 
-Its numbered menu records the exact source identity and all 18 target states in
+Its numbered menu records the exact source identity, all 18 fuzz target states,
+and a separate native RISC-V admission job in
 `target/fuzz-manager/state.sqlite3`. On a later invocation it offers to continue
 that session or start a new one. A target can run locally or over SSH. Local
 workers remain detached after the menu exits, with an atomic lock preventing a
-second local campaign. Remote setup clones the exact session commit, installs
-the pinned Rust toolchain and `cargo-fuzz` version, starts a detached worker,
-and records its host, PID, work directory, and start time. If rustup is absent,
+second local campaign. Remote setup clones the exact session commit, reuses the
+pinned Rust toolchain when it is already installed or installs only its minimal
+profile otherwise, installs the pinned `cargo-fuzz` version for fuzz jobs,
+starts a detached worker, and records its host, SSH port, PID, work directory,
+and start time. If rustup is absent,
 the official TLS bootstrap is used only after explicit operator approval. The
 manager separately checks for the C compiler and command-line tools needed to
 build `cargo-fuzz`. With explicit approval, it installs a fixed prerequisite
@@ -172,10 +175,16 @@ the repository:
 
 ```sh
 export BASE64_NG_FUZZ_SSH_USER=ubuntu
+export BASE64_NG_FUZZ_SSH_PORT=22
 export BASE64_NG_FUZZ_SSH_KEY="$HOME/.ssh/fuzz-worker.pem"
 ```
 
-When all targets are locally verified, the menu exposes final aggregation.
+The RISC-V job runs `scripts/capture-2.0-riscv-admission.sh` rather than
+LibFuzzer, reuses the exact installed project toolchain without installing
+nightly or `cargo-fuzz`, and stores its independently validated bundle outside
+the fuzz shard directory. When all fuzz targets and that hardware job are
+locally verified, the menu exposes final aggregation of the exact 18 fuzz
+shards.
 Headless status and finalization are also available:
 
 ```sh

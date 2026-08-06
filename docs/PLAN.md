@@ -43,8 +43,10 @@ contract. Heap secret frames prove stable preallocation after classified input,
 the volatile provider wipes quarantined storage on provider drop and proves
 restart is not recovery, and the shared corpus also exercises 2.0 one-shot and
 incremental states. Release mode intentionally fails until both Apple Silicon
-and server AArch64 NEON performance bundles are retained. RVV, SVE, and
-big-endian QEMU evidence cannot satisfy that native admission boundary. See
+and server AArch64 NEON performance bundles are retained. Access to a physical
+SpacemiT X60 now makes the exact-profile RVV native admission campaign
+release-blocking for 2.0.0; SVE and big-endian QEMU evidence cannot satisfy a
+native admission boundary. See
 [`2.0_MEMORY_SANITIZER_HARDWARE_EVIDENCE.md`](2.0_MEMORY_SANITIZER_HARDWARE_EVIDENCE.md).
 
 ## Dependency Policy
@@ -1426,7 +1428,7 @@ a generation-bound token and one allocation-specific protected typestate. The
 included provider is finite, volatile, best-effort, and explicitly not a
 page-locking or persistent-recovery provider. Ordinary SIMD may coexist in one
 build but does not enter or authorize assured secret operations. The numbered
-acceptance criteria remain authoritative in `2.0.0-release-plan.md`.
+acceptance criteria remain authoritative in `docs/2.0.0-release-plan.md`.
 
 Commit 46 adds `base64-ng-imap`, a bounded `no_std` companion for only the
 obsolete RFC 3501 Section 5.1.3 modified-Base64 payload transform. It accepts

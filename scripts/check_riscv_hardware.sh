@@ -45,6 +45,9 @@ run sh -c 'cat /proc/cpuinfo'
 run cargo test --all-targets --all-features
 run cargo test --doc --all-features
 run env RUSTFLAGS=--cfg=base64_ng_rvv_candidate cargo test --release --all-features --lib rvv_ -- --nocapture
+run env RUSTFLAGS=--cfg=base64_ng_rvv_candidate cargo test --release --all-features --lib \
+    simd::rvv_tests::rvv_state_survives_linux_signal_delivery -- \
+    --ignored --exact --nocapture
 run scripts/generate_rvv_asm_evidence.sh
 
 cat "$transcript"

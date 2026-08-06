@@ -86,10 +86,21 @@ Generated assembly is checked by:
 scripts/generate_rvv_asm_evidence.sh
 ```
 
-That gate requires all five leaf symbols, segmented vector loads/stores,
+That gate requires all seven evidence symbols, segmented vector loads/stores,
 mask-based mapping, VLMAX cleanup, no nested calls, and an ELF `V` attribute.
 
 ## Real Hardware Admission
+
+Physical access is now available to a Banana Pi BPI-F3 with a SpacemiT X60,
+RVV 1.0, and VLEN 256. The 2.0 pre-seal amendment makes the native campaign
+release-blocking rather than deferring it to 2.0.1. The candidate remains
+non-admitted until the retained bundle passes and a later reviewed commit
+deliberately integrates exact-profile dispatch.
+
+The frozen host identity is Linux `riscv64`, `mvendorid=0x710`,
+`marchid=0x8000000058000001`, and `mimpid=0x1000000049772200`. Evidence from
+that host can support only that exact profile; it cannot establish behavior or
+performance for other RVV implementations.
 
 Real reports must follow
 `hardware-evidence/riscv/schema-v1.json` and be generated from a clean exact
@@ -102,6 +113,20 @@ virtual machines and requires:
 - native differential tests and generated assembly review;
 - raw benchmark data proving encode and decode benefit;
 - register-cleanup review and a pentest range ending at the source commit.
+
+The resumable distributed evidence manager exposes this campaign as the
+separate `riscv_hardware` job. It reuses an installed project Rust toolchain,
+does not install nightly or `cargo-fuzz`, and retrieves the validated hardware
+bundle separately from the 18 fuzz shards. The direct capture command is:
+
+```text
+scripts/capture-2.0-riscv-admission.sh \
+  target/release-evidence/riscv-native-admission
+```
+
+The Linux signal-frame test is explicitly ignored in ordinary and QEMU suites
+and run by exact name only from the native hardware gate. This prevents QEMU
+signal emulation from being mistaken for kernel/hardware vector-state evidence.
 
 An accepted Commit 32 report still says `production_admitted = false`. A later
 reviewed commit must consume the evidence, set measured thresholds, integrate

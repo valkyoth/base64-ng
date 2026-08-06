@@ -59,16 +59,16 @@ with tempfile.TemporaryDirectory() as raw_temp:
     ).split()[1]
     principal = "evidence-test@example.invalid"
     public_key = pathlib.Path(f"{key}.pub").read_text(encoding="utf-8").strip()
-    (repo / "security/release-signers").write_text(
+    (repo / "security/evidence-signers").write_text(
         f'{principal} namespaces="base64-ng-evidence-v2" {public_key}\n',
         encoding="utf-8",
     )
     verifier = repo / "scripts/verify-release-evidence-signature.sh"
     verifier.write_text(
         verifier.read_text(encoding="utf-8")
-        .replace("1921261+eldryoth@users.noreply.github.com", principal)
+        .replace("base64-ng-evidence-signer-v2", principal)
         .replace(
-            "SHA256:EoLRQ5k4J5pYz3UMFmkrV798gYFNkToGS2xEPvebqB4",
+            "SHA256:vf1eXq+UBZWKsX3DD1iakRK2Pk9AsXoJzZj/tNcdczc",
             fingerprint,
         ),
         encoding="utf-8",

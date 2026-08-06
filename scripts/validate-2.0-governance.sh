@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-plan="2.0.0-release-plan.md"
+plan="docs/2.0.0-release-plan.md"
 decision="docs/2.0_GOVERNANCE.md"
 
 require_text() {
@@ -17,7 +17,7 @@ test -s "$plan"
 test -s "$decision"
 
 require_text "$plan" "This is the authoritative executable roadmap for 2.0."
-require_text "$plan" "[2.0 governance decision](docs/2.0_GOVERNANCE.md)"
+require_text "$plan" "[2.0 governance decision](2.0_GOVERNANCE.md)"
 require_text "$plan" "Nothing listed here is deferred beyond 2.0.0."
 require_text "$plan" 'Planning baseline: signed `v1.3.9` at commit `5af9802`.'
 require_text "$plan" 'Active implementation and release toolchain at plan creation: Rust `1.97.1`.'
@@ -76,9 +76,9 @@ require_text "$decision" "exclude the RFC text and source-lock material from eve
 require_text "$decision" "persistent teardown recovery without a separately named and admitted"
 require_text "$decision" "The accepted pre-seal evidence amendment classifies a second AVX-512 VBMI"
 
-require_text README.md "[2.0 commit plan](2.0.0-release-plan.md)"
+require_text README.md "[2.0 commit plan](docs/2.0.0-release-plan.md)"
 require_text README.md "[governance decision](docs/2.0_GOVERNANCE.md)"
-require_text CONTRIBUTING.md '[`2.0.0-release-plan.md`](2.0.0-release-plan.md)'
+require_text CONTRIBUTING.md '[`2.0.0-release-plan.md`](docs/2.0.0-release-plan.md)'
 require_text docs/RELEASE_EVIDENCE.md '[`2.0_GOVERNANCE.md`](2.0_GOVERNANCE.md)'
 
 echo "2.0 governance: ok"

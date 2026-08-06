@@ -161,5 +161,5 @@ fi
 evidence_verify_source "final release evidence"
 mv "$manifest_tmp" "$manifest"
 trap - EXIT INT TERM
-scripts/sign-release-evidence.sh "$manifest"
 echo "final release evidence: wrote $manifest"
+echo "final release evidence: manifest remains unsigned until the isolated sealing step"

@@ -16,7 +16,7 @@ DEFAULT_ALLOWLIST = ROOT / "security/evidence-reuse-allowlist.txt"
 FULL_COMMIT = re.compile(r"[0-9a-f]{40}")
 HASH_LINE = re.compile(r"([0-9a-f]{64})  (target/release-evidence/.+)")
 PERMITTED_METADATA_PATHS = {
-    "2.0.0-release-plan.md",
+    "docs/2.0.0-release-plan.md",
     "README.md",
     "docs/2.0_RELEASE_FREEZE.md",
     "docs/RELEASE.md",

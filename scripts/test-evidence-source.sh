@@ -148,3 +148,12 @@ printf 'source:\ncommit=stale\ntree_state=dirty-development-only\ncommit=%s\ntre
 assert_manifest_rejected stale-followed-by-current
 
 echo "evidence source test: ok"
+
+if grep -n 'EVIDENCE_SOURCE_TREE_STATE' scripts/check_riscv_qemu.sh scripts/check_sve_qemu.sh; then
+    echo "evidence source test: QEMU report uses an undefined source-state variable" >&2
+    exit 1
+fi
+for report_script in scripts/check_riscv_qemu.sh scripts/check_sve_qemu.sh; do
+    grep -F -q 'tree_state=$EVIDENCE_TREE_STATE' "$report_script"
+done
+echo "QEMU evidence report source fields: ok"

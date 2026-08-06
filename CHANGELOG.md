@@ -52,7 +52,7 @@
   `simd128` Standard/URL-safe encode and strict-decode paths with direct
   known-answer tests, scalar verification, fallback, register cleanup, and
   runtime reporting.
-- See [`2.0.0-release-plan.md`](2.0.0-release-plan.md) for the complete ordered
+- See [`2.0.0-release-plan.md`](docs/2.0.0-release-plan.md) for the complete ordered
   implementation and verification program.
 - Commit 31 audits portable byte-order assumptions, requires complete s390x
   and PowerPC64 QEMU functional suites, preserves scalar-only big-endian
@@ -64,6 +64,9 @@
   checked native-hardware report schema. Production RISC-V dispatch remains
   scalar until native correctness, ABI, signal-state, performance, assembly,
   and external pentest evidence pass.
+- The pre-seal RVV amendment adds a dedicated native X60 admission capture and
+  resumable hardware job. RVV remains scalar until that clean-commit evidence,
+  exact-profile dispatch integration, and external retest are complete.
 - Commit 33 implements an isolated, vector-length-independent AArch64 SVE
   Standard/URL-safe encode and strict-decode candidate through reviewed leaf
   assembly, fail-closed Linux/Android HWCAP and per-thread vector-length

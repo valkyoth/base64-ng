@@ -74,7 +74,7 @@ def validate(path: Path, final: bool) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--final", action="store_true")
-    parser.add_argument("plan", nargs="?", default="2.0.0-release-plan.md")
+    parser.add_argument("plan", nargs="?", default="docs/2.0.0-release-plan.md")
     args = parser.parse_args()
     validate(Path(args.plan), args.final)
 

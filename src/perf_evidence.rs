@@ -22,11 +22,13 @@ pub enum EvidenceBackend {
     Neon,
     /// WebAssembly `simd128` implementation.
     WasmSimd128,
+    /// RISC-V Vector 1.0 implementation under the project evidence cfg.
+    Rvv,
 }
 
 impl EvidenceBackend {
     /// Every backend represented by the performance evidence schema.
-    pub const ALL: [Self; 7] = [
+    pub const ALL: [Self; 8] = [
         Self::Auto,
         Self::Scalar,
         Self::Ssse3Sse41,
@@ -34,6 +36,7 @@ impl EvidenceBackend {
         Self::Avx512Vbmi,
         Self::Neon,
         Self::WasmSimd128,
+        Self::Rvv,
     ];
 
     /// Stable machine-readable backend name.
@@ -47,6 +50,7 @@ impl EvidenceBackend {
             Self::Avx512Vbmi => "avx512-vbmi",
             Self::Neon => "neon",
             Self::WasmSimd128 => "wasm-simd128",
+            Self::Rvv => "rvv",
         }
     }
 
@@ -65,6 +69,8 @@ impl EvidenceBackend {
             Self::Neon => crate::simd::neon_available(),
             #[cfg(all(feature = "simd", target_arch = "wasm32"))]
             Self::WasmSimd128 => crate::simd::wasm_simd128_decode_available(),
+            #[cfg(all(feature = "simd", target_arch = "riscv64", base64_ng_rvv_candidate))]
+            Self::Rvv => crate::simd::rvv_available(),
             _ => false,
         }
     }
@@ -149,6 +155,10 @@ where
         EvidenceBackend::WasmSimd128 if backend.is_available() => Some(
             crate::simd::encode_slice_wasm_simd128::<A, PAD>(input, output),
         ),
+        #[cfg(all(feature = "simd", target_arch = "riscv64", base64_ng_rvv_candidate))]
+        EvidenceBackend::Rvv if backend.is_available() => {
+            Some(crate::simd::encode_slice_rvv::<A, PAD>(input, output))
+        }
         _ => None,
     }
 }
@@ -184,6 +194,10 @@ where
         EvidenceBackend::WasmSimd128 if backend.is_available() => Some(
             crate::simd::decode_slice_wasm_simd128::<A, PAD>(input, output),
         ),
+        #[cfg(all(feature = "simd", target_arch = "riscv64", base64_ng_rvv_candidate))]
+        EvidenceBackend::Rvv if backend.is_available() => {
+            Some(crate::simd::decode_slice_rvv::<A, PAD>(input, output))
+        }
         _ => None,
     }
 }

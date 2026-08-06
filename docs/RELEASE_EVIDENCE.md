@@ -25,7 +25,7 @@ The 2.0 checkpoint program is governed by
 [`2.0_GOVERNANCE.md`](2.0_GOVERNANCE.md). Each numbered checkpoint records
 its exact commit, verification commands, tool and target identity, skips, and
 external pentest coverage in the authoritative
-[`2.0.0-release-plan.md`](../2.0.0-release-plan.md). Generated artifacts remain
+[`2.0.0-release-plan.md`](2.0.0-release-plan.md). Generated artifacts remain
 under `target/release-evidence/`; the final pre-seal checkpoint record retains
 checksums or immutable workflow/artifact references for evidence too large to
 commit. Commit 55 changes only the permanent pentest report. Intermediate
@@ -37,8 +37,11 @@ candidate.
 before Commit 55. `scripts/finalize-release-evidence.sh` rejects missing,
 dirty-tree, or stale-source Miri, sanitizer, release-duration fuzz, dudect,
 normal/advanced Kani, assembly, native-hardware, and SBOM artifacts and writes
-`target/release-evidence/FINAL-MANIFEST.txt`. The finalizer signs that index in
-the `base64-ng-evidence-v2` SSH namespace with the exact project release key.
+`target/release-evidence/FINAL-MANIFEST.txt`. After the build gate exits, the
+isolated `scripts/seal-release-evidence.sh` step signs that index in the
+`base64-ng-evidence-v2` SSH namespace with a dedicated evidence-only key.
+The build gate rejects that private-key environment variable so Cargo, tests,
+fuzzers, and third-party tools cannot inherit it.
 Readiness and reuse verify the detached signature against the pinned principal
 and key fingerprint before trusting any provenance or artifact hash. It also
 requires explicit success
@@ -90,9 +93,10 @@ environment, corpus, and zero-artifact results must remain exact.
 `scripts/manage-fuzz-evidence.py` is the persistent operator layer over those
 primitives. Its ignored SQLite session tracks detached local and SSH workers,
 resumes progress checks across invocations, retrieves successful remote output,
-and exposes aggregation only after every bundle validates locally. SQLite state
-is orchestration metadata, not evidence; the signed bundle manifests and final
-aggregate remain the release trust boundary.
+and exposes aggregation only after all 18 fuzz bundles and the separate native
+RISC-V admission bundle validate locally. SQLite state is orchestration
+metadata, not evidence; the signed bundle manifests and final aggregate remain
+the release trust boundary.
 Retained native-performance bundles may survive test-only fuzz harness changes
 and publish-file inventory changes. The NEON validator compares parsed Cargo
 manifests after removing only `package.include`; feature, dependency, profile,
@@ -534,6 +538,14 @@ The release gate runs:
   register-retention, or side-channel evidence. Production RISC-V dispatch
   remains scalar until a report accepted by
   `hardware-evidence/riscv/schema-v1.json` and external review pass.
+- Native RISC-V admission capture through
+  `scripts/capture-2.0-riscv-admission.sh` on the reviewed physical SpacemiT
+  X60 Linux host. The retained bundle adds an explicit native-only Linux signal
+  frame test, thread context-switch stress, generated assembly and cleanup
+  evidence, and 15 paired scalar/RVV samples for Standard and URL-safe encode
+  and strict decode. The bundle is admission input, not automatic admission;
+  production dispatch changes still require an exact-profile gate and external
+  retest on the final implementation commit.
 - AArch64 SVE QEMU user-mode verification through `scripts/check_sve_qemu.sh`,
   which runs the complete portable fallback suites and the isolated Commit 33
   candidate at vector lengths 128, 256, and 512. The candidate covers

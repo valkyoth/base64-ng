@@ -51,6 +51,9 @@ scripts/test-2.0-checkpoint-record.py
 echo "checks: retained NEON evidence policy"
 scripts/test-neon-admission-bundle.py
 
+echo "checks: native RVV admission evidence policy"
+scripts/test-rvv-admission-bundle.py
+
 echo "checks: Kani proof inventory"
 scripts/validate-kani-proof-inventory.py
 

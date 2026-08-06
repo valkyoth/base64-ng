@@ -122,6 +122,7 @@ test -x scripts/generate_release_history.py
 test -x scripts/validate-release-readiness.sh
 test -x scripts/finalize-release-evidence.sh
 test -x scripts/sign-release-evidence.sh
+test -x scripts/seal-release-evidence.sh
 test -x scripts/verify-release-evidence-signature.sh
 test -x scripts/release_wasm_loader.sh
 test -x scripts/verify-release-tag.sh
@@ -131,6 +132,7 @@ test -x scripts/test-dudect-release-policy.sh
 test -x scripts/test-release-tag-policy.sh
 test -x scripts/test-release-evidence-signature.sh
 test -s security/release-signers
+test -s security/evidence-signers
 test -s scripts/test-release-crates.py
 test -x scripts/test-release-readiness.sh
 test -s scripts/ct-asm-symbols.sh
@@ -139,6 +141,8 @@ test -x scripts/check-2.0-operation-reporting.sh
 test -x scripts/validate-2.0-dispatch-matrix.sh
 test -x scripts/capture-2.0-neon-admission.sh
 test -x scripts/validate-neon-admission-bundle.py
+test -x scripts/capture-2.0-riscv-admission.sh
+test -x scripts/validate-rvv-admission-bundle.py
 if ! awk '
     /name: Format, lint, test, and audit/ { in_checks = 1 }
     in_checks && /fetch-depth: 0/ { found = 1 }
@@ -149,6 +153,7 @@ if ! awk '
     exit 1
 fi
 test -x scripts/test-neon-admission-bundle.py
+test -x scripts/test-rvv-admission-bundle.py
 test -x scripts/validate-2.0-checkpoint-record.py
 test -x scripts/test-2.0-checkpoint-record.py
 
@@ -207,6 +212,7 @@ for required_script in \
     "scripts/check-2.0-release-freeze.sh" \
     "scripts/check-2.0-neon-hot-paths.sh" \
     "scripts/capture-2.0-neon-admission.sh" \
+    "scripts/capture-2.0-riscv-admission.sh" \
     "scripts/validate-2.0-dispatch-matrix.sh" \
     "scripts/check-2.0-x86-decode-hot-paths.sh" \
     "scripts/check-2.0-profiles.sh" \
@@ -264,6 +270,7 @@ for required_script in \
     "scripts/stable_release_gate.sh" \
     "scripts/finalize-release-evidence.sh" \
     "scripts/sign-release-evidence.sh" \
+    "scripts/seal-release-evidence.sh" \
     "scripts/verify-release-evidence-signature.sh" \
     "scripts/test-release-evidence-signature.sh" \
     "scripts/release_wasm_loader.sh" \
@@ -306,6 +313,8 @@ for required_python_script in \
     "scripts/test-fuzz-evidence-manager.py" \
     "scripts/validate-neon-admission-bundle.py" \
     "scripts/test-neon-admission-bundle.py" \
+    "scripts/validate-rvv-admission-bundle.py" \
+    "scripts/test-rvv-admission-bundle.py" \
     "scripts/validate-2.0-checkpoint-record.py" \
     "scripts/test-2.0-checkpoint-record.py"
 do
@@ -394,10 +403,21 @@ for required_finalizer_text in \
     'require_source_manifest_for' \
     'campaign_commit="${BASE64_NG_REUSE_EVIDENCE_FROM:-$EVIDENCE_SOURCE_COMMIT}"' \
     'evidence_mode=metadata-equivalent' \
-    'scripts/sign-release-evidence.sh "$manifest"'
+    'manifest remains unsigned until the isolated sealing step'
 do
     if ! grep -F -q -- "$required_finalizer_text" scripts/finalize-release-evidence.sh; then
         echo "release metadata: final evidence provenance validation is missing: $required_finalizer_text" >&2
+        exit 1
+    fi
+done
+
+for required_sealing_text in \
+    'scripts/sign-release-evidence.sh "$manifest"' \
+    'unset BASE64_NG_EVIDENCE_SIGNING_KEY' \
+    'scripts/validate-release-readiness.sh "$tag"'
+do
+    if ! grep -F -q -- "$required_sealing_text" scripts/seal-release-evidence.sh; then
+        echo "release metadata: isolated evidence sealing is missing: $required_sealing_text" >&2
         exit 1
     fi
 done
@@ -426,6 +446,7 @@ for required_release_provenance_text in \
     'scripts/generate_simd_asm_evidence.sh' \
     'scripts/generate_wasm_simd_evidence.sh' \
     'BASE64_NG_REUSE_EVIDENCE_FROM' \
+    'refuse to expose the evidence signing key to build/test subprocesses' \
     'scripts/evidence-equivalence.py' \
     'evidence_verify_source "stable release gate"'
 do
@@ -877,6 +898,9 @@ for required_package_file in \
     "scripts/capture-2.0-neon-admission.sh" \
     "scripts/validate-neon-admission-bundle.py" \
     "scripts/test-neon-admission-bundle.py" \
+    "scripts/capture-2.0-riscv-admission.sh" \
+    "scripts/validate-rvv-admission-bundle.py" \
+    "scripts/test-rvv-admission-bundle.py" \
     "scripts/validate-2.0-checkpoint-record.py" \
     "scripts/test-2.0-checkpoint-record.py" \
     "scripts/check-2.0-one-shot.sh" \
@@ -940,6 +964,7 @@ for required_package_file in \
     "scripts/generate_neon_asm_evidence.sh" \
     "scripts/test-ct-asm-symbols.sh" \
     "scripts/test-neon-performance.py" \
+    "scripts/test-rvv-admission-bundle.py" \
     "scripts/reproducible_build_check.sh" \
     "scripts/release_crates.py" \
     "scripts/stable_release_gate.sh" \
@@ -950,6 +975,7 @@ for required_package_file in \
     "scripts/validate-doc-versions.sh" \
     "scripts/validate-msrv-policy.sh" \
     "scripts/validate-neon-performance.py" \
+    "scripts/validate-rvv-performance.py" \
     "scripts/validate-panic-policy.sh" \
     "scripts/validate-release-metadata.sh" \
     "scripts/validate-simd-encode-admission-draft.sh" \

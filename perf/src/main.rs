@@ -3,6 +3,7 @@ mod codec;
 mod evidence;
 mod neon;
 mod resources;
+mod rvv;
 mod x86_decode;
 mod x86_encode;
 #[cfg(test)]
@@ -76,6 +77,7 @@ fn main() {
         Some("resources") => resources::print(),
         Some("correctness") => verify_correctness(),
         Some("neon") => neon::run(),
+        Some("rvv") => rvv::run(),
         Some("x86-decode") => x86_decode::run(),
         Some("x86-encode") => x86_encode::run(),
         None | Some("benchmark") => run_benchmark(),

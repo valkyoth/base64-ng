@@ -72,7 +72,8 @@ grep -F -q 'scripts/test-fuzz-evidence-manager.py' scripts/checks.sh
 for manager_contract in \
     'sqlite3' \
     'only one local fuzz target may run at a time' \
-    'all 18 targets must be complete before final verification' \
+    'all 18 fuzz targets and native RISC-V evidence must be complete' \
+    'capture-2.0-riscv-admission.sh' \
     'StrictHostKeyChecking=accept-new'
 do
     grep -F -q -- "$manager_contract" \

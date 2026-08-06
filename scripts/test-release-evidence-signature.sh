@@ -22,9 +22,9 @@ ssh-keygen -Y sign -f "$key" -n "$namespace" "$manifest" >/dev/null
 
 cp scripts/verify-release-evidence-signature.sh "$verifier"
 sed -i \
-    -e "s#security/release-signers#../release-signers#" \
-    -e "s#1921261+eldryoth@users.noreply.github.com#$principal#" \
-    -e "s#SHA256:EoLRQ5k4J5pYz3UMFmkrV798gYFNkToGS2xEPvebqB4#$fingerprint#" \
+    -e "s#security/evidence-signers#../release-signers#" \
+    -e "s#base64-ng-evidence-signer-v2#$principal#" \
+    -e "s#SHA256:vf1eXq+UBZWKsX3DD1iakRK2Pk9AsXoJzZj/tNcdczc#$fingerprint#" \
     "$verifier"
 
 repo="$tmp/repo"

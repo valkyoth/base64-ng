@@ -58,6 +58,15 @@ mod sve_tests;
 #[cfg(all(feature = "simd", target_arch = "riscv64", base64_ng_rvv_candidate))]
 mod rvv;
 #[cfg(all(
+    feature = "simd",
+    target_arch = "riscv64",
+    base64_ng_rvv_candidate,
+    base64_ng_perf_evidence
+))]
+pub(crate) use rvv::{
+    available as rvv_available, decode_slice as decode_slice_rvv, encode_slice as encode_slice_rvv,
+};
+#[cfg(all(
     feature = "std",
     feature = "simd",
     test,

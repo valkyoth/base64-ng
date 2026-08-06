@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Interactive, resumable manager for distributed release fuzz evidence."""
+"""Interactive, resumable manager for distributed release evidence."""
 
 from __future__ import annotations
 
@@ -98,7 +98,11 @@ def status_text(row: sqlite3.Row) -> str:
     if status == "pending":
         return "pending"
     if status == "running":
-        location = "local" if row["mode"] == "local" else row["host"]
+        location = (
+            "local"
+            if row["mode"] == "local"
+            else f"{row['host']}:{row['port']}"
+        )
         return f"CHECK PROGRESS ({location}){elapsed(row['started_at'])}"
     if status == "complete":
         return "COMPLETE"
@@ -111,7 +115,7 @@ def show_menu(store: Store) -> None:
     counts = {status: 0 for status in ("pending", "running", "complete", "failed", "unknown")}
     for row in jobs:
         counts[row["status"]] += 1
-    print("\nbase64-ng distributed fuzz evidence")
+    print("\nbase64-ng distributed release evidence")
     print(f"Session: {session.identifier}")
     print(f"Commit:  {session.source_commit}")
     print(
@@ -127,14 +131,16 @@ def show_menu(store: Store) -> None:
     print(" q. Save state and quit")
 
 
-def remote_defaults(store: Store) -> tuple[str, str]:
+def remote_defaults(store: Store) -> tuple[str, str, str]:
     previous = store.last_remote()
     default_user = os.environ.get("BASE64_NG_FUZZ_SSH_USER", "ubuntu")
     default_key = os.environ.get("BASE64_NG_FUZZ_SSH_KEY", "")
+    default_port = os.environ.get("BASE64_NG_FUZZ_SSH_PORT", "22")
     if previous is not None:
         default_user = previous["remote_user"] or default_user
         default_key = previous["key_path"] or default_key
-    return default_user, default_key
+        default_port = str(previous["port"] or default_port)
+    return default_user, default_key, default_port
 
 
 def start_pending(store: Store, controller: JobController, target: str) -> None:
@@ -147,8 +153,13 @@ def start_pending(store: Store, controller: JobController, target: str) -> None:
         controller.start_local(target)
         print(f"{target} started locally; it will continue if this manager exits.")
     elif choice == "2":
-        default_user, default_key = remote_defaults(store)
+        default_user, default_key, default_port = remote_defaults(store)
         host = answer("Remote IP address or DNS hostname")
+        port_text = answer("Remote SSH port", default_port)
+        try:
+            port = int(port_text)
+        except ValueError as error:
+            raise ManagerError("remote SSH port must be an integer") from error
         user = answer("Remote SSH user", default_user)
         key = Path(answer("Local SSH private-key path", default_key)).expanduser().resolve()
         bootstrap = confirm(
@@ -158,7 +169,7 @@ def start_pending(store: Store, controller: JobController, target: str) -> None:
             "Install missing remote system build prerequisites with passwordless sudo"
         )
         controller.start_remote(
-            target, user, host, key, bootstrap, install_prerequisites
+            target, user, host, port, key, bootstrap, install_prerequisites
         )
         print(f"{target} is running remotely. The SSH session is now detached.")
 
@@ -206,7 +217,7 @@ def run_menu(store: Store) -> None:
             continue
         if choice == "f" and store.all_complete():
             controller.finalize()
-            print("Final distributed fuzz evidence verified and aggregated.")
+            print("Final distributed fuzz and native hardware evidence verified.")
             continue
         if choice.isdigit():
             ordinal = int(choice)
@@ -271,7 +282,7 @@ def main() -> int:
     except KeyboardInterrupt:
         print("\nState saved.")
     except (ManagerError, OSError, sqlite3.Error, subprocess.SubprocessError) as error:
-        print(f"fuzz evidence manager: {error}", file=sys.stderr)
+        print(f"release evidence manager: {error}", file=sys.stderr)
         return 1
     return 0
 

@@ -24,11 +24,11 @@ make_fixture() {
     cp "$signature_verifier" "$repo/scripts/verify-release-evidence-signature.sh"
     cp "$equivalence_allowlist" "$repo/security/evidence-reuse-allowlist.txt"
     sed -i \
-        -e "s#1921261+eldryoth@users.noreply.github.com#$test_principal#" \
-        -e "s#SHA256:EoLRQ5k4J5pYz3UMFmkrV798gYFNkToGS2xEPvebqB4#$test_fingerprint#" \
+        -e "s#base64-ng-evidence-signer-v2#$test_principal#" \
+        -e "s#SHA256:vf1eXq+UBZWKsX3DD1iakRK2Pk9AsXoJzZj/tNcdczc#$test_fingerprint#" \
         "$repo/scripts/verify-release-evidence-signature.sh"
     printf '%s namespaces="base64-ng-evidence-v2" %s\n' \
-        "$test_principal" "$test_public_key" >"$repo/security/release-signers"
+        "$test_principal" "$test_public_key" >"$repo/security/evidence-signers"
 
     (
         cd "$repo"
@@ -43,7 +43,7 @@ make_fixture() {
             scripts/evidence-equivalence.py \
             scripts/verify-release-evidence-signature.sh \
             security/evidence-reuse-allowlist.txt \
-            security/release-signers
+            security/evidence-signers
         git commit -q -m "fixture"
     )
 

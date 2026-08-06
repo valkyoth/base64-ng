@@ -1432,15 +1432,23 @@ only by their later backend-specific admission commits.
 
 Location: `src/simd/rvv.rs`
 
-Commit 32 adds an internal QEMU-only RVV 1.0 candidate. It is not compiled by
-normal published builds and does not enter `EncodeBackend`, `DecodeBackend`, or
-`ActiveBackend` dispatch.
+Commit 32 adds an internal evidence-only RVV 1.0 candidate. It is not compiled
+by normal published builds and does not enter `EncodeBackend`, `DecodeBackend`,
+or `ActiveBackend` dispatch. QEMU and the pre-admission native X60 campaign
+compile it through the project-owned cfg.
 
 Unsafe operations:
 
 - four leaf `global_asm!` functions load exact 12/16-byte blocks, execute RVV
   arithmetic and segmented stores, and clear `v0..v15` at VLMAX;
 - one leaf reads the architectural `vlenb` CSR for evidence reporting;
+- one native-only leaf preserves an output pointer across Linux `getpid` and
+  `kill(SIGUSR1)` syscalls, then stores the interrupted `v8` contents after the
+  signal frame returns;
+- one native-only signal-handler leaf deliberately clobbers `v8`, while its
+  Rust wrapper records signal delivery through an `AtomicBool` before return;
+- test-only unsafe wrappers `signal_context_round_trip` and `signal_clobber`
+  expose those two exact leaf ABIs only to the native evidence harness;
 - Rust wrappers `encode_block` and `decode_block` call those symbols through
   `extern "C"` after fixed-block bounds checks and an RVV/vector-state gate;
 - Linux runtime detection calls `getauxval`, `riscv_hwprobe` through `syscall`,
@@ -1457,10 +1465,14 @@ thread. QEMU's older-kernel fallback accepts only the startup `AT_HWCAP` `V`
 bit.
 
 Generated disassembly, ELF attributes, VLEN 128/256 QEMU execution, and pure
-probe-result tests are required by the Commit 32 gates. These are functional
-candidate evidence only. Real-hardware correctness, ABI/signal preservation,
-performance, register-remanence review, and an external pentest remain hard
-requirements before production admission.
+probe-result tests are required by the Commit 32 gates. The signal test is
+ignored by QEMU and ordinary suites and invoked by exact name only on native
+hardware. Its process-global handler is installed and restored by the sole
+test in that harness; the helper confirms both delivery and restoration of the
+interrupted vector register. These remain pre-admission candidate evidence.
+Accepted native correctness, ABI/signal preservation, performance,
+register-cleanup review, exact-profile dispatch integration, and an external
+pentest remain hard requirements before production admission.
 
 ## Commit 33 Non-Admitted SVE Candidate
 

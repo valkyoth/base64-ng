@@ -1,5 +1,8 @@
 use crate::runtime::{Backend, CandidateDetectionMode, SecurityPosture};
 use crate::{Alphabet, Standard, UrlSafe, checked_encoded_len, scalar};
+use core::sync::atomic::{AtomicBool, Ordering};
+
+pub(super) static SIGNAL_DELIVERED: AtomicBool = AtomicBool::new(false);
 
 #[test]
 fn qemu_runtime_detects_rvv_but_keeps_public_dispatch_scalar() {
@@ -89,6 +92,58 @@ fn unavailable_rvv_candidate_falls_back_to_scalar_without_assembly_entry() {
     .unwrap();
     assert_eq!(fallback_decoded_len, expected_decoded_len);
     assert_eq!(fallback_decoded, expected_decoded);
+}
+
+#[test]
+#[ignore = "requires native RVV hardware and a real Linux signal frame"]
+fn rvv_state_survives_linux_signal_delivery() {
+    const SIGUSR1: i32 = 10;
+    const SIG_ERR: usize = usize::MAX;
+    unsafe extern "C" {
+        fn signal(signal: i32, handler: usize) -> usize;
+    }
+
+    assert!(super::rvv::available());
+    SIGNAL_DELIVERED.store(false, Ordering::SeqCst);
+    // SAFETY: This test serially replaces SIGUSR1, invokes a signal-safe RVV
+    // leaf, and restores the prior handler before returning.
+    unsafe {
+        let old = signal(SIGUSR1, super::rvv::signal_clobber as *const () as usize);
+        assert_ne!(old, SIG_ERR);
+        let mut observed = [0u8; 16];
+        super::rvv::signal_context_round_trip(observed.as_mut_ptr());
+        let restored = signal(SIGUSR1, old);
+        assert_ne!(restored, SIG_ERR);
+        assert!(SIGNAL_DELIVERED.load(Ordering::SeqCst));
+        assert_eq!(observed, [0x5a; 16]);
+    }
+}
+
+#[test]
+fn rvv_candidate_survives_thread_context_switches() {
+    let mut workers = std::vec::Vec::new();
+    for worker in 0u8..8 {
+        workers.push(std::thread::spawn(move || {
+            let mut input = [0u8; 513];
+            for (index, byte) in input.iter_mut().enumerate() {
+                *byte = index.to_le_bytes()[0].wrapping_mul(73).wrapping_add(worker);
+            }
+            for _ in 0..256 {
+                let mut encoded = [0u8; 684];
+                let mut decoded = [0u8; 513];
+                let written =
+                    super::rvv::encode_slice::<Standard, true>(&input, &mut encoded).unwrap();
+                let decoded_len =
+                    super::rvv::decode_slice::<Standard, true>(&encoded[..written], &mut decoded)
+                        .unwrap();
+                assert_eq!(&decoded[..decoded_len], &input);
+                std::thread::yield_now();
+            }
+        }));
+    }
+    for worker in workers {
+        worker.join().unwrap();
+    }
 }
 
 fn assert_candidate_round_trips<A: Alphabet, const PAD: bool>() {

@@ -176,6 +176,40 @@ base64_ng_rvv_vlenb:
     .cfi_endproc
     .size base64_ng_rvv_vlenb, .-base64_ng_rvv_vlenb
 
+    .p2align 2
+    .global base64_ng_rvv_signal_context_round_trip
+    .hidden base64_ng_rvv_signal_context_round_trip
+    .type base64_ng_rvv_signal_context_round_trip, @function
+base64_ng_rvv_signal_context_round_trip:
+    .cfi_startproc
+    mv t1, a0
+    vsetivli zero, 16, e8, m1, ta, ma
+    li t0, 90
+    vmv.v.x v8, t0
+    li a7, 172
+    ecall
+    li a1, 10
+    li a7, 129
+    ecall
+    vse8.v v8, (t1)
+    base64_ng_rvv_clear
+    ret
+    .cfi_endproc
+    .size base64_ng_rvv_signal_context_round_trip, .-base64_ng_rvv_signal_context_round_trip
+
+    .p2align 2
+    .global base64_ng_rvv_signal_clobber
+    .hidden base64_ng_rvv_signal_clobber
+    .type base64_ng_rvv_signal_clobber, @function
+base64_ng_rvv_signal_clobber:
+    .cfi_startproc
+    vsetivli zero, 16, e8, m1, ta, ma
+    li t0, 165
+    vmv.v.x v8, t0
+    ret
+    .cfi_endproc
+    .size base64_ng_rvv_signal_clobber, .-base64_ng_rvv_signal_clobber
+
     .option pop
     "#,
     options(raw)
@@ -187,6 +221,8 @@ unsafe extern "C" {
     fn base64_ng_rvv_decode_standard_16(input: *const u8, output: *mut u8);
     fn base64_ng_rvv_decode_url_safe_16(input: *const u8, output: *mut u8);
     fn base64_ng_rvv_vlenb() -> usize;
+    fn base64_ng_rvv_signal_context_round_trip(output: *mut u8);
+    fn base64_ng_rvv_signal_clobber();
 }
 
 #[cfg(test)]
@@ -194,6 +230,21 @@ pub(super) fn vector_length_bytes() -> usize {
     // SAFETY: Candidate tests call this only after `available()` proves RVV
     // and enabled vector state on the current thread.
     unsafe { base64_ng_rvv_vlenb() }
+}
+
+#[cfg(test)]
+pub(super) unsafe fn signal_context_round_trip(output: *mut u8) {
+    // SAFETY: The caller provides 16 writable bytes and installs the reviewed
+    // signal handler before this Linux-only evidence helper executes.
+    unsafe { base64_ng_rvv_signal_context_round_trip(output) };
+}
+
+#[cfg(test)]
+pub(super) unsafe extern "C" fn signal_clobber(_signal: i32) {
+    // SAFETY: The native evidence gate proves vector state is enabled before
+    // installing this signal handler.
+    unsafe { base64_ng_rvv_signal_clobber() };
+    super::rvv_tests::SIGNAL_DELIVERED.store(true, core::sync::atomic::Ordering::SeqCst);
 }
 
 pub(crate) fn available() -> bool {

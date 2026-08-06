@@ -337,10 +337,9 @@ For the 2.0 final candidate:
    `scripts/stable_release_gate.sh candidate`. Candidate mode fails closed on
    missing Miri, sanitizer, release-duration fuzz, dudect, normal and advanced
    Kani, native-backend, assembly, SBOM, and reproducibility evidence. It writes
-   `target/release-evidence/FINAL-MANIFEST.txt` bound to clean `HEAD`, plus its
-   detached `base64-ng-evidence-v2` SSH signature. Set
-   `BASE64_NG_EVIDENCE_SIGNING_KEY` when the configured Git signing key cannot
-   be resolved to the authorized private key.
+   `target/release-evidence/FINAL-MANIFEST.txt` bound to clean `HEAD`. The
+   build gate deliberately leaves it unsigned and rejects an exported
+   `BASE64_NG_EVIDENCE_SIGNING_KEY`.
 5. Complete the checkpoint table and immutable workflow/evidence references,
    then request final acceptance review of that exact pre-seal commit. The
    pentester decides whether this is a full-range rerun or a focused delta over
@@ -385,6 +384,13 @@ paths, and unrelated system-wide `sysctl` state. The retained AMD AVX-512
 campaign supports exact-host wording; a second AVX-512 microarchitecture is a
 2.0.1 corroboration target, not a 2.0.0 claim.
 
+The persistent evidence manager also includes `riscv_hardware` as a separate
+native admission job. It must run on non-virtualized RVV 1.0 Linux hardware
+and emits an independently validated bundle containing direct correctness,
+malformed-input, signal-state, thread context-switch, FFI boundary, register
+cleanup, assembly, and paired performance evidence. This is not a nineteenth
+fuzz target and is never included in the fuzz aggregate.
+
 The permanent pentest report commit must only change the report file. The
 report must contain `Status: PASS`, `Reviewed-Commit:`, `Tester:`, `Scope:`,
 and `Date:` metadata. CodeQL or GitHub security findings that affect the
@@ -408,10 +414,18 @@ BASE64_NG_REUSE_EVIDENCE_FROM=<campaign-commit> \
   scripts/stable_release_gate.sh release
 ```
 
-Both commands require the authorized evidence-signing private key. By default
-the gate resolves `git config user.signingkey` and removes a trailing `.pub`;
-otherwise set `BASE64_NG_EVIDENCE_SIGNING_KEY=/path/to/private-key`. The key is
-used only by `ssh-keygen -Y sign` and is never copied into release evidence.
+Both commands run without an evidence-signing private key. After the selected
+gate exits successfully, run the isolated sealing step with the dedicated
+evidence-only key:
+
+```sh
+BASE64_NG_EVIDENCE_SIGNING_KEY="$HOME/.ssh/base64-ng-evidence-v2" \
+  scripts/seal-release-evidence.sh v2.0.0
+```
+
+The sealing script signs the completed manifest, unsets the private-key
+variable, verifies the detached signature against `security/evidence-signers`,
+and then runs release-readiness checks. It never falls back to the Git/tag key.
 
 An exact strict campaign is intentionally expensive. It requires Miri, sanitizers,
 one-hour-per-target release fuzz campaigns, dudect timing, all normal and

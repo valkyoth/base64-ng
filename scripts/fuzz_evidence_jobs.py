@@ -13,6 +13,7 @@ from pathlib import Path
 from fuzz_evidence_session import (
     FUZZ_SECONDS,
     FUZZ_VERSION,
+    HARDWARE_TARGET,
     ROOT,
     ManagerError,
     Store,
@@ -23,6 +24,7 @@ from fuzz_evidence_session import (
     ssh_command,
     validate_remote,
     validate_remote_work_dir,
+    hardware_bundle,
     write_local_runner,
 )
 
@@ -106,6 +108,7 @@ if ! command -v rustup >/dev/null 2>&1; then
     rm -f "$installer"
     trap - EXIT
 fi
+
 work="$HOME/base64-ng-fuzz-$session-$target-$attempt"
 if [ -e "$work" ]; then
     echo "remote worker: refusing existing work directory: $work" >&2
@@ -116,15 +119,51 @@ cd "$work"
 git checkout --detach "$commit"
 test "$(git rev-parse HEAD)" = "$commit"
 test -z "$(git status --porcelain --untracked-files=all)"
-scripts/ci_install_rust.sh
+project_toolchain="$(
+    sed -n 's/^channel = "\([^"]*\)"/\1/p' rust-toolchain.toml \
+        | sed -n '1p'
+)"
+if [ -z "$project_toolchain" ]; then
+    echo "remote worker: rust-toolchain.toml is missing a channel" >&2
+    exit 65
+fi
+if rustup run "$project_toolchain" rustc -V >/dev/null 2>&1 \
+    && rustup run "$project_toolchain" cargo -V >/dev/null 2>&1; then
+    echo "remote worker: reusing installed Rust $project_toolchain"
+else
+    echo "remote worker: installing minimal Rust $project_toolchain"
+    rustup set profile minimal
+    rustup toolchain install "$project_toolchain" --profile minimal
+fi
+export RUSTUP_TOOLCHAIN="$project_toolchain"
+rustc -V
+cargo -V
+mkdir -p target/fuzz-manager
+runner="target/fuzz-manager/run.sh"
+status_file="target/fuzz-manager/exit-status"
+if [ "$target" = "''' + HARDWARE_TARGET + r'''" ]; then
+    cat > "$runner" <<'RUNNER'
+#!/usr/bin/env sh
+set +e
+scripts/capture-2.0-riscv-admission.sh target/riscv-native-admission
+status=$?
+printf '%s\n' "$status" > "$3.tmp"
+mv "$3.tmp" "$3"
+exit "$status"
+RUNNER
+    chmod 700 "$runner"
+    label="remote-$session-$target"
+    nohup "$runner" "$label" "$target" "$status_file" \
+        > target/fuzz-manager/job.log 2>&1 < /dev/null &
+    pid=$!
+    printf 'MANAGER_PID=%s\nREMOTE_DIR=%s\n' "$pid" "$work"
+    exit 0
+fi
 rustup toolchain install nightly --profile minimal
 installed_fuzz="$(cargo +nightly fuzz --version 2>/dev/null || true)"
 if [ "$installed_fuzz" != "cargo-fuzz ''' + FUZZ_VERSION + r'''" ]; then
     cargo +nightly install --locked --force cargo-fuzz --version ''' + FUZZ_VERSION + r'''
 fi
-mkdir -p target/fuzz-manager
-runner="target/fuzz-manager/run.sh"
-status_file="target/fuzz-manager/exit-status"
 cat > "$runner" <<'RUNNER'
 #!/usr/bin/env sh
 set +e
@@ -199,6 +238,17 @@ class JobController:
             raise ManagerError("the current source no longer matches this evidence session")
 
     def validate_bundle(self, target: str) -> None:
+        if target == HARDWARE_TARGET:
+            subprocess.run(
+                [
+                    "python3",
+                    "scripts/validate-rvv-admission-bundle.py",
+                    str(hardware_bundle(self.session.collection)),
+                ],
+                cwd=ROOT,
+                check=True,
+            )
+            return
         subprocess.run(
             [
                 "python3",
@@ -253,20 +303,23 @@ class JobController:
         target: str,
         user: str,
         host: str,
+        port: int,
         key_path: Path,
         bootstrap_rustup: bool,
         install_prerequisites: bool,
     ) -> None:
         self.validate_source()
-        validate_remote(user, host, key_path)
-        if self.store.remote_host_running(host):
-            raise ManagerError(f"remote host {host} already has a running fuzz target")
+        validate_remote(user, host, port, key_path)
+        if self.store.remote_host_running(host, port):
+            raise ManagerError(
+                f"remote host {host}:{port} already has a running fuzz target"
+            )
         row = self.store.job(target)
         if row["status"] != "pending":
             raise ManagerError(f"{target} is not pending")
         attempt = f"{int(time.time())}-{os.getpid()}"
-        reset_managed_known_host(host)
-        command = ssh_command(user, host, key_path) + [
+        reset_managed_known_host(host, port)
+        command = ssh_command(user, host, port, key_path) + [
             "bash",
             "-s",
             "--",
@@ -297,12 +350,13 @@ class JobController:
             status="running",
             mode="remote",
             host=host,
+            port=port,
             remote_user=user,
             key_path=str(key_path),
             work_dir=work_dir,
             pid=int(values["MANAGER_PID"]),
             started_at=int(time.time()),
-            message=f"remote worker: {user}@{host}",
+            message=f"remote worker: {user}@{host}:{port}",
         )
 
     def check(self, target: str) -> str:
@@ -352,7 +406,9 @@ class JobController:
     def _remote_query(self, row: object) -> dict[str, str]:
         key = Path(row["key_path"])
         work_dir = self._work_dir(row)
-        command = ssh_command(row["remote_user"], row["host"], key) + [
+        command = ssh_command(
+            row["remote_user"], row["host"], row["port"], key
+        ) + [
             "bash",
             "-s",
             "--",
@@ -383,7 +439,12 @@ class JobController:
 
     def _download(self, row: object) -> None:
         target = row["target"]
-        destination = self.session.collection / target
+        is_hardware = target == HARDWARE_TARGET
+        destination = (
+            hardware_bundle(self.session.collection)
+            if is_hardware
+            else self.session.collection / target
+        )
         if destination.exists():
             self.validate_bundle(target)
             return
@@ -392,13 +453,22 @@ class JobController:
         with tempfile.TemporaryDirectory(
             prefix=f".{target}-download-", dir=self.session.collection.parent
         ) as temporary:
-            command = scp_command(row["remote_user"], row["host"], key) + [
+            remote_artifact = (
+                f"{work_dir}/target/riscv-native-admission"
+                if is_hardware
+                else f"{work_dir}/target/fuzz-shards/{target}"
+            )
+            command = scp_command(
+                row["remote_user"], row["host"], row["port"], key
+            ) + [
                 "-r",
-                f"{row['remote_user']}@{row['host']}:{work_dir}/target/fuzz-shards/{target}",
+                f"{row['remote_user']}@{row['host']}:{remote_artifact}",
                 temporary,
             ]
             subprocess.run(command, check=True)
-            downloaded = Path(temporary) / target
+            downloaded = Path(temporary) / (
+                "riscv-native-admission" if is_hardware else target
+            )
             if not downloaded.is_dir():
                 raise ManagerError("remote evidence download did not produce the target bundle")
             shutil.move(str(downloaded), destination)
@@ -412,7 +482,9 @@ class JobController:
         destination = self.logs / f"remote-{row['target']}.log"
         key = Path(row["key_path"])
         work_dir = self._work_dir(row)
-        command = scp_command(row["remote_user"], row["host"], key) + [
+        command = scp_command(
+            row["remote_user"], row["host"], row["port"], key
+        ) + [
             f"{row['remote_user']}@{row['host']}:{work_dir}/target/fuzz-manager/job.log",
             str(destination),
         ]
@@ -430,7 +502,10 @@ class JobController:
         exit_code = int(values["MANAGER_EXIT"])
         if exit_code == 0:
             self._download(row)
-            message = f"verified; remote worker may be terminated: {row['host']}"
+            message = (
+                "verified; remote worker may be terminated: "
+                f"{row['host']}:{row['port']}"
+            )
         else:
             message = f"remote failure log: {self._download_log(row)}"
         return self._finish(row["target"], exit_code, message)
@@ -438,7 +513,7 @@ class JobController:
     def finalize(self) -> None:
         self.validate_source()
         if not self.store.all_complete():
-            raise ManagerError("all 18 targets must be complete before final verification")
+            raise ManagerError("all 18 fuzz targets and native RISC-V evidence must be complete")
         subprocess.run(
             ["scripts/aggregate-fuzz-shards.sh", str(self.session.collection)],
             cwd=ROOT,

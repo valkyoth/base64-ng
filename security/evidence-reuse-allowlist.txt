@@ -1,7 +1,7 @@
 # Paths that may change after an expensive release campaign without forcing
 # that campaign to run again. Every entry is exact; directories and globs are
 # intentionally unsupported.
-2.0.0-release-plan.md
+docs/2.0.0-release-plan.md
 README.md
 docs/2.0_RELEASE_FREEZE.md
 docs/RELEASE.md

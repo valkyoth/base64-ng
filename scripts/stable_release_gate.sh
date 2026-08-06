@@ -4,6 +4,12 @@ set -eu
 mode="${1:-check}"
 reuse_evidence_from="${BASE64_NG_REUSE_EVIDENCE_FROM:-}"
 
+if [ -n "${BASE64_NG_EVIDENCE_SIGNING_KEY:-}" ]; then
+    echo "stable release gate: refuse to expose the evidence signing key to build/test subprocesses" >&2
+    echo "stable release gate: unset BASE64_NG_EVIDENCE_SIGNING_KEY and seal only after this gate exits" >&2
+    exit 1
+fi
+
 case "$mode" in
     check | candidate | release)
         ;;
@@ -214,10 +220,8 @@ if [ "$mode" != "check" ]; then
     evidence_verify_source "stable release gate"
 fi
 
-if [ "$mode" = "release" ]; then
-    echo "stable release gate: final pentest report"
-    scripts/validate-release-readiness.sh "v${cargo_version}"
-    evidence_verify_source "stable release gate"
-fi
-
 echo "stable release gate: ok ($mode)"
+if [ "$mode" = "release" ]; then
+    echo "stable release gate: run the isolated evidence sealing step next"
+    echo "BASE64_NG_EVIDENCE_SIGNING_KEY=/path/to/evidence-only-key scripts/seal-release-evidence.sh v${cargo_version}"
+fi

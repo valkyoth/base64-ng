@@ -4,10 +4,10 @@ set -eu
 manifest="${1:-target/release-evidence/FINAL-MANIFEST.txt}"
 signature="${2:-${manifest}.sig}"
 root="$(git rev-parse --show-toplevel)"
-policy="$root/security/release-signers"
-principal="1921261+eldryoth@users.noreply.github.com"
+policy="$root/security/evidence-signers"
+principal="base64-ng-evidence-signer-v2"
 namespace="base64-ng-evidence-v2"
-expected_fingerprint="SHA256:EoLRQ5k4J5pYz3UMFmkrV798gYFNkToGS2xEPvebqB4"
+expected_fingerprint="SHA256:vf1eXq+UBZWKsX3DD1iakRK2Pk9AsXoJzZj/tNcdczc"
 
 if [ ! -s "$manifest" ] || [ ! -s "$signature" ] || [ ! -s "$policy" ]; then
     echo "release evidence signature: manifest, signature, or signer policy is missing" >&2

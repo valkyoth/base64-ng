@@ -53,7 +53,7 @@ if [ -z "$binary" ]; then
     exit 1
 fi
 
-symbols="base64_ng_rvv_encode_standard_12 base64_ng_rvv_encode_url_safe_12 base64_ng_rvv_decode_standard_16 base64_ng_rvv_decode_url_safe_16 base64_ng_rvv_vlenb"
+symbols="base64_ng_rvv_encode_standard_12 base64_ng_rvv_encode_url_safe_12 base64_ng_rvv_decode_standard_16 base64_ng_rvv_decode_url_safe_16 base64_ng_rvv_vlenb base64_ng_rvv_signal_context_round_trip base64_ng_rvv_signal_clobber"
 : >"$output_dir/disassembly.txt"
 for symbol in $symbols; do
     if ! "$prefix-nm" "$binary" | grep -E -q "[[:space:]][Tt][[:space:]]+$symbol$"; then
@@ -80,6 +80,7 @@ require_pattern 'vlseg4e8\.v' 'four-segment decode load'
 require_pattern 'vsseg3e8\.v' 'three-segment decode store'
 require_pattern 'vmseq\.vx' 'alphabet-special classification masks'
 require_pattern 'vmv\.v\.i[[:space:]]+v15,0' 'full used-register cleanup tail'
+require_pattern 'ecall' 'native signal-delivery syscall boundary'
 
 if grep -E -q '[[:space:]]jal[[:space:]]' "$output_dir/disassembly.txt"; then
     echo "RVV asm evidence: leaf candidate contains an unexpected call" >&2
