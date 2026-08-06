@@ -7,6 +7,12 @@ trap 'rm -rf "$tmp"' EXIT
 source_script="$(pwd)/scripts/validate-release-readiness.sh"
 equivalence_script="$(pwd)/scripts/evidence-equivalence.py"
 equivalence_allowlist="$(pwd)/security/evidence-reuse-allowlist.txt"
+signature_verifier="$(pwd)/scripts/verify-release-evidence-signature.sh"
+test_key="$tmp/evidence-key"
+test_principal="release-readiness@example.invalid"
+ssh-keygen -q -t ed25519 -N '' -f "$test_key"
+test_fingerprint="$(ssh-keygen -lf "$test_key.pub" -E sha256 | awk 'NR == 1 { print $2 }')"
+test_public_key="$(cat "$test_key.pub")"
 
 make_fixture() {
     name="$1"
@@ -15,7 +21,14 @@ make_fixture() {
     mkdir -p "$repo/scripts" "$repo/release-notes" "$repo/security/pentest" "$repo/target/release-evidence"
     cp "$source_script" "$repo/scripts/validate-release-readiness.sh"
     cp "$equivalence_script" "$repo/scripts/evidence-equivalence.py"
+    cp "$signature_verifier" "$repo/scripts/verify-release-evidence-signature.sh"
     cp "$equivalence_allowlist" "$repo/security/evidence-reuse-allowlist.txt"
+    sed -i \
+        -e "s#1921261+eldryoth@users.noreply.github.com#$test_principal#" \
+        -e "s#SHA256:EoLRQ5k4J5pYz3UMFmkrV798gYFNkToGS2xEPvebqB4#$test_fingerprint#" \
+        "$repo/scripts/verify-release-evidence-signature.sh"
+    printf '%s namespaces="base64-ng-evidence-v2" %s\n' \
+        "$test_principal" "$test_public_key" >"$repo/security/release-signers"
 
     (
         cd "$repo"
@@ -28,7 +41,9 @@ make_fixture() {
         git add README.md .gitignore release-notes/RELEASE_NOTES_2.0.0.md \
             scripts/validate-release-readiness.sh \
             scripts/evidence-equivalence.py \
-            security/evidence-reuse-allowlist.txt
+            scripts/verify-release-evidence-signature.sh \
+            security/evidence-reuse-allowlist.txt \
+            security/release-signers
         git commit -q -m "fixture"
     )
 
@@ -75,6 +90,9 @@ evidence_mode=exact
 campaign_commit=${commit}
 release_commit=${commit}
 EOF
+    rm -f target/release-evidence/FINAL-MANIFEST.txt.sig
+    ssh-keygen -Y sign -f "$test_key" -n base64-ng-evidence-v2 \
+        target/release-evidence/FINAL-MANIFEST.txt >/dev/null
     cat >target/release-evidence/sbom-MANIFEST.txt <<EOF
 source:
 commit=${commit}
@@ -101,6 +119,9 @@ evidence_mode=metadata-equivalent
 campaign_commit=${campaign_commit}
 release_commit=${release_commit}
 EOF
+    rm -f target/release-evidence/FINAL-MANIFEST.txt.sig
+    ssh-keygen -Y sign -f "$test_key" -n base64-ng-evidence-v2 \
+        target/release-evidence/FINAL-MANIFEST.txt >/dev/null
     cat >target/release-evidence/sbom-MANIFEST.txt <<EOF
 source:
 commit=${release_commit}
@@ -292,6 +313,9 @@ EOF
     cp target/release-evidence/sbom-MANIFEST.txt \
         target/release-evidence/reproducible/MANIFEST.txt
     printf 'forged\n' >target/release-evidence/EQUIVALENCE-MANIFEST.txt
+    rm -f target/release-evidence/FINAL-MANIFEST.txt.sig
+    ssh-keygen -Y sign -f "$test_key" -n base64-ng-evidence-v2 \
+        target/release-evidence/FINAL-MANIFEST.txt >/dev/null
 
     assert_fails_with "non-metadata paths changed" \
         scripts/validate-release-readiness.sh "v2.0.0"

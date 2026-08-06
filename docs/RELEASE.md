@@ -337,7 +337,10 @@ For the 2.0 final candidate:
    `scripts/stable_release_gate.sh candidate`. Candidate mode fails closed on
    missing Miri, sanitizer, release-duration fuzz, dudect, normal and advanced
    Kani, native-backend, assembly, SBOM, and reproducibility evidence. It writes
-   `target/release-evidence/FINAL-MANIFEST.txt` bound to clean `HEAD`.
+   `target/release-evidence/FINAL-MANIFEST.txt` bound to clean `HEAD`, plus its
+   detached `base64-ng-evidence-v2` SSH signature. Set
+   `BASE64_NG_EVIDENCE_SIGNING_KEY` when the configured Git signing key cannot
+   be resolved to the authorized private key.
 5. Complete the checkpoint table and immutable workflow/evidence references,
    then request final acceptance review of that exact pre-seal commit. The
    pentester decides whether this is a full-range rerun or a focused delta over
@@ -357,7 +360,9 @@ For the 2.0 final candidate:
    remaining `Pending` cell, non-`PASS` pentest disposition, or missing exact
    Commit 1-54 hash. The self-referential Commit 55 row uses the frozen
    `Report-only release commit (HEAD)` marker and is resolved by the separate
-   report-only-commit check.
+   report-only-commit check. Reuse never permits scripts, workflows, signer
+   policy, or the reuse allowlist to change; those changes require a new exact
+   campaign.
 
 Before candidate mode, capture the two required native NEON bundles from the
 same clean frozen source commit:
@@ -402,6 +407,11 @@ scripts/stable_release_gate.sh release
 BASE64_NG_REUSE_EVIDENCE_FROM=<campaign-commit> \
   scripts/stable_release_gate.sh release
 ```
+
+Both commands require the authorized evidence-signing private key. By default
+the gate resolves `git config user.signingkey` and removes a trailing `.pub`;
+otherwise set `BASE64_NG_EVIDENCE_SIGNING_KEY=/path/to/private-key`. The key is
+used only by `ssh-keygen -Y sign` and is never copied into release evidence.
 
 An exact strict campaign is intentionally expensive. It requires Miri, sanitizers,
 one-hour-per-target release fuzz campaigns, dudect timing, all normal and

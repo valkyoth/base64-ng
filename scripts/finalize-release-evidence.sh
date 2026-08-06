@@ -6,6 +6,7 @@ evidence_capture_source "final release evidence"
 
 root="target/release-evidence"
 manifest="$root/FINAL-MANIFEST.txt"
+manifest_signature="$manifest.sig"
 equivalence_manifest="$root/EQUIVALENCE-MANIFEST.txt"
 campaign_commit="${BASE64_NG_REUSE_EVIDENCE_FROM:-$EVIDENCE_SOURCE_COMMIT}"
 mkdir -p "$root"
@@ -60,6 +61,27 @@ require_source_manifest_for() {
         "$file" commit "$actual_commit" "final release evidence"
 }
 
+require_report_key() {
+    file="$1"
+    key="$2"
+    expected="$3"
+    require_file "$file"
+    actual="$(awk -v key="$key" '
+        index($0, key "=") == 1 {
+            count += 1
+            value = substr($0, length(key) + 2)
+        }
+        END { if (count == 1) print value; else exit 1 }
+    ' "$file")" || {
+        echo "final release evidence: report has no singleton $key: $file" >&2
+        exit 1
+    }
+    if [ "$actual" != "$expected" ]; then
+        echo "final release evidence: expected $key=$expected in $file, got $actual" >&2
+        exit 1
+    fi
+}
+
 for file in \
     "$root/miri/MANIFEST.txt" \
     "$root/2.0-memory-sanitizers/MANIFEST.txt" \
@@ -79,6 +101,14 @@ do
     require_source_manifest_for "$file" "$campaign_commit" "$EVIDENCE_SOURCE_COMMIT"
 done
 
+require_report_key "$root/big-endian-qemu/report.txt" source_commit "$campaign_commit"
+require_report_key "$root/big-endian-qemu/report.txt" s390x_result pass
+require_report_key "$root/big-endian-qemu/report.txt" powerpc64_result pass
+require_report_key "$root/riscv-qemu/report.txt" source_commit "$campaign_commit"
+require_report_key "$root/riscv-qemu/report.txt" result pass
+require_report_key "$root/sve-qemu/report.txt" source_commit "$campaign_commit"
+require_report_key "$root/sve-qemu/report.txt" result pass
+
 # Package composition can change when release-process files change. These
 # artifacts are therefore always regenerated for the tag candidate even when
 # expensive runtime campaigns are reused.
@@ -95,7 +125,13 @@ scripts/validate-release-evidence-outcomes.sh "$root"
 
 evidence_verify_source "final release evidence"
 
-files="$(find "$root" -type f ! -path "$manifest" ! -path "$manifest_tmp" -print | LC_ALL=C sort)"
+files="$(
+    find "$root" -type f \
+        ! -path "$manifest" \
+        ! -path "$manifest_signature" \
+        ! -path "$manifest_tmp" \
+        -print | LC_ALL=C sort
+)"
 if [ -z "$files" ]; then
     echo "final release evidence: no evidence artifacts found" >&2
     exit 1
@@ -125,4 +161,5 @@ fi
 evidence_verify_source "final release evidence"
 mv "$manifest_tmp" "$manifest"
 trap - EXIT INT TERM
+scripts/sign-release-evidence.sh "$manifest"
 echo "final release evidence: wrote $manifest"

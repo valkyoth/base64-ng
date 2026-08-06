@@ -2,7 +2,10 @@
 set -eu
 ulimit -c 0
 
-script_revision="2026-08-03-cross-subprocess-v3"
+. scripts/evidence-source.sh
+evidence_capture_source "SVE QEMU evidence"
+
+script_revision="2026-08-06-signed-provenance-v4"
 evidence_dir="target/release-evidence/sve-qemu"
 target="aarch64-unknown-linux-musl"
 target_key="AARCH64_UNKNOWN_LINUX_MUSL"
@@ -98,10 +101,15 @@ env \
     "CARGO_TARGET_${target_key}_LINKER=$linker" \
     cargo check --target "$target" --no-default-features --features simd --lib
 
+evidence_verify_source "SVE QEMU evidence"
+
 mkdir -p "$evidence_dir"
 {
-    echo "base64-ng Commit 33 AArch64 SVE QEMU evidence"
+    echo "base64-ng AArch64 SVE QEMU evidence"
     echo "script=$script_revision"
+    echo "source_commit=$EVIDENCE_SOURCE_COMMIT"
+    echo "tree_state=$EVIDENCE_SOURCE_TREE_STATE"
+    echo "result=pass"
     echo "target=$target"
     echo "linker=$linker"
     echo "qemu=$(qemu-aarch64 --version | sed -n '1p')"
@@ -118,5 +126,6 @@ mkdir -p "$evidence_dir"
     echo "hardware_status=two real SVE systems with different vector lengths required before public dispatch admission"
 } >"$evidence_dir/report.txt"
 
+evidence_verify_source "SVE QEMU evidence"
 echo "SVE QEMU checks: wrote $evidence_dir/report.txt"
 echo "SVE QEMU checks: ok"

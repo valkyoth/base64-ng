@@ -6,13 +6,4 @@ README.md
 docs/2.0_RELEASE_FREEZE.md
 docs/RELEASE.md
 docs/RELEASE_EVIDENCE.md
-scripts/checks.sh
-scripts/evidence-equivalence.py
-scripts/finalize-release-evidence.sh
-scripts/stable_release_gate.sh
-scripts/test-evidence-equivalence.py
-scripts/test-release-readiness.sh
-scripts/validate-release-metadata.sh
-scripts/validate-release-readiness.sh
-security/evidence-reuse-allowlist.txt
 security/pentest/v2.0.0.md

@@ -37,7 +37,11 @@ candidate.
 before Commit 55. `scripts/finalize-release-evidence.sh` rejects missing,
 dirty-tree, or stale-source Miri, sanitizer, release-duration fuzz, dudect,
 normal/advanced Kani, assembly, native-hardware, and SBOM artifacts and writes
-`target/release-evidence/FINAL-MANIFEST.txt`. It also requires explicit success
+`target/release-evidence/FINAL-MANIFEST.txt`. The finalizer signs that index in
+the `base64-ng-evidence-v2` SSH namespace with the exact project release key.
+Readiness and reuse verify the detached signature against the pinned principal
+and key fingerprint before trusting any provenance or artifact hash. It also
+requires explicit success
 for every Miri and sanitizer scope, dudect, backend evidence, both Kani sets,
 and every named fuzz target. The source section must occur exactly once, and
 its commit and tree-state keys must be exact, anchored, singleton values;
@@ -49,23 +53,27 @@ dudect acceptance threshold to `10`; the finalizer rejects missing, duplicate,
 malformed, or weakened threshold records.
 
 An expensive campaign does not need to be repeated solely because later
-commits change reviewed release-process metadata. Set
+commits change only reviewed prose or the permanent pentest report. Set
 `BASE64_NG_REUSE_EVIDENCE_FROM` to the original campaign commit when running
 candidate or release mode. `scripts/evidence-equivalence.py` then requires a
 clean linear descendant, an exact path allowlist, an unchanged protected Git
-tree, and a retained clean `FINAL-MANIFEST.txt` bound to the original commit.
+tree, and an authentically signed retained clean `FINAL-MANIFEST.txt` bound to
+the original commit. The retained inventory includes Miri, sanitizers, fuzzing,
+dudect, backend, Kani, generated assembly, and big-endian, RISC-V, and SVE QEMU
+artifacts. QEMU reports must also carry the exact campaign commit and explicit
+success markers.
 The final index records both campaign and release commits and includes an
 `EQUIVALENCE-MANIFEST.txt`; original campaign manifests are never relabeled.
 Any runtime, crate, test, fuzz harness, lockfile, workflow, toolchain, corpus,
 or hardware-evidence change fails closed and requires a new campaign.
 
-Release-process scripts are included in the core source package. Therefore
-metadata-equivalent release mode still regenerates current-commit SBOM and
-reproducible package/build evidence, reruns ordinary checks, and refreshes the
-small candidate-bound hardware inventory and NEON/wasm assembly manifests.
-This avoids repeating long-running Miri, sanitizer, fuzz, dudect, Kani, and
-unchanged generated-code campaigns when they would exercise identical product
-and harness bytes.
+Release-process scripts, workflows, signer policy, and the reuse allowlist are
+never metadata-equivalent. Any change to those files requires a new exact
+campaign. Metadata-equivalent release mode is limited to the explicit README,
+release prose, freeze record, plan, and permanent pentest-report paths. It still
+regenerates current-commit SBOM and reproducible package/build evidence, reruns
+ordinary checks, and refreshes the small candidate-bound hardware inventory and
+NEON/wasm assembly manifests.
 
 Commit 51 completes the isolated fuzz and property inventory. Eighteen targets
 cover ordinary/runtime codecs, forced native backends, incremental/in-place

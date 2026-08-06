@@ -2,7 +2,10 @@
 set -eu
 ulimit -c 0
 
-script_revision="2026-08-02-commit35-riscv-qemu-v3"
+. scripts/evidence-source.sh
+evidence_capture_source "RISC-V QEMU evidence"
+
+script_revision="2026-08-06-signed-provenance-v4"
 evidence_dir="target/release-evidence/riscv-qemu"
 target="riscv64gc-unknown-linux-gnu"
 
@@ -144,10 +147,15 @@ env \
     "CARGO_TARGET_${target_key}_LINKER=$linker" \
     cargo check --target "$target" --no-default-features --features simd --lib
 
+evidence_verify_source "RISC-V QEMU evidence"
+
 mkdir -p "$evidence_dir"
 {
-    echo "base64-ng Commit 32 RISC-V QEMU evidence"
+    echo "base64-ng RISC-V QEMU evidence"
     echo "script=$script_revision"
+    echo "source_commit=$EVIDENCE_SOURCE_COMMIT"
+    echo "tree_state=$EVIDENCE_SOURCE_TREE_STATE"
+    echo "result=pass"
     echo "target=$target"
     echo "linker=$linker"
     echo "sysroot=$sysroot"
@@ -165,5 +173,6 @@ mkdir -p "$evidence_dir"
     echo "hardware_status=real RVV hardware evidence required before public dispatch admission"
 } >"$evidence_dir/report.txt"
 
+evidence_verify_source "RISC-V QEMU evidence"
 echo "RISC-V QEMU checks: wrote $evidence_dir/report.txt"
 echo "RISC-V QEMU checks: ok"

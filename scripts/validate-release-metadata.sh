@@ -121,12 +121,15 @@ test -x scripts/release_crates.py
 test -x scripts/generate_release_history.py
 test -x scripts/validate-release-readiness.sh
 test -x scripts/finalize-release-evidence.sh
+test -x scripts/sign-release-evidence.sh
+test -x scripts/verify-release-evidence-signature.sh
 test -x scripts/release_wasm_loader.sh
 test -x scripts/verify-release-tag.sh
 test -x scripts/validate-release-evidence-outcomes.sh
 test -x scripts/test-release-evidence-outcomes.sh
 test -x scripts/test-dudect-release-policy.sh
 test -x scripts/test-release-tag-policy.sh
+test -x scripts/test-release-evidence-signature.sh
 test -s security/release-signers
 test -s scripts/test-release-crates.py
 test -x scripts/test-release-readiness.sh
@@ -260,6 +263,9 @@ for required_script in \
     "scripts/reproducible_build_check.sh" \
     "scripts/stable_release_gate.sh" \
     "scripts/finalize-release-evidence.sh" \
+    "scripts/sign-release-evidence.sh" \
+    "scripts/verify-release-evidence-signature.sh" \
+    "scripts/test-release-evidence-signature.sh" \
     "scripts/release_wasm_loader.sh" \
     "scripts/verify-release-tag.sh" \
     "scripts/validate-release-evidence-outcomes.sh" \
@@ -387,7 +393,8 @@ done
 for required_finalizer_text in \
     'require_source_manifest_for' \
     'campaign_commit="${BASE64_NG_REUSE_EVIDENCE_FROM:-$EVIDENCE_SOURCE_COMMIT}"' \
-    'evidence_mode=metadata-equivalent'
+    'evidence_mode=metadata-equivalent' \
+    'scripts/sign-release-evidence.sh "$manifest"'
 do
     if ! grep -F -q -- "$required_finalizer_text" scripts/finalize-release-evidence.sh; then
         echo "release metadata: final evidence provenance validation is missing: $required_finalizer_text" >&2
@@ -400,7 +407,11 @@ for required_equivalence_text in \
     'non-metadata paths changed' \
     'protected repository contents differ' \
     'retained FINAL-MANIFEST is not bound to the clean evidence commit' \
-    'package_evidence=must-be-regenerated'
+    'package_evidence=must-be-regenerated' \
+    'target/release-evidence/big-endian-qemu/' \
+    'target/release-evidence/riscv-qemu/' \
+    'target/release-evidence/sve-qemu/' \
+    'retained FINAL-MANIFEST signature is invalid'
 do
     if ! grep -F -q -- "$required_equivalence_text" scripts/evidence-equivalence.py; then
         echo "release metadata: evidence equivalence gate is missing: $required_equivalence_text" >&2

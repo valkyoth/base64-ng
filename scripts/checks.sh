@@ -27,6 +27,7 @@ scripts/test-dudect-release-policy.sh
 
 echo "checks: authorized release signer policy"
 scripts/test-release-tag-policy.sh
+scripts/test-release-evidence-signature.sh
 
 echo "checks: portable CT assembly symbol matching"
 scripts/test-ct-asm-symbols.sh

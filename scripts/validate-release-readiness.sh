@@ -72,6 +72,7 @@ if [ ! -s "$evidence_manifest" ]; then
     echo "missing exact-candidate release evidence index: ${evidence_manifest}" >&2
     exit 1
 fi
+scripts/verify-release-evidence-signature.sh "$evidence_manifest" "${evidence_manifest}.sig"
 
 head_commit="$(git rev-parse HEAD)"
 if ! grep -F -q "commit=$head_commit" "$evidence_manifest" ||

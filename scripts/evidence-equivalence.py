@@ -21,15 +21,6 @@ PERMITTED_METADATA_PATHS = {
     "docs/2.0_RELEASE_FREEZE.md",
     "docs/RELEASE.md",
     "docs/RELEASE_EVIDENCE.md",
-    "scripts/checks.sh",
-    "scripts/evidence-equivalence.py",
-    "scripts/finalize-release-evidence.sh",
-    "scripts/stable_release_gate.sh",
-    "scripts/test-evidence-equivalence.py",
-    "scripts/test-release-readiness.sh",
-    "scripts/validate-release-metadata.sh",
-    "scripts/validate-release-readiness.sh",
-    "security/evidence-reuse-allowlist.txt",
     "security/pentest/v2.0.0.md",
 }
 RETAINED_CAMPAIGN_PREFIXES = (
@@ -43,6 +34,9 @@ RETAINED_CAMPAIGN_PREFIXES = (
     "target/release-evidence/simd-asm/",
     "target/release-evidence/rvv-asm/",
     "target/release-evidence/sve-asm/",
+    "target/release-evidence/big-endian-qemu/",
+    "target/release-evidence/riscv-qemu/",
+    "target/release-evidence/sve-qemu/",
 )
 
 
@@ -101,7 +95,47 @@ def require_clean_release(release_commit: str) -> None:
         fail("release HEAD has a dirty worktree")
 
 
-def require_manifest_source(path: pathlib.Path, evidence_commit: str) -> None:
+def require_exact_key(path: pathlib.Path, key: str, expected: str) -> None:
+    values = [
+        line.removeprefix(f"{key}=")
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if line.startswith(f"{key}=")
+    ]
+    if values != [expected]:
+        fail(f"retained report has no singleton {key}={expected}: {path}")
+
+
+def require_qemu_reports(evidence_commit: str) -> None:
+    big_endian = ROOT / "target/release-evidence/big-endian-qemu/report.txt"
+    riscv = ROOT / "target/release-evidence/riscv-qemu/report.txt"
+    sve = ROOT / "target/release-evidence/sve-qemu/report.txt"
+    for report in (big_endian, riscv, sve):
+        if not report.is_file():
+            fail(f"retained QEMU report is missing: {report.relative_to(ROOT)}")
+        require_exact_key(report, "source_commit", evidence_commit)
+    require_exact_key(big_endian, "s390x_result", "pass")
+    require_exact_key(big_endian, "powerpc64_result", "pass")
+    require_exact_key(riscv, "result", "pass")
+    require_exact_key(sve, "result", "pass")
+
+
+def require_manifest_source(
+    path: pathlib.Path,
+    signature: pathlib.Path,
+    evidence_commit: str,
+) -> None:
+    verifier = ROOT / "scripts/verify-release-evidence-signature.sh"
+    result = subprocess.run(
+        [str(verifier), str(path), str(signature)],
+        cwd=ROOT,
+        check=False,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    if result.returncode != 0:
+        detail = result.stderr.strip() or result.stdout.strip()
+        fail(f"retained FINAL-MANIFEST signature is invalid: {detail}")
     try:
         lines = path.read_text(encoding="utf-8").splitlines()
     except OSError as error:
@@ -131,6 +165,7 @@ def require_manifest_source(path: pathlib.Path, evidence_commit: str) -> None:
             actual = hashlib.sha256((ROOT / relative_path).read_bytes()).hexdigest()
             if actual != expected:
                 fail(f"retained campaign artifact checksum changed: {relative_path}")
+    require_qemu_reports(evidence_commit)
 
 
 def protected_listing(commit: str, allowlist: set[str]) -> str:
@@ -151,6 +186,7 @@ def validate(
     release_revision: str,
     allowlist_path: pathlib.Path,
     retained_manifest: pathlib.Path | None,
+    retained_signature: pathlib.Path | None,
 ) -> dict[str, object]:
     evidence_commit = resolve_commit(evidence_revision, "evidence revision")
     release_commit = resolve_commit(release_revision, "release revision")
@@ -191,7 +227,10 @@ def validate(
     protected_hash = hashlib.sha256(evidence_protected.encode("utf-8")).hexdigest()
 
     if retained_manifest is not None:
-        require_manifest_source(retained_manifest, evidence_commit)
+        signature = retained_signature or retained_manifest.with_suffix(
+            retained_manifest.suffix + ".sig"
+        )
+        require_manifest_source(retained_manifest, signature, evidence_commit)
 
     return {
         "evidence_commit": evidence_commit,
@@ -208,7 +247,7 @@ def render(result: dict[str, object]) -> str:
     lines = [
         "base64-ng release evidence equivalence",
         "",
-        "policy=metadata-only-v1",
+        "policy=metadata-only-v2",
         f"evidence_commit={result['evidence_commit']}",
         f"release_commit={result['release_commit']}",
         f"allowlist_sha256={result['allowlist_hash']}",
@@ -227,6 +266,7 @@ def main() -> None:
     parser.add_argument("--release-commit", default="HEAD")
     parser.add_argument("--allowlist", type=pathlib.Path, default=DEFAULT_ALLOWLIST)
     parser.add_argument("--retained-manifest", type=pathlib.Path)
+    parser.add_argument("--retained-signature", type=pathlib.Path)
     parser.add_argument("--output", type=pathlib.Path)
     arguments = parser.parse_args()
 
@@ -235,6 +275,7 @@ def main() -> None:
         arguments.release_commit,
         arguments.allowlist,
         arguments.retained_manifest,
+        arguments.retained_signature,
     )
     output = render(result)
     if arguments.output is None:
