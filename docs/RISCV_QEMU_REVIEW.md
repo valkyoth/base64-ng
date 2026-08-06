@@ -46,10 +46,10 @@ The isolated leaf functions use RVV 1.0 basic integer operations:
 
 Stable Rust 1.97.1 rejects both RVV intrinsics and per-function
 `#[target_feature(enable = "v")]`. Commit 32 consequently uses four leaf
-`global_asm!` functions with no calls or stack mutation. `.option arch,+v`
-scopes instruction acceptance to those leaves. The linked artifact deliberately
-does not publish a global `V` ELF requirement, so it can start and select scalar
-on RISC-V systems without Vector support.
+`global_asm!` functions with no calls or stack mutation. `.option arch,+a,+v`
+scopes Atomic and Vector instruction acceptance to those leaves. The linked
+artifact deliberately does not publish a global `V` ELF requirement, so it can
+start and select scalar on RISC-V systems without Vector support.
 
 ## Runtime Detection
 

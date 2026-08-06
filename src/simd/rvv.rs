@@ -23,7 +23,7 @@ const DECODE_INPUT_BLOCK: usize = 16;
 core::arch::global_asm!(
     r#"
     .option push
-    .option arch, +v
+    .option arch, +a, +v
 
     .macro base64_ng_rvv_clear
         li t0, -1
