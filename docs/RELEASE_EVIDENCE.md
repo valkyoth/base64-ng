@@ -533,19 +533,19 @@ The release gate runs:
   transactionality, capability-probe, and runtime-report tests at VLEN 128 and
   256. `scripts/generate_rvv_asm_evidence.sh` checks exact candidate symbols,
   vector loads/stores, mapping instructions, cleanup, absence of nested calls,
-  and ELF vector attributes. This remains emulation and codegen evidence, not
+  and verifies that the ELF does not globally require Vector. This remains
+  emulation and codegen evidence, not
   native performance, timing, ABI/signal preservation, microarchitectural,
-  register-retention, or side-channel evidence. Production RISC-V dispatch
-  remains scalar until a report accepted by
-  `hardware-evidence/riscv/schema-v1.json` and external review pass.
+  register-retention, or side-channel evidence. Production RISC-V dispatch is
+  restricted to the exact Linux/SpacemiT X60 identity accepted by
+  `hardware-evidence/riscv/schema-v1.json`; every other profile stays scalar.
 - Native RISC-V admission capture through
   `scripts/capture-2.0-riscv-admission.sh` on the reviewed physical SpacemiT
   X60 Linux host. The retained bundle adds an explicit native-only Linux signal
   frame test, thread context-switch stress, generated assembly and cleanup
   evidence, and 15 paired scalar/RVV samples for Standard and URL-safe encode
-  and strict decode. The bundle is admission input, not automatic admission;
-  production dispatch changes still require an exact-profile gate and external
-  retest on the final implementation commit.
+  and strict decode. The bundle must be recaptured after exact-profile dispatch
+  integration and external retest on the final implementation commit.
 - AArch64 SVE QEMU user-mode verification through `scripts/check_sve_qemu.sh`,
   which runs the complete portable fallback suites and the isolated Commit 33
   candidate at vector lengths 128, 256, and 512. The candidate covers

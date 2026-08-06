@@ -13,9 +13,10 @@ test. Commit 54 freezes the reviewed `synced-family` publication plan for all
 13 Rust packages. This is not yet a published release: publication still
 requires Commit 55, final external acceptance, green required CI, and the
 signed `v2.0.0` tag.
-Commit 32 includes a non-dispatchable RVV candidate with QEMU and assembly
-evidence. RISC-V production dispatch remains scalar until native hardware and
-external review evidence satisfy the admission contract.
+Commit 32 includes the RVV candidate and QEMU/assembly evidence. The Commit 54
+pre-seal amendment adds exact-profile Linux/SpacemiT X60 production dispatch
+after native evidence; every other RISC-V profile remains scalar. Final
+integrated-source recapture and external retest remain release-blocking.
 Commit 33 includes a non-dispatchable SVE candidate with QEMU execution at
 128-, 256-, and 512-bit vector lengths plus assembly evidence. Public AArch64
 dispatch remains admitted NEON or scalar until two real SVE systems with

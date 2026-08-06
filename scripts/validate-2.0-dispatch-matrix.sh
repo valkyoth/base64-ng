@@ -18,7 +18,8 @@ for required in \
     '| x86/x86_64 | strict decode | AVX-512 VBMI | - |' \
     '| little-endian AArch64 | encode | NEON | 192 |' \
     '| little-endian AArch64 | strict decode | NEON | 256 |' \
-    '| RISC-V | encode/decode | RVV 1.0 | - |' \
+    '| Linux SpacemiT X60 | encode | RVV 1.0 | 192 |' \
+    '| Linux SpacemiT X60 | strict decode | RVV 1.0 | 192 |' \
     '| AArch64 Linux/Android | encode/decode | SVE | - |'
 do
     if ! grep -F -q "$required" "$matrix"; then
@@ -31,7 +32,8 @@ for required in \
     'pub(super) const MIN_SIMD_INPUT: usize = 12;' \
     'pub(super) const X86_AVX2_MIN_INPUT: usize = 24;' \
     'pub(super) const X86_AVX512_MIN_INPUT: usize = 192;' \
-    'pub(super) const NEON_MIN_INPUT: usize = 192;'
+    'pub(super) const NEON_MIN_INPUT: usize = 192;' \
+    'pub(super) const RVV_MIN_INPUT: usize = 192;'
 do
     grep -F -q "$required" "$encode_policy"
 done
@@ -39,7 +41,8 @@ done
 for required in \
     'pub(super) const MIN_SIMD_INPUT: usize = 16;' \
     'pub(super) const X86_AVX2_MIN_INPUT: usize = 32;' \
-    'pub(super) const NEON_MIN_INPUT: usize = 256;'
+    'pub(super) const NEON_MIN_INPUT: usize = 256;' \
+    'pub(super) const RVV_MIN_INPUT: usize = 192;'
 do
     grep -F -q "$required" "$decode_policy"
 done

@@ -122,8 +122,9 @@ and the isolated Commit 32 RVV candidate at VLEN 128 and 256.
 shape. This is not native RVV performance, ABI/signal preservation, timing,
 microarchitectural, register-retention, or side-channel evidence. Native
 operators use `scripts/check_riscv_hardware.sh` and the checked schema under
-`hardware-evidence/riscv/`; normal published builds stay scalar until that
-evidence and external review are accepted.
+`hardware-evidence/riscv/`. Production RVV dispatch is limited to the accepted
+Linux/SpacemiT X60 identity; QEMU, other RISC-V CPUs, non-Linux, and safe
+`no_std` builds stay scalar.
 
 `scripts/check_sve_qemu.sh` builds a static AArch64 Linux test binary with the
 bundled `rust-lld`, runs the complete portable fallback suites, and exercises

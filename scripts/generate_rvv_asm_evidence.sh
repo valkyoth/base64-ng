@@ -86,14 +86,14 @@ if grep -E -q '[[:space:]]jal[[:space:]]' "$output_dir/disassembly.txt"; then
     echo "RVV asm evidence: leaf candidate contains an unexpected call" >&2
     exit 1
 fi
-if ! grep -E -q 'v1p0|_v' "$output_dir/attributes.txt"; then
-    echo "RVV asm evidence: linked candidate does not advertise the V extension" >&2
+if grep -E -q 'Tag_RISCV_arch:.*_v[0-9]' "$output_dir/attributes.txt"; then
+    echo "RVV asm evidence: linked artifact incorrectly requires V globally" >&2
     exit 1
 fi
 
 evidence_verify_source "RVV asm evidence"
 {
-    echo "base64-ng non-admitted RVV assembly evidence"
+    echo "base64-ng exact-profile RVV assembly evidence"
     echo
     evidence_write_source_manifest
     echo
@@ -104,7 +104,7 @@ evidence_verify_source "RVV asm evidence"
     echo "target=$target"
     echo "linker=$linker"
     echo "candidate_cfg=base64_ng_rvv_candidate"
-    echo "production_admission=false"
+    echo "production_admission=linux-spacemit-x60-only"
     echo "symbols=$symbols"
     echo
     echo "artifacts:"
@@ -116,7 +116,8 @@ evidence_verify_source "RVV asm evidence"
     echo "- VLEN-agnostic batched segment loads/stores"
     echo "- Standard and URL-safe arithmetic mapping"
     echo "- v0..v15 cleared at VLMAX before every return"
-    echo "- candidate remains unavailable to normal production dispatch"
+    echo "- vector instructions remain leaf-local; the ELF does not globally require V"
+    echo "- normal production dispatch requires the exact Linux SpacemiT X60 profile"
 } >"$manifest"
 
 echo "RVV asm evidence: wrote $output_dir"

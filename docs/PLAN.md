@@ -49,6 +49,12 @@ release-blocking for 2.0.0; SVE and big-endian QEMU evidence cannot satisfy a
 native admission boundary. See
 [`2.0_MEMORY_SANITIZER_HARDWARE_EVIDENCE.md`](2.0_MEMORY_SANITIZER_HARDWARE_EVIDENCE.md).
 
+The Commit 54 pre-seal amendment accepted the native X60 campaign and wires
+RVV encode and strict decode into production only for the exact Linux/X60
+identity from 192 input bytes. Operation KATs, quarantine, per-thread vector
+state, leaf-local ELF posture, and scalar fallback are release-gated. The final
+integrated source still requires native recapture and external retest.
+
 ## Dependency Policy
 
 The default position is no external crates.
@@ -1315,9 +1321,10 @@ matrix. It retains clean-source 15-sample x86 evidence and adds median plus
 one-sided sign-test regression gates. Automatic x86 encode remains
 SSSE3/SSE4.1, AVX2, or AVX-512 by length. Automatic strict decode is now
 SSSE3/SSE4.1 or AVX2: AVX-512 remains exact/static because two campaigns missed
-the frozen automatic margin. RVV and SVE remain included but non-dispatchable,
-with no invented threshold. The matrix also records the remaining NEON, wasm,
-RVV, SVE, and big-endian evidence gaps.
+the frozen automatic margin. The later pre-seal RVV amendment adds a measured
+192-byte threshold only for the exact Linux/SpacemiT X60 identity. Other
+RISC-V and SVE remain non-dispatchable. The matrix also records the remaining
+wasm, SVE, big-endian, and cross-microarchitecture evidence limits.
 
 Commit 33 implements a complete isolated AArch64 SVE Standard/URL-safe encode
 and strict-decode candidate with four active lanes at every physical vector
@@ -1328,8 +1335,10 @@ SVE systems with different vector lengths provide the required correctness,
 ABI, signal-state, cleanup, performance, and external-review evidence.
 
 Commit 32 implements a complete isolated RVV 1.0 Standard/URL-safe encode and
-strict-decode candidate with QEMU and assembly evidence. Production RISC-V
-dispatch remains scalar until native evidence and external review satisfy the
+strict-decode candidate with QEMU and assembly evidence. The Commit 54
+pre-seal amendment consumes native X60 evidence and admits exact-profile
+Linux/X60 dispatch while retaining scalar everywhere else. Final native
+recapture and external review must satisfy the
 admission contract.
 
 Commit 31 completes the portable big-endian byte-order audit and requires full

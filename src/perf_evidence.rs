@@ -70,7 +70,7 @@ impl EvidenceBackend {
             #[cfg(all(feature = "simd", target_arch = "wasm32"))]
             Self::WasmSimd128 => crate::simd::wasm_simd128_decode_available(),
             #[cfg(all(feature = "simd", target_arch = "riscv64", base64_ng_rvv_candidate))]
-            Self::Rvv => crate::simd::rvv_available(),
+            Self::Rvv => crate::simd::rvv_candidate_available(),
             _ => false,
         }
     }

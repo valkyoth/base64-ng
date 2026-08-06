@@ -259,19 +259,22 @@ runtime behavior for that line.
   register-retention, or cleanup guarantee. The release-facing decision is
   tracked in
   [WASM_SIMD128_RUNTIME_REVIEW.md](WASM_SIMD128_RUNTIME_REVIEW.md).
-- Big-endian and RISC-V acceleration work follows a QEMU-first evidence path.
+- Big-endian, RISC-V, and SVE acceleration work follows a QEMU-first evidence path.
   SVE candidate work follows the same QEMU-first evidence discipline.
   QEMU proves functional behavior, not hardware performance, timing,
   microarchitectural, register-retention, signal-state, or side-channel
   properties. Commit 32 and its pre-seal native-evidence follow-ups provide a
   vector-length-independent RVV 1.0
-  Standard/URL-safe encode and strict-decode candidate behind the internal
-  `base64_ng_rvv_candidate` evidence cfg. It batches complete quanta across the
-  active VLEN, is exercised at VLEN 128 and 256, has generated
-  instruction/register-cleanup evidence, and uses fail-closed Linux
-  `riscv_hwprobe`, auxiliary-vector, and per-thread vector-state checks. Normal
-  published builds remain scalar on RISC-V until the native hardware contract
-  and external RISC-V vector review pass.
+  Standard/URL-safe encode and strict-decode backend. It batches complete
+  quanta across the active VLEN, is exercised at VLEN 128 and 256, and has
+  generated instruction/register-cleanup evidence. Normal production dispatch
+  requires exact Linux `riscv_hwprobe` identity values for the measured
+  SpacemiT X60, the RVV 1.0 `V` bit, and enabled per-thread vector state. It
+  selects RVV only from 192 input bytes and KAT-gates encode and decode
+  separately. Other RISC-V profiles, non-Linux, safe `no_std`, short inputs,
+  custom alphabets, and secret paths remain scalar. The internal
+  `base64_ng_rvv_candidate` cfg preserves broader QEMU evidence without
+  authorizing production dispatch.
   Commit 33 similarly provides a vector-length-independent AArch64 SVE
   Standard/URL-safe encode and strict-decode candidate behind the internal
   `base64_ng_sve_candidate` evidence cfg. It uses four active lanes at every

@@ -6,8 +6,8 @@ pub(super) static SIGNAL_ARMED: AtomicU32 = AtomicU32::new(0);
 pub(super) static SIGNAL_DELIVERED: AtomicU32 = AtomicU32::new(0);
 
 #[test]
-fn qemu_runtime_detects_rvv_but_keeps_public_dispatch_scalar() {
-    assert!(super::rvv::available());
+fn runtime_distinguishes_exact_x60_admission_from_candidate_visibility() {
+    assert!(super::rvv::candidate_available());
     let vlenb = super::rvv::vector_length_bytes();
     assert!(vlenb >= 16 && vlenb.is_power_of_two());
     eprintln!("RVV candidate VLEN={} bits", vlenb * 8);
@@ -19,6 +19,13 @@ fn qemu_runtime_detects_rvv_but_keeps_public_dispatch_scalar() {
         report.candidate_detection_mode,
         CandidateDetectionMode::RuntimeCpuFeatures
     );
+    if super::rvv::available() {
+        assert_eq!(report.active, Backend::Rvv);
+        assert_eq!(report.encode_backend.backend, Backend::Rvv);
+        assert_eq!(report.strict_decode_backend.backend, Backend::Rvv);
+        assert!(report.ordinary_acceleration_active);
+        return;
+    }
     assert_eq!(report.active, Backend::Scalar);
     assert_eq!(report.encode_backend.backend.as_str(), "scalar");
     assert_eq!(report.strict_decode_backend.backend.as_str(), "scalar");
@@ -58,6 +65,69 @@ fn rvv_probe_fails_closed_across_kernel_and_vector_state_results() {
     assert!(probe_allows_rvv(false, false, true, -1));
     assert!(!probe_allows_rvv(false, false, false, -1));
     assert!(!probe_allows_rvv(false, false, true, 0));
+}
+
+#[test]
+fn x60_admission_requires_every_identity_feature_and_thread_state_field() {
+    use super::rvv::exact_x60_profile_allows_rvv;
+
+    const GOOD: (bool, i64, u64, i64, u64, i64, u64, i64, u64, i32) = (
+        true,
+        0,
+        0x710,
+        1,
+        0x8000_0000_5800_0001,
+        2,
+        0x1000_0000_4977_2200,
+        4,
+        1 << 2,
+        2,
+    );
+    let allows = |values: (bool, i64, u64, i64, u64, i64, u64, i64, u64, i32)| {
+        exact_x60_profile_allows_rvv(
+            values.0, values.1, values.2, values.3, values.4, values.5, values.6, values.7,
+            values.8, values.9,
+        )
+    };
+    assert!(allows(GOOD));
+
+    let mut cases = [GOOD; 10];
+    cases[0].0 = false;
+    cases[1].1 = -1;
+    cases[2].2 ^= 1;
+    cases[3].3 = -1;
+    cases[4].4 ^= 1;
+    cases[5].5 = -1;
+    cases[6].6 ^= 1;
+    cases[7].7 = -1;
+    cases[8].8 = 0;
+    cases[9].9 = 0;
+    for rejected in cases {
+        assert!(!allows(rejected));
+    }
+}
+
+#[test]
+fn exact_x60_profile_selects_public_rvv_only_at_measured_sizes() {
+    if !super::rvv::available() {
+        return;
+    }
+    assert_eq!(
+        crate::encode_backend::active_encode_backend_for_input(191),
+        crate::encode_backend::EncodeBackend::Scalar
+    );
+    assert_eq!(
+        crate::decode_backend::active_decode_backend_for_input(191),
+        crate::decode_backend::DecodeBackend::Scalar
+    );
+    assert_eq!(
+        crate::encode_backend::active_encode_backend_for_input(192),
+        crate::encode_backend::EncodeBackend::Rvv
+    );
+    assert_eq!(
+        crate::decode_backend::active_decode_backend_for_input(192),
+        crate::decode_backend::DecodeBackend::Rvv
+    );
 }
 
 #[test]
@@ -116,7 +186,7 @@ fn rvv_state_survives_linux_signal_delivery() {
         fn setitimer(which: i32, value: *const IntervalTimer, old: *mut IntervalTimer) -> i32;
     }
 
-    assert!(super::rvv::available());
+    assert!(super::rvv::candidate_available());
     SIGNAL_ARMED.store(0, Ordering::SeqCst);
     SIGNAL_DELIVERED.store(0, Ordering::SeqCst);
     let timer = IntervalTimer {

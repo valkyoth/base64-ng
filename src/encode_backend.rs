@@ -20,20 +20,38 @@ mod policy;
 #[cfg(any(
     all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")),
     all(feature = "simd", target_arch = "aarch64", target_endian = "little"),
-    all(feature = "simd", target_arch = "wasm32")
+    all(feature = "simd", target_arch = "wasm32"),
+    all(
+        feature = "std",
+        feature = "simd",
+        target_arch = "riscv64",
+        target_os = "linux"
+    )
 ))]
 use crate::{checked_encoded_len, wipe_bytes};
 
 #[cfg(any(
     all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")),
     all(feature = "simd", target_arch = "aarch64", target_endian = "little"),
-    all(feature = "simd", target_arch = "wasm32")
+    all(feature = "simd", target_arch = "wasm32"),
+    all(
+        feature = "std",
+        feature = "simd",
+        target_arch = "riscv64",
+        target_os = "linux"
+    )
 ))]
 const IN_PLACE_INPUT_CHUNK: usize = 768;
 #[cfg(any(
     all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")),
     all(feature = "simd", target_arch = "aarch64", target_endian = "little"),
-    all(feature = "simd", target_arch = "wasm32")
+    all(feature = "simd", target_arch = "wasm32"),
+    all(
+        feature = "std",
+        feature = "simd",
+        target_arch = "riscv64",
+        target_os = "linux"
+    )
 ))]
 const IN_PLACE_OUTPUT_CHUNK: usize = 1024;
 
@@ -57,6 +75,14 @@ pub(crate) enum EncodeBackend {
     /// wasm32 `simd128` fixed-block encode.
     #[cfg(all(feature = "simd", target_arch = "wasm32"))]
     WasmSimd128,
+    /// Linux `SpacemiT` X60 RVV 1.0 fixed-block encode.
+    #[cfg(all(
+        feature = "std",
+        feature = "simd",
+        target_arch = "riscv64",
+        target_os = "linux"
+    ))]
+    Rvv,
 }
 
 #[cfg(test)]
@@ -123,9 +149,30 @@ pub(crate) fn active_encode_backend_for_input(input_len: usize) -> EncodeBackend
         })
     }
 
+    #[cfg(all(
+        feature = "std",
+        feature = "simd",
+        target_arch = "riscv64",
+        target_os = "linux"
+    ))]
+    {
+        policy::select_rvv(candidate, input_len, |_| {
+            crate::v2::backend_health::admit(
+                crate::runtime::OperationKind::Encode,
+                crate::runtime::Backend::Rvv,
+            )
+        })
+    }
+
     #[cfg(not(any(
         all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")),
-        all(feature = "simd", target_arch = "aarch64", target_endian = "little")
+        all(feature = "simd", target_arch = "aarch64", target_endian = "little"),
+        all(
+            feature = "std",
+            feature = "simd",
+            target_arch = "riscv64",
+            target_os = "linux"
+        )
     )))]
     {
         let _ = input_len;
@@ -176,6 +223,13 @@ pub(crate) fn candidate_encode_backend() -> EncodeBackend {
         crate::simd::ActiveBackend::Neon => return EncodeBackend::Neon,
         #[cfg(all(feature = "simd", target_arch = "wasm32"))]
         crate::simd::ActiveBackend::WasmSimd128 => return EncodeBackend::WasmSimd128,
+        #[cfg(all(
+            feature = "std",
+            feature = "simd",
+            target_arch = "riscv64",
+            target_os = "linux"
+        ))]
+        crate::simd::ActiveBackend::Rvv => return EncodeBackend::Rvv,
     }
 
     EncodeBackend::Scalar
@@ -195,6 +249,13 @@ impl EncodeBackend {
             Self::Neon => crate::runtime::Backend::Neon,
             #[cfg(all(feature = "simd", target_arch = "wasm32"))]
             Self::WasmSimd128 => crate::runtime::Backend::WasmSimd128,
+            #[cfg(all(
+                feature = "std",
+                feature = "simd",
+                target_arch = "riscv64",
+                target_os = "linux"
+            ))]
+            Self::Rvv => crate::runtime::Backend::Rvv,
         }
     }
 }
@@ -274,6 +335,21 @@ where
                 scalar::encode_slice::<A, PAD>(input, output)
             }
         }
+        #[cfg(all(
+            feature = "std",
+            feature = "simd",
+            target_arch = "riscv64",
+            target_os = "linux"
+        ))]
+        EncodeBackend::Rvv => {
+            if input.len() >= 12 && crate::simd::rvv_supports_alphabet::<A>() {
+                record_test_execution(backend);
+                crate::simd::encode_slice_rvv::<A, PAD>(input, output)
+            } else {
+                record_test_execution(EncodeBackend::Scalar);
+                scalar::encode_slice::<A, PAD>(input, output)
+            }
+        }
     }
 }
 
@@ -316,6 +392,15 @@ fn backend_supports<A: Alphabet>(backend: EncodeBackend, input_len: usize) -> bo
         #[cfg(all(feature = "simd", target_arch = "wasm32"))]
         EncodeBackend::WasmSimd128 => {
             input_len >= 12 && crate::simd::wasm_simd128_supports_alphabet::<A>()
+        }
+        #[cfg(all(
+            feature = "std",
+            feature = "simd",
+            target_arch = "riscv64",
+            target_os = "linux"
+        ))]
+        EncodeBackend::Rvv => {
+            input_len >= policy::RVV_MIN_INPUT && crate::simd::rvv_supports_alphabet::<A>()
         }
     }
 }
@@ -372,13 +457,32 @@ where
                 scalar_encode_in_place::encode_in_place::<A, PAD>(buffer, input_len)
             }
         }
+        #[cfg(all(
+            feature = "std",
+            feature = "simd",
+            target_arch = "riscv64",
+            target_os = "linux"
+        ))]
+        EncodeBackend::Rvv => {
+            if input_len >= 12 && crate::simd::rvv_supports_alphabet::<A>() {
+                encode_in_place_staged::<A, PAD>(buffer, input_len)
+            } else {
+                scalar_encode_in_place::encode_in_place::<A, PAD>(buffer, input_len)
+            }
+        }
     }
 }
 
 #[cfg(any(
     all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")),
     all(feature = "simd", target_arch = "aarch64", target_endian = "little"),
-    all(feature = "simd", target_arch = "wasm32")
+    all(feature = "simd", target_arch = "wasm32"),
+    all(
+        feature = "std",
+        feature = "simd",
+        target_arch = "riscv64",
+        target_os = "linux"
+    )
 ))]
 fn encode_in_place_staged<A, const PAD: bool>(
     buffer: &mut [u8],
@@ -454,7 +558,13 @@ where
 #[cfg(any(
     all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")),
     all(feature = "simd", target_arch = "aarch64", target_endian = "little"),
-    all(feature = "simd", target_arch = "wasm32")
+    all(feature = "simd", target_arch = "wasm32"),
+    all(
+        feature = "std",
+        feature = "simd",
+        target_arch = "riscv64",
+        target_os = "linux"
+    )
 ))]
 fn in_place_chunk_start(remaining: usize) -> Result<usize, EncodeError> {
     if remaining <= IN_PLACE_INPUT_CHUNK {
@@ -467,7 +577,13 @@ fn in_place_chunk_start(remaining: usize) -> Result<usize, EncodeError> {
 #[cfg(any(
     all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")),
     all(feature = "simd", target_arch = "aarch64", target_endian = "little"),
-    all(feature = "simd", target_arch = "wasm32")
+    all(feature = "simd", target_arch = "wasm32"),
+    all(
+        feature = "std",
+        feature = "simd",
+        target_arch = "riscv64",
+        target_os = "linux"
+    )
 ))]
 fn round_up_to_multiple_of_three(value: usize) -> Result<usize, EncodeError> {
     let remainder = value % 3;

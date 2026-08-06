@@ -2,7 +2,13 @@
 
 #[cfg(any(
     all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")),
-    all(feature = "simd", target_arch = "aarch64", target_endian = "little")
+    all(feature = "simd", target_arch = "aarch64", target_endian = "little"),
+    all(
+        feature = "std",
+        feature = "simd",
+        target_arch = "riscv64",
+        target_os = "linux"
+    )
 ))]
 use super::EncodeBackend;
 
@@ -15,6 +21,14 @@ pub(super) const X86_AVX512_MIN_INPUT: usize = 192;
 
 #[cfg(all(feature = "simd", target_arch = "aarch64", target_endian = "little"))]
 pub(super) const NEON_MIN_INPUT: usize = 192;
+
+#[cfg(all(
+    feature = "std",
+    feature = "simd",
+    target_arch = "riscv64",
+    target_os = "linux"
+))]
+pub(super) const RVV_MIN_INPUT: usize = 192;
 
 #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
 pub(super) fn select_x86(
@@ -54,6 +68,24 @@ pub(super) fn select_neon(
     if candidate == EncodeBackend::Neon && input_len >= NEON_MIN_INPUT && admit(EncodeBackend::Neon)
     {
         EncodeBackend::Neon
+    } else {
+        EncodeBackend::Scalar
+    }
+}
+
+#[cfg(all(
+    feature = "std",
+    feature = "simd",
+    target_arch = "riscv64",
+    target_os = "linux"
+))]
+pub(super) fn select_rvv(
+    candidate: EncodeBackend,
+    input_len: usize,
+    mut admit: impl FnMut(EncodeBackend) -> bool,
+) -> EncodeBackend {
+    if candidate == EncodeBackend::Rvv && input_len >= RVV_MIN_INPUT && admit(EncodeBackend::Rvv) {
+        EncodeBackend::Rvv
     } else {
         EncodeBackend::Scalar
     }

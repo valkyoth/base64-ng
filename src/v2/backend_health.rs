@@ -318,6 +318,8 @@ health_cells!(
     DECODE_NEON,
     ENCODE_WASM,
     DECODE_WASM,
+    ENCODE_RVV,
+    DECODE_RVV,
 );
 
 #[cfg(all(feature = "simd", target_has_atomic = "ptr"))]
@@ -333,6 +335,8 @@ fn cell(operation: OperationKind, backend: Backend) -> Option<&'static HealthCel
         (OperationKind::StrictDecode, Backend::Neon) => Some(&DECODE_NEON),
         (OperationKind::Encode, Backend::WasmSimd128) => Some(&ENCODE_WASM),
         (OperationKind::StrictDecode, Backend::WasmSimd128) => Some(&DECODE_WASM),
+        (OperationKind::Encode, Backend::Rvv) => Some(&ENCODE_RVV),
+        (OperationKind::StrictDecode, Backend::Rvv) => Some(&DECODE_RVV),
         _ => None,
     }
 }
@@ -453,6 +457,8 @@ const fn candidate_backends() -> &'static [Backend] {
     return &[Backend::Neon];
     #[cfg(target_arch = "wasm32")]
     return &[Backend::WasmSimd128];
+    #[cfg(all(feature = "std", target_arch = "riscv64", target_os = "linux"))]
+    return &[Backend::Rvv];
     #[allow(unreachable_code)]
     &[]
 }

@@ -1,17 +1,17 @@
-//! Non-admitted RVV 1.0 encode/decode candidate.
+//! Exact-profile RVV 1.0 encode/decode backend.
 //!
 //! Stable Rust 1.97.1 recognizes the `v` target feature but does not stabilize
 //! per-function RVV intrinsics or `#[target_feature(enable = "v")]`. This
-//! module therefore isolates the candidate in leaf `global_asm!` functions.
-//! It is compiled only by project-owned QEMU and native admission evidence
-//! through the internal `base64_ng_rvv_candidate` cfg. Normal crate builds do
-//! not compile or dispatch this code.
+//! module therefore isolates RVV instructions in leaf `global_asm!` functions.
+//! Production dispatch is fail-closed to Linux on the measured `SpacemiT` X60
+//! profile. The internal `base64_ng_rvv_candidate` cfg retains broader QEMU
+//! execution for candidate evidence without widening production admission.
 
 #![cfg_attr(
     not(test),
     allow(
         dead_code,
-        reason = "the RVV candidate is compiled for codegen evidence before production dispatch admission"
+        reason = "RVV evidence-only helpers are not reachable from every production feature combination"
     )
 )]
 
@@ -22,7 +22,6 @@ const DECODE_INPUT_BLOCK: usize = 16;
 
 core::arch::global_asm!(
     r#"
-    .attribute arch, "rv64gcv"
     .option push
     .option arch, +v
 
@@ -243,23 +242,26 @@ unsafe extern "C" {
     fn base64_ng_rvv_encode_url_safe_quanta(input: *const u8, output: *mut u8, quanta: usize);
     fn base64_ng_rvv_decode_standard_quanta(input: *const u8, output: *mut u8, quanta: usize);
     fn base64_ng_rvv_decode_url_safe_quanta(input: *const u8, output: *mut u8, quanta: usize);
+    #[cfg(base64_ng_rvv_candidate)]
     fn base64_ng_rvv_vlenb() -> usize;
+    #[cfg(base64_ng_rvv_candidate)]
     fn base64_ng_rvv_signal_context_round_trip(
         output: *mut u8,
         armed: *mut u32,
         delivered: *mut u32,
     );
+    #[cfg(base64_ng_rvv_candidate)]
     fn base64_ng_rvv_signal_clobber();
 }
 
-#[cfg(test)]
+#[cfg(all(test, base64_ng_rvv_candidate))]
 pub(super) fn vector_length_bytes() -> usize {
     // SAFETY: Candidate tests call this only after `available()` proves RVV
     // and enabled vector state on the current thread.
     unsafe { base64_ng_rvv_vlenb() }
 }
 
-#[cfg(test)]
+#[cfg(all(test, base64_ng_rvv_candidate))]
 pub(super) unsafe fn signal_context_round_trip(
     output: *mut u8,
     armed: *mut u32,
@@ -270,7 +272,7 @@ pub(super) unsafe fn signal_context_round_trip(
     unsafe { base64_ng_rvv_signal_context_round_trip(output, armed, delivered) };
 }
 
-#[cfg(test)]
+#[cfg(all(test, base64_ng_rvv_candidate))]
 pub(super) unsafe extern "C" fn signal_clobber(_signal: i32) {
     if super::rvv_tests::SIGNAL_ARMED.load(core::sync::atomic::Ordering::Acquire) == 0 {
         return;
@@ -288,7 +290,7 @@ pub(crate) fn available() -> bool {
         // Caching a positive result per thread is therefore stable until
         // `execve`, while a stale negative remains a safe scalar fallback.
         std::thread_local! {
-            static AVAILABLE: bool = detect_linux_rvv();
+            static AVAILABLE: bool = detect_linux_x60_rvv();
         }
         AVAILABLE.with(|available| *available)
     }
@@ -298,12 +300,111 @@ pub(crate) fn available() -> bool {
     }
     #[cfg(not(feature = "std"))]
     {
-        cfg!(target_feature = "v")
+        false
     }
 }
 
+#[cfg(all(
+    feature = "std",
+    target_os = "linux",
+    any(base64_ng_rvv_candidate, base64_ng_perf_evidence)
+))]
+pub(crate) fn candidate_available() -> bool {
+    detect_linux_rvv_candidate()
+}
+
+fn execution_available() -> bool {
+    #[cfg(base64_ng_rvv_candidate)]
+    {
+        candidate_available()
+    }
+    #[cfg(not(base64_ng_rvv_candidate))]
+    {
+        available()
+    }
+}
+
+#[cfg(all(
+    any(base64_ng_rvv_candidate, base64_ng_perf_evidence),
+    not(all(feature = "std", target_os = "linux"))
+))]
+pub(crate) const fn candidate_available() -> bool {
+    false
+}
+
 #[cfg(all(feature = "std", target_os = "linux"))]
-fn detect_linux_rvv() -> bool {
+fn detect_linux_x60_rvv() -> bool {
+    const RISCV_HWPROBE_SYSCALL: isize = 258;
+    const RISCV_HWPROBE_KEY_MVENDORID: i64 = 0;
+    const RISCV_HWPROBE_KEY_MARCHID: i64 = 1;
+    const RISCV_HWPROBE_KEY_MIMPID: i64 = 2;
+    const RISCV_HWPROBE_KEY_IMA_EXT_0: i64 = 4;
+    const PR_RISCV_V_GET_CONTROL: i32 = 70;
+
+    #[repr(C)]
+    #[derive(Clone, Copy)]
+    struct HwProbe {
+        key: i64,
+        value: u64,
+    }
+
+    unsafe extern "C" {
+        fn prctl(option: i32, ...) -> i32;
+        fn syscall(number: isize, ...) -> isize;
+    }
+
+    let mut probes = [
+        HwProbe {
+            key: RISCV_HWPROBE_KEY_MVENDORID,
+            value: 0,
+        },
+        HwProbe {
+            key: RISCV_HWPROBE_KEY_MARCHID,
+            value: 0,
+        },
+        HwProbe {
+            key: RISCV_HWPROBE_KEY_MIMPID,
+            value: 0,
+        },
+        HwProbe {
+            key: RISCV_HWPROBE_KEY_IMA_EXT_0,
+            value: 0,
+        },
+    ];
+    // SAFETY: These are Linux RISC-V UAPI calls with the exact declared ABI.
+    // The probe pointer covers the complete writable array, CPU-set size zero
+    // permits a null CPU-set pointer, and every failure becomes scalar fallback.
+    unsafe {
+        let hwprobe_ok = syscall(
+            RISCV_HWPROBE_SYSCALL,
+            probes.as_mut_ptr(),
+            probes.len(),
+            0usize,
+            core::ptr::null_mut::<usize>(),
+            0u32,
+        ) == 0;
+        let vector_control = prctl(PR_RISCV_V_GET_CONTROL, 0usize, 0usize, 0usize, 0usize);
+        exact_x60_profile_allows_rvv(
+            hwprobe_ok,
+            probes[0].key,
+            probes[0].value,
+            probes[1].key,
+            probes[1].value,
+            probes[2].key,
+            probes[2].value,
+            probes[3].key,
+            probes[3].value,
+            vector_control,
+        )
+    }
+}
+
+#[cfg(all(
+    feature = "std",
+    target_os = "linux",
+    any(base64_ng_rvv_candidate, base64_ng_perf_evidence)
+))]
+fn detect_linux_rvv_candidate() -> bool {
     const AT_HWCAP: usize = 16;
     const HWCAP_V: usize = 1 << (b'v' - b'a');
     const RISCV_HWPROBE_SYSCALL: isize = 258;
@@ -349,6 +450,43 @@ fn detect_linux_rvv() -> bool {
 }
 
 #[cfg(any(test, all(feature = "std", target_os = "linux")))]
+#[allow(clippy::too_many_arguments)]
+pub(super) const fn exact_x60_profile_allows_rvv(
+    hwprobe_ok: bool,
+    vendor_key: i64,
+    vendor: u64,
+    arch_key: i64,
+    arch: u64,
+    implementation_key: i64,
+    implementation: u64,
+    extensions_key: i64,
+    extensions: u64,
+    vector_control: i32,
+) -> bool {
+    const X60_MVENDORID: u64 = 0x710;
+    const X60_MARCHID: u64 = 0x8000_0000_5800_0001;
+    const X60_MIMPID: u64 = 0x1000_0000_4977_2200;
+    const RISCV_HWPROBE_IMA_V: u64 = 1 << 2;
+    const VSTATE_CURRENT_MASK: i32 = 3;
+    const VSTATE_ON: i32 = 2;
+
+    hwprobe_ok
+        && vendor_key == 0
+        && vendor == X60_MVENDORID
+        && arch_key == 1
+        && arch == X60_MARCHID
+        && implementation_key == 2
+        && implementation == X60_MIMPID
+        && extensions_key == 4
+        && extensions & RISCV_HWPROBE_IMA_V != 0
+        && vector_control >= 0
+        && vector_control & VSTATE_CURRENT_MASK == VSTATE_ON
+}
+
+#[cfg(any(
+    base64_ng_rvv_candidate,
+    all(feature = "std", target_os = "linux", base64_ng_perf_evidence)
+))]
 pub(super) const fn probe_allows_rvv(
     hwprobe_ok: bool,
     hwprobe_has_v: bool,
@@ -386,7 +524,7 @@ pub(crate) fn encode_slice<A: Alphabet, const PAD: bool>(
     input: &[u8],
     output: &mut [u8],
 ) -> Result<usize, EncodeError> {
-    encode_slice_with_availability::<A, PAD>(input, output, available())
+    encode_slice_with_availability::<A, PAD>(input, output, execution_available())
 }
 
 fn encode_slice_with_availability<A: Alphabet, const PAD: bool>(
@@ -419,7 +557,7 @@ pub(crate) fn decode_slice<A: Alphabet, const PAD: bool>(
     input: &[u8],
     output: &mut [u8],
 ) -> Result<usize, DecodeError> {
-    decode_slice_with_availability::<A, PAD>(input, output, available())
+    decode_slice_with_availability::<A, PAD>(input, output, execution_available())
 }
 
 fn decode_slice_with_availability<A: Alphabet, const PAD: bool>(
@@ -455,7 +593,7 @@ fn decode_slice_with_availability<A: Alphabet, const PAD: bool>(
     Ok(write + tail)
 }
 
-#[cfg(test)]
+#[cfg(all(test, base64_ng_rvv_candidate))]
 pub(super) fn encode_slice_unavailable_for_test<A: Alphabet, const PAD: bool>(
     input: &[u8],
     output: &mut [u8],
@@ -463,7 +601,7 @@ pub(super) fn encode_slice_unavailable_for_test<A: Alphabet, const PAD: bool>(
     encode_slice_with_availability::<A, PAD>(input, output, false)
 }
 
-#[cfg(test)]
+#[cfg(all(test, base64_ng_rvv_candidate))]
 pub(super) fn decode_slice_unavailable_for_test<A: Alphabet, const PAD: bool>(
     input: &[u8],
     output: &mut [u8],

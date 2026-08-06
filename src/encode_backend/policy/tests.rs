@@ -64,3 +64,27 @@ fn every_neon_encode_threshold_and_downgrade_edge_is_forced() {
         EncodeBackend::Scalar
     );
 }
+
+#[cfg(all(
+    feature = "std",
+    feature = "simd",
+    target_arch = "riscv64",
+    target_os = "linux"
+))]
+#[test]
+fn every_rvv_encode_threshold_and_downgrade_edge_is_forced() {
+    use super::{EncodeBackend, RVV_MIN_INPUT, select_rvv};
+
+    assert_eq!(
+        select_rvv(EncodeBackend::Rvv, RVV_MIN_INPUT - 1, |_| true),
+        EncodeBackend::Scalar
+    );
+    assert_eq!(
+        select_rvv(EncodeBackend::Rvv, RVV_MIN_INPUT, |_| true),
+        EncodeBackend::Rvv
+    );
+    assert_eq!(
+        select_rvv(EncodeBackend::Rvv, RVV_MIN_INPUT, |_| false),
+        EncodeBackend::Scalar
+    );
+}

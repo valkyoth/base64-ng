@@ -64,8 +64,9 @@ harnesses, sanitizer runs, cross-platform checks, and retained hardware
 evidence have passed.
 
 The candidate includes the complete 2.0 API, synchronized companion crates,
-and the supported npm Wasm loader. The pre-seal backend freeze is temporarily
-reopened for native RVV admission work on the reviewed Linux/X60 profile. See the
+the supported npm Wasm loader, and exact-profile RVV dispatch for the reviewed
+Linux/SpacemiT X60 identity. The final post-integration native bundle remains
+release-blocking. See the
 [release freeze](docs/2.0_RELEASE_FREEZE.md),
 [release notes](release-notes/RELEASE_NOTES_2.0.0.md), and
 [migration guide](docs/MIGRATION.md) for the frozen scope and adoption path.
@@ -93,7 +94,7 @@ normal public dispatch.
 | x86 AVX-512 VBMI encode/decode | Complete | Native AMD AVX-512 VBMI; second Intel performance corroboration is queued for 2.0.1, so no portable throughput claim is made | `admitted` with conservative exact-host thresholds; strict decode remains exact/static only | Not independently verified |
 | little-endian AArch64 NEON encode/decode | Complete | Native Apple Silicon and AWS Neoverse-N1 correctness, direct-kernel, assembly, and retained 15-sample performance bundles accepted through the source-equivalence gate | `admitted` | Not independently verified |
 | wasm `simd128` encode/decode | Complete | Node/V8, Wasmtime, Chromium/V8, Firefox/SpiderMonkey, and Safari/WebKit package/runtime gates | `admitted` for the documented SIMD artifact | Not independently verified |
-| RISC-V RVV 1.0 encode/decode | Complete candidate; native admission in progress | QEMU VLEN 128/256 and generated assembly; a clean-commit native Banana Pi BPI-F3 SpacemiT X60 VLEN 256 correctness, signal/thread, ABI, cleanup, and performance capture is release-blocking | `not admitted` until the native bundle, exact-profile dispatch integration, and external retest pass | Not independently verified |
+| RISC-V RVV 1.0 encode/decode | Complete exact-profile backend | QEMU VLEN 128/256 fallback/direct evidence plus native Banana Pi BPI-F3 SpacemiT X60 VLEN 256 correctness, signal/thread, ABI, cleanup, and performance evidence; final integrated-source recapture is release-blocking | `admitted` only for the exact Linux/X60 identity at 192-byte encode/decode thresholds; all other RISC-V stays scalar | Not independently verified |
 | AArch64 SVE encode/decode | Complete candidate | QEMU vector lengths 128/256/512 plus generated assembly; no accepted native SVE report | `not admitted`; public execution remains NEON or scalar | Not independently verified |
 | Constant-time-oriented secret encode/decode | Complete scalar bounded path | Fixed-work tests, Kani, assembly review, and dudect-style project evidence | Separate scalar path; never ordinary SIMD dispatch | No formal or independent constant-time verification |
 | Big-endian acceleration | No backend implemented | Complete scalar suites under s390x and PowerPC64 QEMU only | `not admitted`; scalar only | No native hardware verification |
@@ -104,17 +105,17 @@ The detailed evidence and non-claims are maintained in
 [SVE review](docs/SVE_QEMU_REVIEW.md). This table is updated whenever a backend
 implementation, execution environment, or admission decision changes.
 
-General 2.0 implementation is complete. The only reopened implementation item
-is exact-profile native RVV admission. After it is captured, integrated, and
-externally retested, final release assurance consists of green required CI and
-CodeQL on the exact final commit, regeneration of candidate-local package
-evidence, the report-only Commit 55 seal, and the authorized signed tag.
+General 2.0 implementation is complete, including exact-profile native RVV
+admission. Final release assurance consists of external retest, a native RVV
+recapture against the integrated source, green required CI and CodeQL,
+regeneration of candidate-local package evidence, the report-only Commit 55
+seal, and the authorized signed tag.
 
-RVV remains non-dispatchable pending complete native ABI, signal-state,
-cleanup, and benchmark admission evidence; SVE remains non-dispatchable
-pending native hardware evidence. Big-endian execution remains scalar. Secret
-operations remain on the separate scalar fixed-work path. Project tests, Kani
-harnesses, timing evidence, native runs, and QEMU runs are scoped evidence, not
+RVV dispatch is limited to the measured Linux/SpacemiT X60 identity; other
+RISC-V profiles remain scalar. SVE remains non-dispatchable pending native
+hardware evidence. Big-endian execution remains scalar. Secret operations
+remain on the separate scalar fixed-work path. Project tests, Kani harnesses,
+timing evidence, native runs, and QEMU runs are scoped evidence, not
 certification or whole-crate formal proof.
 
 ## Trust Dashboard
@@ -126,7 +127,7 @@ certification or whole-crate formal proof.
 | Active release toolchain | Rust `1.97.1` |
 | Runtime dependencies | Zero external crates |
 | Unsafe policy | Scalar encode/decode remains safe Rust; audited unsafe is limited to volatile wiping, CT comparison/barrier helpers, and the reviewed SIMD boundary |
-| Active backend | Scalar by default; std x86/x86_64 encode selects SSSE3/SSE4.1, AVX2, or AVX-512 VBMI by length, strict decode selects SSSE3/SSE4.1 or AVX2, plus little-endian std aarch64 NEON and wasm `simd128` under their admitted profiles; AVX-512 strict decode is exact/static only |
+| Active backend | Scalar by default; std x86/x86_64 encode selects SSSE3/SSE4.1, AVX2, or AVX-512 VBMI by length, strict decode selects SSSE3/SSE4.1 or AVX2, plus little-endian std aarch64 NEON, wasm `simd128`, and exact Linux/SpacemiT X60 RVV under their admitted profiles; AVX-512 strict decode is exact/static only |
 | Strict RFC 4648 decoding | Default, canonical, no whitespace |
 | Legacy compatibility | Explicit opt-in APIs |
 | Constant-time posture | Constant-time-oriented scalar validation/decode plus bounded 2.0 secret frames with private staging and isolated timing evidence; no formal cryptographic guarantee |

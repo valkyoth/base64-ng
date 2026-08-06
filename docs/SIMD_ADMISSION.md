@@ -8,12 +8,14 @@ only for backends named in this file and the release gate.
 
 - Admitted backends: AVX-512 VBMI encode, AVX2 encode, SSSE3/SSE4.1 encode,
   NEON encode, AVX-512 VBMI strict decode, AVX2 strict decode,
-  SSSE3/SSE4.1 strict decode, and NEON strict decode for `x86`/`x86_64`
-  or little-endian `aarch64` where applicable.
+  SSSE3/SSE4.1 strict decode, NEON strict decode, and exact-profile RVV 1.0
+  encode/strict decode for `x86`/`x86_64`, little-endian `aarch64`, or the
+  measured Linux/SpacemiT X60 identity where applicable.
 - Active encode priority: AVX-512 VBMI, then AVX2, then SSSE3/SSE4.1 on
   x86/x86_64. Active strict-decode priority is AVX2, then SSSE3/SSE4.1;
   AVX-512 strict decode remains exact/static only. NEON is active on
-  little-endian aarch64; scalar is the final fallback.
+  little-endian aarch64. RVV is active from 192 bytes only on the exact
+  Linux/X60 profile; scalar is the final fallback.
 - Activation scope: runtime-probed `std` dispatch or compile-time-proven
   `no_std` dispatch with pointer-width atomics and passing direct KATs.
 - Gate summary: Admitted backends: AVX-512 VBMI encode, AVX2 encode, SSSE3/SSE4.1 encode, NEON encode, AVX-512 VBMI strict decode, AVX2 strict decode, SSSE3/SSE4.1 strict decode, and NEON strict decode.
@@ -30,6 +32,10 @@ only for backends named in this file and the release gate.
   and below 256 encoded bytes for strict decode; NEON at and above those
   conservative Commit 29 crossovers. Exact static/evidence calls retain the
   native 12-byte encode and 16-byte decode block boundaries.
+- Automatic RISC-V RVV policy: scalar below 192 bytes for encode and strict
+  decode. At and above 192 bytes, require exact X60 `riscv_hwprobe` identity,
+  RVV 1.0, enabled per-thread vector state, and passing operation KAT. Every
+  other RISC-V target remains scalar; safe `no_std` does not auto-admit RVV.
 - Public performance claims: none without local benchmark evidence.
 - Release status: `2.0.0`; `1.2.0` admitted conservative active encode
   dispatch, and `1.3.0` admitted normal strict decode dispatch for the first
@@ -51,7 +57,10 @@ only for backends named in this file and the release gate.
   a complete non-admitted RVV 1.0 encode/decode candidate, dual-VLEN QEMU
   evidence, fail-closed Linux capability probing, and generated assembly
   review. Real-hardware correctness, ABI, signal-state, benchmark, and pentest
-  evidence remain mandatory before dispatch admission. The 2.0 Commit 24
+  evidence were captured on the physical X60. The Commit 54 pre-seal amendment
+  integrates exact-profile dispatch, a 192-byte crossover, independent KAT
+  quarantine, and scalar fallback; final integrated-source recapture and
+  external retest remain mandatory before the release seal. The 2.0 Commit 24
   checkpoint adds direct KAT, health generation, quarantine, checked-backend,
   and static `no_std` admission without expanding alphabet or secret scope.
   The 2.0 Commit 29 checkpoint replaces the AArch64 prototype architecture

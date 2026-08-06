@@ -19,9 +19,10 @@
   protected helpers, bounding attacker-controlled validation work as well as
   output allocation. The fixed-size policy error is non-exhaustive, and legacy
   locked-vector compatibility mappings for the 1 MiB default are documented.
-- Extends admitted acceleration and evidence for x86, AArch64 NEON, and wasm
-  `simd128`, while keeping RVV and SVE candidates non-dispatchable until native
-  hardware evidence satisfies their admission contracts.
+- Extends admitted acceleration and evidence for x86, AArch64 NEON, wasm
+  `simd128`, and exact-profile Linux/SpacemiT X60 RVV 1.0 encode and strict
+  decode. Other RISC-V profiles remain scalar, and SVE remains non-dispatchable
+  until native hardware evidence satisfies its admission contract.
 - Rebuilds synchronous and Tokio adapters over canonical 2.0 state machines
   with explicit progress, backpressure, cancellation, cleanup, and checked
   recovery semantics.

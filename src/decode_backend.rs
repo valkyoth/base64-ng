@@ -33,6 +33,14 @@ pub(crate) enum DecodeBackend {
     /// wasm32 `simd128` fixed-block strict decode.
     #[cfg(all(feature = "simd", target_arch = "wasm32"))]
     WasmSimd128,
+    /// Linux `SpacemiT` X60 RVV 1.0 fixed-block strict decode.
+    #[cfg(all(
+        feature = "std",
+        feature = "simd",
+        target_arch = "riscv64",
+        target_os = "linux"
+    ))]
+    Rvv,
 }
 
 #[cfg(test)]
@@ -95,9 +103,30 @@ pub(crate) fn active_decode_backend_for_input(input_len: usize) -> DecodeBackend
         })
     }
 
+    #[cfg(all(
+        feature = "std",
+        feature = "simd",
+        target_arch = "riscv64",
+        target_os = "linux"
+    ))]
+    {
+        policy::select_rvv(candidate, input_len, |_| {
+            crate::v2::backend_health::admit(
+                crate::runtime::OperationKind::StrictDecode,
+                crate::runtime::Backend::Rvv,
+            )
+        })
+    }
+
     #[cfg(not(any(
         all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")),
-        all(feature = "simd", target_arch = "aarch64", target_endian = "little")
+        all(feature = "simd", target_arch = "aarch64", target_endian = "little"),
+        all(
+            feature = "std",
+            feature = "simd",
+            target_arch = "riscv64",
+            target_os = "linux"
+        )
     )))]
     {
         let _ = input_len;
@@ -144,6 +173,18 @@ pub(crate) fn candidate_decode_backend() -> DecodeBackend {
         }
     }
 
+    #[cfg(all(
+        feature = "std",
+        feature = "simd",
+        target_arch = "riscv64",
+        target_os = "linux"
+    ))]
+    {
+        if crate::simd::rvv_available() {
+            return DecodeBackend::Rvv;
+        }
+    }
+
     DecodeBackend::Scalar
 }
 
@@ -161,6 +202,13 @@ impl DecodeBackend {
             Self::Neon => crate::runtime::Backend::Neon,
             #[cfg(all(feature = "simd", target_arch = "wasm32"))]
             Self::WasmSimd128 => crate::runtime::Backend::WasmSimd128,
+            #[cfg(all(
+                feature = "std",
+                feature = "simd",
+                target_arch = "riscv64",
+                target_os = "linux"
+            ))]
+            Self::Rvv => crate::runtime::Backend::Rvv,
         }
     }
 }
@@ -227,6 +275,16 @@ where
             record_test_execution(backend);
             crate::simd::decode_slice_wasm_simd128::<A, PAD>(input, output)
         }
+        #[cfg(all(
+            feature = "std",
+            feature = "simd",
+            target_arch = "riscv64",
+            target_os = "linux"
+        ))]
+        DecodeBackend::Rvv => {
+            record_test_execution(backend);
+            crate::simd::decode_slice_rvv::<A, PAD>(input, output)
+        }
     }
 }
 
@@ -260,6 +318,13 @@ fn backend_supports<A: Alphabet>(backend: DecodeBackend) -> bool {
         DecodeBackend::Neon => crate::simd::neon_supports_decode_alphabet::<A>(),
         #[cfg(all(feature = "simd", target_arch = "wasm32"))]
         DecodeBackend::WasmSimd128 => crate::simd::wasm_simd128_supports_decode_alphabet::<A>(),
+        #[cfg(all(
+            feature = "std",
+            feature = "simd",
+            target_arch = "riscv64",
+            target_os = "linux"
+        ))]
+        DecodeBackend::Rvv => crate::simd::rvv_supports_alphabet::<A>(),
     }
 }
 
@@ -327,6 +392,16 @@ mod tests {
         #[cfg(all(feature = "simd", target_arch = "wasm32"))]
         if backend == DecodeBackend::WasmSimd128 {
             assert!(crate::simd::wasm_simd128_decode_available());
+            return;
+        }
+        #[cfg(all(
+            feature = "std",
+            feature = "simd",
+            target_arch = "riscv64",
+            target_os = "linux"
+        ))]
+        if backend == DecodeBackend::Rvv {
+            assert!(crate::simd::rvv_available());
             return;
         }
         assert_eq!(backend, DecodeBackend::Scalar);

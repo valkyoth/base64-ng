@@ -177,6 +177,13 @@ fn encode_id(backend: encode_backend::EncodeBackend) -> &'static str {
         encode_backend::EncodeBackend::Neon => "neon",
         #[cfg(all(feature = "simd", target_arch = "wasm32"))]
         encode_backend::EncodeBackend::WasmSimd128 => "wasm-simd128",
+        #[cfg(all(
+            feature = "std",
+            feature = "simd",
+            target_arch = "riscv64",
+            target_os = "linux"
+        ))]
+        encode_backend::EncodeBackend::Rvv => "rvv",
     }
 }
 
@@ -193,5 +200,12 @@ fn decode_id(backend: decode_backend::DecodeBackend) -> &'static str {
         decode_backend::DecodeBackend::Neon => "neon",
         #[cfg(all(feature = "simd", target_arch = "wasm32"))]
         decode_backend::DecodeBackend::WasmSimd128 => "wasm-simd128",
+        #[cfg(all(
+            feature = "std",
+            feature = "simd",
+            target_arch = "riscv64",
+            target_os = "linux"
+        ))]
+        decode_backend::DecodeBackend::Rvv => "rvv",
     }
 }

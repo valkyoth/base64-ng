@@ -35,6 +35,8 @@ pub(super) fn available(backend: Backend) -> bool {
         Backend::Neon => crate::simd::neon_available(),
         #[cfg(target_arch = "wasm32")]
         Backend::WasmSimd128 => crate::simd::wasm_simd128_decode_available(),
+        #[cfg(all(feature = "std", target_arch = "riscv64", target_os = "linux"))]
+        Backend::Rvv => crate::simd::rvv_available(),
         #[allow(unreachable_patterns)]
         _ => false,
     }
@@ -97,6 +99,8 @@ pub(crate) fn direct_encode<A: crate::Alphabet, const PAD: bool>(
         Backend::Neon => crate::simd::encode_slice_neon::<A, PAD>(input, output),
         #[cfg(target_arch = "wasm32")]
         Backend::WasmSimd128 => crate::simd::encode_slice_wasm_simd128::<A, PAD>(input, output),
+        #[cfg(all(feature = "std", target_arch = "riscv64", target_os = "linux"))]
+        Backend::Rvv => crate::simd::encode_slice_rvv::<A, PAD>(input, output),
         #[allow(unreachable_patterns)]
         _ => return None,
     };
@@ -120,6 +124,8 @@ pub(crate) fn direct_decode<A: crate::Alphabet, const PAD: bool>(
         Backend::Neon => crate::simd::decode_slice_neon::<A, PAD>(input, output),
         #[cfg(target_arch = "wasm32")]
         Backend::WasmSimd128 => crate::simd::decode_slice_wasm_simd128::<A, PAD>(input, output),
+        #[cfg(all(feature = "std", target_arch = "riscv64", target_os = "linux"))]
+        Backend::Rvv => crate::simd::decode_slice_rvv::<A, PAD>(input, output),
         #[allow(unreachable_patterns)]
         _ => return None,
     };

@@ -1428,14 +1428,15 @@ target without pointer-width atomics cannot maintain the required health latch
 and remains scalar. Architecture kernel methods are exposed through this token
 only by their later backend-specific admission commits.
 
-## Commit 32 Non-Admitted RVV Candidate
+## Commit 32 And Commit 54 Exact-Profile RVV Backend
 
 Location: `src/simd/rvv.rs`
 
-Commit 32 adds an internal evidence-only RVV 1.0 candidate. It is not compiled
-by normal published builds and does not enter `EncodeBackend`, `DecodeBackend`,
-or `ActiveBackend` dispatch. QEMU and the pre-admission native X60 campaign
-compile it through the project-owned cfg.
+Commit 32 adds the isolated RVV 1.0 leaves. The Commit 54 pre-seal amendment
+compiles them in normal RISC-V SIMD builds and admits `EncodeBackend::Rvv`,
+`DecodeBackend::Rvv`, and `ActiveBackend::Rvv` only for the exact reviewed
+Linux/SpacemiT X60 identity. The project-owned cfg retains broader QEMU direct
+execution but cannot authorize production dispatch.
 
 Unsafe operations:
 
@@ -1454,15 +1455,16 @@ Unsafe operations:
 - Rust wrappers `encode_quanta` and `decode_quanta` call those symbols through
   `extern "C"` after complete-quantum bounds checks and an RVV/vector-state
   gate;
-- Linux runtime detection calls `getauxval`, `riscv_hwprobe` through `syscall`,
-  and `prctl(PR_RISCV_V_GET_CONTROL)` with the kernel UAPI layouts.
+- Linux production detection calls `riscv_hwprobe` through `syscall` for four
+  identity/feature pairs and `prctl(PR_RISCV_V_GET_CONTROL)` with the kernel
+  UAPI layouts. The evidence-only QEMU detector also calls `getauxval`.
 
 The assembly functions are stackless leaves, make no nested calls, use only
 caller-saved integer temporaries plus vector registers, and carry CFI function
 boundaries. Scalar validation completes before strict-decode output writes.
-The UAPI probe uses one valid writable pair, a zero-sized null CPU set, and
-fails closed on syscall errors, unsupported keys, missing `V`, or disabled
-vector state. A positive probe is cached only on the calling thread. Linux
+The production UAPI probe uses four valid writable pairs, a zero-sized null CPU
+set, and fails closed on syscall errors, altered keys, any non-X60 identity,
+missing `V`, or disabled vector state. A positive probe is cached only on the calling thread. Linux
 forbids turning Vector off after it has been enabled, so that positive remains
 valid; a cached negative remains a safe scalar fallback. The crate never
 enables Vector or process-caches a thread's result. QEMU's older-kernel
@@ -1475,10 +1477,11 @@ hardware. Its process-global handler and one-shot timer are installed,
 disabled, and restored by the sole test in that harness. The helper uses
 aligned atomic words for its bounded wait and confirms both armed delivery and
 restoration of the interrupted vector register without expecting vector state
-to survive a Linux syscall. These remain pre-admission candidate evidence.
-Accepted native correctness, ABI/signal preservation, performance,
-register-cleanup review, exact-profile dispatch integration, and an external
-pentest remain hard requirements before production admission.
+to survive a Linux syscall. The linked artifact deliberately omits a global
+RVV ELF requirement while retaining vector instructions in isolated leaves, so
+unsupported RISC-V systems can start and select scalar. Final release evidence
+must recapture native correctness, ABI/signal preservation, performance, and
+register cleanup from the integrated source and pass external retest.
 
 ## Commit 33 Non-Admitted SVE Candidate
 

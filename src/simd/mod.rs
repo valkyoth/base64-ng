@@ -17,9 +17,11 @@
 //! and line-ending compaction. Legacy whitespace decode may enter admitted
 //! strict decode only after scalar whitespace compaction. Strict in-place
 //! encode and decode may enter admitted backends only after stack staging.
-//! Non-Standard-family custom alphabets, big-endian `AArch64`, CT secret decode,
-//! and every other unsupported SIMD surface still execute through the scalar
-//! implementation. `Alphabet::ENCODE` is authoritative for ordinary scalar and
+//! Exact-profile Linux RISC-V dispatch may use RVV 1.0 on the measured
+//! `SpacemiT` X60 profile. Non-Standard-family custom alphabets, other RISC-V
+//! profiles, big-endian `AArch64`, CT secret decode, and every other unsupported
+//! SIMD surface still execute through the scalar implementation.
+//! `Alphabet::ENCODE` is authoritative for ordinary scalar and
 //! SIMD decode; overridable `Alphabet::decode` code is never an admission input.
 //! A `no_std` build may execute an admitted backend only when complete static
 //! target-feature evidence and the atomic backend-health latch are available.
@@ -55,16 +57,14 @@ mod sve;
 ))]
 mod sve_tests;
 
-#[cfg(all(feature = "simd", target_arch = "riscv64", base64_ng_rvv_candidate))]
+#[cfg(all(feature = "simd", target_arch = "riscv64"))]
 mod rvv;
-#[cfg(all(
-    feature = "simd",
-    target_arch = "riscv64",
-    base64_ng_rvv_candidate,
-    base64_ng_perf_evidence
-))]
+#[cfg(all(feature = "simd", target_arch = "riscv64", base64_ng_perf_evidence))]
+pub(crate) use rvv::candidate_available as rvv_candidate_available;
+#[cfg(all(feature = "simd", target_arch = "riscv64"))]
 pub(crate) use rvv::{
     available as rvv_available, decode_slice as decode_slice_rvv, encode_slice as encode_slice_rvv,
+    supports_alphabet as rvv_supports_alphabet,
 };
 #[cfg(all(
     feature = "std",
@@ -166,6 +166,14 @@ pub(crate) enum ActiveBackend {
     /// wasm32 `simd128` fixed-block encode backend.
     #[cfg(all(feature = "simd", target_arch = "wasm32"))]
     WasmSimd128,
+    /// Linux `SpacemiT` X60 RVV 1.0 encode backend.
+    #[cfg(all(
+        feature = "std",
+        feature = "simd",
+        target_arch = "riscv64",
+        target_os = "linux"
+    ))]
+    Rvv,
 }
 
 /// SIMD candidate detected for the current target.
@@ -191,21 +199,21 @@ pub(crate) enum Candidate {
     /// wasm32 `simd128` is available.
     #[cfg(target_arch = "wasm32")]
     WasmSimd128,
-    /// RVV is visible to the non-admitted project-owned candidate build.
-    #[cfg(all(target_arch = "riscv64", base64_ng_rvv_candidate))]
+    /// RVV is visible to the exact production profile or candidate build.
+    #[cfg(target_arch = "riscv64")]
     Rvv,
 }
 
 /// Returns the backend that is allowed to execute for this build.
 #[must_use]
 pub(crate) fn active_backend() -> ActiveBackend {
-    #[cfg(feature = "std")]
+    #[cfg(all(feature = "std", not(target_arch = "riscv64")))]
     {
         static ACTIVE_BACKEND: std::sync::OnceLock<ActiveBackend> = std::sync::OnceLock::new();
         *ACTIVE_BACKEND.get_or_init(detect_active_backend)
     }
 
-    #[cfg(not(feature = "std"))]
+    #[cfg(any(not(feature = "std"), target_arch = "riscv64"))]
     {
         detect_active_backend()
     }
@@ -238,6 +246,18 @@ fn detect_active_backend() -> ActiveBackend {
     {
         if wasm_simd128_available() {
             return ActiveBackend::WasmSimd128;
+        }
+    }
+
+    #[cfg(all(
+        feature = "std",
+        feature = "simd",
+        target_arch = "riscv64",
+        target_os = "linux"
+    ))]
+    {
+        if rvv::available() {
+            return ActiveBackend::Rvv;
         }
     }
 
@@ -295,6 +315,19 @@ pub(crate) fn detected_candidate() -> Candidate {
     }
 
     #[cfg(all(feature = "simd", target_arch = "riscv64", base64_ng_rvv_candidate))]
+    {
+        if rvv::candidate_available() {
+            return Candidate::Rvv;
+        }
+    }
+
+    #[cfg(all(
+        feature = "std",
+        feature = "simd",
+        target_arch = "riscv64",
+        target_os = "linux",
+        not(base64_ng_rvv_candidate)
+    ))]
     {
         if rvv::available() {
             return Candidate::Rvv;

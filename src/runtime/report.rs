@@ -452,7 +452,7 @@ fn detected_candidate() -> Backend {
         crate::simd::Candidate::Neon => Backend::Neon,
         #[cfg(target_arch = "wasm32")]
         crate::simd::Candidate::WasmSimd128 => Backend::WasmSimd128,
-        #[cfg(all(target_arch = "riscv64", base64_ng_rvv_candidate))]
+        #[cfg(target_arch = "riscv64")]
         crate::simd::Candidate::Rvv => Backend::Rvv,
         #[cfg(all(target_arch = "aarch64", base64_ng_sve_candidate))]
         crate::simd::Candidate::Sve => Backend::Sve,
@@ -471,7 +471,7 @@ const fn detected_candidate() -> Backend {
         target_arch = "x86",
         target_arch = "x86_64",
         all(target_arch = "aarch64", base64_ng_sve_candidate),
-        all(target_arch = "riscv64", base64_ng_rvv_candidate)
+        target_arch = "riscv64"
     )
 ))]
 const fn candidate_detection_mode() -> CandidateDetectionMode {
@@ -486,7 +486,7 @@ const fn candidate_detection_mode() -> CandidateDetectionMode {
             target_arch = "x86",
             target_arch = "x86_64",
             all(target_arch = "aarch64", base64_ng_sve_candidate),
-            all(target_arch = "riscv64", base64_ng_rvv_candidate)
+            target_arch = "riscv64"
         )
     ))
 ))]

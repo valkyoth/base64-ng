@@ -10,8 +10,8 @@ mkdir -p "$evidence_dir"
 evidence_capture_source "2.0 memory and hardware evidence"
 
 for required in \
-    'NEON performance | native evidence required before 2.0.0' \
-    'RVV and SVE remain non-dispatchable candidates' \
+    'NEON performance | Retained native evidence' \
+    'RVV is admitted only for the exact Linux SpacemiT X60 profile' \
     'Base 2.0 ships no persistent provider' \
     'Abort, `panic=abort`, OOM abort, process termination' \
     'No growth after' \
@@ -89,7 +89,7 @@ evidence_verify_source "2.0 memory and hardware evidence"
     echo "neon_automatic_dispatch=$neon_status"
     echo "wasm_simd128=runtime-and-browser-evidence-not-hardware-attestation"
     echo "big_endian=scalar-qemu-portability-native-report-optional"
-    echo "rvv=candidate-qemu-only-not-dispatchable"
+    echo "rvv=exact-linux-spacemit-x60-native-admission"
     echo "sve=candidate-qemu-only-not-dispatchable"
     echo "persistent_provider=none"
     echo "miri=separate-release-artifact"

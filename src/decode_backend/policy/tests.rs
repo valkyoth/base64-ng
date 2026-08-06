@@ -56,3 +56,27 @@ fn every_neon_decode_threshold_and_downgrade_edge_is_forced() {
         DecodeBackend::Scalar
     );
 }
+
+#[cfg(all(
+    feature = "std",
+    feature = "simd",
+    target_arch = "riscv64",
+    target_os = "linux"
+))]
+#[test]
+fn every_rvv_decode_threshold_and_downgrade_edge_is_forced() {
+    use super::{DecodeBackend, RVV_MIN_INPUT, select_rvv};
+
+    assert_eq!(
+        select_rvv(DecodeBackend::Rvv, RVV_MIN_INPUT - 1, |_| true),
+        DecodeBackend::Scalar
+    );
+    assert_eq!(
+        select_rvv(DecodeBackend::Rvv, RVV_MIN_INPUT, |_| true),
+        DecodeBackend::Rvv
+    );
+    assert_eq!(
+        select_rvv(DecodeBackend::Rvv, RVV_MIN_INPUT, |_| false),
+        DecodeBackend::Scalar
+    );
+}

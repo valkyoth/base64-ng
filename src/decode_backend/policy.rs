@@ -2,7 +2,13 @@
 
 #[cfg(any(
     all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")),
-    all(feature = "simd", target_arch = "aarch64", target_endian = "little")
+    all(feature = "simd", target_arch = "aarch64", target_endian = "little"),
+    all(
+        feature = "std",
+        feature = "simd",
+        target_arch = "riscv64",
+        target_os = "linux"
+    )
 ))]
 use super::DecodeBackend;
 
@@ -13,6 +19,14 @@ pub(super) const X86_AVX2_MIN_INPUT: usize = 32;
 
 #[cfg(all(feature = "simd", target_arch = "aarch64", target_endian = "little"))]
 pub(super) const NEON_MIN_INPUT: usize = 256;
+
+#[cfg(all(
+    feature = "std",
+    feature = "simd",
+    target_arch = "riscv64",
+    target_os = "linux"
+))]
+pub(super) const RVV_MIN_INPUT: usize = 192;
 
 #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
 pub(super) fn select_x86(
@@ -48,6 +62,24 @@ pub(super) fn select_neon(
     if candidate == DecodeBackend::Neon && input_len >= NEON_MIN_INPUT && admit(DecodeBackend::Neon)
     {
         DecodeBackend::Neon
+    } else {
+        DecodeBackend::Scalar
+    }
+}
+
+#[cfg(all(
+    feature = "std",
+    feature = "simd",
+    target_arch = "riscv64",
+    target_os = "linux"
+))]
+pub(super) fn select_rvv(
+    candidate: DecodeBackend,
+    input_len: usize,
+    mut admit: impl FnMut(DecodeBackend) -> bool,
+) -> DecodeBackend {
+    if candidate == DecodeBackend::Rvv && input_len >= RVV_MIN_INPUT && admit(DecodeBackend::Rvv) {
+        DecodeBackend::Rvv
     } else {
         DecodeBackend::Scalar
     }
