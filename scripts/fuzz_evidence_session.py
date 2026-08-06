@@ -312,6 +312,8 @@ def ssh_command(user: str, host: str, port: int, key_path: Path) -> list[str]:
     validate_remote(user, host, port, key_path)
     return [
         "ssh",
+        "-F",
+        "/dev/null",
         "-p",
         str(port),
         "-i",
@@ -336,6 +338,8 @@ def scp_command(user: str, host: str, port: int, key_path: Path) -> list[str]:
     validate_remote(user, host, port, key_path)
     return [
         "scp",
+        "-F",
+        "/dev/null",
         "-P",
         str(port),
         "-i",

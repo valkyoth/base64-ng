@@ -212,16 +212,16 @@ def main() -> None:
         )
         subprocess.run(["bash", "-n"], input=jobs.REMOTE_STATUS, text=True, check=True)
         subprocess.run(["sh", "-n", str(runner)], check=True)
-        assert "StrictHostKeyChecking=accept-new" in session.ssh_command(
-            "ubuntu", "192.0.2.10", 985, key
-        )
+        ssh = session.ssh_command("ubuntu", "192.0.2.10", 985, key)
+        assert ssh[1:3] == ["-F", "/dev/null"]
+        assert "StrictHostKeyChecking=accept-new" in ssh
         assert "985" in session.ssh_command("ubuntu", "192.0.2.10", 985, key)
         assert f"UserKnownHostsFile={session.MANAGED_KNOWN_HOSTS}" in session.ssh_command(
             "ubuntu", "192.0.2.10", 985, key
         )
-        assert "GlobalKnownHostsFile=/dev/null" in session.scp_command(
-            "ubuntu", "192.0.2.10", 985, key
-        )
+        scp = session.scp_command("ubuntu", "192.0.2.10", 985, key)
+        assert scp[1:3] == ["-F", "/dev/null"]
+        assert "GlobalKnownHostsFile=/dev/null" in scp
         assert "985" in session.scp_command("ubuntu", "192.0.2.10", 985, key)
         assert key.read_text() not in " ".join(
             session.ssh_command("ubuntu", "192.0.2.10", 985, key)
