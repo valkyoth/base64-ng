@@ -588,6 +588,11 @@ fn build_can_report_accelerated_backend() -> bool {
                 target_arch = "aarch64",
                 target_endian = "little"
             ),
+            all(
+                feature = "std",
+                target_arch = "riscv64",
+                target_os = "linux"
+            ),
             target_arch = "wasm32"
         )
     ))
