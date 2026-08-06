@@ -263,11 +263,13 @@ runtime behavior for that line.
   SVE candidate work follows the same QEMU-first evidence discipline.
   QEMU proves functional behavior, not hardware performance, timing,
   microarchitectural, register-retention, signal-state, or side-channel
-  properties. Commit 32 provides a vector-length-independent RVV 1.0
+  properties. Commit 32 and its pre-seal native-evidence follow-ups provide a
+  vector-length-independent RVV 1.0
   Standard/URL-safe encode and strict-decode candidate behind the internal
-  `base64_ng_rvv_candidate` evidence cfg. It is exercised at VLEN 128 and 256,
-  has generated instruction/register-cleanup evidence, and uses fail-closed
-  Linux `riscv_hwprobe`, auxiliary-vector, and vector-state checks. Normal
+  `base64_ng_rvv_candidate` evidence cfg. It batches complete quanta across the
+  active VLEN, is exercised at VLEN 128 and 256, has generated
+  instruction/register-cleanup evidence, and uses fail-closed Linux
+  `riscv_hwprobe`, auxiliary-vector, and per-thread vector-state checks. Normal
   published builds remain scalar on RISC-V until the native hardware contract
   and external RISC-V vector review pass.
   Commit 33 similarly provides a vector-length-independent AArch64 SVE

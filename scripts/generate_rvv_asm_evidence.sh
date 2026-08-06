@@ -53,7 +53,7 @@ if [ -z "$binary" ]; then
     exit 1
 fi
 
-symbols="base64_ng_rvv_encode_standard_12 base64_ng_rvv_encode_url_safe_12 base64_ng_rvv_decode_standard_16 base64_ng_rvv_decode_url_safe_16 base64_ng_rvv_vlenb base64_ng_rvv_signal_context_round_trip base64_ng_rvv_signal_clobber"
+symbols="base64_ng_rvv_encode_standard_quanta base64_ng_rvv_encode_url_safe_quanta base64_ng_rvv_decode_standard_quanta base64_ng_rvv_decode_url_safe_quanta base64_ng_rvv_vlenb base64_ng_rvv_signal_context_round_trip base64_ng_rvv_signal_clobber"
 : >"$output_dir/disassembly.txt"
 for symbol in $symbols; do
     if ! "$prefix-nm" "$binary" | grep -E -q "[[:space:]][Tt][[:space:]]+$symbol$"; then
@@ -73,7 +73,7 @@ require_pattern() {
     fi
 }
 
-require_pattern 'vsetivli[[:space:]]+zero,4,e8,m1,ta,ma' 'vector-length-agnostic four-lane setup'
+require_pattern 'vsetvli[[:space:]]+a3,a2,e8,m1,ta,ma' 'vector-length-agnostic quantum batching'
 require_pattern 'vlseg3e8\.v' 'three-segment encode load'
 require_pattern 'vsseg4e8\.v' 'four-segment encode store'
 require_pattern 'vlseg4e8\.v' 'four-segment decode load'
@@ -93,7 +93,7 @@ fi
 
 evidence_verify_source "RVV asm evidence"
 {
-    echo "base64-ng Commit 32 non-admitted RVV assembly evidence"
+    echo "base64-ng non-admitted RVV assembly evidence"
     echo
     evidence_write_source_manifest
     echo
@@ -112,8 +112,8 @@ evidence_verify_source "RVV asm evidence"
     evidence_checksum_file "$output_dir/attributes.txt"
     echo
     echo "review focus:"
-    echo "- fixed leaf ABI with no calls or stack mutation"
-    echo "- VLEN-agnostic four-lane segment loads/stores"
+    echo "- leaf ABI with no calls or stack mutation"
+    echo "- VLEN-agnostic batched segment loads/stores"
     echo "- Standard and URL-safe arithmetic mapping"
     echo "- v0..v15 cleared at VLMAX before every return"
     echo "- candidate remains unavailable to normal production dispatch"

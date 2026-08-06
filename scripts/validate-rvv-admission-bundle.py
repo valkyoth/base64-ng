@@ -143,8 +143,8 @@ def validate(directory: Path) -> None:
         if marker not in correctness:
             fail(f"correctness transcript is missing {marker}")
     for marker in (
-        "base64_ng_rvv_encode_standard_12",
-        "base64_ng_rvv_decode_standard_16",
+        "base64_ng_rvv_encode_standard_quanta",
+        "base64_ng_rvv_decode_standard_quanta",
         "base64_ng_rvv_signal_context_round_trip",
         "base64_ng_rvv_signal_clobber",
         "vmv.v.i",

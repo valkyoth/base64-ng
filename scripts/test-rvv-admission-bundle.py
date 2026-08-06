@@ -90,8 +90,8 @@ def write_bundle(directory: Path) -> None:
     )
     (directory / "asm-attributes.txt").write_text("Tag_RISCV_arch: rv64gcv\n")
     (directory / "asm-disassembly.txt").write_text(
-        "base64_ng_rvv_encode_standard_12\n"
-        "base64_ng_rvv_decode_standard_16\n"
+        "base64_ng_rvv_encode_standard_quanta\n"
+        "base64_ng_rvv_decode_standard_quanta\n"
         "base64_ng_rvv_signal_context_round_trip\n"
         "base64_ng_rvv_signal_clobber\n"
         "amoswap.w\n"

@@ -24,16 +24,19 @@ internal evidence build:
 
 The isolated leaf functions use RVV 1.0 basic integer operations:
 
-- encode loads four 3-byte groups with `vlseg3e8.v`, extracts four 6-bit
-  vectors, maps Standard or URL-safe ASCII with masks/arithmetic, and stores
-  four interleaved vectors with `vsseg4e8.v`;
+- encode batches as many complete 3-byte groups as the active VLEN permits
+  with `vlseg3e8.v`, extracts four 6-bit vectors, maps Standard or URL-safe
+  ASCII with masks/arithmetic, and stores four interleaved vectors with
+  `vsseg4e8.v`;
 - strict decode first performs complete scalar validation, then loads four
-  ASCII vectors with `vlseg4e8.v`, maps validated characters, reconstructs
-  three byte vectors, and stores with `vsseg3e8.v`;
+  batched ASCII vectors with `vlseg4e8.v`, maps validated characters,
+  reconstructs three byte vectors, and stores with `vsseg3e8.v`;
 - padding, short tails, unsupported/custom alphabets, and all error reporting
   remain scalar;
-- each leaf sets an explicit four-lane `e8,m1` vector length, so the algorithm
-  is independent of the physical VLEN;
+- each leaf loops with `vsetvli e8,m1`, so it uses the physical VLEN without
+  embedding a VLEN-specific load, store, or pointer stride;
+- one leaf call processes every complete input quantum and clears vector
+  registers once after the batch rather than once per small fixed block;
 - every used register from `v0` through `v15` is cleared at VLMAX before
   return.
 
@@ -52,10 +55,12 @@ Linux `std` evidence uses a minimal reviewed UAPI boundary:
    `AT_HWCAP` `V` bit as the fail-closed fallback;
 4. reject contradictory, disabled, missing, or malformed results.
 
-The complete probe is repeated at every candidate entry. In particular,
-`PR_RISCV_V_GET_CONTROL` is never process-cached because Linux defines vector
-control for the calling thread; a result from one thread cannot authorize RVV
-execution on another.
+The complete probe is cached independently on each calling thread. Linux does
+not permit a thread to turn Vector off after it has been enabled, so a cached
+positive remains valid until `execve`; a cached negative remains a conservative
+scalar fallback if an application enables Vector later. A result from one
+thread never authorizes RVV execution on another, and the crate does not call
+`PR_RISCV_V_SET_CONTROL` or override parent-process policy.
 
 Pure parsing tests cover successful probes, old-kernel fallback, disabled
 vector state, missing `V`, and contradictory results. Non-Linux `std` builds
@@ -139,7 +144,7 @@ dispatch. QEMU evidence alone can never make that change.
   secret-processing claim.
 - QEMU does not establish register remanence, speculative execution, cache,
   timing, signal delivery, context-switch, or performance behavior.
-- Thread migration and vector-state changes after detection remain part of the
+- Thread migration and per-thread vector-state restoration remain part of the
   native admission review.
 - Stable Rust intrinsic support must be re-evaluated before carrying assembly
   into the final 2.0 admission matrix.

@@ -1439,8 +1439,9 @@ compile it through the project-owned cfg.
 
 Unsafe operations:
 
-- four leaf `global_asm!` functions load exact 12/16-byte blocks, execute RVV
-  arithmetic and segmented stores, and clear `v0..v15` at VLMAX;
+- four leaf `global_asm!` functions process complete 3-byte encode or 4-byte
+  decode quanta in VLEN-sized segmented batches, execute RVV arithmetic and
+  exact stores, and clear `v0..v15` at VLMAX once after the batch;
 - one leaf reads the architectural `vlenb` CSR for evidence reporting;
 - one native-only leaf keeps a known value in `v8` while waiting without a
   syscall for a one-shot timer signal, then stores the interrupted register
@@ -1450,8 +1451,9 @@ Unsafe operations:
   return;
 - test-only unsafe wrappers `signal_context_round_trip` and `signal_clobber`
   expose those two exact leaf ABIs only to the native evidence harness;
-- Rust wrappers `encode_block` and `decode_block` call those symbols through
-  `extern "C"` after fixed-block bounds checks and an RVV/vector-state gate;
+- Rust wrappers `encode_quanta` and `decode_quanta` call those symbols through
+  `extern "C"` after complete-quantum bounds checks and an RVV/vector-state
+  gate;
 - Linux runtime detection calls `getauxval`, `riscv_hwprobe` through `syscall`,
   and `prctl(PR_RISCV_V_GET_CONTROL)` with the kernel UAPI layouts.
 
@@ -1460,10 +1462,11 @@ caller-saved integer temporaries plus vector registers, and carry CFI function
 boundaries. Scalar validation completes before strict-decode output writes.
 The UAPI probe uses one valid writable pair, a zero-sized null CPU set, and
 fails closed on syscall errors, unsupported keys, missing `V`, or disabled
-vector state. The wrappers repeat the probe at each candidate entry and never
-process-cache `PR_RISCV_V_GET_CONTROL`, whose result applies to the calling
-thread. QEMU's older-kernel fallback accepts only the startup `AT_HWCAP` `V`
-bit.
+vector state. A positive probe is cached only on the calling thread. Linux
+forbids turning Vector off after it has been enabled, so that positive remains
+valid; a cached negative remains a safe scalar fallback. The crate never
+enables Vector or process-caches a thread's result. QEMU's older-kernel
+fallback accepts only the startup `AT_HWCAP` `V` bit.
 
 Generated disassembly, ELF attributes, VLEN 128/256 QEMU execution, and pure
 probe-result tests are required by the Commit 32 gates. The signal test is
@@ -1493,8 +1496,9 @@ Unsafe operations:
   `z0..z7` plus `p0..p1` before return;
 - one stackless leaf reads the architectural vector length with `cntb` for
   evidence reporting;
-- Rust wrappers call those symbols through `extern "C"` only after exact block
-  bounds and the per-call SVE/vector-length gate are proven;
+- Rust wrappers `encode_block` and `decode_block` call those symbols through
+  `extern "C"` only after exact block bounds and the per-call
+  SVE/vector-length gate are proven;
 - Linux/Android runtime detection calls `getauxval(AT_HWCAP)` and
   `prctl(PR_SVE_GET_VL)` through their reviewed C ABI, and test-only evidence
   changes the current thread's vector length with `PR_SVE_SET_VL`.

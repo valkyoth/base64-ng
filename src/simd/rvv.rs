@@ -3,9 +3,9 @@
 //! Stable Rust 1.97.1 recognizes the `v` target feature but does not stabilize
 //! per-function RVV intrinsics or `#[target_feature(enable = "v")]`. This
 //! module therefore isolates the candidate in leaf `global_asm!` functions.
-//! It is compiled only by project-owned QEMU evidence through the internal
-//! `base64_ng_rvv_candidate` cfg. Normal crate builds do not compile or
-//! dispatch this code.
+//! It is compiled only by project-owned QEMU and native admission evidence
+//! through the internal `base64_ng_rvv_candidate` cfg. Normal crate builds do
+//! not compile or dispatch this code.
 
 #![cfg_attr(
     not(test),
@@ -18,9 +18,7 @@
 use crate::{Alphabet, DecodeError, EncodeError, Standard, checked_encoded_len, scalar};
 
 const ENCODE_INPUT_BLOCK: usize = 12;
-const ENCODE_OUTPUT_BLOCK: usize = 16;
 const DECODE_INPUT_BLOCK: usize = 16;
-const DECODE_OUTPUT_BLOCK: usize = 12;
 
 core::arch::global_asm!(
     r#"
@@ -71,7 +69,13 @@ core::arch::global_asm!(
         .type \name, @function
     \name:
         .cfi_startproc
-        vsetivli zero, 4, e8, m1, ta, ma
+        li t1, 26
+        li t2, 52
+        li t3, 75
+        li t4, 62
+        li t6, 63
+    .Lbase64_ng_rvv_encode_loop_\@:
+        vsetvli a3, a2, e8, m1, ta, ma
         vlseg3e8.v v1, (a0)
 
         vsrl.vi v4, v1, 2
@@ -87,16 +91,19 @@ core::arch::global_asm!(
         vand.vx v7, v3, t0
 
         li t0, 65
-        li t1, 26
-        li t2, 52
-        li t3, 75
-        li t4, 62
-        li t6, 63
         base64_ng_rvv_encode_map v4, v8, \delta62, \delta63
         base64_ng_rvv_encode_map v5, v8, \delta62, \delta63
         base64_ng_rvv_encode_map v6, v8, \delta62, \delta63
         base64_ng_rvv_encode_map v7, v8, \delta62, \delta63
         vsseg4e8.v v4, (a1)
+
+        slli a4, a3, 1
+        add a4, a4, a3
+        add a0, a0, a4
+        slli a4, a3, 2
+        add a1, a1, a4
+        sub a2, a2, a3
+        bnez a2, .Lbase64_ng_rvv_encode_loop_\@
 
         base64_ng_rvv_clear
         ret
@@ -129,15 +136,16 @@ core::arch::global_asm!(
         .type \name, @function
     \name:
         .cfi_startproc
-        vsetivli zero, 4, e8, m1, ta, ma
-        vlseg4e8.v v1, (a0)
-
         li t0, 65
         li t1, 97
         li t2, 71
         li t3, 58
         li t4, \ascii62
         li t5, \ascii63
+    .Lbase64_ng_rvv_decode_loop_\@:
+        vsetvli a3, a2, e8, m1, ta, ma
+        vlseg4e8.v v1, (a0)
+
         base64_ng_rvv_decode_map v1, v5, v9, t4, t5
         base64_ng_rvv_decode_map v2, v6, v9, t4, t5
         base64_ng_rvv_decode_map v3, v7, v9, t4, t5
@@ -153,16 +161,24 @@ core::arch::global_asm!(
         vor.vv v12, v12, v8
         vsseg3e8.v v10, (a1)
 
+        slli a4, a3, 2
+        add a0, a0, a4
+        slli a4, a3, 1
+        add a4, a4, a3
+        add a1, a1, a4
+        sub a2, a2, a3
+        bnez a2, .Lbase64_ng_rvv_decode_loop_\@
+
         base64_ng_rvv_clear
         ret
         .cfi_endproc
         .size \name, .-\name
     .endm
 
-    base64_ng_rvv_encode base64_ng_rvv_encode_standard_12, -15, -12
-    base64_ng_rvv_encode base64_ng_rvv_encode_url_safe_12, -13, 36
-    base64_ng_rvv_decode base64_ng_rvv_decode_standard_16, 43, 47
-    base64_ng_rvv_decode base64_ng_rvv_decode_url_safe_16, 45, 95
+    base64_ng_rvv_encode base64_ng_rvv_encode_standard_quanta, -15, -12
+    base64_ng_rvv_encode base64_ng_rvv_encode_url_safe_quanta, -13, 36
+    base64_ng_rvv_decode base64_ng_rvv_decode_standard_quanta, 43, 47
+    base64_ng_rvv_decode base64_ng_rvv_decode_url_safe_quanta, 45, 95
 
     .p2align 2
     .global base64_ng_rvv_vlenb
@@ -223,10 +239,10 @@ base64_ng_rvv_signal_clobber:
 );
 
 unsafe extern "C" {
-    fn base64_ng_rvv_encode_standard_12(input: *const u8, output: *mut u8);
-    fn base64_ng_rvv_encode_url_safe_12(input: *const u8, output: *mut u8);
-    fn base64_ng_rvv_decode_standard_16(input: *const u8, output: *mut u8);
-    fn base64_ng_rvv_decode_url_safe_16(input: *const u8, output: *mut u8);
+    fn base64_ng_rvv_encode_standard_quanta(input: *const u8, output: *mut u8, quanta: usize);
+    fn base64_ng_rvv_encode_url_safe_quanta(input: *const u8, output: *mut u8, quanta: usize);
+    fn base64_ng_rvv_decode_standard_quanta(input: *const u8, output: *mut u8, quanta: usize);
+    fn base64_ng_rvv_decode_url_safe_quanta(input: *const u8, output: *mut u8, quanta: usize);
     fn base64_ng_rvv_vlenb() -> usize;
     fn base64_ng_rvv_signal_context_round_trip(
         output: *mut u8,
@@ -268,7 +284,13 @@ pub(super) unsafe extern "C" fn signal_clobber(_signal: i32) {
 pub(crate) fn available() -> bool {
     #[cfg(all(feature = "std", target_os = "linux"))]
     {
-        detect_linux_rvv()
+        // Linux does not permit an enabled thread to turn Vector off again.
+        // Caching a positive result per thread is therefore stable until
+        // `execve`, while a stale negative remains a safe scalar fallback.
+        std::thread_local! {
+            static AVAILABLE: bool = detect_linux_rvv();
+        }
+        AVAILABLE.with(|available| *available)
     }
     #[cfg(all(feature = "std", not(target_os = "linux")))]
     {
@@ -383,17 +405,12 @@ fn encode_slice_with_availability<A: Alphabet, const PAD: bool>(
         });
     }
 
-    let mut read = 0;
-    let mut write = 0;
-    while read + ENCODE_INPUT_BLOCK <= input.len() {
-        // SAFETY: The loop proves exact fixed input/output block bounds. The
-        // per-call availability gate proves RVV and enabled vector state.
-        unsafe {
-            encode_block::<A>(input.as_ptr().add(read), output.as_mut_ptr().add(write));
-        }
-        read += ENCODE_INPUT_BLOCK;
-        write += ENCODE_OUTPUT_BLOCK;
-    }
+    let quanta = input.len() / 3;
+    let read = quanta * 3;
+    let write = quanta * 4;
+    // SAFETY: The quotient proves exact complete-quantum input/output bounds.
+    // The per-thread availability gate proves RVV and enabled vector state.
+    unsafe { encode_quanta::<A>(input.as_ptr(), output.as_mut_ptr(), quanta) };
     let tail = scalar::encode_slice::<A, PAD>(&input[read..], &mut output[write..])?;
     Ok(write + tail)
 }
@@ -426,18 +443,13 @@ fn decode_slice_with_availability<A: Alphabet, const PAD: bool>(
     } else {
         input.len()
     };
-    let mut read = 0;
-    let mut write = 0;
-    while read + DECODE_INPUT_BLOCK <= simd_input_len {
-        // SAFETY: Whole-input scalar validation proves classification and
-        // canonicality; the loop proves exact fixed block bounds; the
-        // per-call availability gate proves RVV and enabled vector state.
-        unsafe {
-            decode_block::<A>(input.as_ptr().add(read), output.as_mut_ptr().add(write));
-        }
-        read += DECODE_INPUT_BLOCK;
-        write += DECODE_OUTPUT_BLOCK;
-    }
+    let quanta = simd_input_len / 4;
+    let read = quanta * 4;
+    let write = quanta * 3;
+    // SAFETY: Whole-input scalar validation proves classification and
+    // canonicality. The quotient proves complete-quantum bounds, and the
+    // per-thread availability gate proves RVV and enabled vector state.
+    unsafe { decode_quanta::<A>(input.as_ptr(), output.as_mut_ptr(), quanta) };
     let tail = scalar::decode_slice::<A, PAD>(&input[read..], &mut output[write..])
         .map_err(|error| error.with_index_offset(read))?;
     Ok(write + tail)
@@ -459,22 +471,22 @@ pub(super) fn decode_slice_unavailable_for_test<A: Alphabet, const PAD: bool>(
     decode_slice_with_availability::<A, PAD>(input, output, false)
 }
 
-unsafe fn encode_block<A: Alphabet>(input: *const u8, output: *mut u8) {
+unsafe fn encode_quanta<A: Alphabet>(input: *const u8, output: *mut u8, quanta: usize) {
     if A::ENCODE[62] == b'-' {
-        // SAFETY: The caller owns the fixed block bounds and RVV contract.
-        unsafe { base64_ng_rvv_encode_url_safe_12(input, output) };
+        // SAFETY: The caller owns the complete-quantum bounds and RVV contract.
+        unsafe { base64_ng_rvv_encode_url_safe_quanta(input, output, quanta) };
     } else {
-        // SAFETY: The caller owns the fixed block bounds and RVV contract.
-        unsafe { base64_ng_rvv_encode_standard_12(input, output) };
+        // SAFETY: The caller owns the complete-quantum bounds and RVV contract.
+        unsafe { base64_ng_rvv_encode_standard_quanta(input, output, quanta) };
     }
 }
 
-unsafe fn decode_block<A: Alphabet>(input: *const u8, output: *mut u8) {
+unsafe fn decode_quanta<A: Alphabet>(input: *const u8, output: *mut u8, quanta: usize) {
     if A::ENCODE[62] == b'-' {
-        // SAFETY: The caller owns the fixed block bounds and RVV contract.
-        unsafe { base64_ng_rvv_decode_url_safe_16(input, output) };
+        // SAFETY: The caller owns the complete-quantum bounds and RVV contract.
+        unsafe { base64_ng_rvv_decode_url_safe_quanta(input, output, quanta) };
     } else {
-        // SAFETY: The caller owns the fixed block bounds and RVV contract.
-        unsafe { base64_ng_rvv_decode_standard_16(input, output) };
+        // SAFETY: The caller owns the complete-quantum bounds and RVV contract.
+        unsafe { base64_ng_rvv_decode_standard_quanta(input, output, quanta) };
     }
 }
