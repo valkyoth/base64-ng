@@ -22,7 +22,7 @@ else
     exit 1
 fi
 
-for tool in objdump nm readelf; do
+for tool in as objcopy objdump nm readelf; do
     if ! command -v "$prefix-$tool" >/dev/null 2>&1; then
         echo "RVV asm evidence: missing $prefix-$tool" >&2
         exit 1
@@ -53,6 +53,29 @@ if [ -z "$binary" ]; then
     exit 1
 fi
 
+cat >"$audit_root/rvv-attributes.s" <<'EOF'
+.attribute arch, "rv64gcv"
+.text
+EOF
+"$prefix-as" -o "$audit_root/rvv-attributes.o" "$audit_root/rvv-attributes.s"
+"$prefix-objcopy" \
+    --dump-section .riscv.attributes="$audit_root/rvv.attributes" \
+    "$audit_root/rvv-attributes.o"
+cp "$binary" "$audit_root/disassembly-binary"
+"$prefix-objcopy" \
+    --update-section .riscv.attributes="$audit_root/rvv.attributes" \
+    "$audit_root/disassembly-binary"
+"$prefix-objcopy" --dump-section .text="$audit_root/original.text" "$binary"
+"$prefix-objcopy" \
+    --dump-section .text="$audit_root/disassembly.text" \
+    "$audit_root/disassembly-binary"
+if ! cmp -s "$audit_root/original.text" "$audit_root/disassembly.text"; then
+    echo "RVV asm evidence: disassembly metadata copy changed executable text" >&2
+    exit 1
+fi
+original_text_digest="$(evidence_checksum_file "$audit_root/original.text" | awk '{print $1}')"
+disassembly_text_digest="$(evidence_checksum_file "$audit_root/disassembly.text" | awk '{print $1}')"
+
 symbols="base64_ng_rvv_encode_standard_quanta base64_ng_rvv_encode_url_safe_quanta base64_ng_rvv_decode_standard_quanta base64_ng_rvv_decode_url_safe_quanta base64_ng_rvv_vlenb base64_ng_rvv_signal_context_round_trip base64_ng_rvv_signal_clobber"
 : >"$output_dir/disassembly.txt"
 for symbol in $symbols; do
@@ -60,9 +83,17 @@ for symbol in $symbols; do
         echo "RVV asm evidence: missing leaf symbol $symbol" >&2
         exit 1
     fi
-    "$prefix-objdump" -d --disassemble="$symbol" "$binary" >>"$output_dir/disassembly.txt"
+    "$prefix-objdump" \
+        -d --disassemble="$symbol" "$audit_root/disassembly-binary" \
+        >>"$output_dir/disassembly.txt"
 done
 "$prefix-readelf" -A "$binary" >"$output_dir/attributes.txt"
+{
+    echo "original_text_sha256=$original_text_digest"
+    echo "disassembly_text_sha256=$disassembly_text_digest"
+    echo "disassembly_attribute=rv64gcv"
+    echo "text_identity=verified"
+} >"$output_dir/disassembly-metadata.txt"
 
 require_pattern() {
     pattern="$1"
@@ -105,11 +136,13 @@ evidence_verify_source "RVV asm evidence"
     echo "linker=$linker"
     echo "candidate_cfg=base64_ng_rvv_candidate"
     echo "production_admission=linux-spacemit-x60-only"
+    echo "disassembly_copy=text-identical-attribute-only"
     echo "symbols=$symbols"
     echo
     echo "artifacts:"
     evidence_checksum_file "$output_dir/disassembly.txt"
     evidence_checksum_file "$output_dir/attributes.txt"
+    evidence_checksum_file "$output_dir/disassembly-metadata.txt"
     echo
     echo "review focus:"
     echo "- leaf ABI with no calls or stack mutation"
@@ -117,6 +150,7 @@ evidence_verify_source "RVV asm evidence"
     echo "- Standard and URL-safe arithmetic mapping"
     echo "- v0..v15 cleared at VLMAX before every return"
     echo "- vector instructions remain leaf-local; the ELF does not globally require V"
+    echo "- readable disassembly comes from a text-identical copy with disassembly-only V metadata"
     echo "- normal production dispatch requires the exact Linux SpacemiT X60 profile"
 } >"$manifest"
 
