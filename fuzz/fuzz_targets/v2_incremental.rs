@@ -1,7 +1,5 @@
 #![no_main]
 
-use std::panic::{AssertUnwindSafe, catch_unwind};
-
 use base64_ng::{
     Base64, Codec, CountedSink, DecoderState, EncoderState, OperationError, STRICT_STANDARD_PADDED,
     STRICT_STANDARD_UNPADDED, STRICT_URL_SAFE_PADDED, STRICT_URL_SAFE_UNPADDED, Status, legacy,
@@ -242,16 +240,20 @@ fn exercise_counted_and_formatter<S: Codec>(codec: &Base64<S>, input: &[u8], con
     assert_eq!(written, expected.len());
     assert_eq!(sink.output, expected.as_bytes());
 
-    let panic_after = controls.first().map_or(0, |byte| usize::from(*byte) % 4);
-    let mut formatter = PanicFormatter {
+    let fail_after = controls.first().map_or(0, |byte| usize::from(*byte) % 4);
+    let mut formatter = FailingFormatter {
+        output: Vec::new(),
         calls: 0,
-        panic_after,
+        fail_after,
     };
-    let panic = catch_unwind(AssertUnwindSafe(|| {
-        let _ = codec.encode_to_fmt(input, &mut formatter);
-    }));
-    if input.len() > panic_after * 3 {
-        assert!(panic.is_err());
+    let result = codec.encode_to_fmt(input, &mut formatter);
+    if input.len() > fail_after * 3 {
+        let error = result.unwrap_err();
+        assert_eq!(error.confirmed(), formatter.output.len());
+        assert_eq!(formatter.output, expected.as_bytes()[..formatter.output.len()]);
+    } else {
+        assert_eq!(result.unwrap(), expected.len());
+        assert_eq!(formatter.output, expected.as_bytes());
     }
 }
 
@@ -270,17 +272,20 @@ impl CountedSink for ShortSink {
     }
 }
 
-struct PanicFormatter {
+struct FailingFormatter {
+    output: Vec<u8>,
     calls: usize,
-    panic_after: usize,
+    fail_after: usize,
 }
 
-impl core::fmt::Write for PanicFormatter {
-    fn write_str(&mut self, _text: &str) -> core::fmt::Result {
-        if self.calls == self.panic_after {
-            panic!("injected fuzz formatter panic");
-        }
+impl core::fmt::Write for FailingFormatter {
+    fn write_str(&mut self, text: &str) -> core::fmt::Result {
+        let call = self.calls;
         self.calls += 1;
+        if call == self.fail_after {
+            return Err(core::fmt::Error);
+        }
+        self.output.extend_from_slice(text.as_bytes());
         Ok(())
     }
 }

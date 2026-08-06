@@ -10,6 +10,12 @@ if [ ! -d fuzz ]; then
     exit 0
 fi
 
+if grep -R -n -E 'catch_unwind|resume_unwind' fuzz/fuzz_targets; then
+    echo "fuzz checks: unwind-catching APIs are invalid under libFuzzer panic-abort execution" >&2
+    echo "fuzz checks: put deliberate panic injection in an unwind-capable unit test" >&2
+    exit 1
+fi
+
 if [ "${BASE64_NG_RUN_FUZZ_SMOKE:-0}" = "1" ] || \
     [ "${BASE64_NG_RUN_FUZZ_RELEASE:-0}" = "1" ]; then
     mkdir -p target/release-evidence/fuzz

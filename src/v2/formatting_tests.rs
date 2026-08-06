@@ -73,6 +73,17 @@ fn formatter_failure_reports_only_fully_successful_calls() {
 }
 
 #[test]
+#[cfg(feature = "std")]
+fn formatter_panics_propagate_after_prior_successful_calls() {
+    let mut writer = PanickingWriter::new(1);
+    let panic = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let _ = STRICT_STANDARD_PADDED.encode_to_fmt(b"foobar", &mut writer);
+    }));
+    assert!(panic.is_err());
+    assert_eq!(writer.as_bytes(), b"Zm9v");
+}
+
+#[test]
 fn counted_sink_reports_exact_short_write_progress_and_contract_failures() {
     let mut short = TestCountedSink::new(1);
     assert_eq!(
@@ -159,6 +170,43 @@ impl core::fmt::Write for StackWriter {
             }
             return Err(core::fmt::Error);
         }
+        let end = self.len + text.len();
+        self.bytes[self.len..end].copy_from_slice(text.as_bytes());
+        self.len = end;
+        Ok(())
+    }
+}
+
+#[cfg(feature = "std")]
+struct PanickingWriter {
+    bytes: [u8; 64],
+    len: usize,
+    calls: usize,
+    panic_on_call: usize,
+}
+
+#[cfg(feature = "std")]
+impl PanickingWriter {
+    const fn new(panic_on_call: usize) -> Self {
+        Self {
+            bytes: [0; 64],
+            len: 0,
+            calls: 0,
+            panic_on_call,
+        }
+    }
+
+    fn as_bytes(&self) -> &[u8] {
+        &self.bytes[..self.len]
+    }
+}
+
+#[cfg(feature = "std")]
+impl core::fmt::Write for PanickingWriter {
+    fn write_str(&mut self, text: &str) -> core::fmt::Result {
+        let call = self.calls;
+        self.calls += 1;
+        assert_ne!(call, self.panic_on_call, "injected formatter panic");
         let end = self.len + text.len();
         self.bytes[self.len..end].copy_from_slice(text.as_bytes());
         self.len = end;

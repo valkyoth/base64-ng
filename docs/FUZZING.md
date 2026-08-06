@@ -53,7 +53,8 @@ Current fuzz targets:
   encoder
 - `v2_incremental`: arbitrary encoder/decoder partitions, absorbing malformed
   state, legacy whitespace, WHATWG forgiving decode, short counted sinks, and
-  caller formatter panic propagation
+  formatter errors with exact confirmed progress; unwind-capable unit tests
+  separately cover caller formatter panic propagation
 - `v2_async`: manually polled Tokio reader and writer adapters under one-byte
   I/O, short writes, alternating `Pending`, shutdown, malformed failure, and
   cancellation-by-drop schedules
@@ -62,6 +63,12 @@ Current fuzz targets:
   fault stage through a fuzz-only unsafe provider whose assertions enforce
   ordering, exact-once effects, zero-before-teardown, quarantine, tombstoning,
   and claim separation
+
+`cargo fuzz` executes with abort-on-panic behavior. Fuzz-target panics are
+therefore reserved for violated invariants and are campaign failures;
+deliberate caller-panic injection belongs in unwind-capable unit tests.
+`scripts/check_fuzz.sh` rejects unwind-catching APIs inside fuzz targets so a
+test stimulus cannot be mistaken for a recoverable fuzz input.
 
 `tests/v2_fuzz_properties.rs` supplies deterministic exhaustive-small
 properties for 64 runtime alphabet rotations, padded and unpadded policies,
