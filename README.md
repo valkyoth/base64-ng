@@ -57,9 +57,11 @@ removals, capability edges, and companion boundaries before implementation.
 ## Current Status
 
 This source tree is the `2.0.0` package-family candidate. The latest
-published release remains `1.3.9` until final external review, the
-exact or metadata-equivalent evidence campaign, required green CI, and the signed
-`v2.0.0` tag are complete.
+published release remains `1.3.9` until the final release seal and signed
+`v2.0.0` tag are complete. The implementation and package topology are frozen;
+the full external review, distributed fuzz campaigns, formal-verification
+harnesses, sanitizer runs, cross-platform checks, and retained hardware
+evidence have passed.
 
 The candidate includes the complete 2.0 API, synchronized companion crates,
 and the supported npm Wasm loader. See the
@@ -67,8 +69,8 @@ and the supported npm Wasm loader. See the
 [release notes](release-notes/RELEASE_NOTES_2.0.0.md), and
 [migration guide](docs/MIGRATION.md) for the frozen scope and adoption path.
 
-Use the following Git dependency only when testing the exact candidate before
-the signed release:
+Reviewers testing an untagged candidate should pin the exact reviewed Git
+revision:
 
 ```toml
 base64-ng = { git = "https://github.com/valkyoth/base64-ng", rev = "<reviewed-commit>" }
@@ -85,12 +87,12 @@ normal public dispatch.
 
 | Surface | Implementation | Project execution evidence | Safe automatic dispatch | Independent verification |
 | --- | --- | --- | --- | --- |
-| Portable scalar encode and strict decode | Complete | Native x86-64, Apple/AWS AArch64; QEMU s390x, PowerPC64, and RISC-V | `admitted` | Not independently verified |
+| Portable scalar encode and strict decode | Complete | Native x86-64, Apple/AWS AArch64, and RISC-V; QEMU s390x, PowerPC64, and RISC-V | `admitted` | Not independently verified |
 | x86 SSSE3/SSE4.1 and AVX2 encode/decode | Complete | Native x86-64 differential, direct-kernel, assembly, and benchmark gates | `admitted` | Not independently verified |
 | x86 AVX-512 VBMI encode/decode | Complete | Native AMD AVX-512 VBMI; second Intel performance corroboration is queued for 2.0.1, so no portable throughput claim is made | `admitted` with conservative exact-host thresholds; strict decode remains exact/static only | Not independently verified |
-| little-endian AArch64 NEON encode/decode | Complete | Prior native Apple M2 and AWS Neoverse-N1 correctness evidence plus assembly and direct-kernel gates; exact-candidate retained performance bundles are required before release | `admitted` only after the strict release gate accepts those retained bundles | Not independently verified |
+| little-endian AArch64 NEON encode/decode | Complete | Native Apple Silicon and AWS Neoverse-N1 correctness, direct-kernel, assembly, and retained 15-sample performance bundles accepted through the source-equivalence gate | `admitted` | Not independently verified |
 | wasm `simd128` encode/decode | Complete | Node/V8, Wasmtime, Chromium/V8, Firefox/SpiderMonkey, and Safari/WebKit package/runtime gates | `admitted` for the documented SIMD artifact | Not independently verified |
-| RISC-V RVV 1.0 encode/decode | Complete candidate | QEMU VLEN 128/256 plus generated assembly; no accepted native RVV report | `not admitted`; published execution remains scalar | Not independently verified |
+| RISC-V RVV 1.0 encode/decode | Complete candidate | QEMU VLEN 128/256, generated assembly, and supplemental native Banana Pi BPI-F3 SpacemiT X60 VLEN 256 correctness evidence; benchmark and complete signal/FFI ABI evidence remain incomplete | `not admitted`; published execution remains scalar | Not independently verified |
 | AArch64 SVE encode/decode | Complete candidate | QEMU vector lengths 128/256/512 plus generated assembly; no accepted native SVE report | `not admitted`; public execution remains NEON or scalar | Not independently verified |
 | Constant-time-oriented secret encode/decode | Complete scalar bounded path | Fixed-work tests, Kani, assembly review, and dudect-style project evidence | Separate scalar path; never ordinary SIMD dispatch | No formal or independent constant-time verification |
 | Big-endian acceleration | No backend implemented | Complete scalar suites under s390x and PowerPC64 QEMU only | `not admitted`; scalar only | No native hardware verification |
@@ -101,16 +103,17 @@ The detailed evidence and non-claims are maintained in
 [SVE review](docs/SVE_QEMU_REVIEW.md). This table is updated whenever a backend
 implementation, execution environment, or admission decision changes.
 
-Before `2.0.0`, only release assurance remains: final external review, the
-exact or fail-closed metadata-equivalent evidence campaign, green required CI and CodeQL, the report-only
-Commit 55 seal, and the authorized signed tag. No additional runtime feature is
-planned for the 2.0 release candidate.
+No implementation item remains for `2.0.0`. Final release assurance consists
+of focused acceptance of permitted metadata-only follow-ups, green required CI
+and CodeQL on the exact final commit, regeneration of candidate-local package
+evidence, the report-only Commit 55 seal, and the authorized signed tag.
 
-RVV and SVE remain non-dispatchable candidates pending native hardware
-evidence. Big-endian execution remains scalar. Secret operations remain on the
-separate scalar fixed-work path. Project tests, Kani harnesses, timing evidence,
-and QEMU runs are scoped evidence, not certification or whole-crate formal
-proof.
+RVV remains non-dispatchable pending complete native ABI, signal-state,
+cleanup, and benchmark admission evidence; SVE remains non-dispatchable
+pending native hardware evidence. Big-endian execution remains scalar. Secret
+operations remain on the separate scalar fixed-work path. Project tests, Kani
+harnesses, timing evidence, native runs, and QEMU runs are scoped evidence, not
+certification or whole-crate formal proof.
 
 ## Trust Dashboard
 
@@ -135,14 +138,14 @@ and CWE mapping lives in [docs/SECURITY_CONTROLS.md](docs/SECURITY_CONTROLS.md).
 ## Rust Version Support
 
 The minimum supported Rust version is Rust `1.90.0`. New deployments should
-prefer the latest tested stable Rust; the 2.0 candidate is released with Rust
-`1.97.1` while retaining a separate MSRV gate.
+prefer the latest tested stable Rust; the 2.0 family is built and release-gated
+with Rust `1.97.1` while retaining a separate MSRV gate.
 
 The active release toolchain is Rust `1.97.1`. MSRV remains Rust `1.90.0` and
 is checked separately in CI so the project can build and test with the latest
 stable compiler without dropping older supported users.
 
-Compatibility evidence for the `2.0.0` workspace candidate:
+Compatibility evidence for the `2.0.0` workspace:
 
 | Rust | Local Evidence |
 | --- | --- |
@@ -1431,7 +1434,8 @@ Security commitments:
 - Stable Rust first. MSRV remains Rust `1.90.0`; the active release toolchain
   is Rust `1.97.1`. New deployments should prefer the latest tested stable
   Rust, currently Rust `1.97.1`.
-- `no_std` core by default.
+- `no_std`-capable core; the default convenience feature set enables `alloc`
+  and `std`, and `default-features = false` keeps the core freestanding.
 - Scalar encode/decode remains safe Rust.
 - Audited unsafe helpers in `src/cleanup.rs` perform volatile best-effort
   wiping plus architecture-gated inline assembly and hardware store-ordering
@@ -1468,8 +1472,8 @@ Security commitments:
   admission bar for any future external crate.
 - `runtime::backend_report()` exposes the active admitted backend, detected
   candidate, candidate detection mode, SIMD feature status, security posture,
-  and a conservative unsafe-boundary posture flag for audit logging. In the
-  2.0, non-scalar active values describe admitted encode dispatch, and
+  and a conservative unsafe-boundary posture flag for audit logging. In 2.0,
+  non-scalar active values describe admitted encode dispatch, and
   strict decode dispatch is exposed separately through
   `BackendReport::active_decode_backend()`. The
   unsafe-boundary flag is true only when the reserved `simd` feature is
@@ -1738,7 +1742,8 @@ gate and are too slow for an interpreter.
 
 ## Project Principles
 
-- Keep external crates to the absolute minimum. The current crate dependency graph is only `base64-ng`.
+- Keep the core dependency graph empty and isolate optional ecosystem
+  dependencies in companion crates.
 - Correctness first, speed second, unsafe last.
 - The scalar implementation is the reference behavior.
 - SIMD must prove equivalence to scalar behavior across fuzzed and deterministic inputs.
