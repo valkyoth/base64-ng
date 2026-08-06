@@ -21,8 +21,14 @@ fn runtime_distinguishes_exact_x60_admission_from_candidate_visibility() {
     );
     if super::rvv::available() {
         assert_eq!(report.active, Backend::Rvv);
-        assert_eq!(report.encode_backend.backend, Backend::Rvv);
-        assert_eq!(report.strict_decode_backend.backend, Backend::Rvv);
+        assert_eq!(
+            report.encode_backend.backend.as_str(),
+            Backend::Rvv.as_str()
+        );
+        assert_eq!(
+            report.strict_decode_backend.backend.as_str(),
+            Backend::Rvv.as_str()
+        );
         assert!(report.ordinary_acceleration_active);
         return;
     }
