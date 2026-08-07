@@ -107,6 +107,25 @@ def main() -> None:
     assert VALIDATOR_MODULE.is_nonruntime_change("src/v2/formatting_tests.rs", source)
     assert not VALIDATOR_MODULE.is_nonruntime_change("src/v2/formatting.rs", source)
     assert not VALIDATOR_MODULE.is_nonruntime_change("src/v2/mod.rs", source)
+    policy_before = (
+        '#[cfg(all(\n    feature = "std",\n    feature = "simd",\n'
+        '    target_arch = "riscv64",\n'
+        '    target_os = "linux"\n))]\n'
+        'pub(super) const RVV_MIN_INPUT: usize = 192;\n'
+        'pub(super) const NEON_MIN_INPUT: usize = 256;\n'
+    )
+    policy_after = policy_before.replace(
+        "RVV_MIN_INPUT: usize = 192", "RVV_MIN_INPUT: usize = 1024"
+    )
+    assert VALIDATOR_MODULE.riscv_threshold_only_equal(policy_before, policy_after)
+    assert not VALIDATOR_MODULE.riscv_threshold_only_equal(
+        policy_before,
+        policy_after.replace("NEON_MIN_INPUT: usize = 256", "NEON_MIN_INPUT: usize = 512"),
+    )
+    assert not VALIDATOR_MODULE.riscv_threshold_only_equal(
+        policy_before,
+        policy_after.replace('target_arch = "riscv64"', 'target_arch = "aarch64"'),
+    )
     assert VALIDATOR_MODULE.packaging_manifest_equal(
         '[package]\nname = "fixture"\ninclude = ["src/**"]\n',
         '[package]\nname = "fixture"\ninclude = ["src/**", "scripts/*.txt"]\n',

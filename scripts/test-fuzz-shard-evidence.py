@@ -77,7 +77,7 @@ def write_bundle(root: Path, target: str, source: object) -> Path:
         "cargo_lock_sha256": source.cargo_lock,
         "fuzz_lock_sha256": source.fuzz_lock,
         "fuzz_manifest_sha256": source.fuzz_manifest,
-        "harness_sha256": sha256(ROOT / "fuzz" / "fuzz_targets" / f"{target}.rs"),
+        "harness_sha256": source.harnesses[target],
         "duration_seconds": "3600",
         "started_epoch": "100",
         "finished_epoch": "3700",
@@ -127,6 +127,7 @@ def main() -> None:
     temporary = Path(tempfile.mkdtemp(prefix="base64-ng-fuzz-shard-test-"))
     try:
         source = MODULE.current_source(require_clean=False)
+        assert MODULE.source_at_commit(source.commit) == source
         with (ROOT / "fuzz" / "Cargo.toml").open("rb") as manifest:
             cargo_targets = [entry["name"] for entry in tomllib.load(manifest)["bin"]]
         assert cargo_targets == MODULE.targets()

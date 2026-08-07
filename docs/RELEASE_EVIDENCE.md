@@ -81,6 +81,20 @@ regenerates current-commit SBOM and reproducible package/build evidence, reruns
 ordinary checks, and refreshes the small candidate-bound hardware inventory and
 NEON/wasm assembly manifests.
 
+The 2.0 pre-seal campaign has one narrower, frozen exception for the reviewed
+release-evidence correction immediately after campaign commit
+`1a6802d5748cb419d6c93bad84522751b7c9a0ab`. Set
+`BASE64_NG_CAMPAIGN_SOURCE_COMMIT` only for that linear correction range.
+`scripts/validate-campaign-source-equivalence.py` requires the candidate to be
+clean and permits only its exact release-tooling, policy-test, and documentation
+inventory. Every crate source, test, fuzz harness, manifest, lockfile, toolchain,
+corpus, performance source, and portability input therefore remains byte-for-byte
+the campaign source. Fuzz and native RVV artifacts retain the original commit in
+their manifests; candidate-generated Miri, sanitizer, dudect, Kani, QEMU,
+assembly, SBOM, and package artifacts name the candidate commit. This mode is
+mutually exclusive with signed post-candidate metadata reuse and cannot be used
+in ordinary `check` mode.
+
 Candidate and release modes require `BASE64_NG_REQUIRE_RVV_NATIVE=1`. The
 hardware-evidence gate validates the operator-supplied
 `BASE64_NG_RVV_ADMISSION_BUNDLE`, requires its frozen real-hardware X60 identity

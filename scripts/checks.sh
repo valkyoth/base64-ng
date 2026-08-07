@@ -14,6 +14,7 @@ scripts/validate-release-metadata.sh
 echo "checks: generated-evidence source provenance"
 scripts/test-evidence-source.sh
 python3 scripts/test-evidence-equivalence.py
+python3 scripts/test-campaign-source-equivalence.py
 
 echo "checks: release evidence outcomes"
 scripts/test-release-evidence-outcomes.sh

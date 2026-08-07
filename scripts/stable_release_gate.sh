@@ -3,6 +3,7 @@ set -eu
 
 mode="${1:-check}"
 reuse_evidence_from="${BASE64_NG_REUSE_EVIDENCE_FROM:-}"
+campaign_source_commit="${BASE64_NG_CAMPAIGN_SOURCE_COMMIT:-}"
 unset BASE64_NG_EXPECTED_RVV_SOURCE_COMMIT
 
 if [ -n "${BASE64_NG_EVIDENCE_SIGNING_KEY:-}" ]; then
@@ -35,6 +36,18 @@ fi
 if [ "$mode" = "check" ] && [ -n "$reuse_evidence_from" ]; then
     echo "stable release gate: evidence reuse applies only to candidate or release mode" >&2
     exit 2
+fi
+if [ "$mode" = "check" ] && [ -n "$campaign_source_commit" ]; then
+    echo "stable release gate: external campaign provenance applies only to candidate or release mode" >&2
+    exit 2
+fi
+if [ -n "$reuse_evidence_from" ] && [ -n "$campaign_source_commit" ]; then
+    echo "stable release gate: retained-manifest reuse and external campaign provenance are mutually exclusive" >&2
+    exit 2
+fi
+if [ -n "$campaign_source_commit" ]; then
+    python3 scripts/validate-campaign-source-equivalence.py \
+        --campaign "$campaign_source_commit"
 fi
 
 run_evidence() {
@@ -131,7 +144,8 @@ fi
 
 echo "stable release gate: final native hardware evidence"
 if [ "$mode" != "check" ]; then
-    BASE64_NG_REQUIRE_COMMIT53_NATIVE=1 BASE64_NG_REQUIRE_RVV_NATIVE=1 \
+    BASE64_NG_EXPECTED_RVV_SOURCE_COMMIT="${campaign_source_commit:-$EVIDENCE_SOURCE_COMMIT}" \
+        BASE64_NG_REQUIRE_COMMIT53_NATIVE=1 BASE64_NG_REQUIRE_RVV_NATIVE=1 \
         run_evidence scripts/check-2.0-memory-hardware-evidence.sh
 else
     run_evidence scripts/check-2.0-memory-hardware-evidence.sh
@@ -142,7 +156,8 @@ if [ "$mode" = "check" ]; then
     scripts/check_fuzz.sh
 elif [ -n "${BASE64_NG_FUZZ_SHARD_DIR:-}" ]; then
     echo "stable release gate: verified distributed release-duration fuzz campaigns"
-    run_evidence scripts/aggregate-fuzz-shards.sh "$BASE64_NG_FUZZ_SHARD_DIR"
+    BASE64_NG_FUZZ_SOURCE_COMMIT="$campaign_source_commit" \
+        run_evidence scripts/aggregate-fuzz-shards.sh "$BASE64_NG_FUZZ_SHARD_DIR"
 else
     echo "stable release gate: release-duration fuzz campaigns"
     BASE64_NG_RUN_FUZZ_RELEASE=1 BASE64_NG_FUZZ_SECONDS_PER_TARGET=3600 \

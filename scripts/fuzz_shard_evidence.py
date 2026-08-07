@@ -60,6 +60,7 @@ class Source:
     cargo_lock: str
     fuzz_lock: str
     fuzz_manifest: str
+    harnesses: dict[str, str]
 
 
 @dataclass(frozen=True)
@@ -84,6 +85,10 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def sha256_bytes(value: bytes) -> str:
+    return hashlib.sha256(value).hexdigest()
+
+
 def targets() -> list[str]:
     values = [line.strip() for line in TARGET_FILE.read_text().splitlines() if line.strip()]
     if len(values) != len(set(values)) or len(values) != 18:
@@ -98,16 +103,38 @@ def run_git(*arguments: str) -> str:
     return result.stdout.strip()
 
 
+def git_bytes(revision: str, path: str) -> bytes:
+    result = subprocess.run(
+        ["git", "show", f"{revision}:{path}"],
+        cwd=ROOT,
+        check=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    return result.stdout
+
+
+def source_at_commit(revision: str) -> Source:
+    commit = run_git("rev-parse", "--verify", f"{revision}^{{commit}}")
+    return Source(
+        commit=commit,
+        tree=run_git("rev-parse", f"{commit}^{{tree}}"),
+        cargo_lock=sha256_bytes(git_bytes(commit, "Cargo.lock")),
+        fuzz_lock=sha256_bytes(git_bytes(commit, "fuzz/Cargo.lock")),
+        fuzz_manifest=sha256_bytes(git_bytes(commit, "fuzz/Cargo.toml")),
+        harnesses={
+            target: sha256_bytes(
+                git_bytes(commit, f"fuzz/fuzz_targets/{target}.rs")
+            )
+            for target in targets()
+        },
+    )
+
+
 def current_source(require_clean: bool = True) -> Source:
     if require_clean and run_git("status", "--porcelain", "--untracked-files=all"):
         fail("aggregation requires a clean worktree")
-    return Source(
-        commit=run_git("rev-parse", "--verify", "HEAD"),
-        tree=run_git("rev-parse", "HEAD^{tree}"),
-        cargo_lock=sha256(ROOT / "Cargo.lock"),
-        fuzz_lock=sha256(ROOT / "fuzz" / "Cargo.lock"),
-        fuzz_manifest=sha256(ROOT / "fuzz" / "Cargo.toml"),
-    )
+    return source_at_commit("HEAD")
 
 
 def parse_manifest(path: Path) -> dict[str, str]:
@@ -236,7 +263,7 @@ def validate_bundle(path: Path, source: Source | None = None) -> Bundle:
             "cargo_lock_sha256": source.cargo_lock,
             "fuzz_lock_sha256": source.fuzz_lock,
             "fuzz_manifest_sha256": source.fuzz_manifest,
-            "harness_sha256": sha256(ROOT / "fuzz" / "fuzz_targets" / f"{target}.rs"),
+            "harness_sha256": source.harnesses[target],
         }
         for key, value in expected.items():
             if values[key] != value:
@@ -332,6 +359,7 @@ def main() -> int:
     progress_parser.add_argument("collection", type=Path)
     aggregate_parser = subparsers.add_parser("aggregate")
     aggregate_parser.add_argument("collection", type=Path)
+    aggregate_parser.add_argument("--source-commit")
     arguments = parser.parse_args()
     try:
         if arguments.command == "validate":
@@ -340,7 +368,12 @@ def main() -> int:
         elif arguments.command == "progress":
             progress(arguments.collection)
         else:
-            aggregate(arguments.collection)
+            source = (
+                source_at_commit(arguments.source_commit)
+                if arguments.source_commit is not None
+                else current_source()
+            )
+            aggregate(arguments.collection, source=source)
     except (EvidenceError, OSError, subprocess.CalledProcessError) as error:
         print(f"fuzz shard evidence: {error}", file=sys.stderr)
         return 1

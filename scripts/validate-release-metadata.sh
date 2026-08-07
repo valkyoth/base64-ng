@@ -677,6 +677,19 @@ if ! grep -F -q 'BASE64_NG_EXPECTED_RVV_SOURCE_COMMIT="$reuse_evidence_from"' \
     echo "release metadata: metadata-equivalent RVV evidence is not bound to the campaign" >&2
     exit 1
 fi
+for required_campaign_source_text in \
+    'BASE64_NG_CAMPAIGN_SOURCE_COMMIT' \
+    'scripts/validate-campaign-source-equivalence.py' \
+    'BASE64_NG_FUZZ_SOURCE_COMMIT="$campaign_source_commit"' \
+    'BASE64_NG_EXPECTED_RVV_SOURCE_COMMIT="${campaign_source_commit:-$EVIDENCE_SOURCE_COMMIT}"'
+do
+    if ! grep -F -q "$required_campaign_source_text" \
+        scripts/stable_release_gate.sh scripts/finalize-release-evidence.sh
+    then
+        echo "release metadata: external campaign source boundary is missing: $required_campaign_source_text" >&2
+        exit 1
+    fi
+done
 if ! grep -F -q 'entry.is_symlink() or not entry.is_file()' \
     scripts/validate-rvv-admission-bundle.py; then
     echo "release metadata: native RVV validator does not reject symbolic links" >&2

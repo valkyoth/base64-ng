@@ -9,6 +9,7 @@ manifest="$root/FINAL-MANIFEST.txt"
 manifest_signature="$manifest.sig"
 equivalence_manifest="$root/EQUIVALENCE-MANIFEST.txt"
 campaign_commit="${BASE64_NG_REUSE_EVIDENCE_FROM:-$EVIDENCE_SOURCE_COMMIT}"
+external_campaign_commit="${BASE64_NG_CAMPAIGN_SOURCE_COMMIT:-}"
 mkdir -p "$root"
 if [ -L "$root" ] || [ ! -d "$root" ] || \
     [ -n "$(find "$root" -type l -print -quit)" ]; then
@@ -29,6 +30,11 @@ if [ "$campaign_commit" != "$EVIDENCE_SOURCE_COMMIT" ]; then
         --output "$equivalence_manifest"
 else
     rm -f "$equivalence_manifest"
+fi
+if [ -n "$external_campaign_commit" ]; then
+    python3 scripts/validate-campaign-source-equivalence.py \
+        --campaign "$external_campaign_commit" \
+        --candidate "$EVIDENCE_SOURCE_COMMIT"
 fi
 
 rm -f "$manifest"
@@ -90,7 +96,6 @@ require_report_key() {
 for file in \
     "$root/miri/MANIFEST.txt" \
     "$root/2.0-memory-sanitizers/MANIFEST.txt" \
-    "$root/fuzz/MANIFEST.txt" \
     "$root/dudect/MANIFEST.txt" \
     "$root/backend/MANIFEST.txt" \
     "$root/kani/normal/source.txt" \
@@ -106,6 +111,14 @@ do
     require_source_manifest_for "$file" "$campaign_commit" "$EVIDENCE_SOURCE_COMMIT"
 done
 
+if [ -n "$external_campaign_commit" ]; then
+    require_source_manifest_for \
+        "$root/fuzz/MANIFEST.txt" "$external_campaign_commit"
+else
+    require_source_manifest_for \
+        "$root/fuzz/MANIFEST.txt" "$campaign_commit" "$EVIDENCE_SOURCE_COMMIT"
+fi
+
 require_report_key "$root/big-endian-qemu/report.txt" source_commit "$campaign_commit"
 require_report_key "$root/big-endian-qemu/report.txt" s390x_result pass
 require_report_key "$root/big-endian-qemu/report.txt" powerpc64_result pass
@@ -120,7 +133,8 @@ if [ -n "$(find "$rvv_native" -type l -print -quit)" ]; then
     echo "final release evidence: native RVV bundle contains a symbolic link" >&2
     exit 1
 fi
-require_report_key "$rvv_native/MANIFEST.txt" source_commit "$campaign_commit"
+require_report_key "$rvv_native/MANIFEST.txt" source_commit \
+    "${external_campaign_commit:-$campaign_commit}"
 require_report_key \
     "$rvv_native/MANIFEST.txt" execution_environment real-hardware
 require_report_key \
@@ -166,6 +180,11 @@ fi
     fi
     echo "campaign_commit=$campaign_commit"
     echo "release_commit=$EVIDENCE_SOURCE_COMMIT"
+    if [ -n "$external_campaign_commit" ]; then
+        echo "external_campaign_commit=$external_campaign_commit"
+        echo "fuzz_campaign_commit=$external_campaign_commit"
+        echo "rvv_campaign_commit=$external_campaign_commit"
+    fi
     echo
     echo "required_campaigns=miri,sanitizers,fuzz-release,dudect-release,kani-normal,kani-advanced,assembly,native-neon,native-rvv,sbom"
     echo

@@ -84,6 +84,20 @@ RUNTIME_PATHS = (
     "perf",
     "portability",
 )
+RISCV_ONLY_POLICY_PATHS = {
+    "src/decode_backend/policy.rs",
+    "src/encode_backend/policy.rs",
+}
+RVV_THRESHOLD = re.compile(
+    r"(?m)^(pub\(super\) const RVV_MIN_INPUT: usize = )[0-9]+;$"
+)
+RVV_CFG = """#[cfg(all(
+    feature = "std",
+    feature = "simd",
+    target_arch = "riscv64",
+    target_os = "linux"
+))]
+pub(super) const RVV_MIN_INPUT: usize = """
 
 
 def fail(message: str) -> None:
@@ -185,7 +199,26 @@ def is_nonruntime_change(path: str, source: str) -> bool:
         return before is not None and after is not None and packaging_manifest_equal(
             before, after
         )
+    if path in RISCV_ONLY_POLICY_PATHS:
+        before = git_file(source, path)
+        after = git_file("HEAD", path)
+        return (
+            before is not None
+            and after is not None
+            and riscv_threshold_only_equal(before, after)
+        )
     return test_only_module_at(path, source) and test_only_module_at(path, "HEAD")
+
+
+def riscv_threshold_only_equal(before: str, after: str) -> bool:
+    """Accept only a numeric RVV crossover edit under the frozen RISC-V cfg."""
+    if before.count(RVV_CFG) != 1 or after.count(RVV_CFG) != 1:
+        return False
+    if len(RVV_THRESHOLD.findall(before)) != 1 or len(RVV_THRESHOLD.findall(after)) != 1:
+        return False
+    return RVV_THRESHOLD.sub(r"\g<1><rvv-threshold>;", before) == RVV_THRESHOLD.sub(
+        r"\g<1><rvv-threshold>;", after
+    )
 
 
 def packaging_manifest_equal(before: str, after: str) -> bool:

@@ -407,6 +407,22 @@ BASE64_NG_RVV_ADMISSION_BUNDLE=/path/to/riscv_hardware \
   scripts/stable_release_gate.sh candidate
 ```
 
+For the frozen 2.0 pre-seal release-tooling correction after campaign commit
+`1a6802d5748cb419d6c93bad84522751b7c9a0ab`, bind both the distributed fuzz
+collection and native RVV bundle to that source explicitly:
+
+```sh
+BASE64_NG_CAMPAIGN_SOURCE_COMMIT=1a6802d5748cb419d6c93bad84522751b7c9a0ab \
+BASE64_NG_FUZZ_SHARD_DIR=/path/to/shards \
+BASE64_NG_RVV_ADMISSION_BUNDLE=/path/to/riscv_hardware \
+  scripts/stable_release_gate.sh candidate
+```
+
+The gate first proves that only the frozen release-tooling correction changed.
+It rejects runtime, crate, test, fuzz, dependency, toolchain, corpus, protocol,
+or portability drift and preserves the original campaign source in retained
+artifact manifests.
+
 QEMU and generated RVV assembly cannot satisfy this requirement. The finalizer
 requires the archived bundle, revalidates its complete checksum inventory, and
 binds its `source_commit` to the accepted campaign commit rather than merely
