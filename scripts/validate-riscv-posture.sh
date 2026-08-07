@@ -3,6 +3,7 @@ set -eu
 
 review="docs/RISCV_QEMU_REVIEW.md"
 rvv="src/simd/rvv.rs"
+rvv_asm="src/simd/rvv/asm.rs"
 simd="src/simd/mod.rs"
 encode="src/encode_backend.rs"
 decode="src/decode_backend.rs"
@@ -15,7 +16,7 @@ require_text() {
     fi
 }
 
-for file in "$review" "$rvv" "$simd" "$encode" "$decode" "$qemu"; do
+for file in "$review" "$rvv" "$rvv_asm" "$simd" "$encode" "$decode" "$qemu"; do
     test -s "$file"
 done
 test -x scripts/check_riscv_qemu.sh
@@ -31,13 +32,13 @@ require_text "$review" "PR_RISCV_V_GET_CONTROL"
 require_text "$qemu" "-cpu rv64,v=false"
 require_text "$qemu" "vext_spec=v1.0"
 require_text "$qemu" "--test-threads=1"
-if grep -F -q '.attribute arch, "rv64gcv"' "$rvv"; then
+if grep -F -q '.attribute arch, "rv64gcv"' "$rvv" "$rvv_asm"; then
     echo "RISC-V posture: runtime-dispatched artifact must not require RVV globally" >&2
     exit 1
 fi
-require_text "$rvv" "base64_ng_rvv_encode_standard_quanta"
-require_text "$rvv" "base64_ng_rvv_decode_standard_quanta"
-require_text "$rvv" "vmv.v.i v15, 0"
+require_text "$rvv_asm" "base64_ng_rvv_encode_standard_quanta"
+require_text "$rvv_asm" "base64_ng_rvv_decode_standard_quanta"
+require_text "$rvv_asm" "vmv.v.i v15, 0"
 require_text "$rvv" "encode_slice_with_availability::<A, PAD>(input, output, execution_available())"
 require_text "$rvv" "decode_slice_with_availability::<A, PAD>(input, output, execution_available())"
 require_text "$rvv" "|| !rvv_available"

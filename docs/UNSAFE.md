@@ -1430,7 +1430,7 @@ only by their later backend-specific admission commits.
 
 ## Commit 32 And Commit 54 Exact-Profile RVV Backend
 
-Location: `src/simd/rvv.rs`
+Locations: `src/simd/rvv.rs`, `src/simd/rvv/asm.rs`
 
 Commit 32 adds the isolated RVV 1.0 leaves. The Commit 54 pre-seal amendment
 compiles them in normal RISC-V SIMD builds and admits `EncodeBackend::Rvv`,

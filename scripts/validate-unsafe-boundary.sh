@@ -7,7 +7,7 @@ if ! grep -q '^#!\[deny(unsafe_code)\]' src/lib.rs; then
 fi
 
 simd_allow_files='src/simd/mod.rs src/simd/neon.rs src/simd/neon/direct.rs src/simd/wasm/direct.rs src/simd/x86/cleanup.rs src/simd/x86/decode.rs src/simd/x86/decode_direct.rs src/simd/x86/mod.rs'
-simd_boundary_files='src/simd/mod.rs src/simd/neon.rs src/simd/neon/direct.rs src/simd/rvv.rs src/simd/static_token.rs src/simd/sve.rs src/simd/wasm.rs src/simd/wasm/direct.rs src/simd/x86/cleanup.rs src/simd/x86/decode.rs src/simd/x86/decode_direct.rs src/simd/x86/mod.rs'
+simd_boundary_files='src/simd/mod.rs src/simd/neon.rs src/simd/neon/direct.rs src/simd/rvv.rs src/simd/rvv/asm.rs src/simd/static_token.rs src/simd/sve.rs src/simd/wasm.rs src/simd/wasm/direct.rs src/simd/x86/cleanup.rs src/simd/x86/decode.rs src/simd/x86/decode_direct.rs src/simd/x86/mod.rs'
 simd_tests_allowed='src/simd/tests.rs src/simd/x86_encode_tests.rs'
 root_allowed='src/lib.rs'
 cleanup_allowed='src/cleanup.rs'
