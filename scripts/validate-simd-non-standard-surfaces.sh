@@ -86,17 +86,17 @@ if ! grep -F -q "self.encode_slice(input, &mut output[required..required + encod
     exit 1
 fi
 
-if ! grep -F -q "encode_in_place_staged::<A, PAD>" src/encode_backend.rs; then
+if ! grep -F -q "encode_in_place_staged::<A, PAD>" src/encode_backend/in_place.rs; then
     echo "simd non-standard surfaces: in-place encode must route through stack staging before admitted backend use" >&2
     exit 1
 fi
 
-if ! grep -F -q "scalar_encode_in_place::encode_in_place::<A, PAD>" src/encode_backend.rs; then
+if ! grep -F -q "scalar_encode_in_place::encode_in_place::<A, PAD>" src/encode_backend/in_place.rs; then
     echo "simd non-standard surfaces: unsupported in-place encode must keep scalar fallback" >&2
     exit 1
 fi
 
-if ! grep -F -q "input_scratch[..chunk_len].copy_from_slice" src/encode_backend.rs; then
+if ! grep -F -q "input_scratch[..chunk_len].copy_from_slice" src/encode_backend/in_place.rs; then
     echo "simd non-standard surfaces: in-place encode must copy unread input into scratch before writing output" >&2
     exit 1
 fi
