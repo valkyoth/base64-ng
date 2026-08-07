@@ -120,7 +120,7 @@ def parse_checksums(path: Path) -> dict[str, str]:
     return result
 
 
-def check_git_source(source: str) -> None:
+def check_git_source(source: str, allow_runtime_drift: bool) -> None:
     if re.fullmatch(r"[0-9a-f]{40}", source) is None:
         fail("source_commit must be one exact 40-hex commit")
     if subprocess.run(
@@ -134,6 +134,8 @@ def check_git_source(source: str) -> None:
         ["git", "merge-base", "--is-ancestor", source, "HEAD"], check=False
     ).returncode != 0:
         fail("source commit is not an ancestor of HEAD")
+    if allow_runtime_drift:
+        return
 
     changed = subprocess.run(
         ["git", "diff", "--name-only", f"{source}..HEAD", "--", *RUNTIME_PATHS],
@@ -224,7 +226,7 @@ def validate_host_metadata(directory: Path, host: str) -> None:
         fail("host metadata contains a machine-specific identifier")
 
 
-def validate(directory: Path, platform: str | None) -> None:
+def validate(directory: Path, platform: str | None, allow_runtime_drift: bool) -> None:
     if not directory.is_dir():
         fail(f"bundle directory is missing: {directory}")
     actual = {entry.name for entry in directory.iterdir() if entry.is_file()}
@@ -267,7 +269,7 @@ def validate(directory: Path, platform: str | None) -> None:
         if actual_digest != expected_digest:
             fail(f"checksum mismatch: {name}")
 
-    check_git_source(manifest["source_commit"])
+    check_git_source(manifest["source_commit"], allow_runtime_drift)
     subprocess.run(
         [sys.executable, "scripts/validate-neon-performance.py", str(directory / "neon.csv")],
         check=True,
@@ -279,8 +281,13 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("directory", type=Path)
     parser.add_argument("--platform", choices=("apple-silicon", "aarch64-linux"))
+    parser.add_argument(
+        "--allow-runtime-drift",
+        action="store_true",
+        help="validate a historical bundle without claiming release-source freshness",
+    )
     args = parser.parse_args()
-    validate(args.directory, args.platform)
+    validate(args.directory, args.platform, args.allow_runtime_drift)
 
 
 if __name__ == "__main__":

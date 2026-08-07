@@ -635,6 +635,19 @@ do
     fi
 done
 
+for required_neon_evidence_policy in \
+    '--allow-runtime-drift' \
+    'historical-native-performance' \
+    'BASE64_NG_REQUIRE_COMMIT53_NATIVE'
+do
+    if ! grep -F -q -- "$required_neon_evidence_policy" \
+        scripts/check-2.0-memory-hardware-evidence.sh
+    then
+        echo "release metadata: NEON CI/release policy is missing $required_neon_evidence_policy" >&2
+        exit 1
+    fi
+done
+
 for required_rvv_release_text in \
     'BASE64_NG_RVV_ADMISSION_BUNDLE' \
     'BASE64_NG_EXPECTED_RVV_SOURCE_COMMIT' \

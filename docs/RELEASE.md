@@ -385,6 +385,12 @@ paths, and unrelated system-wide `sysctl` state. The retained AMD AVX-512
 campaign supports exact-host wording; a second AVX-512 microarchitecture is a
 2.0.1 corroboration target, not a 2.0.0 claim.
 
+Ordinary executions of `scripts/checks.sh` validate retained NEON captures as
+historical evidence and do not require them to match every development commit.
+This keeps per-commit CI focused on current code correctness. Candidate and
+release modes set `BASE64_NG_REQUIRE_COMMIT53_NATIVE=1`; only those explicit
+gates require the captures to match the release runtime source exactly.
+
 The persistent evidence manager also includes `riscv_hardware` as a separate
 native admission job. It must run on non-virtualized RVV 1.0 Linux hardware
 and emits an independently validated bundle containing direct correctness,

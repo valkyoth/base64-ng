@@ -85,9 +85,12 @@ def write_bundle(path: Path) -> None:
     write_checksums(path)
 
 
-def run(path: Path, success: bool) -> None:
+def run(path: Path, success: bool, *, allow_runtime_drift: bool = False) -> None:
+    command = [str(VALIDATOR), str(path), "--platform", "aarch64-linux"]
+    if allow_runtime_drift:
+        command.append("--allow-runtime-drift")
     result = subprocess.run(
-        [str(VALIDATOR), str(path), "--platform", "aarch64-linux"],
+        command,
         check=False,
         capture_output=True,
         text=True,
@@ -118,6 +121,7 @@ def main() -> None:
         valid = root / "valid"
         write_bundle(valid)
         run(valid, True)
+        run(valid, True, allow_runtime_drift=True)
 
         (valid / "cpu.txt").write_text("tampered\n", encoding="utf-8")
         run(valid, False)
