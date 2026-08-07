@@ -8,6 +8,7 @@ simd="src/simd/mod.rs"
 encode="src/encode_backend.rs"
 decode="src/decode_backend.rs"
 qemu="scripts/check_riscv_qemu.sh"
+hardware="scripts/check_riscv_hardware.sh"
 
 require_text() {
     if ! grep -F -q -- "$2" "$1"; then
@@ -16,7 +17,7 @@ require_text() {
     fi
 }
 
-for file in "$review" "$rvv" "$rvv_asm" "$simd" "$encode" "$decode" "$qemu"; do
+for file in "$review" "$rvv" "$rvv_asm" "$simd" "$encode" "$decode" "$qemu" "$hardware"; do
     test -s "$file"
 done
 test -x scripts/check_riscv_qemu.sh
@@ -32,6 +33,7 @@ require_text "$review" "PR_RISCV_V_GET_CONTROL"
 require_text "$qemu" "-cpu rv64,v=false"
 require_text "$qemu" "vext_spec=v1.0"
 require_text "$qemu" "--test-threads=1"
+require_text "$hardware" "--test-threads=1"
 if grep -F -q '.attribute arch, "rv64gcv"' "$rvv" "$rvv_asm"; then
     echo "RISC-V posture: runtime-dispatched artifact must not require RVV globally" >&2
     exit 1
