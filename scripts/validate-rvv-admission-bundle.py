@@ -36,7 +36,8 @@ KEYS = {
     "vector_length_bits",
     "samples_per_cell",
     "target_bytes_per_sample",
-    "automatic_minimum_input",
+    "automatic_encode_minimum_raw_input",
+    "automatic_decode_minimum_encoded_input",
     "median_minimum_ratio",
     "one_sided_sign_test_maximum_p",
     "signal_context",
@@ -82,7 +83,7 @@ def validate(directory: Path) -> None:
 
     manifest = parse_manifest(directory / "MANIFEST.txt")
     expected = {
-        "schema": "base64-ng-rvv-native-admission-v1",
+        "schema": "base64-ng-rvv-native-admission-v2",
         "source_status": "clean",
         "execution_environment": "real-hardware",
         "admission_scope": "linux-rvv-1.0-vlen256-spacemit-x60",
@@ -90,7 +91,8 @@ def validate(directory: Path) -> None:
         "marchid": "0x8000000058000001",
         "mimpid": "0x1000000049772200",
         "vector_length_bits": "256",
-        "automatic_minimum_input": "192",
+        "automatic_encode_minimum_raw_input": "384",
+        "automatic_decode_minimum_encoded_input": "1024",
         "median_minimum_ratio": "1.02",
         "one_sided_sign_test_maximum_p": "0.05",
         "signal_context": "pass",

@@ -14,8 +14,9 @@ only for backends named in this file and the release gate.
 - Active encode priority: AVX-512 VBMI, then AVX2, then SSSE3/SSE4.1 on
   x86/x86_64. Active strict-decode priority is AVX2, then SSSE3/SSE4.1;
   AVX-512 strict decode remains exact/static only. NEON is active on
-  little-endian aarch64. RVV is active from 192 bytes only on the exact
-  Linux/X60 profile; scalar is the final fallback.
+  little-endian aarch64. RVV is active from 384 raw encode bytes or 1024
+  encoded strict-decode bytes only on the exact Linux/X60 profile; scalar is
+  the final fallback.
 - Activation scope: runtime-probed `std` dispatch or compile-time-proven
   `no_std` dispatch with pointer-width atomics and passing direct KATs.
 - Gate summary: Admitted backends: AVX-512 VBMI encode, AVX2 encode, SSSE3/SSE4.1 encode, NEON encode, AVX-512 VBMI strict decode, AVX2 strict decode, SSSE3/SSE4.1 strict decode, NEON strict decode, and exact-profile RVV 1.0 encode/strict decode.
@@ -32,10 +33,11 @@ only for backends named in this file and the release gate.
   and below 256 encoded bytes for strict decode; NEON at and above those
   conservative Commit 29 crossovers. Exact static/evidence calls retain the
   native 12-byte encode and 16-byte decode block boundaries.
-- Automatic RISC-V RVV policy: scalar below 192 bytes for encode and strict
-  decode. At and above 192 bytes, require exact X60 `riscv_hwprobe` identity,
-  RVV 1.0, enabled per-thread vector state, and passing operation KAT. Every
-  other RISC-V target remains scalar; safe `no_std` does not auto-admit RVV.
+- Automatic RISC-V RVV policy: scalar below 384 raw bytes for encode and below
+  1024 encoded bytes for strict decode. At and above the operation-specific
+  threshold, require exact X60 `riscv_hwprobe` identity, RVV 1.0, enabled
+  per-thread vector state, and a passing operation KAT. Every other RISC-V
+  target remains scalar; safe `no_std` does not auto-admit RVV.
 - Public performance claims: none without local benchmark evidence.
 - Release status: `2.0.0`; `1.2.0` admitted conservative active encode
   dispatch, and `1.3.0` admitted normal strict decode dispatch for the first
@@ -58,9 +60,10 @@ only for backends named in this file and the release gate.
   evidence, fail-closed Linux capability probing, and generated assembly
   review. Real-hardware correctness, ABI, signal-state, benchmark, and pentest
   evidence were captured on the physical X60. The Commit 54 pre-seal amendment
-  integrates exact-profile dispatch, a 192-byte crossover, independent KAT
-  quarantine, and scalar fallback; final integrated-source recapture and
-  external retest remain mandatory before the release seal. The 2.0 Commit 24
+  integrates exact-profile dispatch, independent KAT quarantine, and scalar
+  fallback; physical X60 measurement corrected the automatic crossover to 384
+  raw encode bytes and 1024 encoded strict-decode bytes; final integrated-source
+  recapture and external retest remain mandatory before the release seal. The 2.0 Commit 24
   checkpoint adds direct KAT, health generation, quarantine, checked-backend,
   and static `no_std` admission without expanding alphabet or secret scope.
   The 2.0 Commit 29 checkpoint replaces the AArch64 prototype architecture
@@ -208,7 +211,7 @@ State labels are intentionally strict:
 | SSSE3/SSE4.1 | admitted backend | `ssse3`, `sse4.1` | x86/x86_64 runtime-dispatched or static-token encode and strict decode for Standard and URL-safe alphabet families; encode uses fixed 12-byte input blocks; Commit 27 strict decode performs direct vector ASCII classification, 6-bit mapping, packing, and an exact 12-byte store for fixed 16-byte unpadded blocks after one whole-input scalar validation preserves canonicality, exact diagnostics, required length, and transactional rejection; final padding and short tails are scalar; in-place encode/decode may enter only through stack staging; wrapped and legacy decode may enter after scalar validation and compaction; unsupported alphabets, CT secret decode, line/whitespace processing, and `no_std` without complete static target-feature, KAT, generation, and health evidence use scalar fallback |
 | NEON | admitted backend | `neon` | little-endian aarch64 runtime-dispatched or statically token-admitted encode and strict decode for Standard and URL-safe alphabet families; direct encode uses exact 8+4-byte reads for 12-byte blocks; direct decode classifies all 16 lanes before exact 8+4-byte stores; one vector cleanup follows each complete block loop; automatic dispatch uses the documented 192-byte encode and 256-byte encoded-decode crossovers; exact static/evidence calls retain native block minima; tails/padding remain scalar; in-place, wrapped, and legacy surfaces enter only after their documented staging/validation/compaction; unsupported alphabets, big-endian AArch64, 32-bit ARM, CT secret decode, line-ending insertion/compaction, and whitespace compaction remain scalar |
 | wasm `simd128` | admitted backend | `simd128` | ordinary wasm32 direct fixed-block encode and strict decode for Standard and URL-safe alphabet families when compiled with `target-feature=+simd128` and the `simd` feature; encode loads 12 bytes and stores 16 bytes per block; strict decode performs whole-input scalar validation once, classifies all 16 vector lanes before exact 12-byte stores, and preserves scalar diagnostics, tails, padding, and canonicality; the supported npm loader ships separate scalar/SIMD artifacts and selects before instantiation; exact-package Node/V8, Wasmtime, Chromium/V8, Firefox/SpiderMonkey, and operator-run Safari/WebKit evidence covers differential codec sweeps, malformed input, hostile JavaScript objects, transactionality, memory ceilings, and package installation; in-place operations may enter only through stack staging; unsupported alphabets, CT secret decode, line-ending insertion/compaction, and whitespace compaction remain scalar or separately reviewed |
-| RVV 1.0 | admitted exact-profile backend | `v` plus exact Linux `riscv_hwprobe` X60 identity and enabled per-thread vector state | runtime-dispatched Standard and URL-safe encode and strict decode from 192 bytes on the measured Linux/SpacemiT X60 profile only; operation-specific KATs quarantine failures independently; complete quanta use vector-length-independent RVV leaves and tails/padding remain scalar; every other RISC-V identity, non-Linux target, safe `no_std` build, short input, custom alphabet, and CT secret path remains scalar; QEMU candidate execution does not authorize production dispatch |
+| RVV 1.0 | admitted exact-profile backend | `v` plus exact Linux `riscv_hwprobe` X60 identity and enabled per-thread vector state | runtime-dispatched Standard and URL-safe encode from 384 raw bytes and strict decode from 1024 encoded bytes on the measured Linux/SpacemiT X60 profile only; operation-specific KATs quarantine failures independently; complete quanta use vector-length-independent RVV leaves and tails/padding remain scalar; every other RISC-V identity, non-Linux target, safe `no_std` build, short input, custom alphabet, and CT secret path remains scalar; QEMU candidate execution does not authorize production dispatch |
 
 ## Encode Surface Review
 

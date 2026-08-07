@@ -119,19 +119,19 @@ fn exact_x60_profile_selects_public_rvv_only_at_measured_sizes() {
         return;
     }
     assert_eq!(
-        crate::encode_backend::active_encode_backend_for_input(191),
+        crate::encode_backend::active_encode_backend_for_input(383),
         crate::encode_backend::EncodeBackend::Scalar
     );
     assert_eq!(
-        crate::decode_backend::active_decode_backend_for_input(191),
+        crate::decode_backend::active_decode_backend_for_input(1023),
         crate::decode_backend::DecodeBackend::Scalar
     );
     assert_eq!(
-        crate::encode_backend::active_encode_backend_for_input(192),
+        crate::encode_backend::active_encode_backend_for_input(384),
         crate::encode_backend::EncodeBackend::Rvv
     );
     assert_eq!(
-        crate::decode_backend::active_decode_backend_for_input(192),
+        crate::decode_backend::active_decode_backend_for_input(1024),
         crate::decode_backend::DecodeBackend::Rvv
     );
 }

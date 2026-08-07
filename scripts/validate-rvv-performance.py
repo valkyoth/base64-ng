@@ -12,7 +12,11 @@ from performance_statistics import MINIMUM_SAMPLES, validate_advantage
 
 
 LENGTHS = (12, 24, 48, 64, 96, 192, 384, 768, 1024, 4096, 64 * 1024)
-AUTOMATIC_MINIMUM = 192
+ENCODE_AUTOMATIC_MINIMUM = 384
+# Decode rows are keyed by decoded bytes so encode and decode throughput share
+# one comparable denominator. The runtime policy receives encoded bytes; the
+# first fully passing 768-byte decoded row is 1024 encoded bytes.
+DECODE_AUTOMATIC_MINIMUM_RAW = 768
 
 
 def fail(message: str) -> None:
@@ -50,15 +54,21 @@ def main() -> None:
                         for value in samples[rvv] + samples[scalar]
                     ):
                         fail(f"invalid throughput for {rvv}")
-                    if input_len < AUTOMATIC_MINIMUM:
+                    automatic_minimum = (
+                        ENCODE_AUTOMATIC_MINIMUM
+                        if operation == "encode"
+                        else DECODE_AUTOMATIC_MINIMUM_RAW
+                    )
+                    if input_len < automatic_minimum:
                         continue
                     try:
                         validate_advantage(samples[rvv], samples[scalar], minimum_ratio, rvv)
                     except ValueError as error:
                         fail(str(error))
     print(
-        "RVV performance: encode and strict decode at proposed automatic sizes "
-        f"exceed scalar by configured ratio {minimum_ratio:.3f}"
+        "RVV performance: encode from 384 raw bytes and strict decode from "
+        "1024 encoded bytes exceed scalar by configured ratio "
+        f"{minimum_ratio:.3f}"
     )
 
 

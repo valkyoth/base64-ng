@@ -99,7 +99,7 @@ for field in isa uarch mvendorid marchid mimpid; do
 done
 
 cat >"$temporary/MANIFEST.txt" <<EOF
-schema=base64-ng-rvv-native-admission-v1
+schema=base64-ng-rvv-native-admission-v2
 source_commit=$source_commit
 source_status=clean
 host=$host
@@ -111,7 +111,8 @@ mimpid=$mimpid
 vector_length_bits=256
 samples_per_cell=$samples
 target_bytes_per_sample=$target_bytes
-automatic_minimum_input=192
+automatic_encode_minimum_raw_input=384
+automatic_decode_minimum_encoded_input=1024
 median_minimum_ratio=1.02
 one_sided_sign_test_maximum_p=0.05
 signal_context=pass

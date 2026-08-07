@@ -28,7 +28,7 @@ pub(super) const NEON_MIN_INPUT: usize = 192;
     target_arch = "riscv64",
     target_os = "linux"
 ))]
-pub(super) const RVV_MIN_INPUT: usize = 192;
+pub(super) const RVV_MIN_INPUT: usize = 384;
 
 #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
 pub(super) fn select_x86(

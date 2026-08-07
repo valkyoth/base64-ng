@@ -64,7 +64,7 @@ def write_bundle(directory: Path) -> None:
     (directory / "MANIFEST.txt").write_text(
         "\n".join(
             (
-                "schema=base64-ng-rvv-native-admission-v1",
+                "schema=base64-ng-rvv-native-admission-v2",
                 f"source_commit={source}",
                 "source_status=clean",
                 "host=riscv64gc-unknown-linux-gnu",
@@ -76,7 +76,8 @@ def write_bundle(directory: Path) -> None:
                 "vector_length_bits=256",
                 "samples_per_cell=15",
                 "target_bytes_per_sample=4194304",
-                "automatic_minimum_input=192",
+                "automatic_encode_minimum_raw_input=384",
+                "automatic_decode_minimum_encoded_input=1024",
                 "median_minimum_ratio=1.02",
                 "one_sided_sign_test_maximum_p=0.05",
                 "signal_context=pass",
@@ -128,6 +129,18 @@ def run(directory: Path, success: bool) -> None:
         raise AssertionError(result.stdout + result.stderr)
 
 
+def set_rvv_throughput(
+    path: Path, operation: str, input_len: int, throughput: float
+) -> None:
+    with path.open(newline="", encoding="utf-8") as handle:
+        rows = list(csv.reader(handle))
+    for row in rows[1:]:
+        if row[0] == "rvv" and row[1] == operation and int(row[4]) == input_len:
+            row[8] = str(throughput)
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        csv.writer(handle).writerows(rows)
+
+
 def main() -> None:
     with tempfile.TemporaryDirectory() as raw:
         root = Path(raw)
@@ -148,6 +161,25 @@ def main() -> None:
         )
         write_checksums(weak)
         run(weak, False)
+
+        below_threshold = root / "below-threshold"
+        shutil.copytree(valid, below_threshold)
+        set_rvv_throughput(below_threshold / "rvv.csv", "encode", 192, 50.0)
+        set_rvv_throughput(below_threshold / "rvv.csv", "decode", 384, 50.0)
+        write_checksums(below_threshold)
+        run(below_threshold, True)
+
+        slow_encode = root / "slow-encode"
+        shutil.copytree(valid, slow_encode)
+        set_rvv_throughput(slow_encode / "rvv.csv", "encode", 384, 100.0)
+        write_checksums(slow_encode)
+        run(slow_encode, False)
+
+        slow_decode = root / "slow-decode"
+        shutil.copytree(valid, slow_decode)
+        set_rvv_throughput(slow_decode / "rvv.csv", "decode", 768, 100.0)
+        write_checksums(slow_decode)
+        run(slow_decode, False)
 
         for name in (*FILES, "CHECKSUMS.sha256"):
             linked = root / f"linked-{name}"

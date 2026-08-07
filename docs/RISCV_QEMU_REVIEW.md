@@ -156,10 +156,11 @@ The Linux signal-frame test is explicitly ignored in ordinary and QEMU suites
 and run by exact name only from the native hardware gate. This prevents QEMU
 signal emulation from being mistaken for kernel/hardware vector-state evidence.
 
-Production code uses a 192-byte encode and strict-decode crossover, independent
-operation KATs, process quarantine, per-thread capability detection, and scalar
-fallback. The final retained report must name the integrated commit and set the
-exact Linux/X60 admission scope. QEMU evidence alone can never satisfy it.
+Production code uses native-X60-measured crossovers of 384 raw bytes for encode
+and 1024 encoded bytes for strict decode, independent operation KATs, process
+quarantine, per-thread capability detection, and scalar fallback. The final
+retained report must name the integrated commit and set the exact Linux/X60
+admission scope. QEMU evidence alone can never satisfy it.
 
 ## Residual Constraints
 

@@ -273,8 +273,9 @@ runtime behavior for that line.
   generated instruction/register-cleanup evidence. Normal production dispatch
   requires exact Linux `riscv_hwprobe` identity values for the measured
   SpacemiT X60, the RVV 1.0 `V` bit, and enabled per-thread vector state. It
-  selects RVV only from 192 input bytes and KAT-gates encode and decode
-  separately. Other RISC-V profiles, non-Linux, safe `no_std`, short inputs,
+  selects RVV only from 384 raw encode bytes or 1024 encoded strict-decode
+  bytes and KAT-gates encode and decode separately. Other RISC-V profiles,
+  non-Linux, safe `no_std`, short inputs,
   custom alphabets, and secret paths remain scalar. The internal
   `base64_ng_rvv_candidate` cfg preserves broader QEMU evidence without
   authorizing production dispatch.
