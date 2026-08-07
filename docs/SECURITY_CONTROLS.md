@@ -350,7 +350,7 @@ aarch64 NEON for full 16-byte encoded blocks after scalar whole-input
 validation; every other decode backend, including big-endian AArch64, and the
 `base64_ng::ct` constant-time-oriented decode path remain scalar unless a
 separate formal side-channel evidence package admits otherwise.
-The `base64-ng-wasm-loader` npm companion is likewise an ordinary byte codec,
+The `@valkyoth/base64-ng-wasm-loader` npm companion is likewise an ordinary byte codec,
 not a secret API. It selects separate scalar or direct `simd128` artifacts
 before instantiation, rejects shared/resizable/detached/overlapping JavaScript
 storage, snapshots input, and commits `*Into` output only after successful

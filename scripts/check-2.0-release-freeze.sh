@@ -74,6 +74,11 @@ test -s release-notes/RELEASE_NOTES_2.0.0.md ||
 
 grep -F -q '"version": "2.0.0"' packages/base64-ng-wasm-loader/package.json ||
     fail "wasm loader package version is not 2.0.0"
+grep -F -q '"name": "@valkyoth/base64-ng-wasm-loader"' \
+    packages/base64-ng-wasm-loader/package.json ||
+    fail "wasm loader package is not owned by the Valkyoth npm scope"
+grep -F -q '"access": "public"' packages/base64-ng-wasm-loader/package.json ||
+    fail "wasm loader scoped package is not configured for public access"
 grep -F -q 'base64-ng-wasm-provenance-v1' \
     packages/base64-ng-wasm-loader/scripts/build.mjs ||
     fail "wasm build does not emit source provenance"

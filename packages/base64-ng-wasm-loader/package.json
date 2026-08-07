@@ -1,5 +1,5 @@
 {
-  "name": "base64-ng-wasm-loader",
+  "name": "@valkyoth/base64-ng-wasm-loader",
   "version": "2.0.0",
   "description": "Capability-selecting scalar and simd128 WebAssembly loader for base64-ng",
   "type": "module",
@@ -20,6 +20,9 @@
   },
   "engines": {
     "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "license": "MIT OR Apache-2.0",
   "repository": {

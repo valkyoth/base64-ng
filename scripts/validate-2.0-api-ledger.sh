@@ -73,7 +73,7 @@ for package in \
     base64-ng-imap \
     base64-ng-password \
     base64-ng-openpgp \
-    base64-ng-wasm-loader
+    @valkyoth/base64-ng-wasm-loader
 do
     require_text "$topology" "\`$package\`"
 done

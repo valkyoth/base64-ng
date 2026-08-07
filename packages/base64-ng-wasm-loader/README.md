@@ -1,12 +1,16 @@
-# base64-ng-wasm-loader
+# @valkyoth/base64-ng-wasm-loader
 
-`base64-ng-wasm-loader` is the supported JavaScript companion for
+`@valkyoth/base64-ng-wasm-loader` is the supported JavaScript companion for
 [`base64-ng`](https://github.com/valkyoth/base64-ng). It selects a scalar or
 `simd128` WebAssembly artifact before instantiation and exposes byte-only
 Base64 APIs.
 
+```sh
+npm install @valkyoth/base64-ng-wasm-loader
+```
+
 ```js
-import { Codecs, createBase64Ng } from "base64-ng-wasm-loader";
+import { Codecs, createBase64Ng } from "@valkyoth/base64-ng-wasm-loader";
 
 const base64 = await createBase64Ng();
 const input = new TextEncoder().encode("hello");

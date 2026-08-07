@@ -94,6 +94,9 @@ test -s packages/base64-ng-wasm-loader/package-lock.json
 test -s packages/base64-ng-wasm-loader/README.md
 test -s packages/base64-ng-wasm-loader/artifacts/base64-ng-scalar.wasm
 test -s packages/base64-ng-wasm-loader/artifacts/base64-ng-simd128.wasm
+grep -F -q '"name": "@valkyoth/base64-ng-wasm-loader"' \
+    packages/base64-ng-wasm-loader/package.json
+grep -F -q '"access": "public"' packages/base64-ng-wasm-loader/package.json
 test -s api-snapshots/README.md
 test -s docs/ASYNC.md
 test -s docs/BENCHMARKS.md

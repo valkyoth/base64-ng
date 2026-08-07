@@ -506,7 +506,7 @@ def main() -> int:
     print("If companion crates were published, also run:")
     for package in PUBLISH_ORDER[1:]:
         print(f"  cargo info {package}@{args.version}")
-    print("Publish base64-ng-wasm-loader separately from the same signed tag:")
+    print("Publish @valkyoth/base64-ng-wasm-loader separately from the same signed tag:")
     print("  scripts/release_wasm_loader.sh publish")
     return 0
 

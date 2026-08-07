@@ -1351,7 +1351,7 @@ performance claim is admitted.
 
 Commit 30 replaces the earlier wasm per-block verification path with direct
 12-to-16 encode and 16-to-12 strict-decode `simd128` kernels. It also adds the
-supported `base64-ng-wasm-loader` npm package with separate scalar/SIMD
+supported `@valkyoth/base64-ng-wasm-loader` npm package with separate scalar/SIMD
 artifacts, pre-instantiation capability selection, byte-only transactional
 APIs, hostile JavaScript storage checks, fixed memory ceilings, deterministic
 artifact evidence, exact-package Node/Wasmtime/browser smoke, and benchmark

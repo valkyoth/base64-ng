@@ -76,7 +76,7 @@ with open(sys.argv[1], encoding="utf-8") as handle:
     provenance = json.load(handle)
 if provenance.get("schema") != "base64-ng-wasm-provenance-v1":
     raise SystemExit("2.0 wasm loader: invalid provenance schema")
-if provenance.get("package") != "base64-ng-wasm-loader" or provenance.get("version") != "2.0.0":
+if provenance.get("package") != "@valkyoth/base64-ng-wasm-loader" or provenance.get("version") != "2.0.0":
     raise SystemExit("2.0 wasm loader: provenance package identity mismatch")
 if provenance.get("sourceCommit") != sys.argv[2]:
     raise SystemExit("2.0 wasm loader: provenance source commit mismatch")

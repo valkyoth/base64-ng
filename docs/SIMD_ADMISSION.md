@@ -140,7 +140,7 @@ wiping on rejected input.
 For 2.0 Commit 30, wasm `simd128` is admitted as direct fixed-block encode and
 strict decode when the binary is compiled for `wasm32` with
 `target-feature=+simd128` and the `simd` feature. The versioned
-`base64-ng-wasm-loader` package ships separately selected scalar and SIMD
+`@valkyoth/base64-ng-wasm-loader` package ships separately selected scalar and SIMD
 artifacts. The admitted runtime profile is backed by exact-package Node/V8,
 Wasmtime, Chromium/V8, Firefox/SpiderMonkey, and operator-run Safari/WebKit
 runtime evidence.

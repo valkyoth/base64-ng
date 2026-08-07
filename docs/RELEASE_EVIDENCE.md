@@ -841,7 +841,7 @@ active dispatch admission.
 
 The 2.0 JavaScript-facing evidence is separate from this older Rust-runtime
 smoke. `scripts/check-2.0-wasm-loader.sh` builds, tests, benchmarks, packs, and
-installs the supported `base64-ng-wasm-loader` package. Its browser scripts use
+installs the supported `@valkyoth/base64-ng-wasm-loader` package. Its browser scripts use
 the extracted npm tarball, not a source-tree-only wasm fixture. The package
 reports probe evidence and selected scalar/SIMD artifact independently and
 does not expose secret APIs or wasm linear-memory views. The package verifies

@@ -13,7 +13,7 @@ whole-input scalar validation, then directly classifies and decodes exact
 16-byte blocks into 12-byte output blocks. Padded final quanta, canonical tail
 bits, and short tails remain scalar.
 
-The `base64-ng-wasm-loader` npm package ships two immutable artifacts:
+The `@valkyoth/base64-ng-wasm-loader` npm package ships two immutable artifacts:
 
 - `base64-ng-scalar.wasm`
 - `base64-ng-simd128.wasm`

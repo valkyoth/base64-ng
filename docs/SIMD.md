@@ -250,7 +250,7 @@ runtime behavior for that line.
   mappings directly from `Alphabet::ENCODE`; overridable `Alphabet::decode`
   code is never executed as an admission check or an engine mapping boundary.
   Non-Standard-family tables remain scalar unless separately admitted.
-  The supported `base64-ng-wasm-loader` npm package ships separate scalar and
+  The supported `@valkyoth/base64-ng-wasm-loader` npm package ships separate scalar and
   SIMD artifacts and selects with an embedded `WebAssembly.validate` probe
   before instantiation. Exact-package Node/V8, Wasmtime, Chromium/V8,
   Firefox/SpiderMonkey, and operator-run Safari/WebKit evidence covers codec

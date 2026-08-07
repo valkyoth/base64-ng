@@ -308,7 +308,7 @@ and crates.io examples resolve consistently across the workspace.
 | `base64-ng-password` | Bounded Passlib PBKDF2 and SHA-crypt field/record transforms with exact checksum permutations; never hashes or verifies passwords. |
 | `base64-ng-openpgp` | Bounded complete RFC 9580 ordinary ASCII armor parser and generator with explicit CRC-24 policy and opt-in secret payload release. |
 | `base64-ng-pem` | Bounded complete RFC 7468 textual encoding parser and generator with labels, boundaries, multiple blocks, and opt-in secret payload release. |
-| `base64-ng-wasm-loader` | Supported byte-only JavaScript/npm loader with separately selected scalar and `simd128` artifacts. |
+| `@valkyoth/base64-ng-wasm-loader` | Supported byte-only JavaScript/npm loader with separately selected scalar and `simd128` artifacts. |
 
 Subcrates are documented so crate pages are readable, but they belong to the
 main `base64-ng` crate family and are not intended as independent protocol
@@ -320,11 +320,11 @@ The 2.0 JavaScript companion selects an artifact with an embedded SIMD probe
 before instantiation and reports the selected posture:
 
 ```sh
-npm install base64-ng-wasm-loader
+npm install @valkyoth/base64-ng-wasm-loader
 ```
 
 ```js
-import { Codecs, createBase64Ng } from "base64-ng-wasm-loader";
+import { Codecs, createBase64Ng } from "@valkyoth/base64-ng-wasm-loader";
 
 const base64 = await createBase64Ng();
 const input = new TextEncoder().encode("hello");

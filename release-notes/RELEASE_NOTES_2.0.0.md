@@ -46,9 +46,9 @@
 - Adds locked RFC and registry sources, semantic and interoperability corpora,
   fuzzing, sanitizer, Miri, Kani, timing, assembly, QEMU, package, SBOM, and
   reproducibility gates.
-- Adds a supported npm wasm loader with scalar and SIMD artifacts, runtime
-  dispatch, checksums, source-commit provenance, and browser/runtime smoke
-  evidence.
+- Adds the supported `@valkyoth/base64-ng-wasm-loader` npm package with scalar
+  and SIMD artifacts, runtime dispatch, checksums, source-commit provenance,
+  and browser/runtime smoke evidence.
 - Hardens publication with atomic success-only campaign manifests,
   tool-created reproducibility directories, source provenance bound to exact
   `HEAD`, mandatory npm provenance, and one pinned authorized SSH release

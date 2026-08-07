@@ -19,6 +19,16 @@ if ! command -v node >/dev/null 2>&1 || ! command -v npm >/dev/null 2>&1; then
 fi
 
 npm_version="$(node -p "require('./$package_dir/package.json').version")"
+npm_name="$(node -p "require('./$package_dir/package.json').name")"
+npm_access="$(node -p "require('./$package_dir/package.json').publishConfig?.access ?? ''")"
+if [ "$npm_name" != "@valkyoth/base64-ng-wasm-loader" ]; then
+    echo "wasm loader release: unexpected npm package identity $npm_name" >&2
+    exit 1
+fi
+if [ "$npm_access" != "public" ]; then
+    echo "wasm loader release: scoped npm package must publish with public access" >&2
+    exit 1
+fi
 if [ "$npm_version" != "$rust_version" ]; then
     echo "wasm loader release: npm version $npm_version does not match Rust family $rust_version" >&2
     exit 1
@@ -54,4 +64,4 @@ fi
 
 (cd "$package_dir" && npm publish --provenance)
 
-echo "wasm loader release: published $npm_version from verified $tag"
+echo "wasm loader release: published $npm_name@$npm_version from verified $tag"

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the extracted base64-ng-wasm-loader npm package in a real browser."""
+"""Run the extracted @valkyoth/base64-ng-wasm-loader npm package in a browser."""
 
 from __future__ import annotations
 
