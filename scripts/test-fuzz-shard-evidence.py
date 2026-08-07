@@ -23,6 +23,14 @@ MODULE = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = MODULE
 SPEC.loader.exec_module(MODULE)
 
+RVV_SPEC = importlib.util.spec_from_file_location(
+    "test_rvv_admission_bundle", ROOT / "scripts" / "test-rvv-admission-bundle.py"
+)
+assert RVV_SPEC is not None and RVV_SPEC.loader is not None
+RVV_FIXTURE = importlib.util.module_from_spec(RVV_SPEC)
+sys.modules[RVV_SPEC.name] = RVV_FIXTURE
+RVV_SPEC.loader.exec_module(RVV_FIXTURE)
+
 
 def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -188,12 +196,16 @@ def main() -> None:
             ),
             "kani/normal/status.txt": "PASS\n",
             "kani/advanced/status.txt": "PASS\n",
-            "commit-53/MANIFEST.txt": "neon_automatic_dispatch=retained-native-performance\n",
+            "commit-53/MANIFEST.txt": (
+                "neon_automatic_dispatch=retained-native-performance\n"
+                "rvv=exact-linux-spacemit-x60-native-admission\n"
+            ),
         }
         for relative, content in fixtures.items():
             path = evidence / relative
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(content)
+        RVV_FIXTURE.write_bundle(evidence / "riscv-native-admission")
         subprocess.run(
             [str(ROOT / "scripts" / "validate-release-evidence-outcomes.sh"), str(evidence)],
             cwd=ROOT,
