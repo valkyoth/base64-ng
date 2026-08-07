@@ -1,6 +1,6 @@
 //! In-place encode dispatch and bounded staging.
 
-use super::{EncodeBackend, active_encode_backend_for_input, encode_slice};
+use super::{EncodeBackend, active_encode_backend_for_input};
 use crate::{Alphabet, EncodeError, scalar_encode_in_place};
 
 #[cfg(any(
@@ -158,7 +158,7 @@ where
         }
 
         input_scratch[..chunk_len].copy_from_slice(&buffer[chunk_start..remaining]);
-        let written = match encode_slice::<A, PAD>(
+        let written = match super::encode_slice::<A, PAD>(
             &input_scratch[..chunk_len],
             &mut output_scratch[..expected_output_len],
         ) {
