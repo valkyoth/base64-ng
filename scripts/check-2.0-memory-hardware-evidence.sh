@@ -2,7 +2,8 @@
 set -eu
 
 document="docs/2.0_MEMORY_SANITIZER_HARDWARE_EVIDENCE.md"
-evidence_dir="target/release-evidence/commit-53"
+evidence_root="target/release-evidence"
+evidence_dir="$evidence_root/commit-53"
 manifest="$evidence_dir/MANIFEST.txt"
 mkdir -p "$evidence_dir"
 
@@ -22,6 +23,43 @@ do
         exit 1
     fi
 done
+
+rvv_archive="$evidence_root/riscv-native-admission"
+rvv_bundle="${BASE64_NG_RVV_ADMISSION_BUNDLE:-$rvv_archive}"
+rvv_status="pending-native-admission"
+if [ -e "$rvv_bundle" ]; then
+    if [ ! -d "$rvv_bundle" ]; then
+        echo "2.0 memory/hardware evidence: RVV bundle is not a directory: $rvv_bundle" >&2
+        exit 1
+    fi
+    scripts/validate-rvv-admission-bundle.py "$rvv_bundle"
+    rvv_source="$(sed -n 's/^source_commit=//p' "$rvv_bundle/MANIFEST.txt")"
+    if [ "$rvv_source" = "$EVIDENCE_SOURCE_COMMIT" ]; then
+        if [ "$rvv_bundle" != "$rvv_archive" ]; then
+            rvv_temporary="$(mktemp -d "$evidence_root/.riscv-native-admission.XXXXXX")"
+            if ! cp -R "$rvv_bundle"/. "$rvv_temporary"/; then
+                rm -rf "$rvv_temporary"
+                echo "2.0 memory/hardware evidence: failed to archive the RVV bundle" >&2
+                exit 1
+            fi
+            if ! scripts/validate-rvv-admission-bundle.py "$rvv_temporary"; then
+                rm -rf "$rvv_temporary"
+                exit 1
+            fi
+            rm -rf "$rvv_archive"
+            mv "$rvv_temporary" "$rvv_archive"
+        fi
+        rvv_status="exact-linux-spacemit-x60-native-admission"
+    else
+        echo "2.0 memory/hardware evidence: ignoring RVV bundle for stale commit $rvv_source"
+    fi
+fi
+if [ "${BASE64_NG_REQUIRE_RVV_NATIVE:-0}" = "1" ] && \
+    [ "$rvv_status" != "exact-linux-spacemit-x60-native-admission" ]; then
+    echo "2.0 memory/hardware evidence: release requires exact-commit native X60 RVV evidence" >&2
+    echo "2.0 memory/hardware evidence: set BASE64_NG_RVV_ADMISSION_BUNDLE to the validated bundle" >&2
+    exit 1
+fi
 
 echo "2.0 memory/hardware evidence: secret allocation identity"
 cargo test --all-features --lib \
@@ -89,7 +127,7 @@ evidence_verify_source "2.0 memory and hardware evidence"
     echo "neon_automatic_dispatch=$neon_status"
     echo "wasm_simd128=runtime-and-browser-evidence-not-hardware-attestation"
     echo "big_endian=scalar-qemu-portability-native-report-optional"
-    echo "rvv=exact-linux-spacemit-x60-native-admission"
+    echo "rvv=$rvv_status"
     echo "sve=candidate-qemu-only-not-dispatchable"
     echo "persistent_provider=none"
     echo "miri=separate-release-artifact"

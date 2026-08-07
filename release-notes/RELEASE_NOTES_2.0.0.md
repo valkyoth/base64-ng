@@ -53,6 +53,9 @@
   tool-created reproducibility directories, source provenance bound to exact
   `HEAD`, mandatory npm provenance, and one pinned authorized SSH release
   signer shared by the Rust and npm publishers.
+- Requires the native SpacemiT X60 RVV admission bundle at candidate and release
+  time, validates its exact source and hardware profile, and includes every
+  bundle artifact in the final evidence index.
 
 ## Migration
 

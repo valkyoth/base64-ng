@@ -109,6 +109,14 @@ require_report_key "$root/riscv-qemu/report.txt" result pass
 require_report_key "$root/sve-qemu/report.txt" source_commit "$campaign_commit"
 require_report_key "$root/sve-qemu/report.txt" result pass
 
+rvv_native="$root/riscv-native-admission"
+scripts/validate-rvv-admission-bundle.py "$rvv_native"
+require_report_key "$rvv_native/MANIFEST.txt" source_commit "$EVIDENCE_SOURCE_COMMIT"
+require_report_key \
+    "$rvv_native/MANIFEST.txt" execution_environment real-hardware
+require_report_key \
+    "$rvv_native/MANIFEST.txt" admission_scope linux-rvv-1.0-vlen256-spacemit-x60
+
 # Package composition can change when release-process files change. These
 # artifacts are therefore always regenerated for the tag candidate even when
 # expensive runtime campaigns are reused.
@@ -150,7 +158,7 @@ fi
     echo "campaign_commit=$campaign_commit"
     echo "release_commit=$EVIDENCE_SOURCE_COMMIT"
     echo
-    echo "required_campaigns=miri,sanitizers,fuzz-release,dudect-release,kani-normal,kani-advanced,assembly,native-hardware,sbom"
+    echo "required_campaigns=miri,sanitizers,fuzz-release,dudect-release,kani-normal,kani-advanced,assembly,native-neon,native-rvv,sbom"
     echo
     echo "artifact-hashes:"
     printf '%s\n' "$files" | while IFS= read -r file; do

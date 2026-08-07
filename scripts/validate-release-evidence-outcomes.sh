@@ -111,5 +111,11 @@ grep -F -q 'neon_automatic_dispatch=retained-native-performance' \
     echo "release evidence outcomes: retained native NEON evidence is incomplete" >&2
     exit 1
 }
+grep -F -q 'rvv=exact-linux-spacemit-x60-native-admission' \
+    "$root/commit-53/MANIFEST.txt" || {
+    echo "release evidence outcomes: exact native X60 RVV evidence is incomplete" >&2
+    exit 1
+}
+scripts/validate-rvv-admission-bundle.py "$root/riscv-native-admission"
 
 echo "release evidence outcomes: all mandatory campaigns passed"

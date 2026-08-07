@@ -43,8 +43,18 @@ simd_prototype_equivalence=0
 EOF
 printf '%s\n' PASS >"$root/kani/normal/status.txt"
 printf '%s\n' PASS >"$root/kani/advanced/status.txt"
-printf '%s\n' 'neon_automatic_dispatch=retained-native-performance' \
-    >"$root/commit-53/MANIFEST.txt"
+cat >"$root/commit-53/MANIFEST.txt" <<'EOF'
+neon_automatic_dispatch=retained-native-performance
+rvv=exact-linux-spacemit-x60-native-admission
+EOF
+python3 - "$root/riscv-native-admission" <<'PY'
+import runpy
+import sys
+from pathlib import Path
+
+fixture = runpy.run_path("scripts/test-rvv-admission-bundle.py")
+fixture["write_bundle"](Path(sys.argv[1]))
+PY
 cat >"$root/fuzz/MANIFEST.txt" <<'EOF'
 mode=release-duration
 campaign_argument=-max_total_time=3600
@@ -58,6 +68,13 @@ do
 done
 
 scripts/validate-release-evidence-outcomes.sh "$root" >/dev/null
+
+mv "$root/riscv-native-admission" "$root/riscv-native-admission.good"
+if scripts/validate-release-evidence-outcomes.sh "$root" >/dev/null 2>&1; then
+    echo "release evidence outcome tests: accepted missing native RVV evidence" >&2
+    exit 1
+fi
+mv "$root/riscv-native-admission.good" "$root/riscv-native-admission"
 
 cp "$root/dudect/MANIFEST.txt" "$root/dudect/MANIFEST.good"
 sed 's/^status=0$/status=1/' "$root/dudect/MANIFEST.good" \

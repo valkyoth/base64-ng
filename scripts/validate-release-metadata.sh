@@ -615,6 +615,7 @@ for required_strict_gate_text in \
     'BASE64_NG_REQUIRE_KANI=1' \
     'BASE64_NG_KANI_ALL_ADVANCED=1' \
     'BASE64_NG_REQUIRE_COMMIT53_NATIVE=1' \
+    'BASE64_NG_REQUIRE_RVV_NATIVE=1' \
     'scripts/finalize-release-evidence.sh'
 do
     if ! grep -F -q "$required_strict_gate_text" scripts/stable_release_gate.sh; then
@@ -622,6 +623,25 @@ do
         exit 1
     fi
 done
+
+for required_rvv_release_text in \
+    'BASE64_NG_RVV_ADMISSION_BUNDLE' \
+    'scripts/validate-rvv-admission-bundle.py "$rvv_bundle"' \
+    'rvv=exact-linux-spacemit-x60-native-admission'
+do
+    if ! grep -F -q "$required_rvv_release_text" \
+        scripts/check-2.0-memory-hardware-evidence.sh \
+        scripts/validate-release-evidence-outcomes.sh
+    then
+        echo "release metadata: native RVV release gate is missing $required_rvv_release_text" >&2
+        exit 1
+    fi
+done
+if ! grep -F -q 'scripts/validate-rvv-admission-bundle.py "$rvv_native"' \
+    scripts/finalize-release-evidence.sh; then
+    echo "release metadata: final evidence index does not validate native RVV evidence" >&2
+    exit 1
+fi
 
 for required_wasm_publish_text in \
     'scripts/check-2.0-wasm-loader.sh' \

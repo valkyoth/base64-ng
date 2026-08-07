@@ -117,6 +117,12 @@ FFI ABI checks, register cleanup, generated assembly review, and the retained
 After dispatch integration, the same native gate must be rerun against the
 exact final source commit before the 2.0 release seal.
 
+Candidate and release modes enforce that requirement through
+`BASE64_NG_REQUIRE_RVV_NATIVE=1`. Operators provide the downloaded bundle with
+`BASE64_NG_RVV_ADMISSION_BUNDLE`; the release gate validates and archives it,
+and final evidence generation independently rejects a missing, stale, or
+wrong-profile bundle.
+
 The frozen host identity is Linux `riscv64`, `mvendorid=0x710`,
 `marchid=0x8000000058000001`, and `mimpid=0x1000000049772200`. Evidence from
 that host can support only that exact profile; it cannot establish behavior or

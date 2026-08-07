@@ -83,7 +83,7 @@ if [ -n "$reuse_evidence_from" ]; then
     # development checks. Long-running runtime campaigns retain their original
     # manifests and commit provenance.
     echo "stable release gate: refresh candidate-bound native inventory"
-    BASE64_NG_REQUIRE_COMMIT53_NATIVE=1 \
+    BASE64_NG_REQUIRE_COMMIT53_NATIVE=1 BASE64_NG_REQUIRE_RVV_NATIVE=1 \
         run_evidence scripts/check-2.0-memory-hardware-evidence.sh
     echo "stable release gate: refresh candidate-bound NEON assembly"
     run_evidence scripts/generate_neon_asm_evidence.sh
@@ -129,7 +129,7 @@ fi
 
 echo "stable release gate: final native hardware evidence"
 if [ "$mode" != "check" ]; then
-    BASE64_NG_REQUIRE_COMMIT53_NATIVE=1 \
+    BASE64_NG_REQUIRE_COMMIT53_NATIVE=1 BASE64_NG_REQUIRE_RVV_NATIVE=1 \
         run_evidence scripts/check-2.0-memory-hardware-evidence.sh
 else
     run_evidence scripts/check-2.0-memory-hardware-evidence.sh

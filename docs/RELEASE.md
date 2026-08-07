@@ -392,6 +392,20 @@ malformed-input, signal-state, thread context-switch, FFI boundary, register
 cleanup, assembly, and paired performance evidence. This is not a nineteenth
 fuzz target and is never included in the fuzz aggregate.
 
+Before candidate or release mode, point the strict gate at the downloaded
+exact-commit bundle. The gate independently validates it and archives a checked
+copy into the final evidence tree:
+
+```sh
+BASE64_NG_RVV_ADMISSION_BUNDLE=/path/to/riscv_hardware \
+  scripts/stable_release_gate.sh candidate
+```
+
+QEMU and generated RVV assembly cannot satisfy this requirement. The finalizer
+requires the archived bundle, revalidates its complete checksum inventory, and
+binds its `source_commit` to the exact candidate rather than merely trusting the
+Commit 53 summary label.
+
 The permanent pentest report commit must only change the report file. The
 report must contain `Status: PASS`, `Reviewed-Commit:`, `Tester:`, `Scope:`,
 and `Date:` metadata. CodeQL or GitHub security findings that affect the
