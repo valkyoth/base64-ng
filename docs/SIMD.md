@@ -259,8 +259,11 @@ runtime behavior for that line.
   register-retention, or cleanup guarantee. The release-facing decision is
   tracked in
   [WASM_SIMD128_RUNTIME_REVIEW.md](WASM_SIMD128_RUNTIME_REVIEW.md).
-- Big-endian, RISC-V, and SVE acceleration work follows a QEMU-first evidence path.
-  SVE candidate work follows the same QEMU-first evidence discipline.
+- Big-endian and SVE acceleration work follows a QEMU-first evidence path.
+  RISC-V candidate work began with the same QEMU-first discipline. RISC-V has
+  native evidence and production admission only for the exact Linux/SpacemiT
+  X60 profile described below. Every other RISC-V profile remains scalar in
+  production and retains QEMU-only candidate evidence.
   QEMU proves functional behavior, not hardware performance, timing,
   microarchitectural, register-retention, signal-state, or side-channel
   properties. Commit 32 and its pre-seal native-evidence follow-ups provide a
