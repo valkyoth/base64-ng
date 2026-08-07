@@ -10,6 +10,11 @@ manifest_signature="$manifest.sig"
 equivalence_manifest="$root/EQUIVALENCE-MANIFEST.txt"
 campaign_commit="${BASE64_NG_REUSE_EVIDENCE_FROM:-$EVIDENCE_SOURCE_COMMIT}"
 mkdir -p "$root"
+if [ -L "$root" ] || [ ! -d "$root" ] || \
+    [ -n "$(find "$root" -type l -print -quit)" ]; then
+    echo "final release evidence: evidence tree contains a symbolic link" >&2
+    exit 1
+fi
 
 if [ "$campaign_commit" != "$EVIDENCE_SOURCE_COMMIT" ]; then
     require_retained_manifest="$manifest"

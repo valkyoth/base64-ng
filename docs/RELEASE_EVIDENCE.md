@@ -44,8 +44,10 @@ isolated `scripts/seal-release-evidence.sh` step signs that index in the
 The build gate rejects that private-key environment variable so Cargo, tests,
 fuzzers, and third-party tools cannot inherit it.
 Readiness and reuse verify the detached signature against the pinned principal
-and key fingerprint before trusting any provenance or artifact hash. It also
-requires explicit success
+and key fingerprint before trusting any provenance or artifact hash. Readiness
+then recomputes every signed artifact hash, requires an exact evidence-tree
+inventory, and rejects symlinks or non-regular entries. It also requires
+explicit success
 for every Miri and sanitizer scope, dudect, backend evidence, both Kani sets,
 and every named fuzz target. The source section must occur exactly once, and
 its commit and tree-state keys must be exact, anchored, singleton values;

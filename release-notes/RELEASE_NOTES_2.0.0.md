@@ -57,6 +57,8 @@
   time, validates its exact campaign source and hardware profile, rejects
   symlinked artifacts, and includes every bundle file in signed exact or
   metadata-equivalent release evidence.
+- Verifies the complete signed evidence inventory and every artifact checksum
+  during release readiness; symlinked evidence trees fail closed.
 
 ## Migration
 

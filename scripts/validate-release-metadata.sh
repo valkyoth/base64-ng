@@ -127,6 +127,7 @@ test -x scripts/finalize-release-evidence.sh
 test -x scripts/sign-release-evidence.sh
 test -x scripts/seal-release-evidence.sh
 test -x scripts/verify-release-evidence-signature.sh
+test -x scripts/verify-release-evidence-artifacts.py
 test -x scripts/release_wasm_loader.sh
 test -x scripts/verify-release-tag.sh
 test -x scripts/validate-release-evidence-outcomes.sh
@@ -134,6 +135,7 @@ test -x scripts/test-release-evidence-outcomes.sh
 test -x scripts/test-dudect-release-policy.sh
 test -x scripts/test-release-tag-policy.sh
 test -x scripts/test-release-evidence-signature.sh
+test -x scripts/test-release-evidence-artifacts.py
 test -s security/release-signers
 test -s security/evidence-signers
 test -s scripts/test-release-crates.py
@@ -318,6 +320,8 @@ for required_python_script in \
     "scripts/test-neon-admission-bundle.py" \
     "scripts/validate-rvv-admission-bundle.py" \
     "scripts/test-rvv-admission-bundle.py" \
+    "scripts/verify-release-evidence-artifacts.py" \
+    "scripts/test-release-evidence-artifacts.py" \
     "scripts/validate-2.0-checkpoint-record.py" \
     "scripts/test-2.0-checkpoint-record.py"
 do
@@ -405,6 +409,7 @@ done
 for required_finalizer_text in \
     'require_source_manifest_for' \
     'campaign_commit="${BASE64_NG_REUSE_EVIDENCE_FROM:-$EVIDENCE_SOURCE_COMMIT}"' \
+    'evidence tree contains a symbolic link' \
     'evidence_mode=metadata-equivalent' \
     'manifest remains unsigned until the isolated sealing step'
 do
@@ -413,6 +418,12 @@ do
         exit 1
     fi
 done
+
+if ! grep -F -q 'scripts/verify-release-evidence-artifacts.py' \
+    scripts/validate-release-readiness.sh; then
+    echo "release metadata: readiness does not verify signed artifact contents" >&2
+    exit 1
+fi
 
 for required_sealing_text in \
     'scripts/sign-release-evidence.sh "$manifest"' \

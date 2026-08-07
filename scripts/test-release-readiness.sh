@@ -8,6 +8,7 @@ source_script="$(pwd)/scripts/validate-release-readiness.sh"
 equivalence_script="$(pwd)/scripts/evidence-equivalence.py"
 equivalence_allowlist="$(pwd)/security/evidence-reuse-allowlist.txt"
 signature_verifier="$(pwd)/scripts/verify-release-evidence-signature.sh"
+artifact_verifier="$(pwd)/scripts/verify-release-evidence-artifacts.py"
 test_key="$tmp/evidence-key"
 test_principal="release-readiness@example.invalid"
 ssh-keygen -q -t ed25519 -N '' -f "$test_key"
@@ -22,6 +23,7 @@ make_fixture() {
     cp "$source_script" "$repo/scripts/validate-release-readiness.sh"
     cp "$equivalence_script" "$repo/scripts/evidence-equivalence.py"
     cp "$signature_verifier" "$repo/scripts/verify-release-evidence-signature.sh"
+    cp "$artifact_verifier" "$repo/scripts/verify-release-evidence-artifacts.py"
     cp "$equivalence_allowlist" "$repo/security/evidence-reuse-allowlist.txt"
     sed -i \
         -e "s#base64-ng-evidence-signer-v2#$test_principal#" \
@@ -42,6 +44,7 @@ make_fixture() {
             scripts/validate-release-readiness.sh \
             scripts/evidence-equivalence.py \
             scripts/verify-release-evidence-signature.sh \
+            scripts/verify-release-evidence-artifacts.py \
             security/evidence-reuse-allowlist.txt \
             security/evidence-signers
         git commit -q -m "fixture"
@@ -77,22 +80,29 @@ write_sbom() {
     printf '{"bomFormat":"CycloneDX"}\n' >target/release-evidence/base64-ng.cyclonedx.json
 }
 
+append_artifact_hashes() {
+    manifest="$1"
+    python3 - "$manifest" <<'PY'
+import hashlib
+import sys
+from pathlib import Path
+
+manifest = Path(sys.argv[1])
+root = manifest.parent
+excluded = {manifest, Path(f"{manifest}.sig")}
+with manifest.open("a", encoding="utf-8") as output:
+    output.write("artifact-hashes:\n")
+    for path in sorted(entry for entry in root.rglob("*") if entry.is_file()):
+        if path in excluded:
+            continue
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        output.write(f"{digest}  {path.as_posix()}\n")
+PY
+}
+
 write_evidence_index() {
     commit="$(git rev-parse HEAD)"
     mkdir -p target/release-evidence/reproducible
-    cat >target/release-evidence/FINAL-MANIFEST.txt <<EOF
-base64-ng final release evidence index
-
-source:
-commit=${commit}
-tree_state=clean
-evidence_mode=exact
-campaign_commit=${commit}
-release_commit=${commit}
-EOF
-    rm -f target/release-evidence/FINAL-MANIFEST.txt.sig
-    ssh-keygen -Y sign -f "$test_key" -n base64-ng-evidence-v2 \
-        target/release-evidence/FINAL-MANIFEST.txt >/dev/null
     cat >target/release-evidence/sbom-MANIFEST.txt <<EOF
 source:
 commit=${commit}
@@ -103,25 +113,26 @@ source:
 commit=${commit}
 tree_state=clean
 EOF
+    cat >target/release-evidence/FINAL-MANIFEST.txt <<EOF
+base64-ng final release evidence index
+
+source:
+commit=${commit}
+tree_state=clean
+evidence_mode=exact
+campaign_commit=${commit}
+release_commit=${commit}
+EOF
+    append_artifact_hashes target/release-evidence/FINAL-MANIFEST.txt
+    rm -f target/release-evidence/FINAL-MANIFEST.txt.sig
+    ssh-keygen -Y sign -f "$test_key" -n base64-ng-evidence-v2 \
+        target/release-evidence/FINAL-MANIFEST.txt >/dev/null
 }
 
 write_equivalent_evidence_index() {
     campaign_commit="$1"
     release_commit="$(git rev-parse HEAD)"
     mkdir -p target/release-evidence/reproducible
-    cat >target/release-evidence/FINAL-MANIFEST.txt <<EOF
-base64-ng final release evidence index
-
-source:
-commit=${release_commit}
-tree_state=clean
-evidence_mode=metadata-equivalent
-campaign_commit=${campaign_commit}
-release_commit=${release_commit}
-EOF
-    rm -f target/release-evidence/FINAL-MANIFEST.txt.sig
-    ssh-keygen -Y sign -f "$test_key" -n base64-ng-evidence-v2 \
-        target/release-evidence/FINAL-MANIFEST.txt >/dev/null
     cat >target/release-evidence/sbom-MANIFEST.txt <<EOF
 source:
 commit=${release_commit}
@@ -135,6 +146,20 @@ EOF
     python3 scripts/evidence-equivalence.py \
         --evidence-commit "$campaign_commit" \
         --output target/release-evidence/EQUIVALENCE-MANIFEST.txt >/dev/null
+    cat >target/release-evidence/FINAL-MANIFEST.txt <<EOF
+base64-ng final release evidence index
+
+source:
+commit=${release_commit}
+tree_state=clean
+evidence_mode=metadata-equivalent
+campaign_commit=${campaign_commit}
+release_commit=${release_commit}
+EOF
+    append_artifact_hashes target/release-evidence/FINAL-MANIFEST.txt
+    rm -f target/release-evidence/FINAL-MANIFEST.txt.sig
+    ssh-keygen -Y sign -f "$test_key" -n base64-ng-evidence-v2 \
+        target/release-evidence/FINAL-MANIFEST.txt >/dev/null
 }
 
 write_pentest() {

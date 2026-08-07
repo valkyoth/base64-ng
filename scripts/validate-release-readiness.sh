@@ -130,6 +130,9 @@ case "$evidence_mode" in
         ;;
 esac
 
+scripts/verify-release-evidence-artifacts.py \
+    "$evidence_manifest" target/release-evidence
+
 for current_manifest in \
     target/release-evidence/sbom-MANIFEST.txt \
     target/release-evidence/reproducible/MANIFEST.txt

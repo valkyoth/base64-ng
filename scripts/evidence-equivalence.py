@@ -155,7 +155,10 @@ def require_manifest_source(
         recorded = {path: digest for path, digest in retained_hashes.items() if path.startswith(prefix)}
         if not recorded:
             fail(f"retained FINAL-MANIFEST lacks campaign artifacts under {prefix}")
-        entries = list((ROOT / prefix).glob("**/*"))
+        campaign_root = ROOT / prefix
+        if campaign_root.is_symlink() or not campaign_root.is_dir():
+            fail(f"retained campaign root is not a regular directory: {prefix}")
+        entries = list(campaign_root.glob("**/*"))
         if any(path.is_symlink() for path in entries):
             fail(f"retained campaign contains a symbolic link under {prefix}")
         current_files = {

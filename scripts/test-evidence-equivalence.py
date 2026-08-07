@@ -186,6 +186,22 @@ with tempfile.TemporaryDirectory() as raw_temp:
         )
         artifact.write_bytes(original)
 
+    for directory in campaign_directories:
+        campaign = repo / "target/release-evidence" / directory
+        saved = repo / "target/release-evidence" / f".{directory}-regular"
+        campaign.rename(saved)
+        campaign.symlink_to(saved, target_is_directory=True)
+        run(
+            repo,
+            "--evidence-commit",
+            evidence,
+            "--retained-manifest",
+            str(retained),
+            succeeds=False,
+        )
+        campaign.unlink()
+        saved.rename(campaign)
+
     original_manifest = retained.read_bytes()
     original_manifest_signature = retained.with_suffix(retained.suffix + ".sig").read_bytes()
     semantic_mutations = {
