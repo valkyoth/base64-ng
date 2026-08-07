@@ -17,6 +17,14 @@ def fail(message: str) -> None:
     raise SystemExit(f"release evidence artifacts: {message}")
 
 
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        while chunk := handle.read(1024 * 1024):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
 def main() -> None:
     if len(sys.argv) not in {1, 3}:
         fail("usage: verify-release-evidence-artifacts.py [manifest evidence-root]")
@@ -71,8 +79,7 @@ def main() -> None:
     if set(actual) != set(recorded):
         fail("signed artifact inventory does not match the evidence tree")
     for relative, path in actual.items():
-        digest = hashlib.sha256(path.read_bytes()).hexdigest()
-        if digest != recorded[relative]:
+        if sha256_file(path) != recorded[relative]:
             fail(f"artifact checksum mismatch: {relative}")
 
     print("release evidence artifacts: signed inventory and checksums verified")
