@@ -36,6 +36,7 @@ RETAINED_CAMPAIGN_PREFIXES = (
     "target/release-evidence/sve-asm/",
     "target/release-evidence/big-endian-qemu/",
     "target/release-evidence/riscv-qemu/",
+    "target/release-evidence/riscv-native-admission/",
     "target/release-evidence/sve-qemu/",
 )
 
@@ -154,9 +155,12 @@ def require_manifest_source(
         recorded = {path: digest for path, digest in retained_hashes.items() if path.startswith(prefix)}
         if not recorded:
             fail(f"retained FINAL-MANIFEST lacks campaign artifacts under {prefix}")
+        entries = list((ROOT / prefix).glob("**/*"))
+        if any(path.is_symlink() for path in entries):
+            fail(f"retained campaign contains a symbolic link under {prefix}")
         current_files = {
             file.relative_to(ROOT).as_posix()
-            for file in (ROOT / prefix).glob("**/*")
+            for file in entries
             if file.is_file()
         }
         if current_files != set(recorded):

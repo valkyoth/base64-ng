@@ -392,9 +392,9 @@ malformed-input, signal-state, thread context-switch, FFI boundary, register
 cleanup, assembly, and paired performance evidence. This is not a nineteenth
 fuzz target and is never included in the fuzz aggregate.
 
-Before candidate or release mode, point the strict gate at the downloaded
-exact-commit bundle. The gate independently validates it and archives a checked
-copy into the final evidence tree:
+Before candidate mode, point the strict gate at the downloaded exact-campaign
+bundle. The gate independently validates it and archives a checked copy into
+the final evidence tree:
 
 ```sh
 BASE64_NG_RVV_ADMISSION_BUNDLE=/path/to/riscv_hardware \
@@ -403,8 +403,11 @@ BASE64_NG_RVV_ADMISSION_BUNDLE=/path/to/riscv_hardware \
 
 QEMU and generated RVV assembly cannot satisfy this requirement. The finalizer
 requires the archived bundle, revalidates its complete checksum inventory, and
-binds its `source_commit` to the exact candidate rather than merely trusting the
-Commit 53 summary label.
+binds its `source_commit` to the accepted campaign commit rather than merely
+trusting the Commit 53 summary label. For a later report-only Commit 55, the
+metadata-equivalence verifier first proves the release commit is a permitted
+linear descendant and checks every retained RVV artifact against the signed
+campaign manifest; release mode then deliberately expects the campaign commit.
 
 The permanent pentest report commit must only change the report file. The
 report must contain `Status: PASS`, `Reviewed-Commit:`, `Tester:`, `Scope:`,

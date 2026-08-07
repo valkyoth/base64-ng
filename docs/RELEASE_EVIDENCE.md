@@ -36,7 +36,7 @@ candidate.
 `scripts/stable_release_gate.sh candidate` runs the strict evidence campaign
 before Commit 55. `scripts/finalize-release-evidence.sh` rejects missing,
 dirty-tree, or stale-source Miri, sanitizer, release-duration fuzz, dudect,
-normal/advanced Kani, assembly, native NEON, exact-commit native X60 RVV, and
+normal/advanced Kani, assembly, native NEON, exact-campaign native X60 RVV, and
 SBOM artifacts and writes
 `target/release-evidence/FINAL-MANIFEST.txt`. After the build gate exits, the
 isolated `scripts/seal-release-evidence.sh` step signs that index in the
@@ -82,11 +82,16 @@ NEON/wasm assembly manifests.
 Candidate and release modes require `BASE64_NG_REQUIRE_RVV_NATIVE=1`. The
 hardware-evidence gate validates the operator-supplied
 `BASE64_NG_RVV_ADMISSION_BUNDLE`, requires its frozen real-hardware X60 identity
-and exact candidate commit, and archives it under
+and exact campaign commit, and archives it under
 `target/release-evidence/riscv-native-admission`. Finalization validates that
 bundle again and hashes every file into the final evidence index. A prose marker,
 QEMU report, or generated assembly manifest cannot substitute for the native
-bundle.
+bundle. In metadata-equivalent release mode, the signed retained index must
+already contain every RVV artifact, the equivalence verifier rechecks those
+hashes, and both the hardware gate and finalizer expect the accepted campaign
+commit rather than relabeling evidence as the report-only release commit. The
+bundle validator and finalizer reject symlinked or non-regular artifacts so no
+validated file can be omitted from the signed inventory.
 
 Commit 51 completes the isolated fuzz and property inventory. Eighteen targets
 cover ordinary/runtime codecs, forced native backends, incremental/in-place

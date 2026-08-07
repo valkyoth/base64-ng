@@ -3,6 +3,7 @@ set -eu
 
 mode="${1:-check}"
 reuse_evidence_from="${BASE64_NG_REUSE_EVIDENCE_FROM:-}"
+unset BASE64_NG_EXPECTED_RVV_SOURCE_COMMIT
 
 if [ -n "${BASE64_NG_EVIDENCE_SIGNING_KEY:-}" ]; then
     echo "stable release gate: refuse to expose the evidence signing key to build/test subprocesses" >&2
@@ -83,7 +84,8 @@ if [ -n "$reuse_evidence_from" ]; then
     # development checks. Long-running runtime campaigns retain their original
     # manifests and commit provenance.
     echo "stable release gate: refresh candidate-bound native inventory"
-    BASE64_NG_REQUIRE_COMMIT53_NATIVE=1 BASE64_NG_REQUIRE_RVV_NATIVE=1 \
+    BASE64_NG_EXPECTED_RVV_SOURCE_COMMIT="$reuse_evidence_from" \
+        BASE64_NG_REQUIRE_COMMIT53_NATIVE=1 BASE64_NG_REQUIRE_RVV_NATIVE=1 \
         run_evidence scripts/check-2.0-memory-hardware-evidence.sh
     echo "stable release gate: refresh candidate-bound NEON assembly"
     run_evidence scripts/generate_neon_asm_evidence.sh

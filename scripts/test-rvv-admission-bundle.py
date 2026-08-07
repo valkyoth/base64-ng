@@ -148,6 +148,18 @@ def main() -> None:
         )
         write_checksums(weak)
         run(weak, False)
+
+        for name in (*FILES, "CHECKSUMS.sha256"):
+            linked = root / f"linked-{name}"
+            shutil.copytree(valid, linked)
+            artifact = linked / name
+            artifact.unlink()
+            artifact.symlink_to(valid / name)
+            run(linked, False)
+
+        linked_root = root / "linked-root"
+        linked_root.symlink_to(valid, target_is_directory=True)
+        run(linked_root, False)
     print("RVV admission bundle: mutation checks ok")
 
 

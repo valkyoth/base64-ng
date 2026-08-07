@@ -65,13 +65,20 @@ def parse_manifest(path: Path) -> dict[str, str]:
 
 
 def validate(directory: Path) -> None:
-    if not directory.is_dir():
+    if directory.is_symlink() or not directory.is_dir():
         fail(f"bundle directory is missing: {directory}")
-    actual = {entry.name for entry in directory.iterdir() if entry.is_file()}
+    entries = list(directory.iterdir())
+    if any(entry.is_symlink() or not entry.is_file() for entry in entries):
+        fail("bundle must contain only regular, non-symlink files")
+    actual = {entry.name for entry in entries}
     if actual != FILES:
         fail("bundle file inventory does not match the frozen schema")
-    if any((directory / name).stat().st_size == 0 for name in FILES):
-        fail("bundle contains an empty artifact")
+    for name in FILES:
+        artifact = directory / name
+        if artifact.is_symlink() or not artifact.is_file():
+            fail(f"bundle artifact is not a regular file: {name}")
+        if artifact.stat().st_size == 0:
+            fail(f"bundle contains an empty artifact: {name}")
 
     manifest = parse_manifest(directory / "MANIFEST.txt")
     expected = {

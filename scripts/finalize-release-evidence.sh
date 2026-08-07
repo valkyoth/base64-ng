@@ -111,7 +111,11 @@ require_report_key "$root/sve-qemu/report.txt" result pass
 
 rvv_native="$root/riscv-native-admission"
 scripts/validate-rvv-admission-bundle.py "$rvv_native"
-require_report_key "$rvv_native/MANIFEST.txt" source_commit "$EVIDENCE_SOURCE_COMMIT"
+if [ -n "$(find "$rvv_native" -type l -print -quit)" ]; then
+    echo "final release evidence: native RVV bundle contains a symbolic link" >&2
+    exit 1
+fi
+require_report_key "$rvv_native/MANIFEST.txt" source_commit "$campaign_commit"
 require_report_key \
     "$rvv_native/MANIFEST.txt" execution_environment real-hardware
 require_report_key \

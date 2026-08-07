@@ -97,6 +97,7 @@ with tempfile.TemporaryDirectory() as raw_temp:
         "sve-asm",
         "big-endian-qemu",
         "riscv-qemu",
+        "riscv-native-admission",
         "sve-qemu",
     )
     artifact_lines = []

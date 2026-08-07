@@ -115,13 +115,15 @@ malformed rejection, Linux signal-frame restoration, thread context switches,
 FFI ABI checks, register cleanup, generated assembly review, and the retained
 15-sample performance policy. That evidence supports only the named profile.
 After dispatch integration, the same native gate must be rerun against the
-exact final source commit before the 2.0 release seal.
+exact final campaign source commit before the 2.0 release seal. A subsequent
+report-only commit may reuse it only through signed metadata equivalence.
 
 Candidate and release modes enforce that requirement through
 `BASE64_NG_REQUIRE_RVV_NATIVE=1`. Operators provide the downloaded bundle with
 `BASE64_NG_RVV_ADMISSION_BUNDLE`; the release gate validates and archives it,
 and final evidence generation independently rejects a missing, stale, or
-wrong-profile bundle.
+wrong-profile bundle. Metadata-equivalent release mode preserves the campaign
+identity and verifies the archived files against the signed retained index.
 
 The frozen host identity is Linux `riscv64`, `mvendorid=0x710`,
 `marchid=0x8000000058000001`, and `mimpid=0x1000000049772200`. Evidence from

@@ -54,8 +54,9 @@
   `HEAD`, mandatory npm provenance, and one pinned authorized SSH release
   signer shared by the Rust and npm publishers.
 - Requires the native SpacemiT X60 RVV admission bundle at candidate and release
-  time, validates its exact source and hardware profile, and includes every
-  bundle artifact in the final evidence index.
+  time, validates its exact campaign source and hardware profile, rejects
+  symlinked artifacts, and includes every bundle file in signed exact or
+  metadata-equivalent release evidence.
 
 ## Migration
 

@@ -626,6 +626,7 @@ done
 
 for required_rvv_release_text in \
     'BASE64_NG_RVV_ADMISSION_BUNDLE' \
+    'BASE64_NG_EXPECTED_RVV_SOURCE_COMMIT' \
     'scripts/validate-rvv-admission-bundle.py "$rvv_bundle"' \
     'rvv=exact-linux-spacemit-x60-native-admission'
 do
@@ -640,6 +641,26 @@ done
 if ! grep -F -q 'scripts/validate-rvv-admission-bundle.py "$rvv_native"' \
     scripts/finalize-release-evidence.sh; then
     echo "release metadata: final evidence index does not validate native RVV evidence" >&2
+    exit 1
+fi
+if ! grep -F -q 'source_commit "$campaign_commit"' \
+    scripts/finalize-release-evidence.sh; then
+    echo "release metadata: reused native RVV evidence is not bound to the campaign commit" >&2
+    exit 1
+fi
+if ! grep -F -q 'BASE64_NG_EXPECTED_RVV_SOURCE_COMMIT="$reuse_evidence_from"' \
+    scripts/stable_release_gate.sh; then
+    echo "release metadata: metadata-equivalent RVV evidence is not bound to the campaign" >&2
+    exit 1
+fi
+if ! grep -F -q 'entry.is_symlink() or not entry.is_file()' \
+    scripts/validate-rvv-admission-bundle.py; then
+    echo "release metadata: native RVV validator does not reject symbolic links" >&2
+    exit 1
+fi
+if ! grep -F -q 'target/release-evidence/riscv-native-admission/' \
+    scripts/evidence-equivalence.py; then
+    echo "release metadata: retained evidence policy omits native RVV artifacts" >&2
     exit 1
 fi
 

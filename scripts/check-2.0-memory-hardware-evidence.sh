@@ -26,7 +26,23 @@ done
 
 rvv_archive="$evidence_root/riscv-native-admission"
 rvv_bundle="${BASE64_NG_RVV_ADMISSION_BUNDLE:-$rvv_archive}"
+rvv_expected_commit="${BASE64_NG_EXPECTED_RVV_SOURCE_COMMIT:-$EVIDENCE_SOURCE_COMMIT}"
 rvv_status="pending-native-admission"
+if [ "${#rvv_expected_commit}" -ne 40 ]; then
+    echo "2.0 memory/hardware evidence: expected RVV source is not a full commit" >&2
+    exit 1
+fi
+case "$rvv_expected_commit" in
+    *[!0-9a-f]*)
+        echo "2.0 memory/hardware evidence: expected RVV source is not a full commit" >&2
+        exit 1
+        ;;
+esac
+if ! git cat-file -e "$rvv_expected_commit^{commit}" 2>/dev/null || \
+    ! git merge-base --is-ancestor "$rvv_expected_commit" "$EVIDENCE_SOURCE_COMMIT"; then
+    echo "2.0 memory/hardware evidence: expected RVV source is not an available ancestor" >&2
+    exit 1
+fi
 if [ -e "$rvv_bundle" ]; then
     if [ ! -d "$rvv_bundle" ]; then
         echo "2.0 memory/hardware evidence: RVV bundle is not a directory: $rvv_bundle" >&2
@@ -34,7 +50,7 @@ if [ -e "$rvv_bundle" ]; then
     fi
     scripts/validate-rvv-admission-bundle.py "$rvv_bundle"
     rvv_source="$(sed -n 's/^source_commit=//p' "$rvv_bundle/MANIFEST.txt")"
-    if [ "$rvv_source" = "$EVIDENCE_SOURCE_COMMIT" ]; then
+    if [ "$rvv_source" = "$rvv_expected_commit" ]; then
         if [ "$rvv_bundle" != "$rvv_archive" ]; then
             rvv_temporary="$(mktemp -d "$evidence_root/.riscv-native-admission.XXXXXX")"
             if ! cp -R "$rvv_bundle"/. "$rvv_temporary"/; then
@@ -51,12 +67,12 @@ if [ -e "$rvv_bundle" ]; then
         fi
         rvv_status="exact-linux-spacemit-x60-native-admission"
     else
-        echo "2.0 memory/hardware evidence: ignoring RVV bundle for stale commit $rvv_source"
+        echo "2.0 memory/hardware evidence: ignoring RVV bundle for unexpected commit $rvv_source"
     fi
 fi
 if [ "${BASE64_NG_REQUIRE_RVV_NATIVE:-0}" = "1" ] && \
     [ "$rvv_status" != "exact-linux-spacemit-x60-native-admission" ]; then
-    echo "2.0 memory/hardware evidence: release requires exact-commit native X60 RVV evidence" >&2
+    echo "2.0 memory/hardware evidence: release requires exact-campaign native X60 RVV evidence" >&2
     echo "2.0 memory/hardware evidence: set BASE64_NG_RVV_ADMISSION_BUNDLE to the validated bundle" >&2
     exit 1
 fi
