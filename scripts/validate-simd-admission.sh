@@ -33,9 +33,10 @@ Avx512Vbmi
 Avx2
 Ssse3Sse41
 Neon
-WasmSimd128"
+WasmSimd128
+Rvv"
 if [ "$active_variants" != "$expected_active_variants" ]; then
-    echo "simd admission: ActiveBackend must contain only Scalar and admitted AVX-512/AVX2/SSSE3/NEON/wasm encode" >&2
+    echo "simd admission: ActiveBackend must contain only Scalar and admitted AVX-512/AVX2/SSSE3/NEON/wasm/RVV backends" >&2
     printf '%s\n' "$active_variants" >&2
     exit 1
 fi
@@ -64,11 +65,14 @@ if ! awk '
     inside && /ActiveBackend::WasmSimd128/ {
         wasm = 1
     }
+    inside && /ActiveBackend::Rvv/ {
+        rvv = 1
+    }
     inside && /ActiveBackend::Scalar/ {
         scalar = 1
     }
     inside && /^}/ {
-        exit (scalar && avx512 && avx2 && ssse3 && neon && wasm) ? 0 : 1
+        exit (scalar && avx512 && avx2 && ssse3 && neon && wasm && rvv) ? 0 : 1
     }
     END {
         if (!inside) {
@@ -76,7 +80,7 @@ if ! awk '
         }
     }
 ' src/simd/mod.rs; then
-    echo "simd admission: detect_active_backend must explicitly return admitted AVX-512, AVX2, SSSE3/SSE4.1, NEON, wasm simd128, and scalar fallback" >&2
+    echo "simd admission: detect_active_backend must explicitly return admitted AVX-512, AVX2, SSSE3/SSE4.1, NEON, wasm simd128, exact-profile RVV, and scalar fallback" >&2
     exit 1
 fi
 
@@ -92,7 +96,7 @@ for required_text in \
     "Decode acceleration" \
     "Required precision" \
     "Performance numbers are release notes evidence only" \
-    "Admitted backends: AVX-512 VBMI encode, AVX2 encode, SSSE3/SSE4.1 encode, NEON encode, AVX-512 VBMI strict decode, AVX2 strict decode, SSSE3/SSE4.1 strict decode, and NEON strict decode" \
+    "Admitted backends: AVX-512 VBMI encode, AVX2 encode, SSSE3/SSE4.1 encode, NEON encode, AVX-512 VBMI strict decode, AVX2 strict decode, SSSE3/SSE4.1 strict decode, NEON strict decode, and exact-profile RVV 1.0 encode/strict decode" \
     "Active encode priority: AVX-512 VBMI, then AVX2, then SSSE3/SSE4.1" \
     "active strict-decode priority: AVX2, then SSSE3/SSE4.1" \
     "wasm simd128 runtime smoke evidence" \
@@ -107,15 +111,15 @@ done
 
 backend_rows="$(
     awk '
-        /^\| AVX-512 VBMI / || /^\| AVX2 / || /^\| SSSE3\/SSE4\.1 / || /^\| NEON / || /^\| wasm `simd128` / {
+        /^\| AVX-512 VBMI / || /^\| AVX2 / || /^\| SSSE3\/SSE4\.1 / || /^\| NEON / || /^\| wasm `simd128` / || /^\| RVV 1\.0 / {
             print
         }
     ' docs/SIMD_ADMISSION.md
 )"
 
 backend_row_count="$(printf '%s\n' "$backend_rows" | sed '/^$/d' | wc -l | tr -d ' ')"
-if [ "$backend_row_count" -ne 5 ]; then
-    echo "simd admission: expected exactly five backend rows in docs/SIMD_ADMISSION.md" >&2
+if [ "$backend_row_count" -ne 6 ]; then
+    echo "simd admission: expected exactly six backend rows in docs/SIMD_ADMISSION.md" >&2
     printf '%s\n' "$backend_rows" >&2
     exit 1
 fi
@@ -151,6 +155,13 @@ fi
 wasm_row="$(printf '%s\n' "$backend_rows" | grep '^| wasm `simd128` ')"
 if ! printf '%s\n' "$wasm_row" | grep '| admitted backend |' >/dev/null 2>&1; then
     echo "simd admission: wasm simd128 row must be an admitted backend" >&2
+    printf '%s\n' "$backend_rows" >&2
+    exit 1
+fi
+
+rvv_row="$(printf '%s\n' "$backend_rows" | grep '^| RVV 1\.0 ')"
+if ! printf '%s\n' "$rvv_row" | grep '| admitted exact-profile backend |' >/dev/null 2>&1; then
+    echo "simd admission: RVV 1.0 row must remain limited to the admitted exact profile" >&2
     printf '%s\n' "$backend_rows" >&2
     exit 1
 fi

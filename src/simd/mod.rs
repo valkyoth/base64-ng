@@ -267,10 +267,9 @@ fn detect_active_backend() -> ActiveBackend {
 
 /// Returns the fastest SIMD candidate visible to this build.
 ///
-/// Candidate detection is intentionally separate from activation. AVX2 and
-/// SSSE3/SSE4.1 encode may be active on std `x86`/`x86_64` builds. Other SIMD
-/// support still executes through scalar code until its own admission evidence
-/// is complete.
+/// Candidate detection is intentionally separate from activation. Only the
+/// admitted target and operation scopes may become active; every other SIMD
+/// candidate still executes through scalar code.
 #[must_use]
 pub(crate) fn detected_candidate() -> Candidate {
     #[cfg(all(
