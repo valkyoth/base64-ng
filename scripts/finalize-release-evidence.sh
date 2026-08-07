@@ -32,9 +32,13 @@ else
     rm -f "$equivalence_manifest"
 fi
 if [ -n "$external_campaign_commit" ]; then
+    external_candidate="$EVIDENCE_SOURCE_COMMIT"
+    if [ "$campaign_commit" != "$EVIDENCE_SOURCE_COMMIT" ]; then
+        external_candidate="$campaign_commit"
+    fi
     python3 scripts/validate-campaign-source-equivalence.py \
         --campaign "$external_campaign_commit" \
-        --candidate "$EVIDENCE_SOURCE_COMMIT"
+        --candidate "$external_candidate"
 fi
 
 rm -f "$manifest"

@@ -41,13 +41,11 @@ if [ "$mode" = "check" ] && [ -n "$campaign_source_commit" ]; then
     echo "stable release gate: external campaign provenance applies only to candidate or release mode" >&2
     exit 2
 fi
-if [ -n "$reuse_evidence_from" ] && [ -n "$campaign_source_commit" ]; then
-    echo "stable release gate: retained-manifest reuse and external campaign provenance are mutually exclusive" >&2
-    exit 2
-fi
 if [ -n "$campaign_source_commit" ]; then
+    campaign_candidate="${reuse_evidence_from:-HEAD}"
     python3 scripts/validate-campaign-source-equivalence.py \
-        --campaign "$campaign_source_commit"
+        --campaign "$campaign_source_commit" \
+        --candidate "$campaign_candidate"
 fi
 
 run_evidence() {
@@ -97,7 +95,7 @@ if [ -n "$reuse_evidence_from" ]; then
     # development checks. Long-running runtime campaigns retain their original
     # manifests and commit provenance.
     echo "stable release gate: refresh candidate-bound native inventory"
-    BASE64_NG_EXPECTED_RVV_SOURCE_COMMIT="$reuse_evidence_from" \
+    BASE64_NG_EXPECTED_RVV_SOURCE_COMMIT="${campaign_source_commit:-$reuse_evidence_from}" \
         BASE64_NG_REQUIRE_COMMIT53_NATIVE=1 BASE64_NG_REQUIRE_RVV_NATIVE=1 \
         run_evidence scripts/check-2.0-memory-hardware-evidence.sh
     echo "stable release gate: refresh candidate-bound NEON assembly"

@@ -25,6 +25,7 @@ ALLOWED_TOOLING_CHANGES = {
     "scripts/validate-campaign-source-equivalence.py",
     "scripts/validate-neon-admission-bundle.py",
     "scripts/validate-release-metadata.sh",
+    "security/pentest/v2.0.0.md",
 }
 
 
@@ -66,9 +67,6 @@ def validate(campaign_revision: str, candidate_revision: str) -> tuple[str, str]
         fail("campaign source is not an ancestor of the candidate")
     if git("rev-list", "--merges", f"{campaign}..{candidate}"):
         fail("campaign-to-candidate range contains a merge commit")
-    if git("rev-list", "--count", f"{campaign}..{candidate}") != "1":
-        fail("candidate must be the single immediate correction commit")
-
     if candidate == resolve("HEAD", "HEAD") and git(
         "status", "--porcelain", "--untracked-files=all"
     ):
@@ -92,7 +90,8 @@ def validate(campaign_revision: str, candidate_revision: str) -> tuple[str, str]
 
     print(
         "campaign source equivalence: runtime, crates, tests, fuzz inputs, "
-        "dependencies, and toolchain are unchanged"
+        "dependencies, and toolchain are unchanged across the linear "
+        "correction range"
     )
     return campaign, candidate
 

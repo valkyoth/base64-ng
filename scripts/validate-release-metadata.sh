@@ -672,14 +672,16 @@ if ! grep -F -q 'source_commit "$campaign_commit"' \
     echo "release metadata: reused native RVV evidence is not bound to the campaign commit" >&2
     exit 1
 fi
-if ! grep -F -q 'BASE64_NG_EXPECTED_RVV_SOURCE_COMMIT="$reuse_evidence_from"' \
+if ! grep -F -q 'BASE64_NG_EXPECTED_RVV_SOURCE_COMMIT="${campaign_source_commit:-$reuse_evidence_from}"' \
     scripts/stable_release_gate.sh; then
-    echo "release metadata: metadata-equivalent RVV evidence is not bound to the campaign" >&2
+    echo "release metadata: metadata-equivalent RVV evidence is not bound to the originating campaign" >&2
     exit 1
 fi
 for required_campaign_source_text in \
     'BASE64_NG_CAMPAIGN_SOURCE_COMMIT' \
     'scripts/validate-campaign-source-equivalence.py' \
+    'campaign_candidate="${reuse_evidence_from:-HEAD}"' \
+    'external_candidate="$campaign_commit"' \
     'BASE64_NG_FUZZ_SOURCE_COMMIT="$campaign_source_commit"' \
     'BASE64_NG_EXPECTED_RVV_SOURCE_COMMIT="${campaign_source_commit:-$EVIDENCE_SOURCE_COMMIT}"'
 do

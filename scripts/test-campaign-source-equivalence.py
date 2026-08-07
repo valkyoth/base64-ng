@@ -62,12 +62,15 @@ def main() -> None:
         git(repo, "config", "user.name", "fixture")
         git(repo, "config", "user.email", "fixture@example.invalid")
         campaign = commit(repo, "src/lib.rs", "pub fn value() {}\n", "campaign")
-        for path in sorted(VALIDATOR_MODULE.ALLOWED_TOOLING_CHANGES):
+        report = "security/pentest/v2.0.0.md"
+        for path in sorted(VALIDATOR_MODULE.ALLOWED_TOOLING_CHANGES - {report}):
             target = repo / path
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text(f"fixture {path}\n", encoding="utf-8")
         git(repo, "add", ".")
         git(repo, "commit", "-m", "reviewed tooling correction")
+
+        commit(repo, report, "final reviewed report\n", "report-only release commit")
         run(repo, campaign, True)
 
         (repo / "src/lib.rs").write_text("pub fn changed() {}\n", encoding="utf-8")

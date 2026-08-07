@@ -92,8 +92,11 @@ corpus, performance source, and portability input therefore remains byte-for-byt
 the campaign source. Fuzz and native RVV artifacts retain the original commit in
 their manifests; candidate-generated Miri, sanitizer, dudect, Kani, QEMU,
 assembly, SBOM, and package artifacts name the candidate commit. This mode is
-mutually exclusive with signed post-candidate metadata reuse and cannot be used
-in ordinary `check` mode.
+not available in ordinary `check` mode. A later report-only release commit may
+combine it with signed post-candidate metadata reuse: the external campaign is
+verified against the retained candidate first, then the signed candidate is
+verified against the release commit. The two links remain distinct in the final
+manifest; neither campaign is relabeled.
 
 Candidate and release modes require `BASE64_NG_REQUIRE_RVV_NATIVE=1`. The
 hardware-evidence gate validates the operator-supplied

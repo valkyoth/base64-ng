@@ -454,6 +454,19 @@ BASE64_NG_REUSE_EVIDENCE_FROM=<campaign-commit> \
   scripts/stable_release_gate.sh release
 ```
 
+When the retained candidate itself records the frozen external fuzz/RVV
+campaign, preserve both provenance links explicitly:
+
+```sh
+BASE64_NG_REUSE_EVIDENCE_FROM=<retained-candidate-commit> \
+BASE64_NG_CAMPAIGN_SOURCE_COMMIT=<external-campaign-commit> \
+  scripts/stable_release_gate.sh release
+```
+
+The external campaign is checked against the retained candidate before the
+signed metadata-equivalence check binds that candidate to the report-only
+release commit.
+
 Both commands run without an evidence-signing private key. After the selected
 gate exits successfully, run the isolated sealing step with the dedicated
 evidence-only key:
