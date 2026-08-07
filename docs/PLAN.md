@@ -53,7 +53,8 @@ The Commit 54 pre-seal amendment accepted the native X60 campaign and wires
 RVV encode and strict decode into production only for the exact Linux/X60
 identity from 192 input bytes. Operation KATs, quarantine, per-thread vector
 state, leaf-local ELF posture, and scalar fallback are release-gated. The final
-integrated source still requires native recapture and external retest.
+release gate requires native recapture against the integrated source and
+external acceptance.
 
 ## Dependency Policy
 

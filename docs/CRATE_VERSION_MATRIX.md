@@ -5,18 +5,17 @@ crate remains the stable user entry point; companion crates are optional
 integration packages for applications that explicitly admit their dependency
 sets.
 
-## 2.0.0 Release Candidate
+## 2.0.0 Synchronized Release
 
-`main` reports `2.0.0` for every workspace package so local builds, device
-reports, and external evidence unambiguously identify the API generation under
-test. Commit 54 freezes the reviewed `synced-family` publication plan for all
-13 Rust packages. This is not yet a published release: publication still
-requires Commit 55, final external acceptance, green required CI, and the
-signed `v2.0.0` tag.
+Every workspace package reports `2.0.0`, so builds, device reports, and
+external evidence unambiguously identify the synchronized API generation.
+Commit 54 freezes the reviewed `synced-family` publication plan for all 13 Rust
+packages. Publication is valid only from the signed `v2.0.0` tag after Commit
+55, final external acceptance, green required CI, and the complete release gate.
 Commit 32 includes the RVV candidate and QEMU/assembly evidence. The Commit 54
 pre-seal amendment adds exact-profile Linux/SpacemiT X60 production dispatch
-after native evidence; every other RISC-V profile remains scalar. Final
-integrated-source recapture and external retest remain release-blocking.
+after native evidence; every other RISC-V profile remains scalar. The release
+gate requires exact integrated-source native evidence and external acceptance.
 Commit 33 includes a non-dispatchable SVE candidate with QEMU execution at
 128-, 256-, and 512-bit vector lengths plus assembly evidence. Public AArch64
 dispatch remains admitted NEON or scalar until two real SVE systems with

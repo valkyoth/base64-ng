@@ -56,17 +56,14 @@ removals, capability edges, and companion boundaries before implementation.
 
 ## Current Status
 
-This source tree is the `2.0.0` package-family candidate. The latest
-published release remains `1.3.9` until the final release seal and signed
-`v2.0.0` tag are complete. The implementation and package topology are frozen;
-the full external review, distributed fuzz campaigns, formal-verification
-harnesses, sanitizer runs, cross-platform checks, and retained hardware
-evidence have passed.
+This source tree defines the synchronized `2.0.0` package family. The
+implementation and package topology are frozen. Publication is authorized only
+from the signed `v2.0.0` tag after external review, required CI, the complete
+release gate, and source-bound hardware evidence pass.
 
-The candidate includes the complete 2.0 API, synchronized companion crates,
+The 2.0 family includes the complete 2.0 API, synchronized companion crates,
 the supported npm Wasm loader, and exact-profile RVV dispatch for the reviewed
-Linux/SpacemiT X60 identity. The final post-integration native bundle remains
-release-blocking. See the
+Linux/SpacemiT X60 identity. See the
 [release freeze](docs/2.0_RELEASE_FREEZE.md),
 [release notes](release-notes/RELEASE_NOTES_2.0.0.md), and
 [migration guide](docs/MIGRATION.md) for the frozen scope and adoption path.
@@ -94,7 +91,7 @@ normal public dispatch.
 | x86 AVX-512 VBMI encode/decode | Complete | Native AMD AVX-512 VBMI; second Intel performance corroboration is queued for 2.0.1, so no portable throughput claim is made | `admitted` with conservative exact-host thresholds; strict decode remains exact/static only | Not independently verified |
 | little-endian AArch64 NEON encode/decode | Complete | Native Apple Silicon and AWS Neoverse-N1 correctness, direct-kernel, assembly, and retained 15-sample performance bundles accepted through the source-equivalence gate | `admitted` | Not independently verified |
 | wasm `simd128` encode/decode | Complete | Node/V8, Wasmtime, Chromium/V8, Firefox/SpiderMonkey, and Safari/WebKit package/runtime gates | `admitted` for the documented SIMD artifact | Not independently verified |
-| RISC-V RVV 1.0 encode/decode | Complete exact-profile backend | QEMU VLEN 128/256 fallback/direct evidence plus native Banana Pi BPI-F3 SpacemiT X60 VLEN 256 correctness, signal/thread, ABI, cleanup, and performance evidence; final integrated-source recapture is release-blocking | `admitted` only for the exact Linux/X60 identity at 192-byte encode/decode thresholds; all other RISC-V stays scalar | Not independently verified |
+| RISC-V RVV 1.0 encode/decode | Complete exact-profile backend | QEMU VLEN 128/256 fallback/direct evidence plus native Banana Pi BPI-F3 SpacemiT X60 VLEN 256 correctness, signal/thread, ABI, cleanup, and performance evidence; the release gate requires an exact integrated-source bundle | `admitted` only for the exact Linux/X60 identity at 192-byte encode/decode thresholds; all other RISC-V stays scalar | Not independently verified |
 | AArch64 SVE encode/decode | Complete candidate | QEMU vector lengths 128/256/512 plus generated assembly; no accepted native SVE report | `not admitted`; public execution remains NEON or scalar | Not independently verified |
 | Constant-time-oriented secret encode/decode | Complete scalar bounded path | Fixed-work tests, Kani, assembly review, and dudect-style project evidence | Separate scalar path; never ordinary SIMD dispatch | No formal or independent constant-time verification |
 | Big-endian acceleration | No backend implemented | Complete scalar suites under s390x and PowerPC64 QEMU only | `not admitted`; scalar only | No native hardware verification |
@@ -106,10 +103,9 @@ The detailed evidence and non-claims are maintained in
 implementation, execution environment, or admission decision changes.
 
 General 2.0 implementation is complete, including exact-profile native RVV
-admission. Final release assurance consists of external retest, a native RVV
-recapture against the integrated source, green required CI and CodeQL,
-regeneration of candidate-local package evidence, the report-only Commit 55
-seal, and the authorized signed tag.
+admission. Release assurance requires external review, exact-source native RVV
+and NEON evidence, green required CI and CodeQL, candidate-local package
+evidence, the report-only Commit 55 seal, and the authorized signed tag.
 
 RVV dispatch is limited to the measured Linux/SpacemiT X60 identity; other
 RISC-V profiles remain scalar. SVE remains non-dispatchable pending native
