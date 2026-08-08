@@ -7,5 +7,5 @@ publish = false
 [workspace]
 
 [dependencies]
-base64-ng = { path = "..", version = "2.0.0", default-features = false, features = ["secrets", "simd"] }
-base64-ng-subtle = { path = "../crates/base64-ng-subtle", version = "2.0.0", default-features = false }
+base64-ng = { path = "..", version = "2.0.1", default-features = false, features = ["secrets", "simd"] }
+base64-ng-subtle = { path = "../crates/base64-ng-subtle", version = "2.0.1", default-features = false }

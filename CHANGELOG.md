@@ -1,10 +1,24 @@
 # Changelog
 
-## 2.0.0 - Release candidate
+## 2.0.1 - Unreleased
 
-- The complete 13-crate Rust family and supported wasm loader are frozen at
-  `2.0.0`. Publication remains gated on final pentest acceptance, green
-  required CI, and the signed `v2.0.0` tag.
+- Keep the complete 2.0 runtime and public API unchanged while reducing the
+  published core crate to source, tests, licenses, changelog, security policy,
+  and concise user documentation.
+- Exclude repository-only release scripts, formal-verification harnesses,
+  hardware evidence, API snapshots, portability projects, release notes, and
+  engineering ledgers from the crates.io archive. They remain available in
+  the GitHub repository.
+- Replace the 1,757-line root README with a focused quick start, API selection
+  guide, representative examples, feature and companion tables, security
+  boundaries, and links to detailed repository documentation.
+- Synchronize the 13 Rust crates and supported wasm loader at `2.0.1`.
+
+## 2.0.0 - 2026-08-07
+
+- Released the complete 13-crate Rust family and supported wasm loader at
+  `2.0.0` after final pentest acceptance, green required CI, and the signed
+  `v2.0.0` tag.
 - Commit 54 freezes the final public API snapshots, migration guide, package
   order, release documentation, crates.io contents, and wasm artifact source
   provenance.

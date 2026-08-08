@@ -4,11 +4,11 @@ version = 4
 
 [[package]]
 name = "base64-ng"
-version = "2.0.0"
+version = "2.0.1"
 
 [[package]]
 name = "base64-ng-bytes"
-version = "2.0.0"
+version = "2.0.1"
 dependencies = [
  "base64-ng",
  "bytes",
@@ -16,7 +16,7 @@ dependencies = [
 
 [[package]]
 name = "base64-ng-sanitization"
-version = "2.0.0"
+version = "2.0.1"
 dependencies = [
  "base64-ng",
  "sanitization",
@@ -38,7 +38,7 @@ dependencies = [
 
 [[package]]
 name = "base64-ng-serde"
-version = "2.0.0"
+version = "2.0.1"
 dependencies = [
  "base64-ng",
  "serde",
@@ -46,7 +46,7 @@ dependencies = [
 
 [[package]]
 name = "base64-ng-tokio"
-version = "2.0.0"
+version = "2.0.1"
 dependencies = [
  "base64-ng",
  "tokio",

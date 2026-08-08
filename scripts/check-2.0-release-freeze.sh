@@ -1,8 +1,8 @@
 #!/usr/bin/env sh
 set -eu
 
-version="2.0.0"
-snapshot_dir="api-snapshots/v${version}"
+version="$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | sed -n '1p')"
+snapshot_dir="api-snapshots/v2.0.0"
 evidence_dir="target/release-evidence/commit-54"
 package_list_dir="$evidence_dir/package-lists"
 
@@ -57,10 +57,10 @@ for package in $packages; do
     fi
 done
 
-grep -F -q 'base64-ng = "2.0.0"' README.md ||
-    fail "README is missing the 2.0.0 dependency"
-grep -F -q 'base64-ng = "2.0.0"' docs/MIGRATION.md ||
-    fail "migration guide is missing the 2.0.0 dependency"
+grep -F -q "base64-ng = \"$version\"" README.md ||
+    fail "README is missing the $version dependency"
+grep -F -q "base64-ng = \"$version\"" docs/MIGRATION.md ||
+    fail "migration guide is missing the $version dependency"
 grep -F -q 'Persistent-provider inventory: **none**.' docs/2.0_RELEASE_FREEZE.md ||
     fail "persistent-provider inventory is not explicit"
 grep -F -q 'policy-carrying, immutable `Base64String<S>`' docs/2.0_RELEASE_FREEZE.md ||
@@ -69,11 +69,11 @@ grep -F -q 'pub struct Base64String' src/v2/ordinary_string.rs ||
     fail "policy-carrying ordinary string owner is missing"
 grep -F -q 'pub mod prelude;' src/lib.rs ||
     fail "focused ordinary prelude is missing"
-test -s release-notes/RELEASE_NOTES_2.0.0.md ||
-    fail "missing 2.0.0 release notes"
+test -s "release-notes/RELEASE_NOTES_${version}.md" ||
+    fail "missing $version release notes"
 
-grep -F -q '"version": "2.0.0"' packages/base64-ng-wasm-loader/package.json ||
-    fail "wasm loader package version is not 2.0.0"
+grep -F -q "\"version\": \"$version\"" packages/base64-ng-wasm-loader/package.json ||
+    fail "wasm loader package version is not $version"
 grep -F -q '"name": "@valkyoth/base64-ng-wasm-loader"' \
     packages/base64-ng-wasm-loader/package.json ||
     fail "wasm loader package is not owned by the Valkyoth npm scope"

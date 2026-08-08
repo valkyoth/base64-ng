@@ -1,5 +1,9 @@
 # SIMD Admission Policy
 
+Release status: `2.0.1`. The patch changes package contents and user
+documentation only; backend implementation and admission remain identical to
+`2.0.0`.
+
 `base64-ng` is scalar by default and admits conservative accelerated encode
 paths in the `1.2.x` line: std `x86`/`x86_64` AVX-512 VBMI first, then
 AVX2, then SSSE3/SSE4.1, plus little-endian std `aarch64` NEON, for Standard

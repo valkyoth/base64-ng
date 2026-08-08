@@ -33,8 +33,8 @@ constant-time-oriented Base64 decode into clear-on-drop secret containers.
 
 ```toml
 [dependencies]
-base64-ng = { version = "2.0.0", default-features = false }
-base64-ng-sanitization = { version = "2.0.0", default-features = false }
+base64-ng = { version = "2.0.1", default-features = false }
+base64-ng-sanitization = { version = "2.0.1", default-features = false }
 ```
 
 ```rust
@@ -54,7 +54,7 @@ assert!(secret.sanitization_verify(
 Enable `alloc` for heap-backed `sanitization::SecretVec` helpers:
 
 ```toml
-base64-ng-sanitization = { version = "2.0.0", features = ["alloc"] }
+base64-ng-sanitization = { version = "2.0.1", features = ["alloc"] }
 ```
 
 The convenience `decode_secret_vec` and `decode_secret_vec_staged` methods
@@ -86,7 +86,7 @@ strict random canaries, and strict assembly comparison, and decodes directly
 into locked memory:
 
 ```toml
-base64-ng-sanitization = { version = "2.0.0", features = ["high-assurance"] }
+base64-ng-sanitization = { version = "2.0.1", features = ["high-assurance"] }
 ```
 
 ```rust
@@ -199,7 +199,7 @@ For deployments that want `sanitization`'s assembly-backed comparison checks,
 enable the passthrough features:
 
 ```toml
-base64-ng-sanitization = { version = "2.0.0", features = ["strict-compare"] }
+base64-ng-sanitization = { version = "2.0.1", features = ["strict-compare"] }
 ```
 
 The previous companion feature name `strict-ct` remains as an alias for

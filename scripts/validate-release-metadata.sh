@@ -68,7 +68,7 @@ test -s README.md
 test -s CONTRIBUTING.md
 test -s SECURITY.md
 test -d release-notes
-test -s release-notes/RELEASE_NOTES_2.0.0.md
+test -s "release-notes/RELEASE_NOTES_${cargo_version}.md"
 test -s security/pentest/README.md
 test -s docs/API_AUDIT.md
 test -s docs/2.0_GOVERNANCE.md
@@ -1106,8 +1106,35 @@ for required_package_file in \
     "src/wrap.rs" \
     "tests/rfc4648.rs"
 do
+    case "$required_package_file" in
+        CHANGELOG.md | LICENSE-APACHE | LICENSE-MIT | README.md | SECURITY.md | src/* | tests/*) ;;
+        *) continue ;;
+    esac
     if ! printf '%s\n' "$package_list" | grep -qx "$required_package_file"; then
         echo "release metadata: package is missing $required_package_file" >&2
+        exit 1
+    fi
+done
+
+package_file_count="$(printf '%s\n' "$package_list" | wc -l)"
+if [ "$package_file_count" -gt 220 ]; then
+    echo "release metadata: core package contains $package_file_count files; maximum is 220" >&2
+    exit 1
+fi
+
+for repository_only_prefix in \
+    api-snapshots \
+    benches \
+    docs \
+    hardware-evidence \
+    kani \
+    portability \
+    release-notes \
+    scripts \
+    security
+do
+    if printf '%s\n' "$package_list" | grep -q "^${repository_only_prefix}/"; then
+        echo "release metadata: repository-only $repository_only_prefix files must not be included in the core package" >&2
         exit 1
     fi
 done

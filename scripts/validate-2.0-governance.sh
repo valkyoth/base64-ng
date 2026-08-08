@@ -76,8 +76,8 @@ require_text "$decision" "exclude the RFC text and source-lock material from eve
 require_text "$decision" "persistent teardown recovery without a separately named and admitted"
 require_text "$decision" "The accepted pre-seal evidence amendment classifies a second AVX-512 VBMI"
 
-require_text README.md "[2.0 commit plan](docs/2.0.0-release-plan.md)"
-require_text README.md "[governance decision](docs/2.0_GOVERNANCE.md)"
+require_text README.md "[2.0 commit plan](https://github.com/valkyoth/base64-ng/blob/main/docs/2.0.0-release-plan.md)"
+require_text README.md "[Governance decision](https://github.com/valkyoth/base64-ng/blob/main/docs/2.0_GOVERNANCE.md)"
 require_text CONTRIBUTING.md '[`2.0.0-release-plan.md`](docs/2.0.0-release-plan.md)'
 require_text docs/RELEASE_EVIDENCE.md '[`2.0_GOVERNANCE.md`](2.0_GOVERNANCE.md)'
 

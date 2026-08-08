@@ -10,12 +10,15 @@ import { pathToFileURL } from "node:url";
 import { createBase64Ng } from "../src/index.js";
 
 test("artifact provenance binds the synchronized package and both digests", async () => {
+  const packageMetadata = JSON.parse(
+    await readFile(new URL("../package.json", import.meta.url), "utf8"),
+  );
   const provenance = JSON.parse(
     await readFile(new URL("../artifacts/PROVENANCE.json", import.meta.url), "utf8"),
   );
   assert.equal(provenance.schema, "base64-ng-wasm-provenance-v1");
   assert.equal(provenance.package, "@valkyoth/base64-ng-wasm-loader");
-  assert.equal(provenance.version, "2.0.0");
+  assert.equal(provenance.version, packageMetadata.version);
   assert.match(provenance.sourceCommit, /^[0-9a-f]{40}$/u);
   for (const artifact of ["scalar", "simd128"]) {
     const name = `base64-ng-${artifact}.wasm`;

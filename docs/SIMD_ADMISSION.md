@@ -39,7 +39,7 @@ only for backends named in this file and the release gate.
   per-thread vector state, and a passing operation KAT. Every other RISC-V
   target remains scalar; safe `no_std` does not auto-admit RVV.
 - Public performance claims: none without local benchmark evidence.
-- Release status: `2.0.0`; `1.2.0` admitted conservative active encode
+- Release status: `2.0.1`; `1.2.0` admitted conservative active encode
   dispatch, and `1.3.0` admitted normal strict decode dispatch for the first
   narrow decode scope. `1.3.3` admits a narrow wasm `simd128` runtime profile
   for Standard and URL-safe public encode plus normal strict decode when the

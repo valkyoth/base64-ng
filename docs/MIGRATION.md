@@ -20,14 +20,14 @@ are not the recommended API for new 2.0 code.
 
 ```toml
 [dependencies]
-base64-ng = "2.0.0"
+base64-ng = "2.0.1"
 ```
 
 For `no_std` without allocation:
 
 ```toml
 [dependencies]
-base64-ng = { version = "2.0.0", default-features = false }
+base64-ng = { version = "2.0.1", default-features = false }
 ```
 
 Enable ordinary runtime SIMD with `features = ["simd"]`, synchronous
@@ -209,10 +209,10 @@ ecosystem integrations are separate synchronized packages:
 
 ```toml
 [dependencies]
-base64-ng = "2.0.0"
-base64-ng-tokio = "2.0.0"
-base64-ng-bytes = "2.0.0"
-base64-ng-serde = "2.0.0"
+base64-ng = "2.0.1"
+base64-ng-tokio = "2.0.1"
+base64-ng-bytes = "2.0.1"
+base64-ng-serde = "2.0.1"
 ```
 
 The Tokio and bytes state machines expose accepted/committed progress,

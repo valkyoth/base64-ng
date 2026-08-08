@@ -1,10 +1,10 @@
 [package]
 name = "base64-ng"
-version = "2.0.0"
+version = "2.0.1"
 edition = "2024"
 rust-version = "1.90"
 license = "MIT OR Apache-2.0"
-description = "no_std-first Base64 encoding and decoding with strict APIs and a security-heavy release process"
+description = "no_std-first Base64 encoding and decoding with strict RFC 4648 APIs and optional SIMD"
 repository = "https://github.com/valkyoth/base64-ng"
 homepage = "https://github.com/valkyoth/base64-ng"
 documentation = "https://docs.rs/base64-ng"
@@ -14,33 +14,11 @@ categories = ["encoding", "no-std"]
 include = [
     "src/**",
     "tests/**",
-    "benches/**",
-    "docs/**",
-    "hardware-evidence/**",
-    "kani/**",
-    "api-snapshots/**",
-    "portability/2_0_migration_smoke/src/**",
-    "portability/2_0_no_std_alloc_smoke/src/**",
-    "portability/aarch64_static_neon_smoke/src/**",
-    "portability/feature_contract_smoke/src/**",
-    "portability/feature_unification_smoke/src/**",
-    "portability/no_alloc_smoke/src/**",
-    "portability/x86_static_encode_smoke/src/**",
-    "portability/migration_smoke/src/**",
-    "scripts/*.py",
-    "scripts/*.sh",
-    "scripts/*.txt",
     "Cargo.toml",
-    "release-crates.toml",
-    "rust-toolchain.toml",
-    "deny.toml",
     "/README.md",
-    "CONTRIBUTING.md",
     "CHANGELOG.md",
-    "release-notes/RELEASE_NOTES_2.0.0.md",
-    "security/release-signers",
     "SECURITY.md",
-    "LICENSE-*",
+    "/LICENSE-*",
 ]
 
 [workspace]

@@ -35,7 +35,7 @@ selection reason, limits, and ABI version.
 The reviewed JavaScript embeds and verifies the SHA-256 digest of each shipped
 artifact before instantiation; `posture.artifactSha256` reports the selected
 digest. `artifacts/SHA256SUMS` records the same values for release tooling.
-`artifacts/PROVENANCE.json` binds package version `2.0.0`, both artifact
+`artifacts/PROVENANCE.json` binds package version `2.0.1`, both artifact
 digests, and the exact source commit used by the package build. The release
 gate checks the provenance inside the packed npm tarball against tagged `HEAD`.
 Builds remap the repository source root to a stable virtual path so official
