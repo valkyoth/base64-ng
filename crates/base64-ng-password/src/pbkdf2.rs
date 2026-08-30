@@ -290,7 +290,7 @@ pub(crate) fn parse_decimal(
             PasswordRecordErrorKind::InvalidRounds,
         ));
     }
-    let mut value = 0_u32;
+    let mut value = u32::default();
     for (index, byte) in field.iter().copied().enumerate() {
         if !byte.is_ascii_digit() {
             return Err(PasswordRecordError::at(

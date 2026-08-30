@@ -47,16 +47,16 @@ pub(super) struct DecodeFailure {
 pub(super) fn encode(profile: Profile, input: &[u8]) -> Vec<u8> {
     let alphabet = profile.alphabet();
     let mut output = Vec::with_capacity(input.len().div_ceil(3) * 4);
-    let mut chunks = input.chunks_exact(3);
+    let (chunks, remainder) = input.as_chunks::<3>();
 
-    for chunk in &mut chunks {
+    for chunk in chunks {
         output.push(alphabet[usize::from(chunk[0] >> 2)]);
         output.push(alphabet[usize::from(((chunk[0] & 3) << 4) | (chunk[1] >> 4))]);
         output.push(alphabet[usize::from(((chunk[1] & 15) << 2) | (chunk[2] >> 6))]);
         output.push(alphabet[usize::from(chunk[2] & 63)]);
     }
 
-    match chunks.remainder() {
+    match remainder {
         [] => {}
         [first] => {
             output.push(alphabet[usize::from(first >> 2)]);

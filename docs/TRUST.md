@@ -21,7 +21,7 @@ of the published runtime trusted computing base.
 | --- | --- | --- |
 | License | `MIT OR Apache-2.0` | `Cargo.toml`, `LICENSE-MIT`, `LICENSE-APACHE` |
 | MSRV | Rust `1.90.0` | `Cargo.toml`, CI compatibility matrix |
-| Active release toolchain | Rust `1.97.1`; MSRV remains Rust `1.90.0` | `rust-toolchain.toml`, `scripts/ci_install_rust.sh` |
+| Active release toolchain | Rust `1.98.0`; MSRV remains Rust `1.90.0` | `rust-toolchain.toml`, `scripts/ci_install_rust.sh` |
 | Runtime dependencies | Zero external crates in the core package; optional companion crates are separate opt-in packages | `scripts/validate-dependencies.sh`, `scripts/check_companion_crates.sh` |
 | Default dev dependencies | Zero external crates | `Cargo.toml` |
 | Optional runtime features | `alloc`, `std`, `stream`, and admitted ordinary `simd`; dependency-free `secrets` storage, scalar processing, and assurance tokens; secret-only `allow-wasm32-best-effort-wipe` and `allow-compiler-fence-only-wipe` cleanup-limit acknowledgements; reserved `tokio`, `kani`, `fuzzing`. AArch64 CSDB attestation uses custom cfg `base64_ng_aarch64_csdb_attested`. The `base64_ng_require_high_assurance` eligibility cfg requires `secrets` and fails on unsupported or unattested targets; additive ordinary SIMD does not authorize assured secret operations. | `Cargo.toml`, `scripts/check-2.0-secret-capabilities.sh`, `scripts/check-2.0-assurance.sh` |

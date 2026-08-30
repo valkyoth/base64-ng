@@ -26,7 +26,9 @@ fuzz_target!(|data: &[u8]| {
             match (one_shot, chunked) {
                 (Ok(expected), Ok(actual)) => assert_eq!(actual, expected),
                 (Err(expected), Err(actual)) => assert_eq!(actual.kind(), expected.kind()),
-                (left, right) => panic!("PEM one-shot/chunk mismatch: {left:?} {right:?}"),
+                (Ok(_), Err(_)) | (Err(_), Ok(_)) => {
+                    panic!("PEM one-shot/chunk result classification mismatch")
+                }
             }
         }
     }

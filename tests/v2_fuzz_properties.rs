@@ -135,8 +135,8 @@ fn incremental_decode<S: Codec>(
 
 fn independent_encode(alphabet: &[u8; 64], padded: bool, input: &[u8]) -> Vec<u8> {
     let mut output = Vec::new();
-    let mut chunks = input.chunks_exact(3);
-    for chunk in &mut chunks {
+    let (chunks, remainder) = input.as_chunks::<3>();
+    for chunk in chunks {
         output.extend_from_slice(&[
             alphabet[usize::from(chunk[0] >> 2)],
             alphabet[usize::from(((chunk[0] & 3) << 4) | (chunk[1] >> 4))],
@@ -144,7 +144,7 @@ fn independent_encode(alphabet: &[u8; 64], padded: bool, input: &[u8]) -> Vec<u8
             alphabet[usize::from(chunk[2] & 63)],
         ]);
     }
-    match chunks.remainder() {
+    match remainder {
         [] => {}
         [first] => {
             output.extend_from_slice(&[

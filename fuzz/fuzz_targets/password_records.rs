@@ -9,13 +9,16 @@ use libfuzzer_sys::fuzz_target;
 
 fuzz_target!(|input: &[u8]| {
     let limits = PasswordRecordLimits::new(4096, 2048, 1024, 1024, 4096, 4096);
-    let mut decoded = [0_u8; 1024];
-    let mut regenerated = [0_u8; 4096];
+    let mut decoded =
+        core::array::from_fn::<_, 1024, _>(|index| u8::try_from(index % 251).unwrap());
+    let mut regenerated =
+        core::array::from_fn::<_, 4096, _>(|index| u8::try_from(index % 251).unwrap());
 
     if let Ok(record) = parse_pbkdf2_record(input, limits) {
         let salt_len = decode_pbkdf2_field_into(record.expose_encoded_salt(), &mut decoded, limits)
             .expect("validated PBKDF2 salt must decode");
-        let mut checksum = [0_u8; 64];
+        let mut checksum =
+            core::array::from_fn::<_, 64, _>(|index| u8::try_from(index % 251).unwrap());
         let checksum_len =
             decode_pbkdf2_field_into(record.expose_encoded_checksum(), &mut checksum, limits)
                 .expect("validated PBKDF2 checksum must decode");

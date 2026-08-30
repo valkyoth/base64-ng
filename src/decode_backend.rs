@@ -360,8 +360,8 @@ mod tests {
             .decode_slice(&input, &mut output)
             .unwrap();
         assert_eq!(written, output.len());
-        for chunk in output.chunks_exact(3) {
-            assert_eq!(chunk, [0x04, 0x10, 0x41]);
+        for chunk in output.as_chunks::<3>().0 {
+            assert_eq!(*chunk, [0x04, 0x10, 0x41]);
         }
         assert_eq!(DECODE_CALLS.load(Ordering::Relaxed), 0);
     }

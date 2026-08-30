@@ -379,7 +379,7 @@ exercise the deepest local paths:
 
 ```sh
 rustup target add x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu x86_64-unknown-freebsd wasm32-unknown-unknown thumbv7em-none-eabihf
-cargo install --locked cargo-nextest --version 0.9.140
+cargo install --locked cargo-nextest --version 0.9.143
 cargo install --locked cargo-fuzz --version 0.13.2
 cargo install --locked kani-verifier --version 0.67.0
 ```

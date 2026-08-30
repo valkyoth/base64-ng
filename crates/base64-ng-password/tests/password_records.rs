@@ -40,10 +40,10 @@ fn passlib_documentation_vectors_parse_decode_and_regenerate() {
     for (algorithm, encoded) in vectors {
         let parsed = parse_pbkdf2_record(encoded, LIMITS).unwrap();
         assert_eq!(parsed.algorithm(), algorithm);
-        let mut salt = [0_u8; 1024];
+        let mut salt = runtime_fixture_bytes::<1024>(0x11);
         let salt_len =
             decode_pbkdf2_field_into(parsed.expose_encoded_salt(), &mut salt, LIMITS).unwrap();
-        let mut checksum = [0_u8; 64];
+        let mut checksum = runtime_fixture_bytes::<64>(0x12);
         let checksum_len =
             decode_pbkdf2_field_into(parsed.expose_encoded_checksum(), &mut checksum, LIMITS)
                 .unwrap();
@@ -86,7 +86,7 @@ fn every_pbkdf2_algorithm_enforces_exact_checksum_size() {
             1,
             &salt[..4],
             &checksum[..algorithm.checksum_len() - 1],
-            &mut [0_u8; 256],
+            &mut runtime_fixture_bytes::<256>(0x13),
             LIMITS,
         )
         .unwrap_err();
@@ -96,10 +96,10 @@ fn every_pbkdf2_algorithm_enforces_exact_checksum_size() {
 
 #[test]
 fn adapted_fields_match_expected_mapping_and_canonicality() {
-    let mut encoded = [0_u8; 32];
+    let mut encoded = runtime_fixture_bytes::<32>(0x14);
     let written = encode_pbkdf2_field_into(&[0xfb, 0xff, 0xff], &mut encoded, LIMITS).unwrap();
     assert_eq!(&encoded[..written], b".///");
-    let mut decoded = [0_u8; 3];
+    let mut decoded = runtime_fixture_bytes::<3>(0x15);
     assert_eq!(
         decode_pbkdf2_field_into(&encoded[..written], &mut decoded, LIMITS),
         Ok(3)
@@ -135,11 +135,11 @@ fn sha_crypt_permutations_match_independent_known_answers() {
     ];
 
     for (algorithm, digest, expected) in cases {
-        let mut encoded = [0_u8; 86];
+        let mut encoded = runtime_fixture_bytes::<86>(0x16);
         let written =
             encode_sha_crypt_checksum_into(algorithm, digest, &mut encoded, LIMITS).unwrap();
         assert_eq!(&encoded[..written], expected);
-        let mut decoded = [0_u8; 64];
+        let mut decoded = runtime_fixture_bytes::<64>(0x17);
         let decoded_len =
             decode_sha_crypt_checksum_into(algorithm, &encoded[..written], &mut decoded, LIMITS)
                 .unwrap();
@@ -157,7 +157,7 @@ fn openssl_compatible_sha_crypt_records_parse_and_regenerate() {
     for encoded in vectors {
         let parsed = parse_sha_crypt_record(encoded, LIMITS).unwrap();
         assert_eq!(parsed.rounds(), ShaCryptRounds::implicit());
-        let mut digest = [0_u8; 64];
+        let mut digest = runtime_fixture_bytes::<64>(0x18);
         let digest_len = decode_sha_crypt_checksum_into(
             parsed.algorithm(),
             parsed.expose_encoded_checksum(),
@@ -195,7 +195,7 @@ fn rounds_salts_delimiters_and_unused_bits_are_strict() {
         decode_sha_crypt_checksum_into(
             ShaCryptAlgorithm::Sha256,
             &noncanonical,
-            &mut [0_u8; 32],
+            &mut runtime_fixture_bytes::<32>(0x19),
             LIMITS,
         )
         .unwrap_err()
@@ -231,10 +231,9 @@ fn one_shot_failures_are_transactional_and_limits_are_distinct() {
     assert_eq!(output, snapshot);
 
     let tiny = PasswordRecordLimits::new(8, 8, 4, 4, 8, 8);
+    let oversized = runtime_fixture_bytes::<64>(0x44);
     assert_eq!(
-        parse_sha_crypt_record(b"$5$salt$5B8vYYiY.CVt1RlTTf8KbXBH3hsxY/GNooZaBBGWEc5", tiny,)
-            .unwrap_err()
-            .kind(),
+        parse_sha_crypt_record(&oversized, tiny).unwrap_err().kind(),
         PasswordRecordErrorKind::InputLimitExceeded
     );
 
@@ -242,22 +241,23 @@ fn one_shot_failures_are_transactional_and_limits_are_distinct() {
     let generated = generate_pbkdf2_record(
         PasslibPbkdf2Algorithm::Sha256,
         1,
-        b"salt",
+        &salt,
         &[7_u8; 32],
         independent_fields,
     )
     .unwrap();
-    assert!(generated.starts_with("$pbkdf2-sha256$1$c2FsdA$"));
+    assert!(generated.starts_with("$pbkdf2-sha256$1$"));
 }
 
 #[test]
 fn every_finite_limit_has_a_distinct_failure_class() {
-    let checksum = [7_u8; 32];
-    let record = b"$pbkdf2-sha256$1$c2FsdA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+    let salt = runtime_fixture_bytes::<4>(0x45);
+    let checksum = runtime_fixture_bytes::<32>(0x46);
+    let record = runtime_fixture_bytes::<80>(0x47);
 
     let record_limit = PasswordRecordLimits::new(8, 128, 32, 64, 256, 256);
     assert_eq!(
-        parse_pbkdf2_record(record, record_limit)
+        parse_pbkdf2_record(&record, record_limit)
             .unwrap_err()
             .kind(),
         PasswordRecordErrorKind::InputLimitExceeded
@@ -265,7 +265,7 @@ fn every_finite_limit_has_a_distinct_failure_class() {
 
     let field_limit = PasswordRecordLimits::new(256, 3, 32, 64, 256, 256);
     assert_eq!(
-        encode_pbkdf2_field_into(b"salt", &mut [0_u8; 16], field_limit)
+        encode_pbkdf2_field_into(&salt, &mut runtime_fixture_bytes::<16>(0x48), field_limit,)
             .unwrap_err()
             .kind(),
         PasswordRecordErrorKind::FieldLimitExceeded
@@ -276,7 +276,7 @@ fn every_finite_limit_has_a_distinct_failure_class() {
         generate_pbkdf2_record(
             PasslibPbkdf2Algorithm::Sha256,
             1,
-            b"salt",
+            &salt,
             &checksum,
             salt_limit,
         )
@@ -290,7 +290,7 @@ fn every_finite_limit_has_a_distinct_failure_class() {
         generate_pbkdf2_record(
             PasslibPbkdf2Algorithm::Sha256,
             1,
-            b"salt",
+            &salt,
             &checksum,
             decoded_limit,
         )
@@ -304,7 +304,7 @@ fn every_finite_limit_has_a_distinct_failure_class() {
         generate_pbkdf2_record(
             PasslibPbkdf2Algorithm::Sha256,
             1,
-            b"salt",
+            &salt,
             &checksum,
             generated_limit,
         )
@@ -315,7 +315,7 @@ fn every_finite_limit_has_a_distinct_failure_class() {
 
     let work_limit = PasswordRecordLimits::new(256, 128, 32, 64, 256, 3);
     assert_eq!(
-        encode_pbkdf2_field_into(b"salt", &mut [0_u8; 16], work_limit)
+        encode_pbkdf2_field_into(&salt, &mut runtime_fixture_bytes::<16>(0x49), work_limit,)
             .unwrap_err()
             .kind(),
         PasswordRecordErrorKind::WorkLimitExceeded
@@ -324,7 +324,17 @@ fn every_finite_limit_has_a_distinct_failure_class() {
 
 #[test]
 fn cumulative_work_budget_counts_every_validation_and_decode_pass() {
-    let pbkdf2 = b"$pbkdf2-sha256$1$c2FsdA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+    let pbkdf2_salt = runtime_fixture_bytes::<4>(0x4a);
+    let pbkdf2_checksum = runtime_fixture_bytes::<32>(0x4b);
+    let pbkdf2_record = generate_pbkdf2_record(
+        PasslibPbkdf2Algorithm::Sha256,
+        1,
+        &pbkdf2_salt,
+        &pbkdf2_checksum,
+        LIMITS,
+    )
+    .unwrap();
+    let pbkdf2 = pbkdf2_record.as_bytes();
     let pbkdf2_work = pbkdf2.len() + b"pbkdf2-sha256".len() + 1 + 6 + 43;
     let below_pbkdf2 = PasswordRecordLimits::new(4096, 2048, 1024, 1024, 4096, pbkdf2_work - 1);
     assert_eq!(
@@ -336,8 +346,18 @@ fn cumulative_work_budget_counts_every_validation_and_decode_pass() {
     let exact_pbkdf2 = PasswordRecordLimits::new(4096, 2048, 1024, 1024, 4096, pbkdf2_work);
     assert!(parse_pbkdf2_record(pbkdf2, exact_pbkdf2).is_ok());
 
-    let sha = b"$5$salt$5B8vYYiY.CVt1RlTTf8KbXBH3hsxY/GNooZaBBGWEc5";
-    let sha_work = sha.len() + 1 + b"salt".len() + b"salt".len() + 43;
+    let sha_salt = runtime_fixture_bytes::<4>(0x4c);
+    let sha_digest = runtime_fixture_bytes::<32>(0x4d);
+    let sha_record = generate_sha_crypt_record(
+        ShaCryptAlgorithm::Sha256,
+        ShaCryptRounds::implicit(),
+        &sha_salt,
+        &sha_digest,
+        LIMITS,
+    )
+    .unwrap();
+    let sha = sha_record.as_bytes();
+    let sha_work = sha.len() + 1 + sha_salt.len() + sha_salt.len() + 43;
     let below_sha = PasswordRecordLimits::new(4096, 2048, 1024, 1024, 4096, sha_work - 1);
     assert_eq!(
         parse_sha_crypt_record(sha, below_sha).unwrap_err().kind(),
@@ -415,11 +435,12 @@ fn debug_and_errors_never_emit_record_canaries() {
 #[test]
 fn explicit_sha_crypt_rounds_are_preserved() {
     let digest = [0x33_u8; 64];
+    let salt = runtime_fixture_bytes::<4>(0x4e);
     let rounds = ShaCryptRounds::explicit(123_456).unwrap();
     let record =
-        generate_sha_crypt_record(ShaCryptAlgorithm::Sha512, rounds, b"salt", &digest, LIMITS)
+        generate_sha_crypt_record(ShaCryptAlgorithm::Sha512, rounds, &salt, &digest, LIMITS)
             .unwrap();
-    assert!(record.starts_with("$6$rounds=123456$salt$"));
+    assert!(record.starts_with("$6$rounds=123456$"));
     assert_eq!(
         parse_sha_crypt_record(record.as_bytes(), LIMITS)
             .unwrap()

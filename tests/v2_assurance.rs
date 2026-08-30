@@ -548,7 +548,7 @@ fn violating_provider_double_panic_is_confined_to_a_subprocess() {
 
 fn recursive_test_command(executable: &std::path::Path) -> Command {
     let Some(runner) = env::var_os("BASE64_NG_TEST_SUBPROCESS_RUNNER") else {
-        return Command::new(executable);
+        return without_core_dumps(Command::new(executable));
     };
     let runner = runner
         .to_str()
@@ -559,5 +559,27 @@ fn recursive_test_command(executable: &std::path::Path) -> Command {
         .expect("cross-test runner must name a program");
     let mut command = Command::new(program);
     command.args(arguments).arg(executable);
+    without_core_dumps(command)
+}
+
+#[cfg(unix)]
+fn without_core_dumps(command: Command) -> Command {
+    let program = command.get_program().to_os_string();
+    let arguments = command
+        .get_args()
+        .map(std::ffi::OsStr::to_os_string)
+        .collect::<Vec<_>>();
+    let mut wrapped = Command::new("/bin/sh");
+    wrapped.args([
+        "-c",
+        "ulimit -c 0; exec \"$@\"",
+        "base64-ng-test-subprocess",
+    ]);
+    wrapped.arg(program).args(arguments);
+    wrapped
+}
+
+#[cfg(not(unix))]
+fn without_core_dumps(command: Command) -> Command {
     command
 }

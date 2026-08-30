@@ -45,8 +45,8 @@ const NO_INDEX = 0xffff_ffff;
 const HARD_MAX_MEMORY_PAGES = 128;
 const MAX_ARTIFACT_BYTES = 1024 * 1024;
 const ARTIFACT_SHA256 = Object.freeze({
-  scalar: "a37358ace625126dab94c57c8d8442da2d43479bd244c4cace681e6ca26c169f",
-  simd128: "75b1049fa012896ee2b2b969c5c223c100de5147b1a0d28e194b59cff24fdba2",
+  scalar: "1267b3de661aa478250eed1346de98369f76ef495a9fe7f877c41ea32f26f4ed",
+  simd128: "924e841431dfe85d22df120b73fd5293e17be3fed767ca24fc36640e5a5c8cb2",
 });
 
 export const Codecs = Object.freeze({

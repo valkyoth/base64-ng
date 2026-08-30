@@ -5,27 +5,28 @@ crate remains the stable user entry point; companion crates are optional
 integration packages for applications that explicitly admit their dependency
 sets.
 
-## 2.0.1 Synchronized Release
+## 2.0.2 Synchronized Release
 
-Every workspace package reports `2.0.1`. This patch keeps the 2.0.0 runtime and
-public API unchanged while reducing the core crates.io archive and root README.
-All companion releases are dependency-only synchronization bumps.
+Every workspace package reports `2.0.2`. This maintenance patch keeps the
+2.0.0 runtime and public API unchanged while updating the active Rust
+toolchain, current dependencies, and immutable CI Action pins. All companion
+releases are dependency-only synchronization bumps.
 
 | Crate | Candidate Version | In Synchronized Plan | Cargo |
 | --- | --- | --- | --- |
-| `base64-ng` | `2.0.1` | yes | <https://crates.io/crates/base64-ng> |
-| `base64-ng-sanitization` | `2.0.1` | yes | <https://crates.io/crates/base64-ng-sanitization> |
-| `base64-ng-derive` | `2.0.1` | yes | <https://crates.io/crates/base64-ng-derive> |
-| `base64-ng-serde` | `2.0.1` | yes | <https://crates.io/crates/base64-ng-serde> |
-| `base64-ng-bytes` | `2.0.1` | yes | <https://crates.io/crates/base64-ng-bytes> |
-| `base64-ng-subtle` | `2.0.1` | yes | <https://crates.io/crates/base64-ng-subtle> |
-| `base64-ng-tokio` | `2.0.1` | yes | <https://crates.io/crates/base64-ng-tokio> |
-| `base64-ng-imap` | `2.0.1` | yes | <https://crates.io/crates/base64-ng-imap> |
-| `base64-ng-mime` | `2.0.1` | yes | <https://crates.io/crates/base64-ng-mime> |
-| `base64-ng-multibase` | `2.0.1` | yes | <https://crates.io/crates/base64-ng-multibase> |
-| `base64-ng-password` | `2.0.1` | yes | <https://crates.io/crates/base64-ng-password> |
-| `base64-ng-openpgp` | `2.0.1` | yes | <https://crates.io/crates/base64-ng-openpgp> |
-| `base64-ng-pem` | `2.0.1` | yes | <https://crates.io/crates/base64-ng-pem> |
+| `base64-ng` | `2.0.2` | yes | <https://crates.io/crates/base64-ng> |
+| `base64-ng-sanitization` | `2.0.2` | yes | <https://crates.io/crates/base64-ng-sanitization> |
+| `base64-ng-derive` | `2.0.2` | yes | <https://crates.io/crates/base64-ng-derive> |
+| `base64-ng-serde` | `2.0.2` | yes | <https://crates.io/crates/base64-ng-serde> |
+| `base64-ng-bytes` | `2.0.2` | yes | <https://crates.io/crates/base64-ng-bytes> |
+| `base64-ng-subtle` | `2.0.2` | yes | <https://crates.io/crates/base64-ng-subtle> |
+| `base64-ng-tokio` | `2.0.2` | yes | <https://crates.io/crates/base64-ng-tokio> |
+| `base64-ng-imap` | `2.0.2` | yes | <https://crates.io/crates/base64-ng-imap> |
+| `base64-ng-mime` | `2.0.2` | yes | <https://crates.io/crates/base64-ng-mime> |
+| `base64-ng-multibase` | `2.0.2` | yes | <https://crates.io/crates/base64-ng-multibase> |
+| `base64-ng-password` | `2.0.2` | yes | <https://crates.io/crates/base64-ng-password> |
+| `base64-ng-openpgp` | `2.0.2` | yes | <https://crates.io/crates/base64-ng-openpgp> |
+| `base64-ng-pem` | `2.0.2` | yes | <https://crates.io/crates/base64-ng-pem> |
 
 ## 1.3.9 Release Plan
 

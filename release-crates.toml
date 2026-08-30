@@ -1,94 +1,94 @@
 [release]
-version = "2.0.1"
+version = "2.0.2"
 policy = "synced-family"
 
 [crates."base64-ng"]
-previous_version = "2.0.0"
-version = "2.0.1"
+previous_version = "2.0.1"
+version = "2.0.2"
 change = "code"
 publish = true
-reason = "Publishes the unchanged 2.0 runtime with a smaller crates.io archive and concise user-facing README."
+reason = "Publishes the unchanged 2.0 runtime with current dependencies, tooling, GitHub Actions, and Rust 1.98.0 release checks."
 
 [crates."base64-ng-sanitization"]
-previous_version = "2.0.0"
-version = "2.0.1"
+previous_version = "2.0.1"
+version = "2.0.2"
 change = "dependency"
 publish = true
-reason = "Synchronizes the companion dependency with base64-ng 2.0.1."
+reason = "Synchronizes the companion dependency with base64-ng 2.0.2."
 
 [crates."base64-ng-derive"]
-previous_version = "2.0.0"
-version = "2.0.1"
+previous_version = "2.0.1"
+version = "2.0.2"
 change = "dependency"
 publish = true
-reason = "Synchronizes the companion dependency with base64-ng 2.0.1."
+reason = "Synchronizes the companion dependency with base64-ng 2.0.2."
 
 [crates."base64-ng-imap"]
-previous_version = "2.0.0"
-version = "2.0.1"
+previous_version = "2.0.1"
+version = "2.0.2"
 change = "dependency"
 publish = true
-reason = "Synchronizes the companion dependency with base64-ng 2.0.1."
+reason = "Synchronizes the companion dependency with base64-ng 2.0.2."
 
 [crates."base64-ng-mime"]
-previous_version = "2.0.0"
-version = "2.0.1"
+previous_version = "2.0.1"
+version = "2.0.2"
 change = "dependency"
 publish = true
-reason = "Synchronizes the companion dependency with base64-ng 2.0.1."
+reason = "Synchronizes the companion dependency with base64-ng 2.0.2."
 
 [crates."base64-ng-multibase"]
-previous_version = "2.0.0"
-version = "2.0.1"
+previous_version = "2.0.1"
+version = "2.0.2"
 change = "dependency"
 publish = true
-reason = "Synchronizes the companion dependency with base64-ng 2.0.1."
+reason = "Synchronizes the companion dependency with base64-ng 2.0.2."
 
 [crates."base64-ng-password"]
-previous_version = "2.0.0"
-version = "2.0.1"
+previous_version = "2.0.1"
+version = "2.0.2"
 change = "dependency"
 publish = true
-reason = "Synchronizes the companion dependency with base64-ng 2.0.1."
+reason = "Synchronizes the companion dependency with base64-ng 2.0.2."
 
 [crates."base64-ng-openpgp"]
-previous_version = "2.0.0"
-version = "2.0.1"
+previous_version = "2.0.1"
+version = "2.0.2"
 change = "dependency"
 publish = true
-reason = "Synchronizes the companion dependency with base64-ng 2.0.1."
+reason = "Synchronizes the companion dependency with base64-ng 2.0.2."
 
 [crates."base64-ng-pem"]
-previous_version = "2.0.0"
-version = "2.0.1"
+previous_version = "2.0.1"
+version = "2.0.2"
 change = "dependency"
 publish = true
-reason = "Synchronizes the companion dependency with base64-ng 2.0.1."
+reason = "Synchronizes the companion dependency with base64-ng 2.0.2."
 
 [crates."base64-ng-serde"]
-previous_version = "2.0.0"
-version = "2.0.1"
+previous_version = "2.0.1"
+version = "2.0.2"
 change = "dependency"
 publish = true
-reason = "Synchronizes the companion dependency with base64-ng 2.0.1."
+reason = "Synchronizes the companion dependency with base64-ng 2.0.2 and serde_json 1.0.151 test coverage."
 
 [crates."base64-ng-bytes"]
-previous_version = "2.0.0"
-version = "2.0.1"
+previous_version = "2.0.1"
+version = "2.0.2"
 change = "dependency"
 publish = true
-reason = "Synchronizes the companion dependency with base64-ng 2.0.1."
+reason = "Synchronizes the companion dependency with base64-ng 2.0.2."
 
 [crates."base64-ng-subtle"]
-previous_version = "2.0.0"
-version = "2.0.1"
+previous_version = "2.0.1"
+version = "2.0.2"
 change = "dependency"
 publish = true
-reason = "Synchronizes the companion dependency with base64-ng 2.0.1."
+reason = "Synchronizes the companion dependency with base64-ng 2.0.2."
 
 [crates."base64-ng-tokio"]
-previous_version = "2.0.0"
-version = "2.0.1"
+previous_version = "2.0.1"
+version = "2.0.2"
 change = "dependency"
 publish = true
-reason = "Synchronizes the companion dependency with base64-ng 2.0.1."
+reason = "Synchronizes the companion dependency with base64-ng 2.0.2."

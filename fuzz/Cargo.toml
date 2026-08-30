@@ -10,15 +10,15 @@ publish = false
 cargo-fuzz = true
 
 [dependencies]
-base64 = "0.22.1"
-base64-ng = { path = "..", version = "2.0.1", features = ["alloc", "checked-backend", "secrets", "simd", "std", "stream"] }
-base64-ng-imap = { path = "../crates/base64-ng-imap", version = "2.0.1" }
-base64-ng-mime = { path = "../crates/base64-ng-mime", version = "2.0.1" }
-base64-ng-multibase = { path = "../crates/base64-ng-multibase", version = "2.0.1" }
-base64-ng-password = { path = "../crates/base64-ng-password", version = "2.0.1" }
-base64-ng-openpgp = { path = "../crates/base64-ng-openpgp", version = "2.0.1" }
-base64-ng-pem = { path = "../crates/base64-ng-pem", version = "2.0.1" }
-base64-ng-tokio = { path = "../crates/base64-ng-tokio", version = "2.0.1" }
+base64 = "0.23.1"
+base64-ng = { path = "..", version = "2.0.2", features = ["alloc", "checked-backend", "secrets", "simd", "std", "stream"] }
+base64-ng-imap = { path = "../crates/base64-ng-imap", version = "2.0.2" }
+base64-ng-mime = { path = "../crates/base64-ng-mime", version = "2.0.2" }
+base64-ng-multibase = { path = "../crates/base64-ng-multibase", version = "2.0.2" }
+base64-ng-password = { path = "../crates/base64-ng-password", version = "2.0.2" }
+base64-ng-openpgp = { path = "../crates/base64-ng-openpgp", version = "2.0.2" }
+base64-ng-pem = { path = "../crates/base64-ng-pem", version = "2.0.2" }
+base64-ng-tokio = { path = "../crates/base64-ng-tokio", version = "2.0.2" }
 libfuzzer-sys = "0.4"
 tokio = { version = "1.53.1", default-features = false, features = ["io-util"] }
 

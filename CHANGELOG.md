@@ -1,6 +1,24 @@
 # Changelog
 
-## 2.0.1 - Unreleased
+## 2.0.2 - Unreleased
+
+- Update the active release and CI toolchain to Rust `1.98.0` while retaining
+  and rechecking the Rust `1.90.0` MSRV contract.
+- Update `serde_json` test/integration coverage to `1.0.151` and the active
+  fuzz differential oracle to `base64 0.23.1`; all runtime dependencies were
+  already current. Retain the exact `base64 0.23.0` performance/protocol
+  evidence oracle so historical records remain reproducible.
+- Update `cargo-nextest` to `0.9.143`, `Swatinem/rust-cache` to `2.9.2`, and
+  `taiki-e/install-action` to `2.87.1`, retaining immutable Action SHA pins.
+- Disable core-dump collection in the intentionally aborting assurance-test
+  subprocess so local Linux test runs do not create desktop crash reports.
+- Replace credential-shaped password test constants with runtime-generated
+  fixtures and keep PEM fuzz mismatch diagnostics opaque, resolving CodeQL
+  hard-coded-value and cleartext-logging alerts without reducing coverage.
+- Synchronize the 13 Rust crates and supported wasm loader at `2.0.2` without
+  changing the public 2.0 codec API or runtime implementation.
+
+## 2.0.1 - 2026-08-08
 
 - Keep the complete 2.0 runtime and public API unchanged while reducing the
   published core crate to source, tests, licenses, changelog, security policy,

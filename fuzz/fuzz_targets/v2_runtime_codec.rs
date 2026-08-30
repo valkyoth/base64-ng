@@ -159,14 +159,14 @@ fn exercise_arbitrary_decode(codec: &Base64<RuntimeSpec>, input: &[u8]) {
 
 fn independent_encode(alphabet: &[u8; 64], padded: bool, input: &[u8]) -> Vec<u8> {
     let mut output = Vec::with_capacity((input.len() + 2) / 3 * 4);
-    let mut chunks = input.chunks_exact(3);
-    for chunk in &mut chunks {
+    let (chunks, remainder) = input.as_chunks::<3>();
+    for chunk in chunks {
         output.push(alphabet[usize::from(chunk[0] >> 2)]);
         output.push(alphabet[usize::from(((chunk[0] & 3) << 4) | (chunk[1] >> 4))]);
         output.push(alphabet[usize::from(((chunk[1] & 15) << 2) | (chunk[2] >> 6))]);
         output.push(alphabet[usize::from(chunk[2] & 63)]);
     }
-    match chunks.remainder() {
+    match remainder {
         [] => {}
         [first] => {
             output.push(alphabet[usize::from(first >> 2)]);
