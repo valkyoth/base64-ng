@@ -9,6 +9,29 @@ use crate::{Alphabet, Standard, StaticBackendToken, UrlSafe, checked_encoded_len
 const MAX_INPUT: usize = 193;
 const MAX_OUTPUT: usize = 260;
 
+fn await_encode_backend_health(backend: Backend) {
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+    loop {
+        if crate::v2::backend_health::admit(crate::runtime::OperationKind::Encode, backend) {
+            return;
+        }
+        let snapshot =
+            crate::v2::backend_health::snapshot(crate::runtime::OperationKind::Encode, backend);
+        match snapshot.state {
+            crate::BackendHealthState::NeverRun | crate::BackendHealthState::Testing
+                if std::time::Instant::now() < deadline =>
+            {
+                std::thread::yield_now();
+            }
+            crate::BackendHealthState::Healthy => return,
+            crate::BackendHealthState::Quarantined => {
+                panic!("encode backend was quarantined during crossover test: {snapshot:?}")
+            }
+            _ => panic!("encode backend health did not settle before timeout: {snapshot:?}"),
+        }
+    }
+}
+
 fn scalar_block<A, const INPUT: usize, const OUTPUT: usize>(input: &[u8; INPUT]) -> [u8; OUTPUT]
 where
     A: Alphabet,
@@ -197,6 +220,9 @@ fn avx512_automatic_policy_uses_narrower_backends_below_crossover() {
         != crate::encode_backend::EncodeBackend::Avx512Vbmi
     {
         return;
+    }
+    for backend in [Backend::Ssse3Sse41, Backend::Avx2, Backend::Avx512Vbmi] {
+        await_encode_backend_health(backend);
     }
     assert_eq!(
         crate::encode_backend::active_encode_backend_for_input(12),
