@@ -33,8 +33,8 @@ constant-time-oriented Base64 decode into clear-on-drop secret containers.
 
 ```toml
 [dependencies]
-base64-ng = { version = "2.0.2", default-features = false }
-base64-ng-sanitization = { version = "2.0.2", default-features = false }
+base64-ng = { version = "2.0.3", default-features = false }
+base64-ng-sanitization = { version = "2.0.3", default-features = false }
 ```
 
 ```rust
@@ -54,7 +54,7 @@ assert!(secret.sanitization_verify(
 Enable `alloc` for heap-backed `sanitization::SecretVec` helpers:
 
 ```toml
-base64-ng-sanitization = { version = "2.0.2", features = ["alloc"] }
+base64-ng-sanitization = { version = "2.0.3", features = ["alloc"] }
 ```
 
 The convenience `decode_secret_vec` and `decode_secret_vec_staged` methods
@@ -81,12 +81,12 @@ protected storage, or the protected mapping APIs below.
 
 For high-assurance x86_64 or AArch64 native deployments, enable locked storage
 helpers. This
-uses `sanitization` 2.0.3's hardened native controls, including memory locking,
+uses `sanitization` 2.0.4's hardened native controls, including memory locking,
 strict random canaries, and strict assembly comparison, and decodes directly
 into locked memory:
 
 ```toml
-base64-ng-sanitization = { version = "2.0.2", features = ["high-assurance"] }
+base64-ng-sanitization = { version = "2.0.3", features = ["high-assurance"] }
 ```
 
 ```rust
@@ -121,7 +121,7 @@ key.try_with_secret(|bytes| assert_eq!(bytes, b"hello"))?;
 
 The built-in fixed-size and dynamic `_checked` methods establish required
 memory-lock, dump, and fork controls before decoding plaintext into the
-mapping. Dynamic decode uses sanitization 2.0.3's protected-capacity fill
+mapping. Dynamic decode uses sanitization 2.0.4's protected-capacity fill
 constructor, whose closure is not invoked when a required control fails.
 External implementations of `CtDecodeSanitizationExt` must implement every
 locked checked/fill method explicitly; 2.0 has no post-construction
@@ -179,7 +179,7 @@ secret-container API pointed at the constant-time-oriented decode path.
 
 `base64-ng-sanitization` also re-exports `sanitization::ct` and adds
 `SanitizationCtEqExt` for comparing decoded `SecretBytes` and `SecretVec`
-values through `sanitization` 2.0.3's native `Choice` API. This gives projects
+values through `sanitization` 2.0.4's native `Choice` API. This gives projects
 that already admit `sanitization` a dependency-free alternative to external
 `subtle` integration:
 
@@ -199,7 +199,7 @@ For deployments that want `sanitization`'s assembly-backed comparison checks,
 enable the passthrough features:
 
 ```toml
-base64-ng-sanitization = { version = "2.0.2", features = ["strict-compare"] }
+base64-ng-sanitization = { version = "2.0.3", features = ["strict-compare"] }
 ```
 
 The previous companion feature name `strict-ct` remains as an alias for

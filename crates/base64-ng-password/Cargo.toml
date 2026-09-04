@@ -1,6 +1,6 @@
 [package]
 name = "base64-ng-password"
-version = "2.0.2"
+version = "2.0.3"
 edition = "2024"
 rust-version = "1.90"
 license = "MIT OR Apache-2.0"
@@ -23,7 +23,7 @@ default = ["alloc"]
 alloc = ["base64-ng/alloc"]
 
 [dependencies]
-base64-ng = { version = "2.0.2", path = "../..", default-features = false }
+base64-ng = { version = "2.0.3", path = "../..", default-features = false }
 
 [lints.rust]
 unsafe_code = "deny"

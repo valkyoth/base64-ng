@@ -12,7 +12,7 @@
 //! secret-bearing Base64 directly into `sanitization` secret containers.
 //!
 //! The extension trait targets [`base64_ng::ct::CtEngine`] rather than the
-//! ordinary strict decoder. `sanitization` 2.0.3's native [`ct`] primitives are
+//! ordinary strict decoder. `sanitization` 2.0.4's native [`ct`] primitives are
 //! re-exported for callers that want `Choice`-based verification after decode.
 //! Enable `memory-lock` or `high-assurance` for locked secret containers on
 //! supported native targets.
@@ -431,7 +431,7 @@ pub trait CtDecodeSanitizationExt {
     /// # Security
     ///
     /// In the provided [`base64_ng::ct::CtEngine`] implementation, the
-    /// `sanitization` 2.0.3 protected-capacity constructor requires memory
+    /// `sanitization` 2.0.4 protected-capacity constructor requires memory
     /// locking, dump exclusion, and fork exclusion before its fill closure can
     /// run. Canaries are required when enabled. A required-control failure
     /// therefore returns before decoded plaintext can enter the mapping.

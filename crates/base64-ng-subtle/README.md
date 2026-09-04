@@ -38,8 +38,8 @@ and timing evidence.
 
 ```toml
 [dependencies]
-base64-ng = { version = "2.0.2", features = ["secrets"] }
-base64-ng-subtle = "2.0.2"
+base64-ng = { version = "2.0.3", features = ["secrets"] }
+base64-ng-subtle = "2.0.3"
 ```
 
 ```rust

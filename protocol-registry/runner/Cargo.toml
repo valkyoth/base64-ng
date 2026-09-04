@@ -10,13 +10,13 @@ license = "MIT OR Apache-2.0"
 [dependencies]
 base64 = "=0.23.0"
 base64ct = "=1.8.3"
-base64-ng = { version = "=2.0.2", path = "../..", default-features = false, features = ["alloc"] }
-base64-ng-imap = { version = "=2.0.2", path = "../../crates/base64-ng-imap", features = ["alloc"] }
-base64-ng-mime = { version = "=2.0.2", path = "../../crates/base64-ng-mime", features = ["alloc"] }
-base64-ng-multibase = { version = "=2.0.2", path = "../../crates/base64-ng-multibase", features = ["alloc"] }
-base64-ng-openpgp = { version = "=2.0.2", path = "../../crates/base64-ng-openpgp" }
-base64-ng-password = { version = "=2.0.2", path = "../../crates/base64-ng-password", features = ["alloc"] }
-base64-ng-pem = { version = "=2.0.2", path = "../../crates/base64-ng-pem" }
+base64-ng = { version = "=2.0.3", path = "../..", default-features = false, features = ["alloc"] }
+base64-ng-imap = { version = "=2.0.3", path = "../../crates/base64-ng-imap", features = ["alloc"] }
+base64-ng-mime = { version = "=2.0.3", path = "../../crates/base64-ng-mime", features = ["alloc"] }
+base64-ng-multibase = { version = "=2.0.3", path = "../../crates/base64-ng-multibase", features = ["alloc"] }
+base64-ng-openpgp = { version = "=2.0.3", path = "../../crates/base64-ng-openpgp" }
+base64-ng-password = { version = "=2.0.3", path = "../../crates/base64-ng-password", features = ["alloc"] }
+base64-ng-pem = { version = "=2.0.3", path = "../../crates/base64-ng-pem" }
 
 [lints.rust]
 unsafe_code = "deny"

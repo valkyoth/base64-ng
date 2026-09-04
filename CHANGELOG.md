@@ -1,6 +1,19 @@
 # Changelog
 
-## 2.0.2 - Unreleased
+## 2.0.3 - Unreleased
+
+- Update the active release and CI toolchain to Rust `1.98.1` while retaining
+  the Rust `1.90.0` MSRV contract and checking every stable release between
+  them.
+- Update the exact-pinned `sanitization` companion dependency from `2.0.3` to
+  `2.0.4`.
+- Update the immutable `taiki-e/install-action` pin from `2.87.1` to `2.87.4`.
+  All other Rust dependencies, release tools, and GitHub Actions were already
+  current when the maintenance release was initiated.
+- Synchronize the 13 Rust crates and supported wasm loader at `2.0.3` without
+  changing the public 2.0 codec API or core runtime implementation.
+
+## 2.0.2 - 2026-08-30
 
 - Update the active release and CI toolchain to Rust `1.98.0` while retaining
   and rechecking the Rust `1.90.0` MSRV contract.

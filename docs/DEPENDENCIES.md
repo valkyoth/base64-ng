@@ -35,7 +35,7 @@ dependency graph through this tooling.
 - `base64-ng-sanitization` is an optional companion package for applications
   that already admit `sanitization`; it is not a dependency of the core
   `base64-ng` package. Its `2.0.0` line requires an exact
-  `sanitization` `=2.0.3` dependency
+  `sanitization` `=2.0.4` dependency
   so callers can use `sanitization::ct::Choice`, native
   constant-time-oriented equality helpers, and opt-in locked-secret fill APIs
   without adding dependencies to the core crate. Release review must verify

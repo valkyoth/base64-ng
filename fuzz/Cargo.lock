@@ -16,7 +16,7 @@ checksum = "ac07cdecf99051d9a5238b80f35af32cdeba5b336e55d957b318b50137e18da5"
 
 [[package]]
 name = "base64-ng"
-version = "2.0.2"
+version = "2.0.3"
 
 [[package]]
 name = "base64-ng-fuzz"
@@ -37,49 +37,49 @@ dependencies = [
 
 [[package]]
 name = "base64-ng-imap"
-version = "2.0.2"
+version = "2.0.3"
 dependencies = [
  "base64-ng",
 ]
 
 [[package]]
 name = "base64-ng-mime"
-version = "2.0.2"
+version = "2.0.3"
 dependencies = [
  "base64-ng",
 ]
 
 [[package]]
 name = "base64-ng-multibase"
-version = "2.0.2"
+version = "2.0.3"
 dependencies = [
  "base64-ng",
 ]
 
 [[package]]
 name = "base64-ng-openpgp"
-version = "2.0.2"
+version = "2.0.3"
 dependencies = [
  "base64-ng",
 ]
 
 [[package]]
 name = "base64-ng-password"
-version = "2.0.2"
+version = "2.0.3"
 dependencies = [
  "base64-ng",
 ]
 
 [[package]]
 name = "base64-ng-pem"
-version = "2.0.2"
+version = "2.0.3"
 dependencies = [
  "base64-ng",
 ]
 
 [[package]]
 name = "base64-ng-tokio"
-version = "2.0.2"
+version = "2.0.3"
 dependencies = [
  "base64-ng",
  "tokio",

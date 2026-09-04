@@ -26,16 +26,16 @@ and allocating APIs, incremental and in-place transforms, optional admitted
 SIMD backends, and separately named compatibility policies.
 Zero external runtime or development dependencies in `Cargo.toml`.
 
-This source tree defines the synchronized `2.0.2` package family. This
-maintenance patch updates the tested Rust toolchain, companion development
-dependencies, and CI tooling. Runtime behavior and the public 2.0 API remain
-unchanged.
+This source tree defines the synchronized `2.0.3` package family. This
+maintenance patch updates the tested Rust toolchain, the sanitization
+companion dependency, and CI tooling. Runtime behavior and the public 2.0 API
+remain unchanged.
 
 ## Quick Start
 
 ```toml
 [dependencies]
-base64-ng = "2.0.2"
+base64-ng = "2.0.3"
 ```
 
 For ordinary Standard Base64 with canonical padding:
@@ -226,14 +226,14 @@ Disable defaults for core-only embedded use:
 
 ```toml
 [dependencies]
-base64-ng = { version = "2.0.2", default-features = false }
+base64-ng = { version = "2.0.3", default-features = false }
 ```
 
 Enable ordinary SIMD dispatch without changing the public codec API:
 
 ```toml
 [dependencies]
-base64-ng = { version = "2.0.2", features = ["simd"] }
+base64-ng = { version = "2.0.3", features = ["simd"] }
 ```
 
 Scalar by default; std x86/x86_64 encode selects SSSE3/SSE4.1, AVX2, or AVX-512 VBMI by length, strict decode selects SSSE3/SSE4.1 or AVX2. Admitted
@@ -252,7 +252,7 @@ bounded fixed-work API:
 
 ```toml
 [dependencies]
-base64-ng = { version = "2.0.2", default-features = false, features = ["secrets"] }
+base64-ng = { version = "2.0.3", default-features = false, features = ["secrets"] }
 ```
 
 ```rust
@@ -336,13 +336,13 @@ and [dispatch matrix](https://github.com/valkyoth/base64-ng/blob/main/docs/2.0_D
 
 ## Rust Support
 
-MSRV remains Rust `1.90.0`. The active release toolchain is Rust `1.98.0`.
+MSRV remains Rust `1.90.0`. The active release toolchain is Rust `1.98.1`.
 
 | Rust | Evidence |
 | --- | --- |
 | `1.90.0` | MSRV compatibility check |
-| `1.91.0` - `1.97.1` | `cargo check --all-features` |
-| `1.98.0` | Active release toolchain and full release checks |
+| `1.91.0` - `1.98.0` | `cargo check --all-features` |
+| `1.98.1` | Active release toolchain and full release checks |
 
 New deployments should prefer the latest tested stable Rust.
 

@@ -10,7 +10,7 @@ checksum = "b25655df2c3cdd83c5e5b293b88acd880332b2ddadd7c30ac43144fdc0033da9"
 
 [[package]]
 name = "base64-ng"
-version = "2.0.2"
+version = "2.0.3"
 
 [[package]]
 name = "base64-ng-perf"
