@@ -12,6 +12,10 @@
   current when the maintenance release was initiated.
 - Synchronize the 13 Rust crates and supported wasm loader at `2.0.3` without
   changing the public 2.0 codec API or core runtime implementation.
+- Make high-assurance target eligibility independent of the additive `simd`
+  feature, preventing feature unification from admitting unsupported or
+  unattested targets. Compile-fail checks now cover wasm and unattested
+  AArch64 with SIMD enabled.
 
 ## 2.0.2 - 2026-08-30
 

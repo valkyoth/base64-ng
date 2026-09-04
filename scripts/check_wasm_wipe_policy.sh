@@ -70,4 +70,19 @@ if ! grep -F -q "unsupported or unattested" "$output"; then
     exit 1
 fi
 
+echo "wasm wipe policy: checking high-assurance rejection with SIMD for $target"
+if RUSTFLAGS="--cfg base64_ng_require_high_assurance" cargo check \
+    --target "$target" \
+    --no-default-features \
+    --features secrets,simd,allow-wasm32-best-effort-wipe \
+    --lib >"$output" 2>&1; then
+    echo "wasm wipe policy: high-assurance SIMD wasm build unexpectedly compiled" >&2
+    exit 1
+fi
+if ! grep -F -q "unsupported or unattested" "$output"; then
+    echo "wasm wipe policy: high-assurance SIMD rejection was not posture-specific" >&2
+    cat "$output" >&2
+    exit 1
+fi
+
 echo "wasm wipe policy: ok"

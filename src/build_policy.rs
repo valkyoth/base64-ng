@@ -21,7 +21,6 @@ compile_error!(
 #[cfg(all(
     base64_ng_require_high_assurance,
     feature = "secrets",
-    not(feature = "simd"),
     not(any(
         target_arch = "x86",
         target_arch = "x86_64",

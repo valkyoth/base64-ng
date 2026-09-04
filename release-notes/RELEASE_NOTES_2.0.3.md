@@ -13,6 +13,9 @@ implementation and public 2.0 API are unchanged.
   are current at release initiation.
 - Synchronizes all Rust companion crates and
   `@valkyoth/base64-ng-wasm-loader` at 2.0.3.
+- Makes high-assurance target eligibility independent of additive SIMD feature
+  unification, with compile-fail regression checks for wasm and unattested
+  AArch64.
 
-No codec behavior, public API contract, SIMD admission decision,
-secret-processing boundary, or MSRV change is included.
+No codec behavior, public API contract, SIMD admission decision, or MSRV
+change is included.

@@ -7,7 +7,7 @@ previous_version = "2.0.2"
 version = "2.0.3"
 change = "code"
 publish = true
-reason = "Publishes the unchanged 2.0 runtime with sanitization 2.0.4, current tooling and GitHub Actions, and Rust 1.98.1 release checks."
+reason = "Corrects the high-assurance target gate under additive SIMD while updating sanitization to 2.0.4, current tooling and GitHub Actions, and Rust 1.98.1 release checks."
 
 [crates."base64-ng-sanitization"]
 previous_version = "2.0.2"
