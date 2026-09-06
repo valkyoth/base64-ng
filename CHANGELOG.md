@@ -16,6 +16,8 @@
 - Enforce same-line, increasing patch transitions for every changed Rust crate
   under `selective-patch`, and record npm version/publication independently in
   the release plan instead of inferring selection from Rust version equality.
+- Reject npm publication centrally while the release policy is
+  `development-blocked`, including through the machine-readable npm plan.
 
 ## 2.0.3 - 2026-09-04
 

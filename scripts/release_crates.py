@@ -123,6 +123,8 @@ def release_plan(plan_path: Path) -> dict:
         validate_plan_entry(package_name, entry, version, policy)
     validate_release_policy(crates, version, policy)
     validate_npm_plan(npm)
+    if policy == "development-blocked" and npm["publish"]:
+        raise RuntimeError("npm publication is forbidden under development-blocked")
     return {"version": version, "policy": policy, "crates": crates, "npm": npm}
 
 

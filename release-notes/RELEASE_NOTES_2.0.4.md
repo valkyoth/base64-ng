@@ -18,3 +18,5 @@ unchanged.
   2.0.3 and continue to accept the compatible core patch.
 - Hardens selective release validation against downgrade or major/minor drift
   and gives the independently versioned npm loader an explicit publish entry.
+- Blocks selected npm packages under the `development-blocked` policy before
+  any machine-readable publication decision is emitted.

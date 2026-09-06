@@ -364,6 +364,40 @@ def test_npm_plan_rejects_inconsistent_selection() -> None:
     )
 
 
+def test_development_policy_blocks_selected_npm_package() -> None:
+    plan = {
+        "release": {"version": "2.0.0", "policy": "development-blocked"},
+        "crates": {
+            name: {
+                "previous_version": "1.3.9",
+                "version": "2.0.0",
+                "change": "code",
+                "publish": False,
+                "reason": "development",
+            }
+            for name in release_crates.PUBLISH_ORDER
+        },
+        "npm": {
+            "name": "@valkyoth/base64-ng-wasm-loader",
+            "previous_version": "1.3.9",
+            "version": "2.0.0",
+            "change": "code",
+            "publish": True,
+            "reason": "development",
+        },
+    }
+    original_load_toml = release_crates.load_toml
+    try:
+        release_crates.load_toml = lambda _path: plan
+        assert_fails(
+            "npm publication is forbidden under development-blocked",
+            release_crates.release_plan,
+            Path("unused.toml"),
+        )
+    finally:
+        release_crates.load_toml = original_load_toml
+
+
 def test_npm_manifest_and_lock_must_match_plan() -> None:
     plan = {
         "npm": {
@@ -528,6 +562,7 @@ def run_tests() -> None:
         test_selective_patch_requires_published_core,
         test_npm_plan_supports_independent_versions,
         test_npm_plan_rejects_inconsistent_selection,
+        test_development_policy_blocks_selected_npm_package,
         test_npm_manifest_and_lock_must_match_plan,
         test_publish_sequence_dry_runs_dependents_after_index_wait,
         test_post_tag_full_gate_uses_candidate_mode,
