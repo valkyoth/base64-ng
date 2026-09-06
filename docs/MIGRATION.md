@@ -20,14 +20,14 @@ are not the recommended API for new 2.0 code.
 
 ```toml
 [dependencies]
-base64-ng = "2.0.3"
+base64-ng = "2.0.4"
 ```
 
 For `no_std` without allocation:
 
 ```toml
 [dependencies]
-base64-ng = { version = "2.0.3", default-features = false }
+base64-ng = { version = "2.0.4", default-features = false }
 ```
 
 Enable ordinary runtime SIMD with `features = ["simd"]`, synchronous
@@ -209,7 +209,7 @@ ecosystem integrations are separate synchronized packages:
 
 ```toml
 [dependencies]
-base64-ng = "2.0.3"
+base64-ng = "2.0.4"
 base64-ng-tokio = "2.0.3"
 base64-ng-bytes = "2.0.3"
 base64-ng-serde = "2.0.3"
@@ -248,7 +248,7 @@ excluded from published packages.
 
 ## Sanitization 2.0
 
-`base64-ng-sanitization` 2.0 uses exact-pinned `sanitization` 2.0.4. Prefer its
+`base64-ng-sanitization` 2.0 uses exact-pinned `sanitization` 2.1.0. Prefer its
 2.0 `SanitizationProtectedDecodeExt` methods for protected fixed or bounded
 dynamic decode. Required memory-lock, dump, and fork controls are established
 before classified input reaches staging. The core `decode_assured` provider

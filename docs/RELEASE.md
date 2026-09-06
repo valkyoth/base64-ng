@@ -7,6 +7,13 @@ candidate boundary. The synchronized publish plan does not authorize release
 without Commit 55, final pentest acceptance, green required CI, and the signed
 tag.
 
+After a synchronized major or minor release, patch releases use the
+`selective-patch` plan. The core release version and only companions with
+package changes are published; unchanged companions retain their prior patch
+version because their compatible Cargo requirements already admit the new core
+patch. The npm WASM loader is versioned and published only when its package or
+generated artifacts change.
+
 ## Preflight
 
 - Confirm `Cargo.toml` has the intended version.

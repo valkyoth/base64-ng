@@ -1,6 +1,20 @@
 # Changelog
 
-## 2.0.3 - Unreleased
+## 2.0.4 - Unreleased
+
+- Update the exact-pinned `sanitization` companion dependency from `2.0.4` to
+  `2.1.0` and recheck its complete feature matrix.
+- Update the immutable `taiki-e/install-action` pin from `2.87.4` to `2.87.7`.
+  Normalize `Swatinem/rust-cache` 2.9.2 to the signed annotated tag's target
+  commit; all other Rust dependencies, release tools, and GitHub Actions were
+  current when the maintenance release was initiated.
+- Retain Rust `1.98.1` as the active release compiler and Rust `1.90.0` as the
+  MSRV, with every intervening stable release covered by CI.
+- Publish only `base64-ng` and `base64-ng-sanitization` at `2.0.4`. Unchanged
+  Rust companions and the supported wasm loader remain at `2.0.3`, avoiding
+  unnecessary registry publication without changing compatibility.
+
+## 2.0.3 - 2026-09-04
 
 - Update the active release and CI toolchain to Rust `1.98.1` while retaining
   the Rust `1.90.0` MSRV contract and checking every stable release between

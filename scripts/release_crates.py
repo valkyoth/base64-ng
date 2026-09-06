@@ -19,8 +19,8 @@ except ModuleNotFoundError:  # pragma: no cover - release host guard.
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_PLAN = ROOT / "release-crates.toml"
-CHANGE_KINDS = ("code", "dependency", "unchanged")
-RELEASE_POLICIES = ("synced-family", "development-blocked")
+CHANGE_KINDS = ("code", "dependency", "metadata", "unchanged")
+RELEASE_POLICIES = ("synced-family", "selective-patch", "development-blocked")
 
 PUBLISH_ORDER = (
     "base64-ng",
@@ -120,7 +120,25 @@ def release_plan(plan_path: Path) -> dict:
     parse_version(version)
     for package_name, entry in crates.items():
         validate_plan_entry(package_name, entry, version, policy)
+    validate_release_policy(crates, version, policy)
     return {"version": version, "policy": policy, "crates": crates}
+
+
+def validate_release_policy(crates: dict, release: str, policy: str) -> None:
+    if policy == "synced-family":
+        if any(
+            entry["version"] != release or not entry["publish"]
+            for entry in crates.values()
+        ):
+            raise RuntimeError(
+                "synced-family releases must publish every crate at the release version"
+            )
+    elif policy == "selective-patch":
+        core = crates["base64-ng"]
+        if core["version"] != release or not core["publish"]:
+            raise RuntimeError(
+                "selective patch releases must publish base64-ng at the release version"
+            )
 
 
 def validate_plan_entry(
@@ -157,6 +175,16 @@ def validate_plan_entry(
             )
         return
 
+    if (
+        policy == "selective-patch"
+        and change != "unchanged"
+        and planned_version != release_parts
+    ):
+        raise RuntimeError(
+            f"{package_name} is selected for the selective patch, so version "
+            f"must be {release}"
+        )
+
     if change == "code":
         if planned_version != release_parts:
             raise RuntimeError(
@@ -164,17 +192,17 @@ def validate_plan_entry(
             )
         if not publish:
             raise RuntimeError(f"{package_name} has code changes but publish is false")
-    elif change == "dependency":
+    elif change in ("dependency", "metadata"):
         same_line = planned_version[:2] == previous_version[:2]
         patch_bump = planned_version[2] > previous_version[2]
         if not same_line or not patch_bump:
             raise RuntimeError(
-                f"{package_name} dependency-only bumps must stay on the existing "
+                f"{package_name} {change}-only bumps must stay on the existing "
                 "minor line and increase only the patch number"
             )
         if not publish:
             raise RuntimeError(
-                f"{package_name} has dependency-only changes but publish is false"
+                f"{package_name} has {change}-only changes but publish is false"
             )
     else:
         if planned_version != previous_version:
@@ -328,12 +356,15 @@ def selected_steps(start_at: str, steps: tuple[str, ...]) -> tuple[str, ...]:
 
 def wait_for_index(package: str, version: str, *, dry_run: bool) -> None:
     print()
+    if dry_run:
+        print(
+            f"[dry-run] would wait for crates.io to index {package} {version} "
+            "before continuing"
+        )
+        return
     print(f"Published {package} {version}.")
     print(f"Wait until crates.io shows: https://crates.io/crates/{package}/{version}")
     print("Then press Enter to continue with dependent crates.")
-    if dry_run:
-        print("[dry-run] skipping wait")
-        return
     input()
     time.sleep(5)
 
@@ -501,13 +532,31 @@ def main() -> int:
     publish_sequence(args, steps, plan)
 
     print()
-    print("Release publish sequence completed.")
+    if args.dry_run:
+        print("Release publish dry-run completed.")
+    else:
+        print("Release publish sequence completed.")
     print(f"Recommended follow-up: cargo info base64-ng@{args.version}")
-    print("If companion crates were published, also run:")
-    for package in PUBLISH_ORDER[1:]:
-        print(f"  cargo info {package}@{args.version}")
-    print("Publish @valkyoth/base64-ng-wasm-loader separately from the same signed tag:")
-    print("  scripts/release_wasm_loader.sh publish")
+    published_companions = [package for package in steps if package != "base64-ng"]
+    if published_companions:
+        print("Verify published companion crates:")
+        for package in published_companions:
+            version = plan["crates"][package]["version"]
+            print(f"  cargo info {package}@{version}")
+
+    npm_package = ROOT / "packages" / "base64-ng-wasm-loader" / "package.json"
+    npm_version = json.loads(npm_package.read_text(encoding="utf-8"))["version"]
+    if npm_version == args.version:
+        print(
+            "Publish @valkyoth/base64-ng-wasm-loader separately from the same "
+            "signed tag:"
+        )
+        print("  scripts/release_wasm_loader.sh publish")
+    else:
+        print(
+            "@valkyoth/base64-ng-wasm-loader is unchanged at "
+            f"{npm_version}; do not republish it for {args.version}."
+        )
     return 0
 
 

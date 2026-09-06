@@ -29,13 +29,21 @@ fail() {
 
 test "$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | sed -n '1p')" = "$version" ||
     fail "root package version is not $version"
-grep -F -q 'policy = "synced-family"' release-crates.toml ||
-    fail "release policy is not synced-family"
-[ "$(grep -F -c 'publish = true' release-crates.toml)" -eq 13 ] ||
-    fail "synchronized plan does not select exactly 13 Rust packages"
-if grep -F -q 'publish = false' release-crates.toml; then
-    fail "synchronized plan contains an unpublished Rust package"
-fi
+policy="$(sed -n 's/^policy = "\([^"]*\)"/\1/p' release-crates.toml | sed -n '1p')"
+case "$policy" in
+    synced-family)
+        [ "$(grep -F -c 'publish = true' release-crates.toml)" -eq 13 ] ||
+            fail "synchronized plan does not select exactly 13 Rust packages"
+        if grep -F -q 'publish = false' release-crates.toml; then
+            fail "synchronized plan contains an unpublished Rust package"
+        fi
+        ;;
+    selective-patch)
+        [ "$(grep -F -c 'publish = true' release-crates.toml)" -ge 1 ] ||
+            fail "selective patch does not select a Rust package"
+        ;;
+    *) fail "unsupported release policy: $policy" ;;
+esac
 
 scripts/release_crates.py --check
 
@@ -72,8 +80,14 @@ grep -F -q 'pub mod prelude;' src/lib.rs ||
 test -s "release-notes/RELEASE_NOTES_${version}.md" ||
     fail "missing $version release notes"
 
-grep -F -q "\"version\": \"$version\"" packages/base64-ng-wasm-loader/package.json ||
-    fail "wasm loader package version is not $version"
+wasm_version="$(
+    sed -n 's/^  "version": "\([^"]*\)",/\1/p' \
+        packages/base64-ng-wasm-loader/package.json | sed -n '1p'
+)"
+[ -n "$wasm_version" ] || fail "wasm loader package version is missing"
+grep -F -q "\"version\": \"$wasm_version\"" \
+    packages/base64-ng-wasm-loader/package-lock.json ||
+    fail "wasm loader package and lock versions differ"
 grep -F -q '"name": "@valkyoth/base64-ng-wasm-loader"' \
     packages/base64-ng-wasm-loader/package.json ||
     fail "wasm loader package is not owned by the Valkyoth npm scope"
@@ -98,4 +112,4 @@ fi
 
 git rev-parse HEAD >"$evidence_dir/source-commit.txt"
 rustc -Vv >"$evidence_dir/rustc.txt"
-echo "2.0 release freeze: synchronized API, documentation, and package family ok"
+echo "2.0 release freeze: API, documentation, and selected package family ok"

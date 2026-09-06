@@ -26,16 +26,16 @@ and allocating APIs, incremental and in-place transforms, optional admitted
 SIMD backends, and separately named compatibility policies.
 Zero external runtime or development dependencies in `Cargo.toml`.
 
-This source tree defines the synchronized `2.0.3` package family. This
-maintenance patch updates the tested Rust toolchain, the sanitization
-companion dependency, and CI tooling. Runtime behavior and the public 2.0 API
-remain unchanged.
+This source tree defines the `base64-ng` `2.0.4` maintenance release. The
+separately published `base64-ng-sanitization` companion also moves to 2.0.4;
+unchanged companion crates and the WASM loader remain at 2.0.3. Runtime
+behavior and the public 2.0 API remain unchanged.
 
 ## Quick Start
 
 ```toml
 [dependencies]
-base64-ng = "2.0.3"
+base64-ng = "2.0.4"
 ```
 
 For ordinary Standard Base64 with canonical padding:
@@ -226,14 +226,14 @@ Disable defaults for core-only embedded use:
 
 ```toml
 [dependencies]
-base64-ng = { version = "2.0.3", default-features = false }
+base64-ng = { version = "2.0.4", default-features = false }
 ```
 
 Enable ordinary SIMD dispatch without changing the public codec API:
 
 ```toml
 [dependencies]
-base64-ng = { version = "2.0.3", features = ["simd"] }
+base64-ng = { version = "2.0.4", features = ["simd"] }
 ```
 
 Scalar by default; std x86/x86_64 encode selects SSSE3/SSE4.1, AVX2, or AVX-512 VBMI by length, strict decode selects SSSE3/SSE4.1 or AVX2. Admitted
@@ -252,7 +252,7 @@ bounded fixed-work API:
 
 ```toml
 [dependencies]
-base64-ng = { version = "2.0.3", default-features = false, features = ["secrets"] }
+base64-ng = { version = "2.0.4", default-features = false, features = ["secrets"] }
 ```
 
 ```rust

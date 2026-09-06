@@ -126,6 +126,29 @@ def test_dependency_only_changes_must_patch_bump() -> None:
     )
 
 
+def test_metadata_only_changes_must_patch_bump_and_publish() -> None:
+    entry = {
+        "previous_version": "2.0.3",
+        "version": "2.0.4",
+        "change": "metadata",
+        "publish": True,
+        "reason": "release metadata",
+    }
+    release_crates.validate_plan_entry(
+        "base64-ng", entry, "2.0.4", "selective-patch"
+    )
+
+    entry["publish"] = False
+    assert_fails(
+        "metadata-only changes but publish is false",
+        release_crates.validate_plan_entry,
+        "base64-ng",
+        entry,
+        "2.0.4",
+        "selective-patch",
+    )
+
+
 def test_unchanged_crates_are_not_published() -> None:
     entry = {
         "previous_version": "1.0.9",
@@ -198,6 +221,69 @@ def test_synced_family_requires_every_changed_crate_to_publish() -> None:
         entry,
         "2.0.0",
         "synced-family",
+    )
+
+
+def test_selective_patch_accepts_changed_and_unchanged_crates() -> None:
+    changed = {
+        "previous_version": "2.0.3",
+        "version": "2.0.4",
+        "change": "dependency",
+        "publish": True,
+        "reason": "dependency refresh",
+    }
+    unchanged = {
+        "previous_version": "2.0.3",
+        "version": "2.0.3",
+        "change": "unchanged",
+        "publish": False,
+        "reason": "no package change",
+    }
+    release_crates.validate_plan_entry(
+        "base64-ng-sanitization", changed, "2.0.4", "selective-patch"
+    )
+    release_crates.validate_plan_entry(
+        "base64-ng-bytes", unchanged, "2.0.4", "selective-patch"
+    )
+
+
+def test_selective_patch_rejects_changed_crate_at_another_version() -> None:
+    entry = {
+        "previous_version": "2.0.2",
+        "version": "2.0.3",
+        "change": "dependency",
+        "publish": True,
+        "reason": "stale patch",
+    }
+    assert_fails(
+        "selected for the selective patch",
+        release_crates.validate_plan_entry,
+        "base64-ng-sanitization",
+        entry,
+        "2.0.4",
+        "selective-patch",
+    )
+
+
+def test_selective_patch_requires_published_core() -> None:
+    plan = base_plan()
+    assert_fails(
+        "must publish base64-ng",
+        release_crates.validate_release_policy,
+        plan["crates"],
+        "1.0.10",
+        "selective-patch",
+    )
+
+    plan["crates"]["base64-ng"] = {
+        "previous_version": "1.0.9",
+        "version": "1.0.10",
+        "change": "dependency",
+        "publish": True,
+        "reason": "maintenance",
+    }
+    release_crates.validate_release_policy(
+        plan["crates"], "1.0.10", "selective-patch"
     )
 
 
@@ -319,10 +405,14 @@ def run_tests() -> None:
         test_current_plan_accepts_unchanged_crates,
         test_code_changes_must_use_milestone_version,
         test_dependency_only_changes_must_patch_bump,
+        test_metadata_only_changes_must_patch_bump_and_publish,
         test_unchanged_crates_are_not_published,
         test_publish_plan_skips_unchanged_crates,
         test_development_policy_requires_synced_unpublished_versions,
         test_synced_family_requires_every_changed_crate_to_publish,
+        test_selective_patch_accepts_changed_and_unchanged_crates,
+        test_selective_patch_rejects_changed_crate_at_another_version,
+        test_selective_patch_requires_published_core,
         test_publish_sequence_dry_runs_dependents_after_index_wait,
         test_post_tag_full_gate_uses_candidate_mode,
         test_release_tag_check_requires_valid_signature,

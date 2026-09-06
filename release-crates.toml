@@ -1,94 +1,94 @@
 [release]
-version = "2.0.3"
-policy = "synced-family"
+version = "2.0.4"
+policy = "selective-patch"
 
 [crates."base64-ng"]
-previous_version = "2.0.2"
-version = "2.0.3"
-change = "code"
+previous_version = "2.0.3"
+version = "2.0.4"
+change = "metadata"
 publish = true
-reason = "Corrects the high-assurance target gate under additive SIMD while updating sanitization to 2.0.4, current tooling and GitHub Actions, and Rust 1.98.1 release checks."
+reason = "Advances the family entry point for the sanitization 2.1.0 integration and current immutable GitHub Actions while retaining Rust 1.98.1 release checks."
 
 [crates."base64-ng-sanitization"]
-previous_version = "2.0.2"
-version = "2.0.3"
+previous_version = "2.0.3"
+version = "2.0.4"
 change = "dependency"
 publish = true
-reason = "Synchronizes the companion with base64-ng 2.0.3 and sanitization 2.0.4."
+reason = "Synchronizes the companion with base64-ng 2.0.4 and sanitization 2.1.0."
 
 [crates."base64-ng-derive"]
-previous_version = "2.0.2"
+previous_version = "2.0.3"
 version = "2.0.3"
-change = "dependency"
-publish = true
-reason = "Synchronizes the companion dependency with base64-ng 2.0.3."
+change = "unchanged"
+publish = false
+reason = "No package change; its compatible base64-ng requirement already admits 2.0.4."
 
 [crates."base64-ng-imap"]
-previous_version = "2.0.2"
+previous_version = "2.0.3"
 version = "2.0.3"
-change = "dependency"
-publish = true
-reason = "Synchronizes the companion dependency with base64-ng 2.0.3."
+change = "unchanged"
+publish = false
+reason = "No package change; its compatible base64-ng requirement already admits 2.0.4."
 
 [crates."base64-ng-mime"]
-previous_version = "2.0.2"
+previous_version = "2.0.3"
 version = "2.0.3"
-change = "dependency"
-publish = true
-reason = "Synchronizes the companion dependency with base64-ng 2.0.3."
+change = "unchanged"
+publish = false
+reason = "No package change; its compatible base64-ng requirement already admits 2.0.4."
 
 [crates."base64-ng-multibase"]
-previous_version = "2.0.2"
+previous_version = "2.0.3"
 version = "2.0.3"
-change = "dependency"
-publish = true
-reason = "Synchronizes the companion dependency with base64-ng 2.0.3."
+change = "unchanged"
+publish = false
+reason = "No package change; its compatible base64-ng requirement already admits 2.0.4."
 
 [crates."base64-ng-password"]
-previous_version = "2.0.2"
+previous_version = "2.0.3"
 version = "2.0.3"
-change = "dependency"
-publish = true
-reason = "Synchronizes the companion dependency with base64-ng 2.0.3."
+change = "unchanged"
+publish = false
+reason = "No package change; its compatible base64-ng requirement already admits 2.0.4."
 
 [crates."base64-ng-openpgp"]
-previous_version = "2.0.2"
+previous_version = "2.0.3"
 version = "2.0.3"
-change = "dependency"
-publish = true
-reason = "Synchronizes the companion dependency with base64-ng 2.0.3."
+change = "unchanged"
+publish = false
+reason = "No package change; its compatible base64-ng requirement already admits 2.0.4."
 
 [crates."base64-ng-pem"]
-previous_version = "2.0.2"
+previous_version = "2.0.3"
 version = "2.0.3"
-change = "dependency"
-publish = true
-reason = "Synchronizes the companion dependency with base64-ng 2.0.3."
+change = "unchanged"
+publish = false
+reason = "No package change; its compatible base64-ng requirement already admits 2.0.4."
 
 [crates."base64-ng-serde"]
-previous_version = "2.0.2"
+previous_version = "2.0.3"
 version = "2.0.3"
-change = "dependency"
-publish = true
-reason = "Synchronizes the companion dependency with base64-ng 2.0.3."
+change = "unchanged"
+publish = false
+reason = "No package change; its compatible base64-ng requirement already admits 2.0.4."
 
 [crates."base64-ng-bytes"]
-previous_version = "2.0.2"
+previous_version = "2.0.3"
 version = "2.0.3"
-change = "dependency"
-publish = true
-reason = "Synchronizes the companion dependency with base64-ng 2.0.3."
+change = "unchanged"
+publish = false
+reason = "No package change; its compatible base64-ng requirement already admits 2.0.4."
 
 [crates."base64-ng-subtle"]
-previous_version = "2.0.2"
+previous_version = "2.0.3"
 version = "2.0.3"
-change = "dependency"
-publish = true
-reason = "Synchronizes the companion dependency with base64-ng 2.0.3."
+change = "unchanged"
+publish = false
+reason = "No package change; its compatible base64-ng requirement already admits 2.0.4."
 
 [crates."base64-ng-tokio"]
-previous_version = "2.0.2"
+previous_version = "2.0.3"
 version = "2.0.3"
-change = "dependency"
-publish = true
-reason = "Synchronizes the companion dependency with base64-ng 2.0.3."
+change = "unchanged"
+publish = false
+reason = "No package change; its compatible base64-ng requirement already admits 2.0.4."

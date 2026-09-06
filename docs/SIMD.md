@@ -1,8 +1,8 @@
 # SIMD Admission Policy
 
-Release status: `2.0.3`. The maintenance patch changes a companion dependency,
-CI tooling, and the active Rust release toolchain only; backend implementation
-and admission remain identical to `2.0.0`.
+Release status: `2.0.4`. The maintenance patch changes a companion dependency
+and CI tooling only; backend implementation and admission remain identical to
+`2.0.0`.
 
 `base64-ng` is scalar by default and admits conservative accelerated encode
 paths in the `1.2.x` line: std `x86`/`x86_64` AVX-512 VBMI first, then

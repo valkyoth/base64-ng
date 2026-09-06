@@ -7,9 +7,9 @@ publish = false
 [workspace]
 
 [dependencies]
-base64-ng = { version = "=2.0.3", path = "../..", features = ["alloc", "std", "stream"] }
+base64-ng = { version = "=2.0.4", path = "../..", features = ["alloc", "std", "stream"] }
 base64-ng-bytes = { version = "=2.0.3", path = "../../crates/base64-ng-bytes" }
-base64-ng-sanitization = { version = "=2.0.3", path = "../../crates/base64-ng-sanitization", features = ["alloc"] }
+base64-ng-sanitization = { version = "=2.0.4", path = "../../crates/base64-ng-sanitization", features = ["alloc"] }
 base64-ng-serde = { version = "=2.0.3", path = "../../crates/base64-ng-serde" }
 base64-ng-tokio = { version = "=2.0.3", path = "../../crates/base64-ng-tokio" }
 bytes = "=1.12.1"

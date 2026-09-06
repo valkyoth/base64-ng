@@ -10,7 +10,7 @@ license = "MIT OR Apache-2.0"
 [dependencies]
 base64 = "=0.23.0"
 base64ct = "=1.8.3"
-base64-ng = { version = "=2.0.3", path = "../..", default-features = false, features = ["alloc"] }
+base64-ng = { version = "=2.0.4", path = "../..", default-features = false, features = ["alloc"] }
 base64-ng-imap = { version = "=2.0.3", path = "../../crates/base64-ng-imap", features = ["alloc"] }
 base64-ng-mime = { version = "=2.0.3", path = "../../crates/base64-ng-mime", features = ["alloc"] }
 base64-ng-multibase = { version = "=2.0.3", path = "../../crates/base64-ng-multibase", features = ["alloc"] }

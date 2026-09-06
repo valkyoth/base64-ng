@@ -11,7 +11,7 @@ cargo-fuzz = true
 
 [dependencies]
 base64 = "0.23.1"
-base64-ng = { path = "..", version = "2.0.3", features = ["alloc", "checked-backend", "secrets", "simd", "std", "stream"] }
+base64-ng = { path = "..", version = "2.0.4", features = ["alloc", "checked-backend", "secrets", "simd", "std", "stream"] }
 base64-ng-imap = { path = "../crates/base64-ng-imap", version = "2.0.3" }
 base64-ng-mime = { path = "../crates/base64-ng-mime", version = "2.0.3" }
 base64-ng-multibase = { path = "../crates/base64-ng-multibase", version = "2.0.3" }

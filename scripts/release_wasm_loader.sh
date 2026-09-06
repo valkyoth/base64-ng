@@ -29,18 +29,22 @@ if [ "$npm_access" != "public" ]; then
     echo "wasm loader release: scoped npm package must publish with public access" >&2
     exit 1
 fi
-if [ "$npm_version" != "$rust_version" ]; then
-    echo "wasm loader release: npm version $npm_version does not match Rust family $rust_version" >&2
-    exit 1
-fi
-
 head="$(git rev-parse --verify HEAD)"
 export BASE64_NG_SOURCE_COMMIT="$head"
 scripts/check-2.0-wasm-loader.sh
 
 if [ "$mode" = "check" ]; then
-    echo "wasm loader release: package checks passed for $npm_version"
+    if [ "$npm_version" = "$rust_version" ]; then
+        echo "wasm loader release: package checks passed for $npm_version"
+    else
+        echo "wasm loader release: unchanged package $npm_version checked during Rust $rust_version release"
+    fi
     exit 0
+fi
+
+if [ "$npm_version" != "$rust_version" ]; then
+    echo "wasm loader release: package $npm_version is not selected for Rust release $rust_version" >&2
+    exit 1
 fi
 
 if [ -n "$(git status --porcelain --untracked-files=all)" ]; then

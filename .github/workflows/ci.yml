@@ -51,12 +51,12 @@ jobs:
           fi
 
       - name: Cache Rust build output
-        uses: Swatinem/rust-cache@63fed3e2fecf6f7b51dc6f043341b79ef82a9ae7 # v2.9.2
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           cache-on-failure: true
 
       - name: Install security and test tools
-        uses: taiki-e/install-action@e67fa11c4b9316fa714ddf0abed07a0c3143b95b # v2.87.4
+        uses: taiki-e/install-action@84f5ac3124727fb3d284d4d22ee9ab3654fd09a6 # v2.87.7
         with:
           tool: cargo-audit@0.22.2,cargo-nextest@0.9.143
           fallback: none
@@ -131,7 +131,7 @@ jobs:
         run: rustup toolchain install ${{ matrix.toolchain }}
 
       - name: Cache Rust build output
-        uses: Swatinem/rust-cache@63fed3e2fecf6f7b51dc6f043341b79ef82a9ae7 # v2.9.2
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           cache-on-failure: true
           key: rust-${{ matrix.toolchain }}
@@ -170,7 +170,7 @@ jobs:
           rustup target add --toolchain 1.90.0 ${{ matrix.target }}
 
       - name: Cache Rust build output
-        uses: Swatinem/rust-cache@63fed3e2fecf6f7b51dc6f043341b79ef82a9ae7 # v2.9.2
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           cache-on-failure: true
           key: msrv-target-${{ matrix.target }}
@@ -202,7 +202,7 @@ jobs:
         run: scripts/ci_install_rust.sh
 
       - name: Cache Rust build output
-        uses: Swatinem/rust-cache@63fed3e2fecf6f7b51dc6f043341b79ef82a9ae7 # v2.9.2
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           cache-on-failure: true
 
@@ -256,7 +256,7 @@ jobs:
         run: rustup target add ${{ matrix.target }}
 
       - name: Cache Rust build output
-        uses: Swatinem/rust-cache@63fed3e2fecf6f7b51dc6f043341b79ef82a9ae7 # v2.9.2
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           cache-on-failure: true
 

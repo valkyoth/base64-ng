@@ -4,7 +4,7 @@ version = 4
 
 [[package]]
 name = "base64-ng"
-version = "2.0.3"
+version = "2.0.4"
 
 [[package]]
 name = "base64-ng-bytes"
@@ -16,7 +16,7 @@ dependencies = [
 
 [[package]]
 name = "base64-ng-sanitization"
-version = "2.0.3"
+version = "2.0.4"
 dependencies = [
  "base64-ng",
  "sanitization",
@@ -96,9 +96,9 @@ dependencies = [
 
 [[package]]
 name = "sanitization"
-version = "2.0.4"
+version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f6c00771cb2e89cc08c486588aa5b462190634313f8885fbdc375de33ee84612"
+checksum = "0c395c5164295d69016c014a3c2dd69d28a84b7e89ba971c1e81b17acc41e411"
 
 [[package]]
 name = "serde"
@@ -144,9 +144,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "3.0.4"
+version = "3.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e6275cddf4610d1775e6d1fe9469b2e77d0f39fd98fb7450901b821e0c53649f"
+checksum = "12df2e0110f65b775f769bb17ef989067a1d931b2eb822bd4346631eeada89f9"
 dependencies = [
  "proc-macro2",
  "quote",

@@ -53,7 +53,11 @@ case "$cargo_version" in
         require_text docs/SIMD_ADMISSION.md "$cargo_version"
         ;;
     *)
-        require_text README.md "This source tree defines the synchronized \`$cargo_version\` package family."
+        if [ "$release_policy" = "selective-patch" ]; then
+            require_text README.md "This source tree defines the \`base64-ng\` \`$cargo_version\` maintenance release."
+        else
+            require_text README.md "This source tree defines the synchronized \`$cargo_version\` package family."
+        fi
         if [ "$cargo_version" = "1.1.0" ]; then
             require_text docs/SIMD_ADMISSION.md "Release status: \`1.1.x\`"
         else

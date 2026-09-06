@@ -192,6 +192,22 @@ if [ "$release_policy" = "synced-family" ]; then
     fi
 fi
 
+if [ "$release_policy" = "selective-patch" ]; then
+    publish_count="$(grep -F -c 'publish = true' release-crates.toml)"
+    if [ "$publish_count" -lt 1 ]; then
+        echo "release metadata: selective patch must publish at least base64-ng" >&2
+        exit 1
+    fi
+fi
+
+case "$release_policy" in
+    development-blocked | synced-family | selective-patch) ;;
+    *)
+        echo "release metadata: unsupported release policy: $release_policy" >&2
+        exit 1
+        ;;
+esac
+
 for required_script in \
     "scripts/check-2.0-feature-contract.sh" \
     "scripts/check-2.0-const-buffers.sh" \
