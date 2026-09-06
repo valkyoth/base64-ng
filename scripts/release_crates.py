@@ -103,6 +103,7 @@ def release_plan(plan_path: Path) -> dict:
     plan = load_toml(plan_path)
     release = plan.get("release", {})
     crates = plan.get("crates", {})
+    npm = plan.get("npm", {})
     version = release.get("version")
     policy = release.get("policy")
     if not isinstance(version, str):
@@ -121,7 +122,42 @@ def release_plan(plan_path: Path) -> dict:
     for package_name, entry in crates.items():
         validate_plan_entry(package_name, entry, version, policy)
     validate_release_policy(crates, version, policy)
-    return {"version": version, "policy": policy, "crates": crates}
+    validate_npm_plan(npm)
+    return {"version": version, "policy": policy, "crates": crates, "npm": npm}
+
+
+def validate_npm_plan(entry: dict) -> None:
+    name = entry.get("name")
+    previous = entry.get("previous_version")
+    version = entry.get("version")
+    change = entry.get("change")
+    publish = entry.get("publish")
+    reason = entry.get("reason")
+    if name != "@valkyoth/base64-ng-wasm-loader":
+        raise RuntimeError("npm release plan has an unexpected package name")
+    if not all(
+        isinstance(value, str) for value in (previous, version, change, reason)
+    ):
+        raise RuntimeError("npm release plan has incomplete metadata")
+    if change not in CHANGE_KINDS:
+        raise RuntimeError(f"npm release plan has invalid change kind {change!r}")
+    if not isinstance(publish, bool):
+        raise RuntimeError("npm release plan publish must be true or false")
+
+    previous_version = parse_version(previous)
+    planned_version = parse_version(version)
+    if change == "unchanged":
+        if planned_version != previous_version:
+            raise RuntimeError(
+                "unchanged npm package version differs from previous_version"
+            )
+        if publish:
+            raise RuntimeError("unchanged npm package cannot be selected for publication")
+    else:
+        if planned_version <= previous_version:
+            raise RuntimeError("changed npm package must increase its independent version")
+        if not publish:
+            raise RuntimeError("changed npm package must be selected for publication")
 
 
 def validate_release_policy(crates: dict, release: str, policy: str) -> None:
@@ -175,15 +211,23 @@ def validate_plan_entry(
             )
         return
 
-    if (
-        policy == "selective-patch"
-        and change != "unchanged"
-        and planned_version != release_parts
-    ):
-        raise RuntimeError(
-            f"{package_name} is selected for the selective patch, so version "
-            f"must be {release}"
-        )
+    if policy == "selective-patch" and change != "unchanged":
+        if planned_version != release_parts:
+            raise RuntimeError(
+                f"{package_name} is selected for the selective patch, so version "
+                f"must be {release}"
+            )
+        same_line = planned_version[:2] == previous_version[:2]
+        patch_bump = planned_version[2] > previous_version[2]
+        if not same_line or not patch_bump:
+            raise RuntimeError(
+                f"{package_name} selective patch must increase the patch version "
+                "on the same major/minor line"
+            )
+        if not publish:
+            raise RuntimeError(
+                f"{package_name} changed under selective-patch but publish is false"
+            )
 
     if change == "code":
         if planned_version != release_parts:
@@ -253,6 +297,34 @@ def verify_publish_order(packages: dict[str, dict], plan: dict) -> None:
                     f"{dependency_name} appears later in PUBLISH_ORDER"
                 )
         seen.add(package_name)
+
+
+def verify_npm_package(plan: dict) -> None:
+    package_dir = ROOT / "packages" / "base64-ng-wasm-loader"
+    package = json.loads((package_dir / "package.json").read_text(encoding="utf-8"))
+    lock = json.loads((package_dir / "package-lock.json").read_text(encoding="utf-8"))
+    npm = plan["npm"]
+    if package.get("name") != npm["name"]:
+        raise RuntimeError("npm package name does not match release plan")
+    if package.get("version") != npm["version"]:
+        raise RuntimeError("npm package version does not match release plan")
+    if lock.get("name") != npm["name"] or lock.get("version") != npm["version"]:
+        raise RuntimeError("npm lock root does not match release plan")
+    locked_package = lock.get("packages", {}).get("", {})
+    if (
+        locked_package.get("name") != npm["name"]
+        or locked_package.get("version") != npm["version"]
+    ):
+        raise RuntimeError("npm locked package does not match release plan")
+
+
+def npm_plan_output(plan: dict) -> str:
+    npm = plan["npm"]
+    selected = "true" if npm["publish"] else "false"
+    return (
+        f"release={plan['version']}\nname={npm['name']}\n"
+        f"version={npm['version']}\npublish={selected}"
+    )
 
 
 def check_release_tag(version: str, *, require_tag: bool) -> None:
@@ -403,6 +475,11 @@ def main() -> int:
         help="Path to the per-crate release plan.",
     )
     parser.add_argument(
+        "--npm-plan",
+        action="store_true",
+        help="Validate and print the npm package release-plan entry, then exit.",
+    )
+    parser.add_argument(
         "--start-at",
         default=None,
         choices=PUBLISH_ORDER,
@@ -478,6 +555,11 @@ def main() -> int:
         )
         return 1
 
+    verify_npm_package(plan)
+    if args.npm_plan:
+        print(npm_plan_output(plan))
+        return 0
+
     metadata = cargo_metadata()
     packages = workspace_packages(metadata)
     verify_publish_order(packages, plan)
@@ -544,18 +626,17 @@ def main() -> int:
             version = plan["crates"][package]["version"]
             print(f"  cargo info {package}@{version}")
 
-    npm_package = ROOT / "packages" / "base64-ng-wasm-loader" / "package.json"
-    npm_version = json.loads(npm_package.read_text(encoding="utf-8"))["version"]
-    if npm_version == args.version:
+    npm = plan["npm"]
+    if npm["publish"]:
         print(
-            "Publish @valkyoth/base64-ng-wasm-loader separately from the same "
-            "signed tag:"
+            f"Publish {npm['name']}@{npm['version']} separately from the same "
+            "signed Rust release tag:"
         )
         print("  scripts/release_wasm_loader.sh publish")
     else:
         print(
-            "@valkyoth/base64-ng-wasm-loader is unchanged at "
-            f"{npm_version}; do not republish it for {args.version}."
+            f"{npm['name']} is unchanged at {npm['version']}; do not republish "
+            f"it for {args.version}."
         )
     return 0
 

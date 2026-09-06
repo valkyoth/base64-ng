@@ -2,6 +2,14 @@
 version = "2.0.4"
 policy = "selective-patch"
 
+[npm]
+name = "@valkyoth/base64-ng-wasm-loader"
+previous_version = "2.0.3"
+version = "2.0.3"
+change = "unchanged"
+publish = false
+reason = "No package or generated-artifact change; do not republish the loader for the Rust 2.0.4 release."
+
 [crates."base64-ng"]
 previous_version = "2.0.3"
 version = "2.0.4"

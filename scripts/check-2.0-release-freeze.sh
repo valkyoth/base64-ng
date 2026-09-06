@@ -31,17 +31,7 @@ test "$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | sed -n '1p')" = "$ve
     fail "root package version is not $version"
 policy="$(sed -n 's/^policy = "\([^"]*\)"/\1/p' release-crates.toml | sed -n '1p')"
 case "$policy" in
-    synced-family)
-        [ "$(grep -F -c 'publish = true' release-crates.toml)" -eq 13 ] ||
-            fail "synchronized plan does not select exactly 13 Rust packages"
-        if grep -F -q 'publish = false' release-crates.toml; then
-            fail "synchronized plan contains an unpublished Rust package"
-        fi
-        ;;
-    selective-patch)
-        [ "$(grep -F -c 'publish = true' release-crates.toml)" -ge 1 ] ||
-            fail "selective patch does not select a Rust package"
-        ;;
+    synced-family | selective-patch) ;;
     *) fail "unsupported release policy: $policy" ;;
 esac
 
@@ -100,6 +90,10 @@ grep -F -q 'BASE64_NG_SOURCE_COMMIT' scripts/check-2.0-wasm-loader.sh ||
     fail "wasm package gate does not bind the source commit"
 grep -F -q 'scripts/verify-release-tag.sh "$tag"' scripts/release_wasm_loader.sh ||
     fail "wasm package publisher does not verify the authorized release signer"
+grep -F -q 'scripts/release_crates.py --npm-plan' scripts/release_wasm_loader.sh ||
+    fail "wasm package publisher does not use the explicit npm release plan"
+grep -F -q 'tag="v$rust_version"' scripts/release_wasm_loader.sh ||
+    fail "wasm package publisher does not bind to the containing Rust release tag"
 
 scripts/check-2.0-migration-smoke.sh
 scripts/check_migration_smoke.sh

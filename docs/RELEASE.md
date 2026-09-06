@@ -12,7 +12,8 @@ After a synchronized major or minor release, patch releases use the
 package changes are published; unchanged companions retain their prior patch
 version because their compatible Cargo requirements already admit the new core
 patch. The npm WASM loader is versioned and published only when its package or
-generated artifacts change.
+generated artifacts change. Its independent version and publication decision
+are recorded under `[npm]` in `release-crates.toml`.
 
 ## Preflight
 
@@ -536,46 +537,19 @@ absent. The same evidence-reuse environment variable may be used when the
 signed tag still satisfies the metadata-only equivalence policy. Pentest
 readiness was already enforced by `release` before tagging.
 
-For manual fallback, publish the core package first, wait until crates.io serves
-the new version, then publish every companion in dependency order:
+For manual fallback, first print the exact selected package sequence:
 
 ```sh
-cargo publish -p base64-ng --dry-run
-cargo publish -p base64-ng
-cargo publish -p base64-ng-imap --dry-run
-cargo publish -p base64-ng-imap
-cargo publish -p base64-ng-mime --dry-run
-cargo publish -p base64-ng-mime
-cargo publish -p base64-ng-multibase --dry-run
-cargo publish -p base64-ng-multibase
-cargo publish -p base64-ng-password --dry-run
-cargo publish -p base64-ng-password
-cargo publish -p base64-ng-openpgp --dry-run
-cargo publish -p base64-ng-openpgp
-cargo publish -p base64-ng-pem --dry-run
-cargo publish -p base64-ng-pem
-cargo package -p base64-ng-sanitization
-cargo publish -p base64-ng-sanitization --dry-run
-cargo publish -p base64-ng-sanitization
-cargo package -p base64-ng-derive
-cargo publish -p base64-ng-derive --dry-run
-cargo publish -p base64-ng-derive
-cargo package -p base64-ng-serde
-cargo publish -p base64-ng-serde --dry-run
-cargo publish -p base64-ng-serde
-cargo package -p base64-ng-bytes
-cargo publish -p base64-ng-bytes --dry-run
-cargo publish -p base64-ng-bytes
-cargo package -p base64-ng-subtle
-cargo publish -p base64-ng-subtle --dry-run
-cargo publish -p base64-ng-subtle
-cargo package -p base64-ng-tokio
-cargo publish -p base64-ng-tokio --dry-run
-cargo publish -p base64-ng-tokio
+scripts/release_crates.py --dry-run
 ```
 
-Publish the supported JavaScript package separately from the signed tag after
-its exact tarball gate passes:
+Run only the printed `cargo publish` commands, in order. Wait for crates.io to
+serve each package before publishing a selected dependent. Never infer the
+selection from matching version numbers or publish unchanged companions.
+
+Always check the supported JavaScript package from the signed tag. Run its
+dry-run and publication modes only when `[npm].publish = true` in
+`release-crates.toml`:
 
 ```sh
 scripts/release_wasm_loader.sh check
@@ -586,9 +560,10 @@ scripts/release_wasm_loader.sh publish
 Real npm publication always uses `npm publish --provenance`; provenance is not
 an optional release-manager toggle. Configure npm trusted publishing in the
 release environment. Never store an npm token in the repository. Both the npm
-and crates.io publishers verify the signed tag against the exact SSH principal
-and public key in `security/release-signers`; a signature that is merely valid
-under a maintainer's ambient keyring is insufficient.
+and crates.io publishers verify the containing signed Rust release tag against
+the exact SSH principal and public key in `security/release-signers`; a
+signature that is merely valid under a maintainer's ambient keyring is
+insufficient.
 
 This order is required because companion crates depend on the same released
 `base64-ng` version from crates.io while using a local path only during

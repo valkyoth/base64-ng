@@ -7,6 +7,8 @@ import copy
 import contextlib
 import importlib.util
 import io
+import json
+import tempfile
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -140,7 +142,7 @@ def test_metadata_only_changes_must_patch_bump_and_publish() -> None:
 
     entry["publish"] = False
     assert_fails(
-        "metadata-only changes but publish is false",
+        "changed under selective-patch but publish is false",
         release_crates.validate_plan_entry,
         "base64-ng",
         entry,
@@ -265,6 +267,29 @@ def test_selective_patch_rejects_changed_crate_at_another_version() -> None:
     )
 
 
+def test_selective_patch_rejects_non_patch_code_transitions() -> None:
+    for previous, release in (
+        ("2.0.3", "2.1.0"),
+        ("2.0.3", "3.0.0"),
+        ("2.0.3", "2.0.2"),
+    ):
+        entry = {
+            "previous_version": previous,
+            "version": release,
+            "change": "code",
+            "publish": True,
+            "reason": "invalid selective transition",
+        }
+        assert_fails(
+            "must increase the patch version on the same major/minor line",
+            release_crates.validate_plan_entry,
+            "base64-ng",
+            entry,
+            release,
+            "selective-patch",
+        )
+
+
 def test_selective_patch_requires_published_core() -> None:
     plan = base_plan()
     assert_fails(
@@ -285,6 +310,93 @@ def test_selective_patch_requires_published_core() -> None:
     release_crates.validate_release_policy(
         plan["crates"], "1.0.10", "selective-patch"
     )
+
+
+def test_npm_plan_supports_independent_versions() -> None:
+    unchanged = {
+        "name": "@valkyoth/base64-ng-wasm-loader",
+        "previous_version": "2.0.3",
+        "version": "2.0.3",
+        "change": "unchanged",
+        "publish": False,
+        "reason": "no package change",
+    }
+    release_crates.validate_npm_plan(unchanged)
+    assert release_crates.npm_plan_output(
+        {"version": "2.0.5", "npm": unchanged}
+    ) == (
+        "release=2.0.5\nname=@valkyoth/base64-ng-wasm-loader\n"
+        "version=2.0.3\npublish=false"
+    )
+
+    changed = dict(unchanged)
+    changed.update(version="2.0.4", change="code", publish=True)
+    release_crates.validate_npm_plan(changed)
+
+
+def test_npm_plan_rejects_inconsistent_selection() -> None:
+    entry = {
+        "name": "@valkyoth/base64-ng-wasm-loader",
+        "previous_version": "2.0.3",
+        "version": "2.0.3",
+        "change": "unchanged",
+        "publish": True,
+        "reason": "invalid selection",
+    }
+    assert_fails(
+        "unchanged npm package cannot be selected",
+        release_crates.validate_npm_plan,
+        entry,
+    )
+
+    entry.update(version="2.0.4", change="code", publish=False)
+    assert_fails(
+        "changed npm package must be selected",
+        release_crates.validate_npm_plan,
+        entry,
+    )
+
+    entry.update(version="2.0.2", publish=True)
+    assert_fails(
+        "must increase its independent version",
+        release_crates.validate_npm_plan,
+        entry,
+    )
+
+
+def test_npm_manifest_and_lock_must_match_plan() -> None:
+    plan = {
+        "npm": {
+            "name": "@valkyoth/base64-ng-wasm-loader",
+            "version": "2.0.4",
+        }
+    }
+    original_root = release_crates.ROOT
+    try:
+        with tempfile.TemporaryDirectory() as raw:
+            release_crates.ROOT = Path(raw)
+            package_dir = (
+                release_crates.ROOT / "packages" / "base64-ng-wasm-loader"
+            )
+            package_dir.mkdir(parents=True)
+            package = {
+                "name": plan["npm"]["name"],
+                "version": plan["npm"]["version"],
+            }
+            (package_dir / "package.json").write_text(json.dumps(package))
+            lock = {**package, "packages": {"": package}}
+            (package_dir / "package-lock.json").write_text(json.dumps(lock))
+            release_crates.verify_npm_package(plan)
+
+            lock["packages"][""]["version"] = "2.0.3"
+            (package_dir / "package-lock.json").write_text(json.dumps(lock))
+            assert_fails(
+                "npm locked package does not match",
+                release_crates.verify_npm_package,
+                plan,
+            )
+    finally:
+        release_crates.ROOT = original_root
 
 
 def test_publish_sequence_dry_runs_dependents_after_index_wait() -> None:
@@ -412,7 +524,11 @@ def run_tests() -> None:
         test_synced_family_requires_every_changed_crate_to_publish,
         test_selective_patch_accepts_changed_and_unchanged_crates,
         test_selective_patch_rejects_changed_crate_at_another_version,
+        test_selective_patch_rejects_non_patch_code_transitions,
         test_selective_patch_requires_published_core,
+        test_npm_plan_supports_independent_versions,
+        test_npm_plan_rejects_inconsistent_selection,
+        test_npm_manifest_and_lock_must_match_plan,
         test_publish_sequence_dry_runs_dependents_after_index_wait,
         test_post_tag_full_gate_uses_candidate_mode,
         test_release_tag_check_requires_valid_signature,

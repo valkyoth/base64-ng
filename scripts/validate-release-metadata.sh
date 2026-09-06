@@ -177,24 +177,35 @@ if ! grep -F -q "version = \"$cargo_version\"" release-crates.toml; then
     exit 1
 fi
 
+rust_publish_count="$(awk '
+    /^\[crates\./ { in_crate = 1; next }
+    /^\[/ { in_crate = 0 }
+    in_crate && /^publish = true$/ { count += 1 }
+    END { print count + 0 }
+' release-crates.toml)"
+rust_unpublished_count="$(awk '
+    /^\[crates\./ { in_crate = 1; next }
+    /^\[/ { in_crate = 0 }
+    in_crate && /^publish = false$/ { count += 1 }
+    END { print count + 0 }
+' release-crates.toml)"
+
 if [ "$release_policy" = "development-blocked" ]; then
-    if grep -F -q 'publish = true' release-crates.toml; then
+    if [ "$rust_publish_count" -ne 0 ]; then
         echo "release metadata: development plan selected a crate for publication" >&2
         exit 1
     fi
 fi
 
 if [ "$release_policy" = "synced-family" ]; then
-    publish_count="$(grep -F -c 'publish = true' release-crates.toml)"
-    if [ "$publish_count" -ne 13 ] || grep -F -q 'publish = false' release-crates.toml; then
+    if [ "$rust_publish_count" -ne 13 ] || [ "$rust_unpublished_count" -ne 0 ]; then
         echo "release metadata: 2.0 synchronized family must publish all 13 Rust packages" >&2
         exit 1
     fi
 fi
 
 if [ "$release_policy" = "selective-patch" ]; then
-    publish_count="$(grep -F -c 'publish = true' release-crates.toml)"
-    if [ "$publish_count" -lt 1 ]; then
+    if [ "$rust_publish_count" -lt 1 ]; then
         echo "release metadata: selective patch must publish at least base64-ng" >&2
         exit 1
     fi
@@ -721,7 +732,9 @@ fi
 
 for required_wasm_publish_text in \
     'scripts/check-2.0-wasm-loader.sh' \
+    'scripts/release_crates.py --npm-plan' \
     'git status --porcelain --untracked-files=all' \
+    'tag="v$rust_version"' \
     'scripts/verify-release-tag.sh "$tag"' \
     'npm publish --dry-run' \
     'npm publish --provenance'
