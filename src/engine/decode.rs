@@ -1,7 +1,5 @@
 #[cfg(feature = "alloc")]
 use crate::SecretBuffer;
-#[cfg(feature = "alloc")]
-use crate::validate_decode;
 use crate::{
     Alphabet, DecodeError, DecodedBuffer, Engine, LineWrap, decode_backend, is_legacy_whitespace,
     validate_legacy_decode, validate_wrapped_decode, wipe_bytes, wipe_tail,
@@ -32,7 +30,7 @@ where
     /// constant-time-oriented secret decoding.
     #[must_use = "handle decode errors; use crate::ct for secret-bearing payloads"]
     pub fn decode_slice(&self, input: &[u8], output: &mut [u8]) -> Result<usize, DecodeError> {
-        decode_backend::decode_slice::<A, PAD>(input, output)
+        self.decode_slice_with_validation(input, output, crate::DecodeValidation::Auto)
     }
 
     /// Decodes `input` into `output` and clears all bytes after the decoded
@@ -270,17 +268,7 @@ where
     #[cfg(feature = "alloc")]
     #[must_use = "for secret-bearing payloads use decode_secret, which returns a redacted buffer with drop-time cleanup"]
     pub fn decode_vec(&self, input: &[u8]) -> Result<alloc::vec::Vec<u8>, DecodeError> {
-        let required = validate_decode::<A, PAD>(input)?;
-        let mut output = alloc::vec![0; required];
-        let written = match self.decode_slice(input, &mut output) {
-            Ok(written) => written,
-            Err(err) => {
-                wipe_bytes(&mut output);
-                return Err(err);
-            }
-        };
-        output.truncate(written);
-        Ok(output)
+        self.decode_vec_with_validation(input, crate::DecodeValidation::Auto)
     }
 
     /// Decodes `input` into a redacted owned secret buffer.

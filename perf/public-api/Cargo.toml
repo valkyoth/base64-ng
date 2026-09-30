@@ -13,6 +13,8 @@ std = ["alloc", "base64-ng/std"]
 stream = ["std", "base64-ng/stream"]
 simd = ["base64-ng/simd"]
 checked = ["base64-ng/checked-backend"]
+# Candidate-only rows; never enabled when transplanting onto the 2.0.4 baseline.
+validation-policy = []
 adapters = ["stream", "dep:base64-ng-bytes", "dep:base64-ng-tokio", "dep:bytes", "dep:tokio"]
 
 [dependencies]

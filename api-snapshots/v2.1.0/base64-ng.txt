@@ -953,13 +953,18 @@ pub fn base64_ng::Base64<S>::decode_in_place_staged(&self, &mut [u8], usize, &mu
 pub fn base64_ng::Base64<S>::secret_decode_staging_len(&self, usize) -> core::result::Result<usize, base64_ng::InPlaceError>
 impl<S: base64_ng::Codec> base64_ng::Base64<S>
 pub fn base64_ng::Base64<S>::decode_into(&self, &[u8], &mut [u8]) -> core::result::Result<usize, base64_ng::OneShotError>
+pub fn base64_ng::Base64<S>::decode_into_with_validation(&self, &[u8], &mut [u8], base64_ng::DecodeValidation) -> core::result::Result<usize, base64_ng::OneShotError>
 pub fn base64_ng::Base64<S>::decoded_len(&self, &[u8]) -> core::result::Result<usize, base64_ng::OneShotError>
+pub fn base64_ng::Base64<S>::decoded_len_with_validation(&self, &[u8], base64_ng::DecodeValidation) -> core::result::Result<usize, base64_ng::OneShotError>
 pub fn base64_ng::Base64<S>::encode_into(&self, &[u8], &mut [u8]) -> core::result::Result<usize, base64_ng::OneShotError>
 pub fn base64_ng::Base64<S>::encoded_len(&self, usize) -> core::result::Result<usize, base64_ng::OneShotError>
 pub fn base64_ng::Base64<S>::validate(&self, &[u8]) -> core::result::Result<(), base64_ng::OneShotError>
+pub fn base64_ng::Base64<S>::validate_with_validation(&self, &[u8], base64_ng::DecodeValidation) -> core::result::Result<(), base64_ng::OneShotError>
 impl<S: base64_ng::Codec> base64_ng::Base64<S>
 pub fn base64_ng::Base64<S>::decode_to_vec(&self, &[u8]) -> core::result::Result<alloc::vec::Vec<u8>, base64_ng::OneShotError>
 pub fn base64_ng::Base64<S>::decode_to_vec_with_limit(&self, &[u8], usize) -> core::result::Result<alloc::vec::Vec<u8>, base64_ng::OneShotError>
+pub fn base64_ng::Base64<S>::decode_to_vec_with_limit_and_validation(&self, &[u8], usize, base64_ng::DecodeValidation) -> core::result::Result<alloc::vec::Vec<u8>, base64_ng::OneShotError>
+pub fn base64_ng::Base64<S>::decode_to_vec_with_validation(&self, &[u8], base64_ng::DecodeValidation) -> core::result::Result<alloc::vec::Vec<u8>, base64_ng::OneShotError>
 pub fn base64_ng::Base64<S>::encode_to_string(&self, &[u8]) -> core::result::Result<alloc::string::String, base64_ng::OneShotError>
 pub fn base64_ng::Base64<S>::encode_to_string_with_limit(&self, &[u8], usize) -> core::result::Result<alloc::string::String, base64_ng::OneShotError>
 impl<S: base64_ng::Codec> base64_ng::Base64<S>
@@ -2151,6 +2156,22 @@ impl core::hash::Hash for base64_ng::DecodePadding
 pub fn base64_ng::DecodePadding::hash<__H: core::hash::Hasher>(&self, &mut __H)
 impl core::marker::Copy for base64_ng::DecodePadding
 impl core::marker::StructuralPartialEq for base64_ng::DecodePadding
+#[non_exhaustive] pub enum base64_ng::DecodeValidation
+pub base64_ng::DecodeValidation::Auto
+pub base64_ng::DecodeValidation::ScalarReference
+impl core::clone::Clone for base64_ng::DecodeValidation
+pub fn base64_ng::DecodeValidation::clone(&self) -> base64_ng::DecodeValidation
+impl core::cmp::Eq for base64_ng::DecodeValidation
+impl core::cmp::PartialEq for base64_ng::DecodeValidation
+pub fn base64_ng::DecodeValidation::eq(&self, &base64_ng::DecodeValidation) -> bool
+impl core::default::Default for base64_ng::DecodeValidation
+pub fn base64_ng::DecodeValidation::default() -> base64_ng::DecodeValidation
+impl core::fmt::Debug for base64_ng::DecodeValidation
+pub fn base64_ng::DecodeValidation::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng::DecodeValidation
+pub fn base64_ng::DecodeValidation::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng::DecodeValidation
+impl core::marker::StructuralPartialEq for base64_ng::DecodeValidation
 pub enum base64_ng::EncodeError
 pub base64_ng::EncodeError::BackendMismatch
 pub base64_ng::EncodeError::InputTooLarge
@@ -2529,13 +2550,18 @@ pub fn base64_ng::Base64<S>::decode_in_place_staged(&self, &mut [u8], usize, &mu
 pub fn base64_ng::Base64<S>::secret_decode_staging_len(&self, usize) -> core::result::Result<usize, base64_ng::InPlaceError>
 impl<S: base64_ng::Codec> base64_ng::Base64<S>
 pub fn base64_ng::Base64<S>::decode_into(&self, &[u8], &mut [u8]) -> core::result::Result<usize, base64_ng::OneShotError>
+pub fn base64_ng::Base64<S>::decode_into_with_validation(&self, &[u8], &mut [u8], base64_ng::DecodeValidation) -> core::result::Result<usize, base64_ng::OneShotError>
 pub fn base64_ng::Base64<S>::decoded_len(&self, &[u8]) -> core::result::Result<usize, base64_ng::OneShotError>
+pub fn base64_ng::Base64<S>::decoded_len_with_validation(&self, &[u8], base64_ng::DecodeValidation) -> core::result::Result<usize, base64_ng::OneShotError>
 pub fn base64_ng::Base64<S>::encode_into(&self, &[u8], &mut [u8]) -> core::result::Result<usize, base64_ng::OneShotError>
 pub fn base64_ng::Base64<S>::encoded_len(&self, usize) -> core::result::Result<usize, base64_ng::OneShotError>
 pub fn base64_ng::Base64<S>::validate(&self, &[u8]) -> core::result::Result<(), base64_ng::OneShotError>
+pub fn base64_ng::Base64<S>::validate_with_validation(&self, &[u8], base64_ng::DecodeValidation) -> core::result::Result<(), base64_ng::OneShotError>
 impl<S: base64_ng::Codec> base64_ng::Base64<S>
 pub fn base64_ng::Base64<S>::decode_to_vec(&self, &[u8]) -> core::result::Result<alloc::vec::Vec<u8>, base64_ng::OneShotError>
 pub fn base64_ng::Base64<S>::decode_to_vec_with_limit(&self, &[u8], usize) -> core::result::Result<alloc::vec::Vec<u8>, base64_ng::OneShotError>
+pub fn base64_ng::Base64<S>::decode_to_vec_with_limit_and_validation(&self, &[u8], usize, base64_ng::DecodeValidation) -> core::result::Result<alloc::vec::Vec<u8>, base64_ng::OneShotError>
+pub fn base64_ng::Base64<S>::decode_to_vec_with_validation(&self, &[u8], base64_ng::DecodeValidation) -> core::result::Result<alloc::vec::Vec<u8>, base64_ng::OneShotError>
 pub fn base64_ng::Base64<S>::encode_to_string(&self, &[u8]) -> core::result::Result<alloc::string::String, base64_ng::OneShotError>
 pub fn base64_ng::Base64<S>::encode_to_string_with_limit(&self, &[u8], usize) -> core::result::Result<alloc::string::String, base64_ng::OneShotError>
 impl<S: base64_ng::Codec> base64_ng::Base64<S>
@@ -2976,6 +3002,12 @@ pub fn base64_ng::Engine<A, PAD>::encode_wrapped_vec(&self, &[u8], base64_ng::Li
 impl<A, const PAD: bool> base64_ng::Engine<A, PAD> where A: base64_ng::Alphabet
 pub fn base64_ng::Engine<A, PAD>::encode_in_place<'a>(&self, &'a mut [u8], usize) -> core::result::Result<&'a mut [u8], base64_ng::EncodeError>
 pub fn base64_ng::Engine<A, PAD>::encode_in_place_clear_tail<'a>(&self, &'a mut [u8], usize) -> core::result::Result<&'a mut [u8], base64_ng::EncodeError>
+impl<A: base64_ng::Alphabet, const PAD: bool> base64_ng::Engine<A, PAD>
+pub fn base64_ng::Engine<A, PAD>::decode_slice_clear_tail_with_validation(&self, &[u8], &mut [u8], base64_ng::DecodeValidation) -> core::result::Result<usize, base64_ng::DecodeError>
+pub fn base64_ng::Engine<A, PAD>::decode_slice_with_validation(&self, &[u8], &mut [u8], base64_ng::DecodeValidation) -> core::result::Result<usize, base64_ng::DecodeError>
+pub fn base64_ng::Engine<A, PAD>::decode_vec_with_validation(&self, &[u8], base64_ng::DecodeValidation) -> core::result::Result<alloc::vec::Vec<u8>, base64_ng::DecodeError>
+pub fn base64_ng::Engine<A, PAD>::validate_result_with_validation(&self, &[u8], base64_ng::DecodeValidation) -> core::result::Result<(), base64_ng::DecodeError>
+pub fn base64_ng::Engine<A, PAD>::validated_decoded_len_with_validation(&self, &[u8], base64_ng::DecodeValidation) -> core::result::Result<usize, base64_ng::DecodeError>
 impl<A, const PAD: bool> core::clone::Clone for base64_ng::Engine<A, PAD>
 pub fn base64_ng::Engine<A, PAD>::clone(&self) -> Self
 impl<A, const PAD: bool> core::cmp::Eq for base64_ng::Engine<A, PAD>

@@ -182,6 +182,10 @@ from the same strict presets.
 
 ## Validation And Compatibility
 
+2.1 development adds explicit ordinary `DecodeValidation::ScalarReference`
+selection alongside `Auto`; both currently retain scalar validation. See
+[validation policy and API examples](docs/DECODE_VALIDATION.md).
+
 Validate without producing decoded output:
 
 ```rust

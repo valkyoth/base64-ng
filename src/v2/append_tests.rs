@@ -1,5 +1,7 @@
 #![cfg(feature = "alloc")]
 
+extern crate std;
+
 use core::cell::Cell;
 
 use super::{

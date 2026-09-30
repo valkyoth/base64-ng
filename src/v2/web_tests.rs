@@ -1,6 +1,6 @@
 #![cfg(feature = "alloc")]
 
-use alloc::{string::String, vec::Vec};
+use alloc::{string::String, vec, vec::Vec};
 
 use super::{
     STRICT_STANDARD_PADDED, STRICT_STANDARD_UNPADDED, Status, compat, web, web::ForgivingError,

@@ -94,6 +94,13 @@ and 10,000 members, checked before extraction.
 
 ## Coverage And Interpretation
 
+The candidate-only `validation-policy` feature adds `historical-reference` and
+`canonical-reference` rows using the explicit scalar-reference decode option.
+Enable it for standalone current-tree measurements, not the transplanted 2.0.4
+paired runner (that release predates the option). Encoding in these rows is
+unchanged. Both decode policies initially use the same scalar checks, so these
+rows establish coverage rather than an acceleration claim.
+
 - Four strict Standard/URL-safe padded/unpadded presets; historical slice,
   canonical slice, validation-only, owned allocation, reusable append, in-place,
   incremental, real sync writer, Tokio writer, and Bytes state adapters.

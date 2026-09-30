@@ -118,6 +118,8 @@ fn scalar_decode_slice<A, const PAD: bool>(
 where
     A: Alphabet,
 {
+    #[cfg(test)]
+    crate::decode_validation::observation::record();
     if input.is_empty() {
         return Ok(0);
     }
@@ -167,6 +169,8 @@ pub(crate) fn decode_padded<A: Alphabet>(
 pub(crate) fn validate_decode<A: Alphabet, const PAD: bool>(
     input: &[u8],
 ) -> Result<usize, DecodeError> {
+    #[cfg(test)]
+    crate::decode_validation::observation::record();
     if input.is_empty() {
         return Ok(0);
     }

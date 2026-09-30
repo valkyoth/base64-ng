@@ -55,6 +55,8 @@ pub fn names() -> Vec<&'static str> {
     ];
     #[cfg(feature = "alloc")]
     names.extend(["owned", "append"]);
+    #[cfg(feature = "validation-policy")]
+    names.extend(["historical-reference", "canonical-reference"]);
     #[cfg(feature = "std")]
     {
         #[cfg(feature = "stream")]
@@ -86,6 +88,30 @@ pub fn apply<S: Codec, A: base64_ng::Alphabet, const PAD: bool>(
         };
     }
     match operation {
+        #[cfg(feature = "validation-policy")]
+        "historical-reference" => {
+            if encode {
+                result!(engine.encode_slice(input, &mut work.output))
+            } else {
+                result!(engine.decode_slice_with_validation(
+                    input,
+                    &mut work.output,
+                    base64_ng::DecodeValidation::ScalarReference
+                ))
+            }
+        }
+        #[cfg(feature = "validation-policy")]
+        "canonical-reference" => {
+            if encode {
+                result!(codec.encode_into(input, &mut work.output))
+            } else {
+                result!(codec.decode_into_with_validation(
+                    input,
+                    &mut work.output,
+                    base64_ng::DecodeValidation::ScalarReference
+                ))
+            }
+        }
         "historical" => {
             if encode {
                 result!(engine.encode_slice(input, &mut work.output))

@@ -65,7 +65,31 @@ impl<S: Codec> Base64<S> {
         input: &[u8],
         max_output_len: usize,
     ) -> Result<Vec<u8>, OneShotError> {
-        self.decode_to_vec_with_reserver(input, max_output_len, |output, required| {
+        self.decode_to_vec_with_limit_and_validation(
+            input,
+            max_output_len,
+            crate::DecodeValidation::Auto,
+        )
+    }
+
+    /// Like [`Self::decode_to_vec`] with an explicit ordinary validation strategy.
+    pub fn decode_to_vec_with_validation(
+        &self,
+        input: &[u8],
+        validation: crate::DecodeValidation,
+    ) -> Result<Vec<u8>, OneShotError> {
+        self.decode_to_vec_with_limit_and_validation(input, usize::MAX, validation)
+    }
+
+    /// Decodes with an output limit and explicit ordinary validation strategy.
+    /// Validation errors take precedence over limits and allocation failures.
+    pub fn decode_to_vec_with_limit_and_validation(
+        &self,
+        input: &[u8],
+        max_output_len: usize,
+        validation: crate::DecodeValidation,
+    ) -> Result<Vec<u8>, OneShotError> {
+        self.decode_to_vec_with_reserver(input, max_output_len, validation, |output, required| {
             output
                 .try_reserve_exact(required)
                 .map_err(|_| OneShotError::AllocationFailed {
@@ -78,17 +102,18 @@ impl<S: Codec> Base64<S> {
         &self,
         input: &[u8],
         max_output_len: usize,
+        validation: crate::DecodeValidation,
         reserve: F,
     ) -> Result<Vec<u8>, OneShotError>
     where
         F: FnOnce(&mut Vec<u8>, usize) -> Result<(), OneShotError>,
     {
-        let required = self.decoded_len(input)?;
+        let required = self.decoded_len_with_validation(input, validation)?;
         require_allocation_limit(required, max_output_len)?;
         let mut output = Vec::new();
         reserve(&mut output, required)?;
         output.resize(required, 0);
-        self.decode_into(input, &mut output)?;
+        self.decode_into_with_validation(input, &mut output, validation)?;
         Ok(output)
     }
 
@@ -102,7 +127,12 @@ impl<S: Codec> Base64<S> {
     where
         F: FnOnce(&mut Vec<u8>, usize) -> Result<(), OneShotError>,
     {
-        self.decode_to_vec_with_reserver(input, max_output_len, reserve)
+        self.decode_to_vec_with_reserver(
+            input,
+            max_output_len,
+            crate::DecodeValidation::Auto,
+            reserve,
+        )
     }
 
     #[cfg(test)]

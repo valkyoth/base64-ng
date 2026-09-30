@@ -1,6 +1,6 @@
 use crate::{
     Alphabet, DecodeError, EncodeError, Engine, LineWrap, checked_encoded_len,
-    checked_wrapped_encoded_len, decoded_len, encoded_len, validate_decode, validate_legacy_decode,
+    checked_wrapped_encoded_len, decoded_len, encoded_len, validate_legacy_decode,
     validate_wrapped_decode, wrapped_encoded_len,
 };
 
@@ -87,7 +87,7 @@ where
     /// assert!(STANDARD.validate_result(b"aGVsbG8").is_err());
     /// ```
     pub fn validate_result(&self, input: &[u8]) -> Result<(), DecodeError> {
-        validate_decode::<A, PAD>(input).map(|_| ())
+        self.validate_result_with_validation(input, crate::DecodeValidation::Auto)
     }
 
     /// Returns whether `input` is valid strict Base64 for this engine.

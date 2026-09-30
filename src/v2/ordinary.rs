@@ -82,7 +82,31 @@ impl<S: Codec> Base64<S> {
 
     /// Validates `input` and returns its exact decoded length.
     pub fn decoded_len(&self, input: &[u8]) -> Result<usize, OneShotError> {
-        validate_and_measure(self, input)
+        self.decoded_len_with_validation(input, crate::DecodeValidation::Auto)
+    }
+
+    /// Validates ordinary input with an explicit strategy and returns its length.
+    /// All grammar settings and detailed error precedence remain unchanged.
+    pub fn decoded_len_with_validation(
+        &self,
+        input: &[u8],
+        validation: crate::DecodeValidation,
+    ) -> Result<usize, OneShotError> {
+        match validation {
+            crate::DecodeValidation::Auto | crate::DecodeValidation::ScalarReference => {
+                validate_and_measure(self, input)
+            }
+        }
+    }
+
+    /// Like [`Self::validate`] with an explicit ordinary validation strategy.
+    pub fn validate_with_validation(
+        &self,
+        input: &[u8],
+        validation: crate::DecodeValidation,
+    ) -> Result<(), OneShotError> {
+        self.decoded_len_with_validation(input, validation)
+            .map(|_| ())
     }
 
     /// Encodes into a caller-owned slice transactionally.
@@ -101,7 +125,29 @@ impl<S: Codec> Base64<S> {
     /// Validation and exact sizing complete before the first destination
     /// write. Every returned error therefore leaves the destination unchanged.
     pub fn decode_into(&self, input: &[u8], output: &mut [u8]) -> Result<usize, OneShotError> {
-        let required = self.decoded_len(input)?;
+        self.decode_into_with_validation(input, output, crate::DecodeValidation::Auto)
+    }
+
+    /// Decodes transactionally with an explicit ordinary validation strategy.
+    ///
+    /// Complete validation precedes output-capacity errors and any writes.
+    /// Neither policy changes the codec grammar or disables `checked-backend`.
+    ///
+    /// ```
+    /// use base64_ng::{DecodeValidation, STRICT_STANDARD_PADDED};
+    /// let mut output = [0; 3];
+    /// STRICT_STANDARD_PADDED.decode_into_with_validation(
+    ///     b"Zm9v", &mut output, DecodeValidation::ScalarReference,
+    /// ).unwrap();
+    /// assert_eq!(&output, b"foo");
+    /// ```
+    pub fn decode_into_with_validation(
+        &self,
+        input: &[u8],
+        output: &mut [u8],
+        validation: crate::DecodeValidation,
+    ) -> Result<usize, OneShotError> {
+        let required = self.decoded_len_with_validation(input, validation)?;
         require_output(required, output.len())?;
         decode_validated(self.settings(), input, &mut output[..required]);
         Ok(required)
@@ -141,6 +187,8 @@ fn require_output(required: usize, available: usize) -> Result<(), OneShotError>
 }
 
 fn validate_and_measure<S: Codec>(codec: &Base64<S>, input: &[u8]) -> Result<usize, OneShotError> {
+    #[cfg(test)]
+    crate::decode_validation::observation::record();
     let mut decoder = codec.decoder();
     let mut input_offset = 0;
     let mut measured_len = 0usize;
