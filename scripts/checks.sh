@@ -38,6 +38,7 @@ echo "checks: crate publish plan"
 scripts/release_crates.py --check
 python3 scripts/test-release-crates.py
 python3 scripts/test-development-release.py
+python3 scripts/test-development-release-optimization.py
 scripts/test-release-readiness.sh
 
 echo "checks: MSRV policy"

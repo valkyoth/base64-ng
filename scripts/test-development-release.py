@@ -16,11 +16,16 @@ import release_crates as release
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def require(condition, message):
+    if not condition:
+        raise AssertionError(message)
+
+
 def reject(message, function, *args):
     try:
         function(*args)
     except RuntimeError as error:
-        assert message in str(error), str(error)
+        require(message in str(error), str(error))
     else:
         raise AssertionError(f"accepted invalid fixture: {message}")
 
@@ -57,8 +62,8 @@ def main():
         write_plan(path, plan)
         parsed = release.release_plan(path)
         release.verify_publish_order(packages, parsed)
-        assert release.publish_plan(parsed) == ()
-        assert "publish=false" in release.npm_plan_output(parsed)
+        require(release.publish_plan(parsed) == (), "development plan publishes crates")
+        require("publish=false" in release.npm_plan_output(parsed), "npm plan is not blocked")
 
         for section in ("npm", *release.PUBLISH_ORDER):
             changed = copy.deepcopy(plan)
@@ -126,9 +131,16 @@ def main():
             ([str(scripts / "validate-release-readiness.sh"), "v2.1.0"], "blocked"),
         ]
         for command, expected in cases:
-            result = subprocess.run(command, cwd=root, env=env, capture_output=True, text=True)
-            assert result.returncode == 1, (command, result.stdout, result.stderr)
-            assert expected in result.stderr, (command, result.stderr)
+            result = subprocess.run(
+                command, cwd=root, env=env, capture_output=True, text=True, timeout=60,
+            )
+            require(result.returncode == 1, (
+                "unexpected publication exit status", command, result.returncode,
+                result.stdout, result.stderr,
+            ))
+            require(expected in result.stderr, (
+                "unexpected publication diagnostic", command, result.stderr,
+            ))
     print("development release: version mutations and all publication entry points fail closed")
 
 
