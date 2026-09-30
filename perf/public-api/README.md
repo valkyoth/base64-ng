@@ -7,8 +7,13 @@ admission tool; this workspace adds feature-isolated caller-path comparisons.
 
 ## Run
 
-Requires Python 3.11+ (`tomllib`), Git history containing signed `v2.0.4`, native
+Requires Linux, an unprivileged user, Python 3.12+, Git history containing signed `v2.0.4`, native
 Rust 1.98.1 (the root pin), and the lockfile dependencies in the Cargo cache.
+Bubblewrap with `--size` and `--disable-userns` support, enabled unprivileged user
+namespaces, `prlimit`, and a system C linker are required. A sandbox probe fails
+before building if isolation is unavailable; there is no unsandboxed fallback.
+The paired runner currently does not run on macOS or Windows. Native evidence
+on those systems requires a separately reviewed runner, not disabling isolation.
 Fetch dependencies once with `cargo fetch --locked --manifest-path
 perf/public-api/Cargo.toml`. Measurements subsequently build offline.
 
@@ -39,6 +44,36 @@ and built with the same current harness and compiler. `--allow-dirty-harness`
 is explicitly diagnostic, records that state, and does not benchmark uncommitted
 production changes. Harness hashes include the independent oracle and allocator.
 No source checkout, CPU tuning, or persistent host configuration is modified.
+
+## Candidate Execution Boundary
+
+Only use a reviewed copy of these Python scripts and harness. Candidate Rust
+code (including build scripts) is untrusted to the runner. Compilation and every
+binary invocation run in separate Bubblewrap PID/user/network namespaces with
+capabilities dropped and nested user namespaces disabled. Source, system tools,
+the selected Rust toolchain and registry cache are read-only. Host home, SSH/AWS
+credentials, agents, repository, and evidence output are not mounted. Treat the
+shared compiler and registry cache as trusted, non-confidential build inputs;
+their contents are visible to a build. This is Linux process isolation, not a VM
+or a guarantee against host-kernel vulnerabilities.
+
+No caller environment variables reach builds/executables. The complete fixed
+build/runtime environments, tool paths and compiler/Cargo/linker/launcher hashes
+are recorded. Ambient wrappers, Cargo configuration in the host home, loader
+injection variables, proxies, and target/profile flags cannot silently alter a
+capture. Candidate manifests remain source-bound inputs. The lockfile is adapted
+only for local crate versions, without re-resolving external packages.
+
+Builds use a 1 GiB target/home tmpfs; executions use 64 MiB. A separate 64 MiB
+temporary filesystem is provided. Per-process limits are 4 GiB virtual address
+space for builds / 512 MiB for execution, 600 CPU seconds, 128 processes per UID,
+256 file descriptors, 64 MiB files, and no cores. These are not an aggregate
+cgroup RAM/CPU budget. Both pipes are drained incrementally: measurement stdout
+and runtime stderr have 64 KiB limits, diagnostics 8 MiB, exported executables
+64 MiB, and compiler stderr 4 MiB. A 600-second wall timeout or overflow kills
+the process group; the PID namespace also disposes of detached descendants.
+Only the bounded executable/diagnostics are exported by the trusted parent.
+Git archives reject links, traversal and special files and are limited to 128 MiB.
 
 ## Coverage And Interpretation
 

@@ -2,6 +2,7 @@
 set -eu
 
 python3 scripts/test-public-api-baseline.py
+python3 scripts/test-public-api-sandbox.py
 manifest=perf/public-api/Cargo.toml
 export RUSTFLAGS="${RUSTFLAGS:+$RUSTFLAGS }--cfg base64_ng_perf_evidence"
 cargo fmt --manifest-path "$manifest" --check

@@ -10,11 +10,12 @@ import os
 from pathlib import Path
 import platform
 import shutil
-import subprocess
+import tarfile
 import tempfile
 import tomllib
 
 from public_api_baseline import parse_sample, summarize
+from public_api_sandbox import Sandbox, bounded, BUILD_ENV, RUNTIME_ENV
 
 ROOT = Path(__file__).resolve().parents[1]
 BASELINE = "816da2e1e4a66c913057c86d149068f1c88776bf"
@@ -36,12 +37,40 @@ def install_harness(tree, files):
         shutil.copyfile(ROOT / source, tree / source)
 
 
-def run(command, **kwargs):
-    return subprocess.run(command, check=True, text=True, timeout=600, **kwargs)
-
-
 def output(command, **kwargs):
-    return run(command, stdout=subprocess.PIPE, **kwargs).stdout
+    return bounded(command, **kwargs).decode("utf-8")
+
+
+def extract_revision(revision, tree):
+    archive = bounded(["/usr/bin/git", "archive", "--format=tar", revision], limit=128 * 1024 * 1024)
+    with tarfile.open(fileobj=io.BytesIO(archive)) as source:
+        members = source.getmembers()
+        if sum(member.size for member in members) > 128 * 1024 * 1024:
+            raise ValueError("source archive exceeds size limit")
+        for member in members:
+            path = Path(member.name)
+            if path.is_absolute() or ".." in path.parts or not (member.isfile() or member.isdir()):
+                raise ValueError("source archive contains a link or unsafe path/type")
+        source.extractall(tree, filter="data")
+
+
+def prepare_lock(tree):
+    reference = tomllib.loads((ROOT / "perf/public-api/Cargo.lock").read_text())
+    for package in reference["package"]:
+        if "source" in package or package["name"] == "base64-ng-public-api-perf":
+            continue
+        name = package["name"]
+        if name not in {"base64-ng", "base64-ng-bytes", "base64-ng-tokio"}:
+            raise ValueError("unexpected local harness dependency")
+        manifest = tree / ("Cargo.toml" if name == "base64-ng" else f"crates/{name}/Cargo.toml")
+        package["version"] = tomllib.loads(manifest.read_text())["package"]["version"]
+    lines = [f'version = {reference["version"]}']
+    for package in reference["package"]:
+        lines.append("\n[[package]]")
+        lines.extend(f"{key} = {json.dumps(value)}" for key, value in package.items())
+    lock = tree / "perf/public-api/Cargo.lock"
+    lock.write_text("\n".join(lines) + "\n")
+    return lock
 
 
 def cases(names, smoke, full):
@@ -80,23 +109,26 @@ def capture(args):
         raise ValueError("commit changes first, or use --allow-dirty-harness for a diagnostic run")
     candidate = output(["git", "rev-parse", f"{args.candidate}^{{commit}}"]).strip()
     toolchain = tomllib.loads((ROOT / "rust-toolchain.toml").read_text())["toolchain"]["channel"]
+    sandbox = Sandbox(toolchain)
     destination = Path(args.output).resolve()
     destination.mkdir(parents=True, exist_ok=False)
     source_files = [*sorted((ROOT / "perf/public-api/src").rglob("*.rs")), ROOT / "perf/public-api/Cargo.toml",
                     ROOT / "perf/public-api/Cargo.lock", ROOT / "perf/src/allocation.rs",
-                    ROOT / "src/v2/rfc4648_oracle.rs", Path(__file__), ROOT / "scripts/public_api_baseline.py"]
+                    ROOT / "src/v2/rfc4648_oracle.rs", Path(__file__), ROOT / "scripts/public_api_baseline.py",
+                    ROOT / "scripts/public_api_sandbox.py"]
     digests = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in source_files}
-    env = dict(os.environ, RUSTFLAGS="--cfg base64_ng_perf_evidence")
-    env.pop("CARGO_ENCODED_RUSTFLAGS", None)
-    env.pop("CARGO_BUILD_TARGET", None)
-    env.pop("CARGO_TARGET_DIR", None)
     manifest = dict(schema=1, baseline=BASELINE, candidate=candidate, harness_commit=output(["git", "rev-parse", "HEAD"]).strip(),
                     diagnostic_dirty_harness=bool(dirty), harness_sha256=digests,
-                    rustc=output(["rustup", "run", toolchain, "rustc", "-Vv"]),
-                    cargo=output(["rustup", "run", toolchain, "cargo", "-V"]), python=platform.python_version(), platform=platform.platform(),
+                    rustc=sandbox.execute(["/toolchain/bin/rustc", "-Vv"], build=True).decode(),
+                    cargo=sandbox.execute(["/toolchain/bin/cargo", "-V"], build=True).decode(), python=platform.python_version(), platform=platform.platform(),
                     machine=platform.machine(), features=args.features, samples=args.samples,
-                    command=list(os.sys.argv), rustflags=env["RUSTFLAGS"], scope="exploratory paired baseline, not admission",
-                    binaries={}, cargo_environment={k: v for k, v in env.items() if k.startswith("CARGO_PROFILE_")})
+                    command=list(os.sys.argv), scope="exploratory paired baseline, not admission",
+                    binaries={}, build_environment=BUILD_ENV, runtime_environment=RUNTIME_ENV,
+                    sandbox="bubblewrap: no network, no host home, readonly source; quota-limited tmpfs",
+                    tool_paths={"toolchain": str(sandbox.toolchain), "registry": str(sandbox.registry)},
+                    tool_sha256={str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in
+                                 [sandbox.toolchain / "bin/rustc", sandbox.toolchain / "bin/cargo",
+                                  Path("/usr/bin/cc"), Path("/usr/bin/bwrap"), Path("/usr/bin/prlimit")]})
     if Path("/proc/cpuinfo").exists():
         manifest["cpuinfo"] = Path("/proc/cpuinfo").read_text()
     else:
@@ -108,36 +140,23 @@ def capture(args):
         for side, revision in [("baseline", BASELINE), ("candidate", candidate)]:
             tree = Path(temporary) / side
             tree.mkdir()
-            archive = Path(temporary) / f"{side}.tar"
-            run(["git", "archive", "--output", str(archive), revision])
-            run(["tar", "-xf", str(archive), "-C", str(tree)])
+            extract_revision(revision, tree)
             install_harness(tree, source_files)
-            package = tree / "perf/public-api/Cargo.toml"
-            run(["cargo", f"+{toolchain}", "generate-lockfile", "--offline", "--manifest-path", str(package)], env=env)
-            lock = tomllib.loads(package.with_name("Cargo.lock").read_text())
-            reference = tomllib.loads((ROOT / "perf/public-api/Cargo.lock").read_text())
-            external = lambda data: [p for p in data["package"] if "source" in p]
-            if external(lock) != external(reference):
-                raise ValueError("external resolution differs from pinned harness lock")
-            shutil.copyfile(package.with_name("Cargo.lock"), destination / f"{side}-Cargo.lock")
+            shutil.copyfile(prepare_lock(tree), destination / f"{side}-Cargo.lock")
             trees[side] = tree
         for feature in args.features:
             binaries = {}
             available = {}
             for side, tree in trees.items():
-                target = tree / "perf/public-api/target" / feature
-                command = ["cargo", f"+{toolchain}", "build", "--release", "--locked", "--offline", "--no-default-features",
-                           "--manifest-path", str(tree / "perf/public-api/Cargo.toml"), "--target-dir", str(target)]
-                if FEATURES[feature]:
-                    command += ["--features", FEATURES[feature]]
-                run(command, env=env)
-                binary = target / "release/base64-ng-public-api-perf"
+                binary = Path(temporary) / f"{feature}-{side}-benchmark"
+                binary.write_bytes(sandbox.compile(tree, FEATURES[feature]))
+                binary.chmod(0o700)
                 binaries[side] = binary
-                available[side] = output([str(binary), "list"]).splitlines()
+                available[side] = sandbox.execute(["/benchmark", "list"], binary=binary).decode().splitlines()
                 manifest["binaries"][f"{feature}-{side}"] = dict(
                     sha256=hashlib.sha256(binary.read_bytes()).hexdigest(), operations=available[side])
-                with (destination / f"{feature}-{side}-diagnostics.txt").open("w") as log:
-                    run([str(binary), "diagnostics"], stdout=log)
+                (destination / f"{feature}-{side}-diagnostics.txt").write_bytes(
+                    sandbox.execute(["/benchmark", "diagnostics"], binary=binary, limit=8 * 1024 * 1024))
             if available["baseline"] != available["candidate"]:
                 raise ValueError("backend/operation availability changed; review before comparison")
             if (destination / f"{feature}-baseline-diagnostics.txt").read_bytes() != (destination / f"{feature}-candidate-diagnostics.txt").read_bytes():
@@ -153,7 +172,7 @@ def capture(args):
                     iterations = 1 if case[-1] == "cold" else min(512, max(1, 16384 // max(size, 32)))
                     for sample in range(args.samples):
                         for side in (["baseline", "candidate"] if sample % 2 == 0 else ["candidate", "baseline"]):
-                            raw = output([str(binaries[side]), *case[:-1], str(iterations), case[-1]])
+                            raw = sandbox.execute(["/benchmark", *case[:-1], str(iterations), case[-1]], binary=binaries[side]).decode()
                             parsed = list(csv.DictReader(io.StringIO(raw)))
                             if len(parsed) != 1:
                                 raise ValueError("missing measurement")

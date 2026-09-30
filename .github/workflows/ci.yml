@@ -40,7 +40,7 @@ jobs:
       - name: Install OpenPGP interoperability tools
         run: |
           sudo apt-get update
-          sudo apt-get install --no-install-recommends gnupg sq
+          sudo apt-get install --no-install-recommends gnupg sq bubblewrap
           /usr/bin/gpg --version
           /usr/bin/sq version
           if ! /usr/bin/sq packet dearmor --help >/dev/null 2>&1 &&
