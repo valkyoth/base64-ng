@@ -24,7 +24,29 @@ runner = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(runner)
 
 
+def process_stopped(pid):
+    try:
+        state = Path(f"/proc/{pid}/stat").read_text().split()[2]
+    except (FileNotFoundError, ProcessLookupError):
+        # procfs can lose the process either before open or during the read.
+        return True
+    return state == "Z"
+
+
 class OutputTests(unittest.TestCase):
+    def test_process_exit_observation_handles_procfs_races(self):
+        for error in (FileNotFoundError(), ProcessLookupError()):
+            with self.subTest(error=type(error).__name__), \
+                    patch.object(Path, 'read_text', side_effect=error):
+                self.assertTrue(process_stopped(123))
+        for state in ('R', 'S', 'D', 'T', 'Z'):
+            with self.subTest(state=state), \
+                    patch.object(Path, 'read_text', return_value=f'123 (child) {state} 1'):
+                self.assertEqual(process_stopped(123), state == 'Z')
+        with patch.object(Path, 'read_text', side_effect=PermissionError()):
+            with self.assertRaises(PermissionError):
+                process_stopped(123)
+
     def test_provenance_tracks_policy_and_all_launchers(self):
         expected = {Path('/usr/bin') / name for name in
                     ('bwrap', 'prlimit', 'systemd-run', 'systemctl', 'python3')}
@@ -97,12 +119,7 @@ class OutputTests(unittest.TestCase):
                 bounded([sys.executable, "-c", code, str(marker)], timeout=0.5)
             pid = int(marker.read_text())
             for _ in range(100):
-                stat = Path(f"/proc/{pid}/stat")
-                try:
-                    state = stat.read_text().split()[2]
-                except FileNotFoundError:
-                    break
-                if state == "Z":
+                if process_stopped(pid):
                     break
                 time.sleep(0.01)
             else:
