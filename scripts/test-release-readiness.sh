@@ -38,9 +38,10 @@ make_fixture() {
         git config user.email "release-readiness@example.invalid"
         git config user.name "Release Readiness Test"
         printf 'fixture\n' >README.md
+        printf '[release]\npolicy = "synced-family"\n' >release-crates.toml
         printf '/target/\n' >.gitignore
         printf '# Release 2.0.0\n' >release-notes/RELEASE_NOTES_2.0.0.md
-        git add README.md .gitignore release-notes/RELEASE_NOTES_2.0.0.md \
+        git add README.md release-crates.toml .gitignore release-notes/RELEASE_NOTES_2.0.0.md \
             scripts/validate-release-readiness.sh \
             scripts/evidence-equivalence.py \
             scripts/verify-release-evidence-signature.sh \

@@ -31,6 +31,12 @@ test "$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | sed -n '1p')" = "$ve
     fail "root package version is not $version"
 policy="$(sed -n 's/^policy = "\([^"]*\)"/\1/p' release-crates.toml | sed -n '1p')"
 case "$policy" in
+    development-blocked)
+        scripts/release_crates.py --check
+        scripts/validate-doc-versions.sh
+        echo "release freeze: development-blocked; final freeze and publish dry-run are not applicable"
+        exit 0
+        ;;
     synced-family | selective-patch) ;;
     *) fail "unsupported release policy: $policy" ;;
 esac

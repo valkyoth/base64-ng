@@ -3,8 +3,8 @@ set -eu
 
 expected_tool="cargo-public-api 0.52.0"
 public_api_toolchain="nightly-2026-07-13"
-snapshot_dir="api-snapshots/v1.3.9"
-release_dir="api-snapshots/v2.0.0"
+snapshot_dir="api-snapshots/v2.0.4"
+release_dir="api-snapshots/v2.1.0"
 workdir="target/api-snapshot-check"
 mode="${1:---check}"
 
@@ -74,62 +74,28 @@ do
         --omit auto-trait-impls \
         -p "$package" >"$generated"
 
-    if [ "$package" != "base64-ng-imap" ] && \
-        [ "$package" != "base64-ng-mime" ] && \
-        [ "$package" != "base64-ng-multibase" ] && \
-        [ "$package" != "base64-ng-password" ] && \
-        [ "$package" != "base64-ng-openpgp" ] && \
-        [ "$package" != "base64-ng-pem" ] && \
-        [ ! -f "$committed" ]; then
-        echo "api snapshots: missing $committed" >&2
+    if [ ! -s "$committed" ]; then
+        echo "api snapshots: missing baseline $committed" >&2
         exit 1
     fi
-
-    if [ "$package" = "base64-ng" ]; then
-        while IFS= read -r baseline_line; do
-            if ! grep -F -x -q "$baseline_line" "$generated"; then
-                echo "api snapshots: base64-ng removed or changed frozen v1.3.9 API:" >&2
-                echo "$baseline_line" >&2
-                exit 1
-            fi
-        done <"$committed"
-
-        development="$release_dir/$package.txt"
-        if [ "$mode" = "--update" ]; then
-            cp "$generated" "$development"
-        elif [ ! -f "$development" ]; then
-            echo "api snapshots: missing $development" >&2
-            exit 1
-        elif ! diff -u "$development" "$generated"; then
-            echo "api snapshots: base64-ng drifted from the frozen 2.0.0 API" >&2
+    while IFS= read -r baseline_line; do
+        if ! grep -F -x -q "$baseline_line" "$generated"; then
+            echo "api snapshots: $package removed or changed frozen 2.0.4 API:" >&2
+            echo "$baseline_line" >&2
             exit 1
         fi
-    elif [ "$package" = "base64-ng-derive" ] || \
-        [ "$package" = "base64-ng-imap" ] || \
-        [ "$package" = "base64-ng-mime" ] || \
-        [ "$package" = "base64-ng-multibase" ] || \
-        [ "$package" = "base64-ng-password" ] || \
-        [ "$package" = "base64-ng-openpgp" ] || \
-        [ "$package" = "base64-ng-pem" ] || \
-        [ "$package" = "base64-ng-bytes" ] || \
-        [ "$package" = "base64-ng-sanitization" ] || \
-        [ "$package" = "base64-ng-serde" ] || \
-        [ "$package" = "base64-ng-subtle" ] || \
-        [ "$package" = "base64-ng-tokio" ]; then
-        development="$release_dir/$package.txt"
-        if [ "$mode" = "--update" ]; then
-            cp "$generated" "$development"
-        elif [ ! -f "$development" ]; then
-            echo "api snapshots: missing $development" >&2
-            exit 1
-        elif ! diff -u "$development" "$generated"; then
-            echo "api snapshots: $package drifted from the frozen 2.0.0 API" >&2
-            exit 1
-        fi
-    elif ! diff -u "$committed" "$generated"; then
-        echo "api snapshots: $package drifted from the v1.3.9 inventory" >&2
+    done <"$committed"
+
+    development="$release_dir/$package.txt"
+    if [ "$mode" = "--update" ]; then
+        cp "$generated" "$development"
+    elif [ ! -f "$development" ]; then
+        echo "api snapshots: missing $development" >&2
+        exit 1
+    elif ! diff -u "$development" "$generated"; then
+        echo "api snapshots: $package drifted from the reviewed 2.1.0 API" >&2
         exit 1
     fi
 done
 
-echo "api snapshots: frozen 1.3.9 compatibility and 2.0.0 release API ok"
+echo "api snapshots: frozen 2.0.4 compatibility and reviewed 2.1.0 API ok"

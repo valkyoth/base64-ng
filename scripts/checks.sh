@@ -37,6 +37,7 @@ scripts/test-ct-asm-symbols.sh
 echo "checks: crate publish plan"
 scripts/release_crates.py --check
 python3 scripts/test-release-crates.py
+python3 scripts/test-development-release.py
 scripts/test-release-readiness.sh
 
 echo "checks: MSRV policy"
@@ -65,8 +66,9 @@ scripts/validate-api-audit.sh
 echo "checks: 2.0 API migration ledger"
 scripts/validate-2.0-api-ledger.sh
 
-echo "checks: frozen 1.3.9 and 2.0.0 public API snapshots"
+echo "checks: baseline and development public API snapshots"
 scripts/check-api-snapshots.sh
+sh scripts/check-2.1-baseline.sh
 
 echo "checks: 2.0 release-candidate freeze"
 scripts/check-2.0-release-freeze.sh

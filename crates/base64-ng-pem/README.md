@@ -25,6 +25,10 @@
 
 # base64-ng-pem
 
+Development source: `2.1.0`, not published. Publication is blocked while the
+[2.1 commit plan](../../docs/2.1.0-release-plan.md) is in progress. Registry
+installation examples below refer to the existing published releases.
+
 Bounded parsing and generation of the complete textual encoding grammar in
 RFC 7468, including labels, matching BEGIN/END boundaries, 64-column Base64
 bodies, multiple blocks, adjacent text, and newline interoperability.

@@ -25,6 +25,10 @@
 
 # base64-ng-serde
 
+Development source: `2.1.0`, not published. Publication is blocked while the
+[2.1 commit plan](../../docs/2.1.0-release-plan.md) is in progress. Registry
+installation examples below refer to the existing published releases.
+
 Optional `serde` integration for `base64-ng`.
 
 The core `base64-ng` crate intentionally does not depend on `serde`. This

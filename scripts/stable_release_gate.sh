@@ -21,6 +21,14 @@ case "$mode" in
         ;;
 esac
 
+if [ "$mode" != "check" ]; then
+    policy="$(sed -n 's/^policy = "\([^"]*\)"/\1/p' release-crates.toml)"
+    if [ "$policy" = "development-blocked" ]; then
+        echo "stable release gate: development-blocked; candidate/release collection is not authorized" >&2
+        exit 1
+    fi
+fi
+
 if [ "$mode" = "check" ]; then
     # Never leak the development-only override into policy self-tests. Evidence
     # commands receive it individually through run_evidence below.

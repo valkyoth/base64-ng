@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.1.0 - Unreleased
+
+- Commit 1: synchronize development package metadata at `2.1.0`, block Rust
+  and npm publication, and preserve the signed `v2.0.4` API/behavior baseline.
+- Retain Rust `1.98.1` and MSRV `1.90.0`; no external dependency, codec
+  implementation, feature-default, or SIMD admission changes in this checkpoint.
+- Throughput improvements and new APIs are planned, not implemented yet.
+
 ## 2.0.4 - Unreleased
 
 - Update the exact-pinned `sanitization` companion dependency from `2.0.4` to

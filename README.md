@@ -26,10 +26,20 @@ and allocating APIs, incremental and in-place transforms, optional admitted
 SIMD backends, and separately named compatibility policies.
 Zero external runtime or development dependencies in `Cargo.toml`.
 
-This source tree defines the `base64-ng` `2.0.4` maintenance release. The
-separately published `base64-ng-sanitization` companion also moves to 2.0.4;
-unchanged companion crates and the WASM loader remain at 2.0.3. Runtime
-behavior and the public 2.0 API remain unchanged.
+The current public release is `2.0.4`. Its unchanged companions and WASM loader
+remain at `2.0.3` (the sanitization companion is `2.0.4`).
+The development branch reports package version `2.1.0` across the family;
+publication is disabled by the `development-blocked` policy, Cargo manifests,
+and npm's private-package flag. See the [2.1 commit plan](docs/2.1.0-release-plan.md).
+Commit 1 changes metadata and verification only, not codec behavior or admission.
+
+The examples below target published releases. To evaluate development code:
+
+```toml
+base64-ng = { git = "https://github.com/valkyoth/base64-ng", branch = "main" }
+```
+
+Pin a reviewed commit with `rev` instead of `branch` for reproducible evaluation.
 
 ## Quick Start
 

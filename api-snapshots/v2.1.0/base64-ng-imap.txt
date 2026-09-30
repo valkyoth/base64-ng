@@ -1,0 +1,121 @@
+pub mod base64_ng_imap
+#[non_exhaustive] pub enum base64_ng_imap::ImapPayloadErrorKind
+pub base64_ng_imap::ImapPayloadErrorKind::AllocationFailed
+pub base64_ng_imap::ImapPayloadErrorKind::BackendFailure
+pub base64_ng_imap::ImapPayloadErrorKind::InputLimitExceeded
+pub base64_ng_imap::ImapPayloadErrorKind::InvalidPayload
+pub base64_ng_imap::ImapPayloadErrorKind::InvalidUtf16BeLength
+pub base64_ng_imap::ImapPayloadErrorKind::LengthOverflow
+pub base64_ng_imap::ImapPayloadErrorKind::OutputLimitExceeded
+pub base64_ng_imap::ImapPayloadErrorKind::OutputTooSmall
+pub base64_ng_imap::ImapPayloadErrorKind::TerminalState
+pub base64_ng_imap::ImapPayloadErrorKind::WorkLimitExceeded
+impl core::clone::Clone for base64_ng_imap::ImapPayloadErrorKind
+pub fn base64_ng_imap::ImapPayloadErrorKind::clone(&self) -> base64_ng_imap::ImapPayloadErrorKind
+impl core::cmp::Eq for base64_ng_imap::ImapPayloadErrorKind
+impl core::cmp::PartialEq for base64_ng_imap::ImapPayloadErrorKind
+pub fn base64_ng_imap::ImapPayloadErrorKind::eq(&self, &base64_ng_imap::ImapPayloadErrorKind) -> bool
+impl core::fmt::Debug for base64_ng_imap::ImapPayloadErrorKind
+pub fn base64_ng_imap::ImapPayloadErrorKind::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng_imap::ImapPayloadErrorKind
+pub fn base64_ng_imap::ImapPayloadErrorKind::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng_imap::ImapPayloadErrorKind
+impl core::marker::StructuralPartialEq for base64_ng_imap::ImapPayloadErrorKind
+pub enum base64_ng_imap::ImapPayloadStatus
+pub base64_ng_imap::ImapPayloadStatus::Complete
+pub base64_ng_imap::ImapPayloadStatus::NeedInput
+pub base64_ng_imap::ImapPayloadStatus::OutputFull(core::num::nonzero::NonZeroUsize)
+impl core::clone::Clone for base64_ng_imap::ImapPayloadStatus
+pub fn base64_ng_imap::ImapPayloadStatus::clone(&self) -> base64_ng_imap::ImapPayloadStatus
+impl core::cmp::Eq for base64_ng_imap::ImapPayloadStatus
+impl core::cmp::PartialEq for base64_ng_imap::ImapPayloadStatus
+pub fn base64_ng_imap::ImapPayloadStatus::eq(&self, &base64_ng_imap::ImapPayloadStatus) -> bool
+impl core::fmt::Debug for base64_ng_imap::ImapPayloadStatus
+pub fn base64_ng_imap::ImapPayloadStatus::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng_imap::ImapPayloadStatus
+impl core::marker::StructuralPartialEq for base64_ng_imap::ImapPayloadStatus
+pub struct base64_ng_imap::ImapPayloadError
+impl base64_ng_imap::ImapPayloadError
+pub const fn base64_ng_imap::ImapPayloadError::available(self) -> core::option::Option<usize>
+pub const fn base64_ng_imap::ImapPayloadError::kind(self) -> base64_ng_imap::ImapPayloadErrorKind
+pub const fn base64_ng_imap::ImapPayloadError::position(self) -> core::option::Option<usize>
+pub const fn base64_ng_imap::ImapPayloadError::required(self) -> core::option::Option<usize>
+impl core::clone::Clone for base64_ng_imap::ImapPayloadError
+pub fn base64_ng_imap::ImapPayloadError::clone(&self) -> base64_ng_imap::ImapPayloadError
+impl core::cmp::Eq for base64_ng_imap::ImapPayloadError
+impl core::cmp::PartialEq for base64_ng_imap::ImapPayloadError
+pub fn base64_ng_imap::ImapPayloadError::eq(&self, &base64_ng_imap::ImapPayloadError) -> bool
+impl core::fmt::Debug for base64_ng_imap::ImapPayloadError
+pub fn base64_ng_imap::ImapPayloadError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for base64_ng_imap::ImapPayloadError
+pub fn base64_ng_imap::ImapPayloadError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng_imap::ImapPayloadError
+impl core::marker::StructuralPartialEq for base64_ng_imap::ImapPayloadError
+pub struct base64_ng_imap::ImapPayloadLimits
+impl base64_ng_imap::ImapPayloadLimits
+pub const fn base64_ng_imap::ImapPayloadLimits::max_input_bytes(self) -> usize
+pub const fn base64_ng_imap::ImapPayloadLimits::max_output_bytes(self) -> usize
+pub const fn base64_ng_imap::ImapPayloadLimits::max_work_before_output(self) -> usize
+pub const fn base64_ng_imap::ImapPayloadLimits::new(usize, usize, usize) -> Self
+impl core::clone::Clone for base64_ng_imap::ImapPayloadLimits
+pub fn base64_ng_imap::ImapPayloadLimits::clone(&self) -> base64_ng_imap::ImapPayloadLimits
+impl core::cmp::Eq for base64_ng_imap::ImapPayloadLimits
+impl core::cmp::PartialEq for base64_ng_imap::ImapPayloadLimits
+pub fn base64_ng_imap::ImapPayloadLimits::eq(&self, &base64_ng_imap::ImapPayloadLimits) -> bool
+impl core::fmt::Debug for base64_ng_imap::ImapPayloadLimits
+pub fn base64_ng_imap::ImapPayloadLimits::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng_imap::ImapPayloadLimits
+impl core::marker::StructuralPartialEq for base64_ng_imap::ImapPayloadLimits
+pub struct base64_ng_imap::ImapPayloadStep
+impl base64_ng_imap::ImapPayloadStep
+pub const fn base64_ng_imap::ImapPayloadStep::input_consumed(self) -> usize
+pub const fn base64_ng_imap::ImapPayloadStep::output_produced(self) -> usize
+pub const fn base64_ng_imap::ImapPayloadStep::status(self) -> base64_ng_imap::ImapPayloadStatus
+impl core::clone::Clone for base64_ng_imap::ImapPayloadStep
+pub fn base64_ng_imap::ImapPayloadStep::clone(&self) -> base64_ng_imap::ImapPayloadStep
+impl core::cmp::Eq for base64_ng_imap::ImapPayloadStep
+impl core::cmp::PartialEq for base64_ng_imap::ImapPayloadStep
+pub fn base64_ng_imap::ImapPayloadStep::eq(&self, &base64_ng_imap::ImapPayloadStep) -> bool
+impl core::fmt::Debug for base64_ng_imap::ImapPayloadStep
+pub fn base64_ng_imap::ImapPayloadStep::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng_imap::ImapPayloadStep
+impl core::marker::StructuralPartialEq for base64_ng_imap::ImapPayloadStep
+pub struct base64_ng_imap::ModifiedUtf7PayloadDecoder
+impl base64_ng_imap::ModifiedUtf7PayloadDecoder
+pub fn base64_ng_imap::ModifiedUtf7PayloadDecoder::clear(&mut self)
+pub fn base64_ng_imap::ModifiedUtf7PayloadDecoder::finish(&mut self, &mut [u8]) -> core::result::Result<base64_ng_imap::ImapPayloadStep, base64_ng_imap::ImapPayloadError>
+pub fn base64_ng_imap::ModifiedUtf7PayloadDecoder::new(base64_ng_imap::ImapPayloadLimits) -> Self
+pub fn base64_ng_imap::ModifiedUtf7PayloadDecoder::reset(&mut self)
+pub const fn base64_ng_imap::ModifiedUtf7PayloadDecoder::source_position(&self) -> usize
+pub fn base64_ng_imap::ModifiedUtf7PayloadDecoder::update(&mut self, &[u8], &mut [u8]) -> core::result::Result<base64_ng_imap::ImapPayloadStep, base64_ng_imap::ImapPayloadError>
+impl core::clone::Clone for base64_ng_imap::ModifiedUtf7PayloadDecoder
+pub fn base64_ng_imap::ModifiedUtf7PayloadDecoder::clone(&self) -> base64_ng_imap::ModifiedUtf7PayloadDecoder
+impl core::cmp::Eq for base64_ng_imap::ModifiedUtf7PayloadDecoder
+impl core::cmp::PartialEq for base64_ng_imap::ModifiedUtf7PayloadDecoder
+pub fn base64_ng_imap::ModifiedUtf7PayloadDecoder::eq(&self, &base64_ng_imap::ModifiedUtf7PayloadDecoder) -> bool
+impl core::fmt::Debug for base64_ng_imap::ModifiedUtf7PayloadDecoder
+pub fn base64_ng_imap::ModifiedUtf7PayloadDecoder::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for base64_ng_imap::ModifiedUtf7PayloadDecoder
+pub struct base64_ng_imap::ModifiedUtf7PayloadEncoder
+impl base64_ng_imap::ModifiedUtf7PayloadEncoder
+pub fn base64_ng_imap::ModifiedUtf7PayloadEncoder::clear(&mut self)
+pub fn base64_ng_imap::ModifiedUtf7PayloadEncoder::finish(&mut self, &mut [u8]) -> core::result::Result<base64_ng_imap::ImapPayloadStep, base64_ng_imap::ImapPayloadError>
+pub fn base64_ng_imap::ModifiedUtf7PayloadEncoder::new(base64_ng_imap::ImapPayloadLimits) -> Self
+pub fn base64_ng_imap::ModifiedUtf7PayloadEncoder::reset(&mut self)
+pub const fn base64_ng_imap::ModifiedUtf7PayloadEncoder::source_position(&self) -> usize
+pub fn base64_ng_imap::ModifiedUtf7PayloadEncoder::update(&mut self, &[u8], &mut [u8]) -> core::result::Result<base64_ng_imap::ImapPayloadStep, base64_ng_imap::ImapPayloadError>
+impl core::clone::Clone for base64_ng_imap::ModifiedUtf7PayloadEncoder
+pub fn base64_ng_imap::ModifiedUtf7PayloadEncoder::clone(&self) -> base64_ng_imap::ModifiedUtf7PayloadEncoder
+impl core::cmp::Eq for base64_ng_imap::ModifiedUtf7PayloadEncoder
+impl core::cmp::PartialEq for base64_ng_imap::ModifiedUtf7PayloadEncoder
+pub fn base64_ng_imap::ModifiedUtf7PayloadEncoder::eq(&self, &base64_ng_imap::ModifiedUtf7PayloadEncoder) -> bool
+impl core::fmt::Debug for base64_ng_imap::ModifiedUtf7PayloadEncoder
+pub fn base64_ng_imap::ModifiedUtf7PayloadEncoder::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for base64_ng_imap::ModifiedUtf7PayloadEncoder
+pub fn base64_ng_imap::decode_modified_utf7_payload_into(&[u8], &mut [u8], base64_ng_imap::ImapPayloadLimits) -> core::result::Result<usize, base64_ng_imap::ImapPayloadError>
+pub fn base64_ng_imap::decode_modified_utf7_payload_to_vec(&[u8], base64_ng_imap::ImapPayloadLimits) -> core::result::Result<alloc::vec::Vec<u8>, base64_ng_imap::ImapPayloadError>
+pub fn base64_ng_imap::encode_modified_utf7_payload_into(&[u8], &mut [u8], base64_ng_imap::ImapPayloadLimits) -> core::result::Result<usize, base64_ng_imap::ImapPayloadError>
+pub fn base64_ng_imap::encode_modified_utf7_payload_to_string(&[u8], base64_ng_imap::ImapPayloadLimits) -> core::result::Result<alloc::string::String, base64_ng_imap::ImapPayloadError>
+pub fn base64_ng_imap::modified_utf7_payload_decoded_len(&[u8], base64_ng_imap::ImapPayloadLimits) -> core::result::Result<usize, base64_ng_imap::ImapPayloadError>
+pub fn base64_ng_imap::modified_utf7_payload_encoded_len(usize) -> core::result::Result<usize, base64_ng_imap::ImapPayloadError>
+pub fn base64_ng_imap::validate_modified_utf7_payload(&[u8], base64_ng_imap::ImapPayloadLimits) -> core::result::Result<(), base64_ng_imap::ImapPayloadError>

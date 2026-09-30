@@ -1,102 +1,102 @@
 [release]
-version = "2.0.4"
-policy = "selective-patch"
+version = "2.1.0"
+policy = "development-blocked"
 
 [npm]
 name = "@valkyoth/base64-ng-wasm-loader"
 previous_version = "2.0.3"
-version = "2.0.3"
-change = "unchanged"
+version = "2.1.0"
+change = "metadata"
 publish = false
-reason = "No package or generated-artifact change; do not republish the loader for the Rust 2.0.4 release."
+reason = "Synchronized 2.1.0 development metadata only; publication is blocked until final acceptance."
 
 [crates."base64-ng"]
-previous_version = "2.0.3"
-version = "2.0.4"
+previous_version = "2.0.4"
+version = "2.1.0"
 change = "metadata"
-publish = true
-reason = "Advances the family entry point for the sanitization 2.1.0 integration and current immutable GitHub Actions while retaining Rust 1.98.1 release checks."
+publish = false
+reason = "Synchronized 2.1.0 development metadata only; publication is blocked until final acceptance."
 
 [crates."base64-ng-sanitization"]
-previous_version = "2.0.3"
-version = "2.0.4"
-change = "dependency"
-publish = true
-reason = "Synchronizes the companion with base64-ng 2.0.4 and sanitization 2.1.0."
+previous_version = "2.0.4"
+version = "2.1.0"
+change = "metadata"
+publish = false
+reason = "Synchronized 2.1.0 development metadata only; publication is blocked until final acceptance."
 
 [crates."base64-ng-derive"]
 previous_version = "2.0.3"
-version = "2.0.3"
-change = "unchanged"
+version = "2.1.0"
+change = "metadata"
 publish = false
-reason = "No package change; its compatible base64-ng requirement already admits 2.0.4."
+reason = "Synchronized 2.1.0 development metadata only; publication is blocked until final acceptance."
 
 [crates."base64-ng-imap"]
 previous_version = "2.0.3"
-version = "2.0.3"
-change = "unchanged"
+version = "2.1.0"
+change = "metadata"
 publish = false
-reason = "No package change; its compatible base64-ng requirement already admits 2.0.4."
+reason = "Synchronized 2.1.0 development metadata only; publication is blocked until final acceptance."
 
 [crates."base64-ng-mime"]
 previous_version = "2.0.3"
-version = "2.0.3"
-change = "unchanged"
+version = "2.1.0"
+change = "metadata"
 publish = false
-reason = "No package change; its compatible base64-ng requirement already admits 2.0.4."
+reason = "Synchronized 2.1.0 development metadata only; publication is blocked until final acceptance."
 
 [crates."base64-ng-multibase"]
 previous_version = "2.0.3"
-version = "2.0.3"
-change = "unchanged"
+version = "2.1.0"
+change = "metadata"
 publish = false
-reason = "No package change; its compatible base64-ng requirement already admits 2.0.4."
+reason = "Synchronized 2.1.0 development metadata only; publication is blocked until final acceptance."
 
 [crates."base64-ng-password"]
 previous_version = "2.0.3"
-version = "2.0.3"
-change = "unchanged"
+version = "2.1.0"
+change = "metadata"
 publish = false
-reason = "No package change; its compatible base64-ng requirement already admits 2.0.4."
+reason = "Synchronized 2.1.0 development metadata only; publication is blocked until final acceptance."
 
 [crates."base64-ng-openpgp"]
 previous_version = "2.0.3"
-version = "2.0.3"
-change = "unchanged"
+version = "2.1.0"
+change = "metadata"
 publish = false
-reason = "No package change; its compatible base64-ng requirement already admits 2.0.4."
+reason = "Synchronized 2.1.0 development metadata only; publication is blocked until final acceptance."
 
 [crates."base64-ng-pem"]
 previous_version = "2.0.3"
-version = "2.0.3"
-change = "unchanged"
+version = "2.1.0"
+change = "metadata"
 publish = false
-reason = "No package change; its compatible base64-ng requirement already admits 2.0.4."
+reason = "Synchronized 2.1.0 development metadata only; publication is blocked until final acceptance."
 
 [crates."base64-ng-serde"]
 previous_version = "2.0.3"
-version = "2.0.3"
-change = "unchanged"
+version = "2.1.0"
+change = "metadata"
 publish = false
-reason = "No package change; its compatible base64-ng requirement already admits 2.0.4."
+reason = "Synchronized 2.1.0 development metadata only; publication is blocked until final acceptance."
 
 [crates."base64-ng-bytes"]
 previous_version = "2.0.3"
-version = "2.0.3"
-change = "unchanged"
+version = "2.1.0"
+change = "metadata"
 publish = false
-reason = "No package change; its compatible base64-ng requirement already admits 2.0.4."
+reason = "Synchronized 2.1.0 development metadata only; publication is blocked until final acceptance."
 
 [crates."base64-ng-subtle"]
 previous_version = "2.0.3"
-version = "2.0.3"
-change = "unchanged"
+version = "2.1.0"
+change = "metadata"
 publish = false
-reason = "No package change; its compatible base64-ng requirement already admits 2.0.4."
+reason = "Synchronized 2.1.0 development metadata only; publication is blocked until final acceptance."
 
 [crates."base64-ng-tokio"]
 previous_version = "2.0.3"
-version = "2.0.3"
-change = "unchanged"
+version = "2.1.0"
+change = "metadata"
 publish = false
-reason = "No package change; its compatible base64-ng requirement already admits 2.0.4."
+reason = "Synchronized 2.1.0 development metadata only; publication is blocked until final acceptance."

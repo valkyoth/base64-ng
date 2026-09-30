@@ -6,6 +6,9 @@ only for backends named in this file and the release gate.
 
 ## Current Admission State
 
+The 2.1.0 development metadata does not change this released admission
+baseline. New paths require the [2.1 checkpoints](2.1.0-release-plan.md).
+
 - Admitted backends: AVX-512 VBMI encode, AVX2 encode, SSSE3/SSE4.1 encode,
   NEON encode, AVX-512 VBMI strict decode, AVX2 strict decode,
   SSSE3/SSE4.1 strict decode, NEON strict decode, and exact-profile RVV 1.0

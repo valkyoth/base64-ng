@@ -25,6 +25,10 @@
 
 # base64-ng-bytes
 
+Development source: `2.1.0`, not published. Publication is blocked while the
+[2.1 commit plan](../../docs/2.1.0-release-plan.md) is in progress. Registry
+installation examples below refer to the existing published releases.
+
 Fragment-preserving `bytes` integration for the `base64-ng` 2.0 codec.
 
 This companion crate provides explicit helpers for services that already use

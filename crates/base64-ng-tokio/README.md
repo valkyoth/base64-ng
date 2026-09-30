@@ -25,6 +25,10 @@
 
 # base64-ng-tokio
 
+Development source: `2.1.0`, not published. Publication is blocked while the
+[2.1 commit plan](../../docs/2.1.0-release-plan.md) is in progress. Registry
+installation examples below refer to the existing published releases.
+
 Optional Tokio helpers for `base64-ng`.
 
 The read-all helpers and manual `AsyncRead`/`AsyncWrite` adapters use the shared

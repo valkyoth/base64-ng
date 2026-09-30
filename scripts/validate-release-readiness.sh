@@ -11,6 +11,14 @@ case "$tag" in
 esac
 
 version="${tag#v}"
+policy="$(sed -n 's/^policy = "\([^"]*\)"/\1/p' release-crates.toml)"
+case "$policy" in
+    synced-family | selective-patch) ;;
+    *)
+        echo "release readiness: publication policy is blocked or unsupported: $policy" >&2
+        exit 1
+        ;;
+esac
 release_notes="release-notes/RELEASE_NOTES_${version}.md"
 pentest_report="security/pentest/${tag}.md"
 spdx="${BASE64_NG_SBOM_DIR:-target/release-evidence}/base64-ng.spdx.json"

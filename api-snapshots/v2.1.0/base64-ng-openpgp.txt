@@ -1,0 +1,233 @@
+pub mod base64_ng_openpgp
+pub enum base64_ng_openpgp::ArmorType
+pub base64_ng_openpgp::ArmorType::Message
+pub base64_ng_openpgp::ArmorType::PrivateKey
+pub base64_ng_openpgp::ArmorType::PublicKey
+pub base64_ng_openpgp::ArmorType::Signature
+impl base64_ng_openpgp::ArmorType
+pub const fn base64_ng_openpgp::ArmorType::label(self) -> &'static str
+impl core::clone::Clone for base64_ng_openpgp::ArmorType
+pub fn base64_ng_openpgp::ArmorType::clone(&self) -> base64_ng_openpgp::ArmorType
+impl core::cmp::Eq for base64_ng_openpgp::ArmorType
+impl core::cmp::PartialEq for base64_ng_openpgp::ArmorType
+pub fn base64_ng_openpgp::ArmorType::eq(&self, &base64_ng_openpgp::ArmorType) -> bool
+impl core::fmt::Debug for base64_ng_openpgp::ArmorType
+pub fn base64_ng_openpgp::ArmorType::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng_openpgp::ArmorType
+impl core::marker::StructuralPartialEq for base64_ng_openpgp::ArmorType
+pub enum base64_ng_openpgp::ChecksumGeneration
+pub base64_ng_openpgp::ChecksumGeneration::LegacyCrc24
+pub base64_ng_openpgp::ChecksumGeneration::Omit
+impl core::clone::Clone for base64_ng_openpgp::ChecksumGeneration
+pub fn base64_ng_openpgp::ChecksumGeneration::clone(&self) -> base64_ng_openpgp::ChecksumGeneration
+impl core::cmp::Eq for base64_ng_openpgp::ChecksumGeneration
+impl core::cmp::PartialEq for base64_ng_openpgp::ChecksumGeneration
+pub fn base64_ng_openpgp::ChecksumGeneration::eq(&self, &base64_ng_openpgp::ChecksumGeneration) -> bool
+impl core::fmt::Debug for base64_ng_openpgp::ChecksumGeneration
+pub fn base64_ng_openpgp::ChecksumGeneration::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng_openpgp::ChecksumGeneration
+impl core::marker::StructuralPartialEq for base64_ng_openpgp::ChecksumGeneration
+pub enum base64_ng_openpgp::ChecksumPolicy
+pub base64_ng_openpgp::ChecksumPolicy::RequireValidCrc24
+pub base64_ng_openpgp::ChecksumPolicy::Rfc9580
+impl core::clone::Clone for base64_ng_openpgp::ChecksumPolicy
+pub fn base64_ng_openpgp::ChecksumPolicy::clone(&self) -> base64_ng_openpgp::ChecksumPolicy
+impl core::cmp::Eq for base64_ng_openpgp::ChecksumPolicy
+impl core::cmp::PartialEq for base64_ng_openpgp::ChecksumPolicy
+pub fn base64_ng_openpgp::ChecksumPolicy::eq(&self, &base64_ng_openpgp::ChecksumPolicy) -> bool
+impl core::fmt::Debug for base64_ng_openpgp::ChecksumPolicy
+pub fn base64_ng_openpgp::ChecksumPolicy::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng_openpgp::ChecksumPolicy
+impl core::marker::StructuralPartialEq for base64_ng_openpgp::ChecksumPolicy
+pub enum base64_ng_openpgp::ChecksumStatus
+pub base64_ng_openpgp::ChecksumStatus::Absent
+pub base64_ng_openpgp::ChecksumStatus::Malformed
+pub base64_ng_openpgp::ChecksumStatus::Mismatch
+pub base64_ng_openpgp::ChecksumStatus::Valid
+impl core::clone::Clone for base64_ng_openpgp::ChecksumStatus
+pub fn base64_ng_openpgp::ChecksumStatus::clone(&self) -> base64_ng_openpgp::ChecksumStatus
+impl core::cmp::Eq for base64_ng_openpgp::ChecksumStatus
+impl core::cmp::PartialEq for base64_ng_openpgp::ChecksumStatus
+pub fn base64_ng_openpgp::ChecksumStatus::eq(&self, &base64_ng_openpgp::ChecksumStatus) -> bool
+impl core::fmt::Debug for base64_ng_openpgp::ChecksumStatus
+pub fn base64_ng_openpgp::ChecksumStatus::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng_openpgp::ChecksumStatus
+impl core::marker::StructuralPartialEq for base64_ng_openpgp::ChecksumStatus
+pub enum base64_ng_openpgp::LineEnding
+pub base64_ng_openpgp::LineEnding::CrLf
+pub base64_ng_openpgp::LineEnding::Lf
+impl core::clone::Clone for base64_ng_openpgp::LineEnding
+pub fn base64_ng_openpgp::LineEnding::clone(&self) -> base64_ng_openpgp::LineEnding
+impl core::cmp::Eq for base64_ng_openpgp::LineEnding
+impl core::cmp::PartialEq for base64_ng_openpgp::LineEnding
+pub fn base64_ng_openpgp::LineEnding::eq(&self, &base64_ng_openpgp::LineEnding) -> bool
+impl core::fmt::Debug for base64_ng_openpgp::LineEnding
+pub fn base64_ng_openpgp::LineEnding::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng_openpgp::LineEnding
+impl core::marker::StructuralPartialEq for base64_ng_openpgp::LineEnding
+#[non_exhaustive] pub enum base64_ng_openpgp::OpenPgpErrorKind
+pub base64_ng_openpgp::OpenPgpErrorKind::AdjacentDocumentLimitExceeded
+pub base64_ng_openpgp::OpenPgpErrorKind::AllocationFailed
+pub base64_ng_openpgp::OpenPgpErrorKind::BeginBoundaryMissing
+pub base64_ng_openpgp::OpenPgpErrorKind::BlockLimitExceeded
+pub base64_ng_openpgp::OpenPgpErrorKind::BodyLineTooLong
+pub base64_ng_openpgp::OpenPgpErrorKind::ChecksumMalformed
+pub base64_ng_openpgp::OpenPgpErrorKind::ChecksumMismatch
+pub base64_ng_openpgp::OpenPgpErrorKind::ChecksumMissing
+pub base64_ng_openpgp::OpenPgpErrorKind::DecodedOutputLimitExceeded
+pub base64_ng_openpgp::OpenPgpErrorKind::EncodedOutputLimitExceeded
+pub base64_ng_openpgp::OpenPgpErrorKind::HeaderBytesLimitExceeded
+pub base64_ng_openpgp::OpenPgpErrorKind::HeaderCountLimitExceeded
+pub base64_ng_openpgp::OpenPgpErrorKind::InputLimitExceeded
+pub base64_ng_openpgp::OpenPgpErrorKind::InternalInvariantViolation
+pub base64_ng_openpgp::OpenPgpErrorKind::InvalidBody
+pub base64_ng_openpgp::OpenPgpErrorKind::InvalidBoundary
+pub base64_ng_openpgp::OpenPgpErrorKind::InvalidHeader
+pub base64_ng_openpgp::OpenPgpErrorKind::Io
+pub base64_ng_openpgp::OpenPgpErrorKind::LabelLimitExceeded
+pub base64_ng_openpgp::OpenPgpErrorKind::LengthOverflow
+pub base64_ng_openpgp::OpenPgpErrorKind::MismatchedEndBoundary
+pub base64_ng_openpgp::OpenPgpErrorKind::MissingEndBoundary
+pub base64_ng_openpgp::OpenPgpErrorKind::MissingHeaderSeparator
+pub base64_ng_openpgp::OpenPgpErrorKind::OutputTooSmall
+pub base64_ng_openpgp::OpenPgpErrorKind::PhysicalLineTooLong
+pub base64_ng_openpgp::OpenPgpErrorKind::SecretBlockSelection
+pub base64_ng_openpgp::OpenPgpErrorKind::TerminalState
+pub base64_ng_openpgp::OpenPgpErrorKind::TrailingAmbiguity
+pub base64_ng_openpgp::OpenPgpErrorKind::WorkLimitExceeded
+impl core::clone::Clone for base64_ng_openpgp::OpenPgpErrorKind
+pub fn base64_ng_openpgp::OpenPgpErrorKind::clone(&self) -> base64_ng_openpgp::OpenPgpErrorKind
+impl core::cmp::Eq for base64_ng_openpgp::OpenPgpErrorKind
+impl core::cmp::PartialEq for base64_ng_openpgp::OpenPgpErrorKind
+pub fn base64_ng_openpgp::OpenPgpErrorKind::eq(&self, &base64_ng_openpgp::OpenPgpErrorKind) -> bool
+impl core::fmt::Debug for base64_ng_openpgp::OpenPgpErrorKind
+pub fn base64_ng_openpgp::OpenPgpErrorKind::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng_openpgp::OpenPgpErrorKind
+impl core::marker::StructuralPartialEq for base64_ng_openpgp::OpenPgpErrorKind
+pub struct base64_ng_openpgp::ArmorBlock
+impl base64_ng_openpgp::ArmorBlock
+pub const fn base64_ng_openpgp::ArmorBlock::checksum_status(&self) -> base64_ng_openpgp::ChecksumStatus
+pub fn base64_ng_openpgp::ArmorBlock::contents(&self) -> &[u8]
+pub fn base64_ng_openpgp::ArmorBlock::headers(&self) -> &[base64_ng_openpgp::ArmorHeader]
+pub fn base64_ng_openpgp::ArmorBlock::into_contents(self) -> alloc::vec::Vec<u8>
+pub const fn base64_ng_openpgp::ArmorBlock::kind(&self) -> base64_ng_openpgp::ArmorType
+impl core::clone::Clone for base64_ng_openpgp::ArmorBlock
+pub fn base64_ng_openpgp::ArmorBlock::clone(&self) -> base64_ng_openpgp::ArmorBlock
+impl core::cmp::Eq for base64_ng_openpgp::ArmorBlock
+impl core::cmp::PartialEq for base64_ng_openpgp::ArmorBlock
+pub fn base64_ng_openpgp::ArmorBlock::eq(&self, &base64_ng_openpgp::ArmorBlock) -> bool
+impl core::fmt::Debug for base64_ng_openpgp::ArmorBlock
+pub fn base64_ng_openpgp::ArmorBlock::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for base64_ng_openpgp::ArmorBlock
+pub struct base64_ng_openpgp::ArmorDocument
+impl base64_ng_openpgp::ArmorDocument
+pub const fn base64_ng_openpgp::ArmorDocument::adjacent_whitespace_bytes(&self) -> usize
+pub fn base64_ng_openpgp::ArmorDocument::blocks(&self) -> &[base64_ng_openpgp::ArmorBlock]
+pub fn base64_ng_openpgp::ArmorDocument::into_blocks(self) -> alloc::vec::Vec<base64_ng_openpgp::ArmorBlock>
+impl core::clone::Clone for base64_ng_openpgp::ArmorDocument
+pub fn base64_ng_openpgp::ArmorDocument::clone(&self) -> base64_ng_openpgp::ArmorDocument
+impl core::cmp::Eq for base64_ng_openpgp::ArmorDocument
+impl core::cmp::PartialEq for base64_ng_openpgp::ArmorDocument
+pub fn base64_ng_openpgp::ArmorDocument::eq(&self, &base64_ng_openpgp::ArmorDocument) -> bool
+impl core::fmt::Debug for base64_ng_openpgp::ArmorDocument
+pub fn base64_ng_openpgp::ArmorDocument::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for base64_ng_openpgp::ArmorDocument
+pub struct base64_ng_openpgp::ArmorDocumentParser
+impl base64_ng_openpgp::ArmorDocumentParser
+pub fn base64_ng_openpgp::ArmorDocumentParser::finish(self) -> core::result::Result<base64_ng_openpgp::ArmorDocument, base64_ng_openpgp::OpenPgpError>
+pub const fn base64_ng_openpgp::ArmorDocumentParser::new(base64_ng_openpgp::OpenPgpLimits, base64_ng_openpgp::ChecksumPolicy) -> Self
+pub fn base64_ng_openpgp::ArmorDocumentParser::update(&mut self, &[u8]) -> core::result::Result<(), base64_ng_openpgp::OpenPgpError>
+pub struct base64_ng_openpgp::ArmorEncoder
+impl base64_ng_openpgp::ArmorEncoder
+pub fn base64_ng_openpgp::ArmorEncoder::finish_into(self, &mut [u8]) -> core::result::Result<usize, base64_ng_openpgp::OpenPgpError>
+pub fn base64_ng_openpgp::ArmorEncoder::finish_to_string(self) -> core::result::Result<alloc::string::String, base64_ng_openpgp::OpenPgpError>
+pub fn base64_ng_openpgp::ArmorEncoder::new(base64_ng_openpgp::ArmorType, &[base64_ng_openpgp::ArmorHeader], base64_ng_openpgp::OpenPgpLimits, base64_ng_openpgp::GenerationOptions) -> core::result::Result<Self, base64_ng_openpgp::OpenPgpError>
+pub fn base64_ng_openpgp::ArmorEncoder::update(&mut self, &[u8]) -> core::result::Result<(), base64_ng_openpgp::OpenPgpError>
+pub struct base64_ng_openpgp::ArmorHeader
+impl base64_ng_openpgp::ArmorHeader
+pub fn base64_ng_openpgp::ArmorHeader::key(&self) -> &str
+pub fn base64_ng_openpgp::ArmorHeader::new(&str, &str) -> core::result::Result<Self, base64_ng_openpgp::OpenPgpError>
+pub fn base64_ng_openpgp::ArmorHeader::value(&self) -> &str
+impl core::clone::Clone for base64_ng_openpgp::ArmorHeader
+pub fn base64_ng_openpgp::ArmorHeader::clone(&self) -> base64_ng_openpgp::ArmorHeader
+impl core::cmp::Eq for base64_ng_openpgp::ArmorHeader
+impl core::cmp::PartialEq for base64_ng_openpgp::ArmorHeader
+pub fn base64_ng_openpgp::ArmorHeader::eq(&self, &base64_ng_openpgp::ArmorHeader) -> bool
+impl core::fmt::Debug for base64_ng_openpgp::ArmorHeader
+pub fn base64_ng_openpgp::ArmorHeader::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for base64_ng_openpgp::ArmorHeader
+pub struct base64_ng_openpgp::GenerationOptions
+impl base64_ng_openpgp::GenerationOptions
+pub const fn base64_ng_openpgp::GenerationOptions::checksum(self) -> base64_ng_openpgp::ChecksumGeneration
+pub const fn base64_ng_openpgp::GenerationOptions::line_ending(self) -> base64_ng_openpgp::LineEnding
+pub const fn base64_ng_openpgp::GenerationOptions::new(base64_ng_openpgp::ChecksumGeneration) -> Self
+pub const fn base64_ng_openpgp::GenerationOptions::terminal_line_ending(self) -> bool
+pub const fn base64_ng_openpgp::GenerationOptions::with_line_ending(self, base64_ng_openpgp::LineEnding) -> Self
+pub const fn base64_ng_openpgp::GenerationOptions::with_terminal_line_ending(self, bool) -> Self
+impl core::clone::Clone for base64_ng_openpgp::GenerationOptions
+pub fn base64_ng_openpgp::GenerationOptions::clone(&self) -> base64_ng_openpgp::GenerationOptions
+impl core::cmp::Eq for base64_ng_openpgp::GenerationOptions
+impl core::cmp::PartialEq for base64_ng_openpgp::GenerationOptions
+pub fn base64_ng_openpgp::GenerationOptions::eq(&self, &base64_ng_openpgp::GenerationOptions) -> bool
+impl core::default::Default for base64_ng_openpgp::GenerationOptions
+pub fn base64_ng_openpgp::GenerationOptions::default() -> Self
+impl core::fmt::Debug for base64_ng_openpgp::GenerationOptions
+pub fn base64_ng_openpgp::GenerationOptions::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng_openpgp::GenerationOptions
+impl core::marker::StructuralPartialEq for base64_ng_openpgp::GenerationOptions
+pub struct base64_ng_openpgp::OpenPgpError
+impl base64_ng_openpgp::OpenPgpError
+pub const fn base64_ng_openpgp::OpenPgpError::kind(self) -> base64_ng_openpgp::OpenPgpErrorKind
+pub const fn base64_ng_openpgp::OpenPgpError::position(self) -> core::option::Option<usize>
+impl core::clone::Clone for base64_ng_openpgp::OpenPgpError
+pub fn base64_ng_openpgp::OpenPgpError::clone(&self) -> base64_ng_openpgp::OpenPgpError
+impl core::cmp::Eq for base64_ng_openpgp::OpenPgpError
+impl core::cmp::PartialEq for base64_ng_openpgp::OpenPgpError
+pub fn base64_ng_openpgp::OpenPgpError::eq(&self, &base64_ng_openpgp::OpenPgpError) -> bool
+impl core::error::Error for base64_ng_openpgp::OpenPgpError
+impl core::fmt::Debug for base64_ng_openpgp::OpenPgpError
+pub fn base64_ng_openpgp::OpenPgpError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for base64_ng_openpgp::OpenPgpError
+pub fn base64_ng_openpgp::OpenPgpError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng_openpgp::OpenPgpError
+impl core::marker::StructuralPartialEq for base64_ng_openpgp::OpenPgpError
+pub struct base64_ng_openpgp::OpenPgpLimits
+impl base64_ng_openpgp::OpenPgpLimits
+pub const fn base64_ng_openpgp::OpenPgpLimits::max_adjacent_document_bytes(self) -> usize
+pub const fn base64_ng_openpgp::OpenPgpLimits::max_blocks(self) -> usize
+pub const fn base64_ng_openpgp::OpenPgpLimits::max_decoded_output_bytes(self) -> usize
+pub const fn base64_ng_openpgp::OpenPgpLimits::max_encoded_output_bytes(self) -> usize
+pub const fn base64_ng_openpgp::OpenPgpLimits::max_header_count(self) -> usize
+pub const fn base64_ng_openpgp::OpenPgpLimits::max_input_bytes(self) -> usize
+pub const fn base64_ng_openpgp::OpenPgpLimits::max_label_bytes(self) -> usize
+pub const fn base64_ng_openpgp::OpenPgpLimits::max_physical_line_bytes(self) -> usize
+pub const fn base64_ng_openpgp::OpenPgpLimits::max_total_header_bytes(self) -> usize
+pub const fn base64_ng_openpgp::OpenPgpLimits::max_work_before_output(self) -> usize
+pub const fn base64_ng_openpgp::OpenPgpLimits::new(usize, usize, usize, usize, usize, usize, usize, usize, usize, usize) -> Self
+impl core::clone::Clone for base64_ng_openpgp::OpenPgpLimits
+pub fn base64_ng_openpgp::OpenPgpLimits::clone(&self) -> base64_ng_openpgp::OpenPgpLimits
+impl core::cmp::Eq for base64_ng_openpgp::OpenPgpLimits
+impl core::cmp::PartialEq for base64_ng_openpgp::OpenPgpLimits
+pub fn base64_ng_openpgp::OpenPgpLimits::eq(&self, &base64_ng_openpgp::OpenPgpLimits) -> bool
+impl core::default::Default for base64_ng_openpgp::OpenPgpLimits
+pub fn base64_ng_openpgp::OpenPgpLimits::default() -> Self
+impl core::fmt::Debug for base64_ng_openpgp::OpenPgpLimits
+pub fn base64_ng_openpgp::OpenPgpLimits::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng_openpgp::OpenPgpLimits
+impl core::marker::StructuralPartialEq for base64_ng_openpgp::OpenPgpLimits
+pub struct base64_ng_openpgp::SecretArmorBlock
+impl base64_ng_openpgp::SecretArmorBlock
+pub const fn base64_ng_openpgp::SecretArmorBlock::checksum_status(&self) -> base64_ng_openpgp::ChecksumStatus
+pub const fn base64_ng_openpgp::SecretArmorBlock::contents(&self) -> &base64_ng::v2::secret::owned::SecretVec
+pub fn base64_ng_openpgp::SecretArmorBlock::headers(&self) -> &[base64_ng_openpgp::ArmorHeader]
+pub fn base64_ng_openpgp::SecretArmorBlock::into_contents(self) -> base64_ng::v2::secret::owned::SecretVec
+pub const fn base64_ng_openpgp::SecretArmorBlock::kind(&self) -> base64_ng_openpgp::ArmorType
+impl core::fmt::Debug for base64_ng_openpgp::SecretArmorBlock
+pub fn base64_ng_openpgp::SecretArmorBlock::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+pub fn base64_ng_openpgp::armor_encoded_len(base64_ng_openpgp::ArmorType, &[base64_ng_openpgp::ArmorHeader], usize, base64_ng_openpgp::GenerationOptions) -> core::result::Result<usize, base64_ng_openpgp::OpenPgpError>
+pub fn base64_ng_openpgp::encode_armor_into(base64_ng_openpgp::ArmorType, &[base64_ng_openpgp::ArmorHeader], &[u8], &mut [u8], base64_ng_openpgp::OpenPgpLimits, base64_ng_openpgp::GenerationOptions) -> core::result::Result<usize, base64_ng_openpgp::OpenPgpError>
+pub fn base64_ng_openpgp::encode_armor_to_string(base64_ng_openpgp::ArmorType, &[base64_ng_openpgp::ArmorHeader], &[u8], base64_ng_openpgp::OpenPgpLimits, base64_ng_openpgp::GenerationOptions) -> core::result::Result<alloc::string::String, base64_ng_openpgp::OpenPgpError>
+pub fn base64_ng_openpgp::parse_armor_document(&[u8], base64_ng_openpgp::OpenPgpLimits, base64_ng_openpgp::ChecksumPolicy) -> core::result::Result<base64_ng_openpgp::ArmorDocument, base64_ng_openpgp::OpenPgpError>
+pub fn base64_ng_openpgp::parse_secret_armor_block(&[u8], base64_ng_openpgp::ArmorType, base64_ng_openpgp::OpenPgpLimits, base64_ng_openpgp::ChecksumPolicy) -> core::result::Result<base64_ng_openpgp::SecretArmorBlock, base64_ng_openpgp::OpenPgpError>
+pub fn base64_ng_openpgp::read_armor_document<R: std::io::Read>(R, base64_ng_openpgp::OpenPgpLimits, base64_ng_openpgp::ChecksumPolicy) -> core::result::Result<base64_ng_openpgp::ArmorDocument, base64_ng_openpgp::OpenPgpError>
+pub fn base64_ng_openpgp::write_armor_block<W: core::io::write::Write>(W, base64_ng_openpgp::ArmorType, &[base64_ng_openpgp::ArmorHeader], &[u8], base64_ng_openpgp::OpenPgpLimits, base64_ng_openpgp::GenerationOptions) -> core::result::Result<usize, base64_ng_openpgp::OpenPgpError>

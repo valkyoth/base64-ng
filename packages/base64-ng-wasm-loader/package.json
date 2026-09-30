@@ -1,6 +1,6 @@
 {
   "name": "@valkyoth/base64-ng-wasm-loader",
-  "version": "2.0.3",
+  "version": "2.1.0",
   "description": "Capability-selecting scalar and simd128 WebAssembly loader for base64-ng",
   "type": "module",
   "exports": "./src/index.js",
@@ -29,5 +29,6 @@
     "type": "git",
     "url": "git+https://github.com/valkyoth/base64-ng.git",
     "directory": "packages/base64-ng-wasm-loader"
-  }
+  },
+  "private": true
 }

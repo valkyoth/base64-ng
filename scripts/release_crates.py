@@ -122,13 +122,13 @@ def release_plan(plan_path: Path) -> dict:
     for package_name, entry in crates.items():
         validate_plan_entry(package_name, entry, version, policy)
     validate_release_policy(crates, version, policy)
-    validate_npm_plan(npm)
-    if policy == "development-blocked" and npm["publish"]:
-        raise RuntimeError("npm publication is forbidden under development-blocked")
+    validate_npm_plan(npm, policy, version)
     return {"version": version, "policy": policy, "crates": crates, "npm": npm}
 
 
-def validate_npm_plan(entry: dict) -> None:
+def validate_npm_plan(
+    entry: dict, policy: str = "synced-family", release: str | None = None
+) -> None:
     name = entry.get("name")
     previous = entry.get("previous_version")
     version = entry.get("version")
@@ -148,6 +148,12 @@ def validate_npm_plan(entry: dict) -> None:
 
     previous_version = parse_version(previous)
     planned_version = parse_version(version)
+    if policy == "development-blocked":
+        if publish:
+            raise RuntimeError("npm publication is forbidden under development-blocked")
+        if version != release or planned_version <= previous_version:
+            raise RuntimeError("npm development version must increase to the release version")
+        return
     if change == "unchanged":
         if planned_version != previous_version:
             raise RuntimeError(
@@ -202,6 +208,8 @@ def validate_plan_entry(
     release_parts = parse_version(release)
 
     if policy == "development-blocked":
+        if planned_version <= previous_version:
+            raise RuntimeError(f"{package_name} development version must increase")
         if planned_version != release_parts:
             raise RuntimeError(
                 f"{package_name} development version must be {release}"
@@ -290,6 +298,10 @@ def verify_publish_order(packages: dict[str, dict], plan: dict) -> None:
                 f"{package_name} is version {package['version']}, "
                 f"expected {planned_version}"
             )
+        if plan.get("policy") == "development-blocked" and package.get("publish") != []:
+            raise RuntimeError(f"{package_name} must declare publish = false during development")
+        if plan["crates"][package_name]["publish"] and package.get("publish") == []:
+            raise RuntimeError(f"{package_name} is selected but its manifest blocks publication")
 
         for dependency in package["dependencies"]:
             dependency_name = dependency["name"]
@@ -306,6 +318,10 @@ def verify_npm_package(plan: dict) -> None:
     package = json.loads((package_dir / "package.json").read_text(encoding="utf-8"))
     lock = json.loads((package_dir / "package-lock.json").read_text(encoding="utf-8"))
     npm = plan["npm"]
+    if plan.get("policy") == "development-blocked" and package.get("private") is not True:
+        raise RuntimeError("npm development package must be private")
+    if npm.get("publish", False) and package.get("private") is True:
+        raise RuntimeError("selected npm package is private")
     if package.get("name") != npm["name"]:
         raise RuntimeError("npm package name does not match release plan")
     if package.get("version") != npm["version"]:
@@ -570,7 +586,7 @@ def main() -> int:
         print("release_crates.py publish order is up to date.")
         print(f"release_crates.py release plan is {args.version}.")
         if plan["policy"] == "development-blocked":
-            print("release_crates.py publishing is blocked during 2.0 development.")
+            print(f"release_crates.py publishing is blocked during {args.version} development.")
         return 0
 
     if plan["policy"] == "development-blocked":

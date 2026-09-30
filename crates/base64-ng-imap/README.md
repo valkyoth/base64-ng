@@ -25,6 +25,10 @@
 
 # base64-ng-imap
 
+Development source: `2.1.0`, not published. Publication is blocked while the
+[2.1 commit plan](../../docs/2.1.0-release-plan.md) is in progress. Registry
+installation examples below refer to the existing published releases.
+
 Bounded, `no_std`-first RFC 3501 Section 5.1.3 modified-Base64 payload
 transforms for the `base64-ng` crate family.
 

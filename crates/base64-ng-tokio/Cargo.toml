@@ -1,6 +1,7 @@
 [package]
 name = "base64-ng-tokio"
-version = "2.0.3"
+version = "2.1.0"
+publish = false
 edition = "2024"
 rust-version = "1.90"
 license = "MIT OR Apache-2.0"
@@ -22,7 +23,7 @@ include = [
 default = []
 
 [dependencies]
-base64-ng = { version = "2.0.3", path = "../..", default-features = false, features = ["alloc", "std"] }
+base64-ng = { version = "2.1.0", path = "../..", default-features = false, features = ["alloc", "std"] }
 tokio = { version = "1.53.1", default-features = false, features = ["io-util", "rt"] }
 
 [dev-dependencies]

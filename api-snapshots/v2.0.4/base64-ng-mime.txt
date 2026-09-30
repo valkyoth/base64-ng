@@ -1,0 +1,198 @@
+pub mod base64_ng_mime
+pub enum base64_ng_mime::MimeBodyDecodePolicy
+pub base64_ng_mime::MimeBodyDecodePolicy::Canonical
+pub base64_ng_mime::MimeBodyDecodePolicy::Rfc2045Compatible
+impl core::clone::Clone for base64_ng_mime::MimeBodyDecodePolicy
+pub fn base64_ng_mime::MimeBodyDecodePolicy::clone(&self) -> base64_ng_mime::MimeBodyDecodePolicy
+impl core::cmp::Eq for base64_ng_mime::MimeBodyDecodePolicy
+impl core::cmp::PartialEq for base64_ng_mime::MimeBodyDecodePolicy
+pub fn base64_ng_mime::MimeBodyDecodePolicy::eq(&self, &base64_ng_mime::MimeBodyDecodePolicy) -> bool
+impl core::fmt::Debug for base64_ng_mime::MimeBodyDecodePolicy
+pub fn base64_ng_mime::MimeBodyDecodePolicy::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng_mime::MimeBodyDecodePolicy
+pub fn base64_ng_mime::MimeBodyDecodePolicy::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng_mime::MimeBodyDecodePolicy
+impl core::marker::StructuralPartialEq for base64_ng_mime::MimeBodyDecodePolicy
+#[non_exhaustive] pub enum base64_ng_mime::MimeBodyErrorKind
+pub base64_ng_mime::MimeBodyErrorKind::AllocationFailed
+pub base64_ng_mime::MimeBodyErrorKind::InputLimitExceeded
+pub base64_ng_mime::MimeBodyErrorKind::InternalInvariant
+pub base64_ng_mime::MimeBodyErrorKind::InvalidBase64
+pub base64_ng_mime::MimeBodyErrorKind::InvalidCanonicalLayout
+pub base64_ng_mime::MimeBodyErrorKind::LengthOverflow
+pub base64_ng_mime::MimeBodyErrorKind::OutputLimitExceeded
+pub base64_ng_mime::MimeBodyErrorKind::OutputTooSmall
+pub base64_ng_mime::MimeBodyErrorKind::PhysicalLineTooLong
+pub base64_ng_mime::MimeBodyErrorKind::SkippedNonalphabetLimitExceeded
+pub base64_ng_mime::MimeBodyErrorKind::TerminalState
+pub base64_ng_mime::MimeBodyErrorKind::WorkBeforeOutputLimitExceeded
+impl base64_ng_mime::MimeBodyErrorKind
+pub const fn base64_ng_mime::MimeBodyErrorKind::as_str(self) -> &'static str
+impl core::clone::Clone for base64_ng_mime::MimeBodyErrorKind
+pub fn base64_ng_mime::MimeBodyErrorKind::clone(&self) -> base64_ng_mime::MimeBodyErrorKind
+impl core::cmp::Eq for base64_ng_mime::MimeBodyErrorKind
+impl core::cmp::PartialEq for base64_ng_mime::MimeBodyErrorKind
+pub fn base64_ng_mime::MimeBodyErrorKind::eq(&self, &base64_ng_mime::MimeBodyErrorKind) -> bool
+impl core::fmt::Debug for base64_ng_mime::MimeBodyErrorKind
+pub fn base64_ng_mime::MimeBodyErrorKind::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng_mime::MimeBodyErrorKind
+pub fn base64_ng_mime::MimeBodyErrorKind::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng_mime::MimeBodyErrorKind
+impl core::marker::StructuralPartialEq for base64_ng_mime::MimeBodyErrorKind
+pub enum base64_ng_mime::MimeBodyStatus
+pub base64_ng_mime::MimeBodyStatus::Complete
+pub base64_ng_mime::MimeBodyStatus::NeedInput
+pub base64_ng_mime::MimeBodyStatus::OutputFull
+impl core::clone::Clone for base64_ng_mime::MimeBodyStatus
+pub fn base64_ng_mime::MimeBodyStatus::clone(&self) -> base64_ng_mime::MimeBodyStatus
+impl core::cmp::Eq for base64_ng_mime::MimeBodyStatus
+impl core::cmp::PartialEq for base64_ng_mime::MimeBodyStatus
+pub fn base64_ng_mime::MimeBodyStatus::eq(&self, &base64_ng_mime::MimeBodyStatus) -> bool
+impl core::fmt::Debug for base64_ng_mime::MimeBodyStatus
+pub fn base64_ng_mime::MimeBodyStatus::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng_mime::MimeBodyStatus
+pub fn base64_ng_mime::MimeBodyStatus::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng_mime::MimeBodyStatus
+impl core::marker::StructuralPartialEq for base64_ng_mime::MimeBodyStatus
+pub enum base64_ng_mime::MimeBodyTerminalLineEnding
+pub base64_ng_mime::MimeBodyTerminalLineEnding::IncludeCrLf
+pub base64_ng_mime::MimeBodyTerminalLineEnding::Omit
+impl core::clone::Clone for base64_ng_mime::MimeBodyTerminalLineEnding
+pub fn base64_ng_mime::MimeBodyTerminalLineEnding::clone(&self) -> base64_ng_mime::MimeBodyTerminalLineEnding
+impl core::cmp::Eq for base64_ng_mime::MimeBodyTerminalLineEnding
+impl core::cmp::PartialEq for base64_ng_mime::MimeBodyTerminalLineEnding
+pub fn base64_ng_mime::MimeBodyTerminalLineEnding::eq(&self, &base64_ng_mime::MimeBodyTerminalLineEnding) -> bool
+impl core::fmt::Debug for base64_ng_mime::MimeBodyTerminalLineEnding
+pub fn base64_ng_mime::MimeBodyTerminalLineEnding::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng_mime::MimeBodyTerminalLineEnding
+pub fn base64_ng_mime::MimeBodyTerminalLineEnding::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng_mime::MimeBodyTerminalLineEnding
+impl core::marker::StructuralPartialEq for base64_ng_mime::MimeBodyTerminalLineEnding
+pub struct base64_ng_mime::MimeBodyDecodeReport
+impl base64_ng_mime::MimeBodyDecodeReport
+pub const fn base64_ng_mime::MimeBodyDecodeReport::bare_line_endings(self) -> usize
+pub const fn base64_ng_mime::MimeBodyDecodeReport::has_transport_warning(self) -> bool
+pub const fn base64_ng_mime::MimeBodyDecodeReport::output_bytes(self) -> usize
+pub const fn base64_ng_mime::MimeBodyDecodeReport::skipped_non_whitespace_bytes(self) -> usize
+pub const fn base64_ng_mime::MimeBodyDecodeReport::skipped_nonalphabet_bytes(self) -> usize
+impl core::clone::Clone for base64_ng_mime::MimeBodyDecodeReport
+pub fn base64_ng_mime::MimeBodyDecodeReport::clone(&self) -> base64_ng_mime::MimeBodyDecodeReport
+impl core::cmp::Eq for base64_ng_mime::MimeBodyDecodeReport
+impl core::cmp::PartialEq for base64_ng_mime::MimeBodyDecodeReport
+pub fn base64_ng_mime::MimeBodyDecodeReport::eq(&self, &base64_ng_mime::MimeBodyDecodeReport) -> bool
+impl core::default::Default for base64_ng_mime::MimeBodyDecodeReport
+pub fn base64_ng_mime::MimeBodyDecodeReport::default() -> base64_ng_mime::MimeBodyDecodeReport
+impl core::fmt::Debug for base64_ng_mime::MimeBodyDecodeReport
+pub fn base64_ng_mime::MimeBodyDecodeReport::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng_mime::MimeBodyDecodeReport
+pub fn base64_ng_mime::MimeBodyDecodeReport::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng_mime::MimeBodyDecodeReport
+impl core::marker::StructuralPartialEq for base64_ng_mime::MimeBodyDecodeReport
+pub struct base64_ng_mime::MimeBodyDecoder
+impl base64_ng_mime::MimeBodyDecoder
+pub fn base64_ng_mime::MimeBodyDecoder::finish(&mut self, &mut [u8]) -> core::result::Result<base64_ng_mime::MimeBodyStep, base64_ng_mime::MimeBodyError>
+pub const fn base64_ng_mime::MimeBodyDecoder::mime_body_decode_report(&self) -> base64_ng_mime::MimeBodyDecodeReport
+pub const fn base64_ng_mime::MimeBodyDecoder::new(base64_ng_mime::MimeBodyDecodePolicy, base64_ng_mime::MimeBodyLimits) -> Self
+pub fn base64_ng_mime::MimeBodyDecoder::update(&mut self, &[u8], &mut [u8]) -> core::result::Result<base64_ng_mime::MimeBodyStep, base64_ng_mime::MimeBodyError>
+impl core::clone::Clone for base64_ng_mime::MimeBodyDecoder
+pub fn base64_ng_mime::MimeBodyDecoder::clone(&self) -> base64_ng_mime::MimeBodyDecoder
+impl core::cmp::Eq for base64_ng_mime::MimeBodyDecoder
+impl core::cmp::PartialEq for base64_ng_mime::MimeBodyDecoder
+pub fn base64_ng_mime::MimeBodyDecoder::eq(&self, &base64_ng_mime::MimeBodyDecoder) -> bool
+impl core::fmt::Debug for base64_ng_mime::MimeBodyDecoder
+pub fn base64_ng_mime::MimeBodyDecoder::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for base64_ng_mime::MimeBodyDecoder
+pub struct base64_ng_mime::MimeBodyEncoder
+impl base64_ng_mime::MimeBodyEncoder
+pub fn base64_ng_mime::MimeBodyEncoder::finish(&mut self, &mut [u8]) -> core::result::Result<base64_ng_mime::MimeBodyStep, base64_ng_mime::MimeBodyError>
+pub const fn base64_ng_mime::MimeBodyEncoder::mime_body_input_bytes(&self) -> usize
+pub const fn base64_ng_mime::MimeBodyEncoder::mime_body_output_bytes(&self) -> usize
+pub const fn base64_ng_mime::MimeBodyEncoder::new(base64_ng_mime::MimeBodyLimits, base64_ng_mime::MimeBodyTerminalLineEnding) -> Self
+pub fn base64_ng_mime::MimeBodyEncoder::update(&mut self, &[u8], &mut [u8]) -> core::result::Result<base64_ng_mime::MimeBodyStep, base64_ng_mime::MimeBodyError>
+impl core::clone::Clone for base64_ng_mime::MimeBodyEncoder
+pub fn base64_ng_mime::MimeBodyEncoder::clone(&self) -> base64_ng_mime::MimeBodyEncoder
+impl core::cmp::Eq for base64_ng_mime::MimeBodyEncoder
+impl core::cmp::PartialEq for base64_ng_mime::MimeBodyEncoder
+pub fn base64_ng_mime::MimeBodyEncoder::eq(&self, &base64_ng_mime::MimeBodyEncoder) -> bool
+impl core::fmt::Debug for base64_ng_mime::MimeBodyEncoder
+pub fn base64_ng_mime::MimeBodyEncoder::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for base64_ng_mime::MimeBodyEncoder
+pub struct base64_ng_mime::MimeBodyError
+impl base64_ng_mime::MimeBodyError
+pub const fn base64_ng_mime::MimeBodyError::available_output(self) -> core::option::Option<usize>
+pub const fn base64_ng_mime::MimeBodyError::kind(self) -> base64_ng_mime::MimeBodyErrorKind
+pub const fn base64_ng_mime::MimeBodyError::required_output(self) -> core::option::Option<usize>
+pub const fn base64_ng_mime::MimeBodyError::source_index(self) -> core::option::Option<usize>
+impl core::clone::Clone for base64_ng_mime::MimeBodyError
+pub fn base64_ng_mime::MimeBodyError::clone(&self) -> base64_ng_mime::MimeBodyError
+impl core::cmp::Eq for base64_ng_mime::MimeBodyError
+impl core::cmp::PartialEq for base64_ng_mime::MimeBodyError
+pub fn base64_ng_mime::MimeBodyError::eq(&self, &base64_ng_mime::MimeBodyError) -> bool
+impl core::error::Error for base64_ng_mime::MimeBodyError
+impl core::fmt::Debug for base64_ng_mime::MimeBodyError
+pub fn base64_ng_mime::MimeBodyError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for base64_ng_mime::MimeBodyError
+pub fn base64_ng_mime::MimeBodyError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng_mime::MimeBodyError
+impl core::marker::StructuralPartialEq for base64_ng_mime::MimeBodyError
+pub struct base64_ng_mime::MimeBodyLimits
+impl base64_ng_mime::MimeBodyLimits
+pub const base64_ng_mime::MimeBodyLimits::DEFAULT: Self
+pub const fn base64_ng_mime::MimeBodyLimits::max_decoded_output_bytes(self) -> usize
+pub const fn base64_ng_mime::MimeBodyLimits::max_encoded_output_bytes(self) -> usize
+pub const fn base64_ng_mime::MimeBodyLimits::max_input_bytes(self) -> usize
+pub const fn base64_ng_mime::MimeBodyLimits::max_physical_line_bytes(self) -> usize
+pub const fn base64_ng_mime::MimeBodyLimits::max_skipped_nonalphabet_bytes(self) -> usize
+pub const fn base64_ng_mime::MimeBodyLimits::max_work_before_output(self) -> usize
+pub const fn base64_ng_mime::MimeBodyLimits::new(usize, usize, usize, usize, usize, usize) -> Self
+impl core::clone::Clone for base64_ng_mime::MimeBodyLimits
+pub fn base64_ng_mime::MimeBodyLimits::clone(&self) -> base64_ng_mime::MimeBodyLimits
+impl core::cmp::Eq for base64_ng_mime::MimeBodyLimits
+impl core::cmp::PartialEq for base64_ng_mime::MimeBodyLimits
+pub fn base64_ng_mime::MimeBodyLimits::eq(&self, &base64_ng_mime::MimeBodyLimits) -> bool
+impl core::default::Default for base64_ng_mime::MimeBodyLimits
+pub fn base64_ng_mime::MimeBodyLimits::default() -> Self
+impl core::fmt::Debug for base64_ng_mime::MimeBodyLimits
+pub fn base64_ng_mime::MimeBodyLimits::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng_mime::MimeBodyLimits
+pub fn base64_ng_mime::MimeBodyLimits::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng_mime::MimeBodyLimits
+impl core::marker::StructuralPartialEq for base64_ng_mime::MimeBodyLimits
+pub struct base64_ng_mime::MimeBodyProgress
+impl base64_ng_mime::MimeBodyProgress
+pub const fn base64_ng_mime::MimeBodyProgress::input_consumed(self) -> usize
+pub const fn base64_ng_mime::MimeBodyProgress::output_produced(self) -> usize
+impl core::clone::Clone for base64_ng_mime::MimeBodyProgress
+pub fn base64_ng_mime::MimeBodyProgress::clone(&self) -> base64_ng_mime::MimeBodyProgress
+impl core::cmp::Eq for base64_ng_mime::MimeBodyProgress
+impl core::cmp::PartialEq for base64_ng_mime::MimeBodyProgress
+pub fn base64_ng_mime::MimeBodyProgress::eq(&self, &base64_ng_mime::MimeBodyProgress) -> bool
+impl core::default::Default for base64_ng_mime::MimeBodyProgress
+pub fn base64_ng_mime::MimeBodyProgress::default() -> base64_ng_mime::MimeBodyProgress
+impl core::fmt::Debug for base64_ng_mime::MimeBodyProgress
+pub fn base64_ng_mime::MimeBodyProgress::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng_mime::MimeBodyProgress
+pub fn base64_ng_mime::MimeBodyProgress::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng_mime::MimeBodyProgress
+impl core::marker::StructuralPartialEq for base64_ng_mime::MimeBodyProgress
+pub struct base64_ng_mime::MimeBodyStep
+impl base64_ng_mime::MimeBodyStep
+pub const fn base64_ng_mime::MimeBodyStep::progress(self) -> base64_ng_mime::MimeBodyProgress
+pub const fn base64_ng_mime::MimeBodyStep::status(self) -> base64_ng_mime::MimeBodyStatus
+impl core::clone::Clone for base64_ng_mime::MimeBodyStep
+pub fn base64_ng_mime::MimeBodyStep::clone(&self) -> base64_ng_mime::MimeBodyStep
+impl core::cmp::Eq for base64_ng_mime::MimeBodyStep
+impl core::cmp::PartialEq for base64_ng_mime::MimeBodyStep
+pub fn base64_ng_mime::MimeBodyStep::eq(&self, &base64_ng_mime::MimeBodyStep) -> bool
+impl core::fmt::Debug for base64_ng_mime::MimeBodyStep
+pub fn base64_ng_mime::MimeBodyStep::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for base64_ng_mime::MimeBodyStep
+pub fn base64_ng_mime::MimeBodyStep::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for base64_ng_mime::MimeBodyStep
+impl core::marker::StructuralPartialEq for base64_ng_mime::MimeBodyStep
+pub fn base64_ng_mime::decode_mime_content_transfer_body_into(&[u8], &mut [u8], base64_ng_mime::MimeBodyDecodePolicy, base64_ng_mime::MimeBodyLimits) -> core::result::Result<base64_ng_mime::MimeBodyDecodeReport, base64_ng_mime::MimeBodyError>
+pub fn base64_ng_mime::decode_mime_content_transfer_body_to_vec(&[u8], base64_ng_mime::MimeBodyDecodePolicy, base64_ng_mime::MimeBodyLimits) -> core::result::Result<(alloc::vec::Vec<u8>, base64_ng_mime::MimeBodyDecodeReport), base64_ng_mime::MimeBodyError>
+pub fn base64_ng_mime::encode_mime_content_transfer_body_into(&[u8], &mut [u8], base64_ng_mime::MimeBodyLimits, base64_ng_mime::MimeBodyTerminalLineEnding) -> core::result::Result<usize, base64_ng_mime::MimeBodyError>
+pub fn base64_ng_mime::encode_mime_content_transfer_body_to_string(&[u8], base64_ng_mime::MimeBodyLimits, base64_ng_mime::MimeBodyTerminalLineEnding) -> core::result::Result<alloc::string::String, base64_ng_mime::MimeBodyError>
+pub fn base64_ng_mime::mime_content_transfer_body_encoded_len(usize, base64_ng_mime::MimeBodyTerminalLineEnding) -> core::result::Result<usize, base64_ng_mime::MimeBodyError>
+pub fn base64_ng_mime::validate_mime_content_transfer_body(&[u8], base64_ng_mime::MimeBodyDecodePolicy, base64_ng_mime::MimeBodyLimits) -> core::result::Result<base64_ng_mime::MimeBodyDecodeReport, base64_ng_mime::MimeBodyError>

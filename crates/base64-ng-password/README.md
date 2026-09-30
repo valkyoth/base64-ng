@@ -25,6 +25,10 @@
 
 # base64-ng-password
 
+Development source: `2.1.0`, not published. Publication is blocked while the
+[2.1 commit plan](../../docs/2.1.0-release-plan.md) is in progress. Registry
+installation examples below refer to the existing published releases.
+
 Bounded Base64 field and record transforms for exact Passlib PBKDF2 and
 SHA-crypt formats.
 

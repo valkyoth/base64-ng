@@ -63,6 +63,7 @@ jobs:
 
       - name: Install crates.io release tools
         run: |
+          rustup toolchain install 1.90.0 --profile minimal
           rustup toolchain install nightly-2026-07-13 --profile minimal
           cargo install --locked cargo-public-api --version 0.52.0
           cargo install --locked cargo-deny --version 0.20.2
