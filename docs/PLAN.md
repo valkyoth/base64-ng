@@ -2,8 +2,10 @@
 
 The next feature release is planned in
 [`2.1.0-release-plan.md`](2.1.0-release-plan.md): numbered commits for ordinary
-decode throughput, explicit scalar-reference validation, and preserved public
-contracts. The historical roadmap below remains context for released work.
+encode/decode throughput, explicit scalar-reference validation, accelerated
+streaming/in-place APIs, borrowed validated input, companion feature forwarding,
+and native Windows evidence. Public contracts remain preserved. The historical
+roadmap below remains context for released work.
 
 Date: 2026-05-14
 
