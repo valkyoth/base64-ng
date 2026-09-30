@@ -1,5 +1,10 @@
 # base64-ng Professional Secure Plan
 
+The next feature release is planned in
+[`2.1.0-release-plan.md`](2.1.0-release-plan.md): numbered commits for ordinary
+decode throughput, explicit scalar-reference validation, and preserved public
+contracts. The historical roadmap below remains context for released work.
+
 Date: 2026-05-14
 
 ## Objective
