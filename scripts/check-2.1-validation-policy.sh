@@ -1,7 +1,15 @@
 #!/usr/bin/env sh
 set -eu
 
-for compiler in "$(sed -n 's/^channel = "\([^"]*\)"/\1/p' rust-toolchain.toml)" 1.90.0; do
+active="$(sed -n 's/^channel = "\([^"]*\)"/\1/p' rust-toolchain.toml)"
+for compiler in "$active" 1.90.0; do
+    if ! cargo +"$compiler" clippy --version >/dev/null 2>&1; then
+        echo "2.1 validation policy: required Clippy unavailable; run: rustup toolchain install $compiler --profile minimal --component clippy" >&2
+        exit 1
+    fi
+done
+
+for compiler in "$active" 1.90.0; do
     for features in '' alloc std simd std,simd checked-backend std,checked-backend; do
         cargo +"$compiler" test --no-default-features --features "$features" --test decode_validation
         cargo +"$compiler" test --no-default-features --features "$features" --lib decode_validation::tests
