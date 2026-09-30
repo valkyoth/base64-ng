@@ -46,7 +46,7 @@ pub use static_token::StaticBackendToken;
 ))]
 pub(crate) use x86::test_probes::{
     candidate_decode_16, candidate_decode_avx2, candidate_decode_avx512, candidate_validate_16,
-    candidate_validate_avx2, candidate_validate_avx512,
+    candidate_validate_avx2, candidate_validate_avx512, test_avx512_loop_geometry,
 };
 #[cfg(all(
     test,

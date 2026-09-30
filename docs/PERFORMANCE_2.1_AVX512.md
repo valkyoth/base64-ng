@@ -74,3 +74,20 @@ measurements do not change any public dispatch threshold.
 Raw samples are retained locally in
 `target/release-evidence/2.1-commit8-avx512/benchmark.log`. They are development
 artifacts, not a signed release evidence bundle.
+
+## Pentest Hardening Recheck
+
+The table above records the initial Commit 8 implementation. After the pentest
+follow-up on `f3d9b23846b3c7c3fe501009ebbdb6fca5945c67`, the shared production
+AVX-512 block loop validates its own geometry and derives arrays from checked
+slices. First-block rejection now receives loop-level cleanup, and the candidate
+wrapper's redundant cleanup was removed.
+
+Repeating the same 504-record experiment on the same host/toolchain produced
+Standard padded medians of 4311.56 ns (64 KiB) and 65115.00 ns (1 MiB) for the
+hardened candidate, versus 7238.31 ns and 110124.75 ns for AVX2. Across all four
+profiles at those two sizes, the AVX-512/AVX2 speedup remained 1.46-1.71x.
+Small-message overhead relative to public Auto remains. This is a short
+performance screen, not a statistically controlled before/after regression
+bound or an admission decision. The fresh raw samples are retained separately
+in `target/release-evidence/2.1-commit8-avx512/benchmark-pentest-followup.log`.

@@ -168,6 +168,25 @@ fn avx512_validation_guard_pages_cover_exact_masked_stores() {
                 assert!(super::candidate_validate_avx512(input, url_safe));
                 assert!(super::candidate_decode_avx512(input, output, url_safe));
                 assert!(output.iter().all(|&byte| byte == 0));
+                output.fill(0xa5);
+                for requested in [input.len() + 1, usize::MAX] {
+                    assert_eq!(
+                        super::test_avx512_loop_geometry(input, output, requested, url_safe),
+                        Some((0, 0, false))
+                    );
+                    assert!(output.iter().all(|&byte| byte == 0xa5));
+                }
+                let short_len = output.len() - 1;
+                assert_eq!(
+                    super::test_avx512_loop_geometry(
+                        input,
+                        &mut output[..short_len],
+                        input.len(),
+                        url_safe
+                    ),
+                    Some((0, 0, false))
+                );
+                assert!(output.iter().all(|&byte| byte == 0xa5));
                 for lane in 0..input.len() {
                     input[lane] = 0xff;
                     output.fill(0xa5);

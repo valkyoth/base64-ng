@@ -287,6 +287,11 @@ where
     Ok(AVX512_DECODE_OUTPUT_BLOCK)
 }
 
+/// Decodes complete blocks in the requested prefix; leaves any partial block alone.
+/// Invalid slice geometry returns `(0, 0, false)` without reading or writing blocks.
+///
+/// # Safety
+/// The caller must establish AVX-512 F/BW/VL/VBMI CPU and OS-state support.
 #[target_feature(enable = "avx512f,avx512bw,avx512vl,avx512vbmi")]
 pub(super) unsafe fn decode_full_blocks_avx512<A>(
     input: &[u8],
@@ -296,33 +301,36 @@ pub(super) unsafe fn decode_full_blocks_avx512<A>(
 where
     A: Alphabet,
 {
-    let mut read = 0;
-    let mut write = 0;
+    let Some(simd_input) = input.get(..simd_input_len) else {
+        return (0, 0, false);
+    };
+    let inputs = simd_input.as_chunks::<AVX512_DECODE_INPUT_BLOCK>().0;
+    let Some(output_bytes) = inputs.len().checked_mul(AVX512_DECODE_OUTPUT_BLOCK) else {
+        return (0, 0, false);
+    };
+    let Some(simd_output) = output.get_mut(..output_bytes) else {
+        return (0, 0, false);
+    };
+    let outputs = simd_output.as_chunks_mut::<AVX512_DECODE_OUTPUT_BLOCK>().0;
+    let mut completed = 0;
     let mut classified = true;
-    while read + AVX512_DECODE_INPUT_BLOCK <= simd_input_len {
-        // SAFETY: The loop guards prove both exact fixed blocks are within the
-        // preflighted slices. This function carries the complete ISA contract.
-        let block_classified = unsafe {
-            let block = &*(input
-                .as_ptr()
-                .add(read)
-                .cast::<[u8; AVX512_DECODE_INPUT_BLOCK]>());
-            let decoded = &mut *(output
-                .as_mut_ptr()
-                .add(write)
-                .cast::<[u8; AVX512_DECODE_OUTPUT_BLOCK]>());
-            super::decode_direct::decode_64_bytes_avx512::<A>(block, decoded)
-        };
-        if !block_classified {
+    for (block, decoded) in inputs.iter().zip(outputs.iter_mut()) {
+        // SAFETY: The caller proves ISA/OS support. Checked slices and fixed
+        // arrays establish the exact load/store bounds inside this helper.
+        if !unsafe { super::decode_direct::decode_64_bytes_avx512::<A>(block, decoded) } {
             classified = false;
             break;
         }
-        read += AVX512_DECODE_INPUT_BLOCK;
-        write += AVX512_DECODE_OUTPUT_BLOCK;
+        completed += 1;
     }
-    if read != 0 {
-        // SAFETY: All vector results have already been stored.
+    if !inputs.is_empty() {
+        // SAFETY: All vector results are dead, including first-block rejection.
         unsafe { super::cleanup::clear_zmm_registers_after_encode_block() };
     }
-    (read, write, classified)
+    // Completed cannot exceed the checked input/output array counts.
+    (
+        completed * AVX512_DECODE_INPUT_BLOCK,
+        completed * AVX512_DECODE_OUTPUT_BLOCK,
+        classified,
+    )
 }

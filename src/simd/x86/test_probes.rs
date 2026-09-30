@@ -36,9 +36,27 @@ pub(crate) fn candidate_decode_avx512(input: &[u8], output: &mut [u8], url_safe:
             super::decode::decode_full_blocks_avx512::<crate::Standard>(input, output, input.len())
         }
     };
-    // SAFETY: Also covers first-block rejection, before stored-block cleanup.
-    unsafe { super::cleanup::clear_zmm_registers_after_encode_block() };
     valid && read == input.len() && written == required
+}
+
+pub(crate) fn test_avx512_loop_geometry(
+    input: &[u8],
+    output: &mut [u8],
+    requested: usize,
+    url_safe: bool,
+) -> Option<(usize, usize, bool)> {
+    if !crate::simd::avx512_vbmi_base64_available() {
+        return None;
+    }
+    // SAFETY: CPU/OS support is the only unsafe precondition. Deliberately do
+    // not precheck geometry: tests must exercise the loop's own bounds checks.
+    Some(unsafe {
+        if url_safe {
+            super::decode::decode_full_blocks_avx512::<crate::UrlSafe>(input, output, requested)
+        } else {
+            super::decode::decode_full_blocks_avx512::<crate::Standard>(input, output, requested)
+        }
+    })
 }
 
 pub(crate) fn candidate_validate_avx2(input: &[u8], url_safe: bool) -> bool {

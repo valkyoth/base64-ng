@@ -32,6 +32,68 @@ fn avx512_validation_candidate_execution_status() {
 }
 
 #[test]
+fn avx512_loop_rejects_inconsistent_geometry_before_writes() {
+    if !crate::simd::avx512_validation_candidate_available() {
+        return;
+    }
+    for url_safe in [false, true] {
+        for input_len in 0_usize..=195 {
+            for requested in [
+                0,
+                1,
+                63,
+                64,
+                65,
+                128,
+                192,
+                input_len.saturating_sub(1),
+                input_len,
+                input_len + 1,
+                usize::MAX,
+            ] {
+                for capacity in [0, 1, 47, 48, 49, 95, 96, 143, 144, 150] {
+                    let mut output = [0xa5; 152];
+                    let result = crate::simd::test_avx512_loop_geometry(
+                        &[b'A'; 195][..input_len],
+                        &mut output[1..][..capacity],
+                        requested,
+                        url_safe,
+                    );
+                    let valid_geometry = requested <= input_len && requested / 64 * 48 <= capacity;
+                    let written = if valid_geometry {
+                        requested / 64 * 48
+                    } else {
+                        0
+                    };
+                    let expected = if valid_geometry {
+                        (requested / 64 * 64, written, true)
+                    } else {
+                        (0, 0, false)
+                    };
+                    assert_eq!(result, Some(expected));
+                    assert_eq!(output[0], 0xa5);
+                    assert!(output[1..][..written].iter().all(|&byte| byte == 0));
+                    assert!(output[1 + written..].iter().all(|&byte| byte == 0xa5));
+                }
+            }
+        }
+        for lane in 0..192 {
+            let mut input = [b'A'; 192];
+            input[lane] = 0xff;
+            let mut output = [0xa5; 145];
+            let read = lane / 64 * 64;
+            let written = lane / 64 * 48;
+            assert_eq!(
+                crate::simd::test_avx512_loop_geometry(&input, &mut output, 192, url_safe),
+                Some((read, written, false))
+            );
+            assert!(output[..written].iter().all(|&byte| byte == 0));
+            assert!(output[written..].iter().all(|&byte| byte == 0xa5));
+        }
+    }
+}
+
+#[test]
 fn every_byte_lane_alignment_and_mask_boundary() {
     if !crate::simd::avx512_validation_candidate_available() {
         return;

@@ -815,11 +815,18 @@ There are no output stores. Its wrapper uses the existing ZMM cleanup after
 success and early rejection. This ordinary-data path is not constant-time and
 does not claim secret-memory or complete mask-register erasure guarantees.
 
-`candidate_decode_avx512` proves 64:48 geometry before calling the existing
-`decode_full_blocks_avx512` loop, whose parent-module visibility is the only
-production change. Each block still uses the existing exact 48-byte masked
-store. Cleanup also runs on first-block rejection. The low-level loop can
-write earlier valid blocks before a later rejection; transactionality belongs
+`candidate_decode_avx512` checks 64:48 geometry before calling
+`decode_full_blocks_avx512`. After the Commit 8 pentest, the shared loop also
+checks its own prefix bound and full-block output capacity before any block
+access. It derives arrays from checked slices with `as_chunks`/`as_chunks_mut`,
+not raw pointer arithmetic. Invalid geometry returns `(0, 0, false)` without
+block reads or stores; a valid partial final block remains for the caller.
+The only unsafe caller precondition is the full CPU/OS feature contract.
+Completed-block counters are bounded by both checked slice lengths.
+Each block still uses the existing exact 48-byte masked store. Loop-level
+cleanup runs after any attempted block, including first-block rejection; the
+candidate wrapper no longer needs a duplicate cleanup call. The low-level loop
+can write earlier valid blocks before a later rejection; transactionality belongs
 to the complete canonical candidate's shared immutable-input preflight. It
 validates the vector prefix and original scalar remainder before any write.
 Classifier/kernel disagreement is still a test-only assertion, not a production
@@ -830,7 +837,10 @@ Tests classify every byte at every lane of three consecutive blocks at all
 tail bits and exact errors, and exercise all output alignments. Native Linux
 x86_64 guard pages bound 64-byte loads and 48-byte stores at both page edges,
 including later-block rejection and complete transactional operations. The
-pinned-toolchain assembly check requires both alphabet bodies, ZMM loads,
+geometry regression test directly supplies inconsistent prefix/output lengths,
+including `usize::MAX`, bypassing the candidate wrapper's prechecks. Guard-page
+tests also exercise these rejected requests without accessing protected pages.
+The pinned-toolchain assembly check requires both alphabet bodies, ZMM loads,
 unsigned vector comparisons and full-width `ktestq`, and rejects stores
 (including masked stores) and delegated calls. These are bounded development
 checks, not a new hardware admission or universal compiler-codegen proof.
@@ -887,10 +897,10 @@ Safety argument:
 
 Locations: `src/simd/x86/decode_direct.rs` and `src/simd/x86/decode.rs`
 
-Status: admitted x86/x86_64 AVX-512 VBMI strict decode for Standard and
-URL-safe alphabet families. Automatic dispatch uses AVX-512 only at the
-retained 16 KiB encoded-input crossover; exact static-token and evidence calls
-may use it from one complete 64-byte block.
+Status: x86/x86_64 AVX-512 VBMI strict decode for Standard and URL-safe alphabet
+families is available through exact static-token and evidence calls from one
+complete 64-byte block. Automatic strict-decode dispatch still uses narrower
+backends; AVX-512 automatic admission remains separate.
 
 The safe `decode_slice_avx512` wrapper performs whole-input scalar validation,
 output preflight, alphabet checks, tail fallback, and error-index preservation
@@ -902,12 +912,15 @@ Purpose:
 - Pack sixteen Base64 quanta and store exactly forty-eight decoded bytes.
 - Batch complete blocks and clear ZMM state once at the call boundary.
 
-Preconditions:
+Contracts:
 
-- The caller proves AVX-512 F, BW, VL, and VBMI on the current thread.
-- Whole-input scalar validation and output sizing complete before entry.
-- Each kernel input is exactly 64 bytes and output is exactly 48 bytes.
-- The alphabet belongs to the Standard or URL-safe family.
+- The unsafe caller precondition is AVX-512 F, BW, VL, and VBMI CPU/OS-state
+  support on the current thread.
+- The production slice wrapper performs whole-input scalar validation and
+  output sizing before entry; the test-only candidate uses shared preflight.
+- Each direct kernel input is exactly 64 bytes and output is exactly 48 bytes.
+  The block loop enforces its own slice geometry with checked operations.
+- Semantic admission is restricted to the Standard or URL-safe family.
 
 Unsafe operation:
 
@@ -918,18 +931,19 @@ Unsafe operation:
   pack each 128-bit lane into twelve decoded bytes.
 - `_mm512_permutexvar_epi8` compacts the four lane-local results.
 - `_mm512_mask_storeu_epi8` writes only the low forty-eight output bytes.
-- `decode_full_blocks_avx512` derives fixed-array references from preflighted
-  slice pointers and advances them only by 64-byte/48-byte block widths.
+- `decode_full_blocks_avx512` uses checked prefix/output slices and fixed-array
+  chunks, rejecting inconsistent geometry before any block access.
 - `clear_zmm_registers_after_encode_block` clears ZMM state once after the
   complete block loop and emits `vzeroupper`.
 
 Safety argument:
 
-- Scalar validation is authoritative for canonicality, padding, detailed
-  errors, decoded length, and no-write-on-error behavior. Malformed input never
-  reaches the direct block loop.
-- Fixed-array references and loop guards prove every unaligned load and masked
-  store remains within the preflighted caller slices.
+- The production slice wrapper's scalar validation is authoritative for
+  canonicality, padding, detailed errors, decoded length and no-write-on-error
+  behavior. Direct low-level calls may reject after earlier valid block stores;
+  they do not independently provide whole-input transactionality.
+- Checked slices and fixed-array chunks bound every unaligned load and masked
+  store, even when an internal caller supplies inconsistent geometry.
 - The kernel requires all sixty-four validity-mask bits before storing. A
   classifier disagreement after scalar validation restarts with scalar decode.
 - VBMI compaction indices are constants in `0..=59` and select only bytes
@@ -937,7 +951,9 @@ Safety argument:
 - The complete target-feature attribute covers every intrinsic. Runtime
   dispatch, static tokens, and exact evidence calls separately prove the same
   feature bundle before entry.
-- All vector output is stored before the single call-boundary cleanup.
+- Vector results are stored or rejected before the single call-boundary
+  cleanup, including first-block rejection. No block cleanup is necessary when
+  geometry is rejected before block processing or when no full blocks exist.
 
 ### `decode_32_bytes_avx2`
 
