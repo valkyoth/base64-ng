@@ -84,6 +84,7 @@ echo "checks: 2.0 feature contract"
 scripts/check-2.0-feature-contract.sh
 
 echo "checks: 2.0 crate skeleton"
+python3 scripts/test-2.0-skeleton.py
 scripts/validate-2.0-skeleton.sh
 
 echo "checks: 2.0 validated alphabet"
