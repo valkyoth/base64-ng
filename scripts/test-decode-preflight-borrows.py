@@ -14,7 +14,7 @@ prefix = f'#[path = {json.dumps(str(module))}] mod decode_preflight;\n'
 setup = '''
 fn main() {
     let mut input = *b"Zm9v";
-    let proof = decode_preflight::Preflight::reference(&input, 7_u8,
+    let proof = decode_preflight::Preflight::validate(&input, 7_u8,
         |config, bytes| { assert_eq!(config, 7); assert_eq!(bytes, b"Zm9v"); Ok::<usize, ()>(3) }).unwrap();
     let mut output = [0; 3];
 '''

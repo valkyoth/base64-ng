@@ -26,6 +26,7 @@ mod ordinary;
 #[cfg(feature = "alloc")]
 mod ordinary_alloc;
 mod ordinary_decode;
+mod ordinary_scalar;
 #[cfg(feature = "alloc")]
 mod ordinary_string;
 mod profiles;

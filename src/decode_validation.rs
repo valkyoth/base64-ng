@@ -1,7 +1,8 @@
 /// Validation strategy for ordinary, non-secret Base64 input.
 ///
 /// This selects validation, not output-generation instructions or a weaker
-/// grammar. Both variants currently use the existing scalar checks. Scalar
+/// grammar. Canonical strict Standard/URL-safe `Auto` uses a specialized portable
+/// scalar validator; `ScalarReference` retains the original validator. Historical scalar
 /// execution can combine validation with decoding; admitted SIMD execution
 /// retains its full scalar prevalidation. Existing error precedence and output
 /// mutation contracts are unchanged.
@@ -21,7 +22,8 @@
 pub enum DecodeValidation {
     /// Use the admitted validation strategy, with scalar fallback.
     ///
-    /// No accelerated validation is enabled by this API's initial introduction.
+    /// Canonical strict Standard/URL-safe settings use portable table validation.
+    /// Other settings retain reference validation. Vector validation is not yet enabled.
     #[default]
     Auto,
     /// Retain complete scalar-reference grammar validation on every call.
@@ -36,12 +38,19 @@ pub(crate) mod observation {
     extern crate std;
     std::thread_local! {
         static CALLS: core::cell::Cell<usize> = const { core::cell::Cell::new(0) };
+        static FAST_CALLS: core::cell::Cell<usize> = const { core::cell::Cell::new(0) };
     }
     pub(crate) fn record() {
         CALLS.with(|calls| calls.set(calls.get() + 1));
     }
     pub(crate) fn calls() -> usize {
         CALLS.with(core::cell::Cell::get)
+    }
+    pub(crate) fn record_fast() {
+        FAST_CALLS.with(|calls| calls.set(calls.get() + 1));
+    }
+    pub(crate) fn fast_calls() -> usize {
+        FAST_CALLS.with(core::cell::Cell::get)
     }
 }
 
@@ -72,6 +81,7 @@ mod tests {
             }
             assert_eq!(output, [0; 3072]);
             let before = observation::calls();
+            let fast_before = observation::fast_calls();
             assert_eq!(
                 crate::STRICT_STANDARD_PADDED.decode_into_with_validation(
                     &input,
@@ -80,7 +90,13 @@ mod tests {
                 ),
                 Ok(3072)
             );
-            assert!(observation::calls() > before);
+            if policy == DecodeValidation::ScalarReference {
+                assert!(observation::calls() > before);
+                assert_eq!(observation::fast_calls(), fast_before);
+            } else {
+                assert_eq!(observation::calls(), before);
+                assert_eq!(observation::fast_calls(), fast_before + 1);
+            }
             let before = observation::calls();
             assert_eq!(
                 crate::STANDARD.validated_decoded_len_with_validation(&input, policy),

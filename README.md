@@ -31,7 +31,8 @@ remain at `2.0.3` (the sanitization companion is `2.0.4`).
 The development branch reports package version `2.1.0` across the family;
 publication is disabled by the `development-blocked` policy, Cargo manifests,
 and npm's private-package flag. See the [2.1 commit plan](docs/2.1.0-release-plan.md).
-Commit 1 changes metadata and verification only, not codec behavior or admission.
+The branch includes canonical scalar decode improvements; vector validation
+admission is still in progress.
 
 The examples below target published releases. To evaluate development code:
 
@@ -183,7 +184,8 @@ from the same strict presets.
 ## Validation And Compatibility
 
 2.1 development adds explicit ordinary `DecodeValidation::ScalarReference`
-selection alongside `Auto`; both currently retain scalar validation. See
+selection alongside `Auto`, which specializes canonical Standard/URL-safe
+scalar validation without changing accepted input or error contracts. See
 [validation policy and API examples](docs/DECODE_VALIDATION.md).
 
 Validate without producing decoded output:

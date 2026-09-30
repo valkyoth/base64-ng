@@ -16,6 +16,7 @@ for compiler in "$active" 1.90.0; do
         cargo +"$compiler" test --no-default-features --features "$features" --lib decode_validation::tests
         cargo +"$compiler" test --no-default-features --features "$features" --lib decode_preflight::tests
         cargo +"$compiler" test --no-default-features --features "$features" --lib ordinary_decode::tests
+        cargo +"$compiler" test --no-default-features --features "$features" --lib ordinary_scalar::tests
         cargo +"$compiler" clippy --no-default-features --features "$features" --lib --test decode_validation -- -D warnings
     done
 done

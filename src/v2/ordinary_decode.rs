@@ -1,9 +1,10 @@
-//! Reference preflight and the private canonical writer.
+//! Ordinary preflight and the private canonical writer.
 
 use super::{
     contracts::{BackendFault, Status},
     incremental_decoder::DecoderState,
     ordinary::{OneShotError, map_operation_error},
+    ordinary_scalar::Family,
     specifications::{CodecSettings, DecodePadding},
 };
 use crate::{
@@ -16,11 +17,31 @@ pub(super) fn prepare(
     input: &[u8],
     validation: DecodeValidation,
 ) -> Result<Preflight<'_, CodecSettings>, OneShotError> {
-    match validation {
-        DecodeValidation::Auto | DecodeValidation::ScalarReference => {
-            Preflight::reference(input, settings, validate_and_measure).map_err(map_preflight_error)
+    Preflight::validate(input, settings, |settings, input| {
+        // Empty input is valid for every sealed codec, without inspecting its
+        // alphabet. Keep the explicit reference policy on the original path.
+        if validation == DecodeValidation::Auto && input.is_empty() {
+            return Ok(0);
         }
-    }
+        if validation == DecodeValidation::Auto
+            && let Some(family) = Family::for_settings(settings)
+        {
+            if let Some(required) = family.validated_len(
+                input,
+                settings.decode_padding() == DecodePadding::RequireCanonical,
+            ) {
+                return Ok(required);
+            }
+            // Preserve exact legacy diagnostics on rejection. A false negative
+            // is an implementation fault, not permission to write a result.
+            return match validate_and_measure(settings, input) {
+                Err(error) => Err(error),
+                Ok(_) => Err(OneShotError::Backend(BackendFault::ImpossibleState)),
+            };
+        }
+        validate_and_measure(settings, input)
+    })
+    .map_err(map_preflight_error)
 }
 
 fn map_preflight_error(error: PreflightFailure<OneShotError>) -> OneShotError {
@@ -83,34 +104,22 @@ pub(super) fn write(
     proof: Preflight<'_, CodecSettings>,
     output: &mut [u8],
 ) -> Result<usize, OneShotError> {
+    if proof.len() == 0 {
+        return Ok(0);
+    }
     proof
         .write(
             output,
             |settings, interior, tail, body_output, tail_output| {
-                for (input, output) in interior
-                    .as_chunks::<4>()
-                    .0
-                    .iter()
-                    .zip(body_output.as_chunks_mut::<3>().0.iter_mut())
-                {
-                    let first = value(settings, input[0]);
-                    let second = value(settings, input[1]);
-                    let third = value(settings, input[2]);
-                    output[0] = (first << 2) | (second >> 4);
-                    output[1] = (second << 4) | (third >> 2);
-                    output[2] = (third << 6) | value(settings, input[3]);
-                }
-                if !tail_output.is_empty() {
-                    let first = value(settings, tail[0]);
-                    let second = value(settings, tail[1]);
-                    tail_output[0] = (first << 2) | (second >> 4);
-                    if tail_output.len() > 1 {
-                        let third = value(settings, tail[2]);
-                        tail_output[1] = (second << 4) | (third >> 2);
-                        if tail_output.len() > 2 {
-                            tail_output[2] = (third << 6) | value(settings, tail[3]);
-                        }
-                    }
+                if let Some(family) = Family::for_settings(settings) {
+                    let table = family.table();
+                    write_parts(interior, tail, body_output, tail_output, |byte| {
+                        table[usize::from(byte)]
+                    });
+                } else {
+                    write_parts(interior, tail, body_output, tail_output, |byte| {
+                        value(settings, byte)
+                    });
                 }
             },
         )
@@ -118,6 +127,40 @@ pub(super) fn write(
             required: error.required,
             available: error.available,
         })
+}
+
+fn write_parts(
+    interior: &[u8],
+    tail: &[u8],
+    body_output: &mut [u8],
+    tail_output: &mut [u8],
+    value: impl Fn(u8) -> u8,
+) {
+    for (input, output) in interior
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .zip(body_output.as_chunks_mut::<3>().0.iter_mut())
+    {
+        let first = value(input[0]);
+        let second = value(input[1]);
+        let third = value(input[2]);
+        output[0] = (first << 2) | (second >> 4);
+        output[1] = (second << 4) | (third >> 2);
+        output[2] = (third << 6) | value(input[3]);
+    }
+    if !tail_output.is_empty() {
+        let first = value(tail[0]);
+        let second = value(tail[1]);
+        tail_output[0] = (first << 2) | (second >> 4);
+        if tail_output.len() > 1 {
+            let third = value(tail[2]);
+            tail_output[1] = (second << 4) | (third >> 2);
+            if tail_output.len() > 2 {
+                tail_output[2] = (third << 6) | value(tail[3]);
+            }
+        }
+    }
 }
 
 fn value(settings: CodecSettings, byte: u8) -> u8 {

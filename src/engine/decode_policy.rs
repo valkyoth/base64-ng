@@ -52,7 +52,7 @@ impl<A: Alphabet, const PAD: bool> Engine<A, PAD> {
     ) -> Result<usize, DecodeError> {
         match validation {
             DecodeValidation::Auto | DecodeValidation::ScalarReference => {
-                Preflight::reference(input, self, |_, input| validate_decode::<A, PAD>(input))
+                Preflight::validate(input, self, |_, input| validate_decode::<A, PAD>(input))
                     .map(|proof| proof.len())
                     .map_err(|error| match error {
                         Failure::Input(error) => error,

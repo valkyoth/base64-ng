@@ -200,16 +200,16 @@ fn fault_injection_stops_before_capacity_checks_and_writes() {
 fn allocating_decode_retains_validation_across_reservation() {
     use crate::decode_validation::observation;
     let codec = crate::STRICT_STANDARD_PADDED;
-    let before = observation::calls();
+    let before = observation::fast_calls();
     let output = codec
         .decode_to_vec_with_injected_reserver(b"Zm9v", 3, |output, required| {
-            assert_eq!(observation::calls(), before + 1);
+            assert_eq!(observation::fast_calls(), before + 1);
             assert_eq!(required, 3);
             output.try_reserve_exact(required).unwrap();
             Ok(())
         })
         .unwrap();
-    assert_eq!(observation::calls(), before + 1);
+    assert_eq!(observation::fast_calls(), before + 1);
     assert_eq!(output, b"foo");
     assert!(
         codec

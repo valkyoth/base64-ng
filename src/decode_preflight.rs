@@ -45,7 +45,8 @@ impl Layout {
 
 /// Owns the immutable configuration snapshot and borrows the exact validated
 /// source. Not Clone/Copy; writing consumes it and accepts no replacement input
-/// or settings. Only a completed reference validation can construct this value.
+/// or settings. Only a completed validator can construct this value. The
+/// internal callback must check the complete grammar, not only input shape.
 pub(crate) struct Preflight<'a, C> {
     input: &'a [u8],
     configuration: C,
@@ -53,7 +54,7 @@ pub(crate) struct Preflight<'a, C> {
 }
 
 impl<'a, C: Copy> Preflight<'a, C> {
-    pub(crate) fn reference<E>(
+    pub(crate) fn validate<E>(
         input: &'a [u8],
         configuration: C,
         validate: impl FnOnce(C, &[u8]) -> Result<usize, E>,

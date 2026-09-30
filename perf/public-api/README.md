@@ -98,8 +98,9 @@ The candidate-only `validation-policy` feature adds `historical-reference` and
 `canonical-reference` rows using the explicit scalar-reference decode option.
 Enable it for standalone current-tree measurements, not the transplanted 2.0.4
 paired runner (that release predates the option). Encoding in these rows is
-unchanged. Both decode policies initially use the same scalar checks, so these
-rows establish coverage rather than an acceleration claim.
+unchanged. Canonical `Auto` now uses specialized portable scalar checks for
+strict Standard/URL-safe settings; `ScalarReference` retains the original
+validator. Historical policies still share their existing validation paths.
 
 - Four strict Standard/URL-safe padded/unpadded presets; historical slice,
   canonical slice, validation-only, owned allocation, reusable append, in-place,
@@ -114,8 +115,8 @@ rows establish coverage rather than an acceleration claim.
   Default does not enable SIMD or the optional stream feature.
 - Existing historical/vector routes retain scalar prevalidation at this
   checkpoint. `scalar` means full scalar execution; it is **not** a simulated
-  future `ScalarReference` selector. The selectable policy does not exist until
-  Commit 3; extend this harness when it does. Checked and exact-backend rows
+  `ScalarReference` selector. Use the explicit `*-reference` rows for that
+  policy. Checked and exact-backend rows
   must not be described as interchangeable execution contracts.
 - Boundary-sized, empty, small and 64 KiB payloads; `--full` adds SIMD-boundary
   neighbors, 1 MiB, all-zero, and structured byte patterns. Pseudorandom bytes

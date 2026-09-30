@@ -48,7 +48,7 @@ fn length_arithmetic_is_bounded_at_usize_max_without_allocating() {
 #[test]
 fn proof_binds_source_configuration_and_writer_spans() {
     let source = *b"Zm9vYg==";
-    let proof = Preflight::reference(&source, 42, |config, input| {
+    let proof = Preflight::validate(&source, 42, |config, input| {
         assert_eq!(config, 42);
         assert!(core::ptr::eq(input, source.as_slice()));
         Ok::<_, ()>(4)
@@ -73,7 +73,7 @@ fn proof_binds_source_configuration_and_writer_spans() {
 
 #[test]
 fn no_writer_on_capacity_error_or_inconsistent_validation_length() {
-    let proof = Preflight::reference(b"Zm9v", (), |(), _| Ok::<_, ()>(3)).unwrap();
+    let proof = Preflight::validate(b"Zm9v", (), |(), _| Ok::<_, ()>(3)).unwrap();
     let mut output = [0xa5; 2];
     let error = proof
         .write(&mut output, |(), _, _, _, _| panic!("must not write"))
@@ -81,7 +81,7 @@ fn no_writer_on_capacity_error_or_inconsistent_validation_length() {
     assert_eq!((error.required, error.available), (3, 2));
     assert_eq!(output, [0xa5; 2]);
     assert!(matches!(
-        Preflight::reference(b"Zm9v", (), |(), _| Ok::<_, ()>(4)),
+        Preflight::validate(b"Zm9v", (), |(), _| Ok::<_, ()>(4)),
         Err(Failure::Bounds)
     ));
 }
