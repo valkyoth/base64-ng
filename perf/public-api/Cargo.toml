@@ -1,0 +1,25 @@
+[package]
+name = "base64-ng-public-api-perf"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[features]
+default = ["std"]
+alloc = ["base64-ng/alloc"]
+std = ["alloc", "base64-ng/std"]
+stream = ["std", "base64-ng/stream"]
+simd = ["base64-ng/simd"]
+checked = ["base64-ng/checked-backend"]
+adapters = ["stream", "dep:base64-ng-bytes", "dep:base64-ng-tokio", "dep:bytes", "dep:tokio"]
+
+[dependencies]
+base64-ng = { version = ">=2.0.4, <2.2.0", path = "../..", default-features = false }
+base64 = "=0.23.0"
+base64ct = "=1.8.3"
+base64-ng-bytes = { version = ">=2.0.3, <2.2.0", path = "../../crates/base64-ng-bytes", optional = true }
+base64-ng-tokio = { version = ">=2.0.3, <2.2.0", path = "../../crates/base64-ng-tokio", optional = true }
+bytes = { version = "=1.12.1", optional = true }
+tokio = { version = "=1.53.1", default-features = false, features = ["rt", "io-util"], optional = true }

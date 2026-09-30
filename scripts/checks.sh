@@ -70,6 +70,7 @@ scripts/validate-2.0-api-ledger.sh
 echo "checks: baseline and development public API snapshots"
 scripts/check-api-snapshots.sh
 sh scripts/check-2.1-baseline.sh
+sh scripts/check-2.1-public-api.sh
 
 echo "checks: 2.0 release-candidate freeze"
 scripts/check-2.0-release-freeze.sh
