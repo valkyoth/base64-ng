@@ -1,4 +1,4 @@
-//! Linux native guard-page checks for the non-admitted SSSE3 candidate.
+//! Linux native guard-page checks for the non-admitted x86 validation candidates.
 #![cfg(not(miri))]
 
 use core::ffi::c_void;
@@ -82,6 +82,71 @@ fn validation_guard_pages_bound_loads_and_decode_stores() {
                 assert!(!super::candidate_decode_16(input, output, url_safe));
                 assert_eq!(*output, [0xa5; 12]);
                 input[lane] = b'A';
+            }
+        }
+    }
+}
+
+#[test]
+fn avx2_validation_guard_pages_cover_blocks_and_complete_decode() {
+    if !super::avx2_validation_candidate_available() {
+        return;
+    }
+    for at_end in [false, true] {
+        let mut source = Pages::new();
+        let mut destination = Pages::new();
+        for url_safe in [false, true] {
+            for blocks in 1..=3 {
+                let input = source.region(blocks * 32, at_end);
+                input.fill(b'A');
+                let output = destination.region(blocks * 24, at_end);
+                assert!(super::candidate_validate_avx2(input, url_safe));
+                assert!(super::candidate_decode_avx2(input, output, url_safe));
+                assert!(output.iter().all(|&byte| byte == 0));
+                input[0] = b'!';
+                output.fill(0xa5);
+                assert!(!super::candidate_decode_avx2(input, output, url_safe));
+                assert!(output.iter().all(|&byte| byte == 0xa5));
+                input[0] = b'A';
+                for lane in 0..input.len() {
+                    input[lane] = 0xff;
+                    assert!(!super::candidate_validate_avx2(input, url_safe));
+                    input[lane] = b'A';
+                }
+            }
+        }
+        for settings in [
+            crate::STRICT_STANDARD_PADDED.settings(),
+            crate::STRICT_STANDARD_UNPADDED.settings(),
+            crate::STRICT_URL_SAFE_PADDED.settings(),
+            crate::STRICT_URL_SAFE_UNPADDED.settings(),
+        ] {
+            let codec = crate::CodecBuilder::new(*settings.alphabet())
+                .encode_padding(settings.encode_padding())
+                .decode_padding(settings.decode_padding())
+                .build()
+                .unwrap();
+            for length in 0..=100 {
+                let plain = [0x9b; 100];
+                let mut encoded = [0; 136];
+                let n = codec.encode_into(&plain[..length], &mut encoded).unwrap();
+                let input = source.region(n, at_end);
+                input.copy_from_slice(&encoded[..n]);
+                let output = destination.region(length, at_end);
+                assert_eq!(
+                    crate::v2::decode_avx2_candidate_for_test(codec.settings(), input, output),
+                    Ok(length)
+                );
+                assert_eq!(output, &plain[..length]);
+                if n > 0 {
+                    input[n - 1] = b'!';
+                    output.fill(0xa5);
+                    assert!(
+                        crate::v2::decode_avx2_candidate_for_test(codec.settings(), input, output)
+                            .is_err()
+                    );
+                    assert!(output.iter().all(|&byte| byte == 0xa5));
+                }
             }
         }
     }

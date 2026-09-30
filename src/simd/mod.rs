@@ -44,7 +44,9 @@ pub use static_token::StaticBackendToken;
     feature = "std",
     any(target_arch = "x86", target_arch = "x86_64")
 ))]
-pub(crate) use x86::test_probes::{candidate_decode_16, candidate_validate_16};
+pub(crate) use x86::test_probes::{
+    candidate_decode_16, candidate_decode_avx2, candidate_validate_16, candidate_validate_avx2,
+};
 #[cfg(all(
     test,
     feature = "std",
@@ -52,6 +54,15 @@ pub(crate) use x86::test_probes::{candidate_decode_16, candidate_validate_16};
 ))]
 pub(crate) fn ssse3_validation_candidate_available() -> bool {
     ssse3_sse41_available()
+}
+
+#[cfg(all(
+    test,
+    feature = "std",
+    any(target_arch = "x86", target_arch = "x86_64")
+))]
+pub(crate) fn avx2_validation_candidate_available() -> bool {
+    avx2_available()
 }
 
 #[cfg(all(test, feature = "std", target_arch = "x86_64", target_os = "linux"))]

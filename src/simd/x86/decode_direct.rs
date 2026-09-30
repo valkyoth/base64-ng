@@ -121,6 +121,29 @@ where
     true
 }
 
+#[inline(never)]
+#[allow(
+    clippy::cast_ptr_alignment,
+    reason = "_mm256_loadu_si256 accepts an unaligned pointer"
+)]
+#[cfg(all(test, feature = "std"))]
+#[target_feature(enable = "avx2")]
+pub(super) unsafe fn validate_blocks_avx2<A: Alphabet>(input: &[[u8; 32]]) -> bool {
+    for block in input {
+        // SAFETY: The caller proves AVX2 availability. Each array provides
+        // exactly 32 readable bytes. No output pointer or store is present.
+        let valid = unsafe {
+            let ascii = _mm256_loadu_si256(block.as_ptr().cast::<__m256i>());
+            let (_, valid) = map_ascii_to_values_avx2::<A>(ascii);
+            _mm256_movemask_epi8(valid) == -1
+        };
+        if !valid {
+            return false;
+        }
+    }
+    true
+}
+
 #[inline]
 #[allow(
     clippy::cast_ptr_alignment,

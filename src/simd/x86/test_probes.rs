@@ -1,5 +1,45 @@
 use crate::Alphabet;
 
+pub(crate) fn candidate_validate_avx2(input: &[u8], url_safe: bool) -> bool {
+    if !crate::simd::avx2_available() || !input.len().is_multiple_of(32) {
+        return false;
+    }
+    let blocks = input.as_chunks::<32>().0;
+    // SAFETY: The probe proves AVX2, arrays bound every load, and the
+    // closed choice excludes custom alphabets. The classifier has no stores.
+    let valid = unsafe {
+        if url_safe {
+            super::decode_direct::validate_blocks_avx2::<crate::UrlSafe>(blocks)
+        } else {
+            super::decode_direct::validate_blocks_avx2::<crate::Standard>(blocks)
+        }
+    };
+    // SAFETY: Classification is complete, including any early rejection.
+    unsafe { super::cleanup::clear_ymm_registers_after_encode_block() };
+    valid
+}
+
+pub(crate) fn candidate_decode_avx2(input: &[u8], output: &mut [u8], url_safe: bool) -> bool {
+    let required = input.len() / 32 * 24;
+    if !crate::simd::avx2_available() || !input.len().is_multiple_of(32) || output.len() < required
+    {
+        return false;
+    }
+    // SAFETY: CPU availability and exact 32:24 geometry are established above.
+    // The reviewed kernel checks alphabet validity before each block store.
+    let (read, written, valid) = unsafe {
+        if url_safe {
+            super::decode::decode_full_blocks_avx2::<crate::UrlSafe>(input, output, input.len())
+        } else {
+            super::decode::decode_full_blocks_avx2::<crate::Standard>(input, output, input.len())
+        }
+    };
+    // SAFETY: Also clear the first-block rejection case, when the existing
+    // loop's stored-block cleanup has not run. No vector results remain live.
+    unsafe { super::cleanup::clear_ymm_registers_after_encode_block() };
+    valid && read == input.len() && written == required
+}
+
 pub(crate) fn candidate_validate_16(input: &[u8; 16], url_safe: bool) -> bool {
     if !crate::simd::ssse3_sse41_available() {
         return false;

@@ -150,3 +150,28 @@ backend fault/quarantine integration is still required before enabling the path.
 Kani equivalence for the portable validator would provide additional bounded
 assurance; it is not claimed by the current exhaustive classification/tail and
 reference/oracle tests.
+
+## AVX2 Validation Candidate
+
+Commit 7 adds the corresponding test-only AVX2 route. A bulk validator checks
+32-byte blocks with a full YMM movemask; every lane in both 128-bit halves must
+belong to the selected alphabet. The final 1-32 bytes use original scalar
+validation. Empty input has no remainder. The complete immutable input and exact
+settings are bound to preflight before capacity checks and output stores.
+Rejection recovers whole-input reference diagnostics, including original indexes.
+
+The writer uses the existing AVX2 direct-block loop and scalar residual quanta.
+CPU/OS probing, complete-block geometry, exact output capacity and cleanup are
+retained. Custom/relaxed settings or unavailable AVX2 use the reference path.
+Like SSSE3, the candidate is test-only and uses an assertion for kernel
+disagreement. It is not a new public API, checked-backend replacement, or an
+admitted production fault-recovery path. Public dispatch, CT/secret engines and
+the explicit reference option are unchanged.
+
+Run `sh scripts/check-2.1-avx2-validation.sh` for exhaustive classification,
+malformed-input parity, guard pages on Linux x86_64, active/MSRV feature builds,
+assembly checks and production-IR exclusion. Set
+`BASE64_NG_REQUIRE_AVX2_VALIDATION=1` when native execution must be mandatory.
+The opt-in same-process benchmark and its limitations are described in
+[Commit 7 measurements](PERFORMANCE_2.1_AVX2.md). Small-message overhead is not an
+admission claim; dispatch thresholds remain a later checkpoint.

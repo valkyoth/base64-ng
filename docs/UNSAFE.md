@@ -770,6 +770,37 @@ test-only libc calls use the native Linux x86_64 ABI and do not run under Miri.
 They bound the 16-byte input loads and exact 12-byte stores at both page edges.
 The focused gate inspects generated classifier assembly separately from decode.
 
+### `validate_blocks_avx2` (2.1 Commit 7 Candidate)
+
+Location: `src/simd/x86/decode_direct.rs`
+
+Status: test-only, non-dispatchable, like the Commit 6 classifier. The input is a
+slice of exact 32-byte arrays. Each unaligned load stays within one array, uses
+the existing AVX2 range/equality masks, and reduces all 32 lanes with
+`_mm256_movemask_epi8`, rejecting unless every lane is valid. No output stores
+are performed. The safe `candidate_validate_avx2` wrapper requires a multiple
+of 32 bytes, checks AVX2 CPU/OS support, chooses only Standard or URL-safe, and
+clears YMM state once after the loop, including early rejection.
+
+`candidate_decode_avx2` separately checks the same feature bundle and exact
+32:24 input/output geometry before calling the existing
+`decode_full_blocks_avx2` loop. That loop's visibility is widened only to its
+parent module, without changing its production behavior. The candidate wrapper
+also clears YMM state on first-block rejection, when the loop has stored nothing.
+The low-level decoder can write earlier valid blocks before rejecting a later
+one; only the private canonical candidate preflight provides transactionality.
+It validates the complete vector prefix and scalar remainder before any write.
+As in Commit 6, classifier/kernel disagreement is a test failure, not shipped
+fault recovery. Production quarantine/recovery remains an admission prerequisite.
+
+Tests exercise both halves of every AVX2 vector, several consecutive blocks,
+mixed invalid lanes, unaligned loads/stores, malformed diagnostics and exact
+output sentinels. Linux x86_64 guard pages cover direct bulk operations and the
+complete canonical candidate at both ends of readable/writable pages. Assembly
+checks require a YMM-width movemask in both alphabet specializations and reject
+stores, delegated calls or AVX-512 registers. No constant-time or hardware
+admission claim is added.
+
 ### `decode_16_bytes_ssse3_sse41`
 
 Location: `src/simd/x86/decode_direct.rs`

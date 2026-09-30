@@ -27,7 +27,8 @@ with tempfile.TemporaryDirectory(prefix="base64-ng-skeleton-") as directory:
             raise AssertionError(result.stdout + result.stderr)
 
     check(True)
-    for parent in ("src/v2/ordinary_decode.rs", "src/v2/ordinary_decode/ssse3_candidate.rs"):
+    for parent in ("src/v2/ordinary_decode.rs", "src/v2/ordinary_decode/ssse3_candidate.rs",
+                   "src/v2/ordinary_decode/avx2_candidate.rs"):
         path = fixture / parent
         original = path.read_text()
         declaration = "#[cfg(test)]\nmod tests;"
@@ -35,6 +36,13 @@ with tempfile.TemporaryDirectory(prefix="base64-ng-skeleton-") as directory:
         path.write_text(original.replace(declaration, "mod tests;"))
         check(False)
         path.write_text(original)
+    path = fixture / "src/v2/ordinary_decode/avx2_candidate.rs"
+    original = path.read_text()
+    declaration = "#[cfg(test)]\nmod benchmark;"
+    assert declaration in original
+    path.write_text(original.replace(declaration, "mod benchmark;"))
+    check(False)
+    path.write_text(original)
     # An arbitrary nested tests.rs must not inherit an exemption by filename.
     for name in ("src/v2/production_oracle.rs", "src/v2/unreviewed/tests.rs"):
         path = fixture / name

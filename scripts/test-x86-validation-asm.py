@@ -4,7 +4,7 @@ import subprocess
 import sys
 import tempfile
 
-checker = Path(__file__).with_name("check-ssse3-validation-asm.py")
+checker = Path(__file__).with_name("check-x86-validation-asm.py")
 body = "\tmovdqu (%rdi), %xmm0\n\tpcmpeqb %xmm1, %xmm0\n\tpmovmskb %xmm0, %eax\n\tretq\n"
 valid = "".join(
     f"validate_16_bytes_ssse3_sse41_{name}:\n{body}.Lfunc_end{index}:\n"
@@ -29,7 +29,18 @@ with tempfile.TemporaryDirectory() as root:
         result = subprocess.run([sys.executable, str(checker), root], capture_output=True)
         if (result.returncode == 0) != accepted:
             raise SystemExit(f"SSSE3 assembly mutation accepted={accepted}: {result.stderr!r}")
+        avx = text.replace("validate_16_bytes_ssse3_sse41", "validate_blocks_avx2")
+        avx = avx.replace("%ymm", "%zmm").replace("%xmm", "%ymm")
+        avx = avx.replace("movdqu", "vmovdqu").replace("pcmpeqb", "vpcmpeqb").replace("pmovmskb", "vpmovmskb")
+        path.write_text(avx)
+        result = subprocess.run([sys.executable, str(checker), root, "avx2"], capture_output=True)
+        if (result.returncode == 0) != accepted:
+            raise SystemExit(f"AVX2 assembly mutation accepted={accepted}: {result.stderr!r}")
+    avx = valid.replace("validate_16_bytes_ssse3_sse41", "validate_blocks_avx2").replace("pmovmskb", "vpmovmskb")
+    path.write_text(avx)
+    if subprocess.run([sys.executable, str(checker), root, "avx2"], capture_output=True).returncode == 0:
+        raise SystemExit("AVX2 assembly check accepted a half-width reduction")
     (Path(root) / "base64_ng-stale.s").write_text(valid)
     if subprocess.run([sys.executable, str(checker), root], capture_output=True).returncode == 0:
         raise SystemExit("SSSE3 assembly check accepted ambiguous files")
-print("SSSE3 validation assembly mutations: valid bodies accepted; omissions/stores/calls rejected")
+print("x86 validation assembly mutations: valid bodies accepted; omissions/stores/calls and half-width AVX2 rejected")

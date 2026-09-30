@@ -72,6 +72,7 @@ scripts/check-api-snapshots.sh
 sh scripts/check-2.1-baseline.sh
 sh scripts/check-2.1-validation-policy.sh
 sh scripts/check-2.1-ssse3-validation.sh
+sh scripts/check-2.1-avx2-validation.sh
 sh scripts/check-2.1-public-api.sh
 
 echo "checks: 2.0 release-candidate freeze"
