@@ -169,3 +169,11 @@ fn value(settings: CodecSettings, byte: u8) -> u8 {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(all(
+    test,
+    feature = "std",
+    feature = "simd",
+    any(target_arch = "x86", target_arch = "x86_64")
+))]
+pub(crate) mod ssse3_candidate;

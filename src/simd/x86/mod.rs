@@ -4,7 +4,7 @@ mod cleanup;
 mod decode;
 mod decode_direct;
 #[cfg(all(test, feature = "std"))]
-mod test_probes;
+pub(super) mod test_probes;
 
 use crate::{Alphabet, EncodeError, checked_encoded_len, scalar};
 

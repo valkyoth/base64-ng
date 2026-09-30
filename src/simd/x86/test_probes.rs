@@ -1,5 +1,31 @@
 use crate::Alphabet;
 
+pub(crate) fn candidate_validate_16(input: &[u8; 16], url_safe: bool) -> bool {
+    if !crate::simd::ssse3_sse41_available() {
+        return false;
+    }
+    // SAFETY: The runtime probe proves the feature bundle, arrays bound loads,
+    // and these closed choices cannot introduce a custom alphabet.
+    let valid = unsafe {
+        if url_safe {
+            super::decode_direct::validate_16_bytes_ssse3_sse41::<crate::UrlSafe>(input)
+        } else {
+            super::decode_direct::validate_16_bytes_ssse3_sse41::<crate::Standard>(input)
+        }
+    };
+    // SAFETY: The classification result is scalar; vector temporaries are dead.
+    unsafe { super::cleanup::clear_xmm_registers_after_encode_block() };
+    valid
+}
+
+pub(crate) fn candidate_decode_16(input: &[u8; 16], output: &mut [u8; 12], url_safe: bool) -> bool {
+    if url_safe {
+        test_direct_decode_16::<crate::UrlSafe>(input, output)
+    } else {
+        test_direct_decode_16::<crate::Standard>(input, output)
+    }
+}
+
 pub(super) fn scalar_encode_block<A, const IN: usize, const OUT: usize>(
     input: &[u8; IN],
     output: &mut [u8; OUT],

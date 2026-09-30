@@ -743,6 +743,33 @@ Safety argument:
   line-ending compaction, or legacy-whitespace compaction. Wasm decode is
   admitted only through its separate narrow `simd128` profile.
 
+### `validate_16_bytes_ssse3_sse41` (2.1 Commit 6 Candidate)
+
+Location: `src/simd/x86/decode_direct.rs`
+
+Status: test-only, non-dispatchable validation experiment; not public admission.
+The caller proves SSSE3/SSE4.1 availability and supplies exactly sixteen readable
+bytes. Only the closed Standard/URL-safe choices in `candidate_validate_16` reach
+it. It shares the reviewed range/equality classifier with the decode kernel,
+reduces all sixteen validity lanes with a movemask, and performs no output
+stores. High-bit bytes, padding, whitespace and opposite-alphabet symbols are
+rejected. The wrapper clears vector registers after the scalar result is saved.
+
+The test-only canonical route validates vector blocks plus the final scalar
+remainder before constructing a private preflight result. Malformed inputs use
+the original whole-input validator for exact diagnostics; capacity checks and
+output follow validation. The existing decode kernel is used only after this
+preflight. A kernel disagreement is a test assertion, not shipped recovery code;
+backend identity, quarantine and fault recovery are prerequisites for admission.
+
+Native tests cover every byte/lane, mixed invalid lanes, unaligned slices,
+padding/tails and whole-destination sentinels. Linux x86_64 guard tests own three
+anonymous pages, protect the outside pages with `mprotect`, and borrow slices
+only within the middle page. `Drop` unmaps once all borrows have expired. These
+test-only libc calls use the native Linux x86_64 ABI and do not run under Miri.
+They bound the 16-byte input loads and exact 12-byte stores at both page edges.
+The focused gate inspects generated classifier assembly separately from decode.
+
 ### `decode_16_bytes_ssse3_sse41`
 
 Location: `src/simd/x86/decode_direct.rs`
@@ -762,8 +789,9 @@ Preconditions:
 - Caller must prove SSSE3 and SSE4.1 are available on the current CPU.
 - Input is exactly 16 encoded bytes.
 - Output is exactly 12 bytes.
-- Whole-input scalar validation has already proved a canonical unpadded full
-  block and exact output capacity.
+- Production callers perform whole-input scalar validation. The test-only
+  Commit 6 candidate instead uses vector classification plus scalar tails.
+  Both preflight exact output capacity before writing.
 
 Unsafe operation:
 
@@ -778,7 +806,7 @@ Unsafe operation:
 
 Safety argument:
 
-- Whole-input scalar validation completes before this kernel is entered, so
+- Whole-input validation completes before this kernel is entered, so
   malformed input cannot reach any direct output store and exact diagnostics
   remain scalar-defined.
 - The input and output array types provide exact readable and writable bounds;

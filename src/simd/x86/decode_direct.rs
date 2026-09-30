@@ -75,6 +75,23 @@ where
     true
 }
 
+#[allow(
+    clippy::cast_ptr_alignment,
+    reason = "_mm_loadu_si128 accepts an unaligned pointer"
+)]
+#[cfg(all(test, feature = "std"))]
+#[inline(never)]
+#[target_feature(enable = "ssse3,sse4.1")]
+pub(super) unsafe fn validate_16_bytes_ssse3_sse41<A: Alphabet>(input: &[u8; 16]) -> bool {
+    // SAFETY: The caller proves SSSE3/SSE4.1 availability. The fixed array
+    // supplies exactly 16 readable bytes; no output pointer or store exists.
+    unsafe {
+        let ascii = _mm_loadu_si128(input.as_ptr().cast::<__m128i>());
+        let (_, valid) = map_ascii_to_values_ssse3::<A>(ascii);
+        _mm_movemask_epi8(valid) == 0xffff
+    }
+}
+
 #[inline]
 #[allow(
     clippy::cast_ptr_alignment,

@@ -50,6 +50,9 @@ including partial output on its scalar error path. No progressive API is added.
 - Canonical `Auto` checks complete grammar with input-indexed lookup tables,
   then writes through the private preflight result. On rejection, the original
   validator recovers exact diagnostics before capacity or allocation checks.
+  A late-invalid input can therefore take two linear scans, still `O(n)`.
+  Network-facing callers should enforce protocol-level input-size limits;
+  detailed ordinary diagnostics and these tables are not constant-time.
   Custom alphabets and relaxed settings retain the original validator and
   writer. Empty input is accepted without inspecting the alphabet.
 - Canonical writing uses the same specialized tables under either validation
@@ -126,3 +129,24 @@ The policy gate also runs exhaustive short-input and tail tests, an independent
 bounded layout model, `usize::MAX` arithmetic checks, fault injection through
 the preflight/write path, and compiler rejection tests for source mutation,
 proof reuse, and configuration/input substitution on active Rust and the MSRV.
+
+## SSSE3 Validation Candidate
+
+Commit 6 adds test-only Standard/URL-safe validation of complete 16-byte blocks
+without output stores. The final 1-16 input bytes stay with the original scalar
+validator, including canonical padding/tail checks. The private preflight binds
+the successful validation before the existing direct decode kernel writes.
+On rejection, whole-input reference validation recovers the original error.
+Custom/relaxed settings and unavailable CPUs use the reference path.
+
+This evaluation route is compiled only for x86 unit tests with `std,simd`; it cannot
+be selected by public `Auto`, static tokens, CT APIs or production callers.
+Public canonical `Auto` retains Commit 5's portable scalar validation; historical
+SIMD retains its scalar prepass. Run `sh scripts/check-2.1-ssse3-validation.sh` for
+the candidate's native tests and generated-code checks. This is not performance
+admission. A test assertion catches decode-kernel disagreement; production
+backend fault/quarantine integration is still required before enabling the path.
+
+Kani equivalence for the portable validator would provide additional bounded
+assurance; it is not claimed by the current exhaustive classification/tail and
+reference/oracle tests.

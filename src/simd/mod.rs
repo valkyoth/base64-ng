@@ -40,6 +40,24 @@ mod static_token;
 pub use static_token::StaticBackendToken;
 
 #[cfg(all(
+    test,
+    feature = "std",
+    any(target_arch = "x86", target_arch = "x86_64")
+))]
+pub(crate) use x86::test_probes::{candidate_decode_16, candidate_validate_16};
+#[cfg(all(
+    test,
+    feature = "std",
+    any(target_arch = "x86", target_arch = "x86_64")
+))]
+pub(crate) fn ssse3_validation_candidate_available() -> bool {
+    ssse3_sse41_available()
+}
+
+#[cfg(all(test, feature = "std", target_arch = "x86_64", target_os = "linux"))]
+mod validation_guard_tests;
+
+#[cfg(all(
     feature = "simd",
     target_arch = "aarch64",
     target_endian = "little",
