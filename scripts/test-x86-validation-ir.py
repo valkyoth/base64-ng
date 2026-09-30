@@ -4,7 +4,7 @@ import subprocess
 import sys
 import tempfile
 
-checker = Path(__file__).with_name("check-avx2-validation-ir.py")
+checker = Path(__file__).with_name("check-x86-validation-ir.py")
 valid = "define void @ordinary_decode() {\n  ret void\n}\n"
 
 
@@ -46,11 +46,13 @@ with tempfile.TemporaryDirectory(prefix="base64-ng-avx2-ir-") as temporary:
     finally:
         path.chmod(0o600)
     for symbol in ("validate_blocks_avx2", "avx2_candidate",
-                   "candidate_validate_avx2", "candidate_decode_avx2"):
+                   "candidate_validate_avx2", "candidate_decode_avx2",
+                   "validate_blocks_avx512", "avx512_candidate",
+                   "candidate_validate_avx512", "candidate_decode_avx512"):
         path.write_text(valid + valid.replace("ordinary_decode", symbol))
         check(root, False, "candidate leaked")
     path.write_text(valid)
     (root / "base64_ng-stale.ll").write_text(valid)
     check(root, False, "exactly one")
 
-print("AVX2 production IR mutations: valid artifact accepted; missing, ambiguous, unreadable, empty and leaked definitions rejected")
+print("x86 production IR mutations: valid artifact accepted; missing, ambiguous, unreadable, empty and leaked definitions rejected")

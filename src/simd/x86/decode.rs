@@ -288,7 +288,7 @@ where
 }
 
 #[target_feature(enable = "avx512f,avx512bw,avx512vl,avx512vbmi")]
-unsafe fn decode_full_blocks_avx512<A>(
+pub(super) unsafe fn decode_full_blocks_avx512<A>(
     input: &[u8],
     output: &mut [u8],
     simd_input_len: usize,

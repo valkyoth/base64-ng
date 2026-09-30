@@ -1,5 +1,46 @@
 use crate::Alphabet;
 
+pub(crate) fn candidate_validate_avx512(input: &[u8], url_safe: bool) -> bool {
+    if !crate::simd::avx512_vbmi_base64_available() || !input.len().is_multiple_of(64) {
+        return false;
+    }
+    let blocks = input.as_chunks::<64>().0;
+    // SAFETY: The full feature/OS-state probe and exact arrays bound all loads.
+    // Only the closed Standard/URL-safe families reach this classifier.
+    let valid = unsafe {
+        if url_safe {
+            super::decode_direct::validate_blocks_avx512::<crate::UrlSafe>(blocks)
+        } else {
+            super::decode_direct::validate_blocks_avx512::<crate::Standard>(blocks)
+        }
+    };
+    // SAFETY: All vector/mask results are dead, including on early rejection.
+    unsafe { super::cleanup::clear_zmm_registers_after_encode_block() };
+    valid
+}
+
+pub(crate) fn candidate_decode_avx512(input: &[u8], output: &mut [u8], url_safe: bool) -> bool {
+    let required = input.len() / 64 * 48;
+    if !crate::simd::avx512_vbmi_base64_available()
+        || !input.len().is_multiple_of(64)
+        || output.len() < required
+    {
+        return false;
+    }
+    // SAFETY: Full CPU/OS support and 64:48 geometry were checked. The existing
+    // loop validates each block before its exact 48-byte masked store.
+    let (read, written, valid) = unsafe {
+        if url_safe {
+            super::decode::decode_full_blocks_avx512::<crate::UrlSafe>(input, output, input.len())
+        } else {
+            super::decode::decode_full_blocks_avx512::<crate::Standard>(input, output, input.len())
+        }
+    };
+    // SAFETY: Also covers first-block rejection, before stored-block cleanup.
+    unsafe { super::cleanup::clear_zmm_registers_after_encode_block() };
+    valid && read == input.len() && written == required
+}
+
 pub(crate) fn candidate_validate_avx2(input: &[u8], url_safe: bool) -> bool {
     if !crate::simd::avx2_available() || !input.len().is_multiple_of(32) {
         return false;

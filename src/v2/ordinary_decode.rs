@@ -185,3 +185,11 @@ pub(crate) mod ssse3_candidate;
     any(target_arch = "x86", target_arch = "x86_64")
 ))]
 pub(crate) mod avx2_candidate;
+
+#[cfg(all(
+    test,
+    feature = "std",
+    feature = "simd",
+    any(target_arch = "x86", target_arch = "x86_64")
+))]
+pub(crate) mod avx512_candidate;

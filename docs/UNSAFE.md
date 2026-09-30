@@ -801,6 +801,40 @@ checks require a YMM-width movemask in both alphabet specializations and reject
 stores, delegated calls or AVX-512 registers. No constant-time or hardware
 admission claim is added.
 
+### `validate_blocks_avx512` (2.1 Commit 8 Candidate)
+
+Location: `src/simd/x86/decode_direct.rs`
+
+Status: test-only and absent from public automatic/exact/static dispatch.
+`candidate_validate_avx512` proves the existing complete AVX-512 F/BW/VL/VBMI
+CPU/OS-state bundle, accepts only multiples of 64, and selects only Standard or
+URL-safe. Exact `[u8; 64]` arrays bound the unaligned loads. Existing unsigned
+range masks and alphabet-specific equality masks reject high-bit bytes; the
+classifier requires all 64 bits of validity, not a truncated 16/32-bit mask.
+There are no output stores. Its wrapper uses the existing ZMM cleanup after
+success and early rejection. This ordinary-data path is not constant-time and
+does not claim secret-memory or complete mask-register erasure guarantees.
+
+`candidate_decode_avx512` proves 64:48 geometry before calling the existing
+`decode_full_blocks_avx512` loop, whose parent-module visibility is the only
+production change. Each block still uses the existing exact 48-byte masked
+store. Cleanup also runs on first-block rejection. The low-level loop can
+write earlier valid blocks before a later rejection; transactionality belongs
+to the complete canonical candidate's shared immutable-input preflight. It
+validates the vector prefix and original scalar remainder before any write.
+Classifier/kernel disagreement is still a test-only assertion, not a production
+fault-recovery policy; quarantine/recovery integration precedes promotion.
+
+Tests classify every byte at every lane of three consecutive blocks at all
+64 input alignments, check output packing independently, malformed positions,
+tail bits and exact errors, and exercise all output alignments. Native Linux
+x86_64 guard pages bound 64-byte loads and 48-byte stores at both page edges,
+including later-block rejection and complete transactional operations. The
+pinned-toolchain assembly check requires both alphabet bodies, ZMM loads,
+unsigned vector comparisons and full-width `ktestq`, and rejects stores
+(including masked stores) and delegated calls. These are bounded development
+checks, not a new hardware admission or universal compiler-codegen proof.
+
 ### `decode_16_bytes_ssse3_sse41`
 
 Location: `src/simd/x86/decode_direct.rs`

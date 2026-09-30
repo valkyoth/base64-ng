@@ -175,3 +175,26 @@ assembly checks and production-IR exclusion. Set
 The opt-in same-process benchmark and its limitations are described in
 [Commit 7 measurements](PERFORMANCE_2.1_AVX2.md). Small-message overhead is not an
 admission claim; dispatch thresholds remain a later checkpoint.
+
+## AVX-512 Validation Candidate
+
+Commit 8 adds a test-only 64-byte classifier and complete canonical candidate.
+It retains the full AVX-512 F/BW/VL/VBMI CPU/OS-state probe, requires all 64
+validity bits, and uses the existing exact 48-byte masked decode stores. The
+original validator handles the final 1-64 bytes (zero for empty input), including
+padding and canonical tail bits. Full-input reference diagnostics are recovered
+on rejection. Shared preflight validates everything before any output write.
+
+Only the four strict Standard/URL-safe families qualify; other settings and
+unavailable hardware fall back to reference validation. Public automatic and
+exact/static paths, explicit `ScalarReference`, and CT/secret APIs are unchanged.
+The kernel-disagreement assertion is test-only, as in Commits 6 and 7; production
+fault handling is required before integration, and automatic AVX-512 admission
+remains a separate decision. Wider vectors alone do not establish a speedup.
+
+Run `sh scripts/check-2.1-avx512-validation.sh` for active/MSRV feature matrices,
+lane/byte and error-parity checks, Linux x86_64 guard pages, generated assembly
+and fail-closed production-IR exclusion. Set
+`BASE64_NG_REQUIRE_AVX512_VALIDATION=1` to require native execution. The opt-in
+same-process AVX2 comparison is documented in
+[Commit 8 measurements](PERFORMANCE_2.1_AVX512.md).

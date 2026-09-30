@@ -35,6 +35,15 @@ mod ordinary_decode;
     not(miri)
 ))]
 pub(crate) use ordinary_decode::avx2_candidate::decode as decode_avx2_candidate_for_test;
+#[cfg(all(
+    test,
+    feature = "std",
+    feature = "simd",
+    target_arch = "x86_64",
+    target_os = "linux",
+    not(miri)
+))]
+pub(crate) use ordinary_decode::avx512_candidate::decode as decode_avx512_candidate_for_test;
 mod ordinary_scalar;
 #[cfg(feature = "alloc")]
 mod ordinary_string;

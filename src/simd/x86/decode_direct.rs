@@ -33,6 +33,29 @@ use core::arch::x86_64::{
     _mm512_shuffle_epi8,
 };
 
+#[inline(never)]
+#[allow(
+    clippy::cast_ptr_alignment,
+    reason = "_mm512_loadu_si512 accepts an unaligned pointer"
+)]
+#[cfg(all(test, feature = "std"))]
+#[target_feature(enable = "avx512f,avx512bw,avx512vl,avx512vbmi")]
+pub(super) unsafe fn validate_blocks_avx512<A: Alphabet>(input: &[[u8; 64]]) -> bool {
+    for block in input {
+        // SAFETY: The caller proves the full ISA/OS-state contract. Each array
+        // provides exactly 64 readable bytes; unsigned masks reject high bits.
+        let valid = unsafe {
+            let ascii = _mm512_loadu_si512(block.as_ptr().cast::<__m512i>());
+            let (_, valid) = map_ascii_to_values_avx512::<A>(ascii);
+            valid == u64::MAX
+        };
+        if !valid {
+            return false;
+        }
+    }
+    true
+}
+
 #[inline]
 #[allow(
     clippy::cast_ptr_alignment,

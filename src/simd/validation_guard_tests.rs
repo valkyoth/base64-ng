@@ -151,3 +151,74 @@ fn avx2_validation_guard_pages_cover_blocks_and_complete_decode() {
         }
     }
 }
+
+#[test]
+fn avx512_validation_guard_pages_cover_exact_masked_stores() {
+    if !super::avx512_validation_candidate_available() {
+        return;
+    }
+    for at_end in [false, true] {
+        let mut source = Pages::new();
+        let mut destination = Pages::new();
+        for url_safe in [false, true] {
+            for blocks in 1..=3 {
+                let input = source.region(blocks * 64, at_end);
+                input.fill(b'A');
+                let output = destination.region(blocks * 48, at_end);
+                assert!(super::candidate_validate_avx512(input, url_safe));
+                assert!(super::candidate_decode_avx512(input, output, url_safe));
+                assert!(output.iter().all(|&byte| byte == 0));
+                for lane in 0..input.len() {
+                    input[lane] = 0xff;
+                    output.fill(0xa5);
+                    assert!(!super::candidate_validate_avx512(input, url_safe));
+                    assert!(!super::candidate_decode_avx512(input, output, url_safe));
+                    // The low-level loop may store earlier valid blocks; the
+                    // rejected block and everything after it remain untouched.
+                    let written = lane / 64 * 48;
+                    assert!(output[..written].iter().all(|&byte| byte == 0));
+                    assert!(output[written..].iter().all(|&byte| byte == 0xa5));
+                    input[lane] = b'A';
+                }
+            }
+        }
+        for settings in [
+            crate::STRICT_STANDARD_PADDED.settings(),
+            crate::STRICT_STANDARD_UNPADDED.settings(),
+            crate::STRICT_URL_SAFE_PADDED.settings(),
+            crate::STRICT_URL_SAFE_UNPADDED.settings(),
+        ] {
+            let codec = crate::CodecBuilder::new(*settings.alphabet())
+                .encode_padding(settings.encode_padding())
+                .decode_padding(settings.decode_padding())
+                .build()
+                .unwrap();
+            for length in 0..=200 {
+                let plain = [0x9b; 200];
+                let mut encoded = [0; 268];
+                let n = codec.encode_into(&plain[..length], &mut encoded).unwrap();
+                let input = source.region(n, at_end);
+                input.copy_from_slice(&encoded[..n]);
+                let output = destination.region(length, at_end);
+                assert_eq!(
+                    crate::v2::decode_avx512_candidate_for_test(codec.settings(), input, output),
+                    Ok(length)
+                );
+                assert_eq!(output, &plain[..length]);
+                if n > 0 {
+                    input[n - 1] = b'!';
+                    output.fill(0xa5);
+                    assert!(
+                        crate::v2::decode_avx512_candidate_for_test(
+                            codec.settings(),
+                            input,
+                            output
+                        )
+                        .is_err()
+                    );
+                    assert!(output.iter().all(|&byte| byte == 0xa5));
+                }
+            }
+        }
+    }
+}

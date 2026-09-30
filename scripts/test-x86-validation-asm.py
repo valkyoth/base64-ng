@@ -43,4 +43,38 @@ with tempfile.TemporaryDirectory() as root:
     (Path(root) / "base64_ng-stale.s").write_text(valid)
     if subprocess.run([sys.executable, str(checker), root], capture_output=True).returncode == 0:
         raise SystemExit("SSSE3 assembly check accepted ambiguous files")
-print("x86 validation assembly mutations: valid bodies accepted; omissions/stores/calls and half-width AVX2 rejected")
+body512 = "\tvmovdqu64 (%rdi), %zmm0\n\tvpcmpltub %zmm1, %zmm0, %k1\n\tvpcmpneqb %zmm2, %zmm0, %k0\n\tktestq %k1, %k0\n\tretq\n"
+valid512 = "".join(
+    f"validate_blocks_avx512_{name}:\n{body512}.Lfunc_end{index}:\n"
+    for index, name in enumerate(("Standard", "UrlSafe"))
+)
+cases512 = [
+    (valid512, True),
+    (valid512.replace(".Lfunc_end", "Lfunc_end"), True),
+    (valid512.replace("ktestq", "ktestd"), False),
+    (valid512.replace("ktestq", "ktestw"), False),
+    (valid512.replace("vmovdqu64", "vmovdqa64"), False),
+    (valid512.replace("vpcmpltub", "vpaddb"), False),
+    (valid512.replace("vpcmpneqb", "vpaddb"), False),
+    (valid512.replace("%zmm", "%ymm"), False),
+    (valid512.replace("\tretq", "\tcallq hidden_classifier\n\tretq"), False),
+    (valid512.replace("\tretq", "\tvmovdqu8 %zmm0, (%rsi) {%k1}\n\tretq"), False),
+    (valid512.replace("\tretq", "\tvmovdqu64 %zmm0, (%rsi)\n\tretq"), False),
+    (valid512.replace("UrlSafe", "Standard"), False),
+    (valid512.split("validate_blocks_avx512_UrlSafe")[0], False),
+]
+with tempfile.TemporaryDirectory() as root:
+    path = Path(root) / "base64_ng-fixture.s"
+    for text, accepted in cases512:
+        path.write_text(text)
+        result = subprocess.run([sys.executable, str(checker), root, "avx512"], capture_output=True)
+        if (result.returncode == 0) != accepted:
+            raise SystemExit(f"AVX-512 assembly mutation accepted={accepted}: {result.stderr!r}")
+    path.unlink()
+    if subprocess.run([sys.executable, str(checker), root, "avx512"], capture_output=True).returncode == 0:
+        raise SystemExit("AVX-512 assembly check accepted a missing artifact")
+    path.write_text(valid512)
+    (Path(root) / "base64_ng-stale.s").write_text(valid512)
+    if subprocess.run([sys.executable, str(checker), root, "avx512"], capture_output=True).returncode == 0:
+        raise SystemExit("AVX-512 assembly check accepted ambiguous files")
+print("x86 validation assembly mutations: valid bodies accepted; omissions/stores/calls and partial-width reductions rejected")
