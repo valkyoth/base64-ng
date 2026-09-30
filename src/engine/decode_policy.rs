@@ -1,3 +1,4 @@
+use crate::decode_preflight::{Failure, Preflight};
 use crate::{Alphabet, DecodeError, DecodeValidation, Engine, decode_backend, validate_decode};
 
 impl<A: Alphabet, const PAD: bool> Engine<A, PAD> {
@@ -51,7 +52,14 @@ impl<A: Alphabet, const PAD: bool> Engine<A, PAD> {
     ) -> Result<usize, DecodeError> {
         match validation {
             DecodeValidation::Auto | DecodeValidation::ScalarReference => {
-                validate_decode::<A, PAD>(input)
+                Preflight::reference(input, self, |_, input| validate_decode::<A, PAD>(input))
+                    .map(|proof| proof.len())
+                    .map_err(|error| match error {
+                        Failure::Input(error) => error,
+                        Failure::Bounds | Failure::ClassifierDisagreement => {
+                            DecodeError::InvalidInput
+                        }
+                    })
             }
         }
     }

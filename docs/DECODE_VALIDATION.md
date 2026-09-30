@@ -65,3 +65,43 @@ generic codecs, runtime alphabets, malformed-input precedence, whole-buffer
 sentinels, allocation limits, feature combinations and Rust 1.90.0. Internal
 observations verify that reference work runs in the actual scalar routines.
 The existing 2.0.4 downstream fixture remains unchanged.
+
+## Private Preflight Boundary
+
+Commit 4 binds successful ordinary validation to an immutable input borrow and
+an owned codec-settings snapshot. The private result is neither `Clone` nor
+`Copy`; the writer consumes it and accepts no replacement source or settings.
+Canonical caller-buffer and allocating decode share this boundary. Allocating
+decode now retains the result across reservation instead of validating again.
+Historical validation-only helpers share its length checks; historical decode,
+checked-backend comparisons, incremental states, and CT/secret paths are not
+rerouted.
+
+Checked geometry reserves the last quantum (at most four input bytes and three
+output bytes), leaving only complete unpadded quanta in the interior. Empty
+input, impossible lengths, arithmetic bounds and the measured output length
+are checked before the destination is sliced. The geometry check is not a
+grammar validator: existing surface-specific reference validation must succeed
+first, including for custom alphabets and relaxed runtime settings. No vector
+classifier is enabled and no throughput admission is made by this checkpoint.
+
+The classifier disagreement contract is frozen with test-only injection:
+
+| Classifier vs reference | Outcome before any write |
+| --- | --- |
+| Both reject | Retain the reference's exact surface-specific diagnostic |
+| Both accept | Require checked span bounds and destination capacity |
+| Either disagrees | No validated result; fail closed as a backend invariant fault |
+
+The canonical surface maps internal disagreement/bounds faults to
+`OneShotError::Backend(BackendFault::ImpossibleState)`; the historical
+validation-only surface maps them to opaque `DecodeError::InvalidInput`.
+Neither mapping changes ordinary malformed-input diagnostics. Candidate
+classifiers cannot authorize writes on their own. Future vector integration
+must associate faults with backend identity and quarantine before admission;
+existing checked-output quarantine and retry behavior is unchanged.
+
+The policy gate also runs exhaustive short-input and tail tests, an independent
+bounded layout model, `usize::MAX` arithmetic checks, fault injection through
+the preflight/write path, and compiler rejection tests for source mutation,
+proof reuse, and configuration/input substitution on active Rust and the MSRV.

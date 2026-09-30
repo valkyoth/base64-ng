@@ -4,6 +4,7 @@ use alloc::{string::String, vec::Vec};
 
 use super::{
     ordinary::OneShotError,
+    ordinary_decode,
     specifications::{Base64, Codec},
 };
 
@@ -108,12 +109,13 @@ impl<S: Codec> Base64<S> {
     where
         F: FnOnce(&mut Vec<u8>, usize) -> Result<(), OneShotError>,
     {
-        let required = self.decoded_len_with_validation(input, validation)?;
+        let proof = ordinary_decode::prepare(self.settings(), input, validation)?;
+        let required = proof.len();
         require_allocation_limit(required, max_output_len)?;
         let mut output = Vec::new();
         reserve(&mut output, required)?;
         output.resize(required, 0);
-        self.decode_into_with_validation(input, &mut output, validation)?;
+        ordinary_decode::write(proof, &mut output)?;
         Ok(output)
     }
 

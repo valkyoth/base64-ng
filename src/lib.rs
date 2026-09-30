@@ -136,6 +136,7 @@ mod build_policy;
 mod cleanup;
 pub mod ct;
 mod decode_backend;
+mod decode_preflight;
 mod decode_validation;
 mod encode_backend;
 mod engine;

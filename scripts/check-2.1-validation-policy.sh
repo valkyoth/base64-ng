@@ -10,9 +10,12 @@ for compiler in "$active" 1.90.0; do
 done
 
 for compiler in "$active" 1.90.0; do
+    python3 scripts/test-decode-preflight-borrows.py "$compiler"
     for features in '' alloc std simd std,simd checked-backend std,checked-backend; do
         cargo +"$compiler" test --no-default-features --features "$features" --test decode_validation
         cargo +"$compiler" test --no-default-features --features "$features" --lib decode_validation::tests
+        cargo +"$compiler" test --no-default-features --features "$features" --lib decode_preflight::tests
+        cargo +"$compiler" test --no-default-features --features "$features" --lib ordinary_decode::tests
         cargo +"$compiler" clippy --no-default-features --features "$features" --lib --test decode_validation -- -D warnings
     done
 done

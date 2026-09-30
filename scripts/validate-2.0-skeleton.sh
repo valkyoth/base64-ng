@@ -55,6 +55,13 @@ gated && /^mod (append_tests|chunk_tests|const_buffer_tests|fixtures|formatting_
     }
 ' src/v2/mod.rs
 
+# The nested preflight tests use the oracle only through a test-gated module.
+awk '
+    previous == "#[cfg(test)]" && $0 == "mod tests;" { found = 1 }
+    { previous = $0 }
+    END { exit !found }
+' src/v2/ordinary_decode.rs
+
 oracle_references="$(
     find src -type f -name '*.rs' \
         ! -path 'src/v2/mod.rs' \
@@ -65,6 +72,7 @@ oracle_references="$(
         ! -path 'src/v2/incremental_encoder_tests.rs' \
         ! -path 'src/v2/one_shot_tests.rs' \
         ! -path 'src/v2/ordinary.rs' \
+        ! -path 'src/v2/ordinary_decode/tests.rs' \
         ! -path 'src/v2/secret_encoder_tests.rs' \
         ! -path 'src/v2/rfc4648_oracle.rs' \
         -exec grep -nH 'rfc4648_oracle' {} \; || exit 1

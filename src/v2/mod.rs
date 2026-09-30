@@ -25,6 +25,7 @@ mod lifecycle;
 mod ordinary;
 #[cfg(feature = "alloc")]
 mod ordinary_alloc;
+mod ordinary_decode;
 #[cfg(feature = "alloc")]
 mod ordinary_string;
 mod profiles;

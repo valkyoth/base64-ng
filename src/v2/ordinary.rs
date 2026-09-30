@@ -1,7 +1,8 @@
 //! Transactional ordinary one-shot operations.
 
 use super::{
-    contracts::{BackendFault, Failure, InputError, OperationError, Status},
+    contracts::{BackendFault, Failure, InputError, OperationError},
+    ordinary_decode,
     specifications::{Base64, Codec, CodecSettings, EncodePadding},
 };
 
@@ -92,11 +93,7 @@ impl<S: Codec> Base64<S> {
         input: &[u8],
         validation: crate::DecodeValidation,
     ) -> Result<usize, OneShotError> {
-        match validation {
-            crate::DecodeValidation::Auto | crate::DecodeValidation::ScalarReference => {
-                validate_and_measure(self, input)
-            }
-        }
+        ordinary_decode::prepare(self.settings(), input, validation).map(|proof| proof.len())
     }
 
     /// Like [`Self::validate`] with an explicit ordinary validation strategy.
@@ -147,10 +144,8 @@ impl<S: Codec> Base64<S> {
         output: &mut [u8],
         validation: crate::DecodeValidation,
     ) -> Result<usize, OneShotError> {
-        let required = self.decoded_len_with_validation(input, validation)?;
-        require_output(required, output.len())?;
-        decode_validated(self.settings(), input, &mut output[..required]);
-        Ok(required)
+        let proof = ordinary_decode::prepare(self.settings(), input, validation)?;
+        ordinary_decode::write(proof, output)
     }
 }
 
@@ -183,42 +178,6 @@ fn require_output(required: usize, available: usize) -> Result<(), OneShotError>
         })
     } else {
         Ok(())
-    }
-}
-
-fn validate_and_measure<S: Codec>(codec: &Base64<S>, input: &[u8]) -> Result<usize, OneShotError> {
-    #[cfg(test)]
-    crate::decode_validation::observation::record();
-    let mut decoder = codec.decoder();
-    let mut input_offset = 0;
-    let mut measured_len = 0usize;
-    let mut scratch = [0u8; 3];
-    while input_offset < input.len() {
-        let step = decoder
-            .update(&input[input_offset..], &mut scratch)
-            .map_err(map_operation_error)?;
-        let progress = step.progress();
-        if progress.input_consumed() == 0 && progress.output_produced() == 0 {
-            return Err(OneShotError::Backend(BackendFault::ImpossibleState));
-        }
-        input_offset += progress.input_consumed();
-        measured_len = measured_len
-            .checked_add(progress.output_produced())
-            .ok_or(OneShotError::LengthOverflow)?;
-    }
-
-    loop {
-        let step = decoder.finish(&mut scratch).map_err(map_operation_error)?;
-        measured_len = measured_len
-            .checked_add(step.progress().output_produced())
-            .ok_or(OneShotError::LengthOverflow)?;
-        match step.status() {
-            Status::Complete => return Ok(measured_len),
-            Status::OutputFull(_) => {}
-            Status::NeedInput => {
-                return Err(OneShotError::Backend(BackendFault::ImpossibleState));
-            }
-        }
     }
 }
 
@@ -266,46 +225,6 @@ fn encode_tail(settings: CodecSettings, input: &[u8], output: &mut [u8]) {
             output[2..4].copy_from_slice(b"==");
         }
     }
-}
-
-fn decode_validated(settings: CodecSettings, input: &[u8], output: &mut [u8]) {
-    let mut read = 0;
-    let mut write = 0;
-    while read + 4 <= input.len() {
-        let input_quantum = &input[read..read + 4];
-        let first = decode_value(settings, input_quantum[0]);
-        let second = decode_value(settings, input_quantum[1]);
-        output[write] = (first << 2) | (second >> 4);
-        write += 1;
-        if input_quantum[2] != b'=' {
-            let third = decode_value(settings, input_quantum[2]);
-            output[write] = (second << 4) | (third >> 2);
-            write += 1;
-            if input_quantum[3] != b'=' {
-                output[write] = (third << 6) | decode_value(settings, input_quantum[3]);
-                write += 1;
-            }
-        }
-        read += 4;
-    }
-    decode_tail(settings, &input[read..], &mut output[write..]);
-}
-
-fn decode_tail(settings: CodecSettings, input: &[u8], output: &mut [u8]) {
-    if let [first, second, rest @ ..] = input {
-        let first = decode_value(settings, *first);
-        let second = decode_value(settings, *second);
-        output[0] = (first << 2) | (second >> 4);
-        if let [third] = rest
-            && *third != b'='
-        {
-            output[1] = (second << 4) | (decode_value(settings, *third) >> 2);
-        }
-    }
-}
-
-fn decode_value(settings: CodecSettings, byte: u8) -> u8 {
-    settings.alphabet().decode_byte(byte).unwrap_or(0)
 }
 
 #[cfg(test)]
