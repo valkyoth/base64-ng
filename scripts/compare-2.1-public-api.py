@@ -44,14 +44,18 @@ def output(command, **kwargs):
 def extract_revision(revision, tree):
     archive = bounded(["/usr/bin/git", "archive", "--format=tar", revision], limit=128 * 1024 * 1024)
     with tarfile.open(fileobj=io.BytesIO(archive)) as source:
-        members = source.getmembers()
+        members = []
+        for member in source:
+            if len(members) >= 10000:
+                raise ValueError("source archive exceeds member count limit")
+            members.append(member)
         if sum(member.size for member in members) > 128 * 1024 * 1024:
             raise ValueError("source archive exceeds size limit")
         for member in members:
             path = Path(member.name)
             if path.is_absolute() or ".." in path.parts or not (member.isfile() or member.isdir()):
                 raise ValueError("source archive contains a link or unsafe path/type")
-        source.extractall(tree, filter="data")
+        source.extractall(tree, members=members, filter="data")
 
 
 def prepare_lock(tree):
@@ -115,7 +119,7 @@ def capture(args):
     source_files = [*sorted((ROOT / "perf/public-api/src").rglob("*.rs")), ROOT / "perf/public-api/Cargo.toml",
                     ROOT / "perf/public-api/Cargo.lock", ROOT / "perf/src/allocation.rs",
                     ROOT / "src/v2/rfc4648_oracle.rs", Path(__file__), ROOT / "scripts/public_api_baseline.py",
-                    ROOT / "scripts/public_api_sandbox.py"]
+                    ROOT / "scripts/public_api_sandbox.py", ROOT / "scripts/public_api_cgroup.py"]
     digests = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in source_files}
     manifest = dict(schema=1, baseline=BASELINE, candidate=candidate, harness_commit=output(["git", "rev-parse", "HEAD"]).strip(),
                     diagnostic_dirty_harness=bool(dirty), harness_sha256=digests,
@@ -125,6 +129,8 @@ def capture(args):
                     command=list(os.sys.argv), scope="exploratory paired baseline, not admission",
                     binaries={}, build_environment=BUILD_ENV, runtime_environment=RUNTIME_ENV,
                     sandbox="bubblewrap: no network, no host home, readonly source; quota-limited tmpfs",
+                    aggregate_limits=dict(build_memory_bytes=6 * 1024**3, runtime_memory_bytes=1024**3,
+                                          swap_bytes=0, tasks=128, cpu_quota_percent=200),
                     tool_paths={"toolchain": str(sandbox.toolchain), "registry": str(sandbox.registry)},
                     tool_sha256={str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in
                                  [sandbox.toolchain / "bin/rustc", sandbox.toolchain / "bin/cargo",

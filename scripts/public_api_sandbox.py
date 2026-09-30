@@ -7,6 +7,7 @@ import signal
 import subprocess
 import sys
 import time
+import uuid
 
 HOST_ENV = {"PATH": "/usr/bin:/bin", "HOME": "/nonexistent", "LC_ALL": "C",
             "GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": "/dev/null"}
@@ -15,6 +16,7 @@ BUILD_ENV = {"PATH": "/toolchain/bin:/usr/bin:/bin", "HOME": "/work/home",
              "RUSTFLAGS": "--cfg base64_ng_perf_evidence", "LC_ALL": "C",
              "CARGO_BUILD_JOBS": "2", "CARGO_INCREMENTAL": "0", "TMPDIR": "/tmp"}
 RUNTIME_ENV = {"PATH": "/usr/bin:/bin", "HOME": "/work/home", "LC_ALL": "C", "TMPDIR": "/tmp"}
+MEMORY_LIMITS = {True: 6 * 1024**3, False: 1024**3}
 
 
 def bounded(command, *, env=None, timeout=600, limit=65536, stderr_limit=1048576, cwd=None):
@@ -67,7 +69,8 @@ class Sandbox:
 
         if os.getuid() == 0:
             raise RuntimeError("run the benchmark sandbox as an unprivileged user")
-        for path in ("/usr/bin/bwrap", "/usr/bin/prlimit", "/usr/bin/cc"):
+        for path in ("/usr/bin/bwrap", "/usr/bin/prlimit", "/usr/bin/cc",
+                     "/usr/bin/systemd-run", "/usr/bin/systemctl", "/usr/bin/python3"):
             if not Path(path).is_file():
                 raise RuntimeError(f"sandbox prerequisite missing: {path}; no unsandboxed fallback")
         home = Path(pwd.getpwuid(os.getuid()).pw_dir)
@@ -92,6 +95,9 @@ class Sandbox:
         args += ["--ro-bind-try", "/etc/ld.so.cache", "/etc/ld.so.cache", "--proc", "/proc", "--dev", "/dev",
                  "--size", "67108864", "--tmpfs", "/tmp", "--size", "1073741824" if build else "67108864",
                  "--tmpfs", "/work", "--dir", "/work/home", "--chdir", "/work"]
+        # Debian-family compiler symlinks traverse /etc/alternatives.
+        if Path('/etc/alternatives').is_dir():
+            args += ['--ro-bind', '/etc/alternatives', '/etc/alternatives']
         if build:
             args += ["--ro-bind", str(self.toolchain), "/toolchain", "--dir", "/work/cargo",
                      "--ro-bind", str(self.registry), "/work/cargo/registry"]
@@ -107,8 +113,26 @@ class Sandbox:
                 f"--as={4294967296 if build else 536870912}", "--fsize=67108864", "--", *command]
 
     def execute(self, command, *, tree=None, binary=None, build=False, limit=65536, timeout=600):
-        return bounded(self.command(command, tree=tree, binary=binary, build=build),
-                       limit=limit, stderr_limit=4 * 1024 * 1024 if build else 65536, timeout=timeout)
+        unit = f"base64-ng-benchmark-{uuid.uuid4().hex}.scope"
+        memory = MEMORY_LIMITS[build]
+        env = dict(HOST_ENV, XDG_RUNTIME_DIR=f"/run/user/{os.getuid()}",
+                   DBUS_SESSION_BUS_ADDRESS=f"unix:path=/run/user/{os.getuid()}/bus")
+        args = ["/usr/bin/systemd-run", "--user", "--scope", "--quiet", "--collect",
+                f"--unit={unit}", f"--property=MemoryMax={memory}",
+                "--property=MemorySwapMax=0", "--property=TasksMax=128",
+                "--property=CPUQuota=200%", "/usr/bin/python3", "-I",
+                str(Path(__file__).with_name('public_api_cgroup.py')), str(memory),
+                *self.command(command, tree=tree, binary=binary, build=build)]
+        try:
+            return bounded(args, env=env, limit=limit,
+                           stderr_limit=4 * 1024 * 1024 if build else 65536, timeout=timeout)
+        finally:
+            # A timeout must also dispose of processes moved to the transient scope.
+            # Already collected units return nonzero; no candidate is launched here.
+            try:
+                bounded(["/usr/bin/systemctl", "--user", "stop", unit], env=env, timeout=15)
+            except RuntimeError:
+                pass
 
     def compile(self, tree, features):
         # The entire target directory lives on a quota-limited disposable tmpfs.

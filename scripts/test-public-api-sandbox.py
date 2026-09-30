@@ -15,7 +15,8 @@ import tomllib
 import unittest
 from unittest.mock import patch
 
-from public_api_sandbox import BUILD_ENV, HOST_ENV, RUNTIME_ENV, Sandbox, bounded
+from public_api_sandbox import BUILD_ENV, HOST_ENV, RUNTIME_ENV, MEMORY_LIMITS, Sandbox, bounded
+from public_api_cgroup import verify
 
 spec = importlib.util.spec_from_file_location("runner", Path(__file__).with_name("compare-2.1-public-api.py"))
 runner = importlib.util.module_from_spec(spec)
@@ -23,6 +24,38 @@ spec.loader.exec_module(runner)
 
 
 class OutputTests(unittest.TestCase):
+    def test_cgroup_limits_fail_closed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            membership = root / 'membership'
+            membership.write_text('0::/scope\n')
+            group = root / 'scope'
+            group.mkdir()
+            values = {'memory.max': '1073741824', 'memory.swap.max': '0',
+                      'pids.max': '128', 'cpu.max': '200000 100000'}
+            for name, value in values.items():
+                (group / name).write_text(value)
+            verify(1073741824, root, membership)
+            for name, value in values.items():
+                with self.subTest(name=name):
+                    (group / name).write_text('max 100000' if name == 'cpu.max' else 'max')
+                    with self.assertRaises(RuntimeError):
+                        verify(1073741824, root, membership)
+                    (group / name).unlink()
+                    with self.assertRaises(FileNotFoundError):
+                        verify(1073741824, root, membership)
+                    (group / name).write_text(value)
+
+    def test_archive_member_limit_precedes_extraction(self):
+        buffer = io.BytesIO()
+        with tarfile.open(fileobj=buffer, mode='w') as archive:
+            for i in range(10001):
+                archive.addfile(tarfile.TarInfo(f'empty-{i}'))
+        with tempfile.TemporaryDirectory() as directory, patch.object(runner, 'bounded', return_value=buffer.getvalue()):
+            with self.assertRaisesRegex(ValueError, 'member count'):
+                runner.extract_revision('ignored', Path(directory))
+            self.assertEqual(list(Path(directory).iterdir()), [])
+
     def test_output_limits_are_enforced_during_reading(self):
         for fd, expected in [(1, "stdout"), (2, "stderr")]:
             with self.subTest(fd=fd), self.assertRaisesRegex(ValueError, expected):
@@ -39,7 +72,11 @@ class OutputTests(unittest.TestCase):
             pid = int(marker.read_text())
             for _ in range(100):
                 stat = Path(f"/proc/{pid}/stat")
-                if not stat.exists() or stat.read_text().split()[2] == "Z":
+                try:
+                    state = stat.read_text().split()[2]
+                except FileNotFoundError:
+                    break
+                if state == "Z":
                     break
                 time.sleep(0.01)
             else:
@@ -65,6 +102,20 @@ class IsolationTests(unittest.TestCase):
         # Required, never silently skipped: CI must provision bwrap/user namespaces.
         toolchain = tomllib.loads((runner.ROOT / "rust-toolchain.toml").read_text())["toolchain"]["channel"]
         cls.sandbox = Sandbox(toolchain)
+
+    def test_forked_allocations_share_one_memory_budget(self):
+        # Each child fits the per-process limit; together they exceed the cgroup.
+        code = """
+import subprocess,sys
+children = [subprocess.Popen(['/usr/bin/python3', '-c',
+    'import time; data=bytearray(32*1024*1024); time.sleep(2)']) for _ in range(3)]
+codes = [child.wait() for child in children]
+sys.exit(1 if any(codes) else 0)
+"""
+        with patch.dict(MEMORY_LIMITS, {False: 64 * 1024**2}):
+            with self.assertRaises(RuntimeError):
+                self.sandbox.execute(['/usr/bin/python3', '-c', code], timeout=10)
+        self.assertEqual(self.sandbox.execute(['/usr/bin/true']), b'')
 
     def test_actual_cargo_build_script_and_exported_binary_are_confined(self):
         with tempfile.TemporaryDirectory() as directory:

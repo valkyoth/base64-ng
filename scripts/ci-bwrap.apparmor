@@ -1,0 +1,7 @@
+# Only the sandbox launcher may create namespaces; candidate capabilities are
+# subsequently dropped by bwrap. Do not disable AppArmor's global userns policy.
+abi <abi/4.0>,
+include <tunables/global>
+profile bwrap /usr/bin/bwrap flags=(unconfined) {
+  userns,
+}
