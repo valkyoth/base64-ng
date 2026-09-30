@@ -17,6 +17,20 @@ BUILD_ENV = {"PATH": "/toolchain/bin:/usr/bin:/bin", "HOME": "/work/home",
              "CARGO_BUILD_JOBS": "2", "CARGO_INCREMENTAL": "0", "TMPDIR": "/tmp"}
 RUNTIME_ENV = {"PATH": "/usr/bin:/bin", "HOME": "/work/home", "LC_ALL": "C", "TMPDIR": "/tmp"}
 MEMORY_LIMITS = {True: 6 * 1024**3, False: 1024**3}
+SWAP_LIMIT = 0
+TASK_LIMIT = 128
+CPU_QUOTA_PERCENT = 200
+SECURITY_TOOLS = tuple(Path('/usr/bin') / name for name in
+                       ('bwrap', 'prlimit', 'systemd-run', 'systemctl', 'python3'))
+
+
+def aggregate_limits():
+    return dict(build_memory_bytes=MEMORY_LIMITS[True], runtime_memory_bytes=MEMORY_LIMITS[False],
+                swap_bytes=SWAP_LIMIT, tasks=TASK_LIMIT, cpu_quota_percent=CPU_QUOTA_PERCENT)
+
+
+def tool_inventory(toolchain):
+    return [toolchain / 'bin/rustc', toolchain / 'bin/cargo', Path('/usr/bin/cc'), *SECURITY_TOOLS]
 
 
 def bounded(command, *, env=None, timeout=600, limit=65536, stderr_limit=1048576, cwd=None):
@@ -69,8 +83,7 @@ class Sandbox:
 
         if os.getuid() == 0:
             raise RuntimeError("run the benchmark sandbox as an unprivileged user")
-        for path in ("/usr/bin/bwrap", "/usr/bin/prlimit", "/usr/bin/cc",
-                     "/usr/bin/systemd-run", "/usr/bin/systemctl", "/usr/bin/python3"):
+        for path in (*SECURITY_TOOLS, Path('/usr/bin/cc')):
             if not Path(path).is_file():
                 raise RuntimeError(f"sandbox prerequisite missing: {path}; no unsandboxed fallback")
         home = Path(pwd.getpwuid(os.getuid()).pw_dir)
@@ -119,9 +132,10 @@ class Sandbox:
                    DBUS_SESSION_BUS_ADDRESS=f"unix:path=/run/user/{os.getuid()}/bus")
         args = ["/usr/bin/systemd-run", "--user", "--scope", "--quiet", "--collect",
                 f"--unit={unit}", f"--property=MemoryMax={memory}",
-                "--property=MemorySwapMax=0", "--property=TasksMax=128",
-                "--property=CPUQuota=200%", "/usr/bin/python3", "-I",
+                f"--property=MemorySwapMax={SWAP_LIMIT}", f"--property=TasksMax={TASK_LIMIT}",
+                f"--property=CPUQuota={CPU_QUOTA_PERCENT}%", "/usr/bin/python3", "-I",
                 str(Path(__file__).with_name('public_api_cgroup.py')), str(memory),
+                str(SWAP_LIMIT), str(TASK_LIMIT), str(CPU_QUOTA_PERCENT),
                 *self.command(command, tree=tree, binary=binary, build=build)]
         try:
             return bounded(args, env=env, limit=limit,

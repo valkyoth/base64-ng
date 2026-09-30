@@ -34,6 +34,13 @@ def expect_failure(name: str, mutation) -> None:
             raise SystemExit(f"protocol registry mutation unexpectedly passed: {name}")
 
 
+# Negative cases must not pass merely because the unmodified fixture is broken.
+subprocess.run(['python3', str(VALIDATOR)], check=True)
+
+expect_failure(
+    'lockfile drift',
+    lambda root: replace(root / 'protocol-registry/runner/Cargo.lock', b'version = 4', b'version = 3'),
+)
 expect_failure(
     "missing protocol claim",
     lambda root: replace(root / "protocol-registry/v1/protocols.tsv", b"mime-body\t", b"mime-body-removed\t"),

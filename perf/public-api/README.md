@@ -72,6 +72,8 @@ are recorded. Ambient wrappers, Cargo configuration in the host home, loader
 injection variables, proxies, and target/profile flags cannot silently alter a
 capture. Candidate manifests remain source-bound inputs. The lockfile is adapted
 only for local crate versions, without re-resolving external packages.
+The launcher inventory includes Bubblewrap, prlimit, systemd-run, systemctl and
+Python. Recorded aggregate budgets use the same policy constants as enforcement.
 
 Builds use a 1 GiB target/home tmpfs; executions use 64 MiB. A separate 64 MiB
 temporary filesystem is provided. Per-process limits are 4 GiB virtual address

@@ -17,6 +17,7 @@ from unittest.mock import patch
 
 from public_api_sandbox import BUILD_ENV, HOST_ENV, RUNTIME_ENV, MEMORY_LIMITS, Sandbox, bounded
 from public_api_cgroup import verify
+import public_api_sandbox as isolation
 
 spec = importlib.util.spec_from_file_location("runner", Path(__file__).with_name("compare-2.1-public-api.py"))
 runner = importlib.util.module_from_spec(spec)
@@ -24,6 +25,26 @@ spec.loader.exec_module(runner)
 
 
 class OutputTests(unittest.TestCase):
+    def test_provenance_tracks_policy_and_all_launchers(self):
+        expected = {Path('/usr/bin') / name for name in
+                    ('bwrap', 'prlimit', 'systemd-run', 'systemctl', 'python3')}
+        self.assertEqual(set(isolation.SECURITY_TOOLS), expected)
+        self.assertTrue(expected <= set(runner.tool_inventory(Path('/toolchain'))))
+        with patch.dict(MEMORY_LIMITS, {True: 4096, False: 2048}), \
+                patch.object(isolation, 'SWAP_LIMIT', 16), \
+                patch.object(isolation, 'TASK_LIMIT', 32), \
+                patch.object(isolation, 'CPU_QUOTA_PERCENT', 100):
+            self.assertEqual(runner.aggregate_limits(), dict(build_memory_bytes=4096,
+                             runtime_memory_bytes=2048, swap_bytes=16, tasks=32, cpu_quota_percent=100))
+            sandbox = object.__new__(Sandbox)
+            with patch.object(sandbox, 'command', return_value=['/usr/bin/true']), \
+                    patch.object(isolation, 'bounded', return_value=b'') as launch:
+                sandbox.execute(['/usr/bin/true'])
+            command = launch.call_args_list[0].args[0]
+            for prop in ['MemoryMax=2048', 'MemorySwapMax=16', 'TasksMax=32', 'CPUQuota=100%']:
+                self.assertIn('--property=' + prop, command)
+            self.assertEqual(command[-5:], ['2048', '16', '32', '100', '/usr/bin/true'])
+
     def test_cgroup_limits_fail_closed(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -35,16 +56,21 @@ class OutputTests(unittest.TestCase):
                       'pids.max': '128', 'cpu.max': '200000 100000'}
             for name, value in values.items():
                 (group / name).write_text(value)
-            verify(1073741824, root, membership)
+            verify(1073741824, 0, 128, 200, root, membership)
             for name, value in values.items():
                 with self.subTest(name=name):
                     (group / name).write_text('max 100000' if name == 'cpu.max' else 'max')
                     with self.assertRaises(RuntimeError):
-                        verify(1073741824, root, membership)
+                        verify(1073741824, 0, 128, 200, root, membership)
                     (group / name).unlink()
                     with self.assertRaises(FileNotFoundError):
-                        verify(1073741824, root, membership)
+                        verify(1073741824, 0, 128, 200, root, membership)
                     (group / name).write_text(value)
+
+            for name, value in {'memory.max': '4096', 'memory.swap.max': '16',
+                                'pids.max': '32', 'cpu.max': '50000 100000'}.items():
+                (group / name).write_text(value)
+            verify(4096, 16, 32, 50, root, membership)
 
     def test_archive_member_limit_precedes_extraction(self):
         buffer = io.BytesIO()

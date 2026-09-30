@@ -16,6 +16,7 @@ import tomllib
 
 from public_api_baseline import parse_sample, summarize
 from public_api_sandbox import Sandbox, bounded, BUILD_ENV, RUNTIME_ENV
+from public_api_sandbox import aggregate_limits, tool_inventory
 
 ROOT = Path(__file__).resolve().parents[1]
 BASELINE = "816da2e1e4a66c913057c86d149068f1c88776bf"
@@ -129,12 +130,10 @@ def capture(args):
                     command=list(os.sys.argv), scope="exploratory paired baseline, not admission",
                     binaries={}, build_environment=BUILD_ENV, runtime_environment=RUNTIME_ENV,
                     sandbox="bubblewrap: no network, no host home, readonly source; quota-limited tmpfs",
-                    aggregate_limits=dict(build_memory_bytes=6 * 1024**3, runtime_memory_bytes=1024**3,
-                                          swap_bytes=0, tasks=128, cpu_quota_percent=200),
+                    aggregate_limits=aggregate_limits(),
                     tool_paths={"toolchain": str(sandbox.toolchain), "registry": str(sandbox.registry)},
-                    tool_sha256={str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in
-                                 [sandbox.toolchain / "bin/rustc", sandbox.toolchain / "bin/cargo",
-                                  Path("/usr/bin/cc"), Path("/usr/bin/bwrap"), Path("/usr/bin/prlimit")]})
+                    tool_sha256={str(p): hashlib.sha256(p.read_bytes()).hexdigest()
+                                 for p in tool_inventory(sandbox.toolchain)})
     if Path("/proc/cpuinfo").exists():
         manifest["cpuinfo"] = Path("/proc/cpuinfo").read_text()
     else:
