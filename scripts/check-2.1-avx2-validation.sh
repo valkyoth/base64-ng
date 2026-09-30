@@ -2,6 +2,7 @@
 set -eu
 
 python3 scripts/test-x86-validation-asm.py
+python3 scripts/test-avx2-validation-ir.py
 python3 scripts/test-2.0-skeleton.py
 active="$(sed -n 's/^channel = "\([^"]*\)"/\1/p' rust-toolchain.toml)"
 host="$(rustc -vV | sed -n 's/^host: //p')"
@@ -26,11 +27,7 @@ tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT INT TERM
 CARGO_TARGET_DIR="$tmp/production" \
     cargo rustc --locked --release --all-features --lib -- --emit=llvm-ir
-if grep -E 'define .*validate_blocks_avx2|define .*avx2_candidate|define .*candidate_(validate|decode)_avx2' \
-    "$tmp"/production/release/deps/base64_ng-*.ll; then
-    echo "2.1 AVX2 validation: candidate leaked into production IR" >&2
-    exit 1
-fi
+python3 scripts/check-avx2-validation-ir.py "$tmp/production/release/deps"
 CARGO_TARGET_DIR="$tmp/test" RUSTFLAGS='-C target-feature=+ssse3,+sse4.1' \
     cargo rustc --locked --release --all-features --lib -- --emit=asm --test
 python3 scripts/check-x86-validation-asm.py "$tmp/test/release/deps" avx2
