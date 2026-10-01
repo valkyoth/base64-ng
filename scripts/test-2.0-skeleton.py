@@ -28,7 +28,8 @@ with tempfile.TemporaryDirectory(prefix="base64-ng-skeleton-") as directory:
 
     check(True)
     for parent in ("src/v2/ordinary_decode.rs", "src/v2/ordinary_decode/ssse3_candidate.rs",
-                   "src/v2/ordinary_decode/avx2_candidate.rs", "src/v2/ordinary_decode/avx512_candidate.rs"):
+                   "src/v2/ordinary_decode/avx2_candidate.rs", "src/v2/ordinary_decode/avx512_candidate.rs",
+                   "src/v2/ordinary_decode/neon_candidate.rs"):
         path = fixture / parent
         original = path.read_text()
         declaration = "#[cfg(test)]\nmod tests;"
@@ -36,7 +37,8 @@ with tempfile.TemporaryDirectory(prefix="base64-ng-skeleton-") as directory:
         path.write_text(original.replace(declaration, "mod tests;"))
         check(False)
         path.write_text(original)
-    for parent in ("src/v2/ordinary_decode/avx2_candidate.rs", "src/v2/ordinary_decode/avx512_candidate.rs"):
+    for parent in ("src/v2/ordinary_decode/avx2_candidate.rs", "src/v2/ordinary_decode/avx512_candidate.rs",
+                   "src/v2/ordinary_decode/neon_candidate.rs"):
         path = fixture / parent
         original = path.read_text()
         declaration = "#[cfg(test)]\nmod benchmark;"

@@ -62,6 +62,7 @@ scripts/check_backend_evidence.sh
 
 echo "AArch64 Linux checks: Commit 29 direct NEON admission"
 scripts/check-2.0-neon-hot-paths.sh
+sh scripts/check-2.1-neon-validation.sh
 
 echo "AArch64 Linux checks: SIMD feature bundles"
 scripts/check_simd_feature_bundles.sh

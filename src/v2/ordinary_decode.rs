@@ -242,3 +242,12 @@ pub(crate) mod avx2_candidate;
     any(target_arch = "x86", target_arch = "x86_64")
 ))]
 pub(crate) mod avx512_candidate;
+
+#[cfg(all(
+    test,
+    feature = "std",
+    feature = "simd",
+    target_arch = "aarch64",
+    target_endian = "little"
+))]
+pub(crate) mod neon_candidate;

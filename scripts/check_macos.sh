@@ -93,6 +93,7 @@ if [ "$host" = "aarch64-apple-darwin" ]; then
 
     echo "macOS checks: Commit 29 direct NEON admission"
     scripts/check-2.0-neon-hot-paths.sh
+    sh scripts/check-2.1-neon-validation.sh
 fi
 
 for target in aarch64-apple-darwin x86_64-apple-darwin; do

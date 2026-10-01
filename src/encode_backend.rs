@@ -163,7 +163,7 @@ pub(crate) const fn avx512_auto_preferred(input_len: usize) -> bool {
 }
 
 #[cfg(all(
-    any(test, feature = "checked-backend"),
+    feature = "checked-backend",
     feature = "simd",
     target_arch = "aarch64",
     target_endian = "little"

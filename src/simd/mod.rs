@@ -138,6 +138,14 @@ pub(crate) use neon::neon_available;
 pub(crate) use neon::neon_supports_alphabet;
 #[cfg(all(feature = "simd", target_arch = "aarch64", target_endian = "little"))]
 pub(crate) use neon::neon_supports_decode_alphabet;
+#[cfg(all(
+    test,
+    feature = "std",
+    feature = "simd",
+    target_arch = "aarch64",
+    target_endian = "little"
+))]
+pub(crate) use neon::validation_candidate as neon_validation_candidate;
 #[cfg(any(
     all(test, any(target_arch = "x86", target_arch = "x86_64")),
     all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64"))

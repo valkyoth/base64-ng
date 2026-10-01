@@ -56,7 +56,7 @@ gated && /^mod (append_tests|chunk_tests|const_buffer_tests|fixtures|formatting_
 ' src/v2/mod.rs
 
 # Nested oracle consumers must retain their explicit test-only declaration.
-for parent in src/v2/ordinary_decode.rs src/v2/ordinary_decode/ssse3_candidate.rs src/v2/ordinary_decode/avx2_candidate.rs src/v2/ordinary_decode/avx512_candidate.rs; do
+for parent in src/v2/ordinary_decode.rs src/v2/ordinary_decode/ssse3_candidate.rs src/v2/ordinary_decode/avx2_candidate.rs src/v2/ordinary_decode/avx512_candidate.rs src/v2/ordinary_decode/neon_candidate.rs; do
 awk '
     previous == "#[cfg(test)]" && $0 == "mod tests;" { found = 1 }
     { previous = $0 }
@@ -64,7 +64,7 @@ awk '
 ' "$parent"
 done
 
-for parent in src/v2/ordinary_decode/avx2_candidate.rs src/v2/ordinary_decode/avx512_candidate.rs; do
+for parent in src/v2/ordinary_decode/avx2_candidate.rs src/v2/ordinary_decode/avx512_candidate.rs src/v2/ordinary_decode/neon_candidate.rs; do
 awk '
     previous == "#[cfg(test)]" && $0 == "mod benchmark;" { found = 1 }
     { previous = $0 }
@@ -88,6 +88,8 @@ oracle_references="$(
         ! -path 'src/v2/ordinary_decode/avx2_candidate/benchmark.rs' \
         ! -path 'src/v2/ordinary_decode/avx512_candidate/tests.rs' \
         ! -path 'src/v2/ordinary_decode/avx512_candidate/benchmark.rs' \
+        ! -path 'src/v2/ordinary_decode/neon_candidate/tests.rs' \
+        ! -path 'src/v2/ordinary_decode/neon_candidate/benchmark.rs' \
         ! -path 'src/v2/secret_encoder_tests.rs' \
         ! -path 'src/v2/rfc4648_oracle.rs' \
         -exec grep -nH 'rfc4648_oracle' {} \; || exit 1

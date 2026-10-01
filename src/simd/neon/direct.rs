@@ -10,6 +10,20 @@ use core::arch::aarch64::{
     vsubq_u8,
 };
 
+/// Read exactly one block and reduce every validity lane without storing output.
+/// The caller must establish NEON and a Standard or URL-safe alphabet.
+#[cfg(all(test, feature = "std", feature = "simd"))]
+#[inline(never)]
+#[target_feature(enable = "neon")]
+pub(super) unsafe fn validate_16_bytes_neon<A: Alphabet>(input: &[u8; 16]) -> bool {
+    // SAFETY: The fixed array bounds the unaligned load; the caller establishes
+    // the ISA. Unused mapped values are eliminated by codegen.
+    unsafe {
+        let (_, valid) = map_ascii_to_values::<A>(vld1q_u8(input.as_ptr()));
+        vminvq_u8(valid) == u8::MAX
+    }
+}
+
 #[inline]
 #[target_feature(enable = "neon")]
 pub(super) unsafe fn encode_12_bytes<A>(input: &[u8; 12], output: &mut [u8; 16])

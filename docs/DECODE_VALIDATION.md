@@ -219,3 +219,18 @@ and fail-closed production-IR exclusion. Set
 `BASE64_NG_REQUIRE_AVX512_VALIDATION=1` to require native execution. The opt-in
 same-process AVX2 comparison is documented in
 [Commit 8 measurements](PERFORMANCE_2.1_AVX512.md).
+
+## NEON Validation Candidate
+
+Commit 10 adds a test-only little-endian AArch64 route. It classifies exact
+16-byte blocks without writes, reduces every lane, uses the shared strict
+scalar tail validator, and binds immutable input through preflight before
+decoding. Rejection recovers exact reference diagnostics; custom/relaxed
+settings stay on the reference path. Safe wrappers restrict alphabet selection
+and block geometry and clear vector registers after success or rejection.
+
+This candidate does not change production NEON, static no_std, checked-backend,
+ScalarReference or secret/CT routing. Its test-only disagreement assertion
+requires production health/quarantine integration before promotion. Native AWS
+and QEMU correctness are recorded separately; Apple Silicon verification is
+pending. See [Commit 10 measurements and native commands](PERFORMANCE_2.1_NEON.md).

@@ -189,6 +189,15 @@ macro_rules! clear_neon_registers_after_vector_block {
     }};
 }
 
+#[cfg(all(
+    test,
+    feature = "std",
+    feature = "simd",
+    target_arch = "aarch64",
+    target_endian = "little"
+))]
+pub(crate) mod validation_candidate;
+
 /// Encodes one 12-byte block into 16 bytes through the NEON block encoder.
 ///
 /// On little-endian `aarch64`, Standard and URL-safe alphabets use real NEON
