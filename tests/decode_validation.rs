@@ -163,9 +163,12 @@ fn public_vector_boundaries_preserve_reference_results_and_whole_destinations() 
             .decode_padding(settings.decode_padding())
             .build()
             .unwrap();
-        for len in [380, 381, 382, 383, 384, 385, 767, 768, 769, 1537] {
-            let input = [0xa5; 1537];
-            let mut encoded = [0; 2052];
+        for len in [
+            380, 381, 382, 383, 384, 385, 767, 768, 769, 1537, 3070, 3071, 3072, 3073, 4095, 4096,
+            4097,
+        ] {
+            let input = [0xa5; 4097];
+            let mut encoded = [0; 5464];
             let size = codec.encode_into(&input[..len], &mut encoded).unwrap();
             for position in [0, 15, 16, 31, 32, 63, 64, size - 1] {
                 for byte in [encoded[position], b'!', b'=', b' ', 0xff] {
@@ -175,8 +178,8 @@ fn public_vector_boundaries_preserve_reference_results_and_whole_destinations() 
                         codec.decoded_len(&data[..size]),
                         codec.decoded_len_with_validation(&data[..size], POLICY)
                     );
-                    for capacity in [0, len - 1, len, 1540] {
-                        let mut auto = [0x55; 1540];
+                    for capacity in [0, len - 1, len, 4100] {
+                        let mut auto = [0x55; 4100];
                         let mut reference = auto;
                         let expected = codec.decode_into_with_validation(
                             &data[..size],
@@ -189,7 +192,7 @@ fn public_vector_boundaries_preserve_reference_results_and_whole_destinations() 
                         );
                         assert_eq!(auto, reference);
                         if expected.is_err() {
-                            assert_eq!(auto, [0x55; 1540]);
+                            assert_eq!(auto, [0x55; 4100]);
                         }
                     }
                 }
@@ -228,9 +231,24 @@ fn validation_policy_preserves_historical_diagnostics_and_whole_buffers() {
 }
 
 fn historical_bulk<A: Alphabet, const PAD: bool>(engine: Engine<A, PAD>) {
-    let mut encoded = [0; 2052];
-    let size = engine.encode_slice(&[0xa5; 1537], &mut encoded).unwrap();
-    for position in [0, 15, 16, 31, 32, 63, 64, 511, 512, 1023, 1024, size - 1] {
+    let mut encoded = [0; 5464];
+    let size = engine.encode_slice(&[0xa5; 4097], &mut encoded).unwrap();
+    for position in [
+        0,
+        15,
+        16,
+        31,
+        32,
+        63,
+        64,
+        511,
+        512,
+        1023,
+        1024,
+        4095,
+        4096,
+        size - 1,
+    ] {
         for byte in [encoded[position], b'!', b'=', b' ', 0xff] {
             let mut data = encoded;
             data[position] = byte;
@@ -239,8 +257,8 @@ fn historical_bulk<A: Alphabet, const PAD: bool>(engine: Engine<A, PAD>) {
                 engine.validated_decoded_len_with_validation(input, DecodeValidation::Auto),
                 engine.validated_decoded_len_with_validation(input, POLICY)
             );
-            for capacity in [0, 1536, 1537, 1544] {
-                let mut auto = [0x55; 1544];
+            for capacity in [0, 4096, 4097, 4104] {
+                let mut auto = [0x55; 4104];
                 let mut reference = auto;
                 assert_eq!(
                     engine.decode_slice_with_validation(

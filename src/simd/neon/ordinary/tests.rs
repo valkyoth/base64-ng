@@ -1,4 +1,4 @@
-//! Linux native guard-page checks for candidate NEON validation.
+//! Linux guard-page checks for production NEON validation.
 #![cfg(not(miri))]
 
 use core::ffi::c_void;
@@ -71,22 +71,73 @@ fn neon_validation_guard_pages_bound_loads_and_stores() {
                 input.fill(b'A');
                 let output = destination.region(length / 4 * 3, at_end);
                 output.fill(0xa5);
-                assert!(super::validate(input, url));
-                assert!(super::decode(input, output, url));
+                assert!(super::validate(crate::runtime::Backend::Neon, input, url));
+                assert!(super::decode(
+                    crate::runtime::Backend::Neon,
+                    input,
+                    output,
+                    url
+                ));
                 assert!(output.iter().all(|&byte| byte == 0));
                 for position in 0..length {
                     input[position] = 0xff;
-                    assert!(!super::validate(input, url));
+                    assert!(!super::validate(crate::runtime::Backend::Neon, input, url));
                     input[position] = b'A';
                 }
                 if length != 0 {
                     output.fill(0xa5);
-                    assert!(!super::decode(input, &mut output[..0], url));
+                    assert!(!super::decode(
+                        crate::runtime::Backend::Neon,
+                        input,
+                        &mut output[..0],
+                        url
+                    ));
                     assert!(output.iter().all(|&byte| byte == 0xa5));
                     input[0] = b'=';
-                    assert!(!super::decode(input, output, url));
+                    assert!(!super::decode(
+                        crate::runtime::Backend::Neon,
+                        input,
+                        output,
+                        url
+                    ));
                     assert!(output.iter().all(|&byte| byte == 0xa5));
                 }
+            }
+        }
+    }
+}
+
+#[test]
+fn neon_public_guard_pages_preserve_transactional_output() {
+    for at_end in [false, true] {
+        for length in [508, 512, 516, 1024, 1028, 4088, 4092, 4096] {
+            let mut source = Pages::new();
+            let mut destination = Pages::new();
+            let input = source.region(length, at_end);
+            input.fill(b'A');
+            let output = destination.region(length / 4 * 3, at_end);
+            for settings in [
+                crate::STRICT_STANDARD_PADDED.settings(),
+                crate::STRICT_URL_SAFE_PADDED.settings(),
+            ] {
+                let codec = crate::CodecBuilder::new(*settings.alphabet())
+                    .encode_padding(settings.encode_padding())
+                    .decode_padding(settings.decode_padding())
+                    .build()
+                    .unwrap();
+                output.fill(0xa5);
+                assert_eq!(codec.decode_into(input, output), Ok(output.len()));
+                assert!(output.iter().all(|&b| b == 0));
+                for position in [0, 15, length - 4, length - 1] {
+                    input[position] = b'!';
+                    output.fill(0xa5);
+                    assert!(codec.decode_into(input, output).is_err());
+                    assert!(output.iter().all(|&b| b == 0xa5));
+                    input[position] = b'A';
+                }
+                output.fill(0xa5);
+                assert!(codec.decode_into(input, &mut output[..0]).is_err());
+                assert!(output.iter().all(|&b| b == 0xa5));
             }
         }
     }

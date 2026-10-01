@@ -30,7 +30,8 @@ with tempfile.TemporaryDirectory() as directory:
     for instruction in ["str q0, [x1]", "stp q0, q1, [x1]", "bl helper", "b helper", "ldr q2, [x0]", "mov z0.b, #0"]:
         verify(elf.replace("\tret", f"\t{instruction}\n\tret"), "assembly", False)
     verify("define void @normal() {\nret void\n}", "production", True)
-    for name in ("neon_candidate", "validation_candidate", "validate_16_bytes_neon"):
+    verify("define void @validate_16_bytes_neon() {}", "production", True)
+    for name in ("neon_candidate", "validation_candidate"):
         verify(f"define void @{name}() {{}}", "production", False)
     verify("", "production", False)
     (root / "base64_ng-extra.s").write_text(elf)

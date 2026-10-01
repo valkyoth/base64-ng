@@ -1,4 +1,4 @@
-//! Ordinary x86 bulk operations. Tail grammar remains in the scalar validator.
+//! Ordinary x86/NEON bulk operations. Tail grammar remains in the scalar validator.
 use super::Family;
 use crate::{
     BackendFault,
@@ -12,7 +12,18 @@ pub(super) fn select(len: usize) -> Option<Backend> {
     if len < 512 {
         return None;
     }
-    #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
+    #[cfg(all(target_arch = "aarch64", target_endian = "little"))]
+    if len < 4096 {
+        return None;
+    }
+    #[cfg(all(
+        feature = "simd",
+        any(
+            target_arch = "x86",
+            target_arch = "x86_64",
+            all(target_arch = "aarch64", target_endian = "little")
+        )
+    ))]
     {
         // Reserve the final quantum. No automatic AVX-512 admission.
         let backend =
@@ -20,18 +31,39 @@ pub(super) fn select(len: usize) -> Option<Backend> {
                 .reported();
         width(backend).map(|_| backend)
     }
-    #[cfg(not(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64"))))]
+    #[cfg(not(all(
+        feature = "simd",
+        any(
+            target_arch = "x86",
+            target_arch = "x86_64",
+            all(target_arch = "aarch64", target_endian = "little")
+        )
+    )))]
     {
         None
     }
 }
 
 fn width(backend: Backend) -> Option<usize> {
-    #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
+    #[cfg(all(
+        feature = "simd",
+        any(
+            target_arch = "x86",
+            target_arch = "x86_64",
+            all(target_arch = "aarch64", target_endian = "little")
+        )
+    ))]
     {
         crate::simd::ordinary::width(backend)
     }
-    #[cfg(not(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64"))))]
+    #[cfg(not(all(
+        feature = "simd",
+        any(
+            target_arch = "x86",
+            target_arch = "x86_64",
+            all(target_arch = "aarch64", target_endian = "little")
+        )
+    )))]
     {
         let _ = backend;
         None
@@ -66,11 +98,25 @@ fn validate(backend: Backend, input: &[u8], url: bool) -> bool {
     if let Some(valid) = tests::validate(backend) {
         return valid;
     }
-    #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
+    #[cfg(all(
+        feature = "simd",
+        any(
+            target_arch = "x86",
+            target_arch = "x86_64",
+            all(target_arch = "aarch64", target_endian = "little")
+        )
+    ))]
     {
         crate::simd::ordinary::validate(backend, input, url)
     }
-    #[cfg(not(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64"))))]
+    #[cfg(not(all(
+        feature = "simd",
+        any(
+            target_arch = "x86",
+            target_arch = "x86_64",
+            all(target_arch = "aarch64", target_endian = "little")
+        )
+    )))]
     {
         let _ = (backend, input, url);
         false
@@ -82,11 +128,25 @@ fn decode(backend: Backend, input: &[u8], output: &mut [u8], url: bool) -> bool 
     if let Some(valid) = tests::decode(backend, output) {
         return valid;
     }
-    #[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
+    #[cfg(all(
+        feature = "simd",
+        any(
+            target_arch = "x86",
+            target_arch = "x86_64",
+            all(target_arch = "aarch64", target_endian = "little")
+        )
+    ))]
     {
         crate::simd::ordinary::decode(backend, input, output, url)
     }
-    #[cfg(not(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64"))))]
+    #[cfg(not(all(
+        feature = "simd",
+        any(
+            target_arch = "x86",
+            target_arch = "x86_64",
+            all(target_arch = "aarch64", target_endian = "little")
+        )
+    )))]
     {
         let _ = (backend, input, output, url);
         false
@@ -118,11 +178,19 @@ pub(super) fn write(backend: Backend, family: Family, input: &[u8], output: &mut
         #[cfg(all(
             test,
             feature = "simd",
-            any(target_arch = "x86", target_arch = "x86_64")
+            any(
+                target_arch = "x86",
+                target_arch = "x86_64",
+                all(target_arch = "aarch64", target_endian = "little")
+            )
         ))]
         crate::decode_backend::record_test_execution(match backend {
+            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
             Backend::Avx2 => crate::decode_backend::DecodeBackend::Avx2,
+            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
             Backend::Ssse3Sse41 => crate::decode_backend::DecodeBackend::Ssse3Sse41,
+            #[cfg(all(target_arch = "aarch64", target_endian = "little"))]
+            Backend::Neon => crate::decode_backend::DecodeBackend::Neon,
             _ => crate::decode_backend::DecodeBackend::Scalar,
         });
         prefix

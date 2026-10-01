@@ -1,10 +1,16 @@
 //! Evaluation-only NEON path. Production routing and health checks are unchanged.
 use super::*;
-use crate::simd::neon_validation_candidate as neon;
+use crate::simd::ordinary as neon;
 
 fn candidate_len(settings: CodecSettings, input: &[u8], family: Family) -> Option<usize> {
     let prefix = input.len().saturating_sub(1) / 16 * 16;
-    if prefix != 0 && !neon::validate(&input[..prefix], family == Family::UrlSafe) {
+    if prefix != 0
+        && !neon::validate(
+            crate::runtime::Backend::Neon,
+            &input[..prefix],
+            family == Family::UrlSafe,
+        )
+    {
         return None;
     }
     let tail = family.validated_len(
@@ -43,7 +49,12 @@ pub(crate) fn decode(
             // requires shared health KAT, quarantine/recovery and checked comparison.
             assert!(
                 prefix == 0
-                    || neon::decode(&interior[..prefix], &mut body_output[..written], url_safe)
+                    || neon::decode(
+                        crate::runtime::Backend::Neon,
+                        &interior[..prefix],
+                        &mut body_output[..written],
+                        url_safe
+                    )
             );
             let table = family.table();
             write_parts(

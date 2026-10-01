@@ -873,12 +873,12 @@ unsigned vector comparisons and full-width `ktestq`, and rejects stores
 (including masked stores) and delegated calls. These are bounded development
 checks, not a new hardware admission or universal compiler-codegen proof.
 
-### `validate_16_bytes_neon` (2.1 Commit 10 Candidate)
+### `validate_16_bytes_neon` (2.1 Commit 10)
 
-Location: `src/simd/neon/direct.rs` and the safe test-only wrappers in
-`src/simd/neon/validation_candidate.rs`.
+Location: `src/simd/neon/direct.rs` and the safe wrappers in
+`src/simd/neon/ordinary.rs`.
 
-This validation-only function is compiled only for tests with `std,simd` on
+This validation-only function is compiled with `simd` on
 little-endian AArch64. It reads exactly one immutable `[u8; 16]`, reuses the
 existing Standard/URL-safe range classifier, and reduces all validity lanes.
 There is no output pointer or store. Its caller establishes NEON availability
@@ -887,14 +887,18 @@ blocks, iterates bounded array chunks, and clears vector registers after both
 acceptance and rejection. The decode wrapper bounds exact 16:12 chunks before
 using the existing direct decoder, with the same register cleanup. Earlier
 blocks may be written before a later low-level rejection; only the complete
-candidate's immutable-input preflight provides transactional semantics.
+operation's immutable-input preflight and recovery provide transactional semantics.
 
-The candidate reserves the final quantum for the shared strict scalar validator,
+The public route reserves the final quantum for the shared strict scalar validator,
 uses the shared non-copyable preflight, and recovers exact malformed diagnostics
-through reference validation. Kernel disagreement asserts in this test-only
-path. Shared health KAT, quarantine/recovery, checked output comparison, and
-native Apple Silicon/AWS evidence are required before production promotion.
-Existing production and static no_std NEON routes are unchanged. Codegen gates
+through reference validation. Shared health KAT checks both classifiers directly;
+selection starts at 4096 encoded bytes. Detected false rejection quarantines
+before mutation; write rejection or checked-output mismatch quarantines and
+retries with complete scalar overwrite. The shared checked path compares full
+validation and bounded output chunks. Static no_std token contracts and
+secret/CT routes are unchanged. The original asserting evaluation path is
+still test-only, not the public route. Native AWS integrated checks are separate
+from Apple Silicon candidate evidence; the integrated Mac rerun is pending. Codegen gates
 inspect both classifier bodies for one 16-byte load, all-lane reduction (LLVM
 may invert masks and use `umaxv`), and absence of stores/calls/SVE, and prove the
 candidate absent from production IR. Linux guard pages and exhaustive lane,

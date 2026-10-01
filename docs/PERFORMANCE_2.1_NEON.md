@@ -1,8 +1,10 @@
-# Commit 10 NEON Candidate Measurements
+# Commit 10 NEON Measurements
 
 This is a bounded development experiment, not release admission or a general
-performance guarantee. The NEON candidate is test-only. Existing production
-NEON dispatch and its health/checked/static contracts are unchanged.
+performance guarantee. The first two campaigns measured a test-only candidate;
+the integration campaign below measures the production public APIs, including
+health selection. Do not treat the earlier candidate numbers as integrated
+results. Static-token and secret/CT contracts are unchanged.
 
 ## Scope And Method
 
@@ -104,13 +106,75 @@ cargo test --locked --release --no-default-features --features std,simd \
 Retain the commit, compiler, machine model, gate output and all benchmark rows.
 The gate installs missing pinned/MSRV toolchains and targets and runs both
 compiler feature matrices. Linux also runs guard pages. The same assembly
-checker accepts ELF and Mach-O syntax and verifies production exclusion.
-Apple Silicon candidate results are recorded above. The candidate must acquire the
-shared production health KAT, quarantine/recovery and checked-output comparison
-before default routing can change, followed by native regression tests.
+checker accepts ELF and Mach-O syntax and verifies exclusion of the asserting
+test candidate, not the production classifier. The expanded integrated gate
+also runs public validation-policy, health and injected-fault recovery tests.
+Apple Silicon candidate results are recorded above; an integrated-code rerun
+there is still required. At an integrated revision, the optional same-process
+benchmark compares integrated Auto with reference and private candidate, not
+with the earlier public implementation.
 
 On a non-ARM Linux host with QEMU installed, use
 `sh scripts/check-2.1-neon-validation.sh --qemu` for functional tests only.
 Without that option the gate cross-compiles and checks codegen, explicitly
 reporting that execution was not performed. QEMU timings are not hardware
 performance evidence.
+
+## AWS Production Integration
+
+On the same Neoverse-V2 host, Rust 1.98.1, two separate release builds of the
+unchanged `perf/public-api` harness compared candidate-checkpoint production
+source `c3c59d36bcf6df7197d2070ad13ef692515f9740` with the integration working
+tree based on `6ea850d`. Both used `--features simd` and
+`RUSTFLAGS='--cfg base64_ng_perf_evidence'`; checked-backend was not enabled for
+timing. Each operation/profile/size had seven paired samples, alternating which
+binary ran first. No correctness builds ran concurrently with this measurement.
+
+The harness independently verifies output and length outside the timer, counts
+successful calls inside it, checks zero timed allocations, and reports NEON capability
+for both builds. Patterns are deterministic `random`, buffers are warm, and all
+four strict profiles are included. Round counts are 100000 for 0/3/32 bytes,
+5000 for 1024, 2000 for 3072/4096, 128 for 65536, and 8 for 1048576. Sizes are
+decoded payload bytes; ratios are medians of paired old/new elapsed times.
+This is a development comparison, not a statistical admission or a comparison
+with a competitor, cold-cache workload, or checked-backend performance.
+
+An initial 512-encoded-byte floor regressed canonical 1 KiB calls (0.844-0.848x
+ratios) despite large-input gains. The integration therefore uses a conservative
+4096-encoded-byte NEON floor, leaving x86's 512-byte floor unchanged. The final
+run produced these all-profile ranges:
+
+| Payload bytes | Canonical decode | Historical `decode_slice` | Canonical validate |
+| --- | ---: | ---: | ---: |
+| 1024 | 1.003-1.008x | 0.999-1.000x | 0.992-1.002x |
+| 3072 | 1.046-1.047x | 2.147-2.726x | 1.336-1.344x |
+| 4096 | 1.079-1.080x | 2.242-2.847x | 1.402-1.406x |
+| 65536 | 1.193-1.194x | 3.821-4.596x | 1.688-1.720x |
+| 1048576 | 1.249-1.256x | 4.291-4.851x | 1.778-1.783x |
+
+The 0/3/32-byte paths do not enter vector selection. Their few-nanosecond
+differences are not claimed as improvements: canonical ratios range from
+0.907-1.116x and historical empty calls from 0.728-0.833x (about 1-2 ns slower).
+The early return preserves the small-input algorithm, not identical codegen or
+timing. This does not establish a universal crossover on all AArch64 CPUs.
+
+All 1344 timed records are retained locally in
+`target/release-evidence/2.1-commit10-neon/integrated-aws-public-api.json`, SHA-256
+`529f9403602c8ecea152fd5509e00b7d6008338d1cf94d9e02115efc8affb113`.
+The local evidence directory also retains the runner and source hashes; it is
+not a signed release bundle. Native AWS and QEMU feature/MSRV gates cover
+the integrated kernels, guard pages, health faults and public transactionality.
+Apple Silicon integration evidence and external pentest acceptance are pending.
+
+For a direct public operation sample, build this same harness at each revision
+separately, then alternate its binaries with these arguments (repeat for all
+profiles and sizes for a paired comparison):
+
+```sh
+RUSTFLAGS='--cfg base64_ng_perf_evidence' cargo build --locked --release \
+    --manifest-path perf/public-api/Cargo.toml --features simd
+perf/public-api/target/release/base64-ng-public-api-perf \
+    canonical decode sp 65536 random 4096 128 warm
+perf/public-api/target/release/base64-ng-public-api-perf \
+    historical decode sp 65536 random 4096 128 warm
+```

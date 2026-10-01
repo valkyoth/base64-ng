@@ -2,14 +2,16 @@
 
 2.1 adds the non-exhaustive `DecodeValidation::{Auto, ScalarReference}` policy.
 It is a per-call choice, not a Cargo feature or a change to the codec grammar.
-`Auto` uses health-gated SSSE3/SSE4.1 or AVX2 validation and writing for strict
+`Auto` uses health-gated SSSE3/SSE4.1, AVX2, or little-endian AArch64 NEON
+validation and writing for strict
 Standard/URL-safe padded/unpadded presets and exactly equivalent runtime
 settings. Canonical fallback uses portable table validation; `ScalarReference`
-retains the original validator. Eligible historical x86 calls share the fast
-core without acquiring canonical error semantics. Automatic AVX-512, NEON and
-wasm vector validation are not introduced by Commit 9.
+retains the original validator. Eligible historical x86/NEON calls share the fast
+core without acquiring canonical error semantics. Automatic AVX-512 and
+wasm vector validation remain outside the current production route.
 
-The new vector route starts at 512 encoded bytes; smaller canonical calls keep
+The new vector route starts at 512 encoded bytes on x86 and 4096 on AArch64;
+smaller canonical calls keep
 portable validation/writing and smaller historical calls keep their existing
 decoder. This conservative complete-call cutoff avoids measured small-message
 setup regressions; it does not change existing static/exact ISA contracts.
@@ -66,7 +68,7 @@ including partial output on its scalar error path. No progressive API is added.
 - Canonical writing uses admitted vector blocks and specialized tail tables
   under either validation policy when settings qualify. Reference validation still runs the original
   incremental state machine, not the optimized table validator.
-- Historical `Auto` shares the fast core for eligible x86 calls with sufficient
+- Historical `Auto` shares the fast core for eligible x86/NEON calls with sufficient
   capacity. Invalid input, insufficient capacity, custom alphabets and other
   decode backends use the original path, preserving historical errors and
   partial-write behavior. Fully validated length helpers also share fast
@@ -220,18 +222,26 @@ and fail-closed production-IR exclusion. Set
 same-process AVX2 comparison is documented in
 [Commit 8 measurements](PERFORMANCE_2.1_AVX512.md).
 
-## NEON Validation Candidate
+## NEON Validation
 
-Commit 10 adds a test-only little-endian AArch64 route. It classifies exact
+Commit 10 adds a little-endian AArch64 route. It classifies exact
 16-byte blocks without writes, reduces every lane, uses the shared strict
 scalar tail validator, and binds immutable input through preflight before
 decoding. Rejection recovers exact reference diagnostics; custom/relaxed
 settings stay on the reference path. Safe wrappers restrict alphabet selection
 and block geometry and clear vector registers after success or rejection.
 
-This candidate does not change production NEON, static no_std, checked-backend,
-ScalarReference or secret/CT routing. Its test-only disagreement assertion
-requires production health/quarantine integration before promotion. Native AWS
-and QEMU correctness are recorded separately, alongside operator-reported Apple
-Silicon candidate results. Production integration and its verification remain
-pending. See [Commit 10 measurements and native commands](PERFORMANCE_2.1_NEON.md).
+The integrated route uses a measured 4096-encoded-byte floor, shared health admission,
+direct classifier KATs for both alphabets, and preflight-to-write health recheck.
+False rejection detected by reference validation quarantines before mutation;
+kernel rejection or checked-output disagreement quarantines and overwrites the
+complete output through the scalar writer. `checked-backend` also compares
+validation against the reference. Empty/small inputs retain their existing
+paths. Explicit ScalarReference validation, static-token contracts, other
+architectures, and secret/CT paths are unchanged.
+
+The original asserting candidate remains test-only. Native AWS integrated
+feature/MSRV, guard-page, fault-recovery and public-policy checks are retained
+separately from operator-reported Apple Silicon candidate results. The integrated
+Mac rerun and external pentest acceptance remain pending. See
+[Commit 10 measurements and native commands](PERFORMANCE_2.1_NEON.md).

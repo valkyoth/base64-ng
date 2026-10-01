@@ -58,8 +58,12 @@ fn encode(backend: Backend) -> bool {
 }
 
 fn decode(backend: Backend) -> bool {
-    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-    if matches!(backend, Backend::Avx2 | Backend::Ssse3Sse41)
+    #[cfg(any(
+        target_arch = "x86",
+        target_arch = "x86_64",
+        all(target_arch = "aarch64", target_endian = "little")
+    ))]
+    if matches!(backend, Backend::Avx2 | Backend::Ssse3Sse41 | Backend::Neon)
         // Deployment-attested no_std tokens may enable only the existing
         // direct kernels, without making the automatically probed route usable.
         && crate::simd::ordinary::width(backend).is_some()
@@ -73,7 +77,11 @@ fn decode(backend: Backend) -> bool {
         && decode_matches::<UrlSafe>(backend, BOUNDARY_URL_SAFE, &BOUNDARY_INPUT)
 }
 
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+#[cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    all(target_arch = "aarch64", target_endian = "little")
+))]
 fn ordinary_classifiers(backend: Backend) -> bool {
     for (input, url) in [(STANDARD_ENCODED, false), (URL_SAFE_ENCODED, true)] {
         if !crate::simd::ordinary::validate(backend, input, url) {

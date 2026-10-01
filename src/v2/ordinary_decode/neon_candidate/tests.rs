@@ -45,7 +45,10 @@ fn all_bytes_in_every_lane_offset_and_multiple_invalid_lanes() {
             for lane in 0..48 {
                 for byte in 0..=255 {
                     blocks[lane] = byte;
-                    assert_eq!(neon::validate(blocks, url_safe), alphabet.contains(&byte));
+                    assert_eq!(
+                        neon::validate(crate::runtime::Backend::Neon, blocks, url_safe),
+                        alphabet.contains(&byte)
+                    );
                 }
                 blocks[lane] = b'A';
             }
@@ -53,17 +56,30 @@ fn all_bytes_in_every_lane_offset_and_multiple_invalid_lanes() {
                 for second in 16..32 {
                     blocks[first] = 0x80;
                     blocks[second] = b'=';
-                    assert!(!neon::validate(blocks, url_safe));
+                    assert!(!neon::validate(
+                        crate::runtime::Backend::Neon,
+                        blocks,
+                        url_safe
+                    ));
                     blocks[first] = b'A';
                     blocks[second] = b'A';
                 }
             }
         }
         for len in 1..16 {
-            assert!(!neon::validate(&[b'A'; 16][..len], url_safe));
+            assert!(!neon::validate(
+                crate::runtime::Backend::Neon,
+                &[b'A'; 16][..len],
+                url_safe
+            ));
         }
         let mut output = [0xa5; 11];
-        assert!(!neon::decode(&[b'A'; 16], &mut output, url_safe));
+        assert!(!neon::decode(
+            crate::runtime::Backend::Neon,
+            &[b'A'; 16],
+            &mut output,
+            url_safe
+        ));
         assert_eq!(output, [0xa5; 11]);
     }
 }

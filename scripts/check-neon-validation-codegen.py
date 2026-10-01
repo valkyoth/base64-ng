@@ -14,9 +14,9 @@ def check(directory, mode):
         definitions = re.findall(r"^define\s+[^\n]+", text, re.MULTILINE)
         if not definitions:
             raise ValueError("missing production function definitions")
-        if any(re.search(r"neon_candidate|validation_candidate|validate_16_bytes_neon", row)
+        if any(re.search(r"neon_candidate|validation_candidate", row)
                for row in definitions):
-            raise ValueError("NEON candidate leaked into production")
+            raise ValueError("asserting NEON candidate leaked into production")
         return
     if mode != "assembly":
         raise ValueError("expected assembly or production")

@@ -102,7 +102,10 @@ fn assert_quarantined(fault: BackendFault) {
     let backend = state
         .backend
         .expect("the actual invocation must use a backend");
-    assert!(matches!(backend, Backend::Avx2 | Backend::Ssse3Sse41));
+    assert!(matches!(
+        backend,
+        Backend::Avx2 | Backend::Ssse3Sse41 | Backend::Neon
+    ));
     assert_eq!(state.quarantined, Some((backend, fault)));
 }
 
@@ -110,7 +113,10 @@ fn assert_quarantined(fault: BackendFault) {
 // KATs. Tests wait for that finite initialization, rather than silently skipping
 // fault coverage on a capable host during parallel startup.
 fn ready_backend(len: usize) -> Option<Backend> {
-    if width(Backend::Avx2).is_none() && width(Backend::Ssse3Sse41).is_none() {
+    if width(Backend::Avx2).is_none()
+        && width(Backend::Ssse3Sse41).is_none()
+        && width(Backend::Neon).is_none()
+    {
         return None;
     }
     let start = std::time::Instant::now();
@@ -131,7 +137,14 @@ fn small_inputs_do_not_initialize_or_execute_the_vector_route() {
     for len in [0, 4, 16, 32, 64, 256, 508, 511] {
         assert_eq!(select(len), None);
     }
+    #[cfg(all(target_arch = "aarch64", target_endian = "little"))]
+    for len in [512, 1024, 1368, 2048, 4095] {
+        assert_eq!(select(len), None);
+    }
     inject(Fault::Reject, || {
+        let mut empty_output = [0xa5; 8];
+        assert_eq!(CODEC.decode_into(b"", &mut empty_output), Ok(0));
+        assert_eq!(empty_output, [0xa5; 8]);
         let mut output = [0xa5; 381];
         assert_eq!(CODEC.decode_into(&[b'A'; 508], &mut output), Ok(381));
         assert_eq!(STATE.with(Cell::get).validation, 0);
@@ -140,11 +153,16 @@ fn small_inputs_do_not_initialize_or_execute_the_vector_route() {
 }
 
 #[test]
-fn public_validation_and_writing_reach_health_gated_x86_not_avx512() {
+fn public_validation_and_writing_reach_health_gated_x86_or_neon_not_avx512() {
     let Some(backend) = ready_backend(4096) else {
         return;
     };
-    assert!(matches!(backend, Backend::Avx2 | Backend::Ssse3Sse41));
+    assert!(matches!(
+        backend,
+        Backend::Avx2 | Backend::Ssse3Sse41 | Backend::Neon
+    ));
+    #[cfg(all(feature = "simd", target_arch = "aarch64", target_endian = "little"))]
+    assert_eq!(backend, Backend::Neon);
     let input = [b'A'; 4096];
     let mut output = [0xff; 3075];
     inject(Fault::None, || {
@@ -156,7 +174,7 @@ fn public_validation_and_writing_reach_health_gated_x86_not_avx512() {
         assert!(state.writes > 0);
         assert!(matches!(
             state.backend,
-            Some(Backend::Avx2 | Backend::Ssse3Sse41)
+            Some(Backend::Avx2 | Backend::Ssse3Sse41 | Backend::Neon)
         ));
         assert_eq!(output[..3072], [0; 3072]);
         assert_eq!(output[3072..], [0xff; 3]);
@@ -178,17 +196,17 @@ fn public_validation_and_writing_reach_health_gated_x86_not_avx512() {
 
 #[test]
 fn false_rejection_quarantines_before_capacity_or_mutation() {
-    if ready_backend(512).is_none() {
+    if ready_backend(4096).is_none() {
         return;
     }
-    for capacity in [0, 383, 384, 396] {
+    for capacity in [0, 3071, 3072, 3084] {
         inject(Fault::Reject, || {
-            let mut output = [0xa5; 396];
+            let mut output = [0xa5; 3084];
             assert_eq!(
-                CODEC.decode_into(&[b'A'; 512], &mut output[..capacity]),
+                CODEC.decode_into(&[b'A'; 4096], &mut output[..capacity]),
                 Err(OneShotError::Backend(BackendFault::ImpossibleState))
             );
-            assert_eq!(output, [0xa5; 396]);
+            assert_eq!(output, [0xa5; 3084]);
             assert_quarantined(BackendFault::ImpossibleState);
         });
     }
@@ -210,13 +228,13 @@ fn rejected_kernel_partial_stores_are_overwritten_and_backend_quarantined() {
 
 #[test]
 fn backend_unavailable_after_preflight_uses_scalar_writer() {
-    if ready_backend(512).is_none() {
+    if ready_backend(4096).is_none() {
         return;
     }
     inject(Fault::Unavailable, || {
-        let mut output = [0xa5; 384];
-        assert_eq!(CODEC.decode_into(&[b'A'; 512], &mut output), Ok(384));
-        assert_eq!(output, [0; 384]);
+        let mut output = [0xa5; 3072];
+        assert_eq!(CODEC.decode_into(&[b'A'; 4096], &mut output), Ok(3072));
+        assert_eq!(output, [0; 3072]);
         assert_eq!(STATE.with(Cell::get).writes, 0);
     });
 }
@@ -224,24 +242,24 @@ fn backend_unavailable_after_preflight_uses_scalar_writer() {
 #[cfg(feature = "checked-backend")]
 #[test]
 fn checked_validation_and_output_faults_are_detected() {
-    if ready_backend(512).is_none() {
+    if ready_backend(4096).is_none() {
         return;
     }
     inject(Fault::Accept, || {
-        let mut input = [b'A'; 512];
+        let mut input = [b'A'; 4096];
         input[0] = b'!';
-        let mut output = [0xa5; 384];
+        let mut output = [0xa5; 3072];
         assert_eq!(
             CODEC.decode_into(&input, &mut output),
             Err(OneShotError::Backend(BackendFault::ImpossibleState))
         );
-        assert_eq!(output, [0xa5; 384]);
+        assert_eq!(output, [0xa5; 3072]);
         assert_quarantined(BackendFault::ImpossibleState);
     });
     inject(Fault::WriteCorrupt, || {
-        let mut output = [0xa5; 384];
-        assert_eq!(CODEC.decode_into(&[b'A'; 512], &mut output), Ok(384));
-        assert_eq!(output, [0; 384]);
+        let mut output = [0xa5; 3072];
+        assert_eq!(CODEC.decode_into(&[b'A'; 4096], &mut output), Ok(3072));
+        assert_eq!(output, [0; 3072]);
         assert_quarantined(BackendFault::OutputMismatch);
     });
 }

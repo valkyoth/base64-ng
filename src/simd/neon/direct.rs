@@ -12,7 +12,7 @@ use core::arch::aarch64::{
 
 /// Read exactly one block and reduce every validity lane without storing output.
 /// The caller must establish NEON and a Standard or URL-safe alphabet.
-#[cfg(all(test, feature = "std", feature = "simd"))]
+#[cfg(feature = "simd")]
 #[inline(never)]
 #[target_feature(enable = "neon")]
 pub(super) unsafe fn validate_16_bytes_neon<A: Alphabet>(input: &[u8; 16]) -> bool {

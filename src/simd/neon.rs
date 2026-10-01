@@ -189,14 +189,8 @@ macro_rules! clear_neon_registers_after_vector_block {
     }};
 }
 
-#[cfg(all(
-    test,
-    feature = "std",
-    feature = "simd",
-    target_arch = "aarch64",
-    target_endian = "little"
-))]
-pub(crate) mod validation_candidate;
+#[cfg(all(feature = "simd", target_arch = "aarch64", target_endian = "little"))]
+pub(crate) mod ordinary;
 
 /// Encodes one 12-byte block into 16 bytes through the NEON block encoder.
 ///

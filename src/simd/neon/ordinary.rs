@@ -1,11 +1,16 @@
-//! Safe test-only boundary; no production dispatch or health state is changed.
-use super::*;
+//! Closed-family NEON boundary; health admission belongs to the caller.
+use super::{Alphabet, Standard, direct, neon_available};
+use crate::runtime::Backend;
 
-#[cfg(all(test, target_os = "linux"))]
+#[cfg(all(test, feature = "std", target_os = "linux"))]
 mod tests;
 
-pub(crate) fn validate(input: &[u8], url_safe: bool) -> bool {
-    if !neon_available() || !input.len().is_multiple_of(16) {
+pub(crate) fn width(backend: Backend) -> Option<usize> {
+    (backend == Backend::Neon && neon_available()).then_some(16)
+}
+
+pub(crate) fn validate(backend: Backend, input: &[u8], url_safe: bool) -> bool {
+    if width(backend).is_none() || !input.len().is_multiple_of(16) {
         return false;
     }
     if url_safe {
@@ -30,8 +35,11 @@ fn validate_family<A: Alphabet>(input: &[u8]) -> bool {
     valid
 }
 
-pub(crate) fn decode(input: &[u8], output: &mut [u8], url_safe: bool) -> bool {
-    if !neon_available() || !input.len().is_multiple_of(16) || output.len() != input.len() / 4 * 3 {
+pub(crate) fn decode(backend: Backend, input: &[u8], output: &mut [u8], url_safe: bool) -> bool {
+    if width(backend).is_none()
+        || !input.len().is_multiple_of(16)
+        || output.len() != input.len() / 4 * 3
+    {
         return false;
     }
     if url_safe {
