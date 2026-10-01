@@ -87,11 +87,40 @@ exact tarball contents and installation. The scalar binary is unchanged.
 Chromium and Firefox run the extracted package through scalar/SIMD differential
 tests, vector-boundary lengths, malformed lanes and output sentinels. Their
 smoke timings are observational, not paired baseline performance evidence.
-Safari operator execution is pending. On the Mac, enable Safari remote
-automation, run `sh scripts/check-2.0-wasm-loader.sh`, then
+Safari operator execution passed in the supplied logs described below. To
+repeat on the Mac, enable Safari remote automation, run
+`sh scripts/check-2.0-wasm-loader.sh`, then
 `sh scripts/check_wasm_loader_browser_safari_dispatch.sh`. A missing-tool skip
 does not satisfy the Safari requirement.
 
 No new JavaScript options, shared-memory support, constant-time claim or native
 register-clearing guarantee is introduced. Host JIT behavior remains outside
 the Rust compiler assurance boundary.
+
+## Mac Operator Follow-up
+
+The maintainer supplied `base64-wasm-package.log` and `base64-wasm-safari.log`
+after the instructions for `a74fed6`. The package log reports Node v24.21.0,
+successful format/Clippy, deterministic and path-independent scalar/SIMD
+rebuilds, matching integrity pins, all 26 Node tests (zero failures/skips),
+and exact npm package/install smoke. It ends with `2.0 wasm loader: ok`.
+Wasmtime is explicitly skipped because it is not installed on that Mac;
+the separate local Linux Wasmtime results above are not relabeled as Mac runs.
+
+The Safari log contains `BASE64_NG_WASM_LOADER_BROWSER_PASS` and `safari ok`.
+Its eight-call smoke timings are encode 8 ms scalar / 3 ms SIMD and decode
+13 ms scalar / 5 ms SIMD. These are observational scalar/SIMD timings, not a
+paired pre/post Commit 11 comparison. The Node package benchmark similarly
+compares scalar against SIMD, reporting 4.187x encode and 3.610x decode.
+
+These are operator-reported execution results. Neither log prints Git HEAD,
+the exact artifact digests, Rust version, macOS version or Safari version, so
+they are not an independently bound exact-source/browser-version attestation.
+They satisfy the requested operator smoke check without changing runtime code.
+
+Copies are retained under `target/release-evidence/2.1-commit11-wasm/`:
+
+| Log | SHA-256 |
+| --- | --- |
+| `base64-wasm-package.log` | `268992f3a7af7e20b0aba45e37d4427ec9abd59eed84b155ab6b834f7e9f7262` |
+| `base64-wasm-safari.log` | `33e14037b98af5747d1c04e77b11568a7504f1329b31af40c601cce8e4401019` |

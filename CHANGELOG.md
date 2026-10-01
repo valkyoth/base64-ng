@@ -12,8 +12,8 @@
 - Commit 11 extends that ordinary route to WASM simd128 and rebuilds the npm
   SIMD artifact without changing JavaScript contracts or the scalar artifact.
   Add WASM active/MSRV fault and lane tests, expanded browser checks and paired
-  guest/loader benchmarks. Safari operator confirmation and external review
-  remain pending; remaining APIs and optimizations follow the commit plan.
+  guest/loader benchmarks. Safari operator confirmation passed; external review
+  remains pending. Remaining APIs and optimizations follow the commit plan.
 
 ## 2.0.4 - Unreleased
 

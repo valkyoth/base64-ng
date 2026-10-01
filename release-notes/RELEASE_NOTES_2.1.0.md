@@ -14,8 +14,8 @@ from correctness evidence. CT/secret contracts are unchanged.
 Commit 11 extends the ordinary strict route to WASM simd128. The npm SIMD
 artifact and integrity pin are refreshed; the scalar artifact, JavaScript
 options, ownership rules, limits and transactional destinations are unchanged.
-Local Node, Wasmtime, Chromium and Firefox checks pass. Safari operator
-execution and external review remain pending. See the
+Local Node, Wasmtime, Chromium and Firefox checks pass, as does the
+operator-supplied Mac package/Safari rerun. External review remains pending. See the
 [WASM measurements](../docs/PERFORMANCE_2.1_WASM.md) for paired guest and loader
 results, including small-input regressions and JIT limitations.
 

@@ -222,8 +222,9 @@ tail grammar through a private preflight, followed by health-gated writing.
 Explicit reference validation and existing direct/static wrappers retain
 their original contracts. See [validation policy](DECODE_VALIDATION.md) for
 thresholds and recovery. The WASM change has new Node, Wasmtime, Chromium and
-Firefox checks; its Safari operator rerun is pending, not inherited from 2.0
-evidence. No JIT timing or register-clearing guarantee is added.
+Firefox checks and a passing operator-supplied Safari rerun, not inherited from
+2.0 evidence. See [WASM measurements](PERFORMANCE_2.1_WASM.md) for the log
+provenance limitations. No JIT timing or register-clearing guarantee is added.
 
 ## Encode Surface Review
 
