@@ -78,6 +78,10 @@ checked-backend = ["base64-ng/checked-backend"]
 [dependencies]
 base64-ng = { path = "../..", default-features = false, features = ["simd"] }
 MANIFEST
+        echo "2.0 x86 decode: deployment-attested no_std without global ISA flags"
+        RUSTFLAGS='' cargo run --quiet --offline --manifest-path "$smoke_dir/Cargo.toml"
+        RUSTFLAGS='' cargo run --quiet --offline --manifest-path "$smoke_dir/Cargo.toml" \
+            --features checked-backend
         echo "2.0 x86 decode: no_std static SSSE3/SSE4.1 execution"
         RUSTFLAGS='-C target-feature=+ssse3,+sse4.1' \
             cargo run --quiet --offline --manifest-path "$smoke_dir/Cargo.toml"

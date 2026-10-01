@@ -58,10 +58,42 @@ fn encode(backend: Backend) -> bool {
 }
 
 fn decode(backend: Backend) -> bool {
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    if matches!(backend, Backend::Avx2 | Backend::Ssse3Sse41)
+        // Deployment-attested no_std tokens may enable only the existing
+        // direct kernels, without making the automatically probed route usable.
+        && crate::simd::ordinary::width(backend).is_some()
+        && !ordinary_classifiers(backend)
+    {
+        return false;
+    }
     decode_matches::<Standard>(backend, STANDARD_ENCODED, &INPUT)
         && decode_matches::<UrlSafe>(backend, URL_SAFE_ENCODED, &INPUT)
         && decode_matches::<Standard>(backend, BOUNDARY_STANDARD, &BOUNDARY_INPUT)
         && decode_matches::<UrlSafe>(backend, BOUNDARY_URL_SAFE, &BOUNDARY_INPUT)
+}
+
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+fn ordinary_classifiers(backend: Backend) -> bool {
+    for (input, url) in [(STANDARD_ENCODED, false), (URL_SAFE_ENCODED, true)] {
+        if !crate::simd::ordinary::validate(backend, input, url) {
+            return false;
+        }
+        let mut output = [0; 48];
+        if !crate::simd::ordinary::decode(backend, input, &mut output, url) || output != INPUT {
+            return false;
+        }
+        for byte in [b'=', b' ', 0xff, if url { b'+' } else { b'-' }] {
+            for index in 0..64 {
+                let mut invalid = *input;
+                invalid[index] = byte;
+                if crate::simd::ordinary::validate(backend, &invalid, url) {
+                    return false;
+                }
+            }
+        }
+    }
+    true
 }
 
 fn encode_matches<A: crate::Alphabet>(

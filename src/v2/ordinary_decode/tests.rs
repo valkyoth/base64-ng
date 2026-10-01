@@ -180,8 +180,11 @@ fn fault_injection_stops_before_capacity_checks_and_writes() {
             let mut output = [0xa5; 8];
             let result = Preflight::classified_for_test(
                 input,
-                crate::STRICT_STANDARD_PADDED.settings(),
-                validate_and_measure,
+                super::Prepared {
+                    settings: crate::STRICT_STANDARD_PADDED.settings(),
+                    backend: None,
+                },
+                |config, input| validate_and_measure(config.settings, input),
                 accepted,
             )
             .map_err(map_preflight_error)

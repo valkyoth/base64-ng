@@ -14,7 +14,7 @@ except (OSError, UnicodeError) as error:
 definitions = re.findall(r"^define\s+[^\n]+", ir, re.MULTILINE)
 if not definitions:
     raise SystemExit("x86 production IR: no function definitions found")
-if any(re.search(r"validate_blocks_avx(?:2|512)|avx(?:2|512)_candidate|candidate_(validate|decode)_avx(?:2|512)",
+if any(re.search(r"validate_blocks_avx512|(?:ssse3|avx2|avx512)_candidate|candidate_(validate|decode)_(?:16|avx2|avx512)",
                  definition) for definition in definitions):
     raise SystemExit("x86 production IR: candidate leaked into production IR")
 print("x86 production IR: one readable artifact; candidate definitions absent")

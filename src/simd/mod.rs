@@ -38,6 +38,8 @@
 
 mod static_token;
 pub use static_token::StaticBackendToken;
+#[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
+pub(crate) use x86::ordinary;
 
 #[cfg(all(
     test,

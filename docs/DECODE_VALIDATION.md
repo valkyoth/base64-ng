@@ -2,10 +2,17 @@
 
 2.1 adds the non-exhaustive `DecodeValidation::{Auto, ScalarReference}` policy.
 It is a per-call choice, not a Cargo feature or a change to the codec grammar.
-Canonical `Auto` specializes portable scalar validation for strict Standard and
-URL-safe padded/unpadded presets and exactly equivalent runtime settings.
-`ScalarReference` retains the original validator. Historical decode paths are
-unchanged; no new vector validation is enabled by this checkpoint.
+`Auto` uses health-gated SSSE3/SSE4.1 or AVX2 validation and writing for strict
+Standard/URL-safe padded/unpadded presets and exactly equivalent runtime
+settings. Canonical fallback uses portable table validation; `ScalarReference`
+retains the original validator. Eligible historical x86 calls share the fast
+core without acquiring canonical error semantics. Automatic AVX-512, NEON and
+wasm vector validation are not introduced by Commit 9.
+
+The new vector route starts at 512 encoded bytes; smaller canonical calls keep
+portable validation/writing and smaller historical calls keep their existing
+decoder. This conservative complete-call cutoff avoids measured small-message
+setup regressions; it does not change existing static/exact ISA contracts.
 
 ```rust
 use base64_ng::{DecodeValidation, STRICT_STANDARD_PADDED};
@@ -45,9 +52,10 @@ including partial output on its scalar error path. No progressive API is added.
 - `ScalarReference` means the original scalar grammar checks, not scalar output instructions.
   Valid input is fully checked. Malformed input can fail early; this is not CT.
   The existing scalar decoder combines validation with output generation;
-  SIMD decoders retain scalar prevalidation. This preserves historical behavior
+  reference-selected historical SIMD decoders retain scalar prevalidation. This preserves historical behavior
   without adding a redundant extra pass to every scalar decode.
-- Canonical `Auto` checks complete grammar with input-indexed lookup tables,
+- Canonical `Auto` checks complete grammar with admitted vector blocks and
+  portable input-indexed tail tables (or entirely portable tables),
   then writes through the private preflight result. On rejection, the original
   validator recovers exact diagnostics before capacity or allocation checks.
   A late-invalid input can therefore take two linear scans, still `O(n)`.
@@ -55,11 +63,17 @@ including partial output on its scalar error path. No progressive API is added.
   detailed ordinary diagnostics and these tables are not constant-time.
   Custom alphabets and relaxed settings retain the original validator and
   writer. Empty input is accepted without inspecting the alphabet.
-- Canonical writing uses the same specialized tables under either validation
-  policy when settings qualify. Reference validation still runs the original
+- Canonical writing uses admitted vector blocks and specialized tail tables
+  under either validation policy when settings qualify. Reference validation still runs the original
   incremental state machine, not the optimized table validator.
-- Historical `Auto` still follows the existing paths. Future vector validation
-  requires its own admission; the explicit reference choice remains available.
+- Historical `Auto` shares the fast core for eligible x86 calls with sufficient
+  capacity. Invalid input, insufficient capacity, custom alphabets and other
+  decode backends use the original path, preserving historical errors and
+  partial-write behavior. Fully validated length helpers also share fast
+  validation. The explicit reference choice remains available.
+  Historical error recovery can run both canonical reference diagnostics and
+  the historical decoder after fast rejection, so rejection remains linear
+  but may involve three scans. Enforce application-level input-size limits.
 - `checked-backend` still performs its independent output comparison for selected
   accelerated backends and retains quarantine/retry rules. Neither policy opts out.
 - Scalar-only builds require neither allocation nor CPU detection. The policy
@@ -91,9 +105,9 @@ an owned codec-settings snapshot. The private result is neither `Clone` nor
 `Copy`; the writer consumes it and accepts no replacement source or settings.
 Canonical caller-buffer and allocating decode share this boundary. Allocating
 decode now retains the result across reservation instead of validating again.
-Historical validation-only helpers share its length checks; historical decode,
-checked-backend comparisons, incremental states, and CT/secret paths are not
-rerouted.
+Historical validation-only helpers share its length checks. Commit 9 also
+routes eligible historical ordinary decoding through it. Incremental states,
+static tokens and CT/secret paths are not rerouted.
 
 Checked geometry reserves the last quantum (at most four input bytes and three
 output bytes), leaving only complete unpadded quanta in the interior. Empty
@@ -105,8 +119,7 @@ custom alphabets, relaxed settings and explicit `ScalarReference` keep the
 original validation. The fast validator also verifies padding placement and
 canonical tail bits; it is not merely an interior-block classifier.
 
-The future vector classifier/reference disagreement contract remains covered
-with test-only injection (no vector classifier is enabled here):
+The classifier/reference disagreement contract is covered with test injection:
 
 | Classifier vs reference | Outcome before any write |
 | --- | --- |
@@ -115,22 +128,28 @@ with test-only injection (no vector classifier is enabled here):
 | Either disagrees | No validated result; fail closed as a backend invariant fault |
 
 The canonical surface maps internal disagreement/bounds faults to
-`OneShotError::Backend(BackendFault::ImpossibleState)`; the historical
-validation-only surface maps them to opaque `DecodeError::InvalidInput`.
+`OneShotError::Backend(BackendFault::ImpossibleState)`. Historical fast-path
+failures fall back to the original decoder/validator after any quarantine;
+its preflight bounds failures map to opaque `DecodeError::InvalidInput`.
 Neither mapping changes ordinary malformed-input diagnostics. A rejection by
 the portable validator followed by reference acceptance also fails closed with
 `ImpossibleState`. Successful portable validation does not rerun the original
 validator; callers wanting that pass select `ScalarReference`. Candidate vector
-classifiers cannot authorize writes on their own. Future vector integration
-must associate faults with backend identity and quarantine before admission;
-existing checked-output quarantine and retry behavior is unchanged.
+classifiers cannot authorize writes without complete scalar tail validation.
+Commit 9 binds backend identity and applies health admission and quarantine.
+Checked builds independently validate the whole input before writing and
+compare bounded output chunks with the original scalar decoder. Kernel
+rejection or checked output mismatch quarantines the backend and rewrites the
+body with the validated table path; no error is returned after partial writes.
+The test-only fault hooks use thread-local quarantine observations rather than
+poisoning shared process health during parallel tests.
 
 The policy gate also runs exhaustive short-input and tail tests, an independent
 bounded layout model, `usize::MAX` arithmetic checks, fault injection through
 the preflight/write path, and compiler rejection tests for source mutation,
 proof reuse, and configuration/input substitution on active Rust and the MSRV.
 
-## SSSE3 Validation Candidate
+## SSSE3 Validation Candidate History
 
 Commit 6 adds test-only Standard/URL-safe validation of complete 16-byte blocks
 without output stores. The final 1-16 input bytes stay with the original scalar
@@ -139,19 +158,19 @@ the successful validation before the existing direct decode kernel writes.
 On rejection, whole-input reference validation recovers the original error.
 Custom/relaxed settings and unavailable CPUs use the reference path.
 
-This evaluation route is compiled only for x86 unit tests with `std,simd`; it cannot
+The original evaluation route is compiled only for x86 unit tests with `std,simd`; it cannot
 be selected by public `Auto`, static tokens, CT APIs or production callers.
-Public canonical `Auto` retains Commit 5's portable scalar validation; historical
-SIMD retains its scalar prepass. Run `sh scripts/check-2.1-ssse3-validation.sh` for
+Commit 9 separately promotes its classifier into the production fault-handling
+route above. Run `sh scripts/check-2.1-ssse3-validation.sh` for
 the candidate's native tests and generated-code checks. This is not performance
-admission. A test assertion catches decode-kernel disagreement; production
-backend fault/quarantine integration is still required before enabling the path.
+admission. A test assertion catches decode-kernel disagreement in the original
+evaluation route, which remains excluded from production.
 
 Kani equivalence for the portable validator would provide additional bounded
 assurance; it is not claimed by the current exhaustive classification/tail and
 reference/oracle tests.
 
-## AVX2 Validation Candidate
+## AVX2 Validation Candidate History
 
 Commit 7 adds the corresponding test-only AVX2 route. A bulk validator checks
 32-byte blocks with a full YMM movemask; every lane in both 128-bit halves must
@@ -165,12 +184,14 @@ CPU/OS probing, complete-block geometry, exact output capacity and cleanup are
 retained. Custom/relaxed settings or unavailable AVX2 use the reference path.
 Like SSSE3, the candidate is test-only and uses an assertion for kernel
 disagreement. It is not a new public API, checked-backend replacement, or an
-admitted production fault-recovery path. Public dispatch, CT/secret engines and
-the explicit reference option are unchanged.
+admitted production fault-recovery path. Commit 9 separately promotes its bulk
+classifier and adds production recovery; CT/secret engines and the explicit
+reference validator remain separate.
 
 Run `sh scripts/check-2.1-avx2-validation.sh` for exhaustive classification,
 malformed-input parity, guard pages on Linux x86_64, active/MSRV feature builds,
-assembly checks and production-IR exclusion. Set
+assembly checks and production-IR exclusion of the asserting candidate (the
+AVX2 classifier itself now ships). Set
 `BASE64_NG_REQUIRE_AVX2_VALIDATION=1` when native execution must be mandatory.
 The opt-in same-process benchmark and its limitations are described in
 [Commit 7 measurements](PERFORMANCE_2.1_AVX2.md). Small-message overhead is not an

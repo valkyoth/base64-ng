@@ -31,8 +31,10 @@ remain at `2.0.3` (the sanitization companion is `2.0.4`).
 The development branch reports package version `2.1.0` across the family;
 publication is disabled by the `development-blocked` policy, Cargo manifests,
 and npm's private-package flag. See the [2.1 commit plan](docs/2.1.0-release-plan.md).
-The branch includes canonical scalar decode improvements; vector validation
-admission is still in progress.
+The branch includes canonical scalar decode improvements and health-gated x86
+SSSE3/AVX2 strict validation and decoding. Other vector-validation backends and
+release performance admission remain in progress; see
+[validation policies](docs/DECODE_VALIDATION.md).
 
 The examples below target published releases. To evaluate development code:
 

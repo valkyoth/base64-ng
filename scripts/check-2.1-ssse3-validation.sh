@@ -30,4 +30,4 @@ CARGO_TARGET_DIR="$tmp" RUSTFLAGS='-C target-feature=+ssse3,+sse4.1' \
 python3 scripts/check-x86-validation-asm.py "$tmp/release/deps"
 sh scripts/validate-unsafe-boundary.sh
 sh scripts/validate-panic-policy.sh
-echo "2.1 SSSE3 validation: candidate semantics, bounds, MSRV and assembly ok; public dispatch unchanged"
+echo "2.1 SSSE3 validation: classifier/candidate semantics, bounds, MSRV and assembly ok"

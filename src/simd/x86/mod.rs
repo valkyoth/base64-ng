@@ -1,8 +1,9 @@
 #![allow(unsafe_code)]
-
 mod cleanup;
 mod decode;
 mod decode_direct;
+#[cfg(feature = "simd")]
+pub(crate) mod ordinary;
 #[cfg(all(test, feature = "std"))]
 pub(super) mod test_probes;
 

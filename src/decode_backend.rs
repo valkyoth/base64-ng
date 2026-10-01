@@ -56,7 +56,7 @@ pub(crate) fn last_test_execution() -> DecodeBackend {
 }
 
 #[cfg(test)]
-fn record_test_execution(backend: DecodeBackend) {
+pub(crate) fn record_test_execution(backend: DecodeBackend) {
     LAST_TEST_EXECUTION.with(|observed| observed.set(backend));
 }
 

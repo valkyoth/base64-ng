@@ -372,7 +372,6 @@ pub(crate) const fn admit_deployment_attested(
     false
 }
 
-#[cfg(feature = "checked-backend")]
 pub(crate) fn quarantine(operation: OperationKind, backend: Backend, fault: BackendFault) {
     #[cfg(all(feature = "simd", target_has_atomic = "ptr"))]
     if let Some(cell) = cell(operation, backend) {

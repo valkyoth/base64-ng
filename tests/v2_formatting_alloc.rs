@@ -108,6 +108,39 @@ fn display_and_formatter_paths_allocate_zero_heap_blocks() {
 }
 
 #[test]
+fn strict_decode_validation_and_writing_allocate_zero_heap_blocks() {
+    let input = [b'A'; 4096];
+    let mut output = [0xff; 3072];
+    let _ = base64_ng::initialize_backends();
+    STRICT_STANDARD_PADDED
+        .decode_into(&input, &mut output)
+        .unwrap();
+    for policy in [
+        base64_ng::DecodeValidation::Auto,
+        base64_ng::DecodeValidation::ScalarReference,
+    ] {
+        assert_eq!(
+            measure(|| {
+                assert_eq!(
+                    STRICT_STANDARD_PADDED.decoded_len_with_validation(&input, policy),
+                    Ok(3072)
+                );
+                assert_eq!(
+                    STRICT_STANDARD_PADDED.decode_into_with_validation(&input, &mut output, policy),
+                    Ok(3072)
+                );
+                assert_eq!(
+                    base64_ng::STANDARD.decode_slice_with_validation(&input, &mut output, policy),
+                    Ok(3072)
+                );
+            }),
+            0
+        );
+    }
+    assert_eq!(output, [0; 3072]);
+}
+
+#[test]
 fn counter_detects_allocations_and_reallocations() {
     let mut bytes = Vec::<u8>::new();
     assert!(measure(|| bytes.reserve_exact(std::hint::black_box(16))) > 0);

@@ -1,4 +1,4 @@
-//! Linux native guard-page checks for the non-admitted x86 validation candidates.
+//! Linux native guard-page checks for production and candidate x86 validation.
 #![cfg(not(miri))]
 
 use core::ffi::c_void;
@@ -56,6 +56,62 @@ impl Drop for Pages {
         // SAFETY: This object owns the complete mapping; all borrowed slices expired.
         unsafe {
             munmap(self.base.cast(), self.page * 3);
+        }
+    }
+}
+
+#[cfg(feature = "simd")]
+#[test]
+fn public_validation_guard_pages_bound_production_loads_and_stores() {
+    use crate::runtime::Backend;
+    for backend in [Backend::Ssse3Sse41, Backend::Avx2] {
+        let Some(width) = super::ordinary::width(backend) else {
+            continue;
+        };
+        for at_end in [false, true] {
+            for url in [false, true] {
+                let mut source = Pages::new();
+                let mut destination = Pages::new();
+                let input = source.region(width * 3, at_end);
+                input.fill(b'A');
+                let output = destination.region(width / 4 * 9, at_end);
+                output.fill(0xa5);
+                assert!(super::ordinary::validate(backend, input, url));
+                assert!(!super::ordinary::decode(
+                    backend,
+                    input,
+                    &mut output[..0],
+                    url
+                ));
+                assert!(output.iter().all(|&b| b == 0xa5));
+                assert!(super::ordinary::decode(backend, input, output, url));
+                assert!(output.iter().all(|&b| b == 0));
+                input[width - 1] = 0xff;
+                output.fill(0xa5);
+                assert!(!super::ordinary::validate(backend, input, url));
+                assert!(!super::ordinary::decode(backend, input, output, url));
+                assert!(output.iter().all(|&b| b == 0xa5));
+            }
+            for len in [508, 512, 516, 1024, 1028] {
+                let mut source = Pages::new();
+                let mut destination = Pages::new();
+                let input = source.region(len, at_end);
+                input.fill(b'A');
+                let output = destination.region(len / 4 * 3, at_end);
+                assert_eq!(
+                    crate::STRICT_STANDARD_PADDED.decode_into(input, output),
+                    Ok(output.len())
+                );
+                assert!(output.iter().all(|&b| b == 0));
+                input[len - 2] = b'!';
+                output.fill(0xa5);
+                assert!(
+                    crate::STRICT_STANDARD_PADDED
+                        .decode_into(input, output)
+                        .is_err()
+                );
+                assert!(output.iter().all(|&b| b == 0xa5));
+            }
         }
     }
 }

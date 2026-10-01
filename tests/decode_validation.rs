@@ -151,6 +151,54 @@ fn validation_policy_preserves_canonical_grammar_and_transactionality() {
 }
 
 #[test]
+fn public_vector_boundaries_preserve_reference_results_and_whole_destinations() {
+    for settings in [
+        STRICT_STANDARD_PADDED.settings(),
+        STRICT_STANDARD_UNPADDED.settings(),
+        STRICT_URL_SAFE_PADDED.settings(),
+        STRICT_URL_SAFE_UNPADDED.settings(),
+    ] {
+        let codec = CodecBuilder::new(*settings.alphabet())
+            .encode_padding(settings.encode_padding())
+            .decode_padding(settings.decode_padding())
+            .build()
+            .unwrap();
+        for len in [380, 381, 382, 383, 384, 385, 767, 768, 769, 1537] {
+            let input = [0xa5; 1537];
+            let mut encoded = [0; 2052];
+            let size = codec.encode_into(&input[..len], &mut encoded).unwrap();
+            for position in [0, 15, 16, 31, 32, 63, 64, size - 1] {
+                for byte in [encoded[position], b'!', b'=', b' ', 0xff] {
+                    let mut data = encoded;
+                    data[position] = byte;
+                    assert_eq!(
+                        codec.decoded_len(&data[..size]),
+                        codec.decoded_len_with_validation(&data[..size], POLICY)
+                    );
+                    for capacity in [0, len - 1, len, 1540] {
+                        let mut auto = [0x55; 1540];
+                        let mut reference = auto;
+                        let expected = codec.decode_into_with_validation(
+                            &data[..size],
+                            &mut reference[..capacity],
+                            POLICY,
+                        );
+                        assert_eq!(
+                            codec.decode_into(&data[..size], &mut auto[..capacity]),
+                            expected
+                        );
+                        assert_eq!(auto, reference);
+                        if expected.is_err() {
+                            assert_eq!(auto, [0x55; 1540]);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[test]
 fn validation_policy_preserves_historical_diagnostics_and_whole_buffers() {
     historical(base64_ng::STANDARD);
     historical(base64_ng::STANDARD_NO_PAD);
@@ -177,4 +225,54 @@ fn validation_policy_preserves_historical_diagnostics_and_whole_buffers() {
         );
         assert_eq!(&output[..3], b"foo");
     }
+}
+
+fn historical_bulk<A: Alphabet, const PAD: bool>(engine: Engine<A, PAD>) {
+    let mut encoded = [0; 2052];
+    let size = engine.encode_slice(&[0xa5; 1537], &mut encoded).unwrap();
+    for position in [0, 15, 16, 31, 32, 63, 64, 511, 512, 1023, 1024, size - 1] {
+        for byte in [encoded[position], b'!', b'=', b' ', 0xff] {
+            let mut data = encoded;
+            data[position] = byte;
+            let input = &data[..size];
+            assert_eq!(
+                engine.validated_decoded_len_with_validation(input, DecodeValidation::Auto),
+                engine.validated_decoded_len_with_validation(input, POLICY)
+            );
+            for capacity in [0, 1536, 1537, 1544] {
+                let mut auto = [0x55; 1544];
+                let mut reference = auto;
+                assert_eq!(
+                    engine.decode_slice_with_validation(
+                        input,
+                        &mut auto[..capacity],
+                        DecodeValidation::Auto
+                    ),
+                    engine.decode_slice_with_validation(input, &mut reference[..capacity], POLICY)
+                );
+                assert_eq!(auto, reference);
+                assert_eq!(
+                    engine.decode_slice_clear_tail_with_validation(
+                        input,
+                        &mut auto[..capacity],
+                        DecodeValidation::Auto
+                    ),
+                    engine.decode_slice_clear_tail_with_validation(
+                        input,
+                        &mut reference[..capacity],
+                        POLICY
+                    )
+                );
+                assert_eq!(auto, reference);
+            }
+        }
+    }
+}
+
+#[test]
+fn historical_bulk_errors_never_acquire_canonical_diagnostics_or_mutation_rules() {
+    historical_bulk(base64_ng::STANDARD);
+    historical_bulk(base64_ng::STANDARD_NO_PAD);
+    historical_bulk(base64_ng::URL_SAFE);
+    historical_bulk(base64_ng::URL_SAFE_NO_PAD);
 }

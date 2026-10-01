@@ -102,8 +102,8 @@ where
     clippy::cast_ptr_alignment,
     reason = "_mm_loadu_si128 accepts an unaligned pointer"
 )]
-#[cfg(all(test, feature = "std"))]
 #[inline(never)]
+#[cfg(any(feature = "simd", all(test, feature = "std")))]
 #[target_feature(enable = "ssse3,sse4.1")]
 pub(super) unsafe fn validate_16_bytes_ssse3_sse41<A: Alphabet>(input: &[u8; 16]) -> bool {
     // SAFETY: The caller proves SSSE3/SSE4.1 availability. The fixed array
@@ -149,7 +149,7 @@ where
     clippy::cast_ptr_alignment,
     reason = "_mm256_loadu_si256 accepts an unaligned pointer"
 )]
-#[cfg(all(test, feature = "std"))]
+#[cfg(any(feature = "simd", all(test, feature = "std")))]
 #[target_feature(enable = "avx2")]
 pub(super) unsafe fn validate_blocks_avx2<A: Alphabet>(input: &[[u8; 32]]) -> bool {
     for block in input {

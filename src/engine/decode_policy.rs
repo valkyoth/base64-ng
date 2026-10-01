@@ -13,7 +13,17 @@ impl<A: Alphabet, const PAD: bool> Engine<A, PAD> {
         output: &mut [u8],
         validation: DecodeValidation,
     ) -> Result<usize, DecodeError> {
-        // Both strategies retain today's scalar checks until separate admission.
+        if validation == DecodeValidation::Auto
+            && crate::v2::ordinary_decode::accelerated(input.len())
+            && let Some(settings) = strict_settings::<A, PAD>()
+            && let Ok(proof) = crate::v2::ordinary_decode::prepare(settings, input, validation)
+            && output.len() >= proof.len()
+        {
+            return crate::v2::ordinary_decode::write(proof, output)
+                .map_err(|_| DecodeError::InvalidInput);
+        }
+        // Recover historical precedence and partial-write behavior on invalid
+        // input or insufficient capacity; canonical errors are never translated.
         match validation {
             DecodeValidation::Auto | DecodeValidation::ScalarReference => {
                 decode_backend::decode_slice::<A, PAD>(input, output)
@@ -50,6 +60,12 @@ impl<A: Alphabet, const PAD: bool> Engine<A, PAD> {
         input: &[u8],
         validation: DecodeValidation,
     ) -> Result<usize, DecodeError> {
+        if validation == DecodeValidation::Auto
+            && let Some(settings) = strict_settings::<A, PAD>()
+            && let Ok(proof) = crate::v2::ordinary_decode::prepare(settings, input, validation)
+        {
+            return Ok(proof.len());
+        }
         match validation {
             DecodeValidation::Auto | DecodeValidation::ScalarReference => {
                 Preflight::validate(input, self, |_, input| validate_decode::<A, PAD>(input))
@@ -88,5 +104,23 @@ impl<A: Alphabet, const PAD: bool> Engine<A, PAD> {
             self.decode_slice_clear_tail_with_validation(input, &mut output, validation)?;
         output.truncate(written);
         Ok(output)
+    }
+}
+
+fn strict_settings<A: Alphabet, const PAD: bool>() -> Option<crate::CodecSettings> {
+    match (A::ENCODE, PAD) {
+        (table, true) if table == crate::Standard::ENCODE => {
+            Some(crate::STRICT_STANDARD_PADDED.settings())
+        }
+        (table, false) if table == crate::Standard::ENCODE => {
+            Some(crate::STRICT_STANDARD_UNPADDED.settings())
+        }
+        (table, true) if table == crate::UrlSafe::ENCODE => {
+            Some(crate::STRICT_URL_SAFE_PADDED.settings())
+        }
+        (table, false) if table == crate::UrlSafe::ENCODE => {
+            Some(crate::STRICT_URL_SAFE_UNPADDED.settings())
+        }
+        _ => None,
     }
 }

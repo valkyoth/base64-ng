@@ -1,10 +1,10 @@
 /// Validation strategy for ordinary, non-secret Base64 input.
 ///
 /// This selects validation, not output-generation instructions or a weaker
-/// grammar. Canonical strict Standard/URL-safe `Auto` uses a specialized portable
-/// scalar validator; `ScalarReference` retains the original validator. Historical scalar
-/// execution can combine validation with decoding; admitted SIMD execution
-/// retains its full scalar prevalidation. Existing error precedence and output
+/// grammar. Strict Standard/URL-safe `Auto` uses admitted x86 vector validation
+/// with scalar tails or portable validation; `ScalarReference` retains the
+/// original validator. Historical scalar execution can combine validation with
+/// decoding. Other architectures retain their existing prevalidation. Error precedence and output
 /// mutation contracts are unchanged.
 ///
 /// `checked-backend` remains additive: this option cannot disable redundant
@@ -22,8 +22,9 @@
 pub enum DecodeValidation {
     /// Use the admitted validation strategy, with scalar fallback.
     ///
-    /// Canonical strict Standard/URL-safe settings use portable table validation.
-    /// Other settings retain reference validation. Vector validation is not yet enabled.
+    /// Canonical strict Standard/URL-safe settings use health-gated SSSE3/AVX2
+    /// validation when available, with portable table fallback. Other settings
+    /// retain reference validation. No automatic AVX-512 admission is implied.
     #[default]
     Auto,
     /// Retain complete scalar-reference grammar validation on every call.
@@ -70,7 +71,14 @@ mod tests {
                 crate::STANDARD.decode_slice_with_validation(&input, &mut output, policy),
                 Ok(3072)
             );
-            assert!(observation::calls() > before);
+            if policy == DecodeValidation::ScalarReference
+                || !crate::v2::ordinary_decode::accelerated(input.len())
+                || cfg!(feature = "checked-backend")
+            {
+                assert!(observation::calls() > before);
+            } else {
+                assert_eq!(observation::calls(), before);
+            }
             #[cfg(feature = "checked-backend")]
             if crate::decode_backend::last_test_execution()
                 != crate::decode_backend::DecodeBackend::Scalar
@@ -94,7 +102,13 @@ mod tests {
                 assert!(observation::calls() > before);
                 assert_eq!(observation::fast_calls(), fast_before);
             } else {
-                assert_eq!(observation::calls(), before);
+                if cfg!(feature = "checked-backend")
+                    && crate::v2::ordinary_decode::accelerated(input.len())
+                {
+                    assert!(observation::calls() > before);
+                } else {
+                    assert_eq!(observation::calls(), before);
+                }
                 assert_eq!(observation::fast_calls(), fast_before + 1);
             }
             let before = observation::calls();
@@ -102,7 +116,14 @@ mod tests {
                 crate::STANDARD.validated_decoded_len_with_validation(&input, policy),
                 Ok(3072)
             );
-            assert!(observation::calls() > before);
+            if policy == DecodeValidation::ScalarReference
+                || (cfg!(feature = "checked-backend")
+                    && crate::v2::ordinary_decode::accelerated(input.len()))
+            {
+                assert!(observation::calls() > before);
+            } else {
+                assert_eq!(observation::calls(), before);
+            }
         }
     }
 }

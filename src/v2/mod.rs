@@ -25,7 +25,7 @@ mod lifecycle;
 mod ordinary;
 #[cfg(feature = "alloc")]
 mod ordinary_alloc;
-mod ordinary_decode;
+pub(crate) mod ordinary_decode;
 #[cfg(all(
     test,
     feature = "std",

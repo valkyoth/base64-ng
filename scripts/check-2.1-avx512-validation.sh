@@ -33,4 +33,4 @@ CARGO_TARGET_DIR="$tmp/test" RUSTFLAGS='-C target-feature=+ssse3,+sse4.1' \
 python3 scripts/check-x86-validation-asm.py "$tmp/test/release/deps" avx512
 sh scripts/validate-unsafe-boundary.sh
 sh scripts/validate-panic-policy.sh
-echo "2.1 AVX-512 validation: candidate semantics, bounds, MSRV and assembly ok; public dispatch unchanged"
+echo "2.1 AVX-512 validation: candidate semantics, bounds, MSRV and assembly ok; AVX-512 dispatch unchanged"

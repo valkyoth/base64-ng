@@ -45,7 +45,9 @@ with tempfile.TemporaryDirectory(prefix="base64-ng-avx2-ir-") as temporary:
             check(root, False, "cannot read artifact")
     finally:
         path.chmod(0o600)
-    for symbol in ("validate_blocks_avx2", "avx2_candidate",
+    path.write_text(valid + valid.replace("ordinary_decode", "validate_blocks_avx2"))
+    check(root, True, "candidate definitions absent")
+    for symbol in ("ssse3_candidate", "candidate_validate_16", "candidate_decode_16", "avx2_candidate",
                    "candidate_validate_avx2", "candidate_decode_avx2",
                    "validate_blocks_avx512", "avx512_candidate",
                    "candidate_validate_avx512", "candidate_decode_avx512"):

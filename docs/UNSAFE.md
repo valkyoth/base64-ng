@@ -747,9 +747,10 @@ Safety argument:
 
 Location: `src/simd/x86/decode_direct.rs`
 
-Status: test-only, non-dispatchable validation experiment; not public admission.
+Status: promoted to ordinary production validation in 2.1 Commit 9.
 The caller proves SSSE3/SSE4.1 availability and supplies exactly sixteen readable
-bytes. Only the closed Standard/URL-safe choices in `candidate_validate_16` reach
+bytes. Only the closed Standard/URL-safe choices in the production `ordinary`
+wrapper and test `candidate_validate_16` reach
 it. It shares the reviewed range/equality classifier with the decode kernel,
 reduces all sixteen validity lanes with a movemask, and performs no output
 stores. High-bit bytes, padding, whitespace and opposite-alphabet symbols are
@@ -759,8 +760,8 @@ The test-only canonical route validates vector blocks plus the final scalar
 remainder before constructing a private preflight result. Malformed inputs use
 the original whole-input validator for exact diagnostics; capacity checks and
 output follow validation. The existing decode kernel is used only after this
-preflight. A kernel disagreement is a test assertion, not shipped recovery code;
-backend identity, quarantine and fault recovery are prerequisites for admission.
+preflight. The historical evaluation route retains its test assertion. Public
+calls instead use the fault-handling boundary described below.
 
 Native tests cover every byte/lane, mixed invalid lanes, unaligned slices,
 padding/tails and whole-destination sentinels. Linux x86_64 guard tests own three
@@ -774,7 +775,7 @@ The focused gate inspects generated classifier assembly separately from decode.
 
 Location: `src/simd/x86/decode_direct.rs`
 
-Status: test-only, non-dispatchable, like the Commit 6 classifier. The input is a
+Status: promoted to ordinary production validation in 2.1 Commit 9. The input is a
 slice of exact 32-byte arrays. Each unaligned load stays within one array, uses
 the existing AVX2 range/equality masks, and reduces all 32 lanes with
 `_mm256_movemask_epi8`, rejecting unless every lane is valid. No output stores
@@ -790,8 +791,8 @@ also clears YMM state on first-block rejection, when the loop has stored nothing
 The low-level decoder can write earlier valid blocks before rejecting a later
 one; only the private canonical candidate preflight provides transactionality.
 It validates the complete vector prefix and scalar remainder before any write.
-As in Commit 6, classifier/kernel disagreement is a test failure, not shipped
-fault recovery. Production quarantine/recovery remains an admission prerequisite.
+The evaluation candidate still asserts disagreement. Public calls use the
+separate production fault-handling boundary below, not that assertion.
 
 Tests exercise both halves of every AVX2 vector, several consecutive blocks,
 mixed invalid lanes, unaligned loads/stores, malformed diagnostics and exact
@@ -799,7 +800,34 @@ output sentinels. Linux x86_64 guard pages cover direct bulk operations and the
 complete canonical candidate at both ends of readable/writable pages. Assembly
 checks require a YMM-width movemask in both alphabet specializations and reject
 stores, delegated calls or AVX-512 registers. No constant-time or hardware
-admission claim is added.
+admission claim is added by the evaluation tests alone.
+
+### Ordinary Production `decode_avx2` / `decode_ssse3` (2.1 Commit 9)
+
+Location: `src/simd/x86/ordinary.rs`
+
+Safe entry points check CPU/OS support, block divisibility and exact output
+geometry, and select only Standard or URL-safe. The target-feature loops derive
+32:24 or 16:12 arrays using checked slice chunking. Direct kernels classify
+before each exact store; cleanup runs after success or first/later rejection.
+The only unsafe precondition of these internal loops is CPU/OS support.
+
+Public callers use the strict-decode health latch. Its direct KAT now covers
+these classifiers and writers for both alphabets, including invalid bytes at
+every position, without recursively entering dispatch. Preflight binds complete
+validation, immutable input, settings, checked length and backend identity.
+Canonical validation failure precedes capacity checks and any output write.
+A false classifier rejection quarantines that backend and reports an invariant
+fault before writing. A kernel rejection quarantines it and rewrites the entire
+body using the validated scalar table path. No post-write error is returned.
+Checked builds additionally reference-validate the whole input and compare
+bounded 1024:768 chunks against the original scalar decoder before copying;
+temporary buffers are wiped. Historical rejection/capacity paths retain their
+original diagnostics and mutation semantics. CT/secret, static-token and
+non-x86 backend routes are not replaced by this integration.
+Deployment-attested no_std tokens without global ISA flags retain their original
+direct-kernel KAT: the new automatically selected route is unavailable in that
+build, so its probed wrappers are not a prerequisite for the attested token.
 
 ### `validate_blocks_avx512` (2.1 Commit 8 Candidate)
 

@@ -12,31 +12,70 @@ use crate::{
     decode_preflight::{Failure as PreflightFailure, Preflight},
 };
 
-pub(super) fn prepare(
+mod vector;
+
+#[derive(Clone, Copy)]
+pub(crate) struct Prepared {
+    settings: CodecSettings,
+    backend: Option<crate::runtime::Backend>,
+}
+
+#[inline]
+pub(crate) fn accelerated(input_len: usize) -> bool {
+    vector::select(input_len).is_some()
+}
+
+pub(crate) fn prepare(
     settings: CodecSettings,
     input: &[u8],
     validation: DecodeValidation,
-) -> Result<Preflight<'_, CodecSettings>, OneShotError> {
-    Preflight::validate(input, settings, |settings, input| {
+) -> Result<Preflight<'_, Prepared>, OneShotError> {
+    let family = if input.is_empty() {
+        None
+    } else {
+        Family::for_settings(settings)
+    };
+    let backend = family.and_then(|_| vector::select(input.len()));
+    let config = Prepared { settings, backend };
+    Preflight::validate(input, config, |config, input| {
+        let settings = config.settings;
         // Empty input is valid for every sealed codec, without inspecting its
         // alphabet. Keep the explicit reference policy on the original path.
         if validation == DecodeValidation::Auto && input.is_empty() {
             return Ok(0);
         }
         if validation == DecodeValidation::Auto
-            && let Some(family) = Family::for_settings(settings)
+            && let Some(family) = family
         {
-            if let Some(required) = family.validated_len(
-                input,
-                settings.decode_padding() == DecodePadding::RequireCanonical,
-            ) {
+            let padded = settings.decode_padding() == DecodePadding::RequireCanonical;
+            let required = match config.backend {
+                Some(backend) => vector::validated_len(backend, family, input, padded),
+                None => family.validated_len(input, padded),
+            };
+            if let Some(required) = required {
+                // Checked builds independently validate the entire immutable
+                // source before any caller-visible output, not just chunks.
+                #[cfg(feature = "checked-backend")]
+                if let Some(backend) = config.backend {
+                    match validate_and_measure(settings, input) {
+                        Ok(reference) if reference == required => {}
+                        _ => {
+                            vector::quarantine(backend, BackendFault::ImpossibleState);
+                            return Err(OneShotError::Backend(BackendFault::ImpossibleState));
+                        }
+                    }
+                }
                 return Ok(required);
             }
             // Preserve exact legacy diagnostics on rejection. A false negative
             // is an implementation fault, not permission to write a result.
-            return match validate_and_measure(settings, input) {
-                Err(error) => Err(error),
-                Ok(_) => Err(OneShotError::Backend(BackendFault::ImpossibleState)),
+            return if let Err(error) = validate_and_measure(settings, input) {
+                Err(error)
+            } else {
+                if let Some(backend) = config.backend {
+                    vector::quarantine(backend, BackendFault::ImpossibleState);
+                }
+                Err(OneShotError::Backend(BackendFault::ImpossibleState))
             };
         }
         validate_and_measure(settings, input)
@@ -100,22 +139,32 @@ fn validate_and_measure(settings: CodecSettings, input: &[u8]) -> Result<usize, 
     }
 }
 
-pub(super) fn write(
-    proof: Preflight<'_, CodecSettings>,
+pub(crate) fn write(
+    proof: Preflight<'_, Prepared>,
     output: &mut [u8],
 ) -> Result<usize, OneShotError> {
+    #[cfg(test)]
+    crate::decode_backend::record_test_execution(crate::decode_backend::DecodeBackend::Scalar);
     if proof.len() == 0 {
         return Ok(0);
     }
     proof
         .write(
             output,
-            |settings, interior, tail, body_output, tail_output| {
+            |config, interior, tail, body_output, tail_output| {
+                let settings = config.settings;
                 if let Some(family) = Family::for_settings(settings) {
                     let table = family.table();
-                    write_parts(interior, tail, body_output, tail_output, |byte| {
-                        table[usize::from(byte)]
+                    let read = config.backend.map_or(0, |backend| {
+                        vector::write(backend, family, interior, body_output)
                     });
+                    write_parts(
+                        &interior[read..],
+                        tail,
+                        &mut body_output[read / 4 * 3..],
+                        tail_output,
+                        |byte| table[usize::from(byte)],
+                    );
                 } else {
                     write_parts(interior, tail, body_output, tail_output, |byte| {
                         value(settings, byte)
