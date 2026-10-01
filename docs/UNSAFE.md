@@ -900,10 +900,17 @@ secret/CT routes are unchanged. The original asserting evaluation path is
 still test-only, not the public route. Native AWS integrated checks are separate
 from Apple Silicon candidate performance evidence; the maintainer's integrated
 Mac correctness/codegen gate passed at `450239a`. Codegen gates
-inspect both classifier bodies for one 16-byte load, all-lane reduction (LLVM
-may invert masks and use `umaxv`), and absence of stores/calls/SVE, and prove the
-candidate absent from production IR. Linux guard pages and exhaustive lane,
-alignment, tail and capacity tests supplement these bounded checks.
+inspect fresh production assembly (plain, checked and all-features) for both
+classifier bodies, one 16-byte load, and absence of stores/calls/SVE. A narrow
+fail-closed instruction model derives each lane's mask for all 256 byte values,
+requires `uminv` on valid masks or `umaxv` on invalid masks, and follows the
+reduced register to the returned Boolean. Unknown instruction forms require
+review, rather than silently satisfying an opcode-presence test. Production IR
+also excludes the asserting candidate. External integration tests reject every
+invalid byte in each lane at first/interior/last vector blocks through public
+validation and decoding, asserting NEON health and unchanged output. Linux guard
+pages and exhaustive alignment, tail and capacity tests supplement these bounded
+checks; this is not a general machine-code or hardware correctness proof.
 
 ### `decode_16_bytes_ssse3_sse41`
 

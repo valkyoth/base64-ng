@@ -1,7 +1,8 @@
-"""Inspect exact validation-only symbols, or prove their production exclusion."""
+"""Inspect production classifiers and exclude the asserting test-only candidate."""
 from pathlib import Path
 import re
 import sys
+from neon_validation_semantics import check_return
 
 
 def check(directory, mode):
@@ -27,7 +28,7 @@ def check(directory, mode):
     if len(bodies) != 2 or not all(any(name in symbol for symbol, _ in bodies)
                                  for name in ("Standard", "UrlSafe")):
         raise ValueError("both alphabet classifiers are required")
-    for _, body in bodies:
+    for symbol, body in bodies:
         # ELF and Mach-O spelling; LLVM may invert validity before reducing.
         loads = re.findall(r"\bldr\s+q\d+,\s*\[x0\]", body)
         if len(loads) != 1 or len(re.findall(r"\b(?:ldr|ldur|ldp|ld1)\b", body)) != 1:
@@ -40,6 +41,7 @@ def check(directory, mode):
             raise ValueError("unexpected store, call, or branch")
         if re.search(r"\b[zp]\d+\b", body):
             raise ValueError("unexpected SVE ISA")
+        check_return(body, "UrlSafe" in symbol)
 
 
 if __name__ == "__main__":

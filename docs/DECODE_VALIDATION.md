@@ -246,3 +246,12 @@ separately from operator-reported Apple Silicon results. The maintainer's
 integrated Mac gate and all-features tests passed at `450239a`; paired integrated
 Mac timings and external pentest acceptance remain pending. See
 [Commit 10 measurements and native commands](PERFORMANCE_2.1_NEON.md).
+
+The NEON gate inspects production assembly with plain, checked and all-features
+configurations, not only a unit-test build. Its fail-closed lane-mask and scalar
+return model rejects an any-matching-lane reduction, wrong alphabet masks, and
+disconnected or inverted Boolean returns. The external `decode_validation`
+integration target also exercises every invalid byte in every NEON lane across
+three vector blocks for all four strict presets, with no test-only library cfg.
+It requires a healthy NEON backend and checks both validation and transactional
+decode rejection. These checks supplement, rather than replace, native tests.

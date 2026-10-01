@@ -55,12 +55,17 @@ for compiler in "$active" 1.90.0; do
 done
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT INT TERM
-CARGO_TARGET_DIR="$tmp/production" cargo rustc --locked --release --target "$target" \
-    --all-features --lib -- --emit=llvm-ir
-python3 scripts/check-neon-validation-codegen.py "$tmp/production/$target/release/deps" production
-CARGO_TARGET_DIR="$tmp/test" cargo rustc --locked --release --target "$target" \
-    --all-features --lib -- --emit=asm --test
-python3 scripts/check-neon-validation-codegen.py "$tmp/test/$target/release/deps" assembly
+for features in std,simd std,simd,checked-backend all; do
+    directory="$tmp/$features"
+    case "$features" in
+        all) set -- --all-features ;;
+        *) set -- --no-default-features --features "$features" ;;
+    esac
+    CARGO_TARGET_DIR="$directory" cargo rustc --locked --release --target "$target" \
+        "$@" --lib -- --emit=llvm-ir,asm
+    python3 scripts/check-neon-validation-codegen.py "$directory/$target/release/deps" production
+    python3 scripts/check-neon-validation-codegen.py "$directory/$target/release/deps" assembly
+done
 sh scripts/validate-unsafe-boundary.sh
 sh scripts/validate-panic-policy.sh
 if [ "$execute" -eq 0 ]; then

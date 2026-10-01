@@ -7,6 +7,18 @@ use base64_ng::{
 const POLICY: DecodeValidation = DecodeValidation::ScalarReference;
 const CODEC: Base64<base64_ng::StrictStandardPadded> = Base64::new(base64_ng::StrictStandardPadded);
 
+fn initialize_backend_health() {
+    #[cfg(all(feature = "std", feature = "simd"))]
+    {
+        // Paired historical calls must not straddle another test's startup KAT:
+        // the nonblocking scalar fallback has its own legacy error precedence.
+        static INITIALIZE: std::sync::Once = std::sync::Once::new();
+        INITIALIZE.call_once(|| {
+            let _ = base64_ng::initialize_backends();
+        });
+    }
+}
+
 fn canonical<S: Codec>(codec: Base64<S>) {
     for input in [
         b"".as_slice(),
@@ -127,6 +139,7 @@ fn historical<A: Alphabet, const PAD: bool>(engine: Engine<A, PAD>) {
 
 #[test]
 fn validation_policy_preserves_canonical_grammar_and_transactionality() {
+    initialize_backend_health();
     assert_eq!(DecodeValidation::default(), DecodeValidation::Auto);
     canonical(CODEC);
     canonical(STRICT_STANDARD_UNPADDED);
@@ -152,6 +165,7 @@ fn validation_policy_preserves_canonical_grammar_and_transactionality() {
 
 #[test]
 fn public_vector_boundaries_preserve_reference_results_and_whole_destinations() {
+    initialize_backend_health();
     for settings in [
         STRICT_STANDARD_PADDED.settings(),
         STRICT_STANDARD_UNPADDED.settings(),
@@ -203,6 +217,7 @@ fn public_vector_boundaries_preserve_reference_results_and_whole_destinations() 
 
 #[test]
 fn validation_policy_preserves_historical_diagnostics_and_whole_buffers() {
+    initialize_backend_health();
     historical(base64_ng::STANDARD);
     historical(base64_ng::STANDARD_NO_PAD);
     historical(base64_ng::URL_SAFE);
@@ -289,8 +304,69 @@ fn historical_bulk<A: Alphabet, const PAD: bool>(engine: Engine<A, PAD>) {
 
 #[test]
 fn historical_bulk_errors_never_acquire_canonical_diagnostics_or_mutation_rules() {
+    initialize_backend_health();
     historical_bulk(base64_ng::STANDARD);
     historical_bulk(base64_ng::STANDARD_NO_PAD);
     historical_bulk(base64_ng::URL_SAFE);
     historical_bulk(base64_ng::URL_SAFE_NO_PAD);
+}
+
+#[cfg(all(
+    feature = "std",
+    feature = "simd",
+    target_arch = "aarch64",
+    target_endian = "little"
+))]
+#[test]
+fn production_neon_rejects_every_invalid_lane_without_writing() {
+    // This integration target links the non-cfg(test) library. Do not silently
+    // pass on scalar fallback if the production classifier failed its KAT.
+    initialize_backend_health();
+    let assert_neon = || {
+        assert_eq!(
+            base64_ng::runtime::backend_report().active_decode_backend(),
+            base64_ng::runtime::Backend::Neon
+        );
+    };
+    assert_neon();
+    for settings in [
+        STRICT_STANDARD_PADDED.settings(),
+        STRICT_STANDARD_UNPADDED.settings(),
+        STRICT_URL_SAFE_PADDED.settings(),
+        STRICT_URL_SAFE_UNPADDED.settings(),
+    ] {
+        let codec = CodecBuilder::new(*settings.alphabet())
+            .encode_padding(settings.encode_padding())
+            .decode_padding(settings.decode_padding())
+            .build()
+            .unwrap();
+        let mut input = [b'A'; 4096];
+        let mut output = [0xa5; 3072];
+        assert_eq!(codec.validate(&input), Ok(()));
+        assert_eq!(codec.decode_into(&input, &mut output), Ok(3072));
+        assert_eq!(output, [0; 3072]);
+        output.fill(0xa5);
+        // First, interior and last vector blocks, before the reserved tail.
+        for block in [0, 2048, 4064] {
+            for lane in 0..16 {
+                for byte in 0..=u8::MAX {
+                    if settings.alphabet().as_array().contains(&byte) {
+                        continue;
+                    }
+                    input[block + lane] = byte;
+                    assert!(matches!(
+                        codec.validate(&input),
+                        Err(OneShotError::Input(_))
+                    ));
+                    assert!(matches!(
+                        codec.decode_into(&input, &mut output),
+                        Err(OneShotError::Input(_))
+                    ));
+                    assert_eq!(output, [0xa5; 3072]);
+                    assert_neon();
+                }
+                input[block + lane] = b'A';
+            }
+        }
+    }
 }
