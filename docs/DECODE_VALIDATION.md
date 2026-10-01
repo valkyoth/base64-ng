@@ -2,19 +2,23 @@
 
 2.1 adds the non-exhaustive `DecodeValidation::{Auto, ScalarReference}` policy.
 It is a per-call choice, not a Cargo feature or a change to the codec grammar.
-`Auto` uses health-gated SSSE3/SSE4.1, AVX2, or little-endian AArch64 NEON
+`Auto` uses health-gated SSSE3/SSE4.1, AVX2, little-endian AArch64 NEON, or WASM simd128
 validation and writing for strict
 Standard/URL-safe padded/unpadded presets and exactly equivalent runtime
 settings. Canonical fallback uses portable table validation; `ScalarReference`
-retains the original validator. Eligible historical x86/NEON calls share the fast
-core without acquiring canonical error semantics. Automatic AVX-512 and
-wasm vector validation remain outside the current production route.
+retains the original validator. Eligible historical x86/NEON/WASM calls share the fast
+core without acquiring canonical error semantics. Automatic AVX-512 remains
+outside the current production route.
 
-The new vector route starts at 512 encoded bytes on x86 and 4096 on AArch64;
+The new vector route starts at 512 encoded bytes on x86/WASM and 4096 on AArch64;
 smaller canonical calls keep
 portable validation/writing and smaller historical calls keep their existing
 decoder. This conservative complete-call cutoff avoids measured small-message
-setup regressions; it does not change existing static/exact ISA contracts.
+setup regressions on the measured native hosts; WASM uses the conservative
+512-byte integration floor. It does not change existing static/exact ISA contracts.
+WASM requires a simd128-compiled artifact; this is not native CPU detection.
+The scalar artifact never selects this path, and host JIT behavior is outside
+Rust's code-generation guarantees.
 
 ```rust
 use base64_ng::{DecodeValidation, STRICT_STANDARD_PADDED};
@@ -68,7 +72,7 @@ including partial output on its scalar error path. No progressive API is added.
 - Canonical writing uses admitted vector blocks and specialized tail tables
   under either validation policy when settings qualify. Reference validation still runs the original
   incremental state machine, not the optimized table validator.
-- Historical `Auto` shares the fast core for eligible x86/NEON calls with sufficient
+- Historical `Auto` shares the fast core for eligible x86/NEON/WASM calls with sufficient
   capacity. Invalid input, insufficient capacity, custom alphabets and other
   decode backends use the original path, preserving historical errors and
   partial-write behavior. Fully validated length helpers also share fast

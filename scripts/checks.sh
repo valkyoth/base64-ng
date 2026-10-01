@@ -207,6 +207,9 @@ BASE64_NG_ALLOW_DIRTY_EVIDENCE=1 scripts/generate_wasm_simd_evidence.sh
 echo "checks: wasm SIMD runtime dispatch"
 scripts/check_wasm_runtime_dispatch.sh
 
+echo "checks: 2.1 wasm validation"
+sh scripts/check-2.1-wasm-validation.sh
+
 echo "checks: 2.0 wasm loader package"
 scripts/check-2.0-wasm-loader.sh
 

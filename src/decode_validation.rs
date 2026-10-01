@@ -1,7 +1,7 @@
 /// Validation strategy for ordinary, non-secret Base64 input.
 ///
 /// This selects validation, not output-generation instructions or a weaker
-/// grammar. Strict Standard/URL-safe `Auto` uses admitted x86/NEON vector validation
+/// grammar. Strict Standard/URL-safe `Auto` uses admitted x86/NEON/WASM vector validation
 /// with scalar tails or portable validation; `ScalarReference` retains the
 /// original validator. Historical scalar execution can combine validation with
 /// decoding. Other architectures retain their existing prevalidation. Error precedence and output

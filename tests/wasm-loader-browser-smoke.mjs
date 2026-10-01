@@ -20,7 +20,9 @@ try {
     require(scalar.posture.artifactPosture === "scalar", "scalar artifact posture");
 
     for (const codec of codecs) {
-      for (let length = 0; length <= 200; length += 1) {
+      const lengths = [...Array.from({ length: 201 }, (_, i) => i),
+        383, 384, 385, 767, 768, 769, 3071, 3072, 3073, 65536];
+      for (const length of lengths) {
         const input = pattern(length);
         const expected = referenceEncode(input, codec);
         const scalarEncoded = scalar.encode(input, codec);
@@ -29,6 +31,21 @@ try {
         equalBytes(simdEncoded, expected, "SIMD encode");
         equalBytes(scalar.decode(expected, codec), input, "scalar decode");
         equalBytes(simd.decode(expected, codec), input, "SIMD decode");
+        const output = new Uint8Array(length + 8).fill(0xa5);
+        require(simd.decodeInto(expected, output, codec) === length, "SIMD decodeInto length");
+        equalBytes(output.subarray(0, length), input, "SIMD decodeInto");
+        require(output.subarray(length).every((b) => b === 0xa5), "SIMD output tail");
+      }
+      const malformed = new Uint8Array(1024).fill(65);
+      for (const index of [0, 15, 16, 511, 512, 1007, 1023]) {
+        malformed[index] = 33;
+        const output = new Uint8Array(800).fill(0xa5);
+        let failed = false;
+        try { simd.decodeInto(malformed, output, codec); }
+        catch (error) { failed = error.code === "invalid-byte" && error.index === index; }
+        require(failed, "bulk invalid lane rejected");
+        require(output.every((b) => b === 0xa5), "bulk transactional output");
+        malformed[index] = 65;
       }
     }
 
@@ -46,7 +63,11 @@ try {
     const benchmarkInput = pattern(256 * 1024);
     const scalarTime = measure(() => scalar.encode(benchmarkInput));
     const simdTime = measure(() => simd.encode(benchmarkInput));
-    const metrics = `scalar=${scalarTime.toFixed(3)}ms simd128=${simdTime.toFixed(3)}ms`;
+    const encoded = scalar.encode(benchmarkInput);
+    const scalarDecode = measure(() => scalar.decode(encoded));
+    const simdDecode = measure(() => simd.decode(encoded));
+    const metrics = `encode scalar=${scalarTime.toFixed(3)}ms simd128=${simdTime.toFixed(3)}ms; `
+      + `decode scalar=${scalarDecode.toFixed(3)}ms simd128=${simdDecode.toFixed(3)}ms`;
     status = "pass";
     detail = `BASE64_NG_WASM_LOADER_BROWSER_PASS ${metrics}`;
   } finally {

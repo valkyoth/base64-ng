@@ -1,4 +1,4 @@
-//! Ordinary x86/NEON bulk operations. Tail grammar remains in the scalar validator.
+//! Ordinary SIMD bulk operations. Tail grammar remains in the scalar validator.
 use super::Family;
 use crate::{
     BackendFault,
@@ -21,6 +21,7 @@ pub(super) fn select(len: usize) -> Option<Backend> {
         any(
             target_arch = "x86",
             target_arch = "x86_64",
+            target_arch = "wasm32",
             all(target_arch = "aarch64", target_endian = "little")
         )
     ))]
@@ -36,6 +37,7 @@ pub(super) fn select(len: usize) -> Option<Backend> {
         any(
             target_arch = "x86",
             target_arch = "x86_64",
+            target_arch = "wasm32",
             all(target_arch = "aarch64", target_endian = "little")
         )
     )))]
@@ -50,6 +52,7 @@ fn width(backend: Backend) -> Option<usize> {
         any(
             target_arch = "x86",
             target_arch = "x86_64",
+            target_arch = "wasm32",
             all(target_arch = "aarch64", target_endian = "little")
         )
     ))]
@@ -61,6 +64,7 @@ fn width(backend: Backend) -> Option<usize> {
         any(
             target_arch = "x86",
             target_arch = "x86_64",
+            target_arch = "wasm32",
             all(target_arch = "aarch64", target_endian = "little")
         )
     )))]
@@ -103,6 +107,7 @@ fn validate(backend: Backend, input: &[u8], url: bool) -> bool {
         any(
             target_arch = "x86",
             target_arch = "x86_64",
+            target_arch = "wasm32",
             all(target_arch = "aarch64", target_endian = "little")
         )
     ))]
@@ -114,6 +119,7 @@ fn validate(backend: Backend, input: &[u8], url: bool) -> bool {
         any(
             target_arch = "x86",
             target_arch = "x86_64",
+            target_arch = "wasm32",
             all(target_arch = "aarch64", target_endian = "little")
         )
     )))]
@@ -133,6 +139,7 @@ fn decode(backend: Backend, input: &[u8], output: &mut [u8], url: bool) -> bool 
         any(
             target_arch = "x86",
             target_arch = "x86_64",
+            target_arch = "wasm32",
             all(target_arch = "aarch64", target_endian = "little")
         )
     ))]
@@ -144,6 +151,7 @@ fn decode(backend: Backend, input: &[u8], output: &mut [u8], url: bool) -> bool 
         any(
             target_arch = "x86",
             target_arch = "x86_64",
+            target_arch = "wasm32",
             all(target_arch = "aarch64", target_endian = "little")
         )
     )))]
@@ -181,6 +189,7 @@ pub(super) fn write(backend: Backend, family: Family, input: &[u8], output: &mut
             any(
                 target_arch = "x86",
                 target_arch = "x86_64",
+                target_arch = "wasm32",
                 all(target_arch = "aarch64", target_endian = "little")
             )
         ))]
@@ -191,6 +200,8 @@ pub(super) fn write(backend: Backend, family: Family, input: &[u8], output: &mut
             Backend::Ssse3Sse41 => crate::decode_backend::DecodeBackend::Ssse3Sse41,
             #[cfg(all(target_arch = "aarch64", target_endian = "little"))]
             Backend::Neon => crate::decode_backend::DecodeBackend::Neon,
+            #[cfg(target_arch = "wasm32")]
+            Backend::WasmSimd128 => crate::decode_backend::DecodeBackend::WasmSimd128,
             _ => crate::decode_backend::DecodeBackend::Scalar,
         });
         prefix

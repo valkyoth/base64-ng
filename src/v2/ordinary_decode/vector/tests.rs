@@ -104,7 +104,7 @@ fn assert_quarantined(fault: BackendFault) {
         .expect("the actual invocation must use a backend");
     assert!(matches!(
         backend,
-        Backend::Avx2 | Backend::Ssse3Sse41 | Backend::Neon
+        Backend::Avx2 | Backend::Ssse3Sse41 | Backend::Neon | Backend::WasmSimd128
     ));
     assert_eq!(state.quarantined, Some((backend, fault)));
 }
@@ -116,6 +116,7 @@ fn ready_backend(len: usize) -> Option<Backend> {
     if width(Backend::Avx2).is_none()
         && width(Backend::Ssse3Sse41).is_none()
         && width(Backend::Neon).is_none()
+        && width(Backend::WasmSimd128).is_none()
     {
         return None;
     }
@@ -153,16 +154,18 @@ fn small_inputs_do_not_initialize_or_execute_the_vector_route() {
 }
 
 #[test]
-fn public_validation_and_writing_reach_health_gated_x86_or_neon_not_avx512() {
+fn public_validation_and_writing_reach_health_gated_simd_not_avx512() {
     let Some(backend) = ready_backend(4096) else {
         return;
     };
     assert!(matches!(
         backend,
-        Backend::Avx2 | Backend::Ssse3Sse41 | Backend::Neon
+        Backend::Avx2 | Backend::Ssse3Sse41 | Backend::Neon | Backend::WasmSimd128
     ));
     #[cfg(all(feature = "simd", target_arch = "aarch64", target_endian = "little"))]
     assert_eq!(backend, Backend::Neon);
+    #[cfg(target_arch = "wasm32")]
+    assert_eq!(backend, Backend::WasmSimd128);
     let input = [b'A'; 4096];
     let mut output = [0xff; 3075];
     inject(Fault::None, || {
@@ -174,7 +177,7 @@ fn public_validation_and_writing_reach_health_gated_x86_or_neon_not_avx512() {
         assert!(state.writes > 0);
         assert!(matches!(
             state.backend,
-            Some(Backend::Avx2 | Backend::Ssse3Sse41 | Backend::Neon)
+            Some(Backend::Avx2 | Backend::Ssse3Sse41 | Backend::Neon | Backend::WasmSimd128)
         ));
         assert_eq!(output[..3072], [0; 3072]);
         assert_eq!(output[3072..], [0xff; 3]);

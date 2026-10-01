@@ -170,6 +170,8 @@ mod neon_decode_tests;
 mod neon_direct_tests;
 #[cfg(all(target_arch = "wasm32", any(test, feature = "simd")))]
 mod wasm;
+#[cfg(all(target_arch = "wasm32", feature = "simd"))]
+pub(crate) use wasm::ordinary;
 #[cfg(all(
     feature = "std",
     test,

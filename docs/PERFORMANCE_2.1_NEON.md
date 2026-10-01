@@ -246,9 +246,9 @@ pairs. Canonical decode's median per-call times increase by about 1-3 ns across
 calls increase by about 0.8-1.1 ns. These cases remain below the vector threshold,
 so the benchmark alone does not identify the cause. The 1 KiB results are near
 parity with mixed pair directions. This evidence supports a bulk-throughput
-improvement, not a claim of no performance regressions at any size. Acceptance
-of the tiny-input tradeoff, or a separate optimization, remains a maintainer
-decision; no threshold or runtime code was changed after this measurement.
+improvement, not a claim of no performance regressions at any size. The
+maintainer explicitly accepted this tiny-input tradeoff and authorized Commit
+11; no threshold or runtime code was changed to address it after measurement.
 
 The raw file is retained locally at
 `target/release-evidence/2.1-commit10-neon/integrated-macos-public-api.json`,

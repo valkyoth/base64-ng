@@ -29,6 +29,24 @@ pub(super) unsafe fn encode_12_bytes<A: Alphabet>(input: &[u8; 12], output: &mut
     unsafe { v128_store(output.as_mut_ptr().cast(), encoded) };
 }
 
+#[cfg(feature = "simd")]
+#[target_feature(enable = "simd128")]
+pub(super) unsafe fn validate_16_bytes_wasm<A: Alphabet>(input: &[u8; 16]) -> bool {
+    // SAFETY: The array proves one exact 16-byte load; the caller establishes
+    // simd128 and restricts A to Standard or UrlSafe. No output is written.
+    let ascii = unsafe { core::arch::wasm32::v128_load(input.as_ptr().cast()) };
+    let upper = u8x16_lt(u8x16_sub(ascii, u8x16_splat(b'A')), u8x16_splat(26));
+    let lower = u8x16_lt(u8x16_sub(ascii, u8x16_splat(b'a')), u8x16_splat(26));
+    let digit = u8x16_lt(u8x16_sub(ascii, u8x16_splat(b'0')), u8x16_splat(10));
+    let symbol62 = u8x16_eq(ascii, u8x16_splat(A::ENCODE[62]));
+    let symbol63 = u8x16_eq(ascii, u8x16_splat(A::ENCODE[63]));
+    let valid = v128_or(
+        v128_or(upper, lower),
+        v128_or(digit, v128_or(symbol62, symbol63)),
+    );
+    i8x16_bitmask(valid) == 0xffff
+}
+
 #[target_feature(enable = "simd128")]
 pub(super) unsafe fn decode_16_bytes<A: Alphabet>(input: &[u8; 16], output: &mut [u8; 12]) -> bool {
     // SAFETY: The input array is exactly one v128 wide.

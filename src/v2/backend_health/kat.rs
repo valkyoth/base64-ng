@@ -61,9 +61,10 @@ fn decode(backend: Backend) -> bool {
     #[cfg(any(
         target_arch = "x86",
         target_arch = "x86_64",
+        target_arch = "wasm32",
         all(target_arch = "aarch64", target_endian = "little")
     ))]
-    if matches!(backend, Backend::Avx2 | Backend::Ssse3Sse41 | Backend::Neon)
+    if matches!(backend, Backend::Avx2 | Backend::Ssse3Sse41 | Backend::Neon | Backend::WasmSimd128)
         // Deployment-attested no_std tokens may enable only the existing
         // direct kernels, without making the automatically probed route usable.
         && crate::simd::ordinary::width(backend).is_some()
@@ -80,6 +81,7 @@ fn decode(backend: Backend) -> bool {
 #[cfg(any(
     target_arch = "x86",
     target_arch = "x86_64",
+    target_arch = "wasm32",
     all(target_arch = "aarch64", target_endian = "little")
 ))]
 fn ordinary_classifiers(backend: Backend) -> bool {

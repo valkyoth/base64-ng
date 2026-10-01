@@ -9,6 +9,12 @@ installation examples below refer to the published package.
 `simd128` WebAssembly artifact before instantiation and exposes byte-only
 Base64 APIs.
 
+The 2.1 development SIMD artifact accelerates strict validation and decoding
+for larger inputs. Padding, canonical tail bits and transactional `decodeInto`
+behavior are unchanged; no new JavaScript option is required. The scalar
+artifact remains the fallback. These ordinary APIs are not constant-time or
+secret containers, and performance depends on the host WebAssembly runtime.
+
 ```sh
 npm install @valkyoth/base64-ng-wasm-loader
 ```

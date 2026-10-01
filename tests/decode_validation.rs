@@ -314,21 +314,33 @@ fn historical_bulk_errors_never_acquire_canonical_diagnostics_or_mutation_rules(
 #[cfg(all(
     feature = "std",
     feature = "simd",
-    target_arch = "aarch64",
-    target_endian = "little"
+    any(
+        all(target_arch = "aarch64", target_endian = "little"),
+        target_arch = "wasm32"
+    )
 ))]
 #[test]
-fn production_neon_rejects_every_invalid_lane_without_writing() {
+fn production_16_lane_simd_rejects_every_invalid_lane_without_writing() {
     // This integration target links the non-cfg(test) library. Do not silently
     // pass on scalar fallback if the production classifier failed its KAT.
     initialize_backend_health();
-    let assert_neon = || {
+    let assert_backend = || {
+        #[cfg(target_arch = "aarch64")]
+        let expected = base64_ng::runtime::Backend::Neon;
+        #[cfg(target_arch = "wasm32")]
+        let expected = if base64_ng::runtime::backend_report().wasm_artifact_posture
+            == base64_ng::runtime::WasmArtifactPosture::Simd128Artifact
+        {
+            base64_ng::runtime::Backend::WasmSimd128
+        } else {
+            base64_ng::runtime::Backend::Scalar
+        };
         assert_eq!(
             base64_ng::runtime::backend_report().active_decode_backend(),
-            base64_ng::runtime::Backend::Neon
+            expected
         );
     };
-    assert_neon();
+    assert_backend();
     for settings in [
         STRICT_STANDARD_PADDED.settings(),
         STRICT_STANDARD_UNPADDED.settings(),
@@ -363,7 +375,7 @@ fn production_neon_rejects_every_invalid_lane_without_writing() {
                         Err(OneShotError::Input(_))
                     ));
                     assert_eq!(output, [0xa5; 3072]);
-                    assert_neon();
+                    assert_backend();
                 }
                 input[block + lane] = b'A';
             }

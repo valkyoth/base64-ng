@@ -46,7 +46,7 @@ const HARD_MAX_MEMORY_PAGES = 128;
 const MAX_ARTIFACT_BYTES = 1024 * 1024;
 const ARTIFACT_SHA256 = Object.freeze({
   scalar: "246daf099d4b4df44ad5be246f01645f0dda1d70cb07cf3641f85d4a90bba232",
-  simd128: "67f3f5c3ce82fd0fef2517853e34b82585b82e0e129307ec8ec4054889104406",
+  simd128: "fae642dd36e6e1e2e42fa3aec074fbeec7133af8a634a20de9ec3db6f93ed0ea",
 });
 
 export const Codecs = Object.freeze({

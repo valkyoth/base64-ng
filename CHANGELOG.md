@@ -4,9 +4,16 @@
 
 - Commit 1: synchronize development package metadata at `2.1.0`, block Rust
   and npm publication, and preserve the signed `v2.0.4` API/behavior baseline.
-- Retain Rust `1.98.1` and MSRV `1.90.0`; no external dependency, codec
-  implementation, feature-default, or SIMD admission changes in this checkpoint.
-- Throughput improvements and new APIs are planned, not implemented yet.
+- Retain Rust `1.98.1` and MSRV `1.90.0`.
+- Add explicit ordinary `Auto`/`ScalarReference` validation policy and shared
+  transactional preflight. Eligible ordinary strict Standard/URL-safe calls
+  use portable table validation or health-gated x86/NEON vector validation,
+  with exact diagnostics, checked comparison and quarantine/recovery retained.
+- Commit 11 extends that ordinary route to WASM simd128 and rebuilds the npm
+  SIMD artifact without changing JavaScript contracts or the scalar artifact.
+  Add WASM active/MSRV fault and lane tests, expanded browser checks and paired
+  guest/loader benchmarks. Safari operator confirmation and external review
+  remain pending; remaining APIs and optimizations follow the commit plan.
 
 ## 2.0.4 - Unreleased
 

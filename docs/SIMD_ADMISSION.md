@@ -216,6 +216,15 @@ State labels are intentionally strict:
 | wasm `simd128` | admitted backend | `simd128` | ordinary wasm32 direct fixed-block encode and strict decode for Standard and URL-safe alphabet families when compiled with `target-feature=+simd128` and the `simd` feature; encode loads 12 bytes and stores 16 bytes per block; strict decode performs whole-input scalar validation once, classifies all 16 vector lanes before exact 12-byte stores, and preserves scalar diagnostics, tails, padding, and canonicality; the supported npm loader ships separate scalar/SIMD artifacts and selects before instantiation; exact-package Node/V8, Wasmtime, Chromium/V8, Firefox/SpiderMonkey, and operator-run Safari/WebKit evidence covers differential codec sweeps, malformed input, hostile JavaScript objects, transactionality, memory ceilings, and package installation; in-place operations may enter only through stack staging; unsupported alphabets, CT secret decode, line-ending insertion/compaction, and whitespace compaction remain scalar or separately reviewed |
 | RVV 1.0 | admitted exact-profile backend | `v` plus exact Linux `riscv_hwprobe` X60 identity and enabled per-thread vector state | runtime-dispatched Standard and URL-safe encode from 384 raw bytes and strict decode from 1024 encoded bytes on the measured Linux/SpacemiT X60 profile only; operation-specific KATs quarantine failures independently; complete quanta use vector-length-independent RVV leaves and tails/padding remain scalar; every other RISC-V identity, non-Linux target, safe `no_std` build, short input, custom alphabet, and CT secret path remains scalar; QEMU candidate execution does not authorize production dispatch |
 
+The 2.1 development ordinary path extends the historical rows above: eligible
+x86/NEON/WASM `Auto` operations use whole-input vector validation plus scalar
+tail grammar through a private preflight, followed by health-gated writing.
+Explicit reference validation and existing direct/static wrappers retain
+their original contracts. See [validation policy](DECODE_VALIDATION.md) for
+thresholds and recovery. The WASM change has new Node, Wasmtime, Chromium and
+Firefox checks; its Safari operator rerun is pending, not inherited from 2.0
+evidence. No JIT timing or register-clearing guarantee is added.
+
 ## Encode Surface Review
 
 The `1.3.0` encode surface review keeps the active encode admission unchanged:

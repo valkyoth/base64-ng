@@ -1,4 +1,6 @@
 mod direct;
+#[cfg(feature = "simd")]
+pub(crate) mod ordinary;
 
 use crate::{Alphabet, EncodeError, Standard, checked_encoded_len, scalar};
 

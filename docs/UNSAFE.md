@@ -1416,9 +1416,10 @@ Safety argument:
 - This macro clears all AArch64 vector registers for the reviewed encode
   sequence. It is not an admission claim for arbitrary future NEON code.
 
-### `encode_12_bytes`, `decode_16_bytes`, and `decode_full_blocks` (wasm)
+### `encode_12_bytes`, `decode_16_bytes`, `validate_16_bytes_wasm`, and `decode_full_blocks` (wasm)
 
-Locations: `src/simd/wasm/direct.rs` and `src/simd/wasm.rs`.
+Locations: `src/simd/wasm/direct.rs`, `src/simd/wasm.rs`, and
+`src/simd/wasm/ordinary.rs`.
 
 Status: private direct fixed-block helpers for the 2.0 Commit 30 wasm
 `simd128` profile.
@@ -1426,11 +1427,13 @@ Status: private direct fixed-block helpers for the 2.0 Commit 30 wasm
 Purpose and preconditions:
 
 - Encode exactly 12 input bytes into 16 Standard-family Base64 bytes.
-- Decode exactly 16 already scalar-validated Base64 bytes into 12 bytes.
+- Decode exactly 16 validated Base64 bytes into 12 bytes.
 - The artifact is compiled with `target-feature=+simd128`; dispatch admits only
   Standard and URL-safe alphabet families.
-- Whole-input scalar strict validation, decoded-size calculation, and output
-  preflight complete before the direct decode loop.
+- Whole-input strict validation, decoded-size calculation, and output
+  preflight complete before the direct decode loop. The historical direct
+  wrapper retains scalar validation; 2.1 ordinary Auto uses vector classification
+  plus scalar tail grammar through the shared immutable-input preflight.
 
 Unsafe operations:
 
@@ -1438,6 +1441,11 @@ Unsafe operations:
   shifts, masks, and one exact 16-byte store.
 - Decode loads exactly 16 bytes, classifies every lane, reduces the complete
   validity mask, packs four quanta, and stores exactly eight plus four bytes.
+- `validate_16_bytes_wasm` loads exactly 16 bytes without stores. Unsigned
+  wrapping range comparisons and the two alphabet-specific symbols form an
+  exact 0xff/0x00 lane mask. `i8x16_bitmask(valid) == 0xffff` requires every lane.
+  Safe ordinary wrappers close the alphabet family, check simd128 availability
+  and exact block geometry, and use checked fixed-array chunks without casts.
 - `decode_full_blocks` casts loop positions to fixed-array references only
   under exact block guards and completed output preflight.
 
@@ -1446,8 +1454,12 @@ Safety argument:
 - Fixed arrays and loop guards prove every load and store width without caller
   over-read or over-write.
 - Decode performs no output store until `i8x16_bitmask(valid) == 0xffff`.
-- The public direct loop is reached only after scalar validation has preserved
-  exact error, padding, canonicality, and required-length behavior.
+- The historical direct loop is reached only after scalar validation. The
+  ordinary route applies health admission/KAT (including classifier checks),
+  validates all blocks and the tail before writing, and recovers exact errors
+  through the reference validator on rejection. Checked builds independently
+  compare validation and output. Classifier disagreement or kernel failure
+  uses the shared quarantine/recovery contract.
 - Padded final quanta and remaining tails are excluded from the direct loop and
   handled by scalar code.
 - If the direct classifier unexpectedly disagrees with scalar validation, the
@@ -1459,6 +1471,13 @@ Limitations:
 - These are ordinary public-data operations, not secret or constant-time APIs.
 - Wasm JIT timing and register retention remain outside Rust's compiler
   boundary. No native register-cleanup guarantee is claimed.
+
+Verification for the 2.1 classifier: Wasmtime byte/lane/unaligned boundary
+tests, production-linked transactionality tests and shared fault injection in
+plain/checked active/MSRV builds; actual npm-artifact invalid-lane and tail
+tests in Node; exact package browser tests. Tests distinguish artifact
+capability from CPU/runtime identification. Safari results require operator
+execution and are not inferred from Node or Linux browsers.
 
 ### `base64-ng-wasm-artifact` ABI
 
