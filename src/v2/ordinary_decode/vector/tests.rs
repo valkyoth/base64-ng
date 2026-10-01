@@ -204,6 +204,61 @@ fn public_validation_and_writing_reach_health_gated_simd_not_avx512() {
     });
 }
 
+#[cfg(all(feature = "simd", target_arch = "riscv64", target_os = "linux"))]
+#[test]
+fn rvv_shared_boundary_reserves_complete_or_partial_final_quantum() {
+    fn check<S: crate::Codec>(codec: &crate::Base64<S>, padded: bool, backend: Option<Backend>) {
+        for len in [1024, 1026, 1027, 1028] {
+            let selected = if len == 1024 { None } else { backend };
+            assert_eq!(select(len), selected);
+            let input = std::vec![b'A'; len];
+            let mut expected = [0xa5; 780];
+            let reference = codec.decode_into_with_validation(
+                &input,
+                &mut expected,
+                DecodeValidation::ScalarReference,
+            );
+            assert_eq!(reference.is_ok(), !padded || len % 4 == 0);
+            inject(Fault::None, || {
+                let mut actual = [0xa5; 780];
+                assert_eq!(codec.decode_into(&input, &mut actual), reference);
+                assert_eq!(actual, expected);
+                let state = STATE.with(Cell::get);
+                assert_eq!(state.backend, selected);
+                assert_eq!(state.validation, usize::from(selected.is_some()));
+                assert_eq!(state.writes > 0, selected.is_some() && reference.is_ok());
+            });
+            for position in len - 4..len {
+                let mut malformed = input.clone();
+                malformed[position] = b'!';
+                let mut expected = [0xa5; 780];
+                let reference = codec.decode_into_with_validation(
+                    &malformed,
+                    &mut expected,
+                    DecodeValidation::ScalarReference,
+                );
+                assert!(reference.is_err());
+                inject(Fault::None, || {
+                    let mut actual = [0xa5; 780];
+                    assert_eq!(codec.decode_into(&malformed, &mut actual), reference);
+                    assert_eq!(actual, [0xa5; 780]);
+                    assert_eq!(STATE.with(Cell::get).writes, 0);
+                });
+            }
+        }
+    }
+
+    if std::env::var_os("BASE64_NG_REQUIRE_X60").is_some() {
+        assert_eq!(width(Backend::Rvv), Some(16));
+    }
+    let backend = ready_backend(4096);
+    assert_eq!(backend, width(Backend::Rvv).map(|_| Backend::Rvv));
+    check(&crate::STRICT_STANDARD_PADDED, true, backend);
+    check(&crate::STRICT_STANDARD_UNPADDED, false, backend);
+    check(&crate::STRICT_URL_SAFE_PADDED, true, backend);
+    check(&crate::STRICT_URL_SAFE_UNPADDED, false, backend);
+}
+
 #[test]
 fn false_rejection_quarantines_before_capacity_or_mutation() {
     if ready_backend(4096).is_none() {

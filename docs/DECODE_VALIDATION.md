@@ -271,10 +271,13 @@ fallbacks; a QEMU candidate cfg cannot admit this public route.
 The classifier scans length-agnostic byte vectors, reducing all active lanes
 before accepting. The safe wrapper requires complete 16-byte spans; the final
 quantum and remaining tail retain scalar padding/canonical-bit validation.
-The old 1024-byte decode crossover is applied to the input with its final
-quantum reserved, so the new complete-call route requires at least 1028 encoded
-bytes. The writer defensively vector-classifies its span before using the old
-RVV packing leaf. Explicit ScalarReference still independently validates input;
+The old 1024-byte decode crossover is applied to `len.saturating_sub(1) / 4 * 4`,
+reserving the final complete or partial quantum. For valid inputs, the new
+complete-call route starts at 1026 encoded bytes for unpadded profiles (a
+two-byte tail), or 1028 for padded profiles. Unpadded 1027-byte inputs also
+qualify; 1024-byte inputs remain below the crossover. The writer defensively
+vector-classifies its span before using the old RVV packing leaf. Explicit
+ScalarReference still independently validates input;
 checked builds independently compare validation and decoded output.
 
 Native X60 tests, dual-VLEN QEMU checks, production assembly contracts and

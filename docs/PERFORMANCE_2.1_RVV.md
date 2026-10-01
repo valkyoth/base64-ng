@@ -16,9 +16,12 @@ wrapper independently classifies before invoking the existing sextet packer.
 
 Shared preflight retains scalar tail grammar, exact reference diagnostics,
 capacity-before-write, quarantine and complete scalar rewrite after failure.
-The existing 1024-byte RVV crossover is applied after reserving the final
-quantum, giving a 1028-encoded-byte minimum for this shared route. No new
-automatic CPU profile, static deployment token, or unsafe public API is added.
+The existing 1024-byte RVV crossover is applied to `len.saturating_sub(1) / 4 * 4`
+after reserving the final complete or partial quantum. Valid unpadded inputs
+first qualify at 1026 encoded bytes (1027 also qualifies); valid padded inputs
+first qualify at 1028. Inputs of 1024 encoded bytes remain below the crossover.
+No new automatic CPU profile, static deployment token, or unsafe public API
+is added.
 
 ## Native Comparison
 
@@ -74,6 +77,12 @@ tests under each compiler in both plain and checked configurations. Direct
 candidate byte/VL/guard-page tests, thread switching and the explicit native
 signal-frame test also passed. The native Rust 1.98.1 toolchain was not installed
 on the board; compilation and assembly inspection ran on the development host.
+
+The pentest boundary follow-up corrects documentation without changing runtime
+routing. Native tests at 1024/1026/1027/1028 encoded bytes passed under Rust
+1.98.1 and 1.90.0, plain and checked, with `BASE64_NG_REQUIRE_X60=1`. All four
+strict profiles check actual validator/writer execution, reference-equivalent
+results, malformed-tail diagnostics and unchanged rejected destinations.
 
 Local workspace all-feature tests and Clippy passed, along with x86 public
 decode, NEON QEMU and WASM active/MSRV gates. SVE-candidate and big-endian
