@@ -164,8 +164,8 @@ All 1344 timed records are retained locally in
 The local evidence directory also retains the runner and source hashes; it is
 not a signed release bundle. Native AWS and QEMU feature/MSRV gates cover
 the integrated kernels, guard pages, health faults and public transactionality.
-Apple Silicon paired integration timings and external pentest acceptance are
-pending; the native Mac correctness rerun is recorded below.
+Apple Silicon paired integration timings and the subsequent external pentest
+acceptance are recorded below, separately from this AWS measurement.
 
 For a direct public operation sample, build this same harness at each revision
 separately, then alternate its binaries with these arguments (repeat for all
@@ -204,3 +204,61 @@ counted as independent executions. This is operator-reported correctness
 evidence; no new benchmark, compiler identity transcript, chip model or macOS
 version was supplied with this rerun. It does not replace paired integrated
 performance measurements or external security review.
+
+## Apple Silicon Production Integration
+
+The maintainer supplied `base64-neon-paired-20261001-161958.json` from an Apple
+M2 Pro running macOS 27.0.1 (26A434), Rust 1.98.1, LLVM 22.1.8. It compares
+`c3c59d36bcf6df7197d2070ad13ef692515f9740` with
+`199a125cea9d4f06fa7604c14a3ff0553c5cda53`. The `perf/public-api` harness is
+unchanged between these revisions. The supplied runner builds separate release
+binaries with `--features simd` and `RUSTFLAGS='--cfg base64_ng_perf_evidence'`,
+then alternates execution order for seven paired samples per case. Workloads,
+round counts, deterministic random data and warm buffers match the AWS
+integration comparison above. Checked-backend is not enabled for timing.
+
+Review verified `complete: true`, the exact two revisions, all 1344 unique
+operation/profile/size/sample/variant combinations, expected raw/encoded lengths
+and iteration counts, positive elapsed times, zero timed allocations and NEON
+capability for both builds. These are operator-supplied development results,
+not an independently attested capture or signed release admission.
+
+Each cell below is the range across four profiles of the median paired old/new
+elapsed-time ratio. A ratio above one means faster; payload sizes are decoded
+bytes. All seven pairs favor the new implementation in every measured case at
+3072 bytes and above.
+
+| Payload bytes | Canonical decode | Historical `decode_slice` | Canonical validate |
+| --- | ---: | ---: | ---: |
+| 0 | 0.893-0.921x | 0.787-0.807x | 0.826-0.889x |
+| 3 | 0.882-0.927x | 0.939-0.992x | 0.870-0.912x |
+| 32 | 0.956-0.992x | 0.997-1.013x | 0.908-0.965x |
+| 1024 | 0.988-1.012x | 0.984-1.016x | 0.983-0.999x |
+| 3072 | 1.543-1.557x | 3.432-5.039x | 2.215-2.285x |
+| 4096 | 1.572-1.607x | 3.442-5.137x | 2.312-2.362x |
+| 65536 | 1.572-1.651x | 5.854-7.425x | 2.378-2.415x |
+| 1048576 | 1.616-1.644x | 6.510-7.844x | 2.393-2.433x |
+
+Tiny-input regressions must not be dismissed as universal measurement noise:
+all profiles' three-byte canonical decode and validation cases lose all seven
+pairs. Canonical decode's median per-call times increase by about 1-3 ns across
+0/3/32-byte cases; validation increases by about 0.75-1.9 ns. Historical empty
+calls increase by about 0.8-1.1 ns. These cases remain below the vector threshold,
+so the benchmark alone does not identify the cause. The 1 KiB results are near
+parity with mixed pair directions. This evidence supports a bulk-throughput
+improvement, not a claim of no performance regressions at any size. Acceptance
+of the tiny-input tradeoff, or a separate optimization, remains a maintainer
+decision; no threshold or runtime code was changed after this measurement.
+
+The raw file is retained locally at
+`target/release-evidence/2.1-commit10-neon/integrated-macos-public-api.json`,
+SHA-256 `aafec88773c48db856d0b4844111322a895ed6a6554d31eb5c0e26ebc273188e`.
+
+The maintainer also supplied a passing native Mac gate transcript containing
+the new production-linked invalid-lane test in all four active/MSRV,
+plain/checked configurations and production IR/assembly checks in three feature
+configurations. External review explicitly accepted `199a125`, closing the
+previous Low verification gap, and the maintainer reported GitHub green.
+Assembly semantics checks target the active Rust 1.98.1 code shape; MSRV 1.90
+has execution coverage, not equivalent assembly-level coverage. None of these
+correctness results substitutes for the paired performance data above.
