@@ -1656,7 +1656,7 @@ Unsafe operations:
 
 The assembly functions are stackless leaves, make no nested calls, use only
 caller-saved integer temporaries plus vector registers, and carry CFI function
-boundaries. Scalar validation completes before strict-decode output writes.
+boundaries. Whole-input validation completes before strict-decode output writes.
 The production UAPI probe uses four valid writable pairs, a zero-sized null CPU
 set, and fails closed on syscall errors, altered keys, any non-X60 identity,
 missing `V`, or disabled vector state. A positive probe is cached only on the calling thread. Linux
@@ -1677,6 +1677,37 @@ RVV ELF requirement while retaining vector instructions in isolated leaves, so
 unsupported RISC-V systems can start and select scalar. Final release evidence
 must recapture native correctness, ABI/signal preservation, performance, and
 register cleanup from the integrated source and pass external retest.
+
+### 2.1 Commit 12 Ordinary Validation
+
+`src/simd/rvv/ordinary.rs` adds a closed Standard/URL-safe boundary backed by
+`base64_ng_rvv_validate_standard` and `base64_ng_rvv_validate_url_safe` in
+`src/simd/rvv/asm.rs`. Their C ABI takes a readable pointer and byte length
+and returns an integer 0 or 1. Zero length skips loading. Each iteration sets
+VL from remaining bytes, loads exactly VL bytes, combines five unsigned
+alphabet masks, and compares their population count to VL. Inactive/tail mask
+bits cannot affect `vcpop.m`. A mismatch returns false, not a writer length.
+The leaves never store, call, mutate the stack, or touch callee-saved integer
+registers. Both exits clear `v0..v15` at VLMAX. This is ordinary-data processing,
+not a constant-time or secret-register assurance claim.
+
+The safe production wrappers require the unchanged per-thread exact X60
+probe and closed alphabet, and enforce 16-byte input / exact 4:3 output spans.
+The packing wrapper independently classifies before invoking the old packing
+leaf, whose map assumes valid sextets. Empty input never enters that leaf.
+Private helpers are called only after these checks; direct test calls first
+prove candidate RVV availability and supply the same writer geometry.
+Public dispatch never uses the broader candidate probe, including QEMU builds.
+
+The shared preflight reserves the final quantum for scalar padding/tail-bit
+validation, checks capacity before writes, and retains scalar diagnostics and
+quarantine/recovery. Initialization KATs include both new classifiers.
+`scripts/check-2.1-rvv-validation.sh` checks active/MSRV production assembly
+against the entire reviewed leaf program, including control flow and cleanup,
+and tests direct execution at QEMU VLEN 128/256. Linux guard-page tests use
+owned anonymous mappings and exclusive slices to bound partial-VL loads and
+quantum stores. Neither QEMU nor cross-compilation establishes native admission;
+the explicit native test requires the exact X60 probe to succeed.
 
 ## Commit 33 Non-Admitted SVE Candidate
 

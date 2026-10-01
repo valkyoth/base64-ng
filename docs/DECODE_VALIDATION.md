@@ -248,7 +248,7 @@ The original asserting candidate remains test-only. Native AWS integrated
 feature/MSRV, guard-page, fault-recovery and public-policy checks are retained
 separately from operator-reported Apple Silicon results. The maintainer's
 integrated Mac gate and all-features tests passed at `450239a`; paired integrated
-Mac timings and external pentest acceptance remain pending. See
+Mac timings and external pentest/CI acceptance subsequently completed. See
 [Commit 10 measurements and native commands](PERFORMANCE_2.1_NEON.md).
 
 The NEON gate inspects production assembly with plain, checked and all-features
@@ -259,3 +259,23 @@ integration target also exercises every invalid byte in every NEON lane across
 three vector blocks for all four strict presets, with no test-only library cfg.
 It requires a healthy NEON backend and checks both validation and transactional
 decode rejection. These checks supplement, rather than replace, native tests.
+
+## Exact-Profile RVV Validation
+
+Commit 12 connects the same preflight and recovery path to Linux SpacemiT X60
+RVV. Public routing still requires the exact vendor/architecture/implementation
+probe, enabled per-thread vector state and a healthy strict-decode KAT. Other
+RISC-V profiles, non-Linux targets and safe no_std builds stay on their existing
+fallbacks; a QEMU candidate cfg cannot admit this public route.
+
+The classifier scans length-agnostic byte vectors, reducing all active lanes
+before accepting. The safe wrapper requires complete 16-byte spans; the final
+quantum and remaining tail retain scalar padding/canonical-bit validation.
+The old 1024-byte decode crossover is applied to the input with its final
+quantum reserved, so the new complete-call route requires at least 1028 encoded
+bytes. The writer defensively vector-classifies its span before using the old
+RVV packing leaf. Explicit ScalarReference still independently validates input;
+checked builds independently compare validation and decoded output.
+
+Native X60 tests, dual-VLEN QEMU checks, production assembly contracts and
+paired measurements are documented in [the RVV checkpoint](PERFORMANCE_2.1_RVV.md).

@@ -22,6 +22,7 @@ pub(super) fn select(len: usize) -> Option<Backend> {
             target_arch = "x86",
             target_arch = "x86_64",
             target_arch = "wasm32",
+            target_arch = "riscv64",
             all(target_arch = "aarch64", target_endian = "little")
         )
     ))]
@@ -38,6 +39,7 @@ pub(super) fn select(len: usize) -> Option<Backend> {
             target_arch = "x86",
             target_arch = "x86_64",
             target_arch = "wasm32",
+            target_arch = "riscv64",
             all(target_arch = "aarch64", target_endian = "little")
         )
     )))]
@@ -53,6 +55,7 @@ fn width(backend: Backend) -> Option<usize> {
             target_arch = "x86",
             target_arch = "x86_64",
             target_arch = "wasm32",
+            target_arch = "riscv64",
             all(target_arch = "aarch64", target_endian = "little")
         )
     ))]
@@ -65,6 +68,7 @@ fn width(backend: Backend) -> Option<usize> {
             target_arch = "x86",
             target_arch = "x86_64",
             target_arch = "wasm32",
+            target_arch = "riscv64",
             all(target_arch = "aarch64", target_endian = "little")
         )
     )))]
@@ -108,6 +112,7 @@ fn validate(backend: Backend, input: &[u8], url: bool) -> bool {
             target_arch = "x86",
             target_arch = "x86_64",
             target_arch = "wasm32",
+            target_arch = "riscv64",
             all(target_arch = "aarch64", target_endian = "little")
         )
     ))]
@@ -120,6 +125,7 @@ fn validate(backend: Backend, input: &[u8], url: bool) -> bool {
             target_arch = "x86",
             target_arch = "x86_64",
             target_arch = "wasm32",
+            target_arch = "riscv64",
             all(target_arch = "aarch64", target_endian = "little")
         )
     )))]
@@ -140,6 +146,7 @@ fn decode(backend: Backend, input: &[u8], output: &mut [u8], url: bool) -> bool 
             target_arch = "x86",
             target_arch = "x86_64",
             target_arch = "wasm32",
+            target_arch = "riscv64",
             all(target_arch = "aarch64", target_endian = "little")
         )
     ))]
@@ -152,6 +159,7 @@ fn decode(backend: Backend, input: &[u8], output: &mut [u8], url: bool) -> bool 
             target_arch = "x86",
             target_arch = "x86_64",
             target_arch = "wasm32",
+            target_arch = "riscv64",
             all(target_arch = "aarch64", target_endian = "little")
         )
     )))]
@@ -190,6 +198,7 @@ pub(super) fn write(backend: Backend, family: Family, input: &[u8], output: &mut
                 target_arch = "x86",
                 target_arch = "x86_64",
                 target_arch = "wasm32",
+                target_arch = "riscv64",
                 all(target_arch = "aarch64", target_endian = "little")
             )
         ))]
@@ -202,6 +211,8 @@ pub(super) fn write(backend: Backend, family: Family, input: &[u8], output: &mut
             Backend::Neon => crate::decode_backend::DecodeBackend::Neon,
             #[cfg(target_arch = "wasm32")]
             Backend::WasmSimd128 => crate::decode_backend::DecodeBackend::WasmSimd128,
+            #[cfg(all(feature = "std", target_arch = "riscv64", target_os = "linux"))]
+            Backend::Rvv => crate::decode_backend::DecodeBackend::Rvv,
             _ => crate::decode_backend::DecodeBackend::Scalar,
         });
         prefix

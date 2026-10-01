@@ -18,11 +18,14 @@
 use crate::{Alphabet, DecodeError, EncodeError, Standard, checked_encoded_len, scalar};
 
 mod asm;
+pub(crate) mod ordinary;
 
 const ENCODE_INPUT_BLOCK: usize = 12;
 const DECODE_INPUT_BLOCK: usize = 16;
 
 unsafe extern "C" {
+    fn base64_ng_rvv_validate_standard(input: *const u8, len: usize) -> usize;
+    fn base64_ng_rvv_validate_url_safe(input: *const u8, len: usize) -> usize;
     fn base64_ng_rvv_encode_standard_quanta(input: *const u8, output: *mut u8, quanta: usize);
     fn base64_ng_rvv_encode_url_safe_quanta(input: *const u8, output: *mut u8, quanta: usize);
     fn base64_ng_rvv_decode_standard_quanta(input: *const u8, output: *mut u8, quanta: usize);

@@ -76,7 +76,7 @@ fi
 original_text_digest="$(evidence_checksum_file "$audit_root/original.text" | awk '{print $1}')"
 disassembly_text_digest="$(evidence_checksum_file "$audit_root/disassembly.text" | awk '{print $1}')"
 
-symbols="base64_ng_rvv_encode_standard_quanta base64_ng_rvv_encode_url_safe_quanta base64_ng_rvv_decode_standard_quanta base64_ng_rvv_decode_url_safe_quanta base64_ng_rvv_vlenb base64_ng_rvv_signal_context_round_trip base64_ng_rvv_signal_clobber"
+symbols="base64_ng_rvv_encode_standard_quanta base64_ng_rvv_encode_url_safe_quanta base64_ng_rvv_decode_standard_quanta base64_ng_rvv_decode_url_safe_quanta base64_ng_rvv_validate_standard base64_ng_rvv_validate_url_safe base64_ng_rvv_vlenb base64_ng_rvv_signal_context_round_trip base64_ng_rvv_signal_clobber"
 : >"$output_dir/disassembly.txt"
 for symbol in $symbols; do
     if ! "$prefix-nm" "$binary" | grep -E -q "[[:space:]][Tt][[:space:]]+$symbol$"; then

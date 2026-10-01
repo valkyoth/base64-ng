@@ -154,6 +154,56 @@ core::arch::global_asm!(
         .size \name, .-\name
     .endm
 
+    // a0 is a readable byte span, a1 its length. Every active byte must match
+    // one closed alphabet range/symbol. There are no stores or masked loads.
+    .macro base64_ng_rvv_validate name, ascii62, ascii63
+        .p2align 2
+        .global \name
+        .hidden \name
+        .type \name, @function
+    \name:
+        .cfi_startproc
+        li t1, 65
+        li t2, 97
+        li t3, 48
+        li t4, \ascii62
+        li t5, \ascii63
+        li t6, 26
+        beqz a1, .Lbase64_ng_rvv_valid_\@
+    .Lbase64_ng_rvv_validate_loop_\@:
+        vsetvli a3, a1, e8, m1, ta, ma
+        vle8.v v1, (a0)
+        vsub.vx v2, v1, t1
+        vmsltu.vx v3, v2, t6
+        vsub.vx v2, v1, t2
+        vmsltu.vx v4, v2, t6
+        vmor.mm v3, v3, v4
+        vsub.vx v2, v1, t3
+        vmsltu.vi v4, v2, 10
+        vmor.mm v3, v3, v4
+        vmseq.vx v4, v1, t4
+        vmor.mm v3, v3, v4
+        vmseq.vx v4, v1, t5
+        vmor.mm v3, v3, v4
+        vcpop.m a4, v3
+        bne a4, a3, .Lbase64_ng_rvv_invalid_\@
+        add a0, a0, a3
+        sub a1, a1, a3
+        bnez a1, .Lbase64_ng_rvv_validate_loop_\@
+    .Lbase64_ng_rvv_valid_\@:
+        li a0, 1
+        j .Lbase64_ng_rvv_validate_return_\@
+    .Lbase64_ng_rvv_invalid_\@:
+        li a0, 0
+    .Lbase64_ng_rvv_validate_return_\@:
+        base64_ng_rvv_clear
+        ret
+        .cfi_endproc
+        .size \name, .-\name
+    .endm
+
+    base64_ng_rvv_validate base64_ng_rvv_validate_standard, 43, 47
+    base64_ng_rvv_validate base64_ng_rvv_validate_url_safe, 45, 95
     base64_ng_rvv_encode base64_ng_rvv_encode_standard_quanta, -15, -12
     base64_ng_rvv_encode base64_ng_rvv_encode_url_safe_quanta, -13, 36
     base64_ng_rvv_decode base64_ng_rvv_decode_standard_quanta, 43, 47

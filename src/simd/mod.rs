@@ -103,6 +103,9 @@ mod rvv;
 #[cfg(all(feature = "simd", target_arch = "riscv64", base64_ng_perf_evidence))]
 pub(crate) use rvv::candidate_available as rvv_candidate_available;
 #[cfg(all(feature = "simd", target_arch = "riscv64"))]
+pub(crate) use rvv::ordinary;
+#[cfg(all(feature = "simd", target_arch = "riscv64"))]
+#[cfg_attr(not(all(feature = "std", target_os = "linux")), allow(unused_imports))]
 pub(crate) use rvv::{
     available as rvv_available, decode_slice as decode_slice_rvv, encode_slice as encode_slice_rvv,
     supports_alphabet as rvv_supports_alphabet,
@@ -246,6 +249,7 @@ pub(crate) enum Candidate {
     WasmSimd128,
     /// RVV is visible to the exact production profile or candidate build.
     #[cfg(target_arch = "riscv64")]
+    #[cfg_attr(not(all(feature = "std", target_os = "linux")), allow(dead_code))]
     Rvv,
 }
 

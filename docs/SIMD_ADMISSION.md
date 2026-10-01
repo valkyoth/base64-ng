@@ -9,6 +9,12 @@ only for backends named in this file and the release gate.
 The 2.1.0 development metadata does not change this released admission
 baseline. New paths require the [2.1 checkpoints](2.1.0-release-plan.md).
 
+2.1 Commit 12 integrates ordinary vector validation for the same exact Linux/X60
+profile, not general RVV hardware. Its shared route reserves the final quantum
+before applying the existing 1024-byte decode threshold. Native checkpoint
+results and tiny-call tradeoffs are in [PERFORMANCE_2.1_RVV.md](PERFORMANCE_2.1_RVV.md);
+external review and CI for this development checkpoint are still pending.
+
 - Admitted backends: AVX-512 VBMI encode, AVX2 encode, SSSE3/SSE4.1 encode,
   NEON encode, AVX-512 VBMI strict decode, AVX2 strict decode,
   SSSE3/SSE4.1 strict decode, NEON strict decode, and exact-profile RVV 1.0

@@ -336,6 +336,9 @@ jobs:
       - name: Run scalar and RVV candidate suites
         run: scripts/check_riscv_qemu.sh
 
+      - name: Check RVV validation under both VLENs and MSRV
+        run: sh scripts/check-2.1-rvv-validation.sh --qemu
+
       - name: Generate RVV candidate assembly evidence
         run: scripts/generate_rvv_asm_evidence.sh
 

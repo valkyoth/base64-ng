@@ -12,8 +12,13 @@
 - Commit 11 extends that ordinary route to WASM simd128 and rebuilds the npm
   SIMD artifact without changing JavaScript contracts or the scalar artifact.
   Add WASM active/MSRV fault and lane tests, expanded browser checks and paired
-  guest/loader benchmarks. Safari operator confirmation passed; external review
-  remains pending. Remaining APIs and optimizations follow the commit plan.
+  guest/loader benchmarks. Safari operator confirmation, external review and CI
+  passed.
+- Commit 12 extends shared ordinary validation/writing to the existing exact
+  Linux/SpacemiT X60 RVV profile, without broadening hardware admission. Add
+  variable-VL classification, production assembly checks, dual-VLEN/MSRV tests
+  and native paired measurements, including documented tiny-call tradeoffs.
+  Remaining APIs and optimizations follow the commit plan.
 
 ## 2.0.4 - Unreleased
 

@@ -15,9 +15,15 @@ Commit 11 extends the ordinary strict route to WASM simd128. The npm SIMD
 artifact and integrity pin are refreshed; the scalar artifact, JavaScript
 options, ownership rules, limits and transactional destinations are unchanged.
 Local Node, Wasmtime, Chromium and Firefox checks pass, as does the
-operator-supplied Mac package/Safari rerun. External review remains pending. See the
+operator-supplied Mac package/Safari rerun. External review and CI passed. See the
 [WASM measurements](../docs/PERFORMANCE_2.1_WASM.md) for paired guest and loader
 results, including small-input regressions and JIT limitations.
+
+Commit 12 adds vector-length-agnostic RVV validation and shared ordinary decoding
+for the already admitted exact Linux/X60 profile. Availability, secret/CT paths,
+scalar diagnostics, transactional output, and health recovery remain unchanged.
+See the [RVV measurements](../docs/PERFORMANCE_2.1_RVV.md) for native bulk gains
+and small historical-call regressions. External review and CI remain pending.
 
 Remaining work is tracked in the [commit plan](../docs/2.1.0-release-plan.md).
 Final release notes, acceptance, and hardware claims will be recorded before

@@ -316,7 +316,8 @@ fn historical_bulk_errors_never_acquire_canonical_diagnostics_or_mutation_rules(
     feature = "simd",
     any(
         all(target_arch = "aarch64", target_endian = "little"),
-        target_arch = "wasm32"
+        target_arch = "wasm32",
+        all(target_arch = "riscv64", target_os = "linux")
     )
 ))]
 #[test]
@@ -324,7 +325,15 @@ fn production_16_lane_simd_rejects_every_invalid_lane_without_writing() {
     // This integration target links the non-cfg(test) library. Do not silently
     // pass on scalar fallback if the production classifier failed its KAT.
     initialize_backend_health();
+    #[cfg(target_arch = "riscv64")]
+    let rvv_expected = base64_ng::runtime::backend_report().active_decode_backend();
+    #[cfg(target_arch = "riscv64")]
+    if std::env::var_os("BASE64_NG_REQUIRE_X60").is_some() {
+        assert_eq!(rvv_expected, base64_ng::runtime::Backend::Rvv);
+    }
     let assert_backend = || {
+        #[cfg(target_arch = "riscv64")]
+        let expected = rvv_expected;
         #[cfg(target_arch = "aarch64")]
         let expected = base64_ng::runtime::Backend::Neon;
         #[cfg(target_arch = "wasm32")]
@@ -359,8 +368,8 @@ fn production_16_lane_simd_rejects_every_invalid_lane_without_writing() {
         assert_eq!(output, [0; 3072]);
         output.fill(0xa5);
         // First, interior and last vector blocks, before the reserved tail.
-        for block in [0, 2048, 4064] {
-            for lane in 0..16 {
+        for block in [0, 2048, 4048] {
+            for lane in 0..32 {
                 for byte in 0..=u8::MAX {
                     if settings.alphabet().as_array().contains(&byte) {
                         continue;

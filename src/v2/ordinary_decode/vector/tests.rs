@@ -104,7 +104,7 @@ fn assert_quarantined(fault: BackendFault) {
         .expect("the actual invocation must use a backend");
     assert!(matches!(
         backend,
-        Backend::Avx2 | Backend::Ssse3Sse41 | Backend::Neon | Backend::WasmSimd128
+        Backend::Avx2 | Backend::Ssse3Sse41 | Backend::Neon | Backend::WasmSimd128 | Backend::Rvv
     ));
     assert_eq!(state.quarantined, Some((backend, fault)));
 }
@@ -117,6 +117,7 @@ fn ready_backend(len: usize) -> Option<Backend> {
         && width(Backend::Ssse3Sse41).is_none()
         && width(Backend::Neon).is_none()
         && width(Backend::WasmSimd128).is_none()
+        && width(Backend::Rvv).is_none()
     {
         return None;
     }
@@ -160,7 +161,7 @@ fn public_validation_and_writing_reach_health_gated_simd_not_avx512() {
     };
     assert!(matches!(
         backend,
-        Backend::Avx2 | Backend::Ssse3Sse41 | Backend::Neon | Backend::WasmSimd128
+        Backend::Avx2 | Backend::Ssse3Sse41 | Backend::Neon | Backend::WasmSimd128 | Backend::Rvv
     ));
     #[cfg(all(feature = "simd", target_arch = "aarch64", target_endian = "little"))]
     assert_eq!(backend, Backend::Neon);
@@ -177,7 +178,13 @@ fn public_validation_and_writing_reach_health_gated_simd_not_avx512() {
         assert!(state.writes > 0);
         assert!(matches!(
             state.backend,
-            Some(Backend::Avx2 | Backend::Ssse3Sse41 | Backend::Neon | Backend::WasmSimd128)
+            Some(
+                Backend::Avx2
+                    | Backend::Ssse3Sse41
+                    | Backend::Neon
+                    | Backend::WasmSimd128
+                    | Backend::Rvv
+            )
         ));
         assert_eq!(output[..3072], [0; 3072]);
         assert_eq!(output[3072..], [0xff; 3]);
