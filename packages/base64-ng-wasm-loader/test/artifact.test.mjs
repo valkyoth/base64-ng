@@ -27,6 +27,12 @@ test("artifact provenance binds the synchronized package and both digests", asyn
       provenance.artifacts[name],
       createHash("sha256").update(bytes).digest("hex"),
     );
+    const api = await createBase64Ng({ artifact });
+    try {
+      assert.equal(api.posture.artifactSha256, provenance.artifacts[name]);
+    } finally {
+      api.dispose();
+    }
   }
 });
 
