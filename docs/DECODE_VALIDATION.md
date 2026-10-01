@@ -232,5 +232,6 @@ and block geometry and clear vector registers after success or rejection.
 This candidate does not change production NEON, static no_std, checked-backend,
 ScalarReference or secret/CT routing. Its test-only disagreement assertion
 requires production health/quarantine integration before promotion. Native AWS
-and QEMU correctness are recorded separately; Apple Silicon verification is
+and QEMU correctness are recorded separately, alongside operator-reported Apple
+Silicon candidate results. Production integration and its verification remain
 pending. See [Commit 10 measurements and native commands](PERFORMANCE_2.1_NEON.md).

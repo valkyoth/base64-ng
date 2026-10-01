@@ -23,7 +23,7 @@ before and after each timed sample, with success and length checked every call.
 Rounds are 10000 for 0/3/32-byte payloads, 500 for 1024 bytes, 32 for 65536 bytes,
 and 4 for 1048576 bytes. The benchmark prints 504 sample records.
 
-## Results
+## AWS Results
 
 Standard padded median nanoseconds per complete decode; sizes are decoded
 payload bytes. Speedup is Auto time divided by candidate time.
@@ -39,14 +39,53 @@ payload bytes. Speedup is Auto time divided by candidate time.
 
 Across all four profiles, 64 KiB speedup is 1.205-1.207x and 1 MiB speedup is
 1.243-1.248x. These warm-buffer, fixed-pattern results do not establish a
-crossover, cold-cache behavior, invalid-input throughput, or an Apple Silicon
-result. The private candidate has no production backend health-selection
+crossover, cold-cache behavior, or invalid-input throughput. The private
+candidate has no production backend health-selection
 overhead yet; small-input numbers in particular are not promised public API
 improvements. `ScalarReference` is the canonical policy, not the historical
 Engine decoder. No comparison with other libraries is implied.
 
 The raw final samples and native/QEMU gate logs are retained locally under
 `target/release-evidence/2.1-commit10-neon/`; this is not a signed release bundle.
+
+## Apple Silicon Results
+
+The maintainer supplied a passing native correctness/codegen gate for commit
+`c3c59d36bcf6df7197d2070ad13ef692515f9740`, Rust 1.98.1 / LLVM 22.1.8,
+`aarch64-apple-darwin`, followed by the full benchmark log from the command
+below. The chip model and macOS version were not supplied. Commit/compiler
+identity comes from the accompanying terminal transcript, not metadata embedded
+in the benchmark file; these are operator-reported development results.
+
+All 504 expected records were checked for unique profile/size/sample/mode keys,
+expected round counts, positive timings, and a successful test summary. The
+correctness gate passed for active/MSRV compilers and checked/non-checked
+configurations. Its zero-test guard-page entries on macOS are expected: that
+test is Linux-only and was executed separately on AWS, not on this Mac.
+
+Standard padded median nanoseconds per call follow. Here speedup is the median
+of seven paired Auto/candidate time ratios, preserving sample pairing rather
+than dividing independently selected median times.
+
+| Payload bytes | Public Auto | ScalarReference | NEON candidate | Paired speedup |
+| --- | ---: | ---: | ---: | ---: |
+| 0 | 24.35 | 45.15 | 32.65 | 0.75x |
+| 3 | 20.15 | 156.33 | 16.18 | 1.25x |
+| 32 | 36.23 | 1365.86 | 33.50 | 1.08x |
+| 1024 | 642.25 | 42635.75 | 416.67 | 1.54x |
+| 65536 | 40522.13 | 2737065.09 | 25286.47 | 1.60x |
+| 1048576 | 663854.25 | 44016468.75 | 409541.75 | 1.62x |
+
+Across all four profiles, paired speedups are 1.587-1.603x at 64 KiB and
+1.599-1.632x at 1 MiB. Empty-input ratios are only 0.746-0.828x: the candidate
+is slower, so these results do not justify unconditional routing. Preserve the
+existing empty-input fast path during production integration and remeasure the
+integrated path, including its health checks. No statistical admission or
+universal improvement is claimed.
+
+The supplied file is retained locally as
+`target/release-evidence/2.1-commit10-neon/macos-benchmark.log`, SHA-256
+`20fb1109e0c80d8e5702dea2f8029b6b97f6161a1033e48e97de6b6f28d90fbe`.
 
 ## Native Reproduction
 
@@ -66,7 +105,7 @@ Retain the commit, compiler, machine model, gate output and all benchmark rows.
 The gate installs missing pinned/MSRV toolchains and targets and runs both
 compiler feature matrices. Linux also runs guard pages. The same assembly
 checker accepts ELF and Mach-O syntax and verifies production exclusion.
-Apple Silicon native results remain pending. The candidate must acquire the
+Apple Silicon candidate results are recorded above. The candidate must acquire the
 shared production health KAT, quarantine/recovery and checked-output comparison
 before default routing can change, followed by native regression tests.
 
