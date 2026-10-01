@@ -109,8 +109,8 @@ compiler feature matrices. Linux also runs guard pages. The same assembly
 checker accepts ELF and Mach-O syntax and verifies exclusion of the asserting
 test candidate, not the production classifier. The expanded integrated gate
 also runs public validation-policy, health and injected-fault recovery tests.
-Apple Silicon candidate results are recorded above; an integrated-code rerun
-there is still required. At an integrated revision, the optional same-process
+Apple Silicon candidate timings are recorded above; integrated correctness
+results are recorded below. At an integrated revision, the optional same-process
 benchmark compares integrated Auto with reference and private candidate, not
 with the earlier public implementation.
 
@@ -164,7 +164,8 @@ All 1344 timed records are retained locally in
 The local evidence directory also retains the runner and source hashes; it is
 not a signed release bundle. Native AWS and QEMU feature/MSRV gates cover
 the integrated kernels, guard pages, health faults and public transactionality.
-Apple Silicon integration evidence and external pentest acceptance are pending.
+Apple Silicon paired integration timings and external pentest acceptance are
+pending; the native Mac correctness rerun is recorded below.
 
 For a direct public operation sample, build this same harness at each revision
 separately, then alternate its binaries with these arguments (repeat for all
@@ -178,3 +179,28 @@ perf/public-api/target/release/base64-ng-public-api-perf \
 perf/public-api/target/release/base64-ng-public-api-perf \
     historical decode sp 65536 random 4096 128 warm
 ```
+
+## Apple Silicon Integration Correctness
+
+The maintainer supplied a terminal transcript identifying
+`450239a0696a9efde63e06448931649e3989e013` on `aarch64-apple-darwin` and
+successful completion of both commands:
+
+```sh
+sh scripts/check-2.1-neon-validation.sh
+cargo test --locked --release --all-features
+```
+
+The gate passed its pinned Rust 1.98.1/MSRV 1.90.0 feature matrices, plain and
+checked public routing, validation-policy and health tests, injected-fault
+recovery, production-IR exclusion of the asserting candidate, assembly and
+unsafe/panic policies. The zero-test guard-page invocations are expected on
+macOS: those tests are Linux-only and were exercised on AWS separately.
+
+The root package's all-features run passed 254 unit tests, 209 integration tests
+and 75 doctests. The one ignored unit test is the opt-in development benchmark.
+Repeated sections in the supplied paste describe the same run and are not
+counted as independent executions. This is operator-reported correctness
+evidence; no new benchmark, compiler identity transcript, chip model or macOS
+version was supplied with this rerun. It does not replace paired integrated
+performance measurements or external security review.

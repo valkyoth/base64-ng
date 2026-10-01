@@ -898,7 +898,8 @@ retries with complete scalar overwrite. The shared checked path compares full
 validation and bounded output chunks. Static no_std token contracts and
 secret/CT routes are unchanged. The original asserting evaluation path is
 still test-only, not the public route. Native AWS integrated checks are separate
-from Apple Silicon candidate evidence; the integrated Mac rerun is pending. Codegen gates
+from Apple Silicon candidate performance evidence; the maintainer's integrated
+Mac correctness/codegen gate passed at `450239a`. Codegen gates
 inspect both classifier bodies for one 16-byte load, all-lane reduction (LLVM
 may invert masks and use `umaxv`), and absence of stores/calls/SVE, and prove the
 candidate absent from production IR. Linux guard pages and exhaustive lane,

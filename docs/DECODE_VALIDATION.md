@@ -242,6 +242,7 @@ architectures, and secret/CT paths are unchanged.
 
 The original asserting candidate remains test-only. Native AWS integrated
 feature/MSRV, guard-page, fault-recovery and public-policy checks are retained
-separately from operator-reported Apple Silicon candidate results. The integrated
-Mac rerun and external pentest acceptance remain pending. See
+separately from operator-reported Apple Silicon results. The maintainer's
+integrated Mac gate and all-features tests passed at `450239a`; paired integrated
+Mac timings and external pentest acceptance remain pending. See
 [Commit 10 measurements and native commands](PERFORMANCE_2.1_NEON.md).
