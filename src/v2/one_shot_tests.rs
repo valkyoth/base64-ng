@@ -183,7 +183,7 @@ fn allocation_limits_and_reservation_failure_precede_materialization() {
     let error = STRICT_STANDARD_PADDED
         .decode_to_vec_with_injected_reserver(b"Zm9v", 3, |output, required| {
             called.set(true);
-            assert!(output.is_empty());
+            assert_eq!(output.len(), 0);
             assert_eq!(required, 3);
             Err(OneShotError::AllocationFailed {
                 requested: required,
@@ -197,7 +197,7 @@ fn allocation_limits_and_reservation_failure_precede_materialization() {
     let error = STRICT_STANDARD_PADDED
         .encode_to_string_with_injected_reserver(b"foo", 4, |output, required| {
             encode_called.set(true);
-            assert!(output.is_empty());
+            assert_eq!(output.len(), 0);
             assert_eq!(required, 4);
             Err(OneShotError::AllocationFailed {
                 requested: required,

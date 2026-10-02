@@ -239,6 +239,15 @@ where
     }
 
     let backend = active_encode_backend_for_input(input.len());
+    encode_selected::<A, PAD>(backend, input, output)
+}
+
+/// Runs a backend selected by the shared CPU/size/health policy.
+pub(crate) fn encode_selected<A: Alphabet, const PAD: bool>(
+    backend: EncodeBackend,
+    input: &[u8],
+    output: &mut [u8],
+) -> Result<usize, EncodeError> {
     #[cfg(feature = "checked-backend")]
     if backend != EncodeBackend::Scalar && backend_supports::<A>(backend, input.len()) {
         record_test_execution(backend);

@@ -34,8 +34,8 @@ require_pattern() {
     fi
 }
 
-require_pattern '(uminv[[:space:]]+b[0-9]+, v[0-9]+\.16b|uminv\.16b[[:space:]]+b[0-9]+, v[0-9]+)' \
-    'all-lane strict-decode validity reduction'
+python3 scripts/check-neon-validation-codegen.py "$output_dir" assembly
+python3 scripts/check-neon-validation-codegen.py "$output_dir" direct-reduction
 require_pattern '(tbl[[:space:]]+v[0-9]+\.16b|tbl\.16b[[:space:]]+v[0-9]+)' \
     'NEON byte-table permutation'
 require_pattern '(bsl[[:space:]]+v[0-9]+\.16b|bsl\.16b[[:space:]]+v[0-9]+)' \
@@ -63,7 +63,9 @@ evidence_verify_source "NEON asm evidence"
     echo
     echo "review focus:"
     echo "- encode uses exact 8+4-byte input reads, table permutation, and vector alphabet mapping"
-    echo "- strict decode classifies all lanes, uses uminv before direct stores, compacts with tbl, and stores exactly 8+4 bytes"
+    echo "- validation-only classifiers pass the lane-mask and reduction-to-bool semantic checker"
+    echo "- direct decode reduction inventory accepts uminv or a full-width addp/fmov/cmn/b.ne pattern; direct kernel tests check lane behavior"
+    echo "- packing inventory includes tbl and exact 8+4-byte stores; this pattern check is not whole-program dataflow proof"
     echo "- wrapper loops clear AArch64 vector state once after the direct block sequence"
 } >"$manifest"
 

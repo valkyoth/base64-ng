@@ -3,8 +3,8 @@
 Development checkpoint, not a release authorization.
 
 Commit 1 synchronizes all Rust packages and the WASM loader at `2.1.0` with
-publication blocked. It retains the signed `v2.0.4` compatibility baseline,
-Rust `1.98.1`, and MSRV `1.90.0`.
+publication blocked. It retains the signed `v2.0.4` compatibility baseline
+and MSRV `1.90.0`. Commit 13 updates the active compiler to Rust `1.99.0`.
 
 Through Commit 10, ordinary decoding has explicit validation policy, immutable
 preflight, portable table validation and health-gated x86/NEON validation and
@@ -23,7 +23,16 @@ Commit 12 adds vector-length-agnostic RVV validation and shared ordinary decodin
 for the already admitted exact Linux/X60 profile. Availability, secret/CT paths,
 scalar diagnostics, transactional output, and health recovery remain unchanged.
 See the [RVV measurements](../docs/PERFORMANCE_2.1_RVV.md) for native bulk gains
-and small historical-call regressions. External review and CI remain pending.
+and small historical-call regressions. External retest and CI passed through
+`0ef1dcb`.
+
+Commit 13 accelerates canonical ordinary encoding through existing admitted
+Standard/URL-safe kernels, including allocating/bounded and append/formatting
+surfaces. Exact sizing, rollback, checked recovery, and short/custom fallback
+remain in place. The [encoding checkpoint](../docs/PERFORMANCE_2.1_ENCODE.md)
+records complete-call measurements and limitations. Both WASM artifacts are
+rebuilt with Rust 1.99.0; JavaScript contracts and secret/CT algorithms are
+unchanged. External review and CI for this checkpoint remain pending.
 
 Remaining work is tracked in the [commit plan](../docs/2.1.0-release-plan.md).
 Final release notes, acceptance, and hardware claims will be recorded before

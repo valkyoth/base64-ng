@@ -76,7 +76,7 @@ fn parsing_validates_before_fallible_reservation() {
         STRICT_STANDARD_PADDED,
         "Zm9v",
         |output, required| {
-            assert!(output.is_empty());
+            assert_eq!(output.len(), 0);
             assert_eq!(required, 4);
             Err(OneShotError::AllocationFailed {
                 requested: required,

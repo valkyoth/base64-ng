@@ -77,6 +77,8 @@ echo "checks: 2.1 AVX-512 validation"
 sh scripts/check-2.1-avx512-validation.sh
 echo "checks: 2.1 public strict decode"
 sh scripts/check-2.1-public-decode.sh
+echo "checks: 2.1 public ordinary encode"
+sh scripts/check-2.1-public-encode.sh
 sh scripts/check-2.1-neon-validation.sh
 sh scripts/check-2.1-public-api.sh
 

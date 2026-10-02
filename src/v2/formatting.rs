@@ -1,7 +1,7 @@
 //! Allocation-free formatting and exact counted-sink encoding.
 
 use super::{
-    chunks::{EncodedChunk, EncodedChunks},
+    chunks::{BufferedChunks, EncodedChunk},
     contracts::BackendFault,
     ordinary::OneShotError,
     specifications::{Base64, Codec, CodecSettings},
@@ -197,7 +197,7 @@ impl core::fmt::Debug for EncodedDisplay<'_> {
 
 impl core::fmt::Display for EncodedDisplay<'_> {
     fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        for chunk in EncodedChunks::new(self.settings, self.input) {
+        for chunk in BufferedChunks::new(self.settings, self.input) {
             formatter.write_str(chunk_text(&chunk).map_err(|_| core::fmt::Error)?)?;
         }
         Ok(())
@@ -224,9 +224,9 @@ impl<S: Codec> Base64<S> {
         input: &[u8],
         writer: &mut W,
     ) -> Result<usize, FormatWriteError> {
-        let chunks = self
-            .encoded_chunks(input)
+        self.encoded_len(input.len())
             .map_err(FormatWriteError::Encoding)?;
+        let chunks = BufferedChunks::new(self.settings(), input);
         let mut confirmed = 0;
         for chunk in chunks {
             let text = chunk_text(&chunk).map_err(|_| FormatWriteError::Backend {
@@ -247,9 +247,9 @@ impl<S: Codec> Base64<S> {
         input: &[u8],
         writer: &mut W,
     ) -> Result<usize, CountedWriteError<W::Error>> {
-        let chunks = self
-            .encoded_chunks(input)
+        self.encoded_len(input.len())
             .map_err(CountedWriteError::Encoding)?;
+        let chunks = BufferedChunks::new(self.settings(), input);
         let mut committed = 0;
         for chunk in chunks {
             let mut pending = chunk.as_bytes();

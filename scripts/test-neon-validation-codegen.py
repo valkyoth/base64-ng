@@ -51,10 +51,39 @@ ret
     verify(elf, "assembly", True)
     macho = re.sub(r"\t(\w+) ([^\n]*\.16b[^\n]*)", lambda m: "\t" + m[1] + ".16b " + m[2].replace(".16b", ""), elf)
     verify(macho.replace(".Lfunc", "Lfunc"), "assembly", True)
+    verify("uminv b0, v0.16b", "direct-reduction", True)
+    verify("uminv.16b b0, v0", "direct-reduction", True)
+    verify("uminv b0, v0.8b", "direct-reduction", False)
+    writer = "addp d6, v6.2d\nfmov x10, d6\ncmn x10, #2\nb.ne .LBB1_2\n"
+    verify(writer, "direct-reduction", True)
+    verify(writer.replace("b.ne", "cset w21, eq\nb.ne"), "direct-reduction", True)
+    verify(writer.replace("addp d6, v6.2d", "addp.2d d6, v6"), "direct-reduction", True)
+    for text in [writer.replace("v6.2d", "v6.2s"), writer.replace("fmov x10, d6", "fmov w10, s6"),
+                 writer.replace("fmov x10, d6", "fmov x10, d7"), writer.replace("cmn x10", "cmn x11"),
+                 writer.replace("cmn x10", "cmn w10"), writer.replace("#2", "#1"),
+                 writer.replace("b.ne", "b.eq"), writer.replace("b.ne .LBB1_2", ""), ""]:
+        verify(text, "direct-reduction", False)
     valid_mask = elf.replace("umaxv b0, v0.16b", "movi v6.16b, #255\n\teor v0.16b, v0.16b, v6.16b\n\tuminv b0, v0.16b").replace("bic w0", "and w0")
     verify(valid_mask, "assembly", True)
     # A max reduction of *valid* masks implements any-match, not all-match.
     verify(valid_mask.replace("uminv", "umaxv"), "assembly", False)
+    summed = elf.replace("mov w9, #1\n", "").replace(
+        "umaxv b0, v0.16b\n\tfmov w8, s0\n\tbic w0, w9, w8",
+        "addp d0, v0.2d\n\tfmov x8, d0\n\tcmp x8, #0\n\tcset w0, eq")
+    verify(summed, "assembly", True)
+    verify(summed.replace("addp d0, v0.2d", "addp.2d d0, v0"), "assembly", True)
+    for mutation in [summed.replace("v0.2d", "v0.2s"),
+                     summed.replace("fmov x8, d0", "fmov w8, s0"),
+                     summed.replace("fmov x8, d0", "fmov x8, d1"),
+                     summed.replace("cmp x8, #0", "cmp w8, #0"),
+                     summed.replace("cmp x8, #0", "cmp x9, #0"),
+                     summed.replace("cmp x8, #0", "cmp x8, #1"),
+                     summed.replace("cmp x8, #0", "mov w8, #0\n\tcmp x8, #0"),
+                     summed.replace("cset w0, eq", "cset w0, ne"),
+                     summed.replace("cset w0, eq", "mov w0, #1"),
+                     summed.replace("addp d0, v0.2d", "addp d0, v1.2d"),
+                     summed.replace("addp d0, v0.2d", "movi v6.16b, #255\n\teor v0.16b, v0.16b, v6.16b\n\taddp d0, v0.2d")]:
+        verify(mutation, "assembly", False)
     verify(elf.replace("umaxv", "uminv"), "assembly", False)
     verify(re.sub(r"\.Lfunc_end\d+:", "\t.cfi_endproc", elf), "assembly", True)
     for mutation in ["", elf.replace("UrlSafe", "Standard"), elf.replace("umaxv", "umov"),

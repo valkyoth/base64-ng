@@ -77,12 +77,21 @@ impl<S: Codec> Base64<S> {
         reserve(destination, required)?;
 
         let mut rollback = StringRollback::new(destination);
-        for chunk in self.encoded_chunks(input)? {
-            let text = chunk
-                .as_str()
+        let mut append = |bytes: &[u8]| {
+            let text = core::str::from_utf8(bytes)
                 .map_err(|_| OneShotError::Backend(BackendFault::ImpossibleState))?;
             rollback.destination().push_str(text);
-            after_chunk(rollback.destination(), text.len())?;
+            after_chunk(rollback.destination(), text.len())
+        };
+        if input.len() < 192 {
+            for chunk in self.encoded_chunks(input)? {
+                append(chunk.as_bytes())?;
+            }
+        } else {
+            let mut chunks = super::chunks::BufferedChunks::new(self.settings(), input);
+            while let Some(bytes) = chunks.next_batch() {
+                append(bytes)?;
+            }
         }
         rollback.commit();
         Ok(required)

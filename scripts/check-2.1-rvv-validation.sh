@@ -68,6 +68,8 @@ for compiler in "$active" 1.90.0; do
             --features "$features" --lib ordinary_decode::vector -- --test-threads=1
         cargo +"$compiler" test --locked --release --target "$target" --no-default-features \
             --features "$features" --lib backend_health -- --test-threads=1
+        cargo +"$compiler" test --locked --release --target "$target" --no-default-features \
+            --features "$features" --lib ordinary_encode -- --test-threads=1
     done
 done
 sh scripts/validate-unsafe-boundary.sh

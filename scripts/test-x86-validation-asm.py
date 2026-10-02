@@ -78,3 +78,25 @@ with tempfile.TemporaryDirectory() as root:
     if subprocess.run([sys.executable, str(checker), root, "avx512"], capture_output=True).returncode == 0:
         raise SystemExit("AVX-512 assembly check accepted ambiguous files")
 print("x86 validation assembly mutations: valid bodies accepted; omissions/stores/calls and partial-width reductions rejected")
+
+# LLVM 23's promoted SSSE3 argument is loaded by the direct caller.
+promoted = valid.replace("\tmovdqu (%rdi), %xmm0\n", "").replace("pcmpeqb %xmm1, %xmm0", "pcmpeqb %xmm0, %xmm1")
+promoted += "".join(f"\tmovups (%r12,%rbx), %xmm0\n\tcallq validate_16_bytes_ssse3_sse41_{name}\n"
+                    for name in ("Standard", "UrlSafe"))
+with tempfile.TemporaryDirectory() as root:
+    path = Path(root) / "base64_ng-fixture.s"
+    for text, accepted in [
+        (promoted, True),
+        (promoted.replace("movups", "movq"), False),
+        (promoted.replace("movups", "vmovups").replace("%xmm0\n\tcallq", "%ymm0\n\tcallq"), False),
+        (promoted.replace("%xmm0\n\tcallq", "%xmm1\n\tcallq"), False),
+        (promoted.replace("\tcallq", "\tpxor %xmm0, %xmm0\n\tcallq"), False),
+        (promoted.replace("\tpcmpeqb", "\tpxor %xmm0, %xmm0\n\tpcmpeqb"), False),
+        (promoted.replace("\tretq", "\tmovq (%rdi), %rax\n\tretq"), False),
+        (promoted.rsplit("\tmovups", 1)[0], False),
+    ]:
+        path.write_text(text)
+        result = subprocess.run([sys.executable, str(checker), root], capture_output=True)
+        if (result.returncode == 0) != accepted:
+            raise SystemExit(f"SSSE3 promoted argument mutation accepted={accepted}: {result.stderr!r}")
+print("SSSE3 promoted argument mutations: exact-width caller witnesses required")

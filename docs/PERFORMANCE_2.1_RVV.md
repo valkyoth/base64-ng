@@ -2,8 +2,8 @@
 
 Commit 12 improves ordinary strict Standard/URL-safe decoding on the existing
 exact Linux/SpacemiT X60 profile. This is a development checkpoint, not a release
-seal, a general RVV admission, or a constant-time claim. External review and CI
-remain pending. Secret/CT algorithms and hardware identity policy are unchanged.
+seal, a general RVV admission, or a constant-time claim. External retest and CI
+passed through `0ef1dcb`. Secret/CT algorithms and hardware identity policy are unchanged.
 
 ## Implementation
 

@@ -4,7 +4,7 @@
 
 - Commit 1: synchronize development package metadata at `2.1.0`, block Rust
   and npm publication, and preserve the signed `v2.0.4` API/behavior baseline.
-- Retain Rust `1.98.1` and MSRV `1.90.0`.
+- Update the active compiler to Rust `1.99.0` and retain MSRV `1.90.0`.
 - Add explicit ordinary `Auto`/`ScalarReference` validation policy and shared
   transactional preflight. Eligible ordinary strict Standard/URL-safe calls
   use portable table validation or health-gated x86/NEON vector validation,
@@ -18,6 +18,12 @@
   Linux/SpacemiT X60 RVV profile, without broadening hardware admission. Add
   variable-VL classification, production assembly checks, dual-VLEN/MSRV tests
   and native paired measurements, including documented tiny-call tradeoffs.
+- Commit 13 routes canonical ordinary Standard/URL-safe encoding through existing
+  admitted kernels, retaining short/custom table fallback, checked recovery,
+  exact sizing and independent encode-padding policy. Batch owned String append
+  and internal formatting work without changing public sink progress contracts.
+- Rebuild both WASM artifacts with Rust 1.99.0. Extend the assembly checkers for
+  reviewed LLVM 23 code shapes with mutation tests; preserve MSRV 1.90.0.
   Remaining APIs and optimizations follow the commit plan.
 
 ## 2.0.4 - Unreleased

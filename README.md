@@ -257,7 +257,7 @@ base64-ng = { version = "2.0.4", features = ["simd"] }
 Scalar by default; std x86/x86_64 encode selects SSSE3/SSE4.1, AVX2, or AVX-512 VBMI by length, strict decode selects SSSE3/SSE4.1 or AVX2. Admitted
 little-endian AArch64 NEON, wasm `simd128`, and exact-profile Linux/SpacemiT
 X60 RVV paths are selected only inside their documented scopes. Unsupported
-CPUs, custom alphabets, compatibility policies, and secret operations retain
+CPUs, custom alphabets, compatibility decoding, and secret operations retain
 scalar behavior.
 
 Runtime selection can be inspected with `runtime::backend_report()`.
@@ -354,13 +354,13 @@ and [dispatch matrix](https://github.com/valkyoth/base64-ng/blob/main/docs/2.0_D
 
 ## Rust Support
 
-MSRV remains Rust `1.90.0`. The active release toolchain is Rust `1.98.1`.
+MSRV remains Rust `1.90.0`. The active release toolchain is Rust `1.99.0`.
 
 | Rust | Evidence |
 | --- | --- |
 | `1.90.0` | MSRV compatibility check |
-| `1.91.0` - `1.98.0` | `cargo check --all-features` |
-| `1.98.1` | Active release toolchain and full release checks |
+| `1.91.0` - `1.98.1` | `cargo check --all-features` |
+| `1.99.0` | Active release toolchain and full release checks |
 
 New deployments should prefer the latest tested stable Rust.
 

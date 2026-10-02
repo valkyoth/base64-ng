@@ -24,7 +24,7 @@ for toolchain in "$active" 1.90.0; do
                 export RUSTFLAGS="$flags"
                 cargo "+$toolchain" clippy --locked --target wasm32-wasip1 \
                     --no-default-features --features "$features" --lib --tests -- -D warnings
-                for filter in simd::wasm::ordinary::tests v2::ordinary_decode::vector::tests; do
+                for filter in simd::wasm::ordinary::tests v2::ordinary_decode::vector::tests ordinary_encode encode_backend::checked; do
                     cargo "+$toolchain" test --locked --release --target wasm32-wasip1 \
                         --no-default-features --features "$features" --lib "$filter" -- --test-threads=1
                 done

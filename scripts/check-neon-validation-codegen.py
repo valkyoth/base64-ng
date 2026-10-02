@@ -19,8 +19,21 @@ def check(directory, mode):
                for row in definitions):
             raise ValueError("asserting NEON candidate leaked into production")
         return
+    if mode == "direct-reduction":
+        # Legacy writer instruction-shape inventory, not its complete dataflow
+        # proof. LLVM 23 sums valid 0/255 masks and rejects unless the full
+        # 64-bit sum is -2. Lane semantics are exercised by direct kernel tests.
+        text = re.sub(r"addp\.2d\s+(d\d+),\s*(v\d+)\b", r"addp \1, \2.2d", text)
+        text = re.sub(r"uminv\.16b\s+(b\d+),\s*(v\d+)\b", r"uminv \1, \2.16b", text)
+        old = r"\buminv\s+b\d+,\s*v\d+\.16b(?:\s|$)"
+        summed = (r"\baddp\s+d(\d+),\s*v\d+\.2d\s*\n\s*"
+                  r"fmov\s+x(\d+),\s*d\1\s*\n\s*cmn\s+x\2,\s*#2\s*\n\s*"
+                  r"(?:cset\s+w\d+,\s*eq\s*\n\s*)?b\.ne\s+\.?LBB\w+")
+        if not re.search(old, text) and not re.search(summed, text):
+            raise ValueError("missing direct decode full-lane reduction pattern")
+        return
     if mode != "assembly":
-        raise ValueError("expected assembly or production")
+        raise ValueError("expected assembly, direct-reduction or production")
     bodies = re.findall(
         r"^([^\s:]*validate_16_bytes_neon[^\s:]*):\s*\n(.*?)(?:^\.?Lfunc_end\d+:|^\s*\.cfi_endproc\b)",
         text, re.MULTILINE | re.DOTALL,
@@ -33,7 +46,7 @@ def check(directory, mode):
         loads = re.findall(r"\bldr\s+q\d+,\s*\[x0\]", body)
         if len(loads) != 1 or len(re.findall(r"\b(?:ldr|ldur|ldp|ld1)\b", body)) != 1:
             raise ValueError("expected one exact 16-byte input load")
-        if not re.search(r"\b(?:uminv|umaxv)(?:\.16b)?\s+b\d+,\s*v\d+(?:\.16b)?", body):
+        if not re.search(r"\b(?:uminv|umaxv)(?:\.16b)?\s+b\d+,\s*v\d+(?:\.16b)?|\baddp(?:\.2d)?\s+d\d+,\s*v\d+(?:\.2d)?", body):
             raise ValueError("missing all-lane reduction")
         if not re.search(r"\bcmeq(?:\.16b)?\s+v\d+", body):
             raise ValueError("missing vector classification")

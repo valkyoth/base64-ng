@@ -8,7 +8,7 @@ admission tool; this workspace adds feature-isolated caller-path comparisons.
 ## Run
 
 Requires Linux, an unprivileged user, Python 3.12+, Git history containing signed `v2.0.4`, native
-Rust 1.98.1 (the root pin), and the lockfile dependencies in the Cargo cache.
+Rust 1.99.0 (the root pin), and the lockfile dependencies in the Cargo cache.
 Bubblewrap with `--size` and `--disable-userns` support, enabled unprivileged user
 namespaces, `prlimit`, a system C linker, and a running systemd user manager with
 cgroup-v2 CPU/memory/PID delegation are required. A sandbox probe fails

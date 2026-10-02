@@ -26,6 +26,7 @@ mod ordinary;
 #[cfg(feature = "alloc")]
 mod ordinary_alloc;
 pub(crate) mod ordinary_decode;
+mod ordinary_encode;
 #[cfg(all(
     test,
     feature = "std",

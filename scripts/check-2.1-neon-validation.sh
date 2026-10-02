@@ -44,11 +44,15 @@ for compiler in "$active" 1.90.0; do
                     cargo +"$compiler" test --locked --release --target "$target" \
                         --no-default-features --features "$features" --lib simd::neon::ordinary::tests -- --test-threads=1
                     cargo +"$compiler" test --locked --release --target "$target" \
+                        --no-default-features --features "$features" --lib simd::neon_direct_tests -- --test-threads=1
+                    cargo +"$compiler" test --locked --release --target "$target" \
                         --no-default-features --features "$features" --lib ordinary_decode::vector -- --test-threads=1
                     cargo +"$compiler" test --locked --release --target "$target" \
                         --no-default-features --features "$features" --test decode_validation
                     cargo +"$compiler" test --locked --release --target "$target" \
                         --no-default-features --features "$features" --lib backend_health -- --test-threads=1
+                    cargo +"$compiler" test --locked --release --target "$target" \
+                        --no-default-features --features "$features" --lib ordinary_encode -- --test-threads=1
                 fi ;;
         esac
     done

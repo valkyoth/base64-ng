@@ -5,6 +5,9 @@ use super::{
     specifications::{Base64, Codec, CodecSettings, EncodePadding},
 };
 
+mod buffered;
+pub(super) use buffered::BufferedChunks;
+
 /// One synthesized Base64 output chunk.
 ///
 /// Complete chunks contain four bytes. The final chunk may contain two or

@@ -234,7 +234,7 @@ fn changing_remaining_cannot_bypass_the_cumulative_input_limit() {
     );
     assert_eq!(error.progress(), BytesProgress::ZERO);
     assert_eq!(input.advanced, 0);
-    assert!(output.is_empty());
+    assert_eq!(output.len(), 0);
     assert!(encoder.is_failed());
 }
 

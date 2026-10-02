@@ -48,7 +48,7 @@ async fn exhausted_budget_suspends_before_the_next_external_write() {
 
     assert!(Future::poll(future.as_mut(), &mut context).is_pending());
     drop(future);
-    assert!(writer.output.is_empty());
+    assert_eq!(writer.output.len(), 0);
 }
 
 #[tokio::test(flavor = "current_thread")]

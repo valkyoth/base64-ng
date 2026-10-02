@@ -38,6 +38,8 @@ pub(super) fn encode<A: Alphabet, const PAD: bool>(
             chunk,
             &mut accelerated[..chunk_required],
         );
+        #[cfg(test)]
+        let accelerated_len = tests::inject_result(accelerated_len, &mut accelerated);
         let reference_len = scalar::encode_slice::<A, PAD>(chunk, &mut reference[..chunk_required]);
 
         let written =
@@ -89,7 +91,13 @@ fn scalar_retry<A: Alphabet, const PAD: bool>(
     input: &[u8],
     output: &mut [u8],
 ) -> Result<usize, EncodeError> {
-    crate::v2::backend_health::quarantine(OperationKind::Encode, backend, fault);
+    #[cfg(test)]
+    let injected = tests::record_quarantine(backend, fault);
+    #[cfg(not(test))]
+    let injected = false;
+    if !injected {
+        crate::v2::backend_health::quarantine(OperationKind::Encode, backend, fault);
+    }
     match scalar::encode_slice::<A, PAD>(input, output) {
         Ok(written) => Ok(written),
         Err(error) => {
@@ -105,7 +113,100 @@ fn scalar_retry<A: Alphabet, const PAD: bool>(
 
 #[cfg(test)]
 mod tests {
+    extern crate std;
     use crate::{BackendFault, EncodeError};
+    use std::cell::Cell;
+    type Injection = (u8, usize, Option<(crate::runtime::Backend, BackendFault)>);
+
+    std::thread_local! {
+        static FAULT: Cell<Injection> = const {
+            Cell::new((0, 0, None))
+        };
+    }
+
+    pub(super) fn inject_result(result: Option<usize>, output: &mut [u8]) -> Option<usize> {
+        FAULT.with(|state| {
+            let (fault, calls, quarantine) = state.get();
+            state.set((fault, calls + 1, quarantine));
+            if calls != 1 {
+                return result;
+            }
+            match fault {
+                1 => {
+                    output.fill(0xff);
+                    None
+                }
+                2 => {
+                    output.fill(0xff);
+                    Some(usize::MAX)
+                }
+                3 => {
+                    output[0] ^= 1;
+                    result
+                }
+                _ => result,
+            }
+        })
+    }
+
+    pub(super) fn record_quarantine(backend: crate::runtime::Backend, fault: BackendFault) -> bool {
+        FAULT.with(|state| {
+            let (injection, calls, _) = state.get();
+            if injection == 0 {
+                return false;
+            }
+            state.set((injection, calls, Some((backend, fault))));
+            true
+        })
+    }
+
+    #[test]
+    fn canonical_checked_faults_rewrite_previous_chunks_and_quarantine() {
+        struct Reset;
+        impl Drop for Reset {
+            fn drop(&mut self) {
+                FAULT.with(|state| state.set((0, 0, None)));
+            }
+        }
+        let _reset = Reset;
+        let _ = crate::initialize_backends();
+        if crate::encode_backend::candidate_encode_backend()
+            == crate::encode_backend::EncodeBackend::Scalar
+        {
+            return;
+        }
+        let start = std::time::Instant::now();
+        let backend = loop {
+            let backend = crate::encode_backend::active_encode_backend_for_input(2307);
+            if backend != crate::encode_backend::EncodeBackend::Scalar {
+                break backend;
+            }
+            assert!(start.elapsed() < std::time::Duration::from_secs(5));
+            std::thread::yield_now();
+        };
+        let input = [0xa5; 2307];
+        let mut reference = [0x5a; 3080];
+        let required =
+            crate::scalar::encode_slice::<crate::UrlSafe, false>(&input, &mut reference).unwrap();
+        for injection in [1, 2, 3] {
+            FAULT.with(|state| state.set((injection, 0, None)));
+            let mut actual = [0x5a; 3080];
+            assert_eq!(
+                crate::STRICT_URL_SAFE_UNPADDED.encode_into(&input, &mut actual),
+                Ok(required)
+            );
+            assert_eq!(actual, reference);
+            let fault = if injection == 3 {
+                BackendFault::OutputMismatch
+            } else {
+                BackendFault::ImpossibleState
+            };
+            assert_eq!(
+                FAULT.with(Cell::get),
+                (injection, 2, Some((backend.reported(), fault)))
+            );
+        }
+    }
 
     #[test]
     fn checked_encode_matches_scalar_for_multiple_chunks() {

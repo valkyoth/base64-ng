@@ -22,6 +22,20 @@ if len(bodies) != 2 or not all(any(name in symbol for symbol, _ in bodies)
     raise SystemExit("validation assembly: both alphabet bodies are required")
 for symbol, body in bodies:
     patterns = (r"\b[v]?movdqu\b", r"\b[v]?pcmpeqb\b", r"\b[v]?pmovmskb\b")
+    if isa == "ssse3" and not re.search(patterns[0], body):
+        # LLVM 23 promotes the reference argument to xmm0 and lifts its load
+        # into callers. Require a direct, exact-width load/call witness for
+        # each alphabet; constants are the only memory reads in the callee.
+        # This is a code-shape check, supplemented by native guard-page tests.
+        witness = rf"\bmovups\s+\([^\n]+\),\s*%xmm0\n\s*callq\s+{re.escape(symbol)}(?:\s|$)"
+        if not re.search(witness, assembly):
+            raise SystemExit("validation assembly: missing promoted 16-byte input load/call")
+        if any("(%rip)" not in line for line in body.splitlines() if "(" in line):
+            raise SystemExit("validation assembly: unexpected promoted classifier memory read")
+        first_use = next((line for line in body.splitlines() if "%xmm0" in line), "")
+        if not re.search(r"\b(?:pand|pcmpeqb)\s+%xmm0,\s*%xmm[1-9]\d?", first_use):
+            raise SystemExit("validation assembly: promoted argument is not consumed")
+        patterns = patterns[1:]
     if isa == "avx512":
         # Pinned LLVM folds the range masks into unsigned compares and ktestq.
         patterns = (r"\bvmovdqu(?:8|64)\s+[^\n]*,\s*%zmm", r"\bvpcmpltub\b[^\n]*%zmm",

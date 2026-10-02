@@ -769,6 +769,13 @@ anonymous pages, protect the outside pages with `mprotect`, and borrow slices
 only within the middle page. `Drop` unmaps once all borrows have expired. These
 test-only libc calls use the native Linux x86_64 ABI and do not run under Miri.
 They bound the 16-byte input loads and exact 12-byte stores at both page edges.
+
+Rust 1.99/LLVM 23 promotes this classifier's input to an XMM argument. Its
+code-shape checker requires an exact 16-byte unaligned load immediately before
+a call for each alphabet, consumption of the promoted argument, and no data
+memory reads inside the classifier beyond RIP-relative constants. The existing
+movemask/no-store/no-call checks remain. This caller witness is not whole-program
+dataflow proof; native guard-page and exhaustive behavior tests remain required.
 The focused gate inspects generated classifier assembly separately from decode.
 
 ### `validate_blocks_avx2` (2.1 Commit 7 Candidate)
@@ -911,6 +918,14 @@ invalid byte in each lane at first/interior/last vector blocks through public
 validation and decoding, asserting NEON health and unchanged output. Linux guard
 pages and exhaustive alignment, tail and capacity tests supplement these bounded
 checks; this is not a general machine-code or hardware correctness proof.
+
+Rust 1.99/LLVM 23 instead sums the two 64-bit halves of the invalid-byte mask
+with `addp`, then tests the full 64-bit result for zero. The model requires
+exact 0/255 invalid-byte masks and enumerates all 256 possible half-word masks
+to exclude modular cancellation. It follows the full-width extraction, zero
+comparison and Boolean return, including W/X register alias invalidation.
+Mutation tests reject half-width extraction/comparison, wrong masks/registers,
+inverted returns and stale register values. This does not broaden accepted ISA.
 
 ### `decode_16_bytes_ssse3_sse41`
 

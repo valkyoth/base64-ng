@@ -16,7 +16,7 @@ Build `base64-ng` as a modern, secure, `no_std`-first Base64 implementation for 
 ## Current Baseline
 
 - Rust MSRV: `1.90.0`.
-- Active release toolchain: `1.98.1`.
+- Active release toolchain: `1.99.0`.
 - License: `MIT OR Apache-2.0`.
 - Project name: `base64-ng`.
 - Runtime and dev dependency graph: zero external crates.

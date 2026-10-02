@@ -141,6 +141,44 @@ fn strict_decode_validation_and_writing_allocate_zero_heap_blocks() {
 }
 
 #[test]
+fn bulk_encode_and_buffered_formatting_allocate_zero_heap_blocks() {
+    let input = [0xa5; 1537];
+    let mut output = [0; 2052];
+    let _ = base64_ng::initialize_backends();
+    STRICT_STANDARD_PADDED
+        .encode_into(&input, &mut output)
+        .unwrap();
+    struct Sink(usize);
+    impl core::fmt::Write for Sink {
+        fn write_str(&mut self, text: &str) -> core::fmt::Result {
+            self.0 += text.len();
+            Ok(())
+        }
+    }
+    assert_eq!(
+        measure(|| {
+            assert_eq!(
+                STRICT_STANDARD_PADDED.encode_into(&input, &mut output),
+                Ok(2052)
+            );
+            let mut sink = Sink(0);
+            assert_eq!(
+                STRICT_STANDARD_PADDED.encode_to_fmt(&input, &mut sink),
+                Ok(2052)
+            );
+            write!(
+                &mut sink,
+                "{}",
+                STRICT_STANDARD_PADDED.display(&input).unwrap()
+            )
+            .unwrap();
+            assert_eq!(sink.0, 4104);
+        }),
+        0
+    );
+}
+
+#[test]
 fn counter_detects_allocations_and_reallocations() {
     let mut bytes = Vec::<u8>::new();
     assert!(measure(|| bytes.reserve_exact(std::hint::black_box(16))) > 0);

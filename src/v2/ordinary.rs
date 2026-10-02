@@ -192,7 +192,10 @@ pub(super) fn map_operation_error(error: OperationError) -> OneShotError {
     }
 }
 
-fn encode_validated(settings: CodecSettings, input: &[u8], output: &mut [u8]) {
+pub(super) fn encode_validated(settings: CodecSettings, input: &[u8], output: &mut [u8]) {
+    if super::ordinary_encode::write(settings, input, output) {
+        return;
+    }
     let alphabet = settings.alphabet().as_array();
     let mut read = 0;
     let mut write = 0;

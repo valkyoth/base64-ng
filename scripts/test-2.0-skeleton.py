@@ -27,7 +27,7 @@ with tempfile.TemporaryDirectory(prefix="base64-ng-skeleton-") as directory:
             raise AssertionError(result.stdout + result.stderr)
 
     check(True)
-    for parent in ("src/v2/ordinary_decode.rs", "src/v2/ordinary_decode/ssse3_candidate.rs",
+    for parent in ("src/v2/ordinary_encode.rs", "src/v2/ordinary_decode.rs", "src/v2/ordinary_decode/ssse3_candidate.rs",
                    "src/v2/ordinary_decode/avx2_candidate.rs", "src/v2/ordinary_decode/avx512_candidate.rs",
                    "src/v2/ordinary_decode/neon_candidate.rs"):
         path = fixture / parent

@@ -267,7 +267,7 @@ async fn decoder_keeps_delivered_prefix_irrevocable_on_later_error() {
     let error = decoder.read_to_end(&mut suffix).await.unwrap_err();
     assert_eq!(error.kind(), std::io::ErrorKind::InvalidData);
     assert_eq!(first, *b"hel");
-    assert!(suffix.is_empty());
+    assert_eq!(suffix.len(), 0);
     assert_eq!(decoder.input_read(), 5);
     assert_eq!(decoder.source_position(), 4);
     assert_eq!(decoder.output_delivered(), 3);
