@@ -179,6 +179,7 @@ fn bulk_encode_and_buffered_formatting_allocate_zero_heap_blocks() {
 }
 
 #[test]
+#[cfg(feature = "alloc")]
 fn forwarding_reservation_and_allocation_counts_are_bounded() {
     let _ = base64_ng::initialize_backends();
     let input = [b'A'; 4096];

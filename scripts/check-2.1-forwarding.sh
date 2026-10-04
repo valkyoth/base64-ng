@@ -2,11 +2,12 @@
 set -eu
 active="$(sed -n 's/^channel = "\([^"]*\)"/\1/p' rust-toolchain.toml)"
 for compiler in "$active" 1.90.0; do
-    cargo +"$compiler" check --locked --no-default-features
+    cargo +"$compiler" test --locked --no-default-features --test v2_formatting_alloc
     for features in alloc std alloc,simd std,simd alloc,checked-backend std,checked-backend; do
         cargo +"$compiler" test --locked --release --no-default-features --features "$features" --lib forwarding_
         cargo +"$compiler" test --locked --release --no-default-features --features "$features" --lib append_tests
         cargo +"$compiler" test --locked --release --no-default-features --features "$features" --lib ordinary_string_tests
+        cargo +"$compiler" test --locked --no-default-features --features "$features" --test v2_formatting_alloc
         cargo +"$compiler" clippy --locked --no-default-features --features "$features" --lib --tests -- -D warnings
     done
     cargo +"$compiler" test --locked --all-features --test v2_formatting_alloc
