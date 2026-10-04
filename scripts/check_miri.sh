@@ -77,6 +77,7 @@ else
         "stream_decoder_direct_write_processes_multiple_quads" \
         "stream_decoder_fails_closed_after_malformed_input" \
         "v2::in_place_tests::ordinary_preflight_and_input_errors_do_not_mutate" \
+        "v2::forwarding_tests::forwarding_append_retains_proof_across_reservation_and_rolls_back" \
         "v2::secret_in_place_tests::staged_secret_decode_miri_overlap_contract"
     do
         if [ "$all_features_status" -eq 0 ]; then

@@ -2,6 +2,9 @@ use super::*;
 use crate::{DecodeValidation, OneShotError, STRICT_STANDARD_PADDED as CODEC};
 use core::cell::Cell;
 
+#[cfg(feature = "alloc")]
+mod forwarding_tests;
+
 #[derive(Clone, Copy, Default, Eq, PartialEq)]
 enum Fault {
     #[default]

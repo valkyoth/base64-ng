@@ -79,6 +79,7 @@ echo "checks: 2.1 public strict decode"
 sh scripts/check-2.1-public-decode.sh
 echo "checks: 2.1 public ordinary encode"
 sh scripts/check-2.1-public-encode.sh
+sh scripts/check-2.1-forwarding.sh
 sh scripts/check-2.1-neon-validation.sh
 sh scripts/check-2.1-public-api.sh
 

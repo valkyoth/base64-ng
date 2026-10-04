@@ -179,6 +179,91 @@ fn bulk_encode_and_buffered_formatting_allocate_zero_heap_blocks() {
 }
 
 #[test]
+fn forwarding_reservation_and_allocation_counts_are_bounded() {
+    let _ = base64_ng::initialize_backends();
+    let input = [b'A'; 4096];
+    let mut appended = Vec::with_capacity(3080);
+    appended.extend_from_slice(b"prefix");
+    assert_eq!(
+        measure(|| {
+            assert_eq!(
+                STRICT_STANDARD_PADDED.decode_append(&input, &mut appended),
+                Ok(3072)
+            );
+        }),
+        0
+    );
+    assert_eq!(&appended[..6], b"prefix");
+    assert_eq!(&appended[6..], &[0; 3072]);
+    for historical in [false, true] {
+        assert_eq!(
+            measure(|| {
+                let decoded = if historical {
+                    base64_ng::STANDARD.decode_vec(&input).unwrap()
+                } else {
+                    STRICT_STANDARD_PADDED.decode_to_vec(&input).unwrap()
+                };
+                assert_eq!(decoded, [0; 3072]);
+            }),
+            1
+        );
+    }
+    let text = core::str::from_utf8(&input).unwrap();
+    let mut owner = None;
+    assert_eq!(
+        measure(|| {
+            owner = Some(base64_ng::Base64String::parse(STRICT_STANDARD_PADDED, text).unwrap());
+        }),
+        1
+    );
+    let owner = owner.unwrap();
+    assert_eq!(
+        measure(|| assert_eq!(owner.decode().unwrap(), [0; 3072])),
+        1
+    );
+    assert_eq!(
+        measure(|| assert!(owner.decode_with_limit(3071).is_err())),
+        0
+    );
+    let owned_text = text.to_owned();
+    assert_eq!(
+        measure(|| {
+            std::hint::black_box(
+                base64_ng::Base64String::from_string(STRICT_STANDARD_PADDED, owned_text).unwrap(),
+            );
+        }),
+        0
+    );
+    let mut malformed = input;
+    malformed[4095] = b'!';
+    let previous_len = appended.len();
+    assert_eq!(
+        measure(|| {
+            assert!(
+                STRICT_STANDARD_PADDED
+                    .decode_append(&malformed, &mut appended)
+                    .is_err()
+            );
+            assert!(
+                STRICT_STANDARD_PADDED
+                    .decode_to_vec_with_limit(&malformed, 0)
+                    .is_err()
+            );
+            assert!(base64_ng::STANDARD.decode_vec(&malformed).is_err());
+            assert!(
+                base64_ng::Base64String::parse(
+                    STRICT_STANDARD_PADDED,
+                    core::str::from_utf8(&malformed).unwrap()
+                )
+                .is_err()
+            );
+        }),
+        0
+    );
+    assert_eq!(appended.len(), previous_len);
+}
+
+#[test]
 fn counter_detects_allocations_and_reallocations() {
     let mut bytes = Vec::<u8>::new();
     assert!(measure(|| bytes.reserve_exact(std::hint::black_box(16))) > 0);

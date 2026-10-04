@@ -25,6 +25,10 @@
 - Rebuild both WASM artifacts with Rust 1.99.0. Extend the assembly checkers for
   reviewed LLVM 23 code shapes with mutation tests; preserve MSRV 1.90.0.
   Remaining APIs and optimizations follow the commit plan.
+- Commit 14 reuses private validation proofs through canonical decode append
+  and eligible historical owned decoding. Preserve allocation ordering, exact
+  errors, backend recovery and append rollback; audit owner and companion
+  forwarding without changing streaming, in-place or secret contracts.
 
 ## 2.0.4 - Unreleased
 

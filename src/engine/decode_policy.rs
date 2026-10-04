@@ -98,7 +98,25 @@ impl<A: Alphabet, const PAD: bool> Engine<A, PAD> {
         input: &[u8],
         validation: DecodeValidation,
     ) -> Result<alloc::vec::Vec<u8>, DecodeError> {
-        let required = self.validated_decoded_len_with_validation(input, validation)?;
+        // Keep the proof bound to this source through allocation. Rejected
+        // input still uses the historical validator for exact diagnostics.
+        // Single-quantum calls retain the cheaper historical scalar path.
+        let required = if validation == DecodeValidation::Auto
+            && input.len() > 4
+            && let Some(settings) = strict_settings::<A, PAD>()
+        {
+            if let Ok(proof) = crate::v2::ordinary_decode::prepare(settings, input, validation) {
+                let mut output = alloc::vec![0; proof.len()];
+                if crate::v2::ordinary_decode::write(proof, &mut output).is_err() {
+                    crate::wipe_bytes(&mut output);
+                    return Err(DecodeError::InvalidInput);
+                }
+                return Ok(output);
+            }
+            validate_decode::<A, PAD>(input)?
+        } else {
+            self.validated_decoded_len_with_validation(input, validation)?
+        };
         let mut output = alloc::vec![0; required];
         let written =
             self.decode_slice_clear_tail_with_validation(input, &mut output, validation)?;

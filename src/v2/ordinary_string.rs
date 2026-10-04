@@ -7,13 +7,17 @@ use super::{
     specifications::{Base64, Codec, CodecSettings},
 };
 
-/// An owned ordinary Base64 string validated by one exact codec policy.
+/// An owned ordinary Base64 string carrying one exact codec policy.
 ///
 /// The value retains the [`Base64<S>`] used to encode or validate its text, so
 /// its [`decode`](Self::decode) methods cannot accidentally select a different
 /// alphabet, padding, or trailing-bit policy. Construction either encodes
 /// bytes through that codec or validates complete encoded text before
 /// ownership is returned. There is deliberately no mutable string access.
+/// Encode padding and decode acceptance are distinct settings; the sealed
+/// codec builder rejects incompatible combinations. Each decode validates once
+/// before output allocation; no cached constructor result bypasses validation
+/// or backend health checks.
 ///
 /// This is an ordinary, visibly printable, cloneable value. It performs no
 /// cleanup and is not suitable for keys, tokens, passwords, or other secret
@@ -28,7 +32,8 @@ impl<S: Codec> Base64String<S> {
     /// Encodes bytes and retains the exact codec policy with the result.
     ///
     /// Allocation and length errors use the same contract as
-    /// [`Base64::encode_to_string`].
+    /// [`Base64::encode_to_string`]. Encoding follows the encode-padding
+    /// setting, including when decoding accepts either padding form.
     pub fn encode(codec: Base64<S>, input: &[u8]) -> Result<Self, OneShotError> {
         let encoded = codec.encode_to_string(input)?;
         Ok(Self { codec, encoded })
@@ -101,7 +106,7 @@ impl<S: Codec> Base64String<S> {
         self.codec.settings()
     }
 
-    /// Returns the validated encoded text.
+    /// Returns the encoded text.
     ///
     /// Passing this ordinary view to another codec can deliberately discard
     /// the retained policy. Use [`Self::decode`] to preserve it.
@@ -110,7 +115,7 @@ impl<S: Codec> Base64String<S> {
         self.encoded.as_str()
     }
 
-    /// Returns the validated encoded bytes.
+    /// Returns the encoded bytes.
     ///
     /// Passing this ordinary view to another codec can deliberately discard
     /// the retained policy. Use [`Self::decode`] to preserve it.
@@ -131,7 +136,7 @@ impl<S: Codec> Base64String<S> {
         self.encoded.is_empty()
     }
 
-    /// Decodes the validated text with its retained codec.
+    /// Validates and decodes the text with its retained codec.
     pub fn decode(&self) -> Result<alloc::vec::Vec<u8>, OneShotError> {
         self.codec.decode_to_vec(self.encoded.as_bytes())
     }
@@ -145,7 +150,7 @@ impl<S: Codec> Base64String<S> {
             .decode_to_vec_with_limit(self.encoded.as_bytes(), max_output_len)
     }
 
-    /// Consumes the wrapper and returns the validated ordinary string.
+    /// Consumes the wrapper and returns the ordinary encoded string.
     ///
     /// The returned `String` no longer carries the codec policy.
     #[must_use]

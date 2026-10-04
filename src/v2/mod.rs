@@ -124,6 +124,8 @@ mod contract_tests;
 mod fixtures;
 #[cfg(test)]
 mod formatting_tests;
+#[cfg(all(test, feature = "alloc"))]
+mod forwarding_tests;
 #[cfg(test)]
 mod in_place_tests;
 #[cfg(test)]

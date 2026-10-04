@@ -123,7 +123,7 @@ fn verify(
 }
 
 #[allow(clippy::too_many_arguments)]
-fn measure<S: Codec, A: Alphabet, const PAD: bool>(
+fn measure<S: Codec + Copy, A: Alphabet, const PAD: bool>(
     codec: &Base64<S>,
     engine: Engine<A, PAD>,
     profile: oracle::Profile,

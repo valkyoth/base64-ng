@@ -32,7 +32,15 @@ surfaces. Exact sizing, rollback, checked recovery, and short/custom fallback
 remain in place. The [encoding checkpoint](../docs/PERFORMANCE_2.1_ENCODE.md)
 records complete-call measurements and limitations. Both WASM artifacts are
 rebuilt with Rust 1.99.0; JavaScript contracts and secret/CT algorithms are
-unchanged. External review and CI for this checkpoint remain pending.
+unchanged. External review and CI passed at `d0a5f16`; local sandbox isolation
+tests also passed after controller delegation was enabled.
+
+Commit 14 retains private validation results across decode append reservation
+and eligible historical owned decoding. Existing canonical allocating/bounded
+routes already validate once. New wrapper tests cover allocation ordering,
+limits, exact diagnostics, rollback and backend recovery. The
+[routing audit](../docs/FORWARDING_2.1.md) keeps protocol grammar, streaming and
+in-place work explicit and separate. External review and CI remain pending.
 
 Remaining work is tracked in the [commit plan](../docs/2.1.0-release-plan.md).
 Final release notes, acceptance, and hardware claims will be recorded before

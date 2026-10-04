@@ -135,6 +135,10 @@ validator. Historical policies still share their existing validation paths.
   to isolate KAT cost from every other first-call effect.
 - In-place rows include restoring input; owned rows include replacing/dropping
   the previous owned output. Append and adapter output allocations are reused.
+  `historical-owned` measures Engine allocation; `string-owned` decode includes
+  UTF-8 checking, Base64String parse/copy, decoding and temporary-owner drop.
+  Neither is a cached borrowed-view measurement. These operations are present
+  only with the harness `alloc` feature.
   Incremental/adapter construction and completion are timed; Tokio runtime
   construction is not. Short writes/fragments of 1 and 7 bytes are separate rows.
   Tokio uses a current-thread executor and ready short writes: these are throughput

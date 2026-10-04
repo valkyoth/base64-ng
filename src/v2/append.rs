@@ -5,6 +5,7 @@ use alloc::{string::String, vec::Vec};
 use super::{
     contracts::BackendFault,
     ordinary::OneShotError,
+    ordinary_decode,
     specifications::{Base64, Codec},
 };
 
@@ -108,7 +109,9 @@ impl<S: Codec> Base64<S> {
         R: FnOnce(&mut Vec<u8>, usize) -> Result<(), OneShotError>,
         H: FnOnce(&mut Vec<u8>) -> Result<(), OneShotError>,
     {
-        let required = self.decoded_len(input)?;
+        let proof =
+            ordinary_decode::prepare(self.settings(), input, crate::DecodeValidation::Auto)?;
+        let required = proof.len();
         let original_len = destination.len();
         let total = original_len
             .checked_add(required)
@@ -117,7 +120,7 @@ impl<S: Codec> Base64<S> {
 
         let mut rollback = VecRollback::new(destination);
         rollback.destination().resize(total, 0);
-        self.decode_into(input, &mut rollback.destination()[original_len..total])?;
+        ordinary_decode::write(proof, &mut rollback.destination()[original_len..total])?;
         after_decode(rollback.destination())?;
         rollback.commit();
         Ok(required)

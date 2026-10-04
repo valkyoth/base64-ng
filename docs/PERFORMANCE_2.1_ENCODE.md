@@ -2,7 +2,8 @@
 
 Commit 13 connects ordinary canonical encoding to existing admitted kernels.
 This is a development checkpoint, not final release admission or a constant-time
-claim. External retest and CI acceptance remain pending.
+claim. External retest and CI passed at `d0a5f16`; the maintainer subsequently
+passed all 12 local sandbox tests after enabling cgroup controller delegation.
 
 ## Implementation
 

@@ -32,7 +32,7 @@ impl Work {
         let _ = encode;
         match operation {
             #[cfg(feature = "alloc")]
-            "owned" | "append" => &self.bytes[..written],
+            "owned" | "historical-owned" | "string-owned" | "append" => &self.bytes[..written],
             #[cfg(feature = "adapters")]
             "bytes" | "tokio" => &self.bytes[..written],
             #[cfg(feature = "stream")]
@@ -54,7 +54,7 @@ pub fn names() -> Vec<&'static str> {
         "base64ct",
     ];
     #[cfg(feature = "alloc")]
-    names.extend(["owned", "append"]);
+    names.extend(["owned", "historical-owned", "string-owned", "append"]);
     #[cfg(feature = "validation-policy")]
     names.extend(["historical-reference", "canonical-reference"]);
     #[cfg(feature = "std")]
@@ -73,7 +73,7 @@ pub fn names() -> Vec<&'static str> {
     names
 }
 
-pub fn apply<S: Codec, A: base64_ng::Alphabet, const PAD: bool>(
+pub fn apply<S: Codec + Copy, A: base64_ng::Alphabet, const PAD: bool>(
     codec: &Base64<S>,
     engine: base64_ng::Engine<A, PAD>,
     operation: &str,
@@ -145,6 +145,27 @@ pub fn apply<S: Codec, A: base64_ng::Alphabet, const PAD: bool>(
                 result!(codec.encode_to_string(input))?.into_bytes()
             } else {
                 result!(codec.decode_to_vec(input))?
+            };
+            Ok(work.bytes.len())
+        }
+        #[cfg(feature = "alloc")]
+        "historical-owned" => {
+            work.bytes = if encode {
+                result!(engine.encode_vec(input))?
+            } else {
+                result!(engine.decode_vec(input))?
+            };
+            Ok(work.bytes.len())
+        }
+        #[cfg(feature = "alloc")]
+        "string-owned" => {
+            work.bytes = if encode {
+                result!(base64_ng::Base64String::encode(*codec, input))?
+                    .into_string()
+                    .into_bytes()
+            } else {
+                let text = result!(core::str::from_utf8(input))?;
+                result!(result!(base64_ng::Base64String::parse(*codec, text))?.decode())?
             };
             Ok(work.bytes.len())
         }
