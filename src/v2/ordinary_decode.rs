@@ -144,7 +144,7 @@ fn validate_and_measure(settings: CodecSettings, input: &[u8]) -> Result<usize, 
     let mut scratch = [0u8; 3];
     while input_offset < input.len() {
         let step = decoder
-            .update(&input[input_offset..], &mut scratch)
+            .update_reference(&input[input_offset..], &mut scratch)
             .map_err(map_operation_error)?;
         let progress = step.progress();
         if progress.input_consumed() == 0 && progress.output_produced() == 0 {

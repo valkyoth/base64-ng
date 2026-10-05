@@ -2,6 +2,7 @@
 set -eu
 
 toolchain="${BASE64_NG_INCREMENTAL_DECODER_TOOLCHAIN:-}"
+test -s src/v2/incremental_decoder/update.rs
 
 test -s docs/2.0_INCREMENTAL_PADDED_DECODER.md
 for required in \
@@ -38,7 +39,7 @@ for required in \
     'InputError::TruncatedInput' \
     'pub fn reset'
 do
-    if ! grep -F -q "$required" src/v2/incremental_decoder.rs; then
+    if ! grep -F -q "$required" src/v2/incremental_decoder.rs src/v2/incremental_decoder/update.rs; then
         echo "2.0 padded decoder: implementation is missing: $required" >&2
         exit 1
     fi
@@ -54,7 +55,7 @@ if grep -n -F \
     -e '.unwrap(' \
     -e '.expect(' \
     -e 'panic!' \
-    src/v2/incremental_decoder.rs
+    src/v2/incremental_decoder.rs src/v2/incremental_decoder/update.rs
 then
     echo "2.0 padded decoder: core gained allocation, panic, unsafe, or Drop" >&2
     exit 1

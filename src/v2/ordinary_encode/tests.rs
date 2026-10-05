@@ -78,6 +78,29 @@ fn ready() -> encode_backend::EncodeBackend {
 }
 
 #[test]
+fn incremental_bulk_encode_recovers_rejected_and_wrong_length_writes() {
+    if ready() == encode_backend::EncodeBackend::Scalar {
+        return;
+    }
+    let input = [0; 4098];
+    for fault in [1, 2] {
+        let mut encoder = crate::STRICT_STANDARD_PADDED.encoder();
+        encoder.update(&[0], &mut []).unwrap();
+        let (calls, quarantined) = observe(fault, || {
+            let mut output = [0xa5; 5500];
+            let step = encoder.update(&input, &mut output).unwrap();
+            assert_eq!(step.progress().input_consumed(), input.len());
+            assert_eq!(step.progress().output_produced(), 5464);
+            assert_eq!(output[..5464], [b'A'; 5464]);
+            assert_eq!(output[5464..], [0xa5; 36]);
+            assert_eq!(encoder.buffered_input_len(), 1);
+        });
+        assert_eq!(calls, 1);
+        assert!(quarantined.is_some());
+    }
+}
+
+#[test]
 fn boundaries_and_all_input_bytes_match_independent_oracle() {
     fn check<S: Codec>(codec: &Base64<S>, profile: Profile) {
         for len in [

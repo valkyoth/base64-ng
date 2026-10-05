@@ -2,6 +2,12 @@
 
 ## 2.1.0 - Unreleased
 
+- Commit 17 processes substantial ordinary incremental input in bulk, retaining
+  exact progress, per-call decode transactionality, pending output and scalar
+  terminal rules. Add `DecoderState::update_with_validation` for explicit
+  per-call reference validation; preserve checked recovery, tiny-buffer progress
+  and custom/legacy fallbacks. Secret state machines are unchanged.
+
 - Commit 16 adds `Base64Ref`, an immutable, codec-bound borrowed input with
   exact decoded length and reusable transactional decoding. Reference policy
   revalidates on every decode; cached Auto proofs retain health checks and

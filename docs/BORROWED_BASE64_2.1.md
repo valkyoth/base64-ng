@@ -2,7 +2,7 @@
 
 Commit 16 adds `Base64Ref<'a, S: Codec>` for ordinary encoded input that callers
 want to validate once and decode repeatedly without copying. This is a
-development checkpoint; external review and CI acceptance remain pending.
+development checkpoint; external review and CI passed at `98cafa4`.
 
 ```rust
 use base64_ng::{Base64Ref, STRICT_STANDARD_PADDED};

@@ -3,9 +3,7 @@
 use core::num::NonZeroUsize;
 
 use super::{
-    contracts::{
-        BackendFault, Failure, InputError, Lifecycle, OperationError, Progress, SourceSpan, Step,
-    },
+    contracts::{Failure, InputError, Lifecycle, OperationError, Progress, Step},
     decode_primitives::{
         is_legacy_ascii_whitespace, one_byte_tail_is_canonical, pack_full_quantum,
         two_byte_tail_is_canonical,
@@ -15,6 +13,8 @@ use super::{
 
 const INPUT_QUANTUM: usize = 4;
 const OUTPUT_QUANTUM: usize = 3;
+
+mod update;
 
 /// Heapless strict Base64 decoder state.
 ///
@@ -67,52 +67,6 @@ impl DecoderState {
         let mut state = Self::new_padded(settings);
         state.input_mode = InputMode::IgnoreLegacyAsciiWhitespace;
         state
-    }
-
-    /// Accepts a strict padded input prefix and writes decoded output that fits.
-    pub fn update(&mut self, input: &[u8], output: &mut [u8]) -> Result<Step, OperationError> {
-        let span = self.lifecycle.reserve_input(input.len())?;
-        let consumed = match self.plan_update(input, output.len(), span) {
-            Ok(consumed) => consumed,
-            Err(failure) => return Err(self.lifecycle.fail(failure)),
-        };
-        self.lifecycle.commit_input(span, consumed)?;
-
-        let mut produced = self.drain_pending(output);
-        let source_start = self.lifecycle.source_position() - consumed;
-        let mut input_offset = 0;
-        while input_offset < consumed {
-            if self.ignores(input[input_offset]) {
-                input_offset += 1;
-                continue;
-            }
-            self.quantum[self.quantum_len] = input[input_offset];
-            self.quantum_indexes[self.quantum_len] = source_start + input_offset;
-            self.quantum_len += 1;
-            input_offset += 1;
-
-            if self.quantum_len == INPUT_QUANTUM {
-                let Ok(decoded) = decode_quantum(self.settings, self.quantum, self.quantum_indexes)
-                else {
-                    return Err(self
-                        .lifecycle
-                        .fail(Failure::Backend(BackendFault::ImpossibleState)));
-                };
-                self.pending = decoded.bytes;
-                self.pending_start = 0;
-                self.pending_len = decoded.len;
-                self.terminal_padding = decoded.terminal_padding;
-                self.quantum_len = 0;
-                produced += self.drain_pending(&mut output[produced..]);
-            }
-        }
-
-        let progress = Progress::new(consumed, produced);
-        if self.pending_len != 0 || consumed != input.len() {
-            self.lifecycle.output_full(progress, NonZeroUsize::MIN)
-        } else {
-            self.lifecycle.need_input(progress)
-        }
     }
 
     /// Declares end of input and resolves the selected padding policy.
@@ -211,67 +165,6 @@ impl DecoderState {
         self.lifecycle.reset();
     }
 
-    fn plan_update(
-        &self,
-        input: &[u8],
-        output_len: usize,
-        span: SourceSpan,
-    ) -> Result<usize, Failure> {
-        let pending_written = self.pending_len.min(output_len);
-        let mut pending = self.pending_len - pending_written;
-        if pending != 0 {
-            return Ok(0);
-        }
-
-        let mut available_output = output_len - pending_written;
-        let mut quantum = self.quantum;
-        let mut indexes = self.quantum_indexes;
-        let mut quantum_len = self.quantum_len;
-        let mut terminal_padding = self.terminal_padding;
-        let mut consumed = 0;
-
-        while consumed < input.len() {
-            let index = span
-                .index(consumed)
-                .ok_or(Failure::Backend(BackendFault::ImpossibleState))?;
-            if self.ignores(input[consumed]) {
-                consumed += 1;
-                continue;
-            }
-            if terminal_padding {
-                return Err(Failure::Input(InputError::TrailingData { index }));
-            }
-
-            validate_partial_symbol(
-                self.settings,
-                quantum,
-                &indexes,
-                quantum_len,
-                input[consumed],
-                index,
-            )
-            .map_err(Failure::Input)?;
-            quantum[quantum_len] = input[consumed];
-            indexes[quantum_len] = index;
-            quantum_len += 1;
-            consumed += 1;
-
-            if quantum_len == INPUT_QUANTUM {
-                let decoded =
-                    decode_quantum(self.settings, quantum, indexes).map_err(Failure::Input)?;
-                quantum_len = 0;
-                terminal_padding = decoded.terminal_padding;
-                let written = decoded.len.min(available_output);
-                available_output -= written;
-                pending = decoded.len - written;
-                if pending != 0 {
-                    break;
-                }
-            }
-        }
-        Ok(consumed)
-    }
-
     const fn ignores(&self, byte: u8) -> bool {
         matches!(self.input_mode, InputMode::IgnoreLegacyAsciiWhitespace)
             && is_legacy_ascii_whitespace(byte)
@@ -329,6 +222,7 @@ struct DecodedQuantum {
     terminal_padding: bool,
 }
 
+#[inline]
 fn validate_partial_symbol(
     settings: CodecSettings,
     quantum: [u8; INPUT_QUANTUM],
@@ -363,6 +257,7 @@ fn validate_partial_symbol(
     }
 }
 
+#[inline]
 fn decode_quantum(
     settings: CodecSettings,
     input: [u8; INPUT_QUANTUM],

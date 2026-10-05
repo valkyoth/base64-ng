@@ -1,13 +1,22 @@
 #![no_main]
 
 use base64_ng::{
-    Base64, Codec, CountedSink, DecoderState, EncoderState, OperationError, STRICT_STANDARD_PADDED,
-    STRICT_STANDARD_UNPADDED, STRICT_URL_SAFE_PADDED, STRICT_URL_SAFE_UNPADDED, Status, legacy,
-    web,
+    Base64, Codec, CountedSink, DecodeValidation, DecoderState, EncoderState, OperationError,
+    STRICT_STANDARD_PADDED, STRICT_STANDARD_UNPADDED, STRICT_URL_SAFE_PADDED,
+    STRICT_URL_SAFE_UNPADDED, Status, legacy, web,
 };
 use libfuzzer_sys::fuzz_target;
 
 const MAX_INPUT: usize = 4096;
+
+fn stream_span(controls: &[u8], turn: usize, small: usize) -> usize {
+    if controls.last().is_some_and(|byte| byte & 1 != 0) {
+        let spans = [1, 2, 3, 4, 7, 16, 256, 512, 4096, 8192];
+        spans[controlled(controls, turn, spans.len()) - 1]
+    } else {
+        controlled(controls, turn, small)
+    }
+}
 
 fuzz_target!(|data: &[u8]| {
     let mode = data.first().copied().unwrap_or(0) % 4;
@@ -53,11 +62,11 @@ fn drive_encoder(mut state: EncoderState, input: &[u8], controls: &[u8]) -> Vec<
     let mut offset = 0;
     let mut turn = 0;
     while offset < input.len() {
-        let chunk_len = controlled(controls, turn, 17).min(input.len() - offset);
+        let chunk_len = stream_span(controls, turn, 17).min(input.len() - offset);
         let chunk_end = offset + chunk_len;
         while offset < chunk_end {
-            let mut scratch = [0u8; 8];
-            let output_len = controlled(controls, turn + 1, scratch.len());
+            let mut scratch = [0u8; 4096];
+            let output_len = stream_span(controls, turn + 1, 8).min(scratch.len());
             let step = state
                 .update(&input[offset..chunk_end], &mut scratch[..output_len])
                 .unwrap();
@@ -97,12 +106,28 @@ fn drive_decoder(
     let mut offset = 0;
     let mut turn = 0;
     while offset < input.len() {
-        let chunk_len = controlled(controls, turn, 19).min(input.len() - offset);
+        let chunk_len = stream_span(controls, turn, 19).min(input.len() - offset);
         let chunk_end = offset + chunk_len;
         while offset < chunk_end {
-            let mut scratch = [0u8; 7];
-            let output_len = controlled(controls, turn + 1, scratch.len());
-            match state.update(&input[offset..chunk_end], &mut scratch[..output_len]) {
+            let mut scratch = [0xa5; 4096];
+            let mut expected = scratch;
+            let mut reference = state.clone();
+            let output_len = stream_span(controls, turn + 1, 7).min(scratch.len());
+            let result = state.update(&input[offset..chunk_end], &mut scratch[..output_len]);
+            assert_eq!(
+                result,
+                reference.update_with_validation(
+                    &input[offset..chunk_end],
+                    &mut expected[..output_len],
+                    DecodeValidation::ScalarReference
+                )
+            );
+            assert_eq!(state, reference);
+            assert_eq!(scratch, expected);
+            if result.is_err() {
+                assert_eq!(scratch, [0xa5; 4096]);
+            }
+            match result {
                 Ok(step) => {
                     let progress = step.progress();
                     assert!(progress.input_consumed() != 0 || progress.output_produced() != 0);
@@ -250,7 +275,10 @@ fn exercise_counted_and_formatter<S: Codec>(codec: &Base64<S>, input: &[u8], con
     if input.len() > fail_after * 3 {
         let error = result.unwrap_err();
         assert_eq!(error.confirmed(), formatter.output.len());
-        assert_eq!(formatter.output, expected.as_bytes()[..formatter.output.len()]);
+        assert_eq!(
+            formatter.output,
+            expected.as_bytes()[..formatter.output.len()]
+        );
     } else {
         assert_eq!(result.unwrap(), expected.len());
         assert_eq!(formatter.output, expected.as_bytes());

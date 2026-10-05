@@ -299,6 +299,26 @@ fn borrowed_view_construction_and_reuse_allocate_zero_heap_blocks() {
 }
 
 #[test]
+fn incremental_bulk_caller_buffers_allocate_nothing() {
+    let _ = base64_ng::initialize_backends();
+    let input = [0; 6144];
+    let mut encoded = [0xa5; 8192];
+    let mut decoded = [0xa5; 6144];
+    assert_eq!(
+        measure(|| {
+            let mut encoder = STRICT_STANDARD_PADDED.encoder();
+            encoder.update(&input, &mut encoded).unwrap();
+            encoder.finish(&mut []).unwrap();
+            let mut decoder = STRICT_STANDARD_PADDED.decoder();
+            decoder.update(&encoded, &mut decoded).unwrap();
+            decoder.finish(&mut []).unwrap();
+        }),
+        0
+    );
+    assert_eq!(decoded, input);
+}
+
+#[test]
 fn counter_detects_allocations_and_reallocations() {
     let mut bytes = Vec::<u8>::new();
     assert!(measure(|| bytes.reserve_exact(std::hint::black_box(16))) > 0);

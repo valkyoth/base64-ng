@@ -166,6 +166,10 @@ The decoder uses the same lifecycle and progress contract. See the
 and [decoder finalization](https://github.com/valkyoth/base64-ng/blob/main/docs/2.0_INCREMENTAL_DECODER_FINALIZATION.md)
 guides for fragmented-input examples.
 
+2.1 development adds [bulk incremental processing](docs/INCREMENTAL_BULK_2.1.md)
+and per-call `DecoderState::update_with_validation`, preserving retry and
+per-call output contracts.
+
 ## Encoded Strings And Formatting
 
 `Base64String<S>` stores validated ordinary Base64 together with its exact

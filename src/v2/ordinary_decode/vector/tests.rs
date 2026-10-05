@@ -6,6 +6,7 @@ use core::cell::Cell;
 mod forwarding_tests;
 
 mod composition_tests;
+mod incremental_tests;
 
 #[derive(Clone, Copy, Default, Eq, PartialEq)]
 enum Fault {

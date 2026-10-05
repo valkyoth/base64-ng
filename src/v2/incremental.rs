@@ -41,6 +41,18 @@ impl EncoderState {
 
     /// Accepts an input prefix and writes as much encoded output as fits.
     pub fn update(&mut self, input: &[u8], output: &mut [u8]) -> Result<Step, OperationError> {
+        if input.len() < 192 || output.len() < 256 {
+            self.update_impl::<false>(input, output)
+        } else {
+            self.update_impl::<true>(input, output)
+        }
+    }
+
+    fn update_impl<const BULK: bool>(
+        &mut self,
+        input: &[u8],
+        output: &mut [u8],
+    ) -> Result<Step, OperationError> {
         let span = self.lifecycle.reserve_input(input.len())?;
         let consumed =
             planned_input_consumption(self.tail_len, self.pending_len, input.len(), output.len());
@@ -49,6 +61,31 @@ impl EncoderState {
         let mut produced = self.drain_pending(output);
         let mut input_offset = 0;
         while input_offset < consumed {
+            if BULK && self.tail_len == 0 && self.pending_len == 0 {
+                let quanta = ((consumed - input_offset) / 3).min((output.len() - produced) / 4);
+                let len = quanta * 3;
+                if len >= 192 {
+                    let input = &input[input_offset..input_offset + len];
+                    let output = &mut output[produced..produced + quanta * 4];
+                    if !super::ordinary_encode::write(self.settings, input, output) {
+                        for (input, output) in input
+                            .as_chunks::<3>()
+                            .0
+                            .iter()
+                            .zip(output.as_chunks_mut::<4>().0.iter_mut())
+                        {
+                            *output = encode_quantum(self.settings, *input);
+                        }
+                    }
+                    // Preserve the same retained bytes as the scalar loop,
+                    // including observable Clone/Debug/Eq state after draining.
+                    self.tail.copy_from_slice(&input[len - 3..]);
+                    self.pending.copy_from_slice(&output[output.len() - 4..]);
+                    input_offset += len;
+                    produced += output.len();
+                    continue;
+                }
+            }
             self.tail[self.tail_len] = input[input_offset];
             self.tail_len += 1;
             input_offset += 1;
@@ -177,25 +214,10 @@ fn planned_input_consumption(
         return 0;
     }
 
-    let mut available_output = output - pending_written;
-    let mut tail = initial_tail;
-    let mut consumed = 0;
-    while consumed < input {
-        let copied = (INPUT_QUANTUM - tail).min(input - consumed);
-        consumed += copied;
-        tail += copied;
-        if tail != INPUT_QUANTUM {
-            break;
-        }
-
-        tail = 0;
-        let written = OUTPUT_QUANTUM.min(available_output);
-        available_output -= written;
-        if written != OUTPUT_QUANTUM {
-            break;
-        }
-    }
-    consumed
+    // Fully emitted quanta plus at most one quantum retained as pending.
+    // Divide before multiplying; saturating addition handles usize::MAX output.
+    let complete = (output - pending_written) / OUTPUT_QUANTUM * INPUT_QUANTUM;
+    input.min(complete.saturating_add(INPUT_QUANTUM - initial_tail))
 }
 
 fn encode_quantum(settings: CodecSettings, input: [u8; INPUT_QUANTUM]) -> [u8; OUTPUT_QUANTUM] {
@@ -232,3 +254,6 @@ fn encode_tail(settings: CodecSettings, input: &[u8], output: &mut [u8; 4]) -> u
         }
     }
 }
+
+#[cfg(test)]
+mod bulk_tests;

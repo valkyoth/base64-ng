@@ -1,5 +1,6 @@
 #!/usr/bin/env sh
 set -eu
+test -s src/v2/incremental_decoder/update.rs
 
 toolchain="${BASE64_NG_INCREMENTAL_DECODER_TOOLCHAIN:-}"
 
@@ -53,6 +54,7 @@ if grep -n -F \
     -e '.expect(' \
     -e 'panic!' \
     src/v2/incremental_decoder.rs \
+    src/v2/incremental_decoder/update.rs \
     src/v2/lifecycle.rs
 then
     echo "2.0 decoder finalization: core gained allocation, panic, unsafe, or Drop" >&2

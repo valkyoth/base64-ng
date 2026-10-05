@@ -1146,9 +1146,9 @@ do
 done
 
 package_file_count="$(printf '%s\n' "$package_list" | wc -l)"
-# Commit 16 adds four runtime/test source files, not repository-only tooling.
-if [ "$package_file_count" -gt 224 ]; then
-    echo "release metadata: core package contains $package_file_count files; maximum is 224" >&2
+# Commit 17 adds five runtime/test source files, not repository-only tooling.
+if [ "$package_file_count" -gt 229 ]; then
+    echo "release metadata: core package contains $package_file_count files; maximum is 229" >&2
     exit 1
 fi
 

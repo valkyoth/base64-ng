@@ -2903,7 +2903,9 @@ pub fn base64_ng::DecoderState::finish(&mut self, &mut [u8]) -> core::result::Re
 pub const fn base64_ng::DecoderState::has_terminal_padding(&self) -> bool
 pub fn base64_ng::DecoderState::reset(&mut self)
 pub const fn base64_ng::DecoderState::source_position(&self) -> usize
+impl base64_ng::DecoderState
 pub fn base64_ng::DecoderState::update(&mut self, &[u8], &mut [u8]) -> core::result::Result<base64_ng::Step, base64_ng::OperationError>
+pub fn base64_ng::DecoderState::update_with_validation(&mut self, &[u8], &mut [u8], base64_ng::DecodeValidation) -> core::result::Result<base64_ng::Step, base64_ng::OperationError>
 impl core::clone::Clone for base64_ng::DecoderState
 pub fn base64_ng::DecoderState::clone(&self) -> base64_ng::DecoderState
 impl core::cmp::Eq for base64_ng::DecoderState

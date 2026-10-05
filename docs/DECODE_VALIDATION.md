@@ -40,6 +40,7 @@ assert_eq!(&output[..written], b"foo");
 | Canonical validation and exact length | `validate_with_validation`, `decoded_len_with_validation` |
 | Canonical allocating helpers | `decode_to_vec_with_validation`, `decode_to_vec_with_limit_and_validation` |
 | Borrowed validated input | `Base64Ref::parse_with_validation`, then `decode_into` or allocating helpers |
+| Ordinary incremental input accepted by one call | `DecoderState::update_with_validation` |
 | Historical caller buffer | `Engine::decode_slice_with_validation` |
 | Historical clearing caller buffer | `decode_slice_clear_tail_with_validation` |
 | Historical validation and fully validated length | `validate_result_with_validation`, `validated_decoded_len_with_validation` |
@@ -92,8 +93,11 @@ not evidence that a particular invocation actually executed a vector backend.
 - Scalar-only builds require neither allocation nor CPU detection. The policy
   works in `no_std`; only allocating helpers require `alloc`.
 - Static ISA tokens keep their existing contracts; this option neither creates
-  tokens nor overrides execution/deployment restrictions. No token overload or
-  change to incremental `decoder()` semantics is introduced in this checkpoint.
+  tokens nor overrides execution/deployment restrictions.
+- Incremental `update_with_validation` applies to newly accepted input, not
+  previously pending output. Complete accepted-prefix validation precedes all
+  writes in that call, but cannot roll back earlier successful calls. Finish
+  retains scalar terminal rules. See [incremental bulk processing](INCREMENTAL_BULK_2.1.md).
 - CT engines and secret frames do not accept this policy or acquire it through
   an implicit conversion. Continue using the separate secret APIs for secrets.
 

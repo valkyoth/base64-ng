@@ -61,7 +61,17 @@ explicit ScalarReference revalidates each decode. Health changes, checked
 output comparisons and scalar recovery remain enforced. `Base64String`
 borrowing is fallible and validates rather than trusting encode policy.
 See the [borrowed-view checkpoint](../docs/BORROWED_BASE64_2.1.md) for contracts,
-tests and separate parse/reuse measurements. External review and CI are pending.
+tests and separate parse/reuse measurements. External review and CI passed at
+`98cafa4`.
+
+Commit 17 adds bulk interior processing to ordinary incremental states and
+per-call `DecoderState::update_with_validation`. Accepted/produced counts,
+absolute diagnostics, pending bytes, per-call transactionality, finish/reset
+and checked recovery remain intact. No secret state or adapter implementation
+is changed; existing adapters can benefit through the shared states, with
+dedicated adapter integration and measurements reserved for Commit 18. See the
+[incremental checkpoint](../docs/INCREMENTAL_BULK_2.1.md). External review and CI
+are pending.
 
 Remaining work is tracked in the [commit plan](../docs/2.1.0-release-plan.md).
 Final release notes, acceptance, and hardware claims will be recorded before
