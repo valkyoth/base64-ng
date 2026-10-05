@@ -2,6 +2,7 @@
 """Prevent exhaustive release suites from silently returning to push CI."""
 
 from pathlib import Path
+import shlex
 import unittest
 
 import yaml
@@ -9,6 +10,19 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 GUARD = "${{ github.event_name == 'workflow_dispatch' && inputs.full_release }}"
 HEAVY = {"development-checks", "big-endian-qemu", "riscv-qemu", "sve-qemu"}
+
+
+def validate_python_install(workflow):
+    step = next(step for step in workflow["jobs"]["checks"]["steps"]
+                if step.get("name") == "Check release-only CI routing")
+    commands = step["run"].replace("\\\n", "").splitlines()
+    # Force reinstall so a preinstalled distribution cannot bypass hash checking.
+    assert shlex.split(commands[0]) == [
+        "python3", "-m", "pip", "install", "--disable-pip-version-check",
+        "--require-hashes", "--only-binary=:all:", "--no-deps", "--force-reinstall",
+        "-r", "ci/requirements-ci.txt",
+    ]
+    assert commands[1:] == ["python3 scripts/test-ci-release-mode.py"]
 
 
 def validate(workflow):
@@ -44,6 +58,19 @@ class ReleaseModeTests(unittest.TestCase):
 
     def test_actual_workflow_keeps_full_suites_opt_in(self):
         validate(self.load())
+
+    def test_ci_installs_only_hash_approved_wheels(self):
+        validate_python_install(self.load())
+
+    def test_insecure_install_mutations_are_rejected(self):
+        for flag in ("--require-hashes", "--only-binary=:all:", "--no-deps", "--force-reinstall"):
+            with self.subTest(flag=flag):
+                workflow = self.load()
+                step = next(s for s in workflow["jobs"]["checks"]["steps"]
+                            if s.get("name") == "Check release-only CI routing")
+                step["run"] = step["run"].replace(flag, "")
+                with self.assertRaises(AssertionError):
+                    validate_python_install(workflow)
 
     def test_missing_or_broadened_guards_are_rejected(self):
         for job in HEAVY:
