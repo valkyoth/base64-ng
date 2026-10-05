@@ -143,6 +143,54 @@ fn ready_backend(len: usize) -> Option<Backend> {
 }
 
 #[test]
+fn borrowed_view_reuse_keeps_health_checked_output_and_recovery() {
+    if ready_backend(4096).is_none() {
+        return;
+    }
+    let input = [b'A'; 4096];
+    for policy in [DecodeValidation::Auto, DecodeValidation::ScalarReference] {
+        let view = crate::Base64Ref::parse_with_validation(CODEC, &input, policy).unwrap();
+        for fault in [
+            Fault::Unavailable,
+            Fault::WriteReject,
+            #[cfg(feature = "checked-backend")]
+            Fault::WriteCorrupt,
+        ] {
+            inject(fault, || {
+                let mut output = [0xa5; 3080];
+                assert_eq!(view.decode_into(&mut output), Ok(3072));
+                assert_eq!(output[..3072], [0; 3072]);
+                assert_eq!(output[3072..], [0xa5; 8]);
+                assert_eq!(STATE.with(Cell::get).validation, 0);
+                if fault == Fault::Unavailable {
+                    assert_eq!(STATE.with(Cell::get).writes, 0);
+                } else {
+                    assert!(STATE.with(Cell::get).writes > 0);
+                    assert_quarantined(BackendFault::OutputMismatch);
+                }
+            });
+        }
+        inject(Fault::WriteReject, || {
+            let mut output = [0xa5; 3072];
+            assert!(view.decode_into(&mut output[..3071]).is_err());
+            assert_eq!(output, [0xa5; 3072]);
+            assert_eq!(STATE.with(Cell::get).writes, 0);
+        });
+    }
+    inject(Fault::Reject, || {
+        assert!(crate::Base64Ref::parse(CODEC, &input).is_err());
+        assert_quarantined(BackendFault::ImpossibleState);
+    });
+    #[cfg(feature = "checked-backend")]
+    inject(Fault::Accept, || {
+        let mut invalid = input;
+        invalid[1024] = b'!';
+        assert!(crate::Base64Ref::parse(CODEC, &invalid).is_err());
+        assert_quarantined(BackendFault::ImpossibleState);
+    });
+}
+
+#[test]
 fn small_inputs_do_not_initialize_or_execute_the_vector_route() {
     for len in [0, 4, 16, 32, 64, 256, 508, 511] {
         assert_eq!(select(len), None);

@@ -19,6 +19,6 @@
 #[cfg(feature = "alloc")]
 pub use crate::Base64String;
 pub use crate::{
-    Base64, Codec, OneShotError, STRICT_STANDARD_PADDED, STRICT_STANDARD_UNPADDED,
+    Base64, Base64Ref, Codec, OneShotError, STRICT_STANDARD_PADDED, STRICT_STANDARD_UNPADDED,
     STRICT_URL_SAFE_PADDED, STRICT_URL_SAFE_UNPADDED,
 };

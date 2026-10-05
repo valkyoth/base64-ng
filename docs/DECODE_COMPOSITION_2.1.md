@@ -1,7 +1,8 @@
 # Decode Composition Checkpoint
 
 Commit 15 adds ordinary per-call execution reports. This is a development
-checkpoint, not release admission; independent retest and CI remain pending.
+checkpoint, not release admission. External review and CI passed through
+`d3c84b2`; Commit 16 corrects the selected-backend comment noted by review.
 No new ISA, dependency, secret API, or unsafe boundary is introduced.
 
 ## Public Surface

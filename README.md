@@ -183,6 +183,11 @@ It is printable and non-wiping; it is not a secret container. Allocation-free
 `display`, rollback-safe `encode_append`, and `encoded_chunks` are available
 from the same strict presets.
 
+2.1 development adds `Base64Ref::parse(codec, encoded_bytes)` for validated,
+zero-copy borrowing and repeated decoding. `Base64String::as_base64_ref()` is
+fallible and validates before borrowing. See [borrowed views](docs/BORROWED_BASE64_2.1.md)
+for validation reuse, lifetimes and backend-health behavior.
+
 ## Validation And Compatibility
 
 2.1 development adds explicit ordinary `DecodeValidation::ScalarReference`

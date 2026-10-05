@@ -2,6 +2,14 @@
 
 ## 2.1.0 - Unreleased
 
+- Commit 16 adds `Base64Ref`, an immutable, codec-bound borrowed input with
+  exact decoded length and reusable transactional decoding. Reference policy
+  revalidates on every decode; cached Auto proofs retain health checks and
+  checked output comparison. Add fallible `Base64String` borrowing, lifetime
+  compile-fail tests, scan/allocation counters and bounded fuzz coverage.
+  Correct the internal selected-backend comment: writer eligibility is not
+  evidence that ScalarReference validation executed that backend.
+
 - Commit 15 adds per-call ordinary decode execution reports and transactional
   static-token methods with explicit validation policy. Reports distinguish
   actual validation, checked work, final output and scalar backend recovery.

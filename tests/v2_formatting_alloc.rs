@@ -272,6 +272,33 @@ fn forwarding_reservation_and_allocation_counts_are_bounded() {
 }
 
 #[test]
+fn borrowed_view_construction_and_reuse_allocate_zero_heap_blocks() {
+    let _ = base64_ng::initialize_backends();
+    let input = [b'A'; 4096];
+    let mut output = [0xa5; 3072];
+    for policy in [
+        base64_ng::DecodeValidation::Auto,
+        base64_ng::DecodeValidation::ScalarReference,
+    ] {
+        assert_eq!(
+            measure(|| {
+                let view = base64_ng::Base64Ref::parse_with_validation(
+                    STRICT_STANDARD_PADDED,
+                    &input,
+                    policy,
+                )
+                .unwrap();
+                for _ in 0..3 {
+                    assert_eq!(view.decode_into(&mut output), Ok(3072));
+                }
+            }),
+            0
+        );
+    }
+    assert_eq!(output, [0; 3072]);
+}
+
+#[test]
 fn counter_detects_allocations_and_reallocations() {
     let mut bytes = Vec::<u8>::new();
     assert!(measure(|| bytes.reserve_exact(std::hint::black_box(16))) > 0);

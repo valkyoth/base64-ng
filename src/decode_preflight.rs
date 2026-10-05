@@ -13,6 +13,7 @@ pub(crate) struct CapacityError {
     pub(crate) available: usize,
 }
 
+#[derive(Clone, Copy)]
 struct Layout {
     interior_input: usize,
     interior_output: usize,
@@ -89,6 +90,20 @@ impl<'a, C: Copy> Preflight<'a, C> {
 
     pub(crate) const fn configuration(&self) -> C {
         self.configuration
+    }
+
+    /// Reuses only the same immutable input, owned configuration and layout.
+    /// The retained-view owner must still apply its current execution policy.
+    pub(crate) fn reborrow(&self) -> Preflight<'_, C> {
+        Preflight {
+            input: self.input,
+            configuration: self.configuration,
+            layout: self.layout,
+        }
+    }
+
+    pub(crate) const fn input(&self) -> &'a [u8] {
+        self.input
     }
 
     pub(crate) fn write(

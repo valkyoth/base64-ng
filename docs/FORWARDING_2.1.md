@@ -32,7 +32,7 @@ to validate once per decode invocation before reservation, including after
 parsing or adopting a string. It gains no cached proof, self-reference, or new
 mutable access. Encode padding and decode acceptance remain distinct; the
 sealed builder rejects incompatible combinations. The borrowed reusable view
-belongs to Commit 16, not this checkpoint.
+is added separately in [Commit 16](BORROWED_BASE64_2.1.md), not this checkpoint.
 
 ## Routing Audit
 

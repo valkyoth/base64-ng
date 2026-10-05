@@ -45,6 +45,7 @@ pub(crate) use ordinary_decode::avx2_candidate::decode as decode_avx2_candidate_
     not(miri)
 ))]
 pub(crate) use ordinary_decode::avx512_candidate::decode as decode_avx512_candidate_for_test;
+mod ordinary_ref;
 mod ordinary_scalar;
 #[cfg(feature = "alloc")]
 mod ordinary_string;
@@ -94,6 +95,7 @@ pub(crate) use in_place::{
 pub use incremental::EncoderState;
 pub use incremental_decoder::DecoderState;
 pub use ordinary::OneShotError;
+pub use ordinary_ref::Base64Ref;
 #[cfg(feature = "alloc")]
 pub use ordinary_string::Base64String;
 pub use profiles::{

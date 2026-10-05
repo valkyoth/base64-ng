@@ -1,8 +1,8 @@
 #![no_main]
 
 use base64_ng::{
-    Base64, CodecBuilder, DecodePadding, EncodePadding, RuntimeSpec, TrailingBits,
-    ValidatedAlphabet,
+    Base64, Base64Ref, CodecBuilder, DecodePadding, DecodeValidation, EncodePadding, RuntimeSpec,
+    TrailingBits, ValidatedAlphabet,
 };
 use libfuzzer_sys::fuzz_target;
 
@@ -101,6 +101,14 @@ fn exercise_codec(codec: &Base64<RuntimeSpec>, input: &[u8]) {
 
     let decoded = codec.decode_to_vec(&expected).unwrap();
     assert_eq!(decoded, input);
+    let view = Base64Ref::parse(*codec, &expected).unwrap();
+    assert_eq!(view.decoded_len(), input.len());
+    let mut reused = vec![0xa5; input.len() + 3];
+    for _ in 0..2 {
+        assert_eq!(view.decode_into(&mut reused), Ok(input.len()));
+        assert_eq!(&reused[..input.len()], input);
+        assert_eq!(&reused[input.len()..], &[0xa5; 3]);
+    }
     assert_eq!(codec.decoded_len(&expected).unwrap(), input.len());
 
     let mut decoded_output = vec![0x3c; input.len() + 3];
@@ -147,6 +155,19 @@ fn exercise_arbitrary_decode(codec: &Base64<RuntimeSpec>, input: &[u8]) {
     let mut output = vec![0x91; input.len().saturating_add(3)];
     let original = output.clone();
     let result = codec.decode_into(input, &mut output);
+    for policy in [DecodeValidation::Auto, DecodeValidation::ScalarReference] {
+        match Base64Ref::parse_with_validation(*codec, input, policy) {
+            Ok(view) => {
+                assert_eq!(result, Ok(view.decoded_len()));
+                let mut repeated = original.clone();
+                for _ in 0..2 {
+                    assert_eq!(view.decode_into(&mut repeated), result);
+                    assert_eq!(repeated, output);
+                }
+            }
+            Err(error) => assert_eq!(result, Err(error)),
+        }
+    }
     match result {
         Ok(written) => {
             assert_eq!(codec.decoded_len(input), Ok(written));

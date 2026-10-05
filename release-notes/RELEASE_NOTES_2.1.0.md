@@ -48,11 +48,20 @@ policy methods. Reports distinguish requested validation from actual validator
 and writer execution, including checked comparison and scalar recovery. Existing
 methods, deployment checks and secret reporting are unchanged. See the
 [composition checkpoint](../docs/DECODE_COMPOSITION_2.1.md). External review and
-CI remain pending for this checkpoint. The follow-up retains alphabet
+CI passed through `d3c84b2`, with a comment-only correction applied in Commit 16.
+The follow-up retains alphabet
 classification inside the proof, removes repeated writer/report classification
 and stabilizes test-only backend initialization. Both WASM artifacts are rebuilt.
 Local bulk timings recover parity within 5%; documented small-input tradeoffs
 still require acceptance.
+
+Commit 16 adds `Base64Ref`, binding immutable borrowed input to owned codec
+settings and a checked decoded length. Auto can reuse grammar validation;
+explicit ScalarReference revalidates each decode. Health changes, checked
+output comparisons and scalar recovery remain enforced. `Base64String`
+borrowing is fallible and validates rather than trusting encode policy.
+See the [borrowed-view checkpoint](../docs/BORROWED_BASE64_2.1.md) for contracts,
+tests and separate parse/reuse measurements. External review and CI are pending.
 
 Remaining work is tracked in the [commit plan](../docs/2.1.0-release-plan.md).
 Final release notes, acceptance, and hardware claims will be recorded before

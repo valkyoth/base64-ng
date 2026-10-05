@@ -39,6 +39,7 @@ assert_eq!(&output[..written], b"foo");
 | Transactional static token with execution report | `decode_standard_with_report`, `decode_url_safe_with_report` |
 | Canonical validation and exact length | `validate_with_validation`, `decoded_len_with_validation` |
 | Canonical allocating helpers | `decode_to_vec_with_validation`, `decode_to_vec_with_limit_and_validation` |
+| Borrowed validated input | `Base64Ref::parse_with_validation`, then `decode_into` or allocating helpers |
 | Historical caller buffer | `Engine::decode_slice_with_validation` |
 | Historical clearing caller buffer | `decode_slice_clear_tail_with_validation` |
 | Historical validation and fully validated length | `validate_result_with_validation`, `validated_decoded_len_with_validation` |
@@ -115,6 +116,11 @@ development comparison, its scope and limitations.
 Commit 4 binds successful ordinary validation to an immutable input borrow and
 an owned codec-settings snapshot. The private result is neither `Clone` nor
 `Copy`; the writer consumes it and accepts no replacement source or settings.
+Commit 16 adds an internal reborrow operation restricted to the same source,
+settings and layout. The [borrowed-view owner](BORROWED_BASE64_2.1.md) checks
+the retained validation policy and validator health before each reborrow;
+explicit reference validation and stale validator generations require a fresh
+reference proof. This does not cache permission to execute a backend.
 Canonical caller-buffer and allocating decode share this boundary. Allocating
 decode now retains the result across reservation instead of validating again.
 Historical validation-only helpers share its length checks. Commit 9 also
@@ -149,7 +155,7 @@ the portable validator followed by reference acceptance also fails closed with
 validator; callers wanting that pass select `ScalarReference`. Candidate vector
 classifiers cannot authorize writes without complete scalar tail validation.
 Commit 9 binds backend identity and applies health admission and quarantine.
-Checked builds independently validate the whole input before writing and
+Checked builds independently validate the whole input when preparing a proof and
 compare bounded output chunks with the original scalar decoder. Kernel
 rejection or checked output mismatch quarantines the backend and rewrites the
 body with the validated table path; no error is returned after partial writes.

@@ -136,6 +136,28 @@ impl<S: Codec> Base64String<S> {
         self.encoded.is_empty()
     }
 
+    /// Validates and borrows this string as a reusable ordinary input view.
+    ///
+    /// This deliberately validates even strings made by `encode`: encoded
+    /// output is not treated as an unchecked proof of decode acceptance.
+    pub fn as_base64_ref(&self) -> Result<super::Base64Ref<'_, S>, OneShotError>
+    where
+        S: Clone,
+    {
+        self.as_base64_ref_with_validation(crate::DecodeValidation::Auto)
+    }
+
+    /// Borrows with a validation policy retained for every view decode.
+    pub fn as_base64_ref_with_validation(
+        &self,
+        validation: crate::DecodeValidation,
+    ) -> Result<super::Base64Ref<'_, S>, OneShotError>
+    where
+        S: Clone,
+    {
+        super::Base64Ref::parse_with_validation(self.codec.clone(), self.as_bytes(), validation)
+    }
+
     /// Validates and decodes the text with its retained codec.
     pub fn decode(&self) -> Result<alloc::vec::Vec<u8>, OneShotError> {
         self.codec.decode_to_vec(self.encoded.as_bytes())

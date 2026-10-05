@@ -142,6 +142,7 @@ fn composition_quarantine_between_validation_and_write_invalidates_tokens() {
         }
     }
     let input = [b'A'; 4096];
+    let borrowed = crate::Base64Ref::parse(CODEC, &input).unwrap();
     let token = crate::StaticBackendToken::admitted_for_test(backend);
     let mut report = crate::DecodeReport::new(DecodeValidation::Auto);
     let proof =
@@ -168,6 +169,12 @@ fn composition_quarantine_between_validation_and_write_invalidates_tokens() {
         OperationKind::StrictDecode,
         backend
     ));
+    let reference_before = crate::decode_validation::observation::calls();
+    output.fill(0xa5);
+    assert_eq!(borrowed.decode_into(&mut output), Ok(3072));
+    assert!(crate::decode_validation::observation::calls() > reference_before);
+    assert_eq!(output[..3072], [0; 3072]);
+    assert_eq!(output[3072..], [0xa5; 8]);
     if let Some(token) = token {
         assert!(!token.is_valid());
         let (_, report) = token

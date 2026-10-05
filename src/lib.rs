@@ -159,9 +159,9 @@ pub use v2::assurance;
 pub use v2::secret;
 pub use v2::{
     AssuranceClass, Atomicity, BCRYPT_ALPHABET_NO_PAD, BINHEX_ALPHABET, BackendClass, BackendFault,
-    BackendHealthSnapshot, BackendHealthState, BackendInitializationReport, Base64, BodyCodec,
-    BodyLineEnding, BodyWrap, BodyWrapError, BufferLengthError, CRYPT_ALPHABET_NO_PAD, Codec,
-    CodecBuilder, CodecBuilderError, CodecSettings, ConstTransformError, CountedSink,
+    BackendHealthSnapshot, BackendHealthState, BackendInitializationReport, Base64, Base64Ref,
+    BodyCodec, BodyLineEnding, BodyWrap, BodyWrapError, BufferLengthError, CRYPT_ALPHABET_NO_PAD,
+    Codec, CodecBuilder, CodecBuilderError, CodecSettings, ConstTransformError, CountedSink,
     CountedWriteError, DecodePadding, DecodedArray, DecoderState, EncodePadding, EncodedArray,
     EncodedChunk, EncodedChunks, EncodedDisplay, EncoderState, Failure, FormatWriteError,
     IMAP_MUTF7_ALPHABET_NO_PAD, InPlaceError, InputError, InputErrorKind, MIME_BODY_STRICT,

@@ -12,6 +12,7 @@ use crate::{
     decode_preflight::{Failure as PreflightFailure, Preflight},
 };
 
+pub(super) mod retained;
 mod vector;
 
 #[derive(Clone, Copy)]
@@ -240,7 +241,8 @@ pub(crate) fn decode_reported(
             prepare_selected::<true>(settings, input, validation, backend)?
         }
     };
-    // A successful proof records the backend actually used at validation.
+    // Record the writer-eligible backend selected before validation.
+    // ScalarReference does not execute it; validator() describes validation.
     // Do not re-probe health to reconstruct a possibly different selection.
     report.selected_backend = proof.configuration().backend;
     report.validator = if validation == DecodeValidation::ScalarReference {

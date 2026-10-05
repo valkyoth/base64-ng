@@ -81,6 +81,7 @@ echo "checks: 2.1 public ordinary encode"
 sh scripts/check-2.1-public-encode.sh
 sh scripts/check-2.1-forwarding.sh
 sh scripts/check-2.1-decode-composition.sh
+sh scripts/check-2.1-borrowed-view.sh
 sh scripts/check-2.1-neon-validation.sh
 sh scripts/check-2.1-public-api.sh
 
