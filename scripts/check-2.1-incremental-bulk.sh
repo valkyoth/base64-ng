@@ -8,6 +8,9 @@ for compiler in "$active" 1.90.0; do
         cargo +"$compiler" test --locked --release --no-default-features --features "$features" --test incremental_bulk
         cargo +"$compiler" clippy --locked --no-default-features --features "$features" --lib --tests -- -D warnings
     done
+    RUSTFLAGS="${RUSTFLAGS:-} --cfg fuzzing" cargo +"$compiler" test --locked --release --all-features --lib incremental_fuzz_scalar_oracle
+    RUSTFLAGS="${RUSTFLAGS:-} --cfg fuzzing" cargo +"$compiler" test --locked --manifest-path fuzz/Cargo.toml --lib incremental
+    RUSTFLAGS="${RUSTFLAGS:-} --cfg fuzzing" cargo +"$compiler" clippy --locked --manifest-path fuzz/Cargo.toml --lib --bin v2_incremental -- -D warnings
 done
 cargo test --locked --release --all-features --test v2_formatting_alloc incremental_bulk
 sh scripts/validate-unsafe-boundary.sh

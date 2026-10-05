@@ -2,8 +2,7 @@
 
 use std::{
     pin::Pin,
-    sync::Arc,
-    task::{Context, Poll, Wake, Waker},
+    task::{Context, Poll, Waker},
 };
 
 use base64_ng::STRICT_STANDARD_PADDED;
@@ -61,8 +60,7 @@ fn drive_decoder_writer(input: &[u8], maximum: usize, pending: bool) -> Vec<u8> 
 }
 
 fn drive_all_writes<W: AsyncWrite + Unpin>(writer: &mut W, input: &[u8]) {
-    let waker = Waker::from(Arc::new(NoopWake));
-    let mut context = Context::from_waker(&waker);
+    let mut context = Context::from_waker(Waker::noop());
     let mut offset = 0;
     let mut polls = 0;
     while offset < input.len() {
@@ -80,8 +78,7 @@ fn drive_all_writes<W: AsyncWrite + Unpin>(writer: &mut W, input: &[u8]) {
 }
 
 fn drive_shutdown<W: AsyncWrite + Unpin>(writer: &mut W) {
-    let waker = Waker::from(Arc::new(NoopWake));
-    let mut context = Context::from_waker(&waker);
+    let mut context = Context::from_waker(Waker::noop());
     for _ in 0..MAX_POLLS {
         match Pin::new(&mut *writer).poll_shutdown(&mut context) {
             Poll::Pending => {}
@@ -113,8 +110,7 @@ fn drive_decoder_reader(input: &[u8], maximum: usize, pending: bool) -> Vec<u8> 
 }
 
 fn drive_reader<R: AsyncRead + Unpin>(reader: &mut R, maximum: usize) -> Vec<u8> {
-    let waker = Waker::from(Arc::new(NoopWake));
-    let mut context = Context::from_waker(&waker);
+    let mut context = Context::from_waker(Waker::noop());
     let mut output = Vec::new();
     for _ in 0..MAX_POLLS {
         let mut storage = [0u8; 37];
@@ -135,8 +131,7 @@ fn exercise_malformed_decoder_writer(input: &[u8], maximum: usize, pending: bool
         ScriptedWriter::new(maximum, pending),
         &STRICT_STANDARD_PADDED,
     );
-    let waker = Waker::from(Arc::new(NoopWake));
-    let mut context = Context::from_waker(&waker);
+    let mut context = Context::from_waker(Waker::noop());
     for _ in 0..MAX_POLLS.min(input.len().saturating_mul(4).saturating_add(16)) {
         match Pin::new(&mut writer).poll_write(&mut context, input) {
             Poll::Pending => {}
@@ -158,8 +153,7 @@ fn exercise_cancellation_drop(input: &[u8], maximum: usize, pending: bool) {
         ScriptedWriter::new(maximum, pending),
         &STRICT_STANDARD_PADDED,
     );
-    let waker = Waker::from(Arc::new(NoopWake));
-    let mut context = Context::from_waker(&waker);
+    let mut context = Context::from_waker(Waker::noop());
     for _ in 0..8 {
         if !matches!(
             Pin::new(&mut writer).poll_write(&mut context, input),
@@ -169,12 +163,6 @@ fn exercise_cancellation_drop(input: &[u8], maximum: usize, pending: bool) {
         }
     }
     drop(writer);
-}
-
-struct NoopWake;
-
-impl Wake for NoopWake {
-    fn wake(self: Arc<Self>) {}
 }
 
 struct ScriptedWriter {

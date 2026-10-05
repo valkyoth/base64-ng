@@ -21,14 +21,11 @@ fuzz_target!(|data: &[u8]| {
         assert_eq!(decoded, data);
     }
 
-    if data.len() <= 8_192 {
-        match decode_modified_utf7_payload_to_vec(data, limits) {
-            Ok(decoded) => {
-                assert!(decoded.len().is_multiple_of(2));
-                let canonical = encode_modified_utf7_payload_to_string(&decoded, limits).unwrap();
-                assert_eq!(canonical.as_bytes(), data);
-            }
-            Err(_) => {}
-        }
+    if data.len() <= 8_192
+        && let Ok(decoded) = decode_modified_utf7_payload_to_vec(data, limits)
+    {
+        assert!(decoded.len().is_multiple_of(2));
+        let canonical = encode_modified_utf7_payload_to_string(&decoded, limits).unwrap();
+        assert_eq!(canonical.as_bytes(), data);
     }
 });

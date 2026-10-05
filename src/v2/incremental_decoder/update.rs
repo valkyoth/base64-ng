@@ -226,6 +226,17 @@ impl DecoderState {
         }
         Ok(UpdatePlan { consumed, bulk })
     }
+
+    /// Fuzz-only access to the original scalar planner and writer.
+    #[cfg(fuzzing)]
+    #[doc(hidden)]
+    pub fn update_scalar_oracle(
+        &mut self,
+        input: &[u8],
+        output: &mut [u8],
+    ) -> Result<Step, OperationError> {
+        self.update_reference(input, output)
+    }
 }
 
 #[cfg(test)]

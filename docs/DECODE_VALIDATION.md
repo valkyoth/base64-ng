@@ -125,11 +125,13 @@ settings and layout. The [borrowed-view owner](BORROWED_BASE64_2.1.md) checks
 the retained validation policy and validator health before each reborrow;
 explicit reference validation and stale validator generations require a fresh
 reference proof. This does not cache permission to execute a backend.
-Canonical caller-buffer and allocating decode share this boundary. Allocating
-decode now retains the result across reservation instead of validating again.
-Historical validation-only helpers share its length checks. Commit 9 also
-routes eligible historical ordinary decoding through it. Incremental states,
-static tokens and CT/secret paths are not rerouted.
+Canonical caller-buffer, allocating and borrowed-view decode share this
+boundary, as do eligible historical ordinary decoding, static-token decoding
+and bulk incremental decoding. Allocating decode retains the result across
+reservation instead of validating again; incremental decode binds a proof to
+the bulk portion accepted by one update, not the entire stream. Historical
+validation-only helpers share its length checks. CT/secret paths remain
+separate and are not rerouted.
 
 Checked geometry reserves the last quantum (at most four input bytes and three
 output bytes), leaving only complete unpadded quanta in the interior. Empty

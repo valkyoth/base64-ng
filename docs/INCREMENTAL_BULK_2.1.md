@@ -82,8 +82,14 @@ The bounded `incremental_bulk_miri_proof_and_pending_boundaries` test exercises
 proof lifetime and pending-state behavior under Miri. The `incremental_bulk`
 downstream target tests production-linked per-call transactionality and verifies
 that malformed unaccepted suffixes are not inspected. The incremental fuzz
-target now mixes tiny and large fragment schedules and compares Auto/reference
-results, complete destinations and state after each update.
+target mixes tiny and large fragment schedules and compares results, complete
+destinations and state after each update against the original scalar planner
+and writer. A hidden hook available only under cargo-fuzz's `cfg(fuzzing)`
+bypasses bulk planning entirely; selecting `ScalarReference` alone would still
+share the bulk planner and writer. Five committed seeds start at bulk-sized
+inputs for every strict profile, including a late-invalid input. The focused
+gate replays these seeds through the actual fuzz harness and verifies that the
+oracle invokes neither vector validation nor vector writing.
 
 Completed locally: the active/MSRV gate, full workspace release/all-feature
 tests, both focused encoder/decoder Miri boundary tests, 10,000 seeded

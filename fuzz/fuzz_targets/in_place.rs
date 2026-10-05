@@ -61,7 +61,7 @@ where
         assert!(input_too_large.iter().all(|byte| *byte == 0));
     }
 
-    if encoded.len() > 0 {
+    if !encoded.is_empty() {
         let mut too_small = vec![0xa5; encoded.len() - 1];
         too_small[..input.len()].copy_from_slice(input);
         let err = engine

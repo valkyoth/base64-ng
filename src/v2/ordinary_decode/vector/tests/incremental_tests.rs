@@ -1,5 +1,26 @@
 use super::*;
 
+#[cfg(fuzzing)]
+#[test]
+fn incremental_fuzz_scalar_oracle_never_validates_or_writes_through_bulk() {
+    if ready_backend(8192).is_none() {
+        return;
+    }
+    inject(Fault::WriteReject, || {
+        let mut decoder = CODEC.decoder();
+        let mut output = [0xa5; 6160];
+        let step = decoder
+            .update_scalar_oracle(&[b'A'; 8196], &mut output)
+            .unwrap();
+        assert_eq!(step.progress().input_consumed(), 8196);
+        assert_eq!(step.progress().output_produced(), 6147);
+        assert_eq!(&output[..6147], &[0; 6147]);
+        assert_eq!(&output[6147..], &[0xa5; 13]);
+        assert_eq!(STATE.with(Cell::get).validation, 0);
+        assert_eq!(STATE.with(Cell::get).writes, 0);
+    });
+}
+
 #[test]
 fn incremental_bulk_decode_recovers_writes_after_pending_prefix() {
     if ready_backend(8192).is_none() {

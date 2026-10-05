@@ -115,6 +115,23 @@ release gate rejects files under `fuzz/artifacts/` other than `.gitignore`.
 
 ## Running Local Campaigns
 
+The `v2_incremental` corpus includes four strict-profile bulk seeds and one
+late-invalid seed. Each contains 32 schedule-control bytes followed by 4096
+payload bytes; the final text newline is outside the harness's input ceiling.
+The first control selects the profile and a large input span; the remaining
+controls select large output spans. These seeds ensure a fresh campaign reaches
+the bulk path without waiting for input-length growth.
+
+Its independent scalar oracle is compiled only with cargo-fuzz's `cfg(fuzzing)`,
+not the reserved Cargo feature named `fuzzing`. Normal compile-only fuzz checks
+remain supported, but executing this target without that cfg fails explicitly.
+The focused incremental gate tests the same harness and seeds on active Rust
+and MSRV; the deterministic replay can also be run directly:
+
+```sh
+RUSTFLAGS="--cfg fuzzing" cargo test --locked --manifest-path fuzz/Cargo.toml --lib incremental
+```
+
 Install nightly and cargo-fuzz:
 
 ```sh
