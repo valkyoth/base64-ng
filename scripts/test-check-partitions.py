@@ -15,7 +15,7 @@ DEVELOPMENT = (
     "baseline", "validation-policy", "ssse3-validation", "avx2-validation",
     "avx512-validation", "public-decode", "public-encode", "forwarding",
     "decode-composition", "borrowed-view", "incremental-bulk", "adapter-bulk",
-    "in-place-bulk", "neon-validation", "public-api",
+    "in-place-bulk", "companion-features", "neon-validation", "public-api",
 )
 
 

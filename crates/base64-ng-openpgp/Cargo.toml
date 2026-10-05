@@ -15,6 +15,8 @@ categories = ["encoding", "cryptography", "no-std"]
 include = ["src/**", "tests/**", "Cargo.toml", "README.md"]
 
 [features]
+simd = ["base64-ng/simd"]
+checked-backend = ["simd", "base64-ng/checked-backend"]
 default = ["alloc", "std"]
 alloc = []
 std = ["alloc", "base64-ng/std"]

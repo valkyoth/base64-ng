@@ -326,6 +326,9 @@ core.
 | `@valkyoth/base64-ng-wasm-loader` | Scalar/`simd128` JavaScript loader |
 
 Each Rust companion has its own crate README and examples. The
+2.1 development companions for Bytes, Tokio, Serde, Multibase, PEM and OpenPGP
+offer opt-in `simd` and `checked-backend` forwarding with unchanged defaults;
+see the [feature matrix](docs/COMPANION_FEATURES_2.1.md). The
 [package topology](https://github.com/valkyoth/base64-ng/blob/main/docs/2.0_PACKAGE_TOPOLOGY.md)
 defines their boundaries.
 

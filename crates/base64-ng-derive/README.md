@@ -27,6 +27,9 @@ Development source: `2.1.0`, not published. Publication is blocked while the
 [2.1 commit plan](../../docs/2.1.0-release-plan.md) is in progress. Registry
 installation examples below refer to the existing published releases.
 
+This proc-macro has no runtime codec to accelerate; no SIMD forwarding feature is offered.
+See the [2.1 companion feature matrix](../../docs/COMPANION_FEATURES_2.1.md).
+
 Dependency-free derive support for fixed-size `base64-ng` 2.0 secret owners.
 The core crate remains free of proc-macro dependencies.
 

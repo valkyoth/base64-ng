@@ -1,6 +1,12 @@
 name: Rust CI
 
 on:
+  workflow_dispatch:
+    inputs:
+      full_release:
+        description: 'Run full 2.1 feature and QEMU suites for the final release candidate'
+        type: boolean
+        default: false
   push:
     branches:
       - main
@@ -85,6 +91,11 @@ jobs:
       - name: Run checks
         run: scripts/checks.sh --core
 
+      - name: Check release-only CI routing
+        run: |
+          python3 -m pip install --disable-pip-version-check PyYAML==6.0.3
+          python3 scripts/test-ci-release-mode.py
+
       - name: Run nextest
         run: cargo nextest run --all-features
 
@@ -114,6 +125,7 @@ jobs:
 
   development-checks:
     name: 2.1 feature gates
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.full_release }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -324,6 +336,7 @@ jobs:
 
   big-endian-qemu:
     name: Big-endian QEMU functional evidence
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.full_release }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
 
@@ -356,6 +369,7 @@ jobs:
 
   riscv-qemu:
     name: RISC-V QEMU and RVV candidate evidence
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.full_release }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
 
@@ -393,6 +407,7 @@ jobs:
 
   sve-qemu:
     name: AArch64 SVE QEMU candidate evidence
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.full_release }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
 

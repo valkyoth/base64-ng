@@ -29,6 +29,9 @@ Development source: `2.1.0`, not published. Publication is blocked while the
 [2.1 commit plan](../../docs/2.1.0-release-plan.md) is in progress. Registry
 installation examples below refer to the existing published releases.
 
+The current MIME encoder and decoder process scalar quanta; no SIMD forwarding feature is offered.
+See the [2.1 companion feature matrix](../../docs/COMPANION_FEATURES_2.1.md).
+
 This companion implements only the Base64 content-transfer body rules from
 RFC 2045 Section 6.8. It does **not** parse MIME headers, complete messages,
 multipart boundaries, media types, or body-part containers.

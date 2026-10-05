@@ -33,6 +33,7 @@ development_checks() {
     sh scripts/check-2.1-incremental-bulk.sh
     sh scripts/check-2.1-adapter-bulk.sh
     sh scripts/check-2.1-in-place-bulk.sh
+    sh scripts/check-2.1-companion-features.sh
     sh scripts/check-2.1-neon-validation.sh
     sh scripts/check-2.1-public-api.sh
 }
@@ -45,6 +46,8 @@ fi
 
 echo "checks: CI partition coverage"
 python3 scripts/test-check-partitions.py
+python3 scripts/check-companion-features.py --audit-only
+python3 scripts/test-companion-features.py
 
 echo "checks: formatting"
 cargo fmt --all --check

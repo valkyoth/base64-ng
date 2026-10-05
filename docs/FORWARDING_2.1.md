@@ -60,10 +60,10 @@ size, CPU, and health gates qualify; forwarding is not a promise of SIMD.
 | MIME, PEM, OpenPGP | Protocol/body parsing and exact limits before body transforms | Container labels, checksums, line endings and mapped indices cannot be replaced by strict Base64 acceptance |
 | Sanitization, subtle, derive | Existing protected/CT, comparison, or compile-time surfaces | No secret/CT optimization or proc-macro change in this checkpoint |
 
-Companion acceleration features are audited separately in Commit 20. The table
+Companion acceleration features are audited in [Commit 20](COMPANION_FEATURES_2.1.md). The table
 now includes the subsequent [adapter integration](ADAPTER_BULK_2.1.md) and
 [in-place compaction](IN_PLACE_BULK_2.1.md) changes. It does not introduce
-progressive decoding semantics or claim completion of companion feature work.
+progressive decoding semantics. Companion opt-ins preserve every routing contract above.
 
 ## Regression Checks
 

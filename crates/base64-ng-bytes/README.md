@@ -29,6 +29,22 @@ Development source: `2.1.0`, not published. Publication is blocked while the
 [2.1 commit plan](../../docs/2.1.0-release-plan.md) is in progress. Registry
 installation examples below refer to the existing published releases.
 
+### Optional acceleration (2.1 development)
+
+For a consumer next to a checkout of this repository:
+
+```toml
+base64-ng-bytes = { path = "../base64-ng/crates/base64-ng-bytes", features = ["simd"] }
+```
+
+Use `checked-backend` instead of `simd` for redundant scalar checking; it
+implies SIMD support but never promises that a particular call will accelerate.
+Fragmented ordinary encode/decode can use the shared bulk kernels.
+Defaults, grammar and cleanup contracts are unchanged. Neither feature enables
+`std`, `alloc` or `secrets` by itself. Without core `std`, acceleration needs
+complete static target features; otherwise the scalar fallback remains active.
+See the [companion feature matrix](../../docs/COMPANION_FEATURES_2.1.md).
+
 Fragment-preserving `bytes` integration for the `base64-ng` 2.0 codec.
 
 This companion crate provides explicit helpers for services that already use

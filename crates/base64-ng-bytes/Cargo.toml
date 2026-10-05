@@ -20,6 +20,8 @@ include = [
 ]
 
 [features]
+simd = ["base64-ng/simd"]
+checked-backend = ["simd", "base64-ng/checked-backend"]
 default = ["std"]
 std = ["base64-ng/std", "bytes/std"]
 

@@ -1,0 +1,69 @@
+#!/usr/bin/env python3
+"""Prevent exhaustive release suites from silently returning to push CI."""
+
+from pathlib import Path
+import unittest
+
+import yaml
+
+ROOT = Path(__file__).resolve().parents[1]
+GUARD = "${{ github.event_name == 'workflow_dispatch' && inputs.full_release }}"
+HEAVY = {"development-checks", "big-endian-qemu", "riscv-qemu", "sve-qemu"}
+
+
+def validate(workflow):
+    # BaseLoader preserves GitHub's `on` key instead of YAML 1.1 boolean coercion.
+    triggers = workflow["on"]
+    assert set(triggers) == {"push", "pull_request", "workflow_dispatch"}
+    option = triggers["workflow_dispatch"]["inputs"]["full_release"]
+    assert option["type"] == "boolean" and option["default"] == "false"
+    for name, job in workflow["jobs"].items():
+        if name in HEAVY:
+            assert job["if"] == GUARD, name
+        else:
+            assert "if" not in job, name
+            needs = job.get("needs", [])
+            assert not HEAVY.intersection([needs] if isinstance(needs, str) else needs), name
+    assert HEAVY <= workflow["jobs"].keys()
+    commands = {name: "\n".join(step.get("run", "") for step in job["steps"])
+                for name, job in workflow["jobs"].items()}
+    assert "scripts/checks.sh --core" in commands["checks"]
+    for name, command in {
+        "development-checks": "scripts/checks.sh --development",
+        "big-endian-qemu": "scripts/check_big_endian_qemu.sh --all",
+        "riscv-qemu": "scripts/check_riscv_qemu.sh",
+        "sve-qemu": "scripts/check_sve_qemu.sh",
+    }.items():
+        assert command in commands[name]
+        assert all(command not in value for other, value in commands.items() if other != name)
+
+
+class ReleaseModeTests(unittest.TestCase):
+    def load(self):
+        return yaml.load((ROOT / ".github/workflows/ci.yml").read_text(), Loader=yaml.BaseLoader)
+
+    def test_actual_workflow_keeps_full_suites_opt_in(self):
+        validate(self.load())
+
+    def test_missing_or_broadened_guards_are_rejected(self):
+        for job in HEAVY:
+            for guard in (None, "true", "${{ inputs.full_release }}"):
+                with self.subTest(job=job, guard=guard):
+                    workflow = self.load()
+                    workflow["jobs"][job]["if"] = guard
+                    with self.assertRaises(AssertionError):
+                        validate(workflow)
+
+    def test_default_enabled_and_scheduled_runs_are_rejected(self):
+        workflow = self.load()
+        workflow["on"]["workflow_dispatch"]["inputs"]["full_release"]["default"] = "true"
+        with self.assertRaises(AssertionError):
+            validate(workflow)
+        workflow = self.load()
+        workflow["on"]["schedule"] = [{"cron": "0 0 * * *"}]
+        with self.assertRaises(AssertionError):
+            validate(workflow)
+
+
+if __name__ == "__main__":
+    unittest.main()

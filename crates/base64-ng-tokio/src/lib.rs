@@ -3,6 +3,12 @@
 #![deny(clippy::all)]
 #![deny(clippy::pedantic)]
 
+//! Optional `simd` and `checked-backend` features forward to the core's ordinary
+//! kernels without changing defaults or grammar. `checked-backend` implies
+//! `simd`; neither enables `std`, `alloc` or `secrets` on its own. Eligible
+//! sizes and CPU/build capabilities still govern acceleration. Secret/CT paths
+//! remain separate. Without core `std`, complete static ISA features are required.
+
 //! Optional Tokio async helpers for `base64-ng`.
 //!
 //! The crate provides two API tiers:
