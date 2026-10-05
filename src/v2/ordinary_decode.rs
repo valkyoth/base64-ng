@@ -8,11 +8,18 @@ use super::{
     specifications::{CodecSettings, DecodePadding},
 };
 use crate::{
-    DecodeValidation,
+    DecodeReport, DecodeValidation, DecodeValidator,
     decode_preflight::{Failure as PreflightFailure, Preflight},
 };
 
 mod vector;
+
+#[derive(Clone, Copy)]
+pub(crate) enum Selection {
+    Automatic,
+    #[cfg(feature = "simd")]
+    Static(Option<crate::runtime::Backend>),
+}
 
 #[derive(Clone, Copy)]
 pub(crate) struct Prepared {
@@ -30,12 +37,28 @@ pub(crate) fn prepare(
     input: &[u8],
     validation: DecodeValidation,
 ) -> Result<Preflight<'_, Prepared>, OneShotError> {
+    prepare_selected::<false>(settings, input, validation, None)
+}
+
+#[inline]
+fn prepare_selected<const STATIC: bool>(
+    settings: CodecSettings,
+    input: &[u8],
+    validation: DecodeValidation,
+    selected: Option<crate::runtime::Backend>,
+) -> Result<Preflight<'_, Prepared>, OneShotError> {
     let family = if input.is_empty() {
         None
     } else {
         Family::for_settings(settings)
     };
-    let backend = family.and_then(|_| vector::select(input.len()));
+    let backend = family.and_then(|_| {
+        if STATIC {
+            selected
+        } else {
+            vector::select(input.len())
+        }
+    });
     let config = Prepared { settings, backend };
     Preflight::validate(input, config, |config, input| {
         let settings = config.settings;
@@ -143,6 +166,15 @@ pub(crate) fn write(
     proof: Preflight<'_, Prepared>,
     output: &mut [u8],
 ) -> Result<usize, OneShotError> {
+    write_observed(proof, output, ())
+}
+
+#[inline]
+fn write_observed<R: crate::decode_report::WriteObservation>(
+    proof: Preflight<'_, Prepared>,
+    output: &mut [u8],
+    mut report: R,
+) -> Result<usize, OneShotError> {
     #[cfg(test)]
     crate::decode_backend::record_test_execution(crate::decode_backend::DecodeBackend::Scalar);
     if proof.len() == 0 {
@@ -151,12 +183,12 @@ pub(crate) fn write(
     proof
         .write(
             output,
-            |config, interior, tail, body_output, tail_output| {
+            move |config, interior, tail, body_output, tail_output| {
                 let settings = config.settings;
                 if let Some(family) = Family::for_settings(settings) {
                     let table = family.table();
                     let read = config.backend.map_or(0, |backend| {
-                        vector::write(backend, family, interior, body_output)
+                        vector::write(backend, family, interior, body_output, &mut report)
                     });
                     write_parts(
                         &interior[read..],
@@ -176,6 +208,51 @@ pub(crate) fn write(
             required: error.required,
             available: error.available,
         })
+}
+
+pub(crate) fn decode_reported(
+    settings: CodecSettings,
+    input: &[u8],
+    output: &mut [u8],
+    validation: DecodeValidation,
+    selected: Selection,
+) -> Result<(usize, DecodeReport), OneShotError> {
+    let mut report = DecodeReport::new(validation);
+    let proof = match selected {
+        Selection::Automatic => prepare(settings, input, validation)?,
+        #[cfg(feature = "simd")]
+        Selection::Static(backend) => {
+            prepare_selected::<true>(settings, input, validation, backend)?
+        }
+    };
+    // A successful proof records the backend actually used at validation.
+    // Do not re-probe health to reconstruct a possibly different selection.
+    report.selected_backend = proof.configuration().backend;
+    report.validator = if validation == DecodeValidation::ScalarReference {
+        DecodeValidator::ScalarReference
+    } else if input.is_empty() {
+        DecodeValidator::Empty
+    } else if Family::for_settings(settings).is_some() {
+        report
+            .selected_backend
+            .map_or(DecodeValidator::ScalarTable, DecodeValidator::Vector)
+    } else {
+        DecodeValidator::ScalarReference
+    };
+    report.checked_validation =
+        cfg!(feature = "checked-backend") && matches!(report.validator, DecodeValidator::Vector(_));
+    let len = write_observed(proof, output, &mut report)?;
+    Ok((len, report))
+}
+
+#[cfg(feature = "simd")]
+pub(crate) fn static_backend(
+    token: &crate::StaticBackendToken,
+    len: usize,
+) -> Option<crate::runtime::Backend> {
+    // Only existing, safely available ordinary kernels may execute here. In
+    // particular an AVX-512 token must not silently select a different ISA.
+    (token.is_valid() && vector::eligible_static(token.backend(), len)).then_some(token.backend())
 }
 
 fn write_parts(

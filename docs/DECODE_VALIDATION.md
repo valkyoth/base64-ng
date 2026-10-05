@@ -35,6 +35,8 @@ assert_eq!(&output[..written], b"foo");
 | Surface | Explicit method |
 | --- | --- |
 | Canonical caller buffer | `Base64::decode_into_with_validation` |
+| Canonical caller buffer with execution report | `Base64::decode_into_with_report` |
+| Transactional static token with execution report | `decode_standard_with_report`, `decode_url_safe_with_report` |
 | Canonical validation and exact length | `validate_with_validation`, `decoded_len_with_validation` |
 | Canonical allocating helpers | `decode_to_vec_with_validation`, `decode_to_vec_with_limit_and_validation` |
 | Historical caller buffer | `Engine::decode_slice_with_validation` |
@@ -54,6 +56,10 @@ Historical decoding keeps its existing error precedence and mutation behavior,
 including partial output on its scalar error path. No progressive API is added.
 
 ## Composition
+
+Per-call reports and the shared validation/decode health latch are described in
+[the Commit 15 checkpoint](DECODE_COMPOSITION_2.1.md). A capability snapshot is
+not evidence that a particular invocation actually executed a vector backend.
 
 - `ScalarReference` means the original scalar grammar checks, not scalar output instructions.
   Valid input is fully checked. Malformed input can fail early; this is not CT.

@@ -1,7 +1,7 @@
 /// Validation strategy for ordinary, non-secret Base64 input.
 ///
 /// This selects validation, not output-generation instructions or a weaker
-/// grammar. Strict Standard/URL-safe `Auto` uses admitted x86/NEON/WASM vector validation
+/// grammar. Strict Standard/URL-safe `Auto` uses admitted x86/NEON/WASM/RVV vector validation
 /// with scalar tails or portable validation; `ScalarReference` retains the
 /// original validator. Historical scalar execution can combine validation with
 /// decoding. Other architectures retain their existing prevalidation. Error precedence and output
@@ -22,7 +22,7 @@
 pub enum DecodeValidation {
     /// Use the admitted validation strategy, with scalar fallback.
     ///
-    /// Canonical strict Standard/URL-safe settings use health-gated SSSE3/AVX2/NEON
+    /// Canonical strict Standard/URL-safe settings use health-gated SSSE3/AVX2/NEON/WASM/RVV
     /// validation when available, with portable table fallback. Other settings
     /// retain reference validation. No automatic AVX-512 admission is implied.
     #[default]

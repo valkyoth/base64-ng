@@ -172,18 +172,31 @@ fn decode(backend: Backend, input: &[u8], output: &mut [u8], url: bool) -> bool 
 // Returning zero makes the caller overwrite the entire body with the table
 // writer. This input already has a complete proof; retry cannot expose an error
 // after partial output. The remainder and tail are always written by the caller.
-pub(super) fn write(backend: Backend, family: Family, input: &[u8], output: &mut [u8]) -> usize {
+pub(super) fn write<R: crate::decode_report::WriteObservation>(
+    backend: Backend,
+    family: Family,
+    input: &[u8],
+    output: &mut [u8],
+    report: &mut R,
+) -> usize {
     let Some(width) = width(backend) else {
+        report.unavailable();
         return 0;
     };
     if !crate::v2::backend_health::admit(OperationKind::StrictDecode, backend) {
+        report.unavailable();
         return 0;
     }
     #[cfg(all(test, feature = "std"))]
     if tests::unavailable() {
+        report.unavailable();
         return 0;
     }
     let prefix = input.len() / width * width;
+    if prefix == 0 {
+        return 0;
+    }
+    report.checked();
     let input = &input[..prefix];
     let output = &mut output[..prefix / 4 * 3];
     #[cfg(not(feature = "checked-backend"))]
@@ -191,6 +204,7 @@ pub(super) fn write(backend: Backend, family: Family, input: &[u8], output: &mut
     #[cfg(feature = "checked-backend")]
     let valid = checked(backend, family, input, output);
     if valid {
+        report.written(backend);
         #[cfg(all(
             test,
             feature = "simd",
@@ -217,9 +231,15 @@ pub(super) fn write(backend: Backend, family: Family, input: &[u8], output: &mut
         });
         prefix
     } else {
+        report.rejected();
         quarantine(backend, BackendFault::OutputMismatch);
         0
     }
+}
+
+#[cfg(feature = "simd")]
+pub(super) fn eligible_static(backend: Backend, len: usize) -> bool {
+    width(backend).is_some_and(|width| len.saturating_sub(1) / width > 0)
 }
 
 #[cfg(all(test, feature = "std"))]

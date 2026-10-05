@@ -189,6 +189,8 @@ from the same strict presets.
 selection alongside `Auto`, which specializes canonical Standard/URL-safe
 scalar validation without changing accepted input or error contracts. See
 [validation policy and API examples](docs/DECODE_VALIDATION.md).
+`decode_into_with_report` additionally reports the validator, final output
+backend and scalar recovery for that call; see [execution reports](docs/DECODE_COMPOSITION_2.1.md).
 
 Validate without producing decoded output:
 

@@ -130,6 +130,13 @@ fn strict_decode_validation_and_writing_allocate_zero_heap_blocks() {
                     Ok(3072)
                 );
                 assert_eq!(
+                    STRICT_STANDARD_PADDED
+                        .decode_into_with_report(&input, &mut output, policy)
+                        .unwrap()
+                        .0,
+                    3072
+                );
+                assert_eq!(
                     base64_ng::STANDARD.decode_slice_with_validation(&input, &mut output, policy),
                     Ok(3072)
                 );

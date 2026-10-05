@@ -953,6 +953,7 @@ pub fn base64_ng::Base64<S>::decode_in_place_staged(&self, &mut [u8], usize, &mu
 pub fn base64_ng::Base64<S>::secret_decode_staging_len(&self, usize) -> core::result::Result<usize, base64_ng::InPlaceError>
 impl<S: base64_ng::Codec> base64_ng::Base64<S>
 pub fn base64_ng::Base64<S>::decode_into(&self, &[u8], &mut [u8]) -> core::result::Result<usize, base64_ng::OneShotError>
+pub fn base64_ng::Base64<S>::decode_into_with_report(&self, &[u8], &mut [u8], base64_ng::DecodeValidation) -> core::result::Result<(usize, base64_ng::DecodeReport), base64_ng::OneShotError>
 pub fn base64_ng::Base64<S>::decode_into_with_validation(&self, &[u8], &mut [u8], base64_ng::DecodeValidation) -> core::result::Result<usize, base64_ng::OneShotError>
 pub fn base64_ng::Base64<S>::decoded_len(&self, &[u8]) -> core::result::Result<usize, base64_ng::OneShotError>
 pub fn base64_ng::Base64<S>::decoded_len_with_validation(&self, &[u8], base64_ng::DecodeValidation) -> core::result::Result<usize, base64_ng::OneShotError>
@@ -1444,6 +1445,9 @@ pub fn base64_ng::StaticBackendToken::encode_url_safe<const PAD: bool>(&self, &[
 pub fn base64_ng::StaticBackendToken::for_compiled_target() -> core::option::Option<Self>
 pub const fn base64_ng::StaticBackendToken::health_generation(&self) -> usize
 pub fn base64_ng::StaticBackendToken::is_valid(&self) -> bool
+impl base64_ng::StaticBackendToken
+pub fn base64_ng::StaticBackendToken::decode_standard_with_report<const PAD: bool>(&self, &[u8], &mut [u8], base64_ng::DecodeValidation) -> core::result::Result<(usize, base64_ng::DecodeReport), base64_ng::OneShotError>
+pub fn base64_ng::StaticBackendToken::decode_url_safe_with_report<const PAD: bool>(&self, &[u8], &mut [u8], base64_ng::DecodeValidation) -> core::result::Result<(usize, base64_ng::DecodeReport), base64_ng::OneShotError>
 impl core::fmt::Debug for base64_ng::StaticBackendToken
 pub fn base64_ng::StaticBackendToken::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn base64_ng::runtime::backend_report() -> base64_ng::runtime::BackendReport
@@ -2141,6 +2145,19 @@ impl core::fmt::Display for base64_ng::DecodeErrorKind
 pub fn base64_ng::DecodeErrorKind::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for base64_ng::DecodeErrorKind
 impl core::marker::StructuralPartialEq for base64_ng::DecodeErrorKind
+#[non_exhaustive] pub enum base64_ng::DecodeFallback
+pub base64_ng::DecodeFallback::BackendRejected
+pub base64_ng::DecodeFallback::BackendUnavailable
+pub base64_ng::DecodeFallback::None
+impl core::clone::Clone for base64_ng::DecodeFallback
+pub fn base64_ng::DecodeFallback::clone(&self) -> base64_ng::DecodeFallback
+impl core::cmp::Eq for base64_ng::DecodeFallback
+impl core::cmp::PartialEq for base64_ng::DecodeFallback
+pub fn base64_ng::DecodeFallback::eq(&self, &base64_ng::DecodeFallback) -> bool
+impl core::fmt::Debug for base64_ng::DecodeFallback
+pub fn base64_ng::DecodeFallback::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng::DecodeFallback
+impl core::marker::StructuralPartialEq for base64_ng::DecodeFallback
 pub enum base64_ng::DecodePadding
 pub base64_ng::DecodePadding::Forbid
 pub base64_ng::DecodePadding::Indifferent
@@ -2172,6 +2189,20 @@ impl core::hash::Hash for base64_ng::DecodeValidation
 pub fn base64_ng::DecodeValidation::hash<__H: core::hash::Hasher>(&self, &mut __H)
 impl core::marker::Copy for base64_ng::DecodeValidation
 impl core::marker::StructuralPartialEq for base64_ng::DecodeValidation
+#[non_exhaustive] pub enum base64_ng::DecodeValidator
+pub base64_ng::DecodeValidator::Empty
+pub base64_ng::DecodeValidator::ScalarReference
+pub base64_ng::DecodeValidator::ScalarTable
+pub base64_ng::DecodeValidator::Vector(base64_ng::runtime::Backend)
+impl core::clone::Clone for base64_ng::DecodeValidator
+pub fn base64_ng::DecodeValidator::clone(&self) -> base64_ng::DecodeValidator
+impl core::cmp::Eq for base64_ng::DecodeValidator
+impl core::cmp::PartialEq for base64_ng::DecodeValidator
+pub fn base64_ng::DecodeValidator::eq(&self, &base64_ng::DecodeValidator) -> bool
+impl core::fmt::Debug for base64_ng::DecodeValidator
+pub fn base64_ng::DecodeValidator::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng::DecodeValidator
+impl core::marker::StructuralPartialEq for base64_ng::DecodeValidator
 pub enum base64_ng::EncodeError
 pub base64_ng::EncodeError::BackendMismatch
 pub base64_ng::EncodeError::InputTooLarge
@@ -2550,6 +2581,7 @@ pub fn base64_ng::Base64<S>::decode_in_place_staged(&self, &mut [u8], usize, &mu
 pub fn base64_ng::Base64<S>::secret_decode_staging_len(&self, usize) -> core::result::Result<usize, base64_ng::InPlaceError>
 impl<S: base64_ng::Codec> base64_ng::Base64<S>
 pub fn base64_ng::Base64<S>::decode_into(&self, &[u8], &mut [u8]) -> core::result::Result<usize, base64_ng::OneShotError>
+pub fn base64_ng::Base64<S>::decode_into_with_report(&self, &[u8], &mut [u8], base64_ng::DecodeValidation) -> core::result::Result<(usize, base64_ng::DecodeReport), base64_ng::OneShotError>
 pub fn base64_ng::Base64<S>::decode_into_with_validation(&self, &[u8], &mut [u8], base64_ng::DecodeValidation) -> core::result::Result<usize, base64_ng::OneShotError>
 pub fn base64_ng::Base64<S>::decoded_len(&self, &[u8]) -> core::result::Result<usize, base64_ng::OneShotError>
 pub fn base64_ng::Base64<S>::decoded_len_with_validation(&self, &[u8], base64_ng::DecodeValidation) -> core::result::Result<usize, base64_ng::OneShotError>
@@ -2747,6 +2779,24 @@ impl core::fmt::Debug for base64_ng::Crypt
 pub fn base64_ng::Crypt::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl core::marker::Copy for base64_ng::Crypt
 impl core::marker::StructuralPartialEq for base64_ng::Crypt
+pub struct base64_ng::DecodeReport
+impl base64_ng::DecodeReport
+pub const fn base64_ng::DecodeReport::checked_output(&self) -> bool
+pub const fn base64_ng::DecodeReport::checked_validation(&self) -> bool
+pub const fn base64_ng::DecodeReport::fallback(&self) -> base64_ng::DecodeFallback
+pub const fn base64_ng::DecodeReport::output_backend(&self) -> base64_ng::runtime::Backend
+pub const fn base64_ng::DecodeReport::requested_validation(&self) -> base64_ng::DecodeValidation
+pub const fn base64_ng::DecodeReport::selected_backend(&self) -> core::option::Option<base64_ng::runtime::Backend>
+pub const fn base64_ng::DecodeReport::validator(&self) -> base64_ng::DecodeValidator
+impl core::clone::Clone for base64_ng::DecodeReport
+pub fn base64_ng::DecodeReport::clone(&self) -> base64_ng::DecodeReport
+impl core::cmp::Eq for base64_ng::DecodeReport
+impl core::cmp::PartialEq for base64_ng::DecodeReport
+pub fn base64_ng::DecodeReport::eq(&self, &base64_ng::DecodeReport) -> bool
+impl core::fmt::Debug for base64_ng::DecodeReport
+pub fn base64_ng::DecodeReport::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for base64_ng::DecodeReport
+impl core::marker::StructuralPartialEq for base64_ng::DecodeReport
 pub struct base64_ng::DecodedArray<const CAP: usize>
 impl<const CAP: usize> base64_ng::DecodedArray<CAP>
 pub fn base64_ng::DecodedArray<CAP>::as_bytes(&self) -> &[u8]
@@ -3261,6 +3311,9 @@ pub fn base64_ng::StaticBackendToken::encode_url_safe<const PAD: bool>(&self, &[
 pub fn base64_ng::StaticBackendToken::for_compiled_target() -> core::option::Option<Self>
 pub const fn base64_ng::StaticBackendToken::health_generation(&self) -> usize
 pub fn base64_ng::StaticBackendToken::is_valid(&self) -> bool
+impl base64_ng::StaticBackendToken
+pub fn base64_ng::StaticBackendToken::decode_standard_with_report<const PAD: bool>(&self, &[u8], &mut [u8], base64_ng::DecodeValidation) -> core::result::Result<(usize, base64_ng::DecodeReport), base64_ng::OneShotError>
+pub fn base64_ng::StaticBackendToken::decode_url_safe_with_report<const PAD: bool>(&self, &[u8], &mut [u8], base64_ng::DecodeValidation) -> core::result::Result<(usize, base64_ng::DecodeReport), base64_ng::OneShotError>
 impl core::fmt::Debug for base64_ng::StaticBackendToken
 pub fn base64_ng::StaticBackendToken::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub struct base64_ng::Step

@@ -5,6 +5,8 @@ use core::marker::PhantomData;
 use crate::runtime::{Backend, OperationKind};
 use crate::{Alphabet, DecodeError, EncodeError, Standard, UrlSafe};
 
+mod decode_report;
+
 /// Non-forgeable, thread-bound proof that a static SIMD backend passed its KAT.
 ///
 /// The token bypasses runtime CPU probing only. It does not bypass bounds,
@@ -27,6 +29,11 @@ pub struct StaticBackendToken {
 }
 
 impl StaticBackendToken {
+    #[cfg(all(test, feature = "std"))]
+    pub(crate) fn admitted_for_test(backend: Backend) -> Option<Self> {
+        Self::admit(backend, false)
+    }
+
     /// Selects the strongest backend proven by compile-time target features.
     ///
     /// Returns `None` when the build lacks a complete feature bundle,

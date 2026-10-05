@@ -147,6 +147,38 @@ impl<S: Codec> Base64<S> {
         let proof = ordinary_decode::prepare(self.settings(), input, validation)?;
         ordinary_decode::write(proof, output)
     }
+
+    /// Decodes transactionally and reports actual validation and writer execution.
+    ///
+    /// Unlike a runtime capability snapshot, the returned report describes this
+    /// successful call, including scalar replacement of rejected backend output.
+    /// Neither validation policy disables checked comparison or quarantine.
+    /// This ordinary-data report is not a secret-processing attestation.
+    ///
+    /// ```
+    /// use base64_ng::{DecodeValidation, DecodeValidator, STRICT_STANDARD_PADDED};
+    /// let mut output = [0; 3];
+    /// let (len, report) = STRICT_STANDARD_PADDED.decode_into_with_report(
+    ///     b"Zm9v", &mut output, DecodeValidation::ScalarReference,
+    /// ).unwrap();
+    /// assert_eq!(len, 3);
+    /// assert_eq!(report.validator(), DecodeValidator::ScalarReference);
+    /// assert_eq!(&output, b"foo");
+    /// ```
+    pub fn decode_into_with_report(
+        &self,
+        input: &[u8],
+        output: &mut [u8],
+        validation: crate::DecodeValidation,
+    ) -> Result<(usize, crate::DecodeReport), OneShotError> {
+        ordinary_decode::decode_reported(
+            self.settings(),
+            input,
+            output,
+            validation,
+            ordinary_decode::Selection::Automatic,
+        )
+    }
 }
 
 const fn encoded_len_for_settings(

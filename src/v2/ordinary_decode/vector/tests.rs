@@ -5,6 +5,8 @@ use core::cell::Cell;
 #[cfg(feature = "alloc")]
 mod forwarding_tests;
 
+mod composition_tests;
+
 #[derive(Clone, Copy, Default, Eq, PartialEq)]
 enum Fault {
     #[default]

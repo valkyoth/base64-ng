@@ -141,6 +141,8 @@ mod decode_validation;
 mod encode_backend;
 mod engine;
 pub use decode_validation::DecodeValidation;
+mod decode_report;
+pub use decode_report::{DecodeFallback, DecodeReport, DecodeValidator};
 mod errors;
 mod length;
 pub mod prelude;

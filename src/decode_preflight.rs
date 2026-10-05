@@ -87,6 +87,10 @@ impl<'a, C: Copy> Preflight<'a, C> {
         self.layout.decoded_len
     }
 
+    pub(crate) const fn configuration(&self) -> C {
+        self.configuration
+    }
+
     pub(crate) fn write(
         self,
         output: &mut [u8],

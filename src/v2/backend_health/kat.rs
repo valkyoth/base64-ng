@@ -87,8 +87,22 @@ fn decode(backend: Backend) -> bool {
     all(target_arch = "aarch64", target_endian = "little")
 ))]
 fn ordinary_classifiers(backend: Backend) -> bool {
+    ordinary_classifiers_with(backend, crate::simd::ordinary::validate)
+}
+
+#[cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "wasm32",
+    target_arch = "riscv64",
+    all(target_arch = "aarch64", target_endian = "little")
+))]
+fn ordinary_classifiers_with(
+    backend: Backend,
+    validate: impl Fn(Backend, &[u8], bool) -> bool,
+) -> bool {
     for (input, url) in [(STANDARD_ENCODED, false), (URL_SAFE_ENCODED, true)] {
-        if !crate::simd::ordinary::validate(backend, input, url) {
+        if !validate(backend, input, url) {
             return false;
         }
         let mut output = [0; 48];
@@ -99,7 +113,7 @@ fn ordinary_classifiers(backend: Backend) -> bool {
             for index in 0..64 {
                 let mut invalid = *input;
                 invalid[index] = byte;
-                if crate::simd::ordinary::validate(backend, &invalid, url) {
+                if validate(backend, &invalid, url) {
                     return false;
                 }
             }
@@ -174,4 +188,36 @@ pub(crate) fn direct_decode<A: crate::Alphabet, const PAD: bool>(
         _ => return None,
     };
     result.ok()
+}
+
+#[cfg(test)]
+mod tests {
+    #[cfg(any(
+        target_arch = "x86",
+        target_arch = "x86_64",
+        target_arch = "wasm32",
+        target_arch = "riscv64",
+        all(target_arch = "aarch64", target_endian = "little")
+    ))]
+    #[test]
+    fn composition_kat_rejects_false_acceptance_and_rejection_in_each_lane() {
+        use super::{available, ordinary_classifiers, ordinary_classifiers_with};
+        for &backend in super::super::candidate_backends() {
+            if !available(backend) || crate::simd::ordinary::width(backend).is_none() {
+                continue;
+            }
+            assert!(ordinary_classifiers(backend));
+            assert!(!ordinary_classifiers_with(backend, |_, _, _| false));
+            assert!(!ordinary_classifiers_with(backend, |_, _, _| true));
+            for position in 0..64 {
+                assert!(!ordinary_classifiers_with(
+                    backend,
+                    |backend, input, url| {
+                        input[position] == b'='
+                            || crate::simd::ordinary::validate(backend, input, url)
+                    }
+                ));
+            }
+        }
+    }
 }

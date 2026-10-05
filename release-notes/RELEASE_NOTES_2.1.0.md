@@ -40,7 +40,15 @@ and eligible historical owned decoding. Existing canonical allocating/bounded
 routes already validate once. New wrapper tests cover allocation ordering,
 limits, exact diagnostics, rollback and backend recovery. The
 [routing audit](../docs/FORWARDING_2.1.md) keeps protocol grammar, streaming and
-in-place work explicit and separate. External review and CI remain pending.
+in-place work explicit and separate. External review and CI passed, including
+the core-only allocation-test feature-gate follow-up at `51ac4b5`.
+
+Commit 15 adds opt-in per-call execution reports and transactional static-token
+policy methods. Reports distinguish requested validation from actual validator
+and writer execution, including checked comparison and scalar recovery. Existing
+methods, deployment checks and secret reporting are unchanged. See the
+[composition checkpoint](../docs/DECODE_COMPOSITION_2.1.md). External review and
+CI remain pending for this checkpoint.
 
 Remaining work is tracked in the [commit plan](../docs/2.1.0-release-plan.md).
 Final release notes, acceptance, and hardware claims will be recorded before
