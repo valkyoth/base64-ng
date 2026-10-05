@@ -86,6 +86,7 @@ pub(super) fn quarantine(backend: Backend, fault: BackendFault) {
     crate::v2::backend_health::quarantine(OperationKind::StrictDecode, backend, fault);
 }
 
+#[inline]
 pub(super) fn validated_len(
     backend: Backend,
     family: Family,
@@ -172,6 +173,8 @@ fn decode(backend: Backend, input: &[u8], output: &mut [u8], url: bool) -> bool 
 // Returning zero makes the caller overwrite the entire body with the table
 // writer. This input already has a complete proof; retry cannot expose an error
 // after partial output. The remainder and tail are always written by the caller.
+// Keep observer specialization from expanding the preflight writer's hot path.
+#[inline(never)]
 pub(super) fn write<R: crate::decode_report::WriteObservation>(
     backend: Backend,
     family: Family,

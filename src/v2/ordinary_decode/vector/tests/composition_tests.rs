@@ -133,6 +133,14 @@ fn composition_quarantine_between_validation_and_write_invalidates_tokens() {
     let Some(backend) = ready_backend(4096) else {
         return;
     };
+    for available in [Backend::Avx2, Backend::Ssse3Sse41] {
+        if width(available).is_some() {
+            assert_eq!(
+                crate::v2::backend_health::snapshot(OperationKind::StrictDecode, available).state,
+                crate::BackendHealthState::Healthy
+            );
+        }
+    }
     let input = [b'A'; 4096];
     let token = crate::StaticBackendToken::admitted_for_test(backend);
     let mut report = crate::DecodeReport::new(DecodeValidation::Auto);

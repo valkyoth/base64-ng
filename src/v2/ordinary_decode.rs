@@ -25,6 +25,8 @@ pub(crate) enum Selection {
 pub(crate) struct Prepared {
     settings: CodecSettings,
     backend: Option<crate::runtime::Backend>,
+    // Bound to the same immutable settings as validation; avoid reclassification.
+    family: Option<Family>,
 }
 
 #[inline]
@@ -47,6 +49,20 @@ fn prepare_selected<const STATIC: bool>(
     validation: DecodeValidation,
     selected: Option<crate::runtime::Backend>,
 ) -> Result<Preflight<'_, Prepared>, OneShotError> {
+    // Empty ordinary input needs no alphabet inspection or backend selection.
+    // Preserve an explicit reference request on the reference validator.
+    if validation == DecodeValidation::Auto && input.is_empty() {
+        return Preflight::validate(
+            input,
+            Prepared {
+                settings,
+                backend: None,
+                family: None,
+            },
+            |_, _| Ok(0),
+        )
+        .map_err(map_preflight_error);
+    }
     let family = if input.is_empty() {
         None
     } else {
@@ -59,14 +75,13 @@ fn prepare_selected<const STATIC: bool>(
             vector::select(input.len())
         }
     });
-    let config = Prepared { settings, backend };
+    let config = Prepared {
+        settings,
+        backend,
+        family,
+    };
     Preflight::validate(input, config, |config, input| {
         let settings = config.settings;
-        // Empty input is valid for every sealed codec, without inspecting its
-        // alphabet. Keep the explicit reference policy on the original path.
-        if validation == DecodeValidation::Auto && input.is_empty() {
-            return Ok(0);
-        }
         if validation == DecodeValidation::Auto
             && let Some(family) = family
         {
@@ -185,7 +200,7 @@ fn write_observed<R: crate::decode_report::WriteObservation>(
             output,
             move |config, interior, tail, body_output, tail_output| {
                 let settings = config.settings;
-                if let Some(family) = Family::for_settings(settings) {
+                if let Some(family) = config.family {
                     let table = family.table();
                     let read = config.backend.map_or(0, |backend| {
                         vector::write(backend, family, interior, body_output, &mut report)
@@ -232,7 +247,7 @@ pub(crate) fn decode_reported(
         DecodeValidator::ScalarReference
     } else if input.is_empty() {
         DecodeValidator::Empty
-    } else if Family::for_settings(settings).is_some() {
+    } else if proof.configuration().family.is_some() {
         report
             .selected_backend
             .map_or(DecodeValidator::ScalarTable, DecodeValidator::Vector)

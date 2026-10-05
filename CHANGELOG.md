@@ -6,6 +6,8 @@
   static-token methods with explicit validation policy. Reports distinguish
   actual validation, checked work, final output and scalar backend recovery.
   Existing token methods, shared health latches and secret APIs are unchanged.
+  Retain alphabet classification in the private proof to avoid repeated work;
+  preserve reference validation on the empty-input fast path.
 
 - Commit 1: synchronize development package metadata at `2.1.0`, block Rust
   and npm publication, and preserve the signed `v2.0.4` API/behavior baseline.

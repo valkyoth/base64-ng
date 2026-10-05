@@ -105,10 +105,11 @@ matrices and Clippy. Focused reports passed Miri; checked composition passed
 AArch64 QEMU and WASI/Wasmtime, and RISC-V checked test targets cross-compiled.
 An explicitly AVX2-compiled no_std checked test build exercised static methods.
 These are functional checks, not fresh native ARM, Mac, Windows or RVV evidence.
-The loader's scalar artifact is byte-identical; its regenerated SIMD artifact
-and embedded digest changed together and the Node loader suite passed.
+At the initial `93cf09a` checkpoint the loader's scalar artifact was
+byte-identical; its regenerated SIMD artifact and embedded digest changed
+together and the Node loader suite passed. The follow-up below rebuilds both.
 
-## Development Timing Caveat
+## Initial Development Timing Caveat
 
 Unreported writers use a zero-sized observer captured by value. Native release
 assembly inspection confirmed that the ordinary writer entry point no longer
@@ -133,3 +134,52 @@ Raw data: `target/release-evidence/2.1-commit15-composition/native.json`.
 SHA-256: `a5fa0237f8d5be51cf444f87575c58921ad60c6b83bbd15fd10ebeb5fd5b9bf4`.
 Baseline binary: `a1faeb1e51f822cce45ddcf82e9a62181d362e6580c78499cfc1ec0df7eb76b7`.
 Candidate binary: `9d38cce89afe204eafa2bcbb1965c89d827cf03dc2a802b6abd7b9a2295bcfc2`.
+
+## Performance Follow-Up
+
+The follow-up retains the classified alphabet family inside the private proof,
+bound to the same owned settings. Writing and reporting no longer repeat that
+classification. Empty `Auto` input constructs its zero-length proof before
+classification/dispatch; `ScalarReference` still executes reference validation.
+Inlining hints keep the validator close to preparation and the specialized
+vector writer outside the larger preflight writer. No validation, capacity,
+checked comparison, health recheck or quarantine is removed.
+
+A public-gate rerun exposed a test-only initialization race: an earlier selection
+could choose SSSE3 while another thread's AVX2 KAT was in progress. The test
+helper now settles every available ordinary decode backend before comparing
+selection snapshots. An isolated-process regression checks those latches.
+Production admission remains nonblocking.
+
+Both final captures use the same parent, compiler, features, seven alternating
+pairs and CPU-2 affinity described above. A same-binary control put all 168
+cases within 5%. With no other agent test jobs running during final capture:
+
+| Result | Capture 1 | Capture 2 |
+| --- | ---: | ---: |
+| Within 5% | 118 | 121 |
+| Improvement signal | 12 | 13 |
+| Regression signal | 14 | 14 |
+| Inconclusive | 24 | 20 |
+
+All 48 bulk cases (64 KiB and 1 MiB payloads) are within 5% in both captures.
+Remaining regression signals are at 0, 3, 32 and 192 bytes, approximately
+0.9-17.8 ns slower. Thus the earlier bulk signals are no longer reproduced,
+but small-call performance parity is **not** established. Acceptance of these
+tradeoffs, external review and CI remain pending. This is local x86 `std,simd`
+development evidence, not a native ARM/Mac/RVV/Windows performance claim.
+
+Additional regressions cover retained strict/custom/relaxed families, settings
+ownership and empty-input reference work. The active/MSRV composition and
+public-decode gates, workspace all-feature release tests, core-only tests,
+Clippy, focused Miri, AArch64 QEMU and WASI/Wasmtime checks passed. Both WASM
+artifacts and their pins are rebuilt; all 26 Node loader tests passed.
+
+Files under `target/release-evidence/2.1-commit15-composition/`:
+
+- `same-binary-control.json`: `f5d88dd4837a3096bc3e81f57cbf8f2deb018760c6f1c54fe6acd4b5c3355fc7`.
+- `followup-1.json`: `b39f1f6e4b4dd1a6f5f189f7eabba08d70a7df50200ebf6f2d2f9b105fd7f47f`.
+- `followup-2.json`: `68848fcf06c2ad745aeafdd52c4d60db5f6c6b7e1b381aff3daf4330f359ab39`.
+
+Candidate binary: `ff6e40efdc2bb66511b8b094c0000d23da13837cffa9c94a6b180f14d4325ecf`.
+The baseline binary hash is unchanged from the initial capture above.

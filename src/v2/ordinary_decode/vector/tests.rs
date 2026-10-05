@@ -118,25 +118,28 @@ fn assert_quarantined(fault: BackendFault) {
 // KATs. Tests wait for that finite initialization, rather than silently skipping
 // fault coverage on a capable host during parallel startup.
 fn ready_backend(len: usize) -> Option<Backend> {
-    if width(Backend::Avx2).is_none()
-        && width(Backend::Ssse3Sse41).is_none()
-        && width(Backend::Neon).is_none()
-        && width(Backend::WasmSimd128).is_none()
-        && width(Backend::Rvv).is_none()
-    {
-        return None;
-    }
     let start = std::time::Instant::now();
-    loop {
-        if let Some(backend) = select(len) {
-            return Some(backend);
+    for backend in [
+        Backend::Avx2,
+        Backend::Ssse3Sse41,
+        Backend::Neon,
+        Backend::WasmSimd128,
+        Backend::Rvv,
+    ] {
+        if width(backend).is_none() {
+            continue;
         }
-        assert!(
-            start.elapsed() < std::time::Duration::from_secs(5),
-            "available backend did not become healthy"
-        );
-        std::thread::sleep(std::time::Duration::from_millis(1));
+        // A lower-priority backend can be ready while a preferred KAT is still
+        // running. Settle all eligible latches before snapshotting selection.
+        while !crate::v2::backend_health::admit(OperationKind::StrictDecode, backend) {
+            assert!(
+                start.elapsed() < std::time::Duration::from_secs(5),
+                "available backend did not become healthy"
+            );
+            std::thread::sleep(std::time::Duration::from_millis(1));
+        }
     }
+    select(len)
 }
 
 #[test]

@@ -48,7 +48,11 @@ policy methods. Reports distinguish requested validation from actual validator
 and writer execution, including checked comparison and scalar recovery. Existing
 methods, deployment checks and secret reporting are unchanged. See the
 [composition checkpoint](../docs/DECODE_COMPOSITION_2.1.md). External review and
-CI remain pending for this checkpoint.
+CI remain pending for this checkpoint. The follow-up retains alphabet
+classification inside the proof, removes repeated writer/report classification
+and stabilizes test-only backend initialization. Both WASM artifacts are rebuilt.
+Local bulk timings recover parity within 5%; documented small-input tradeoffs
+still require acceptance.
 
 Remaining work is tracked in the [commit plan](../docs/2.1.0-release-plan.md).
 Final release notes, acceptance, and hardware claims will be recorded before

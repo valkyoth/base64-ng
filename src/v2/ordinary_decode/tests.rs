@@ -174,6 +174,71 @@ fn full_blocks_and_tails_match_the_independent_oracle() {
 }
 
 #[test]
+fn composition_preflight_retains_owned_family_and_settings() {
+    for (codec, profile) in profiles() {
+        let input = oracle::encode(profile, &[0xff; 35]);
+        for policy in [DecodeValidation::Auto, DecodeValidation::ScalarReference] {
+            let proof = {
+                let settings = codec.settings();
+                let proof = prepare(settings, &input, policy).unwrap();
+                assert_eq!(proof.configuration().family, Family::for_settings(settings));
+                proof
+            };
+            let mut output = [0xa5; 40];
+            assert_eq!(write(proof, &mut output), Ok(35));
+            assert_eq!(&output[..35], &[0xff; 35]);
+            assert_eq!(&output[35..], &[0xa5; 5]);
+        }
+    }
+    let mut alphabet = *crate::STRICT_STANDARD_PADDED
+        .settings()
+        .alphabet()
+        .as_array();
+    alphabet.swap(0, 1);
+    let custom = CodecBuilder::from_table(alphabet).unwrap().build().unwrap();
+    let relaxed = CodecBuilder::new(*crate::STRICT_STANDARD_PADDED.settings().alphabet())
+        .trailing_bits(TrailingBits::AllowNonCanonical)
+        .build()
+        .unwrap();
+    for (codec, input, expected) in [
+        (custom, b"AAAA".as_slice(), [4, 16, 65].as_slice()),
+        (relaxed, b"Zh==".as_slice(), b"f".as_slice()),
+    ] {
+        for policy in [DecodeValidation::Auto, DecodeValidation::ScalarReference] {
+            let proof = prepare(codec.settings(), input, policy).unwrap();
+            assert_eq!(proof.configuration().family, None);
+            let mut output = [0xa5; 8];
+            assert_eq!(write(proof, &mut output), Ok(expected.len()));
+            assert_eq!(&output[..expected.len()], expected);
+            assert!(output[expected.len()..].iter().all(|&byte| byte == 0xa5));
+        }
+    }
+}
+
+#[test]
+fn composition_empty_preflight_preserves_explicit_reference_work() {
+    use crate::decode_validation::observation;
+    for (codec, _) in profiles() {
+        for policy in [DecodeValidation::Auto, DecodeValidation::ScalarReference] {
+            let before = observation::calls();
+            let fast_before = observation::fast_calls();
+            let proof = prepare(codec.settings(), b"", policy).unwrap();
+            assert_eq!(proof.configuration().family, None);
+            assert_eq!(proof.configuration().backend, None);
+            assert_eq!(proof.len(), 0);
+            assert_eq!(observation::fast_calls(), fast_before);
+            assert_eq!(
+                observation::calls() - before,
+                usize::from(policy == DecodeValidation::ScalarReference)
+            );
+            let mut output = [0xa5; 8];
+            assert_eq!(write(proof, &mut output), Ok(0));
+            assert_eq!(output, [0xa5; 8]);
+        }
+    }
+}
+
+#[test]
 fn fault_injection_stops_before_capacity_checks_and_writes() {
     for (input, accepted) in [(b"!!!!".as_slice(), true), (b"Zm9v".as_slice(), false)] {
         for capacity in 0..=8 {
@@ -183,6 +248,7 @@ fn fault_injection_stops_before_capacity_checks_and_writes() {
                 super::Prepared {
                     settings: crate::STRICT_STANDARD_PADDED.settings(),
                     backend: None,
+                    family: Some(Family::Standard),
                 },
                 |config, input| validate_and_measure(config.settings, input),
                 accepted,
