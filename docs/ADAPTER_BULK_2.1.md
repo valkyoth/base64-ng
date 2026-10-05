@@ -63,8 +63,11 @@ cargo run -p base64-ng-tokio --example stream_transfer
 sh scripts/check-2.1-adapter-bulk.sh
 ```
 
-The file example refuses an existing output path, caps input at 64 MiB plus
-one overflow-detection byte, and explicitly finalizes/syncs output. Any error
+The file example refuses an existing output path (including symlinks), creates
+Unix output with mode `0600` before any bytes are written, caps input at 64 MiB
+plus one overflow-detection byte, and explicitly finalizes/syncs output. Use a
+trusted destination directory; on Windows its inherited DACL must explicitly
+restrict access. Base64 does not provide confidentiality. Any error
 can leave a partial output file that must be discarded. The async example uses
 a bounded duplex channel, exact frame length, a decoded-output ceiling and
 explicit shutdown; it never buffers an unbounded source.
@@ -82,6 +85,9 @@ successful retry, plus invalid-tail rejection without a drain.
 
 The focused gate runs active Rust 1.99.0 and MSRV 1.90.0 in stream-only, SIMD
 and checked configurations, plus Clippy, Bytes core-only tests and both examples.
+The file-example regression runs under Unix umask `000`, verifies mode `0600`
+and encoded content, and rejects existing destinations, input-as-output and
+existing/dangling symlink destinations without modifying their targets.
 Bounded Miri tests cover pending/rejected bulk work and finalization retries.
 Seeded ASan/libFuzzer campaigns cover `stream_chunks` and `v2_async` for 10,000
 executions each. These short campaigns do not replace release fuzzing.
