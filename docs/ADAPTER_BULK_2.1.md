@@ -85,9 +85,17 @@ successful retry, plus invalid-tail rejection without a drain.
 
 The focused gate runs active Rust 1.99.0 and MSRV 1.90.0 in stream-only, SIMD
 and checked configurations, plus Clippy, Bytes core-only tests and both examples.
-The file-example regression runs under Unix umask `000`, verifies mode `0600`
-and encoded content, and rejects existing destinations, input-as-output and
+The file-example regression builds once with Unix umask `077`, obtains the
+executable from Cargo's JSON artifact message, and directly runs only that
+binary under umask `000`. Cargo, rustc and build scripts never inherit the
+permissive test umask. Runner regression tests enforce this separation.
+The example execution verifies mode `0600` and encoded content, and rejects
+existing destinations, input-as-output and
 existing/dangling symlink destinations without modifying their targets.
+Hosts that ran the earlier Cargo-under-umask-`000` test should discard and
+rebuild affected caches before reuse (for its default debug build,
+`cargo clean -p base64-ng --profile dev`). Changing the umask alone does not
+repair existing artifacts or establish that they were not modified.
 Bounded Miri tests cover pending/rejected bulk work and finalization retries.
 Seeded ASan/libFuzzer campaigns cover `stream_chunks` and `v2_async` for 10,000
 executions each. These short campaigns do not replace release fuzzing.

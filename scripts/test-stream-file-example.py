@@ -2,6 +2,7 @@
 """Exercise the compiled file example, including Unix creation permissions."""
 
 import argparse
+import json
 import os
 from pathlib import Path
 import stat
@@ -9,22 +10,47 @@ import subprocess
 import tempfile
 
 
+def build_example(root, toolchain):
+    command = ["cargo", f"+{toolchain}", "build", "--locked",
+               "--example", "stream_file", "--features", "stream",
+               "--message-format=json"]
+    # Never give Cargo, rustc, the linker or build scripts the hostile test umask.
+    options = {"umask": 0o077} if os.name == "posix" else {}
+    result = subprocess.run(command, cwd=root, capture_output=True, text=True,
+                            check=True, timeout=120, **options)
+    executables = []
+    for line in result.stdout.splitlines():
+        message = json.loads(line)
+        target = message.get("target", {})
+        if (message.get("reason") == "compiler-artifact"
+                and target.get("name") == "stream_file"
+                and "example" in target.get("kind", [])
+                and message.get("executable")):
+            executables.append(message["executable"])
+    if len(executables) != 1:
+        raise AssertionError("expected exactly one stream_file executable")
+    return executables[0]
+
+
+def run_example(executable, source, destination, root, *, success):
+    # Only the already-built example receives umask 000, never a Cargo runner.
+    options = {"umask": 0} if os.name == "posix" else {}
+    result = subprocess.run([executable, str(source), str(destination)],
+                            cwd=root, capture_output=True, text=True,
+                            timeout=120, **options)
+    if (result.returncode == 0) != success:
+        raise AssertionError(f"unexpected exit {result.returncode}: {result.stderr}")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("toolchain")
     args = parser.parse_args()
     root = Path(__file__).resolve().parent.parent
-    command = ["cargo", f"+{args.toolchain}", "run", "--quiet", "--locked",
-               "--example", "stream_file", "--features", "stream", "--"]
+    executable = build_example(root, args.toolchain)
 
     def run(source, destination, *, success):
-        # Set the child's umask only; do not alter the test process's umask.
-        options = {"umask": 0} if os.name == "posix" else {}
-        result = subprocess.run(command + [str(source), str(destination)],
-                                cwd=root, capture_output=True, text=True,
-                                timeout=120, **options)
-        if (result.returncode == 0) != success:
-            raise AssertionError(f"unexpected exit {result.returncode}: {result.stderr}")
+        run_example(executable, source, destination, root, success=success)
 
     with tempfile.TemporaryDirectory(prefix="base64-ng-file-example-") as directory:
         work = Path(directory)

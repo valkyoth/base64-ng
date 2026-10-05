@@ -1,5 +1,6 @@
 #!/usr/bin/env sh
 set -eu
+python3 scripts/test-stream-file-runner.py
 active="$(sed -n 's/^channel = "\([^"]*\)"/\1/p' rust-toolchain.toml)"
 for compiler in "$active" 1.90.0; do
     for features in stream stream,simd stream,checked-backend; do
