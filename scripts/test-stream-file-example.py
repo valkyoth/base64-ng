@@ -10,13 +10,17 @@ import subprocess
 import tempfile
 
 
-def build_example(root, toolchain):
+def build_example(root, toolchain, target_dir):
+    target_dir = target_dir.resolve()
     command = ["cargo", f"+{toolchain}", "build", "--locked",
                "--example", "stream_file", "--features", "stream",
-               "--message-format=json"]
+               "--message-format=json", "--target-dir", str(target_dir)]
+    env = dict(os.environ, CARGO_TARGET_DIR=str(target_dir),
+               CARGO_BUILD_BUILD_DIR=str(target_dir / "build"),
+               RUSTC_WRAPPER="", RUSTC_WORKSPACE_WRAPPER="")
     # Never give Cargo, rustc, the linker or build scripts the hostile test umask.
     options = {"umask": 0o077} if os.name == "posix" else {}
-    result = subprocess.run(command, cwd=root, capture_output=True, text=True,
+    result = subprocess.run(command, cwd=root, env=env, capture_output=True, text=True,
                             check=True, timeout=120, **options)
     executables = []
     for line in result.stdout.splitlines():
@@ -29,7 +33,9 @@ def build_example(root, toolchain):
             executables.append(message["executable"])
     if len(executables) != 1:
         raise AssertionError("expected exactly one stream_file executable")
-    return executables[0]
+    executable = Path(executables[0]).resolve()
+    executable.relative_to(target_dir)
+    return str(executable)
 
 
 def run_example(executable, source, destination, root, *, success):
@@ -47,13 +53,13 @@ def main():
     parser.add_argument("toolchain")
     args = parser.parse_args()
     root = Path(__file__).resolve().parent.parent
-    executable = build_example(root, args.toolchain)
-
-    def run(source, destination, *, success):
-        run_example(executable, source, destination, root, success=success)
-
     with tempfile.TemporaryDirectory(prefix="base64-ng-file-example-") as directory:
         work = Path(directory)
+        executable = build_example(root, args.toolchain, work / "target")
+
+        def run(source, destination, *, success):
+            run_example(executable, source, destination, root, success=success)
+
         source = work / "input"
         source.write_bytes(b"foobar!")
         destination = work / "output"

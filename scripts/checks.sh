@@ -1,9 +1,49 @@
 #!/usr/bin/env sh
 set -eu
 
+if [ "$#" -gt 1 ]; then
+    echo "usage: scripts/checks.sh [--all|--core|--development]" >&2
+    exit 2
+fi
+suite="${1---all}"
+case "$suite" in
+    --all|--core|--development) ;;
+    *) echo "usage: scripts/checks.sh [--all|--core|--development]" >&2; exit 2 ;;
+esac
+
 # One assurance regression intentionally aborts a confined child process.
 # Keep that proof without leaving host core files or triggering crash storage.
 ulimit -c 0 2>/dev/null || true
+
+development_checks() {
+    echo "checks: 2.1 baseline and validation policies"
+    sh scripts/check-2.1-baseline.sh
+    sh scripts/check-2.1-validation-policy.sh
+    sh scripts/check-2.1-ssse3-validation.sh
+    sh scripts/check-2.1-avx2-validation.sh
+    echo "checks: 2.1 AVX-512 validation"
+    sh scripts/check-2.1-avx512-validation.sh
+    echo "checks: 2.1 public strict decode"
+    sh scripts/check-2.1-public-decode.sh
+    echo "checks: 2.1 public ordinary encode"
+    sh scripts/check-2.1-public-encode.sh
+    sh scripts/check-2.1-forwarding.sh
+    sh scripts/check-2.1-decode-composition.sh
+    sh scripts/check-2.1-borrowed-view.sh
+    sh scripts/check-2.1-incremental-bulk.sh
+    sh scripts/check-2.1-adapter-bulk.sh
+    sh scripts/check-2.1-neon-validation.sh
+    sh scripts/check-2.1-public-api.sh
+}
+
+if [ "$suite" = --development ]; then
+    development_checks
+    echo "checks: development ok"
+    exit 0
+fi
+
+echo "checks: CI partition coverage"
+python3 scripts/test-check-partitions.py
 
 echo "checks: formatting"
 cargo fmt --all --check
@@ -69,23 +109,9 @@ scripts/validate-2.0-api-ledger.sh
 
 echo "checks: baseline and development public API snapshots"
 scripts/check-api-snapshots.sh
-sh scripts/check-2.1-baseline.sh
-sh scripts/check-2.1-validation-policy.sh
-sh scripts/check-2.1-ssse3-validation.sh
-sh scripts/check-2.1-avx2-validation.sh
-echo "checks: 2.1 AVX-512 validation"
-sh scripts/check-2.1-avx512-validation.sh
-echo "checks: 2.1 public strict decode"
-sh scripts/check-2.1-public-decode.sh
-echo "checks: 2.1 public ordinary encode"
-sh scripts/check-2.1-public-encode.sh
-sh scripts/check-2.1-forwarding.sh
-sh scripts/check-2.1-decode-composition.sh
-sh scripts/check-2.1-borrowed-view.sh
-sh scripts/check-2.1-incremental-bulk.sh
-sh scripts/check-2.1-adapter-bulk.sh
-sh scripts/check-2.1-neon-validation.sh
-sh scripts/check-2.1-public-api.sh
+if [ "$suite" = --all ]; then
+    development_checks
+fi
 
 echo "checks: 2.0 release-candidate freeze"
 scripts/check-2.0-release-freeze.sh

@@ -30,6 +30,11 @@ Run:
 scripts/checks.sh
 ```
 
+CI runs the same checks in two independent jobs: `scripts/checks.sh --core`
+and `scripts/checks.sh --development`. The latter contains the 2.1 feature
+matrices; the former retains the general checks, including WASM. Both must
+pass. The no-argument command above still runs the complete suite locally.
+
 For release-facing changes, run:
 
 ```sh

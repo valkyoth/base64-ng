@@ -83,7 +83,7 @@ jobs:
         run: rustup target add aarch64-unknown-linux-gnu wasm32-unknown-unknown
 
       - name: Run checks
-        run: scripts/checks.sh
+        run: scripts/checks.sh --core
 
       - name: Run nextest
         run: cargo nextest run --all-features
@@ -111,6 +111,51 @@ jobs:
 
       - name: Check SIMD feature bundles
         run: scripts/check_simd_feature_bundles.sh
+
+  development-checks:
+    name: 2.1 feature gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Install Rust toolchain
+        run: scripts/ci_install_rust.sh
+
+      - name: Cache Rust build output
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          shared-key: development-checks
+          cache-on-failure: true
+
+      - name: Install benchmark isolation tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends bubblewrap apparmor dbus-user-session
+
+      - name: Provision benchmark isolation
+        run: |
+          sudo install -m 0644 scripts/ci-bwrap.apparmor /etc/apparmor.d/bwrap
+          sudo apparmor_parser -r /etc/apparmor.d/bwrap
+          sudo install -D -m 0644 scripts/ci-benchmark-delegation.conf "/run/systemd/system/user@$(id -u).service.d/90-base64-benchmark.conf"
+          sudo systemctl daemon-reload
+          sudo loginctl enable-linger "$(id -un)"
+          sudo systemctl start "user@$(id -u).service"
+
+      - name: Install dependency audit tools
+        uses: taiki-e/install-action@84f5ac3124727fb3d284d4d22ee9ab3654fd09a6 # v2.87.7
+        with:
+          tool: cargo-audit@0.22.2,cargo-deny@0.20.2
+          fallback: none
+
+      - name: Install MSRV toolchain
+        run: rustup toolchain install 1.90.0 --profile minimal --component clippy
+
+      - name: Run development checks
+        run: scripts/checks.sh --development
 
   rust-version-compat:
     name: Rust compatibility (${{ matrix.toolchain }})
