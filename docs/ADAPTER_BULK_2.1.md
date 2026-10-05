@@ -1,7 +1,7 @@
 # Bounded Adapter Bulk Checkpoint
 
 Commit 18 connects the ordinary incremental bulk core to bounded user I/O.
-External review and CI acceptance are pending. This is development verification,
+External review and CI passed at `3f459f0`. This is development verification,
 not final release admission or a new native hardware performance claim.
 
 ## Contracts

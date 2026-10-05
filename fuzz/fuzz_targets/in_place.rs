@@ -4,6 +4,7 @@ use base64_ng::{LineEnding, LineWrap, STANDARD, STANDARD_NO_PAD, URL_SAFE, URL_S
 use libfuzzer_sys::fuzz_target;
 
 fuzz_target!(|data: &[u8]| {
+    base64_ng_fuzz::in_place::exercise(data);
     exercise_encode_in_place(data, STANDARD);
     exercise_encode_in_place(data, STANDARD_NO_PAD);
     exercise_encode_in_place(data, URL_SAFE);

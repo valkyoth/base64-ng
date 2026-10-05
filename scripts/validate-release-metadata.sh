@@ -1146,9 +1146,9 @@ do
 done
 
 package_file_count="$(printf '%s\n' "$package_list" | wc -l)"
-# Commit 18 adds two stream modules, one regression test and one usable example.
-if [ "$package_file_count" -gt 233 ]; then
-    echo "release metadata: core package contains $package_file_count files; maximum is 233" >&2
+# Commit 19 adds the compactor, its fault tests, a benchmark and integration tests.
+if [ "$package_file_count" -gt 237 ]; then
+    echo "release metadata: core package contains $package_file_count files; maximum is 237" >&2
     exit 1
 fi
 

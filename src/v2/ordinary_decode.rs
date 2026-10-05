@@ -12,6 +12,7 @@ use crate::{
     decode_preflight::{Failure as PreflightFailure, Preflight},
 };
 
+pub(crate) mod in_place;
 pub(super) mod retained;
 mod vector;
 

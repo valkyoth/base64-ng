@@ -129,11 +129,12 @@ impl<S: Codec> Base64<S> {
         input_len: usize,
     ) -> Result<usize, InPlaceError> {
         require_input_prefix(input_len, buffer.len())?;
-        let required = self
-            .decoded_len(&buffer[..input_len])
-            .map_err(map_one_shot_error)?;
-        decode_forward(self.settings(), buffer, input_len);
-        Ok(required)
+        super::ordinary_decode::in_place::decode(
+            self.settings(),
+            &mut buffer[..input_len],
+            crate::DecodeValidation::Auto,
+        )
+        .map_err(map_one_shot_error)
     }
 }
 
@@ -258,7 +259,7 @@ fn encode_reverse(settings: CodecSettings, buffer: &mut [u8], input_len: usize, 
     }
 }
 
-fn decode_forward(settings: CodecSettings, buffer: &mut [u8], input_len: usize) {
+pub(super) fn decode_forward(settings: CodecSettings, buffer: &mut [u8], input_len: usize) {
     let mut read = 0;
     let mut write = 0;
     while input_len - read >= 4 {

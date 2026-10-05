@@ -44,7 +44,15 @@ if env \
         --target "$target" \
         --all-features \
         --lib \
-        'v2::in_place_tests' >"$address_log" 2>&1 && \
+        'in_place' >"$address_log" 2>&1 && \
+    env \
+        RUSTFLAGS="-Zsanitizer=address" \
+        RUSTDOCFLAGS="-Zsanitizer=address" \
+        rustup run "$toolchain" cargo test \
+            -Zbuild-std \
+            --target "$target" \
+            --all-features \
+            --test in_place_bulk >>"$address_log" 2>&1 && \
     env \
         RUSTFLAGS="-Zsanitizer=address" \
         RUSTDOCFLAGS="-Zsanitizer=address" \

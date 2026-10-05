@@ -1765,6 +1765,14 @@ an external pentest remain hard requirements before production admission.
 
 ## Admission Rule
 
+Commit 19 of 2.1 adds a safe-Rust ordinary in-place caller of the existing
+disjoint kernels, not a new raw overlapping kernel. All bytes of each bounded
+source chunk are copied before the destination is borrowed; exact stores stay
+behind the next unread chunk. Preserved source supports checked comparison and
+complete scalar repair after partial stores. See [the overlap and recovery
+contract](IN_PLACE_BULK_2.1.md) for geometry, scratch bounds and tests. Secret
+staging remains separate.
+
 Unsafe SIMD can become an active backend only after scalar differential tests,
 fuzz evidence, architecture-specific build evidence, benchmark evidence, and
 review of this inventory all pass for that release.

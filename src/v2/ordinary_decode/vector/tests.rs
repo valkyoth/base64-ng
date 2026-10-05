@@ -6,6 +6,7 @@ use core::cell::Cell;
 mod forwarding_tests;
 
 mod composition_tests;
+mod in_place_tests;
 mod incremental_tests;
 
 #[derive(Clone, Copy, Default, Eq, PartialEq)]
@@ -28,9 +29,11 @@ struct State {
     writes: usize,
     backend: Option<Backend>,
     quarantined: Option<(Backend, BackendFault)>,
+    after_writes: usize,
 }
 std::thread_local! { static STATE: Cell<State> = const { Cell::new(State {
     fault: Fault::None, validation: 0, writes: 0, backend: None, quarantined: None,
+    after_writes: 0,
 }) }; }
 
 fn observe(update: impl FnOnce(&mut State)) -> State {
@@ -60,6 +63,9 @@ pub(super) fn decode(backend: Backend, output: &mut [u8]) -> Option<bool> {
         state.writes += 1;
         state.backend = Some(backend);
     });
+    if state.writes <= state.after_writes {
+        return None;
+    }
     match state.fault {
         Fault::WriteReject => {
             output.fill(0xff);
@@ -75,7 +81,10 @@ pub(super) fn decode(backend: Backend, output: &mut [u8]) -> Option<bool> {
 }
 
 pub(super) fn unavailable() -> bool {
-    STATE.with(|state| state.get().fault == Fault::Unavailable)
+    STATE.with(|state| {
+        let state = state.get();
+        state.fault == Fault::Unavailable && state.writes >= state.after_writes
+    })
 }
 
 pub(super) fn quarantine(backend: Backend, fault: BackendFault) -> bool {
@@ -87,6 +96,10 @@ pub(super) fn quarantine(backend: Backend, fault: BackendFault) -> bool {
 }
 
 fn inject(fault: Fault, action: impl FnOnce()) {
+    inject_after(fault, 0, action);
+}
+
+fn inject_after(fault: Fault, after_writes: usize, action: impl FnOnce()) {
     struct Reset;
     impl Drop for Reset {
         fn drop(&mut self) {
@@ -96,6 +109,7 @@ fn inject(fault: Fault, action: impl FnOnce()) {
     STATE.with(|state| {
         state.set(State {
             fault,
+            after_writes,
             ..State::default()
         });
     });

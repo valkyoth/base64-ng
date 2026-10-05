@@ -50,8 +50,8 @@ size, CPU, and health gates qualify; forwarding is not a promise of SIMD.
 | Historical slice, clear-tail and `DecodedBuffer` | Existing eligible ordinary fast route, historical error fallback | Exact old error precedence/partial writes; clear-tail cleanup unchanged |
 | Historical wrapped/legacy slice, Vec, profiles and buffers | Full grammar validator then indexed scratch chunks via historical backend | Original source indices, exact whitespace/line grammar, scratch cleanup; repeated grammar work remains deliberate |
 | Canonical legacy whitespace and web forgiving decode | Dedicated incremental grammar used for measurement and writing | No strict proof is reused for a different grammar; WHATWG and whitespace rules unchanged |
-| Ordinary canonical in-place | Complete validation then scalar forward compaction | Immutable borrowed proof cannot authorize mutation of its own source; acceleration and overlap review in Commit 19 |
-| Historical in-place | Complete validation then bounded copied scratch chunks | Existing overlap geometry, error-index offsets and clearing retained; not replaced with a disjoint-slice writer |
+| Ordinary canonical in-place | Complete validation then bounded copied-source compaction | Commit 19 privately binds the exclusive buffer to validation; copied chunks permit SIMD writing and scalar repair without aliasing |
+| Historical in-place | Eligible strict profiles use the shared compactor | Rejection recovers historical diagnostics before mutation; other profiles retain the previous bounded scratch path |
 | Secret/CT and staged in-place | Dedicated fixed-work and protected-storage paths | Overlap rejection, fixed-work result gates, wiping and provider accounting unchanged |
 | Core sync streams, bytes fragmented drivers, Tokio readers/writers | Shared incremental state machines | Prefix commitment, backpressure, finish/failure, pending buffers, cancellation and original indices unchanged; bulk core in Commit 17, adapters in Commit 18 |
 | Tokio one-shot helpers | Canonical allocating methods | Ordinary full-result ownership, existing I/O error mapping |
@@ -60,11 +60,10 @@ size, CPU, and health gates qualify; forwarding is not a promise of SIMD.
 | MIME, PEM, OpenPGP | Protocol/body parsing and exact limits before body transforms | Container labels, checksums, line endings and mapped indices cannot be replaced by strict Base64 acceptance |
 | Sanitization, subtle, derive | Existing protected/CT, comparison, or compile-time surfaces | No secret/CT optimization or proc-macro change in this checkpoint |
 
-Companion acceleration features are audited separately in Commit 20. This table
-does not mark bulk streaming, in-place acceleration, or companion feature work
-complete and does not introduce progressive decoding semantics.
-Subsequent bounded adapter integration and measurements are recorded in
-[Commit 18](ADAPTER_BULK_2.1.md); the routing table above is the Commit 14 snapshot.
+Companion acceleration features are audited separately in Commit 20. The table
+now includes the subsequent [adapter integration](ADAPTER_BULK_2.1.md) and
+[in-place compaction](IN_PLACE_BULK_2.1.md) changes. It does not introduce
+progressive decoding semantics or claim completion of companion feature work.
 
 ## Regression Checks
 

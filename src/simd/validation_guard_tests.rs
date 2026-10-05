@@ -60,6 +60,38 @@ impl Drop for Pages {
     }
 }
 
+#[test]
+fn in_place_bulk_guard_pages_bound_complete_compaction() {
+    let _ = crate::initialize_backends();
+    for end in [false, true] {
+        let mut pages = Pages::new();
+        for len in [
+            0, 2, 3, 4, 14, 15, 16, 30, 31, 32, 63, 64, 510, 511, 512, 514, 1023, 1024, 1026, 2051,
+            4096,
+        ] {
+            let buffer = pages.region(len, end);
+            buffer.fill(b'A');
+            let n = crate::STRICT_STANDARD_UNPADDED
+                .decode_in_place(buffer, len)
+                .unwrap();
+            assert_eq!(n, len / 4 * 3 + len % 4 * 3 / 4);
+            assert!(buffer[..n].iter().all(|&byte| byte == 0));
+            assert!(buffer[n..].iter().all(|&byte| byte == b'A'));
+            if len != 0 {
+                buffer.fill(b'A');
+                buffer[len - 1] = b'!';
+                let before = buffer.to_vec();
+                assert!(
+                    crate::STRICT_STANDARD_UNPADDED
+                        .decode_in_place(buffer, len)
+                        .is_err()
+                );
+                assert_eq!(buffer, before);
+            }
+        }
+    }
+}
+
 #[cfg(feature = "simd")]
 #[test]
 fn public_validation_guard_pages_bound_production_loads_and_stores() {

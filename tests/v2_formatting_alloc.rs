@@ -319,6 +319,23 @@ fn incremental_bulk_caller_buffers_allocate_nothing() {
 }
 
 #[test]
+fn in_place_bulk_uses_only_bounded_stack_scratch() {
+    let _ = base64_ng::initialize_backends();
+    let mut input = [b'A'; 8192];
+    assert_eq!(
+        measure(|| {
+            assert_eq!(
+                STRICT_STANDARD_PADDED.decode_in_place(&mut input, 8192),
+                Ok(6144)
+            );
+        }),
+        0
+    );
+    assert_eq!(input[..6144], [0; 6144]);
+    assert_eq!(input[6144..], [b'A'; 2048]);
+}
+
+#[test]
 fn counter_detects_allocations_and_reallocations() {
     let mut bytes = Vec::<u8>::new();
     assert!(measure(|| bytes.reserve_exact(std::hint::black_box(16))) > 0);

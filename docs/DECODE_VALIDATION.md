@@ -133,6 +133,12 @@ the bulk portion accepted by one update, not the entire stream. Historical
 validation-only helpers share its length checks. CT/secret paths remain
 separate and are not rerouted.
 
+Commit 19 adds [ordinary in-place compaction](IN_PLACE_BULK_2.1.md). It borrows
+the exclusive buffer for complete preflight, then privately retains its settings
+and checked length. The immutable proof is not reused across mutation. Each
+source chunk is copied before its overlapping destination is borrowed, allowing
+the existing disjoint writer and scalar recovery to operate on preserved input.
+
 Checked geometry reserves the last quantum (at most four input bytes and three
 output bytes), leaving only complete unpadded quanta in the interior. Empty
 input, impossible lengths, arithmetic bounds and the measured output length

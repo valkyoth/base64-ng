@@ -80,6 +80,7 @@ else
         "stream_bulk_finish_retains_tail_when_a_full_queue_drain_must_retry" \
         "stream_bulk_invalid_tail_does_not_drain_a_nearly_full_queue" \
         "v2::in_place_tests::ordinary_preflight_and_input_errors_do_not_mutate" \
+        "v2::ordinary_decode::in_place::tests::in_place_bulk_miri_preserved_source_and_scalar_repair" \
         "v2::forwarding_tests::forwarding_append_retains_proof_across_reservation_and_rolls_back" \
         "v2::secret_in_place_tests::staged_secret_decode_miri_overlap_contract"
     do

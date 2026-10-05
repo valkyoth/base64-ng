@@ -11,6 +11,9 @@ use super::{
 
 const SENTINEL: u8 = 0xa5;
 
+#[cfg(feature = "std")]
+mod benchmark;
+
 #[test]
 fn shared_cursor_helpers_cover_every_runtime_and_proof_decision() {
     assert_eq!(encoded_tail_len(0, false), 0);

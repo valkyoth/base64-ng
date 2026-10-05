@@ -125,7 +125,7 @@ impl<A: Alphabet, const PAD: bool> Engine<A, PAD> {
     }
 }
 
-fn strict_settings<A: Alphabet, const PAD: bool>() -> Option<crate::CodecSettings> {
+pub(super) fn strict_settings<A: Alphabet, const PAD: bool>() -> Option<crate::CodecSettings> {
     match (A::ENCODE, PAD) {
         (table, true) if table == crate::Standard::ENCODE => {
             Some(crate::STRICT_STANDARD_PADDED.settings())

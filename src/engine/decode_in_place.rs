@@ -232,6 +232,17 @@ where
     }
 
     fn decode_slice_to_start(buffer: &mut [u8]) -> Result<usize, DecodeError> {
+        if crate::v2::ordinary_decode::accelerated(buffer.len())
+            && let Some(settings) = super::decode_policy::strict_settings::<A, PAD>()
+            && let Ok(len) = crate::v2::ordinary_decode::in_place::decode(
+                settings,
+                buffer,
+                crate::DecodeValidation::Auto,
+            )
+        {
+            return Ok(len);
+        }
+        // Canonical rejection never mutates; recover the historical diagnostics.
         let _required = validate_decode::<A, PAD>(buffer)?;
         let input_len = buffer.len();
         let mut scratch = [0u8; IN_PLACE_DECODE_INPUT_CHUNK];
