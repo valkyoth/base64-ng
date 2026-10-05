@@ -37,6 +37,14 @@ one declared frame and leaves adjacent bytes unread. Writers preserve bounded
 queued output across short writes, `Pending`, cancellation, and retryable I/O
 errors. Call `shutdown` to finalize a trailing quantum.
 
+In development 2.1, `DecoderReader` and `DecoderWriter` support
+`.with_validation(base64_ng::DecodeValidation::ScalarReference)`; the default
+is `Auto`. This selects validation for future input, not the writer backend,
+and does not retract already delivered prefixes. Neither policy is a secret
+or constant-time API. Run the bounded transfer example with
+`cargo run -p base64-ng-tokio --example stream_transfer` from the repository.
+See the [adapter checkpoint](../../docs/ADAPTER_BULK_2.1.md).
+
 On unwind-capable builds, a panic from a wrapped reader or writer is resumed
 only after the adapter latches failure and clears retained state. Downstream
 bytes consumed before a panic remain irrevocable; retry through that adapter is

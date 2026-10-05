@@ -2,6 +2,13 @@
 
 ## 2.1.0 - Unreleased
 
+- Commit 18 batches synchronous decoder writes within the existing queue and
+  preserves malformed-prefix progress. Add explicit decoder validation policy
+  to synchronous/Tokio adapters and fragmented Bytes updates, bounded queue
+  copies, file/duplex examples and end-to-end measurements. Fix pre-existing
+  finalization failure when a valid tail does not fit the remaining sync queue;
+  draining failures retain that tail for retry and invalid tails do not drain.
+
 - Commit 17 processes substantial ordinary incremental input in bulk, retaining
   exact progress, per-call decode transactionality, pending output and scalar
   terminal rules. Add `DecoderState::update_with_validation` for explicit

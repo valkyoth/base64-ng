@@ -3,7 +3,7 @@
 Commit 17 accelerates ordinary `EncoderState` and `DecoderState` interior
 blocks without changing their state layout or progress/error contract. This
 is a development checkpoint, not release admission. External review and CI
-acceptance remain pending.
+passed at `df2fe8f`, including the independent scalar fuzz-oracle follow-up.
 
 ## Contract
 
@@ -64,7 +64,7 @@ input limits, and use the separate secret/CT types for secret-bearing data.
 Secret state machines, dependencies, unsafe kernels and public state sizes
 are unchanged. Existing synchronous/async adapters call the ordinary states
 and can benefit indirectly; adapter implementation changes and end-to-end
-measurement remain Commit 18 work.
+measurements are recorded in [Commit 18](ADAPTER_BULK_2.1.md).
 
 ## Verification
 

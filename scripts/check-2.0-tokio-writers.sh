@@ -50,7 +50,7 @@ done
 for required in \
     'state: DecoderState' \
     'codec.decoder()' \
-    'self.state.update(' \
+    '.update_with_validation(&input[..offered], &mut decoded, self.validation)' \
     'self.state.finish(' \
     'self.state.clear()' \
     'self.input_accepted = self.state.source_position()' \

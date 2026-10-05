@@ -76,6 +76,9 @@ else
         "stream_encoder_direct_write_buffers_tail_bytes" \
         "stream_decoder_direct_write_processes_multiple_quads" \
         "stream_decoder_fails_closed_after_malformed_input" \
+        "stream::decoder::bulk_tests::stream_bulk_miri_bounded_pending_and_rejection" \
+        "stream_bulk_finish_retains_tail_when_a_full_queue_drain_must_retry" \
+        "stream_bulk_invalid_tail_does_not_drain_a_nearly_full_queue" \
         "v2::in_place_tests::ordinary_preflight_and_input_errors_do_not_mutate" \
         "v2::forwarding_tests::forwarding_append_retains_proof_across_reservation_and_rolls_back" \
         "v2::secret_in_place_tests::staged_secret_decode_miri_overlap_contract"

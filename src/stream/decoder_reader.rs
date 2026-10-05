@@ -55,6 +55,15 @@ where
         }
     }
 
+    /// Selects validation for future input, without changing frame boundaries.
+    ///
+    /// Quantum-sized reads remain scalar under either policy.
+    #[must_use]
+    pub fn with_validation(mut self, validation: crate::DecodeValidation) -> Self {
+        self.driver.set_validation(validation);
+        self
+    }
+
     /// Returns a shared reference to the wrapped reader.
     #[must_use]
     pub fn get_ref(&self) -> &R {

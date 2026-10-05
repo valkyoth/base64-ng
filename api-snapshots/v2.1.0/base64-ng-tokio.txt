@@ -9,6 +9,7 @@ pub fn base64_ng_tokio::DecoderReader<R>::new_exact<S: base64_ng::v2::specificat
 pub const fn base64_ng_tokio::DecoderReader<R>::output_delivered(&self) -> usize
 pub const fn base64_ng_tokio::DecoderReader<R>::remaining_input(&self) -> core::option::Option<usize>
 pub const fn base64_ng_tokio::DecoderReader<R>::source_position(&self) -> usize
+pub fn base64_ng_tokio::DecoderReader<R>::with_validation(self, base64_ng::decode_validation::DecodeValidation) -> Self
 impl<R> core::ops::drop::Drop for base64_ng_tokio::DecoderReader<R>
 pub fn base64_ng_tokio::DecoderReader<R>::drop(&mut self)
 impl<R> tokio::io::async_read::AsyncRead for base64_ng_tokio::DecoderReader<R> where R: tokio::io::async_read::AsyncRead + core::marker::Unpin
@@ -29,6 +30,7 @@ pub fn base64_ng_tokio::DecoderWriter<W>::new<S: base64_ng::v2::specifications::
 pub const fn base64_ng_tokio::DecoderWriter<W>::output_committed(&self) -> usize
 pub const fn base64_ng_tokio::DecoderWriter<W>::pending_len(&self) -> usize
 pub fn base64_ng_tokio::DecoderWriter<W>::try_into_inner(self) -> core::result::Result<W, Self>
+pub fn base64_ng_tokio::DecoderWriter<W>::with_validation(self, base64_ng::decode_validation::DecodeValidation) -> Self
 impl<W> core::ops::drop::Drop for base64_ng_tokio::DecoderWriter<W>
 pub fn base64_ng_tokio::DecoderWriter<W>::drop(&mut self)
 impl<W> tokio::io::async_write::AsyncWrite for base64_ng_tokio::DecoderWriter<W> where W: tokio::io::async_write::AsyncWrite + core::marker::Unpin

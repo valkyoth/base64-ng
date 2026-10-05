@@ -103,7 +103,7 @@ impl AsyncWrite for ScriptedWriter {
 
 struct NoopWake;
 
-#[allow(clippy::manual_noop_waker)]
+#[allow(unknown_lints, clippy::manual_noop_waker)]
 impl Wake for NoopWake {
     fn wake(self: Arc<Self>) {}
 }

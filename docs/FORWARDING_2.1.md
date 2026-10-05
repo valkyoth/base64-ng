@@ -63,6 +63,8 @@ size, CPU, and health gates qualify; forwarding is not a promise of SIMD.
 Companion acceleration features are audited separately in Commit 20. This table
 does not mark bulk streaming, in-place acceleration, or companion feature work
 complete and does not introduce progressive decoding semantics.
+Subsequent bounded adapter integration and measurements are recorded in
+[Commit 18](ADAPTER_BULK_2.1.md); the routing table above is the Commit 14 snapshot.
 
 ## Regression Checks
 

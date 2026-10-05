@@ -262,6 +262,16 @@ where
     }
 
     fn queue_pending_final(&mut self) -> io::Result<()> {
+        // Validate on a wiped clone before draining. A drain error leaves the
+        // original tail intact for retry; invalid tails never trigger a drain.
+        if self.output.available_capacity() < 4
+            && self
+                .driver
+                .final_output_len()
+                .is_ok_and(|len| len > self.output.available_capacity())
+        {
+            self.drain_output()?;
+        }
         let mut encoded = [0u8; 4];
         let step = match self.driver.finish(&mut encoded) {
             Ok(step) => step,

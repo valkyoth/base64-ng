@@ -3,6 +3,8 @@ use std::io::{self, Write};
 struct ShortWriter<'a> {
     bytes: &'a mut Vec<u8>,
     limit: usize,
+    #[cfg(feature = "adapters")]
+    pending: bool,
 }
 impl Write for ShortWriter<'_> {
     fn write(&mut self, input: &[u8]) -> io::Result<usize> {
@@ -26,6 +28,8 @@ pub fn sync<A: base64_ng::Alphabet, const PAD: bool>(
     let writer = ShortWriter {
         bytes: output,
         limit: fragment,
+        #[cfg(feature = "adapters")]
+        pending: false,
     };
     macro_rules! drive {
         ($adapter:expr) => {{
@@ -48,9 +52,15 @@ pub fn sync<A: base64_ng::Alphabet, const PAD: bool>(
 impl tokio::io::AsyncWrite for ShortWriter<'_> {
     fn poll_write(
         mut self: std::pin::Pin<&mut Self>,
-        _: &mut std::task::Context<'_>,
+        context: &mut std::task::Context<'_>,
         input: &[u8],
     ) -> std::task::Poll<io::Result<usize>> {
+        if self.pending {
+            self.pending = false;
+            context.waker().wake_by_ref();
+            return std::task::Poll::Pending;
+        }
+        self.pending = true;
         std::task::Poll::Ready(self.write(input))
     }
     fn poll_flush(
@@ -101,6 +111,7 @@ pub fn companion<S: base64_ng::Codec>(
         let writer = ShortWriter {
             bytes: &mut work.bytes,
             limit: fragment,
+            pending: false,
         };
         work.runtime
             .block_on(async {

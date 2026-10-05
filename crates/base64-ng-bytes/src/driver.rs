@@ -36,7 +36,8 @@ impl BytesEncoder {
         B: Buf,
         M: BufMut,
     {
-        self.driver.update(input, output)
+        self.driver
+            .update(input, output, base64_ng::DecodeValidation::Auto)
     }
 
     /// Emits the final encoded tail into the fragmented destination.
@@ -106,7 +107,24 @@ impl BytesDecoder {
         B: Buf,
         M: BufMut,
     {
-        self.driver.update(input, output)
+        self.update_with_validation(input, output, base64_ng::DecodeValidation::Auto)
+    }
+
+    /// Accepts fragmented input with an explicit validation policy for this call.
+    ///
+    /// Already committed prefixes cannot be retracted. Scalar validation may
+    /// still use an admitted writer, and all cumulative limits remain active.
+    ///
+    /// # Errors
+    ///
+    /// Returns the same limit, buffer-contract and core errors as `update`.
+    pub fn update_with_validation<B: Buf, M: BufMut>(
+        &mut self,
+        input: &mut B,
+        output: &mut M,
+        validation: base64_ng::DecodeValidation,
+    ) -> Result<BytesStep, BytesError> {
+        self.driver.update(input, output, validation)
     }
 
     /// Performs strict final-length and padding validation.
@@ -170,7 +188,12 @@ impl Driver {
         }
     }
 
-    fn update<B, M>(&mut self, input: &mut B, output: &mut M) -> Result<BytesStep, BytesError>
+    fn update<B, M>(
+        &mut self,
+        input: &mut B,
+        output: &mut M,
+        validation: base64_ng::DecodeValidation,
+    ) -> Result<BytesStep, BytesError>
     where
         B: Buf,
         M: BufMut,
@@ -201,7 +224,7 @@ impl Driver {
             let mut scratch = [0u8; SCRATCH_LEN];
             let step = self
                 .state
-                .update(chunk, &mut scratch[..writable])
+                .update(chunk, &mut scratch[..writable], validation)
                 .map_err(|error| BytesError::new(progress, BytesErrorKind::Operation(error)))?;
             let core = step.progress();
             let consumed = core.input_consumed();
@@ -393,10 +416,11 @@ impl State {
         &mut self,
         input: &[u8],
         output: &mut [u8],
+        validation: base64_ng::DecodeValidation,
     ) -> Result<base64_ng::Step, OperationError> {
         match self {
             Self::Encoder(state) => state.update(input, output),
-            Self::Decoder(state) => state.update(input, output),
+            Self::Decoder(state) => state.update_with_validation(input, output, validation),
         }
     }
 

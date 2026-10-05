@@ -15,12 +15,17 @@ categories = ["encoding", "no-std"]
 include = [
     "src/**",
     "tests/**",
+    "examples/stream_file.rs",
     "Cargo.toml",
     "/README.md",
     "CHANGELOG.md",
     "SECURITY.md",
     "/LICENSE-*",
 ]
+
+[[example]]
+name = "stream_file"
+required-features = ["stream"]
 
 [workspace]
 members = [

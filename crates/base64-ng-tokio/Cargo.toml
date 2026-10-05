@@ -15,6 +15,7 @@ categories = ["encoding", "asynchronous"]
 include = [
     "src/**",
     "tests/**",
+    "examples/**",
     "Cargo.toml",
     "README.md",
 ]

@@ -28,7 +28,10 @@ Current fuzz targets:
 - `in_place`: in-place encode/decode, legacy compaction behavior, and strict
   line-wrapped in-place compaction behavior
 - `stream_chunks`: fragmented stream reader/writer state machines, adjacent
-  framed payload boundaries, and stream state-helper invariants
+  framed payload boundaries, and stream state-helper invariants. Schedules mix
+  1-17-byte fragments with 512/516/1364/4096-byte chunks. Encoded round trips
+  also exercise bulk decoding; the `bulk-stream` seed crosses queue and final
+  tail boundaries, including the nearly-full-queue finish regression.
 - `differential`: canonical output comparison against the established Base64
   behavior used by the harness, plus static RFC 4648 ground-truth vectors so
   the differential oracle is not the only source of truth

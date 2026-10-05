@@ -83,6 +83,7 @@ sh scripts/check-2.1-forwarding.sh
 sh scripts/check-2.1-decode-composition.sh
 sh scripts/check-2.1-borrowed-view.sh
 sh scripts/check-2.1-incremental-bulk.sh
+sh scripts/check-2.1-adapter-bulk.sh
 sh scripts/check-2.1-neon-validation.sh
 sh scripts/check-2.1-public-api.sh
 

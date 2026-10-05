@@ -1,6 +1,7 @@
 use crate::{Alphabet, v2};
 use std::io;
 
+#[derive(Clone)]
 pub(super) struct EncoderDriver {
     state: Option<v2::EncoderState>,
 }
@@ -58,10 +59,24 @@ impl EncoderDriver {
     fn state_mut(&mut self) -> io::Result<&mut v2::EncoderState> {
         self.state.as_mut().ok_or_else(invalid_alphabet_error)
     }
+
+    pub(super) fn final_output_len(&self) -> io::Result<usize> {
+        let mut probe = self.clone();
+        let mut output = [0; 4];
+        let result = probe
+            .finish(&mut output)
+            .map(|step| step.progress().output_produced());
+        probe.wipe();
+        crate::wipe_bytes(&mut output);
+        result
+    }
 }
 
+#[derive(Clone)]
+#[cfg_attr(test, derive(Debug, PartialEq))]
 pub(super) struct DecoderDriver {
     state: Option<v2::DecoderState>,
+    validation: crate::DecodeValidation,
 }
 
 impl DecoderDriver {
@@ -90,7 +105,14 @@ impl DecoderDriver {
             }
             Err(_) => None,
         };
-        Self { state }
+        Self {
+            state,
+            validation: crate::DecodeValidation::Auto,
+        }
+    }
+
+    pub(super) fn set_validation(&mut self, validation: crate::DecodeValidation) {
+        self.validation = validation;
     }
 
     pub(super) const fn pending_input_len(&self) -> usize {
@@ -108,8 +130,9 @@ impl DecoderDriver {
     }
 
     pub(super) fn update(&mut self, input: &[u8], output: &mut [u8]) -> io::Result<v2::Step> {
+        let validation = self.validation;
         self.state_mut()?
-            .update(input, output)
+            .update_with_validation(input, output, validation)
             .map_err(operation_error)
     }
 
@@ -125,6 +148,17 @@ impl DecoderDriver {
 
     fn state_mut(&mut self) -> io::Result<&mut v2::DecoderState> {
         self.state.as_mut().ok_or_else(invalid_alphabet_error)
+    }
+
+    pub(super) fn final_output_len(&self) -> io::Result<usize> {
+        let mut probe = self.clone();
+        let mut output = [0; 3];
+        let result = probe
+            .finish(&mut output)
+            .map(|step| step.progress().output_produced());
+        probe.wipe();
+        crate::wipe_bytes(&mut output);
+        result
     }
 }
 

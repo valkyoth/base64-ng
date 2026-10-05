@@ -1757,6 +1757,7 @@ pub const fn base64_ng::stream::Decoder<W, A, PAD>::new(W, base64_ng::Engine<A, 
 pub const fn base64_ng::stream::Decoder<W, A, PAD>::pending_input_needed_len(&self) -> usize
 pub const fn base64_ng::stream::Decoder<W, A, PAD>::pending_len(&self) -> usize
 pub fn base64_ng::stream::Decoder<W, A, PAD>::try_into_inner(self) -> core::result::Result<W, Self>
+pub fn base64_ng::stream::Decoder<W, A, PAD>::with_validation(self, base64_ng::DecodeValidation) -> Self
 impl<W, A, const PAD: bool> base64_ng::stream::Decoder<W, A, PAD> where W: core::io::write::Write, A: base64_ng::Alphabet
 pub fn base64_ng::stream::Decoder<W, A, PAD>::finish(self) -> core::io::error::Result<W>
 pub fn base64_ng::stream::Decoder<W, A, PAD>::try_finish(&mut self) -> core::io::error::Result<()>
@@ -1788,6 +1789,7 @@ pub fn base64_ng::stream::DecoderReader<R, A, PAD>::new(R, base64_ng::Engine<A, 
 pub const fn base64_ng::stream::DecoderReader<R, A, PAD>::pending_input_needed_len(&self) -> usize
 pub const fn base64_ng::stream::DecoderReader<R, A, PAD>::pending_len(&self) -> usize
 pub fn base64_ng::stream::DecoderReader<R, A, PAD>::try_into_inner(self) -> core::result::Result<R, Self>
+pub fn base64_ng::stream::DecoderReader<R, A, PAD>::with_validation(self, base64_ng::DecodeValidation) -> Self
 impl<R, A, const PAD: bool> core::fmt::Debug for base64_ng::stream::DecoderReader<R, A, PAD> where A: base64_ng::Alphabet
 pub fn base64_ng::stream::DecoderReader<R, A, PAD>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl<R, A, const PAD: bool> core::ops::drop::Drop for base64_ng::stream::DecoderReader<R, A, PAD> where A: base64_ng::Alphabet

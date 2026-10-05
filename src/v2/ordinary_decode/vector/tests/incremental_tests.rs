@@ -1,5 +1,36 @@
 use super::*;
 
+#[cfg(feature = "stream")]
+#[test]
+fn stream_bulk_quarantines_faults_without_hiding_errors_or_partial_stores() {
+    use std::io::Write;
+    if ready_backend(1360).is_none() {
+        return;
+    }
+    inject(Fault::Reject, || {
+        let mut decoder = crate::stream::Decoder::new(Vec::new(), crate::STANDARD);
+        assert!(decoder.write(&[b'A'; 1364]).is_err());
+        assert!(decoder.is_failed());
+        assert_eq!(decoder.buffered_output_len(), 0);
+        assert_eq!(decoder.get_ref().as_slice(), []);
+        assert_quarantined(BackendFault::ImpossibleState);
+    });
+    for policy in [DecodeValidation::Auto, DecodeValidation::ScalarReference] {
+        inject(Fault::WriteReject, || {
+            let mut decoder =
+                crate::stream::Decoder::new(Vec::new(), crate::STANDARD).with_validation(policy);
+            assert_eq!(decoder.write(&[b'A'; 1364]).unwrap(), 1364);
+            assert_eq!(
+                STATE.with(Cell::get).validation,
+                usize::from(policy == DecodeValidation::Auto)
+            );
+            assert!(STATE.with(Cell::get).writes > 0);
+            assert_quarantined(BackendFault::OutputMismatch);
+            assert_eq!(decoder.finish().unwrap(), vec![0; 1023]);
+        });
+    }
+}
+
 #[cfg(fuzzing)]
 #[test]
 fn incremental_fuzz_scalar_oracle_never_validates_or_writes_through_bulk() {

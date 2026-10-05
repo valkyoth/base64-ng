@@ -73,6 +73,13 @@ plaintext committed before a malformed later fragment cannot be withdrawn;
 use bounded secret APIs from the core `secrets` capability for secret-bearing
 frames.
 
+In development 2.1, `BytesDecoder::update_with_validation` accepts
+`base64_ng::DecodeValidation::ScalarReference` for independent scalar
+validation of newly accepted input. The default `update` uses `Auto`; both
+retain the same fragment, cumulative-limit and prefix-commitment contracts.
+Scalar validation can still use an admitted writer and is not constant-time.
+See the [adapter checkpoint](../../docs/ADAPTER_BULK_2.1.md).
+
 `BytesProgress::input_consumed()` records bytes accepted by the transform. A
 normal error also reports exact external `Buf` cursor movement through
 `BytesError::input_cursor_progress()`. If a custom `Buf` violates its safe trait

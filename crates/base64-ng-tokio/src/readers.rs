@@ -27,73 +27,10 @@ const fn valid_finish_progress(produced: usize, output_capacity: usize, status: 
     produced <= output_capacity && matches!(status, Status::Complete)
 }
 
-macro_rules! reader_observers {
-    () => {
-        /// Returns whether this adapter has entered its absorbing failure state.
-        #[must_use]
-        pub const fn is_failed(&self) -> bool {
-            self.failed
-        }
-
-        /// Returns whether finalization completed successfully.
-        #[must_use]
-        pub const fn is_complete(&self) -> bool {
-            self.finished && self.output_pos == self.output_len
-        }
-
-        /// Returns bytes irrevocably read from the wrapped source.
-        #[must_use]
-        pub const fn input_read(&self) -> usize {
-            self.input_read
-        }
-
-        /// Returns bytes accepted by the shared Base64 transformer.
-        #[must_use]
-        pub const fn source_position(&self) -> usize {
-            self.source_accepted
-        }
-
-        /// Returns output bytes already delivered to callers.
-        #[must_use]
-        pub const fn output_delivered(&self) -> usize {
-            self.output_delivered
-        }
-
-        /// Returns remaining source bytes for an exact frame, or `None` for EOF mode.
-        #[must_use]
-        pub const fn remaining_input(&self) -> Option<usize> {
-            self.boundary.remaining()
-        }
-    };
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum Boundary {
-    Eof,
-    Exact { remaining: usize },
-}
-
-impl Boundary {
-    fn read_cap(self, capacity: usize) -> usize {
-        match self {
-            Self::Eof => capacity,
-            Self::Exact { remaining } => remaining.min(capacity),
-        }
-    }
-
-    fn consume(&mut self, count: usize) {
-        if let Self::Exact { remaining } = self {
-            *remaining -= count;
-        }
-    }
-
-    const fn remaining(self) -> Option<usize> {
-        match self {
-            Self::Eof => None,
-            Self::Exact { remaining } => Some(remaining),
-        }
-    }
-}
+#[macro_use]
+#[path = "reader_support.rs"]
+mod support;
+use support::Boundary;
 
 /// Async reader that transforms raw bytes into Base64 through the shared 2.0
 /// incremental encoder.
@@ -253,6 +190,7 @@ impl<R> EncoderReader<R> {
 pub struct DecoderReader<R> {
     inner: R,
     state: DecoderState,
+    validation: base64_ng::DecodeValidation,
     boundary: Boundary,
     input: [u8; DECODE_INPUT_CAP],
     output: [u8; DECODE_OUTPUT_CAP],
@@ -295,6 +233,7 @@ impl<R> DecoderReader<R> {
         Self {
             inner,
             state,
+            validation: base64_ng::DecodeValidation::Auto,
             boundary,
             input: [0; DECODE_INPUT_CAP],
             output: [0; DECODE_OUTPUT_CAP],
@@ -308,6 +247,15 @@ impl<R> DecoderReader<R> {
             #[cfg(test)]
             progress_fault: None,
         }
+    }
+
+    /// Selects validation for future input; previously delivered output is unchanged.
+    ///
+    /// Frame limits, pending data and EOF handling are unchanged.
+    #[must_use]
+    pub fn with_validation(mut self, validation: base64_ng::DecodeValidation) -> Self {
+        self.validation = validation;
+        self
     }
 
     reader_observers!();
@@ -350,7 +298,11 @@ impl<R> DecoderReader<R> {
     }
 
     fn transform_input(&mut self, read: usize) -> io::Result<()> {
-        let result = self.state.update(&self.input[..read], &mut self.output);
+        let result = self.state.update_with_validation(
+            &self.input[..read],
+            &mut self.output,
+            self.validation,
+        );
         wipe_bytes(&mut self.input[..read]);
         let step = result.map_err(operation_io_error)?;
         let progress = step.progress();

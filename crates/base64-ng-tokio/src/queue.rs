@@ -34,12 +34,12 @@ impl<const CAP: usize> OutputQueue<CAP> {
             ));
         }
 
-        let mut read = 0;
-        while read < input.len() {
+        if !input.is_empty() {
             let write = (self.start + self.len) % CAP;
-            self.buffer[write] = input[read];
-            self.len += 1;
-            read += 1;
+            let first = input.len().min(CAP - write);
+            self.buffer[write..write + first].copy_from_slice(&input[..first]);
+            self.buffer[..input.len() - first].copy_from_slice(&input[first..]);
+            self.len += input.len();
         }
 
         Ok(())
@@ -102,5 +102,36 @@ mod tests {
         assert!(queue.buffer.iter().all(|byte| *byte == 0));
         assert_eq!(queue.start, 0);
         assert_eq!(queue.len, 0);
+    }
+}
+
+#[cfg(test)]
+mod bulk_tests {
+    use super::OutputQueue;
+
+    #[test]
+    fn bulk_queue_wrap_capacity_and_wiping_match_a_linear_queue() {
+        for discarded in 0..=16 {
+            for appended in 0..=discarded {
+                let mut queue = OutputQueue::<16>::new();
+                queue.push_slice(&[1; 16]).unwrap();
+                queue.discard_front(discarded);
+                assert!(queue.buffer[..discarded].iter().all(|byte| *byte == 0));
+                queue.push_slice(&vec![2; appended]).unwrap();
+                let mut actual = [0xa5; 16];
+                let len = queue.copy_front(&mut actual);
+                let mut expected = vec![1; 16 - discarded];
+                expected.extend_from_slice(&vec![2; appended]);
+                assert_eq!(&actual[..len], expected);
+                let before = queue.buffer;
+                assert!(queue.push_slice(&[3; 17]).is_err());
+                assert_eq!(queue.buffer, before);
+                queue.clear_all();
+                assert_eq!(queue.buffer, [0; 16]);
+            }
+        }
+        let mut empty = OutputQueue::<0>::new();
+        empty.push_slice(&[]).unwrap();
+        assert!(empty.push_slice(&[1]).is_err());
     }
 }

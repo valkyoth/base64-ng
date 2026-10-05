@@ -5,6 +5,10 @@ use super::{
 use crate::{Alphabet, Engine};
 use std::io::{self, Write};
 
+mod bulk;
+#[cfg(test)]
+mod bulk_tests;
+
 /// A streaming Base64 decoder for `std::io::Write`.
 ///
 /// Like any [`Write`] implementation, [`Write::write`] may accept only
@@ -67,6 +71,15 @@ where
             finalized: false,
             failed: false,
         }
+    }
+
+    /// Selects validation for future accepted input; already queued output is unchanged.
+    ///
+    /// `ScalarReference` retains scalar validation but may use an admitted writer.
+    #[must_use]
+    pub fn with_validation(mut self, validation: crate::DecodeValidation) -> Self {
+        self.driver.set_validation(validation);
+        self
     }
 
     /// Returns a shared reference to the wrapped writer.
@@ -302,6 +315,16 @@ where
     }
 
     fn queue_pending_final(&mut self) -> io::Result<()> {
+        // Do not consume a final tail until the bounded queue can retain it.
+        // Invalid tails still fail before any queued prefix is delivered.
+        if self.output.available_capacity() < 3
+            && self
+                .driver
+                .final_output_len()
+                .is_ok_and(|len| len > self.output.available_capacity())
+        {
+            self.drain_output()?;
+        }
         let mut decoded = [0u8; 3];
         let step = match self.driver.finish(&mut decoded) {
             Ok(step) => step,
@@ -401,7 +424,10 @@ where
             return Err(trailing_input_after_padding_error());
         }
 
-        let mut consumed = 0;
+        let mut consumed = self.queue_bulk(input)?;
+        if self.finished {
+            return Ok(consumed);
+        }
         while consumed < input.len() {
             let pending = self.pending_len();
             let take = (4 - pending).min(input.len() - consumed);

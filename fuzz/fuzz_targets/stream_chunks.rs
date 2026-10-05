@@ -80,6 +80,7 @@ fn exercise_decoder_chunks<A, const PAD: bool>(
 
     for chunk in input.chunks(chunk_size(split_seed)) {
         if decoder.write_all(chunk).is_err() {
+            assert!(expected.is_err());
             assert!(decoder.is_failed());
             assert!(!decoder.can_into_inner());
             return;
@@ -155,6 +156,7 @@ fn exercise_encoder_chunks<A, const PAD: bool>(
 
     let streamed = encoder.finish().unwrap();
     assert_eq!(streamed, expected);
+    exercise_decoder_chunks(&streamed, split_seed, engine);
 }
 
 fn exercise_encoder_reader_chunks<A, const PAD: bool>(
@@ -313,7 +315,11 @@ fn exercise_decoder_reader_adjacent_payload<A>(
 }
 
 fn chunk_size(seed: u8) -> usize {
-    usize::from(seed % 17) + 1
+    if seed & 64 != 0 {
+        [512, 516, 1364, 4096][usize::from(seed % 4)]
+    } else {
+        usize::from(seed % 17) + 1
+    }
 }
 
 fn read_size(seed: u8) -> usize {

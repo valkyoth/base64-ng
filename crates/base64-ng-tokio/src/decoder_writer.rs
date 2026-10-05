@@ -30,6 +30,7 @@ const DECODE_OUTPUT_CAP: usize = 1024;
 pub struct DecoderWriter<W> {
     inner: Option<W>,
     state: DecoderState,
+    validation: base64_ng::DecodeValidation,
     output: OutputQueue<DECODE_OUTPUT_CAP>,
     input_accepted: usize,
     output_committed: usize,
@@ -45,6 +46,7 @@ impl<W> DecoderWriter<W> {
         Self {
             inner: Some(inner),
             state: codec.decoder(),
+            validation: base64_ng::DecodeValidation::Auto,
             output: OutputQueue::new(),
             input_accepted: 0,
             output_committed: 0,
@@ -52,6 +54,15 @@ impl<W> DecoderWriter<W> {
             shutdown_complete: false,
             failed: false,
         }
+    }
+
+    /// Selects validation for future input without changing queued output.
+    ///
+    /// Scalar reference validation may still use an admitted output writer.
+    #[must_use]
+    pub fn with_validation(mut self, validation: base64_ng::DecodeValidation) -> Self {
+        self.validation = validation;
+        self
     }
 
     /// Returns a shared reference to the wrapped writer.
@@ -184,7 +195,9 @@ impl<W> DecoderWriter<W> {
         }
 
         let mut decoded = [0u8; DECODE_OUTPUT_CAP];
-        let result = self.state.update(&input[..offered], &mut decoded);
+        let result =
+            self.state
+                .update_with_validation(&input[..offered], &mut decoded, self.validation);
         let step = match result {
             Ok(step) => step,
             Err(error) => {

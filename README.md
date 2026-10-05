@@ -168,7 +168,9 @@ guides for fragmented-input examples.
 
 2.1 development adds [bulk incremental processing](docs/INCREMENTAL_BULK_2.1.md)
 and per-call `DecoderState::update_with_validation`, preserving retry and
-per-call output contracts.
+per-call output contracts. [Bounded I/O adapters](docs/ADAPTER_BULK_2.1.md)
+retain framing and prefix commitment, with explicit validation options and
+compiled file/async transfer examples.
 
 ## Encoded Strings And Formatting
 
