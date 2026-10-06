@@ -45,15 +45,15 @@ Miri/rust-src, cargo-fuzz and compatible Kani (invoked via Rust 1.90.0), plus
 native x86_64 Linux for ASan. Missing tools fail; no installer or silent skip
 turns absence into a pass.
 
-Miri uses a fresh private target directory per gate run, removed on success,
-failure or handled interruption, with `CARGO_BUILD_BUILD_DIR` unset and
-`CARGO_INCREMENTAL=0`. This avoids runner incremental-lock failures on its
-read-only execution filesystem and avoids reusing absolute runner paths from
-moved/copied checkouts. Existing Miri caches are left untouched. These settings
-are scoped to Miri; subsequent ASan and fuzz commands retain their separate
-target and build directories.
-Routing mutation tests reject either missing Miri environment control, but
-real Miri execution remains necessary to verify compiler/runner compatibility.
+Miri and Kani each use a fresh private target directory per gate run, removed
+on success, failure or handled interruption, with `CARGO_BUILD_BUILD_DIR` unset
+and `CARGO_INCREMENTAL=0`. This avoids Miri runner incremental-lock failures
+and reuse of absolute verifier paths from moved/copied checkouts. Existing
+Miri and Kani caches are left untouched. These settings are scoped to each
+verifier; subsequent ASan and fuzz commands retain their separate target and
+build directories. Routing mutation tests reject missing environment controls
+or cleanup traps for either verifier, but real execution remains necessary to
+verify compiler/runner compatibility.
 
 Extended checks run two selected Kani harnesses with five-minute per-harness
 timeouts and an 8 GiB virtual-memory limit. They run the borrowed-view and
@@ -118,3 +118,16 @@ Eight gate regression tests passed, including repeated runs in the same
 checkout, preservation of a simulated stale cache, all three Miri failure
 points, signal handling and rejection of a removed cleanup trap. This is still
 a tooling-only change, with no runtime or dependency changes.
+
+### Kani Cache Follow-Up
+
+Review identified the same relocation issue in Kani's persistent target. Kani
+now runs in its own fresh private target with scoped environment settings and
+cleanup, leaving any old cache untouched. On 2026-10-06, the complete extended
+gate passed with both proofs rebuilt there (about 131 seconds and under one
+second), and the target was removed afterward. Miri, active/MSRV checks,
+companion isolation, Clippy, 13 ASan integration tests and both 1,000-run fuzz
+smokes also passed. The eight gate tests now exercise both verifiers' stale
+cache preservation, fresh targets across runs, environment controls, cleanup
+mutations, individual invocation failures and handled signals. No production
+code, public API or dependency changed.

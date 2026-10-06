@@ -61,14 +61,22 @@ cargo +nightly miri test --locked --all-features --lib v2::ordinary_decode::reta
 cargo +nightly miri test --locked --all-features --lib \
     v2::ordinary_decode::in_place::tests::in_place_bulk_miri_preserved_source_and_scalar_repair -- --exact
 )
-export CARGO_TARGET_DIR="$root/target/security-2.1/kani"
+(
+mkdir -p "$root/target/security-2.1"
+kani_target="$(mktemp -d "$root/target/security-2.1/kani.XXXXXX")"
+trap 'rm -rf "$kani_target"' EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+export CARGO_TARGET_DIR="$kani_target"
 unset CARGO_BUILD_BUILD_DIR
+export CARGO_INCREMENTAL=0
 for proof in ordinary_table_validation_refines_scalar_for_two_quanta bulk_in_place_chunk_geometry_preserves_unread_suffix; do
     (
         ulimit -v 8388608
         cargo +1.90.0 kani --no-default-features -Z unstable-options --harness-timeout 5m --harness "$proof"
     )
 done
+)
 test "$(uname -sm)" = 'Linux x86_64'
 export CARGO_TARGET_DIR="$root/target/security-2.1/asan"
 export CARGO_BUILD_BUILD_DIR="$CARGO_TARGET_DIR/build"
