@@ -173,3 +173,22 @@ fn caller_visible_commit_never_exceeds_initialized_bytes() {
         assert!(after_commit.initialized <= after_commit.capacity);
     }
 }
+
+// Unlike the SIMD models above, this invokes the production table validator.
+// The scalar reference has separate arithmetic classification and tail logic.
+#[kani::proof]
+#[kani::unwind(10)]
+fn ordinary_table_validation_refines_scalar_for_two_quanta() {
+    let bytes = kani::any::<[u8; 8]>();
+    let len = usize::from(kani::any::<u8>() % 9);
+    let padded = kani::any::<bool>();
+    let url_safe = kani::any::<bool>();
+    let input = &bytes[..len];
+    let reference = match (padded, url_safe) {
+        (true, false) => crate::scalar::validate_decode::<crate::alphabet::Standard, true>(input),
+        (false, false) => crate::scalar::validate_decode::<crate::alphabet::Standard, false>(input),
+        (true, true) => crate::scalar::validate_decode::<crate::alphabet::UrlSafe, true>(input),
+        (false, true) => crate::scalar::validate_decode::<crate::alphabet::UrlSafe, false>(input),
+    };
+    assert!(crate::v2::validated_len_for_proof(input, padded, url_safe) == reference.ok());
+}

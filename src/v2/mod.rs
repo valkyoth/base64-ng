@@ -47,6 +47,8 @@ pub(crate) use ordinary_decode::avx2_candidate::decode as decode_avx2_candidate_
 pub(crate) use ordinary_decode::avx512_candidate::decode as decode_avx512_candidate_for_test;
 mod ordinary_ref;
 mod ordinary_scalar;
+#[cfg(kani)]
+pub(crate) use ordinary_scalar::validated_len_for_proof;
 #[cfg(feature = "alloc")]
 mod ordinary_string;
 mod profiles;

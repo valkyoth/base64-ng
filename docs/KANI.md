@@ -7,9 +7,10 @@ pairing is documented rather than assumed.
 ## Current Status
 
 - Active release toolchain: Rust `1.99.0`.
-- Kani verifier toolchain: Rust `1.90.0`.
-- Locally tested Kani: `cargo-kani 0.67.0`.
-- Current inventory: 43 normal, 19 advanced, and 6 exploratory harnesses.
+- Cargo launcher toolchain for Kani: Rust `1.90.0`; Kani uses its own bundled compiler.
+- Historical 2.0 evidence: `cargo-kani 0.67.0`. The two new 2.1 harnesses are
+  checked with `cargo-kani 0.68.0` / CBMC `6.11.0`; this is not a fresh full-set run.
+- Current inventory: 45 normal, 19 advanced, and 6 exploratory harnesses.
 - `scripts/check_kani.sh` verifies every normal no-default-features harness.
 - `BASE64_NG_KANI_ALL_ADVANCED=1 scripts/check_kani_advanced.sh` verifies every
   required advanced harness on the release-evidence host. Exploratory

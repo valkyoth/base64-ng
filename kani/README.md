@@ -31,7 +31,7 @@ this directory exists. If Kani's bundled Rust compiler is older than the
 crate's pinned `rust-version`, the script records an explicit skip until a
 compatible Kani release is available.
 
-The machine-checked [`harnesses.tsv`](harnesses.tsv) registry contains 43
+The machine-checked [`harnesses.tsv`](harnesses.tsv) registry contains 45
 normal, 19 advanced, and 6 exploratory harnesses. Current proofs cover:
 
 - checked encoded length bounds for small symbolic lengths
@@ -53,6 +53,8 @@ normal, 19 advanced, and 6 exploratory harnesses. Current proofs cover:
 - runtime alphabet and complete codec-policy invariants
 - incremental and in-place refinement, rollback, overlap, and finalization
 - portable SIMD arithmetic, masks, cursor bounds, and initialized output
+- 2.1 production table-validator/scalar agreement for all inputs up to 8 bytes
+- 2.1 bulk in-place chunk geometry as an inductive arithmetic model
 - bounded secret release gates and absorbing failures
 - an explicitly in-memory four-axis teardown, generation, journal, accounting,
   quarantine, and tombstone model

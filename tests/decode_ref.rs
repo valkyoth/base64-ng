@@ -76,3 +76,73 @@ fn borrowed_view_rejects_invalid_construction_with_exact_errors() {
     assert!(Base64Ref::parse(STRICT_URL_SAFE_PADDED, b"////").is_err());
     assert!(Base64Ref::parse(STRICT_STANDARD_UNPADDED, b"Zg==").is_err());
 }
+
+#[test]
+fn borrowed_view_security_retry_keeps_proof_and_entire_destination() {
+    for policy in [DecodeValidation::Auto, DecodeValidation::ScalarReference] {
+        let input = *b"AAECAwQFBgcICQoLDA0ODw==";
+        let view =
+            Base64Ref::parse_with_validation(STRICT_STANDARD_PADDED, &input, policy).unwrap();
+        for capacity in [0, 15, 16, 19, 1, 16] {
+            let mut storage = [0xa5; 24];
+            let result = view.decode_into(&mut storage[2..2 + capacity]);
+            if capacity < 16 {
+                assert_eq!(
+                    result,
+                    Err(base64_ng::OneShotError::OutputTooSmall {
+                        required: 16,
+                        available: capacity,
+                    })
+                );
+                assert_eq!(storage, [0xa5; 24]);
+            } else {
+                assert_eq!(result, Ok(16));
+                assert_eq!(
+                    &storage[2..18],
+                    &[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+                );
+                assert_eq!(&storage[..2], &[0xa5; 2]);
+                assert_eq!(&storage[18..], &[0xa5; 6]);
+            }
+            assert_eq!(view.as_bytes(), input);
+        }
+    }
+}
+
+#[test]
+fn security_malformed_blocks_and_tails_never_commit() {
+    let _ = base64_ng::initialize_backends();
+    let mut canonical = [b'A'; 4100];
+    canonical[4096..].copy_from_slice(b"Zg==");
+    // Interior padding, high-bit lanes, and noncanonical final sextets must
+    // fail even when the destination is too short. No prefix may be committed.
+    for (index, byte) in [
+        (0, b'='),
+        (15, 0x80),
+        (16, b'='),
+        (2047, 0xff),
+        (4095, b'='),
+        (4097, b'h'),
+        (4098, b'9'),
+    ] {
+        let mut input = canonical;
+        input[index] = byte;
+        for policy in [DecodeValidation::Auto, DecodeValidation::ScalarReference] {
+            let error = Base64Ref::parse_with_validation(STRICT_STANDARD_PADDED, &input, policy)
+                .unwrap_err();
+            assert!(matches!(error, base64_ng::OneShotError::Input(_)));
+            for capacity in [0, 8, 3073, 4100] {
+                let mut output = [0xa5; 4104];
+                assert_eq!(
+                    STRICT_STANDARD_PADDED.decode_into_with_validation(
+                        &input,
+                        &mut output[2..2 + capacity],
+                        policy,
+                    ),
+                    Err(error)
+                );
+                assert_eq!(output, [0xa5; 4104]);
+            }
+        }
+    }
+}

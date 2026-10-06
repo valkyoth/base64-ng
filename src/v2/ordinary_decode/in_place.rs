@@ -5,6 +5,11 @@ use crate::{CodecSettings, DecodeValidation, OneShotError};
 
 const INPUT_CHUNK: usize = 1024;
 
+#[cfg(kani)]
+pub(crate) const fn input_chunk_for_proof() -> usize {
+    INPUT_CHUNK
+}
+
 // This capability cannot escape this module or be constructed from caller
 // supplied lengths. Validation borrows its exact exclusive source before the
 // first write; no replacement input, settings or fallible operation follows.

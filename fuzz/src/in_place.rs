@@ -1,5 +1,5 @@
 use base64::Engine;
-use base64_ng::{Base64, Codec};
+use base64_ng::{Base64, Base64Ref, Codec, DecodeValidation, OneShotError};
 
 pub fn exercise(data: &[u8]) {
     let input = &data[..data.len().min(8192)];
@@ -30,10 +30,54 @@ pub fn exercise(data: &[u8]) {
     );
 }
 
-fn check<S: Codec>(codec: &Base64<S>, oracle: &impl Engine, data: &[u8], offset: usize) {
+fn check<S: Codec + Clone>(codec: &Base64<S>, oracle: &impl Engine, data: &[u8], offset: usize) {
     let encoded = oracle.encode(data);
-    for input in [data, encoded.as_bytes()] {
+    let mut mutated = encoded.as_bytes().to_vec();
+    if !mutated.is_empty() {
+        let index = data.len().wrapping_mul(37) % mutated.len();
+        mutated[index] = data.first().copied().unwrap_or(b'=');
+    }
+    for input in [data, encoded.as_bytes(), &mutated] {
         let expected = oracle.decode(input);
+        // The oracle is another implementation, not a second optimized route.
+        for policy in [DecodeValidation::Auto, DecodeValidation::ScalarReference] {
+            let view = Base64Ref::parse_with_validation(codec.clone(), input, policy);
+            match (&expected, view) {
+                (Ok(decoded), Ok(view)) => {
+                    assert_eq!(view.decoded_len(), decoded.len());
+                    for capacity in [
+                        decoded.len().saturating_sub(1),
+                        decoded.len(),
+                        decoded.len() + 3,
+                    ] {
+                        let mut output = vec![0xa5; offset + capacity + 3];
+                        for _ in 0..2 {
+                            output.fill(0xa5);
+                            let result = view.decode_into(&mut output[offset..offset + capacity]);
+                            if capacity < decoded.len() {
+                                assert_eq!(
+                                    result,
+                                    Err(OneShotError::OutputTooSmall {
+                                        required: decoded.len(),
+                                        available: capacity,
+                                    })
+                                );
+                                assert!(output.iter().all(|&b| b == 0xa5));
+                            } else {
+                                assert_eq!(result, Ok(decoded.len()));
+                                assert_eq!(&output[offset..offset + decoded.len()], decoded);
+                                assert!(output[..offset].iter().all(|&b| b == 0xa5));
+                                assert!(
+                                    output[offset + decoded.len()..].iter().all(|&b| b == 0xa5)
+                                );
+                            }
+                        }
+                    }
+                }
+                (Err(_), Err(_)) => {}
+                _ => panic!("borrowed-view acceptance differs from independent decoder"),
+            }
+        }
         let mut storage = vec![0xa5; offset + input.len() + 32];
         storage[offset..offset + input.len()].copy_from_slice(input);
         let before = storage.clone();
@@ -65,5 +109,15 @@ mod tests {
         let mut late_invalid = [b'A'; 8192];
         late_invalid[8191] = b'!';
         super::exercise(&late_invalid);
+        for malformed in [
+            b"Zh==".as_slice(),
+            b"Zm9=",
+            b"Zh",
+            b"Zm9",
+            b"=AAA",
+            b"AA\x80A",
+        ] {
+            super::exercise(malformed);
+        }
     }
 }

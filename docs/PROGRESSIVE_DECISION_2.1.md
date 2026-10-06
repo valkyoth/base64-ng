@@ -204,7 +204,7 @@ all-feature release workspace tests, all-target workspace Clippy with warnings
 denied and public API snapshots passed; the reviewed 2.1.0 API remains unchanged
 and frozen 2.0.4 compatibility is retained.
 Package metadata, formatting, CI routing, line-budget, unsafe-boundary and
-panic-policy checks passed. External review and CI for this removal are pending.
+panic-policy checks passed. External review and CI passed at `d7a5110`.
 
 No long fuzz, full QEMU, native ARM/Windows, or release evidence campaign was
 run or claimed for this private no-go experiment.

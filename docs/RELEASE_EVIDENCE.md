@@ -721,8 +721,9 @@ The release gate runs:
   accepts both legacy Rust symbols and the v0 symbols enabled by default in
   Rust `1.97.1`
 - Kani proofs through `scripts/check_kani.sh`; the machine-checked inventory is
-  43 normal, 19 advanced, and 6 exploratory harnesses on the Rust `1.90.0`
-  Kani toolchain with `cargo-kani 0.67.0`
+  45 normal, 19 advanced, and 6 exploratory harnesses, launched through Rust
+  `1.90.0`; the historical 2.0 evidence used `cargo-kani 0.67.0` and predates
+  the two [2.1 additions](SECURITY_REGRESSION_2.1.md)
 - complete required advanced release-host execution through
   `BASE64_NG_KANI_ALL_ADVANCED=1 scripts/check_kani_advanced.sh`
 - retained verifier/compiler identities, exact commands, harness lists,

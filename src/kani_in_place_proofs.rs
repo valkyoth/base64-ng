@@ -49,3 +49,26 @@ fn forward_in_place_decode_writes_only_consumed_prefixes() {
         assert!(write <= read);
     }
 }
+
+// Inductive arithmetic model of ordinary_decode/in_place.rs, not a proof of
+// its memory operations or SIMD instructions. No allocation bounds the input.
+#[kani::proof]
+fn bulk_in_place_chunk_geometry_preserves_unread_suffix() {
+    let len = kani::any::<usize>();
+    let body = len.saturating_sub(1) / 4 * 4;
+    let read = kani::any::<usize>();
+    kani::assume(read < body && read % 4 == 0);
+    let chunk = crate::v2::ordinary_decode::in_place::input_chunk_for_proof();
+    let count = (body - read).min(chunk);
+    let write = read / 4 * 3;
+    let produced = count / 4 * 3;
+    assert!(count > 0 && count <= chunk && count % 4 == 0);
+    assert!(read + count <= body && body < len);
+    assert!(write <= read && write + produced <= read + count);
+    assert!(write + produced == (read + count) / 4 * 3);
+    let consumed = kani::any::<usize>();
+    kani::assume(consumed <= count && consumed % 4 == 0);
+    assert!(consumed / 4 * 3 <= produced);
+    assert!((count - consumed) / 4 * 3 == produced - consumed / 4 * 3);
+    assert!(len - body <= 4);
+}

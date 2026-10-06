@@ -1773,6 +1773,12 @@ complete scalar repair after partial stores. See [the overlap and recovery
 contract](IN_PLACE_BULK_2.1.md) for geometry, scratch bounds and tests. Secret
 staging remains separate.
 
+Commit 23 adds [focused security regressions](SECURITY_REGRESSION_2.1.md) without
+changing these unsafe contracts. Its Kani table-validator refinement invokes
+production scalar code; its bulk in-place geometry proof is an arithmetic
+model, not a proof of loads/stores or ISA behavior. Miri and native guard-page,
+ASan, differential and fault-injection checks cover those distinct boundaries.
+
 Unsafe SIMD can become an active backend only after scalar differential tests,
 fuzz evidence, architecture-specific build evidence, benchmark evidence, and
 review of this inventory all pass for that release.

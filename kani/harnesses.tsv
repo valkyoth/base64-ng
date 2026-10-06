@@ -28,6 +28,7 @@ ct_standard_decode_in_place_clear_tail_clears_buffer_on_error	normal	src/kani_pr
 ct_standard_validate_matches_decode_for_one_quantum	normal	src/kani_proofs.rs	constant-time validation and decode agreement
 reverse_in_place_encode_never_overwrites_unread_input	normal	src/kani_in_place_proofs.rs	2.0 reverse overlap cursor safety
 forward_in_place_decode_writes_only_consumed_prefixes	normal	src/kani_in_place_proofs.rs	2.0 forward overlap cursor safety
+bulk_in_place_chunk_geometry_preserves_unread_suffix	normal	src/kani_in_place_proofs.rs	2.1 full-usize chunk geometry model; assumes bounded quad-aligned vector consumption; no memory or ISA proof
 strict_aliases_select_the_exported_policies	normal	src/kani_v2_core_proofs.rs	strict top-level alias identity
 final_core_encoded_lengths_match_independent_formula	normal	src/kani_v2_core_proofs.rs	strict preset encoded-length formulas
 runtime_policy_product_is_validated_before_use	normal	src/kani_v2_core_proofs.rs	runtime policy product validation
@@ -37,6 +38,7 @@ incremental_finalization_retries_make_bounded_progress	normal	src/kani_v2_core_p
 portable_simd_block_transform_round_trips_all_input_bits	normal	src/kani_simd_model_proofs.rs	portable SIMD block arithmetic
 portable_simd_ascii_classifier_is_bijective_per_lane	normal	src/kani_simd_model_proofs.rs	portable SIMD lane classifier
 portable_simd_validity_mask_requires_every_active_lane	normal	src/kani_simd_model_proofs.rs	portable SIMD all-lane validity reduction
+ordinary_table_validation_refines_scalar_for_two_quanta	normal	src/kani_simd_model_proofs.rs	2.1 production table validator acceptance and exact length equal scalar reference for all 0-8 byte inputs and four strict profiles
 portable_simd_wrapper_cursors_are_bounded_for_every_backend_width	normal	src/kani_simd_model_proofs.rs	portable SIMD wrapper lengths and cursors
 caller_visible_commit_never_exceeds_initialized_bytes	normal	src/kani_simd_model_proofs.rs	initialized-before-visible commit model
 standard_alphabet_lookup_refines_symbol_position	normal	src/kani_v2_core_proofs.rs	standard alphabet decode lookup position

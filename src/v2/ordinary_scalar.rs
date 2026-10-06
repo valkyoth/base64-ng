@@ -109,3 +109,13 @@ impl Family {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(kani)]
+pub(crate) fn validated_len_for_proof(input: &[u8], padded: bool, url_safe: bool) -> Option<usize> {
+    let family = if url_safe {
+        Family::UrlSafe
+    } else {
+        Family::Standard
+    };
+    family.validated_len(input, padded)
+}
