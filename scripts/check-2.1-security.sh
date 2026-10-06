@@ -45,13 +45,17 @@ fi
 python3 scripts/check-companion-features.py
 
 # Explicit local verification only; do not silently count unavailable tools as passes.
+(
+# Miri's runner must not inherit a custom build directory or incremental locks.
 export CARGO_TARGET_DIR="$root/target/security-2.1/miri"
-export CARGO_BUILD_BUILD_DIR="$CARGO_TARGET_DIR/build"
+unset CARGO_BUILD_BUILD_DIR
+export CARGO_INCREMENTAL=0
 cargo +nightly miri test --locked --all-features --test decode_ref \
     borrowed_view_security_retry_keeps_proof_and_entire_destination -- --exact
 cargo +nightly miri test --locked --all-features --lib v2::ordinary_decode::retained::tests
 cargo +nightly miri test --locked --all-features --lib \
     v2::ordinary_decode::in_place::tests::in_place_bulk_miri_preserved_source_and_scalar_repair -- --exact
+)
 export CARGO_TARGET_DIR="$root/target/security-2.1/kani"
 unset CARGO_BUILD_BUILD_DIR
 for proof in ordinary_table_validation_refines_scalar_for_two_quanta bulk_in_place_chunk_geometry_preserves_unread_suffix; do

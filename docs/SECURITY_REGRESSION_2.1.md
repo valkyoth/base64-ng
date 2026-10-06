@@ -45,6 +45,13 @@ Miri/rust-src, cargo-fuzz and compatible Kani (invoked via Rust 1.90.0), plus
 native x86_64 Linux for ASan. Missing tools fail; no installer or silent skip
 turns absence into a pass.
 
+Miri uses its own target cache with `CARGO_BUILD_BUILD_DIR` unset and
+`CARGO_INCREMENTAL=0`. This avoids runner incremental-lock failures on its
+read-only execution filesystem. These settings are scoped to Miri; subsequent
+ASan and fuzz commands retain their separate target and build directories.
+Routing mutation tests reject either missing Miri environment control, but
+real Miri execution remains necessary to verify compiler/runner compatibility.
+
 Extended checks run two selected Kani harnesses with five-minute per-harness
 timeouts and an 8 GiB virtual-memory limit. They run the borrowed-view and
 in-place Miri cases, the public decode/view/incremental/in-place tests under
@@ -87,3 +94,14 @@ also passed. No manifests or lockfiles changed.
 
 These local results are not independent review or final-release evidence;
 external pentest and CI remain pending.
+
+### Miri Runner Follow-Up
+
+The follow-up review identified an incremental-lock failure with the custom
+Miri build directory. After unsetting that directory and disabling incremental
+compilation in a Miri-only subshell, the complete extended gate passed again
+on 2026-10-06: all four real Miri tests, both bounded Kani proofs, 13 ASan
+integration tests and both 1,000-run fuzz smokes. Five gate regression tests
+also passed, including inherited-environment handling, mutations removing
+either Miri control, and restoration of subsequent tools' build settings.
+This fix changes only tooling and documentation, not runtime code or dependencies.
