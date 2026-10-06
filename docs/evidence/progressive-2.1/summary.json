@@ -1,6 +1,10 @@
 {
   "schema": 1,
   "purpose": "private progressive go/no-go, not release admission",
+  "log_redaction": {
+    "policy": "repository-home-v1",
+    "applied": "after-capture"
+  },
   "host": "valkyoth-heim",
   "platform": "Linux-7.2.4-1-default-x86_64-with-glibc2.44",
   "cpu": "AMD Ryzen 9 9950X3D 16-Core Processor",
@@ -245,7 +249,7 @@
         "--test-threads=1"
       ],
       "log": "plain-0.log",
-      "log_sha256": "c49c82bc0682de8ed96dff5ca552bbc30bd08114d4948b31d51adb4c9ef3fc8c",
+      "log_sha256": "fcfd25ab87aa4b34cf78f7f89914e775f7df30fe29178c1a6c863f67fb2a47a9",
       "rows": [
         {
           "profile": 0,
@@ -1475,7 +1479,7 @@
         "--test-threads=1"
       ],
       "log": "checked-0.log",
-      "log_sha256": "d6098eda952cd6d590306965a50849770ca708fd63342adfcc607a293b5f1c88",
+      "log_sha256": "32110ca21987bcc12713d2b7760faa3c6b847bfe6d634a57f09a89506ccdafb4",
       "rows": [
         {
           "profile": 0,

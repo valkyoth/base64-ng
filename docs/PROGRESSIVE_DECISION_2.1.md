@@ -122,6 +122,14 @@ measurement script and logs. `base_commit` identifies the parent; the source
 hashes identify the uncommitted prototype measured on top of it. It is not a
 signed release evidence bundle. Profile IDs 0-3 follow the table order.
 
+Log repository/home paths are replaced by `<REPOSITORY>`/`<HOME>` before saving
+new captures. The retained logs received this redaction after capture; their
+log hashes were updated, but timing lines, parsed samples and original source
+hashes (including the original measurement script) were not changed. The
+`log_redaction` field records that distinction. Host, CPU and platform fields
+remain intentional benchmark metadata. Earlier published Git history may
+still contain the original paths; this update does not retract that disclosure.
+
 ```sh
 python3 scripts/measure-2.1-progressive.py --output target/progressive-new-capture
 sh scripts/check-2.1-progressive.sh

@@ -4,7 +4,9 @@ import importlib.util
 import hashlib
 import json
 from pathlib import Path
+import tempfile
 import unittest
+from unittest.mock import patch
 
 spec = importlib.util.spec_from_file_location("progressive_measurement", Path(__file__).with_name("measure-2.1-progressive.py"))
 module = importlib.util.module_from_spec(spec)
@@ -24,6 +26,30 @@ def fixture():
 
 
 class MeasurementTests(unittest.TestCase):
+    def test_redaction_precedence_repeated_paths_and_idempotence(self):
+        with patch.object(module, "ROOT", Path("/home/reviewer/project")), \
+                patch.object(module.Path, "home", return_value=Path("/home/reviewer")):
+            text = "build /home/reviewer/project\n/home/reviewer/.cargo/bin\n/home/reviewer/project/src/lib.rs\n"
+            expected = "build <REPOSITORY>\n<HOME>/.cargo/bin\n<REPOSITORY>/src/lib.rs\n"
+            self.assertEqual(module.redact_build_log(text), expected)
+            self.assertEqual(module.redact_build_log(expected), expected)
+            self.assertEqual(module.redact_build_log(fixture()), fixture())
+
+    def test_saved_log_and_digest_use_redacted_bytes_without_changing_samples(self):
+        with tempfile.TemporaryDirectory(prefix="base64-redaction-") as directory, \
+                patch.object(module, "ROOT", Path("/work/checkout")), \
+                patch.object(module.Path, "home", return_value=Path("/home/reviewer")):
+            text = "Compiling (/work/checkout)\n/home/reviewer/.rustup\n" + fixture() + "\n\n"
+            path = Path(directory) / "capture.log"
+            digest = module.write_log(path, text)
+            stored = path.read_bytes()
+            self.assertEqual(digest, hashlib.sha256(stored).hexdigest())
+            self.assertNotEqual(digest, hashlib.sha256(text.encode()).hexdigest())
+            self.assertNotIn(b"/work/checkout", stored)
+            self.assertNotIn(b"/home/reviewer", stored)
+            self.assertTrue(stored.endswith(b"\n\n"))
+            self.assertEqual(module.parse(stored.decode()), module.parse(text))
+
     def test_retained_capture_matches_raw_logs_and_complete_repetitions(self):
         directory = module.ROOT / "docs/evidence/progressive-2.1"
         record = json.loads((directory / "summary.json").read_text())
@@ -35,6 +61,7 @@ class MeasurementTests(unittest.TestCase):
             name = f"{'checked' if 'checked' in run['features'] else 'plain'}-{run['repetition']}.log"
             self.assertEqual(run["log"], name)
             log = (directory / name).read_bytes()
+            self.assertNotRegex(log.decode(), r"/(?:home|Users)/")
             self.assertEqual(hashlib.sha256(log).hexdigest(), run["log_sha256"])
             self.assertEqual(module.parse(log.decode()), run["rows"])
 

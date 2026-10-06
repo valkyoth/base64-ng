@@ -15,6 +15,16 @@ SIZES = (4096, 16384, 65536, 1048576)
 TEST = "v2::ordinary_decode::progressive_candidate::benchmark::paired_complete_operations"
 
 
+def redact_build_log(text):
+    # The checkout can be inside the home directory: replace it first.
+    return text.replace(str(ROOT), "<REPOSITORY>").replace(str(Path.home()), "<HOME>")
+
+
+def write_log(path, text):
+    path.write_text(redact_build_log(text), encoding="utf-8")
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
 def parse(text):
     samples, backends = {}, {}
     for line in text.splitlines():
@@ -63,6 +73,7 @@ def main():
                         ROOT / "rust-toolchain.toml", Path(__file__).resolve()]))
     digests = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in files}
     record = {"schema": 1, "purpose": "private progressive go/no-go, not release admission",
+              "log_redaction": {"policy": "repository-home-v1", "applied": "during-capture"},
               "host": platform.node(), "platform": platform.platform(),
               "cpu": next(line.split(":", 1)[1].strip() for line in Path("/proc/cpuinfo").read_text().splitlines() if line.startswith("model name")),
               "rustc": subprocess.check_output(["rustc", f"+{toolchain}", "-Vv"], text=True),
@@ -78,9 +89,9 @@ def main():
             stdout = result.stdout.replace(f"test {TEST} ... ", "")
             rows = parse(stdout)
             name = f"{'checked' if 'checked' in features else 'plain'}-{repetition}.log"
-            (args.output / name).write_text(result.stderr + stdout)
+            log_sha256 = write_log(args.output / name, result.stderr + stdout)
             record["runs"].append({"features": features, "repetition": repetition, "command": command,
-                                   "log": name, "log_sha256": hashlib.sha256((args.output / name).read_bytes()).hexdigest(), "rows": rows})
+                                   "log": name, "log_sha256": log_sha256, "rows": rows})
             print(f"progressive measurement: {features} repetition={repetition} median speedups="
                   + ",".join(f"{row['median_speedup']:.3f}" for row in rows), flush=True)
     if any(hashlib.sha256((ROOT / name).read_bytes()).hexdigest() != digest for name, digest in digests.items()):

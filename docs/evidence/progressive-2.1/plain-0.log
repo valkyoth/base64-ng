@@ -1,4 +1,4 @@
-   Compiling base64-ng v2.1.0 (/home/eldryoth/Work/codex-projects/base64-ng)
+   Compiling base64-ng v2.1.0 (<REPOSITORY>)
     Finished `release` profile [optimized] target(s) in 2.70s
      Running unittests src/lib.rs (target/progressive-measure/1.99.0/release/deps/base64_ng-66838967a23aa810)
 
