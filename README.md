@@ -27,7 +27,7 @@ SIMD backends, and separately named compatibility policies.
 Zero external runtime or development dependencies in `Cargo.toml`.
 
 The current public release is `2.0.4`. Its unchanged companions and WASM loader
-remain at `2.0.3` (the sanitization companion is `2.0.4`).
+remain at `2.0.3` .
 The development branch reports package version `2.1.0` across the family;
 publication is disabled by the `development-blocked` policy, Cargo manifests,
 and npm's private-package flag. See the [2.1 commit plan](docs/2.1.0-release-plan.md).
