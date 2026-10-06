@@ -16,7 +16,7 @@ impl<A: Alphabet, const PAD: bool> Engine<A, PAD> {
         if validation == DecodeValidation::Auto
             && crate::v2::ordinary_decode::accelerated(input.len())
             && let Some(settings) = strict_settings::<A, PAD>()
-            && let Ok(proof) = crate::v2::ordinary_decode::prepare(settings, input, validation)
+            && let Some(proof) = crate::v2::ordinary_decode::prepare_historical(settings, input)
             && output.len() >= proof.len()
         {
             return crate::v2::ordinary_decode::write(proof, output)
@@ -62,7 +62,7 @@ impl<A: Alphabet, const PAD: bool> Engine<A, PAD> {
     ) -> Result<usize, DecodeError> {
         if validation == DecodeValidation::Auto
             && let Some(settings) = strict_settings::<A, PAD>()
-            && let Ok(proof) = crate::v2::ordinary_decode::prepare(settings, input, validation)
+            && let Some(proof) = crate::v2::ordinary_decode::prepare_historical(settings, input)
         {
             return Ok(proof.len());
         }
@@ -105,7 +105,7 @@ impl<A: Alphabet, const PAD: bool> Engine<A, PAD> {
             && input.len() > 4
             && let Some(settings) = strict_settings::<A, PAD>()
         {
-            if let Ok(proof) = crate::v2::ordinary_decode::prepare(settings, input, validation) {
+            if let Some(proof) = crate::v2::ordinary_decode::prepare_historical(settings, input) {
                 let mut output = alloc::vec![0; proof.len()];
                 if crate::v2::ordinary_decode::write(proof, &mut output).is_err() {
                     crate::wipe_bytes(&mut output);

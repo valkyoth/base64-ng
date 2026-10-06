@@ -13,6 +13,10 @@ from pathlib import Path
 import shutil
 import sys
 import tempfile
+
+if sys.version_info < (3, 12):
+    raise SystemExit("Python 3.12+ is required; run this script with python3.12, python3.13 or python3.14.")
+
 import tomllib
 
 from public_api_sandbox import bounded

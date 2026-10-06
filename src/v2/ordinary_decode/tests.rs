@@ -133,6 +133,7 @@ fn custom_and_relaxed_codecs_keep_reference_fallback() {
                 b"!!!!",
                 b"A===",
             ] {
+                assert!(prepare_historical(codec.settings(), input).is_none());
                 let mut reference_output = [0; 32];
                 let mut state = codec.decoder();
                 let reference = state
@@ -170,6 +171,53 @@ fn full_blocks_and_tails_match_the_independent_oracle() {
             assert_eq!(output[..len], plain);
             assert_eq!(output[len..], [0xa5; 5]);
         }
+    }
+}
+
+#[test]
+fn historical_preflight_preserves_grammar_without_canonical_diagnostic_work() {
+    use crate::decode_validation::observation;
+    for (codec, profile) in profiles() {
+        let check = |input: &[u8]| {
+            let expected = oracle::decode(profile, input);
+            let before = observation::canonical_calls();
+            let proof = prepare_historical(codec.settings(), input);
+            assert_eq!(observation::canonical_calls(), before);
+            assert_eq!(proof.is_some(), expected.is_ok());
+            if let Some(proof) = proof {
+                let expected = expected.unwrap();
+                let mut output = std::vec![0xa5; expected.len() + 8];
+                assert_eq!(write(proof, &mut output), Ok(expected.len()));
+                assert_eq!(&output[..expected.len()], expected);
+                assert_eq!(&output[expected.len()..], &[0xa5; 8]);
+            }
+        };
+        check(b"");
+        for len in 1..=8 {
+            let mut input = std::vec![b'A'; len];
+            for position in 0..len {
+                for byte in 0..=255 {
+                    input[position] = byte;
+                    check(&input);
+                }
+                input[position] = b'A';
+            }
+        }
+        for len in [383, 384, 3071, 3072, 65536] {
+            let mut input = oracle::encode(profile, &std::vec![0xff; len]);
+            check(&input);
+            for position in [0, 64, input.len() / 2, input.len() - 1] {
+                let saved = input[position];
+                for byte in [b'!', b'=', b' ', 0xff] {
+                    input[position] = byte;
+                    check(&input);
+                }
+                input[position] = saved;
+            }
+        }
+        let before = observation::canonical_calls();
+        assert!(validate_and_measure(codec.settings(), b"!!!!").is_err());
+        assert_eq!(observation::canonical_calls(), before + 1);
     }
 }
 

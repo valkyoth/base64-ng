@@ -93,8 +93,13 @@ a minimal environment without inherited credentials. Temporary build trees are
 removed on success or exceptions. It does not include final hardware admission,
 signed provenance, Miri, fuzzing, or host confidentiality guarantees.
 
-On native Apple Silicon with Rust 1.99.0, Python 3.11+ and Xcode command-line
+On native Apple Silicon with Rust 1.99.0, Python 3.12+ and Xcode command-line
 tools, from the clean pushed checkpoint:
+
+Check `python3 --version` first. If it is older than 3.12, use an installed
+`python3.12`, `python3.13` or `python3.14` for the capture command. The script
+checks this before importing `tomllib` or starting a build; it does not install
+Python or modify the system interpreter.
 
 ```sh
 git pull --ff-only
@@ -116,8 +121,14 @@ accompany it, as provided by the macOS wrapper's manifest.
   CI passed after the native Cargo-proxy fix at `b1ac680`.
 - Windows' retained 15-pair same-source results remain [exploratory](WINDOWS_2.1.md),
   not a Windows 2.0.4-versus-2.1 comparison. Do not relabel them.
-- New local Ryzen 9 9950X3D and AWS Neoverse-V2 old/new matrices are being
-  captured against accepted runtime source `b1ac680`; only the measurement
-  harness is a recorded working-tree overlay.
+- The initial local Ryzen 9 9950X3D and AWS Neoverse-V2 old/new captures against
+  `b1ac680` were stopped after finding a historical late-malformed regression.
+  Their raw samples are diagnostic, incomplete evidence, not an accepted matrix.
+  The local 64 KiB historical SIMD rows took roughly 2.5-2.7 ms per rejection
+  versus 16-108 us at 2.0.4. Historical preflight unnecessarily computed canonical
+  incremental diagnostics before discarding them and recovering historical
+  errors. The follow-up uses the historical reference validator in shared
+  preflight without changing grammar, quarantine or destination contracts.
+  Corrected-source captures and full result disposition remain required.
 - Native macOS, control comparisons and result disposition are pending.
 - Final frozen-source correctness/fuzz/hardware campaigns remain Commit 27.

@@ -161,6 +161,11 @@ The canonical surface maps internal disagreement/bounds faults to
 `OneShotError::Backend(BackendFault::ImpossibleState)`. Historical fast-path
 failures fall back to the original decoder/validator after any quarantine;
 its preflight bounds failures map to opaque `DecodeError::InvalidInput`.
+Commit 25 supplies the historical scalar validator to shared preflight for
+historical callers, including checked-backend comparisons. It does not compute
+canonical incremental diagnostics only to discard them before historical error
+recovery. Canonical callers retain their original reference validator. Both
+routes share the same proof construction, disagreement checks and quarantine.
 Neither mapping changes ordinary malformed-input diagnostics. A rejection by
 the portable validator followed by reference acceptance also fails closed with
 `ImpossibleState`. Successful portable validation does not rerun the original

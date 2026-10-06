@@ -41,16 +41,41 @@ pub(crate) fn prepare(
     input: &[u8],
     validation: DecodeValidation,
 ) -> Result<Preflight<'_, Prepared>, OneShotError> {
-    prepare_selected::<false>(settings, input, validation, None)
+    prepare_selected::<false, _>(settings, input, validation, None, validate_and_measure)
+        .map_err(map_preflight_error)
+}
+
+// Historical callers recover their own errors and destination contracts. Do
+// not compute canonical state-machine diagnostics just to discard them.
+pub(crate) fn prepare_historical(
+    settings: CodecSettings,
+    input: &[u8],
+) -> Option<Preflight<'_, Prepared>> {
+    let family = Family::for_settings(settings)?;
+    let padded = settings.decode_padding() == DecodePadding::RequireCanonical;
+    prepare_selected::<false, _>(
+        settings,
+        input,
+        DecodeValidation::Auto,
+        None,
+        |_, input| match (family, padded) {
+            (Family::Standard, true) => crate::validate_decode::<crate::Standard, true>(input),
+            (Family::Standard, false) => crate::validate_decode::<crate::Standard, false>(input),
+            (Family::UrlSafe, true) => crate::validate_decode::<crate::UrlSafe, true>(input),
+            (Family::UrlSafe, false) => crate::validate_decode::<crate::UrlSafe, false>(input),
+        },
+    )
+    .ok()
 }
 
 #[inline]
-fn prepare_selected<const STATIC: bool>(
+fn prepare_selected<const STATIC: bool, E>(
     settings: CodecSettings,
     input: &[u8],
     validation: DecodeValidation,
     selected: Option<crate::runtime::Backend>,
-) -> Result<Preflight<'_, Prepared>, OneShotError> {
+    reference: impl Fn(CodecSettings, &[u8]) -> Result<usize, E>,
+) -> Result<Preflight<'_, Prepared>, PreflightFailure<E>> {
     // Empty ordinary input needs no alphabet inspection or backend selection.
     // Preserve an explicit reference request on the reference validator.
     if validation == DecodeValidation::Auto && input.is_empty() {
@@ -62,8 +87,7 @@ fn prepare_selected<const STATIC: bool>(
                 family: None,
             },
             |_, _| Ok(0),
-        )
-        .map_err(map_preflight_error);
+        );
     }
     let family = if input.is_empty() {
         None
@@ -97,30 +121,34 @@ fn prepare_selected<const STATIC: bool>(
                 // source before any caller-visible output, not just chunks.
                 #[cfg(feature = "checked-backend")]
                 if let Some(backend) = config.backend {
-                    match validate_and_measure(settings, input) {
+                    match reference(settings, input) {
                         Ok(reference) if reference == required => {}
                         _ => {
                             vector::quarantine(backend, BackendFault::ImpossibleState);
-                            return Err(OneShotError::Backend(BackendFault::ImpossibleState));
+                            return Err(PreflightFailure::ClassifierDisagreement);
                         }
                     }
                 }
                 return Ok(required);
             }
-            // Preserve exact legacy diagnostics on rejection. A false negative
+            // Preserve surface-specific diagnostics on rejection. A false negative
             // is an implementation fault, not permission to write a result.
-            return if let Err(error) = validate_and_measure(settings, input) {
-                Err(error)
+            return if let Err(error) = reference(settings, input) {
+                Err(PreflightFailure::Input(error))
             } else {
                 if let Some(backend) = config.backend {
                     vector::quarantine(backend, BackendFault::ImpossibleState);
                 }
-                Err(OneShotError::Backend(BackendFault::ImpossibleState))
+                Err(PreflightFailure::ClassifierDisagreement)
             };
         }
-        validate_and_measure(settings, input)
+        reference(settings, input).map_err(PreflightFailure::Input)
     })
-    .map_err(map_preflight_error)
+    .map_err(|error| match error {
+        PreflightFailure::Input(error) => error,
+        PreflightFailure::Bounds => PreflightFailure::Bounds,
+        PreflightFailure::ClassifierDisagreement => PreflightFailure::ClassifierDisagreement,
+    })
 }
 
 fn map_preflight_error(error: PreflightFailure<OneShotError>) -> OneShotError {
@@ -134,7 +162,10 @@ fn map_preflight_error(error: PreflightFailure<OneShotError>) -> OneShotError {
 
 fn validate_and_measure(settings: CodecSettings, input: &[u8]) -> Result<usize, OneShotError> {
     #[cfg(test)]
-    crate::decode_validation::observation::record();
+    {
+        crate::decode_validation::observation::record();
+        crate::decode_validation::observation::record_canonical();
+    }
     let mut decoder = if settings.decode_padding() == DecodePadding::RequireCanonical {
         DecoderState::new_padded(settings)
     } else {
@@ -239,7 +270,8 @@ pub(crate) fn decode_reported(
         Selection::Automatic => prepare(settings, input, validation)?,
         #[cfg(feature = "simd")]
         Selection::Static(backend) => {
-            prepare_selected::<true>(settings, input, validation, backend)?
+            prepare_selected::<true, _>(settings, input, validation, backend, validate_and_measure)
+                .map_err(map_preflight_error)?
         }
     };
     // Record the writer-eligible backend selected before validation.

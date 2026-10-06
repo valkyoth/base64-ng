@@ -40,6 +40,7 @@ pub(crate) mod observation {
     std::thread_local! {
         static CALLS: core::cell::Cell<usize> = const { core::cell::Cell::new(0) };
         static FAST_CALLS: core::cell::Cell<usize> = const { core::cell::Cell::new(0) };
+        static CANONICAL_CALLS: core::cell::Cell<usize> = const { core::cell::Cell::new(0) };
     }
     pub(crate) fn record() {
         CALLS.with(|calls| calls.set(calls.get() + 1));
@@ -52,6 +53,12 @@ pub(crate) mod observation {
     }
     pub(crate) fn fast_calls() -> usize {
         FAST_CALLS.with(core::cell::Cell::get)
+    }
+    pub(crate) fn record_canonical() {
+        CANONICAL_CALLS.with(|calls| calls.set(calls.get() + 1));
+    }
+    pub(crate) fn canonical_calls() -> usize {
+        CANONICAL_CALLS.with(core::cell::Cell::get)
     }
 }
 

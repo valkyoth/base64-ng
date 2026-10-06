@@ -36,6 +36,21 @@ pub(crate) fn decode(
     .write())
 }
 
+pub(crate) fn decode_historical(settings: CodecSettings, buffer: &mut [u8]) -> Option<usize> {
+    let (config, required) = {
+        let proof = super::prepare_historical(settings, buffer)?;
+        (proof.configuration(), proof.len())
+    };
+    Some(
+        Validated {
+            buffer,
+            config,
+            required,
+        }
+        .write(),
+    )
+}
+
 impl Validated<'_> {
     fn write(self) -> usize {
         let Self {

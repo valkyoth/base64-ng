@@ -3,6 +3,8 @@
 import importlib.util
 import json
 from pathlib import Path
+import runpy
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -13,6 +15,15 @@ spec.loader.exec_module(capture)
 
 
 class CaptureTests(unittest.TestCase):
+    def test_old_python_exits_before_importing_tomllib_or_starting_capture(self):
+        with patch.object(sys, "version_info", (3, 9, 6)), \
+             patch.dict(sys.modules, {"tomllib": None}), \
+             patch.object(tempfile, "TemporaryDirectory") as temporary:
+            with self.assertRaisesRegex(SystemExit, r"Python 3\.12\+ is required"):
+                runpy.run_path(str(Path(__file__).with_name("capture-2.1-macos-policy.py")),
+                               run_name="__main__")
+            temporary.assert_not_called()
+
     def exercise(self, fail=False, dirty=False):
         compare = capture.module("compare_test", "compare-2.1-public-api.py")
         measure = capture.module("measure_test", "measure-2.1-native-policy.py")
