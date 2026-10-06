@@ -82,6 +82,16 @@ are test-only and invoked solely through that explicit clobber boundary.
 These rules follow the [Microsoft x64 ABI](https://learn.microsoft.com/en-us/cpp/build/x64-calling-convention)
 and [Rust inline-assembly contract](https://doc.rust-lang.org/reference/inline-assembly.html).
 
+The raw-pointer callback is an `unsafe extern "win64" fn` with an explicit
+validity/exclusivity contract. The assembly wrapper is also unsafe: its caller
+must establish that the supplied callback accepts the borrowed context and
+respects the documented ABI/clobber boundary. Known test callbacks acknowledge
+that contract at their call sites. `scripts/test-windows-abi-contract.py`
+compile-checks an explicit unsafe call, then requires compiler error E0133 for
+each attempted safe call. The Windows gate runs this check for each selected
+compiler in fresh temporary build directories; Python optimization does not
+disable its checks.
+
 The probe checks low-128-bit preservation, not upper YMM/ZMM preservation,
 constant-time execution, secret erasure or exhaustive compiler correctness.
 Running the Win64 callback fixture on Linux tests the fixture but is not a
@@ -178,3 +188,13 @@ tested measurement-parser regression to the lightweight CI step. External
 pentest and GitHub CI for this commit remain pending. Repeat the focused native
 gate on the final release candidate; no Windows performance admission or
 blanket cleanup certification is claimed here.
+
+The pentest follow-up to `39e57f6` hardens only this unpublished fixture's unsafe
+contracts and adds the compile-time regression above. Local and native Windows
+Rust 1.99.0/1.90.0 plain/checked ABI tests and Clippy passed; the native static
+SSSE3/SSE4.1, AVX2 and AVX-512 test builds also passed, including all ten corrupt
+register callbacks. The updated lightweight Windows gate passed end to end.
+The original 49-command capture remains historical evidence, not a rerun of
+the updated fixture. No production library, dependency or benchmark changed,
+so that follow-up did not repeat the full performance campaign. External retest
+and CI for the follow-up remain pending.

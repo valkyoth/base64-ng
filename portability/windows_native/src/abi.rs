@@ -9,9 +9,14 @@ struct Context<'a> {
     token: Option<&'a StaticBackendToken>,
 }
 
+type Callback = unsafe extern "win64" fn(*mut Context<'_>) -> usize;
+
+/// # Safety
+/// `raw` must be non-null, aligned, and point to an initialized, live Context
+/// that is exclusively accessible for the complete call.
 #[inline(never)]
-extern "win64" fn invoke(raw: *mut Context<'_>) -> usize {
-    // SAFETY: call() lends its exclusively borrowed context for this call only.
+unsafe extern "win64" fn invoke(raw: *mut Context<'_>) -> usize {
+    // SAFETY: The caller guarantees validity and exclusivity for this call.
     let context = unsafe { &mut *raw };
     let result = match (context.operation, context.token) {
         (0, None) => STRICT_STANDARD_PADDED
@@ -38,11 +43,12 @@ extern "win64" fn invoke(raw: *mut Context<'_>) -> usize {
     result.unwrap_or(usize::MAX)
 }
 
+/// # Safety
+/// `callback` must accept an exclusively borrowed live Context, must not retain
+/// its pointer or unwind, and must follow Win64 except that XMM6-XMM15 may be
+/// clobbered (this probe explicitly declares and checks those outputs).
 #[inline(never)]
-fn call(
-    context: &mut Context<'_>,
-    callback: extern "win64" fn(*mut Context<'_>) -> usize,
-) -> usize {
+unsafe fn call(context: &mut Context<'_>, callback: Callback) -> usize {
     // Distinct, nonzero low/high halves detect partial restores and swapped slots.
     let expected: [[u64; 2]; 10] = std::array::from_fn(|i| {
         [
@@ -53,15 +59,17 @@ fn call(
     // SAFETY: Every bit pattern is valid in the same-sized SIMD integer type.
     let mut registers: [__m128i; 10] = unsafe { std::mem::transmute(expected) };
     let result;
+    let raw = core::ptr::from_mut(context);
     // SAFETY: SSE2 is baseline on x86_64. Default asm stack alignment permits a
     // call; reserve Win64's 32-byte shadow space and restore rsp exactly. RCX
-    // carries the exclusive live context, R11 the Win64 callback. All volatile
+    // carries the exclusive live context; the caller guarantees the callback
+    // accepts this pointer without additional preconditions. All volatile
     // state and all tested XMM registers are declared outputs. No unwind crosses
     // this block; callback operations return errors instead of asserting.
     unsafe {
         asm!(
             "sub rsp, 32", "call r11", "add rsp, 32",
-            in("rcx") context as *mut Context<'_>, in("r11") callback,
+            in("rcx") raw, in("r11") callback,
             lateout("rax") result,
             inout("xmm6") registers[0], inout("xmm7") registers[1],
             inout("xmm8") registers[2], inout("xmm9") registers[3],
@@ -100,7 +108,9 @@ pub fn exercise() {
                     operation,
                     token,
                 };
-                assert_eq!(call(&mut context, invoke), expected.len());
+                // SAFETY: invoke requires only the exclusive live context
+                // supplied by call(), obeys Win64 and retains no pointer.
+                assert_eq!(unsafe { call(&mut context, invoke) }, expected.len());
                 assert_eq!(&storage[1..expected.len() + 1], expected);
                 assert_eq!(storage[0], 0xa5);
                 assert!(storage[expected.len() + 1..].iter().all(|b| *b == 0xa5));
@@ -112,16 +122,20 @@ pub fn exercise() {
             for operation in [1, 2] {
                 let mut output = [0xa5; 768];
                 assert_eq!(
-                    call(
-                        &mut Context {
-                            input: &[],
-                            encoded: &malformed,
-                            output: &mut output,
-                            operation,
-                            token
-                        },
-                        invoke
-                    ),
+                    // SAFETY: invoke accepts this exclusive live context,
+                    // obeys Win64 and neither retains its pointer nor unwinds.
+                    unsafe {
+                        call(
+                            &mut Context {
+                                input: &[],
+                                encoded: &malformed,
+                                output: &mut output,
+                                operation,
+                                token,
+                            },
+                            invoke,
+                        )
+                    },
                     usize::MAX
                 );
                 assert_eq!(output, [0xa5; 768]);
@@ -144,7 +158,7 @@ mod tests {
     macro_rules! corrupt {
         ($name:ident, $register:literal) => {
             #[unsafe(naked)]
-            extern "win64" fn $name(_: *mut Context<'_>) -> usize {
+            unsafe extern "win64" fn $name(_: *mut Context<'_>) -> usize {
                 std::arch::naked_asm!(
                     concat!("pxor ", $register, ", ", $register),
                     "xor eax, eax",
@@ -171,16 +185,20 @@ mod tests {
             corrupt14, corrupt15,
         ] {
             assert!(
-                std::panic::catch_unwind(|| call(
-                    &mut Context {
-                        input: &[],
-                        encoded: &[],
-                        output: &mut [],
-                        operation: 0,
-                        token: None,
-                    },
-                    callback
-                ))
+                // SAFETY: These known naked callbacks ignore the context,
+                // return normally, and alter only declared probe outputs.
+                std::panic::catch_unwind(|| unsafe {
+                    call(
+                        &mut Context {
+                            input: &[],
+                            encoded: &[],
+                            output: &mut [],
+                            operation: 0,
+                            token: None,
+                        },
+                        callback,
+                    )
+                })
                 .is_err()
             );
         }

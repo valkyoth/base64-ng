@@ -55,6 +55,7 @@ try {
         $null = Run cargo @("+$compiler", '--version')
         $env:CARGO_TARGET_DIR = Join-Path $destination "build/$compiler"
         $env:CARGO_BUILD_BUILD_DIR = Join-Path $env:CARGO_TARGET_DIR 'build'
+        $null = Run python @('scripts/test-windows-abi-contract.py', '--toolchain', $compiler)
         foreach ($command in (Get-WindowsCommands $compiler -Full:$Full)) { $null = Run cargo $command }
         foreach ($feature in @('plain', 'checked')) {
             $args = @("+$compiler", 'run', '--locked', '--release', '--target', $target,
