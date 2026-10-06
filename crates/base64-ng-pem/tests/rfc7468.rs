@@ -45,7 +45,7 @@ fn locked_rfc7468_certificate_example_parses_and_regenerates() {
 
 #[test]
 fn python_ssl_generation_and_parsing_agree() {
-    if Command::new("python3")
+    if Command::new(if cfg!(windows) { "python" } else { "python3" })
         .arg("--version")
         .stdout(Stdio::null())
         .stderr(Stdio::null())
@@ -61,7 +61,7 @@ fn python_ssl_generation_and_parsing_agree() {
     let payload = [0x30, 0x03, 0x02, 0x01, 0x05];
     fs::write(&der, payload).unwrap();
     let script = "import pathlib,ssl,sys; pathlib.Path(sys.argv[2]).write_text(ssl.DER_cert_to_PEM_cert(pathlib.Path(sys.argv[1]).read_bytes()), encoding='ascii')";
-    let status = Command::new("python3")
+    let status = Command::new(if cfg!(windows) { "python" } else { "python3" })
         .args(["-c", script])
         .arg(&der)
         .arg(&pem)

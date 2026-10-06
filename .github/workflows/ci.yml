@@ -296,6 +296,14 @@ jobs:
         if: ${{ !startsWith(matrix.os, 'macos') }}
         run: cargo check --no-default-features --lib
 
+      - name: Check Windows public APIs and companion forwarding
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          ./scripts/test-windows-gate.ps1
+          python scripts/test-windows-measurement.py
+          ./scripts/check_windows.ps1
+
       - name: Test no default features
         if: ${{ !startsWith(matrix.os, 'macos') }}
         run: cargo test --no-default-features --all-targets

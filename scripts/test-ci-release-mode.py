@@ -59,6 +59,15 @@ class ReleaseModeTests(unittest.TestCase):
     def test_actual_workflow_keeps_full_suites_opt_in(self):
         validate(self.load())
 
+    def test_windows_push_gate_excludes_native_campaign(self):
+        steps = self.load()["jobs"]["platform"]["steps"]
+        step = next(s for s in steps if s["name"] == "Check Windows public APIs and companion forwarding")
+        self.assertEqual(step["if"], "matrix.os == 'windows-latest'")
+        self.assertEqual(step["shell"], "pwsh")
+        self.assertEqual(step["run"].splitlines(),
+                         ["./scripts/test-windows-gate.ps1", "python scripts/test-windows-measurement.py",
+                          "./scripts/check_windows.ps1"])
+
     def test_ci_installs_only_hash_approved_wheels(self):
         validate_python_install(self.load())
 

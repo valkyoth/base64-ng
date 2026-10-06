@@ -53,7 +53,7 @@ fn rfc_mailbox_vector_matches_iconv_when_available() {
 }
 
 fn python_encode(input: &[u8]) -> Vec<u8> {
-    let mut child = Command::new("python3")
+    let mut child = Command::new(if cfg!(windows) { "python" } else { "python3" })
         .args([
             "-c",
             "import base64,sys;sys.stdout.buffer.write(base64.b64encode(sys.stdin.buffer.read()).rstrip(b'=').replace(b'/',b','))",

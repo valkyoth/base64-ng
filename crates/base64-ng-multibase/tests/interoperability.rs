@@ -40,7 +40,7 @@ fn python_encodings(input: &[u8]) -> [String; 4] {
         "print('u'+u.rstrip('='))\n",
         "print('U'+u)\n",
     );
-    let output = Command::new("python3")
+    let output = Command::new(if cfg!(windows) { "python" } else { "python3" })
         .args(["-c", script, &hex(input)])
         .output()
         .unwrap();

@@ -1,0 +1,13 @@
+[package]
+name = "base64-ng-windows-probe"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[features]
+checked = ["base64-ng/checked-backend"]
+
+[dependencies]
+base64-ng = { path = "../..", default-features = false, features = ["std", "simd"] }

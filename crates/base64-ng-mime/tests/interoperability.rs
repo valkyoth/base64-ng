@@ -48,7 +48,11 @@ fn python_email_encode(input: &[u8]) -> Vec<u8> {
         "sys.stdout.buffer.write(email.base64mime.body_encode(",
         "sys.stdin.buffer.read(), maxlinelen=76, eol='\\r\\n').encode('ascii'))"
     );
-    run_filter("python3", &["-c", script], input)
+    run_filter(
+        if cfg!(windows) { "python" } else { "python3" },
+        &["-c", script],
+        input,
+    )
 }
 
 fn python_email_decode(input: &[u8]) -> Vec<u8> {
@@ -56,7 +60,11 @@ fn python_email_decode(input: &[u8]) -> Vec<u8> {
         "import email.base64mime,sys; ",
         "sys.stdout.buffer.write(email.base64mime.decode(sys.stdin.buffer.read()))"
     );
-    run_filter("python3", &["-c", script], input)
+    run_filter(
+        if cfg!(windows) { "python" } else { "python3" },
+        &["-c", script],
+        input,
+    )
 }
 
 fn openssl_base64(input: &[u8], decode: bool) -> Vec<u8> {

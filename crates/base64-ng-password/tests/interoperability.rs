@@ -24,7 +24,7 @@ fn adapted_fields_match_python_standard_base64_mapping() {
             })
             .collect();
         let script = "import base64,sys;sys.stdout.buffer.write(base64.b64encode(sys.stdin.buffer.read()).rstrip(b'=') .replace(b'+',b'.'))";
-        let mut child = Command::new("python3")
+        let mut child = Command::new(if cfg!(windows) { "python" } else { "python3" })
             .args(["-c", script])
             .stdin(std::process::Stdio::piped())
             .stdout(std::process::Stdio::piped())
