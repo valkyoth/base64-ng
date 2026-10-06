@@ -34,6 +34,7 @@ development_checks() {
     sh scripts/check-2.1-adapter-bulk.sh
     sh scripts/check-2.1-in-place-bulk.sh
     sh scripts/check-2.1-companion-features.sh
+    sh scripts/check-2.1-progressive.sh
     sh scripts/check-2.1-neon-validation.sh
     sh scripts/check-2.1-public-api.sh
 }

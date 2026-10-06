@@ -5,6 +5,9 @@ python3 scripts/test-companion-features.py
 python3 scripts/check-companion-features.py
 active="$(sed -n 's/^channel = "\([^"]*\)"/\1/p' rust-toolchain.toml)"
 for compiler in "$active" 1.90.0; do
+    # Do not leave another compiler's workspace metadata in the normal cache.
+    export CARGO_TARGET_DIR="$PWD/target/companion-workspace/$compiler"
+    export CARGO_BUILD_BUILD_DIR="$CARGO_TARGET_DIR/build"
     rustup target add thumbv7em-none-eabihf --toolchain "$compiler"
     python3 scripts/check-companion-features.py --toolchain "$compiler" --target thumbv7em-none-eabihf
     # Recovery belongs to the unchanged shared kernels, not duplicated companion code.

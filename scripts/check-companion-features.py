@@ -63,7 +63,8 @@ def expected_features(name, selected, defaults):
 
 
 def run(toolchain, work, *args, capture=False, coverage=False):
-    env = dict(os.environ, CARGO_TARGET_DIR=str(ROOT / "target/companion-features" / toolchain))
+    target = ROOT / "target/companion-features" / toolchain
+    env = dict(os.environ, CARGO_TARGET_DIR=str(target), CARGO_BUILD_BUILD_DIR=str(target / "build"))
     # Keep the feature matrix reproducible instead of inheriting native/forced ISA flags.
     for key in ("RUSTFLAGS", "CARGO_ENCODED_RUSTFLAGS", "RUSTC_WRAPPER", "RUSTC_WORKSPACE_WRAPPER", "CARGO_BUILD_TARGET"):
         env.pop(key, None)

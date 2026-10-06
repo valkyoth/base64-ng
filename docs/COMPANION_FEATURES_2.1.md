@@ -81,6 +81,15 @@ the checked Tokio transfer example are part of the focused gate. Package
 publication remains blocked during 2.1 development; file-list smoke is not a
 registry publication dry run. No runtime Rust implementation or lockfile changed.
 
+The Commit 21 follow-up isolates workspace commands by compiler under
+`target/companion-workspace/<toolchain>` and sets the intermediate build
+directory there too. Isolated consumer fixtures retain their own per-toolchain
+target and intermediate directories. This prevents the two-toolchain gate from
+leaving incompatible Serde metadata in the normal workspace cache; regression
+tests run the shell dispatcher with inherited directory overrides and verify
+every Cargo invocation plus failure propagation. Existing old caches are not
+deleted by the gate.
+
 ## CI During Development
 
 Routine pushes and pull requests continue running core checks, native platform

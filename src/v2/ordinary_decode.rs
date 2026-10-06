@@ -314,6 +314,9 @@ fn value(settings: CodecSettings, byte: u8) -> u8 {
 #[cfg(test)]
 mod tests;
 
+#[cfg(all(test, feature = "std", feature = "simd", target_arch = "x86_64"))]
+mod progressive_candidate;
+
 #[cfg(all(
     test,
     feature = "std",

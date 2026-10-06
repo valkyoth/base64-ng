@@ -1,0 +1,2687 @@
+{
+  "schema": 1,
+  "purpose": "private progressive go/no-go, not release admission",
+  "host": "valkyoth-heim",
+  "platform": "Linux-7.2.4-1-default-x86_64-with-glibc2.44",
+  "cpu": "AMD Ryzen 9 9950X3D 16-Core Processor",
+  "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)\nbinary: rustc\ncommit-hash: b940084d7eb6a299eb4bfeb8e34901bc051e7ac4\ncommit-date: 2026-09-28\nhost: x86_64-unknown-linux-gnu\nrelease: 1.99.0\nLLVM version: 23.1.1\n",
+  "base_commit": "3df2d437561c2c02a38b690d6ee0da017646631a",
+  "source_sha256": {
+    "Cargo.lock": "c3c24ac73e6c709d9bcb952388256d9a0197e7d864bec393b9881ec6c8b94733",
+    "Cargo.toml": "edb8fffca8ec65733b408c48464c1a1910658ffc3ff63a91966ccb245975e98f",
+    "rust-toolchain.toml": "0825b0dd5ce327e08440351f42880e728f21cf5be410aac844fc4281096dd8ab",
+    "scripts/measure-2.1-progressive.py": "5ac45aedc475a1f7e881e5378bf03ffd3b5b45112c0ad8bd5c66d59abfeb17b0",
+    "src/alphabet.rs": "ca77383ac02482df35402a2bd6d080a6ffdbfd28dc9bb1c6e7f4731b44082389",
+    "src/buffers/decoded.rs": "08a2640cf913d540dbb530d1b03232de316181040b5afffbcdb3a9db31aaf64d",
+    "src/buffers/encoded.rs": "35df85ac176ad1230a7ef831382e5ece731d9890d2375c2c9e3cf0869e23999b",
+    "src/buffers/mod.rs": "ee638a268bceebaaa632f93e2cf68151487e49f9392f6124d00c73a0d7304e39",
+    "src/buffers/secret.rs": "13c39e50aed817a25d9e6d2407d761342c213998eb3dbf8efb2b104be222f7b3",
+    "src/buffers/secret_conversions.rs": "37cf07cfdb9c4f6df2e666a28441783e865000e25faddb2fe0af908ddadcfca7",
+    "src/build_policy.rs": "f2ebb3e7cc68dc776c4489febf002c340768b76dd350698db4ae5ed2e5ccd4a2",
+    "src/cleanup.rs": "bb6009c91354cbaa7f9609476093696da61d2d0a70f3be2d8171e55799ad99a5",
+    "src/ct/decode.rs": "9536729716031d1ba7979814b0343a51e8a175f11310408116066553afc8cd04",
+    "src/ct/equality.rs": "994abe57df2ef37df40d2d3b0f5c2e7d6e81d732acca639e4658890de7f206af",
+    "src/ct/mod.rs": "b587cf91e7978f4ab34243b2a3bb7c613e39ff1e9b397917b736d91fca34bd1f",
+    "src/ct/padded.rs": "979f00c9dbf9a45f5415141b85de7e3af1f593cbe63eb95f95f13fc601f3829d",
+    "src/ct/unpadded.rs": "6eadb89525ff55fe5dde52400d6dd725276e8427d74afeb8cc31f8b559bf2b64",
+    "src/decode_backend/checked.rs": "920cc7c0f19461f6719766af53be38b8006970a71fb651cc12060e8c317f5486",
+    "src/decode_backend/policy/tests.rs": "f2ce6460e776c7fa8557df72532f3f7a646abdb6031b7cf3c78bab7320f27920",
+    "src/decode_backend/policy.rs": "a6730bc20afc42d87f6b324df230bd963828cc027e54bfadb243adf838afba2b",
+    "src/decode_backend.rs": "ab7e8b56a7a526dcdead529c12942d8ff40e96e70fce31173fcf68eb71a7cd0a",
+    "src/decode_preflight/tests.rs": "7fe836dbedf56c7594ec6188871263c9cbe094534696f40fc04ea57501849ca4",
+    "src/decode_preflight.rs": "5ccfd7e335efd90a09f61fccf99f3152c47eb1ed8b499d0df42c6c2341d87a77",
+    "src/decode_report.rs": "38f7815f190eb8e7c125971bb6e4fa8766bd35e0bb3c3bb3e217bd20be9f2bd4",
+    "src/decode_surface_tests.rs": "fe9ac071c9f1b52e1455b4c2f52b68953afa5505245fee17134a894c88e3979e",
+    "src/decode_validation.rs": "d6ec2e6494b38fc5925c6ccd62c008f96be7d9be7309b82a965dbd00f2db098c",
+    "src/encode_backend/checked.rs": "4058037251bde27f4579f97be5e095d4fa9e27cc784d6c1179c936a5f3c316cc",
+    "src/encode_backend/in_place.rs": "53b1040e4630aeb56809a547a12e87243ea1734000b5163e425e0086609e684d",
+    "src/encode_backend/policy/tests.rs": "325de3635356bc683734366a076e804fea267d2eeed0570844889877124e9fd8",
+    "src/encode_backend/policy.rs": "7ebbad6be908fc3fd01dd3d3bb3fce5bb6fabc0d3a05fcfb146730a0ca87bfab",
+    "src/encode_backend.rs": "f61be31d6df6e8d08772c8d086e3014dff953ea53e2e6a80649cc74409db8ac8",
+    "src/encode_surface_tests.rs": "c4b7d46312dc2a53c85e2c71c3dc33abe3285d7395f46e244d5f881ab2c2429f",
+    "src/engine/decode.rs": "ec2b9086998609ca649aa4da7dff3f701f00e0984e855edfab9c0430f3a15885",
+    "src/engine/decode_const.rs": "58fc5d4a4764e1d7b0cd78a291a1670fb60a65a8d1b0c2dcc9b90e3955eb139b",
+    "src/engine/decode_in_place.rs": "a84f562ab975a14441c516749c6caabbd42c46fe8ee8df2784c076a7dd3035ea",
+    "src/engine/decode_policy.rs": "e6bbc0a1a4dfcf4a37779ba0553cbdc16d9a4e3b97dc17d6669c974772ff0030",
+    "src/engine/encode.rs": "bc9e3394c8464780d2978f9d08c2e487d7436fdd0459164c8fe0040a006283f1",
+    "src/engine/encode_in_place.rs": "37bb41ac7ae577aaf9d0f0fccb5d619e44b844540ec9295b04e18d5d6ff4e9ab",
+    "src/engine/mod.rs": "04188d6b4e61b8f5d14e60718b7628e186cd6c44eda137bd0e5f0f76ae2c19e9",
+    "src/engine/stream.rs": "ed69ea7e47fde0d0348c57b4eafc780ea4c492358fba243755db5bbfaba56ba9",
+    "src/engine/validate.rs": "4f91ccaa8f8cf72ecee257db7d24aeb8815f491dbeaf241a2c4165e0b2dfbd95",
+    "src/errors.rs": "49d6250a841cb86ef3d2f10f5ab0c35cb859e57ebe95d92fa04bd19f6bea5e3b",
+    "src/kani_assurance_proofs.rs": "8d3750f25723665ae037153d1b826a5959ec59250ecdc9bc8884bd32c6d197bf",
+    "src/kani_in_place_proofs.rs": "473eaca2cfbf0cf77c98800802e84d0ddec04c709a5380739770e2789c714370",
+    "src/kani_proofs.rs": "57008e827c6a7007d2a297f32a2d8274def4e86c7f6500cecb2095950e1cfc1c",
+    "src/kani_secret_encode_proofs.rs": "be070ee3883bb9b539a35ba0954721faa636bf8d1adbc9a36c7b4ebedb129864",
+    "src/kani_secret_proofs.rs": "4858c2b1ef123410766131eac0f8149bc1733be36dc71ee2f4133e78c8c93f3f",
+    "src/kani_simd_model_proofs.rs": "93f1f7739d6dfe100e0e5e2d5774e1ca0605e6e3d0edf9d5713ce826bc169ea7",
+    "src/kani_v2_core_proofs.rs": "944c998974a6702c06b48feb8fa9326303d44e63befa31e93dbb79bdbb012d76",
+    "src/length.rs": "c0271703f8a63e51fa6074443d354fc69e979a5f8f3584eac7d39eb85d6444e8",
+    "src/lib.rs": "d5322b19f24a2180744412731d56fa8511514da2696ad2e3881bf0e1e18d1ee7",
+    "src/non_standard_surface_tests.rs": "ac1c8c693e1188e8257f09ed8119dc51fa0a4b1ed7004a766c85a858f26afdec",
+    "src/perf_evidence.rs": "161eac17443c6d18d0bb9effb2cbc84e85eb5974f67e8554763f127233f4d649",
+    "src/prelude.rs": "f4ea56394978ab6599f22e19448ceadcb93887c26b3085594f15721fb324b529",
+    "src/profiles.rs": "9a81bd77ce19bdf5e5412c7d84d9599f03ccc1eb445892f276ef68075ddaf189",
+    "src/runtime/mod.rs": "245f7bd1a24b56b102efe0c7bf13dc6977bc5ccb41ff8886502a1f5fa690fe3c",
+    "src/runtime/operation.rs": "1ebe824fc132bafcac18d5afb1fbd119b23d4b0e6ce568286ba1425934094756",
+    "src/runtime/report.rs": "b61f5abecfcb2b45f3c1b378c74fcd6bc3ddf1e77512e34c892f2ccebe7421e2",
+    "src/runtime/tests.rs": "89dcb469c0ed4130586556badc68558192fe5f935a4d00266d745bea396ff984",
+    "src/scalar.rs": "3b1d1c236cf3534a46ab1727ef8d8f78e7d7351b801209892fde7df59b9fca59",
+    "src/scalar_encode_in_place.rs": "cecd0ce7acaf2524a8354ab6bf4081aca0b6402d18ca28d99ecf046c62eddc1b",
+    "src/simd/mod.rs": "6078958a3f3f965d1a3bf5b4f19e71658892e6d306ef846e5e3faf972da4dedc",
+    "src/simd/neon/direct.rs": "90ed091cbf1b3f4c2ebbd6f27680a7006f888e58de02d4d24f7f29958c43392b",
+    "src/simd/neon/ordinary/tests.rs": "d2d9b4551882eee2ba25d9b5c21b425a212e387f9e69692bfc9bd320d0b6e631",
+    "src/simd/neon/ordinary.rs": "2380d6f8b0a79c018addd9bf92807bbdb1f3c9012e2046cb711aedb68e205ade",
+    "src/simd/neon.rs": "a073da6751d104751070c7c4a6d5f79d5fb74621d00755ea795294626a79b8b9",
+    "src/simd/neon_decode_tests.rs": "2fddda34d29d4be31b8da6a28748001ea852519f284d124c7450feedd909d070",
+    "src/simd/neon_direct_tests.rs": "a51cffe7b352259a111ca93a1942cd535e466d9f18762f5de6caf0f64ce680bb",
+    "src/simd/rvv/asm.rs": "aa47fb7b22a63237ac8dac9fe95f8b1818684ae16eeb98eaae5a4cb1ebe80894",
+    "src/simd/rvv/ordinary/tests/benchmark.rs": "4f91103806da77bbb77b9f348b07a86793ef830f3437373c07701581a8ec6da3",
+    "src/simd/rvv/ordinary/tests/guards.rs": "a63861e6d1cd93e2a0f842d703bb6c054bc369fd57ae82e7aa81dca1fbe2b2c8",
+    "src/simd/rvv/ordinary/tests.rs": "036d81867121a3a9ef0da88c9673985ea460e88bca58e5e49b8a72ecee07f664",
+    "src/simd/rvv/ordinary.rs": "cd12fa8206a04ea8a34ac5fcf66836ca256eb8227adbdf6d1c4d4723392a0951",
+    "src/simd/rvv.rs": "5cdc30249640aa5d101c519bc9e76ca66f07f8690ce0c348b5b1f37b5e51e19e",
+    "src/simd/rvv_tests.rs": "9021a83528fe4a97401391cf4e19ddbd5ede6c889c53d32f92ed7612924f18b5",
+    "src/simd/static_token/decode_report.rs": "37a9aad37c6a446fc6718c221e126bac13a3d47ca2505a665053887d092afbea",
+    "src/simd/static_token.rs": "88b1a7c0bf0a2800e632203a1966cd34dcd4bd9fbe780a8f32091436e024eb39",
+    "src/simd/sve.rs": "c7d638b962fb46a1b6c08304cb1c1755cbf0308b1fde0adfe91cbf5b9dcffdd4",
+    "src/simd/sve_tests.rs": "115ab54f8de96d32befde99ae608e892bc59958e3647d33f32ea47082ba65361",
+    "src/simd/tests.rs": "5e8e84f2bf769c3b79284e313a95e1a182c13dab74ebd50c1e41e0db20b9058c",
+    "src/simd/validation_guard_tests.rs": "773a45be704216db583565acb6b9dbd86403642ea27dee78aafe8604422d4bd7",
+    "src/simd/wasm/direct.rs": "44af58cc77a98c5acb8b168f0a1950145338b22dbb1eaef36ae2225bccad923c",
+    "src/simd/wasm/ordinary/tests.rs": "6067524be18fe962dee76748bd044836fecbbb192c93523974bb3d027043f34b",
+    "src/simd/wasm/ordinary.rs": "4517c00c52ab84a511b9c0be9ce020033940e7fd18ac4fedf332fe1d86bbc363",
+    "src/simd/wasm.rs": "2933a530773725af08d71355f903283ffc98fe7a107547b36d0a041351423a51",
+    "src/simd/x86/cleanup.rs": "49f9f7799b18acddf5912f375299b55dae3811b62340d3b735c83edaf5ba4b99",
+    "src/simd/x86/decode.rs": "388f47bfc6593cb2c04baf77790d24d269314c9324b5b5b4988d4653531508dc",
+    "src/simd/x86/decode_direct.rs": "1e357ef58191472b5338268b3ef26e375ef7750681c62dca510286378b2451f4",
+    "src/simd/x86/mod.rs": "2798c60cd7e78fa69b399eabbc2c04b81fc0ead4c0586653099f49352d93ecce",
+    "src/simd/x86/ordinary.rs": "56a6a056c03f780c991c0e9b3a1d1cdfbfbe72d3ffb395337457a4b90e2d576c",
+    "src/simd/x86/test_probes.rs": "bf424385d8501a9c97dc75d84ae45efa80fbf854eef394d50cbdaad991449aea",
+    "src/simd/x86_decode_direct_tests.rs": "2326f8086b1cff857a717e5e2f04c49c6330c33cdc4e7e573b3bd8dad46e4b2d",
+    "src/simd/x86_decode_tests.rs": "8201bb23a57c65f7228b805ffb92849a2c96d10b4319b86241249be70475df73",
+    "src/simd/x86_encode_tests.rs": "e736f71d846beb5f791c5f42379ed0ae3a4051356fe6a9b0eaa634db6d291b36",
+    "src/stream/common.rs": "ca9c0d200bd7e351255acbe2a0d8594aaf82e0cb09177802ffcca192a424ee9e",
+    "src/stream/decoder/bulk.rs": "45eb55534b8ecd6c598618347b0f3557206acdccd4fabf1870f73caa9f9ab8c0",
+    "src/stream/decoder/bulk_tests.rs": "7e4852623fc5092a364770809fece44bff2641ccf8c59e225f16bab0564278e0",
+    "src/stream/decoder.rs": "ce001bc5a8745f0a313aed8ca14cb9625d41dcf2c985f4a5fc732865b2e08e8f",
+    "src/stream/decoder_reader.rs": "62a9ae8462e3e0b094276808810f600a5dc94c61405b4c66a62eaf3d53deb0f0",
+    "src/stream/driver.rs": "ebc075099dd92dd54ad16ee65e9679e2df06ee908703c9815e597e61eb6e889e",
+    "src/stream/encoder.rs": "09cc6eb47b7487978cb2fe28f4e282e4b8fda03e766a6b3d26f6b84c9c402a2b",
+    "src/stream/encoder_reader.rs": "dc1597060498e14a68ff459ce303fc51b486d8ce92ab3d34d074a2aaa412a227",
+    "src/stream/mod.rs": "23b5473d33bd0596d0b16b8e4ce4d612e86b4eb73dd1c798439a86c951096666",
+    "src/stream/queue.rs": "efd29e1aad3d81c24cdf8813100b285e4255b9b8f0ffd246351dd54bfef9ce3c",
+    "src/tests.rs": "f438c6cc78a1c332120d87072060e29ba4ab47f87202f194aec67022db62ea51",
+    "src/v2/alphabet.rs": "c9cb45d274493016dbaa65ef4886118b73ff8b988dbc1736b44d37d89977b944",
+    "src/v2/alphabet_tests.rs": "b25b394b4d2e4df9d1fef9bf9a35ef4bf9f061bcb13f0c8253be2ff6852117c5",
+    "src/v2/append.rs": "34f883d1aa71493d49137949f7df786206d0044190c34de8755b39eceeed55b0",
+    "src/v2/append_tests.rs": "18112ba58c894f61a2d91ae16fbc839f8f8a4addd74d34970b7cd14822ee8d9e",
+    "src/v2/assurance/context.rs": "4128aefcee2b51f95467d0165bf70735ee2a62e34c88be460cb4c20ca5cdc56e",
+    "src/v2/assurance/default_provider/helpers.rs": "3d2d48889e42e3bfa35ffff92c0040680d8ee3de1fc29895d0e0ec54fd5bab50",
+    "src/v2/assurance/default_provider.rs": "22ef44769abbb3ecae1ba4caf6c773339be1be878e94ed54bed4a8a87b8c803e",
+    "src/v2/assurance/mod.rs": "9796b10d4a42daf0eed36fcc0fe02367fa9b3e38df7429160280bafc62740fc7",
+    "src/v2/assurance/operations.rs": "2f1850eee5b37f502f39d9aabc2683057e0d257a88114cbf96826238b0a97c76",
+    "src/v2/assurance/posture.rs": "eb376b2df46567449585b1a0ba5d00cd9241a69f354cc6f7939de8e9203b0bd9",
+    "src/v2/assurance/protected.rs": "be13ba6fc6423567d684b767ff98321dd9f98ff00370dd41b699d2695989a5e4",
+    "src/v2/assurance/provider.rs": "e133a6f268d9e32131ee579c6664e3fcc101f0d2fc729a6f9a3f654189c384a3",
+    "src/v2/assurance/report.rs": "aa7aaf770f64277d188f32aeb57a6f362e0775d49cc09c7e46d6a6a94ddddd42",
+    "src/v2/assurance/tests.rs": "0189894074883afeeb40cfa2113f2c4231f93d74c3a2b4a081dff3d62e4c2c8c",
+    "src/v2/backend_health/kat.rs": "d0a474d2a229204b8e1f75d18e209c04d137d354cbf4747d226a9488011d11c8",
+    "src/v2/backend_health/tests.rs": "2c68f5afeacf5657644be5760e80ba6b3efdb9c8e6421394bd072a1aab7051c2",
+    "src/v2/backend_health.rs": "67f0ad7f9025009f281d3ec0002dbe982579d984bcf70985517d0422552d5cf6",
+    "src/v2/bounded.rs": "1970d70b39289504bbb4b24210b011e4b6a8ba1ec4b48b244d32b7f6991383e5",
+    "src/v2/chunk_tests.rs": "c0df03da4f57685c43f044945b34c947a5bfdce50afedf116bd978f66cc1db91",
+    "src/v2/chunks/buffered.rs": "14bd1dca71d3eb1b59bb310174a8bf3c7a1fb52bc0e7be6b48b13d542a036d1b",
+    "src/v2/chunks.rs": "61b4c986749081a22d1af86fef42c2bd697b47add923867dd36e6130e7f196e3",
+    "src/v2/compat.rs": "d55d3840bc00359b12ea930f88c6ddffe503313cbfd2f8856944f493ff0f1c44",
+    "src/v2/const_buffer_tests.rs": "72f6d17d4c94edd960958a68c2ccc02e594bc42feaff441a89c2cf457959a09c",
+    "src/v2/const_transforms.rs": "bb38e2a3701c13a0f9948d2e80ed16553f8c91c35c751f7292e9309f7fbb16df",
+    "src/v2/contract_tests.rs": "b7aa8608288337c02dc0c7708ca77cc54ae8cd657103f2f6bf65607f088905bb",
+    "src/v2/contracts/reporting.rs": "caa42bc76f9396820b4b9f8cfd8c94091f36c6de2402c9ed420b0bc4e14cec3e",
+    "src/v2/contracts.rs": "c81463fc7aeed51330ea7bb6198b7f145723cbc7eca253fca63e97e01d1c93f0",
+    "src/v2/decode_primitives.rs": "cdd0765da1be6d6d651e6383fe2e3f655333e53f88b4889d1d006d806bd30ca9",
+    "src/v2/fixtures.rs": "5022fefa4d474c9bc43bf66a438a2c6ad2bba1dcda9dcf21b1de0b63094ca100",
+    "src/v2/formatting.rs": "db5bfc7639e54df0d97496e997bf31c9d6fd2e12846f32177f4332c10e4b8679",
+    "src/v2/formatting_tests.rs": "5c52ba92b6d3409a36df7e4689d35d81f30825e85856fdbb70b5b562145b2a08",
+    "src/v2/forwarding_tests.rs": "23a96aaa55c28c1b3feb114f1ded16a0181f58212d92cae92dfa72c8ab6f2b53",
+    "src/v2/in_place.rs": "762376c374e873c3f424bb184e6cdfda0edee0766c713ec13974dcf896ab05e0",
+    "src/v2/in_place_tests/benchmark.rs": "2fdfaa719f15c2bca061f27adccc207a6446bbb7359f12cddf0c6d0665ae7681",
+    "src/v2/in_place_tests.rs": "e0ef4a081de1d8ee3856a47345e7d49e8a63ba79115f9e75d2aaa308499edaf4",
+    "src/v2/incremental/bulk_tests.rs": "d143098d8f6fe3d09fe365fb9d4fd17a290978da9f46bf1a17520e1f22304196",
+    "src/v2/incremental.rs": "e1f3fbfce1b9614120604100c43aeb40134ccae3d04154ea6743c3605b133e48",
+    "src/v2/incremental_decoder/update/tests.rs": "e36c2e9a9f327e0763a478cc8e2fa704c5d84308c0c85fef4e77f14b1ca6f318",
+    "src/v2/incremental_decoder/update.rs": "d30343866073385422979db5868ab581b6bec35573b76a9919fc35c8ff7e8db4",
+    "src/v2/incremental_decoder.rs": "dcb042cb8e9fa2b58fc180a29daad2af66d4e08a1cd1edd3663a5dffd9aeaed4",
+    "src/v2/incremental_decoder_tests.rs": "9b33b8cd4072bc1d01dd4a5e2bdb6a621053625f05c243c5ab4fb6347a514d3d",
+    "src/v2/incremental_decoder_unpadded_tests.rs": "609b4100314419ea616d7262b9b8c1e92bee1759f18c0c22a40fc5123dc79c72",
+    "src/v2/incremental_encoder_tests.rs": "c8213e4fcfc04fa569d326fd6fc693059e77f9ba2aadc01f2ec19f62f7d3f756",
+    "src/v2/legacy.rs": "7700dca9058e3bfb2808044ce61b1965ee17cda361719ac182468529dec9475b",
+    "src/v2/legacy_tests.rs": "c053583472385d89c6896716233fbe1a59b0c315a58d596bb994db3cc9bc139b",
+    "src/v2/lifecycle.rs": "7396322cc8cdb2b75907a1662b6f8eea4632b9d803f3b431a43d696465c6c860",
+    "src/v2/mod.rs": "740cc8ed816dff292d6c85897c9975040de454106e2344e573bd01b79f0719fc",
+    "src/v2/one_shot_tests.rs": "6572ae0c25b7b9851d001748fc89c70206cebd6a87b9c019451a7892c73cf766",
+    "src/v2/ordinary.rs": "ba62eaa54a2e34f14b286290b8c8a18295de5896019676e9d223723262f42d65",
+    "src/v2/ordinary_alloc.rs": "1fc015b22bdbf2c73053c6b58d034a9dad937d257a5536a168b9ac2b0948e93e",
+    "src/v2/ordinary_decode/avx2_candidate/benchmark.rs": "ac6f6c80fce1bccdd1046f08962e5121f40c55a4cd0995404ae871f4dadef610",
+    "src/v2/ordinary_decode/avx2_candidate/tests.rs": "416737e5e74644617a07cabe4a95172e750e44e19b13fc6c012616e56a421a81",
+    "src/v2/ordinary_decode/avx2_candidate.rs": "defd1b1e1fc37107534c2c41ef8ba4f3cf35f2d09da959b387247cdc6b0f7575",
+    "src/v2/ordinary_decode/avx512_candidate/benchmark.rs": "6707f40d645108512c35331ee44e2bdf3da18487e9144482ee283f87f7af95e6",
+    "src/v2/ordinary_decode/avx512_candidate/tests.rs": "569a2342b13906a6365db6e109600d5a092b0392653e2616f75272c11692d49f",
+    "src/v2/ordinary_decode/avx512_candidate.rs": "91fbbc53541835b8584cedae6026443c1ca43016fe6c3b8ecd0011650cab0582",
+    "src/v2/ordinary_decode/in_place.rs": "53b43c37575fada34f0fe48fce359ef0770846009d699494edd57bd71151ec94",
+    "src/v2/ordinary_decode/neon_candidate/benchmark.rs": "f81f9f5009d2f94d0b07bf743a148be3b37491990b8c1b8c40c35de5bd5d0b62",
+    "src/v2/ordinary_decode/neon_candidate/tests.rs": "7b24ecc496cac34f410387b0ff112b687198774925bc7cb3be344e2bd41ea611",
+    "src/v2/ordinary_decode/neon_candidate.rs": "14b1ed9d69f0741dfda016668b173ee3f5cfcf3ed7197e18bc80d7ae298ea4e4",
+    "src/v2/ordinary_decode/progressive_candidate/benchmark.rs": "5066369160c0e5ac2040624ba29668b81dc578c6e02c2a84c29720dfc369e6ce",
+    "src/v2/ordinary_decode/progressive_candidate/tests.rs": "432bb023f8034bb818167baa6fea39ed490c8ff947a2bc630d871cf0b0976326",
+    "src/v2/ordinary_decode/progressive_candidate.rs": "59690bd682fbb713f7ba5086e3c2d50e57f106b976a45b455ad7c4d661565c9b",
+    "src/v2/ordinary_decode/retained.rs": "3452192135716cb067ec507415ae8827ea0d92b9a0a347e5082f09e3529b0a53",
+    "src/v2/ordinary_decode/ssse3_candidate/tests.rs": "5e75862391000d889697b0efda260e750abe2c75accd5493524757c32759e4a9",
+    "src/v2/ordinary_decode/ssse3_candidate.rs": "a48a062ca7f4a3f77ef3a15049be8faa8e807bc150e9976a010fe6e4e7e6d46a",
+    "src/v2/ordinary_decode/tests.rs": "24e0adc18ce580b8e20b36ce816bdb697ddaa0dc81fc1ce4b04445ba6ef51aac",
+    "src/v2/ordinary_decode/vector/tests/composition_tests.rs": "8d6313cdacf28c45fd0de4aecaaeb6986933a01e0f758da34de58ecefa63798b",
+    "src/v2/ordinary_decode/vector/tests/forwarding_tests.rs": "f06a1eb736e63b683a7f13e4604e67260410966c08d27f68db472586a4bdfc1a",
+    "src/v2/ordinary_decode/vector/tests/in_place_tests.rs": "7954392e8ff7cad9cae14c66539c10a624fdf35a2660e84e004c14d1bc76aa10",
+    "src/v2/ordinary_decode/vector/tests/incremental_tests.rs": "d2b82b2441bbff6657065284a4a77b3bb3f4f9956c51fc96a939dc9fcad6edf2",
+    "src/v2/ordinary_decode/vector/tests.rs": "c3f2a0c84d9d0b7a4b176835f556c5bf65793d82bdb3a263141af4745e094eb2",
+    "src/v2/ordinary_decode/vector.rs": "605df4fe93ff126ebd275f0844274b7b47db08e1a7f7651e46293d2298051ea6",
+    "src/v2/ordinary_decode.rs": "a6437626f572838ff6d03665e5cf4fa2549e6ae8886bbda23bed093dfaf7f090",
+    "src/v2/ordinary_encode/tests/sinks.rs": "b1b09e2d2d6f8f675e162b5f0aed0e404255833144d874a6364ec35e730a8157",
+    "src/v2/ordinary_encode/tests.rs": "b05f187e9d9de2277d6a2da1cf2ab50205649f299e823badbfe9ee65d5771348",
+    "src/v2/ordinary_encode.rs": "67c681439c3a397d9efb61200540975cc0b8fc4944f79abf521635df73346656",
+    "src/v2/ordinary_ref/tests.rs": "e6d62e8f63af1e3efd68fe4219b43ab6df4d97b5ff00bd4297feefb80058e671",
+    "src/v2/ordinary_ref.rs": "ef026ab35cac69601837fb0a8017bbae6ad84a2ea290d4ebcb5ed20621c7a5f9",
+    "src/v2/ordinary_scalar/tests.rs": "a3362860c3d4173ffcd993ee80f48af7d539b73a2d05f2384d917e59bacf42dd",
+    "src/v2/ordinary_scalar.rs": "4171dfb4b64d83a7bac7e5467023a166de812f86ad019bb965bf61fa34fbef45",
+    "src/v2/ordinary_string.rs": "57220de6446c28d61e367ba3a2263189e4c08645da59869800f2075ccf6c075e",
+    "src/v2/ordinary_string_tests.rs": "015e7ead5b7919a26675b5e31d85b3bd58571d5fe6894ea817c134c734f08dd1",
+    "src/v2/profile_tests.rs": "10e67dc49201a1b31183fe91990031434fd8724bff58a11e570f911c1da93f44",
+    "src/v2/profiles.rs": "b11539ab5df5f0b65171ad330364449424e4a3587b70df2684c2e80e4e50981c",
+    "src/v2/rfc4648_oracle.rs": "bd5e8b8de0c352d18729b4ed57bf3b7eccdc4786b0f8bf7eba04cd33ebc41d10",
+    "src/v2/secret/encoders.rs": "c88e1dcdf761efcbf3f6104afe1a98ad302277389aa56428a9bb9f35432acd76",
+    "src/v2/secret/exposure.rs": "8ea16e4dbbe74eed3daa4a877b2567cb3d2ff6a433660804d4b0073bf27c6f81",
+    "src/v2/secret/frames.rs": "7ec2aba02ddc6721ecc12f891993ebca3dda04c8522396e0f41aafce1b403edb",
+    "src/v2/secret/owned.rs": "a3cbd5dbfaabba44d7bc19943fec15c47a3b58dcb86aec23ebbb685d1c56b540",
+    "src/v2/secret.rs": "6b210646a59564dd95cbb8ed6f1d695019182531d61e5b3575b6039045e6e155",
+    "src/v2/secret_decoder.rs": "4b07371b45d0c842bb1ba3025c2184486959c544ad95e4b19e07fb8372ea7dc6",
+    "src/v2/secret_decoder_tests.rs": "5608ab6e0657de2b30a9766eb676294bc9df57694cd3e2293c6bb9e0907c30c1",
+    "src/v2/secret_encoder.rs": "63c0110c818ba9ac1c40b8a63f43123f3fddca5d95829950bf487eed9c771ec5",
+    "src/v2/secret_encoder_tests.rs": "422e33025b48fb2e249a96a1d02a9ebfcb05195bc636d233e14d8d15516f28e6",
+    "src/v2/secret_in_place.rs": "15ec75062f86d74de8c1ecc881b97681dee89d7ca2adb42d56f1de3ed2e0d69a",
+    "src/v2/secret_in_place_tests.rs": "6d3f7f24c37c02baaef6bee8413d41bf0aecd317fd6190ae37c1333849cf92c4",
+    "src/v2/secret_storage_tests.rs": "5b05c31bd71fb56441c0ab54f6f909170b4fa0c1f9ad1278877c0a0e8f5466e3",
+    "src/v2/specification_tests.rs": "9c27e31cc7bec3449574555549ed1d2736140a96711224f9a5d21e1a8a8fc527",
+    "src/v2/specifications.rs": "2a9513136a58e110bdd0a09c7a4342f6aa4bb65b3dc81efd56db1bc03ce5de03",
+    "src/v2/web/decoder.rs": "9f8ff9a8574f1fc668b9aa2c3c96464f6354cf33ef5771be0cd511b6843a1dfa",
+    "src/v2/web/mod.rs": "1062ef127d0c57b2effd76b3b2e9b706f02eec8885abf945d9e037a061d21e68",
+    "src/v2/web/one_shot.rs": "94eb06add4dc642e63643068c4d79f37aad4c77f2c3826aafd05273187f12867",
+    "src/v2/web/one_shot_alloc.rs": "cc3e956842b38dd9f267f464514bcbe86ca5f68b90453ae3d83e9630ddc6a1fc",
+    "src/v2/web_no_alloc_tests.rs": "b1a9650a6f43ddbfafa7eedb9aa5e2899dd04edf18289212e9b57c0a117d5a74",
+    "src/v2/web_tests.rs": "5021c52f7150fda32336a3ab0a177fd322469472e11013ce8da17aa8e6969fde",
+    "src/v2/wrapping.rs": "b74985e1d39c012f84576f357d6f66b93f2d20c29d7428b259db2b9c5105fe4e",
+    "src/v2/wrapping_tests.rs": "66adf3d702f7a78f47de018bf1090014754abc10e6468fbbd1841a089cd560e0",
+    "src/wrap.rs": "58e4c0a3cc61d82595911c0e64c75a147ddb0aea3ca04b77a71fc08f94be2f7c"
+  },
+  "runs": [
+    {
+      "features": "std,simd",
+      "repetition": 0,
+      "command": [
+        "cargo",
+        "+1.99.0",
+        "test",
+        "--locked",
+        "--offline",
+        "--release",
+        "--no-default-features",
+        "--features",
+        "std,simd",
+        "--lib",
+        "v2::ordinary_decode::progressive_candidate::benchmark::paired_complete_operations",
+        "--",
+        "--ignored",
+        "--exact",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "log": "plain-0.log",
+      "log_sha256": "c49c82bc0682de8ed96dff5ca552bbc30bd08114d4948b31d51adb4c9ef3fc8c",
+      "rows": [
+        {
+          "profile": 0,
+          "decoded_bytes": 4096,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.7742301807736093,
+            0.7562123464008116,
+            0.745138549189998,
+            0.7618322229128063,
+            0.8343656360860131,
+            0.7028679781292642,
+            0.7456175783839473,
+            0.773396144368749,
+            0.7169539264934656,
+            0.7684281965044306,
+            0.8761092013177096
+          ],
+          "median_speedup": 0.7618322229128063,
+          "median_ns_per_call": {
+            "transactional": 517.3515625,
+            "progressive": 681.224609375,
+            "incremental": 570.7333984375
+          }
+        },
+        {
+          "profile": 0,
+          "decoded_bytes": 16384,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.7446978094660803,
+            0.6558773319953742,
+            0.6487333172067576,
+            0.7268840236239973,
+            0.7123029731938111,
+            0.7293535390516902,
+            0.6544129033795133,
+            0.8264405711575606,
+            0.7338711814111226,
+            0.8382729504205327,
+            0.7301192193991825
+          ],
+          "median_speedup": 0.7293535390516902,
+          "median_ns_per_call": {
+            "transactional": 1727.55078125,
+            "progressive": 2371.1875,
+            "incremental": 1772.20703125
+          }
+        },
+        {
+          "profile": 0,
+          "decoded_bytes": 65536,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.7163137707102686,
+            0.7890540478180392,
+            0.6366406589049265,
+            0.7111206261667837,
+            0.6434859767286196,
+            0.6554715746166313,
+            0.7216651173104313,
+            0.693967193165975,
+            0.8064483859536683,
+            0.7367443525361457,
+            0.7167902570097534
+          ],
+          "median_speedup": 0.7163137707102686,
+          "median_ns_per_call": {
+            "transactional": 6571.921875,
+            "progressive": 9215.484375,
+            "incremental": 6591.171875
+          }
+        },
+        {
+          "profile": 0,
+          "decoded_bytes": 1048576,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.6989234357116425,
+            0.7089668649399181,
+            0.703551721169379,
+            0.7062451509493483,
+            0.7094662000739099,
+            0.6984184271703843,
+            0.7248969787330972,
+            0.7094469987119668,
+            0.6949034835151466,
+            0.7022436422737578,
+            0.7148059393732519
+          ],
+          "median_speedup": 0.7062451509493483,
+          "median_ns_per_call": {
+            "transactional": 103046.75,
+            "progressive": 146436.0,
+            "incremental": 102919.0
+          }
+        },
+        {
+          "profile": 1,
+          "decoded_bytes": 4096,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.7475409606203159,
+            0.7464202199324519,
+            0.7591060290767382,
+            0.758493744559799,
+            0.7503178507516484,
+            0.7543541748043776,
+            0.7628777104906072,
+            0.7752043233660092,
+            0.7690196872679307,
+            0.7714225758578765,
+            0.7209789995856096
+          ],
+          "median_speedup": 0.758493744559799,
+          "median_ns_per_call": {
+            "transactional": 526.16796875,
+            "progressive": 694.4736328125,
+            "incremental": 672.9775390625
+          }
+        },
+        {
+          "profile": 1,
+          "decoded_bytes": 16384,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.7037504871829788,
+            0.7502742008561504,
+            0.7300336789520784,
+            0.7617576841840734,
+            0.6966360253529946,
+            0.7136126117940869,
+            0.7325576774039704,
+            0.6012461890336335,
+            0.7364785777835822,
+            0.7056257710122664,
+            0.7420314451616594
+          ],
+          "median_speedup": 0.7300336789520784,
+          "median_ns_per_call": {
+            "transactional": 2303.94921875,
+            "progressive": 3155.4765625,
+            "incremental": 2457.6796875
+          }
+        },
+        {
+          "profile": 1,
+          "decoded_bytes": 65536,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.7187225093468221,
+            0.7310333446248187,
+            0.7051206592113007,
+            0.720783233878333,
+            0.7145067883682752,
+            0.7258991066790782,
+            0.7269948821204067,
+            0.713519925806435,
+            0.7179816891266331,
+            0.6533108379930082,
+            0.713863142353279
+          ],
+          "median_speedup": 0.7179816891266331,
+          "median_ns_per_call": {
+            "transactional": 6546.5625,
+            "progressive": 9114.515625,
+            "incremental": 6685.109375
+          }
+        },
+        {
+          "profile": 1,
+          "decoded_bytes": 1048576,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.7122770126428292,
+            0.6943229141003706,
+            0.6888253399332458,
+            0.71129152835834,
+            0.7114520925370056,
+            0.7056996509862655,
+            0.7109957143197546,
+            0.7149336852838966,
+            0.7146461145598533,
+            0.6959480798119163,
+            0.7091222177850138
+          ],
+          "median_speedup": 0.7109957143197546,
+          "median_ns_per_call": {
+            "transactional": 103878.25,
+            "progressive": 146884.5,
+            "incremental": 103970.75
+          }
+        },
+        {
+          "profile": 2,
+          "decoded_bytes": 4096,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.7635246144333248,
+            0.7401729097050177,
+            0.7595767183876645,
+            0.7627999909819526,
+            0.7623559670488536,
+            0.7620428098321945,
+            0.7682940975100506,
+            0.7493488618316569,
+            0.7454862409925964,
+            0.7309874266416365,
+            0.7497264614367612
+          ],
+          "median_speedup": 0.7595767183876645,
+          "median_ns_per_call": {
+            "transactional": 522.185546875,
+            "progressive": 693.0546875,
+            "incremental": 580.17578125
+          }
+        },
+        {
+          "profile": 2,
+          "decoded_bytes": 16384,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.7291724525557098,
+            0.7368787138059183,
+            0.7398781490432731,
+            0.7411400255985892,
+            0.737737239360325,
+            0.7303551878832778,
+            0.7354391528473632,
+            0.7138260567993526,
+            0.7389288489839112,
+            0.7417710640267081,
+            0.7360243635473085
+          ],
+          "median_speedup": 0.7368787138059183,
+          "median_ns_per_call": {
+            "transactional": 1738.078125,
+            "progressive": 2362.96875,
+            "incremental": 1787.51171875
+          }
+        },
+        {
+          "profile": 2,
+          "decoded_bytes": 65536,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.7214478964536344,
+            0.7204978724656038,
+            0.7050938925199465,
+            0.7163887372253154,
+            0.7236281879171559,
+            0.7209729060449068,
+            0.7210446637829201,
+            0.7182306173703997,
+            0.7246773943800422,
+            0.7223570432832412,
+            0.7183290428673514
+          ],
+          "median_speedup": 0.7209729060449068,
+          "median_ns_per_call": {
+            "transactional": 6536.859375,
+            "progressive": 9090.109375,
+            "incremental": 6598.84375
+          }
+        },
+        {
+          "profile": 2,
+          "decoded_bytes": 1048576,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.7158823722211585,
+            0.7207639481831087,
+            0.715984299197017,
+            0.7231968065315887,
+            0.7120490766901332,
+            0.7125215319172415,
+            0.7181180527073152,
+            0.7227766530004769,
+            0.7095918521416267,
+            0.7301019857073668,
+            0.7200705270324529
+          ],
+          "median_speedup": 0.7181180527073152,
+          "median_ns_per_call": {
+            "transactional": 103392.5,
+            "progressive": 143851.0,
+            "incremental": 103194.5
+          }
+        },
+        {
+          "profile": 3,
+          "decoded_bytes": 4096,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.745978819126488,
+            0.7547145664532753,
+            0.7537753885443783,
+            0.7483479775324945,
+            0.7453788333274517,
+            0.754481996401683,
+            0.7579192296498897,
+            0.7519913537801681,
+            0.7828237403782538,
+            0.7489131016683149,
+            0.7639251381862403
+          ],
+          "median_speedup": 0.7537753885443783,
+          "median_ns_per_call": {
+            "transactional": 521.32421875,
+            "progressive": 691.8212890625,
+            "incremental": 657.5185546875
+          }
+        },
+        {
+          "profile": 3,
+          "decoded_bytes": 16384,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.7147820744286754,
+            0.7397206374188471,
+            0.7381000570692927,
+            0.8027386350707819,
+            0.7252976205216594,
+            0.6507494605282139,
+            0.729728035087268,
+            0.7359370309842244,
+            0.7302228679155044,
+            0.7409120471705276,
+            0.789894698560164
+          ],
+          "median_speedup": 0.7359370309842244,
+          "median_ns_per_call": {
+            "transactional": 1741.52734375,
+            "progressive": 2377.80078125,
+            "incremental": 1883.39453125
+          }
+        },
+        {
+          "profile": 3,
+          "decoded_bytes": 65536,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.7364441295958275,
+            0.7313904482282114,
+            0.6632196946519374,
+            0.7312275476079968,
+            0.7306466231209175,
+            0.714950192131872,
+            0.696618508864802,
+            0.7258838792827162,
+            0.7296955622582396,
+            0.7180407206778855,
+            0.678453745143363
+          ],
+          "median_speedup": 0.7258838792827162,
+          "median_ns_per_call": {
+            "transactional": 6617.78125,
+            "progressive": 9177.453125,
+            "incremental": 6696.21875
+          }
+        },
+        {
+          "profile": 3,
+          "decoded_bytes": 1048576,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.6998734689310276,
+            0.6924958132858396,
+            0.7173088451123468,
+            0.7198466184384437,
+            0.7066053214115195,
+            0.7070705345138911,
+            0.7240923524400423,
+            0.7130558507902767,
+            0.7189905917161794,
+            0.7210166401519484,
+            0.711434551154571
+          ],
+          "median_speedup": 0.7130558507902767,
+          "median_ns_per_call": {
+            "transactional": 104013.5,
+            "progressive": 145258.75,
+            "incremental": 103677.75
+          }
+        }
+      ]
+    },
+    {
+      "features": "std,simd",
+      "repetition": 1,
+      "command": [
+        "cargo",
+        "+1.99.0",
+        "test",
+        "--locked",
+        "--offline",
+        "--release",
+        "--no-default-features",
+        "--features",
+        "std,simd",
+        "--lib",
+        "v2::ordinary_decode::progressive_candidate::benchmark::paired_complete_operations",
+        "--",
+        "--ignored",
+        "--exact",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "log": "plain-1.log",
+      "log_sha256": "b181b9cfce2205c16294d2bb0d313efdb82da31df05583cece35f9b9698b9464",
+      "rows": [
+        {
+          "profile": 0,
+          "decoded_bytes": 4096,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.755360738903398,
+            0.7252153656025291,
+            0.7406111580289895,
+            0.7484946128285168,
+            0.7202961881939319,
+            0.7556917058578189,
+            0.7324115357157289,
+            0.7443515350241598,
+            0.741289051105277,
+            0.6950345035694717,
+            0.7484086347614136
+          ],
+          "median_speedup": 0.741289051105277,
+          "median_ns_per_call": {
+            "transactional": 508.7421875,
+            "progressive": 680.7060546875,
+            "incremental": 579.48046875
+          }
+        },
+        {
+          "profile": 0,
+          "decoded_bytes": 16384,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.7008760045773212,
+            0.714609510380771,
+            0.7060059788024278,
+            0.7598149747463716,
+            0.731546589849641,
+            0.704519036463456,
+            0.7306093127191233,
+            0.7224195520291699,
+            0.7028470618202516,
+            0.9138823482658242,
+            0.723193224337075
+          ],
+          "median_speedup": 0.7224195520291699,
+          "median_ns_per_call": {
+            "transactional": 1705.75390625,
+            "progressive": 2371.421875,
+            "incremental": 1760.8984375
+          }
+        },
+        {
+          "profile": 0,
+          "decoded_bytes": 65536,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.9026929507746535,
+            0.6639200592106218,
+            0.6370517568983801,
+            0.7215232983804858,
+            0.6053659039897359,
+            0.7296209607639299,
+            0.7091644049786465,
+            0.6454359871682707,
+            0.8273220451561326,
+            0.7505928134937241,
+            0.7917863719420878
+          ],
+          "median_speedup": 0.7215232983804858,
+          "median_ns_per_call": {
+            "transactional": 6587.40625,
+            "progressive": 9234.4375,
+            "incremental": 6503.1875
+          }
+        },
+        {
+          "profile": 0,
+          "decoded_bytes": 1048576,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.7023213273921529,
+            0.7861974565609756,
+            0.6856682065348958,
+            0.8275521726543679,
+            0.6914577253894756,
+            0.696493316367716,
+            0.7137848135322554,
+            0.71221085857708,
+            0.7148436359012864,
+            0.7034084775306587,
+            0.7198073827128835
+          ],
+          "median_speedup": 0.71221085857708,
+          "median_ns_per_call": {
+            "transactional": 102438.0,
+            "progressive": 144469.75,
+            "incremental": 102272.75
+          }
+        },
+        {
+          "profile": 1,
+          "decoded_bytes": 4096,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.7724125116310737,
+            0.732098663988981,
+            0.7324865201017727,
+            0.7458835138773333,
+            0.7633559004843681,
+            0.7426819589907959,
+            0.7343364705849442,
+            0.7441272211106456,
+            0.7500707177925966,
+            0.750953366975536,
+            0.5775805767390468
+          ],
+          "median_speedup": 0.7441272211106456,
+          "median_ns_per_call": {
+            "transactional": 523.45703125,
+            "progressive": 701.2041015625,
+            "incremental": 656.8720703125
+          }
+        },
+        {
+          "profile": 1,
+          "decoded_bytes": 16384,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.7086678851525262,
+            0.6409749853512557,
+            0.8145970992507451,
+            0.6576157286193219,
+            0.8155055876064723,
+            0.7151178869108871,
+            0.7733937356909737,
+            0.7263986817347056,
+            0.6719233036219071,
+            0.7307705281337386,
+            0.6509866102889359
+          ],
+          "median_speedup": 0.7151178869108871,
+          "median_ns_per_call": {
+            "transactional": 1737.37890625,
+            "progressive": 2429.5,
+            "incremental": 1849.58203125
+          }
+        },
+        {
+          "profile": 1,
+          "decoded_bytes": 65536,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.6489159226611803,
+            0.7931205721286602,
+            0.7129866073573728,
+            0.6912543115953709,
+            0.7471029523611975,
+            0.718050400299029,
+            0.8107516989385432,
+            0.7140677416994994,
+            0.6447239813316152,
+            0.7154221288097966,
+            0.6522183769552083
+          ],
+          "median_speedup": 0.7140677416994994,
+          "median_ns_per_call": {
+            "transactional": 6491.609375,
+            "progressive": 9104.8125,
+            "incremental": 6583.65625
+          }
+        },
+        {
+          "profile": 1,
+          "decoded_bytes": 1048576,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.7830543841345269,
+            0.6429091823034977,
+            0.7745810928073725,
+            0.6645800863998002,
+            0.720922315341526,
+            0.6382759445392008,
+            0.7059549142748396,
+            0.7770175173059292,
+            0.7133728693807535,
+            0.7192856644332775,
+            0.6762987784670079
+          ],
+          "median_speedup": 0.7133728693807535,
+          "median_ns_per_call": {
+            "transactional": 103239.5,
+            "progressive": 144720.25,
+            "incremental": 102087.25
+          }
+        },
+        {
+          "profile": 2,
+          "decoded_bytes": 4096,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.7512165837676505,
+            0.7565723235261215,
+            0.7606223919895531,
+            0.7642669537931809,
+            0.7674769889795012,
+            0.765765098501153,
+            0.773377394611254,
+            0.7813552601253709,
+            0.7638440258013128,
+            0.7605523710265764,
+            0.763721470833808
+          ],
+          "median_speedup": 0.7638440258013128,
+          "median_ns_per_call": {
+            "transactional": 523.8779296875,
+            "progressive": 685.892578125,
+            "incremental": 574.021484375
+          }
+        },
+        {
+          "profile": 2,
+          "decoded_bytes": 16384,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.7339330383724637,
+            0.7327510008838974,
+            0.7254997240913545,
+            0.7241223634495425,
+            0.7300370350634126,
+            0.728321283866929,
+            0.7405136080198902,
+            0.7264256831026896,
+            0.7252025385047556,
+            0.7269752953069164,
+            0.7293398297832822
+          ],
+          "median_speedup": 0.728321283866929,
+          "median_ns_per_call": {
+            "transactional": 1717.92578125,
+            "progressive": 2355.453125,
+            "incremental": 1763.79296875
+          }
+        },
+        {
+          "profile": 2,
+          "decoded_bytes": 65536,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.7185619546247819,
+            0.7181847398116752,
+            0.72721992816815,
+            0.7359670071819562,
+            0.7260642990536652,
+            0.7174941549564936,
+            0.7258896149788846,
+            0.7228957010978649,
+            0.7177745851220331,
+            0.7183678015180851,
+            0.7150455331176292
+          ],
+          "median_speedup": 0.7185619546247819,
+          "median_ns_per_call": {
+            "transactional": 6518.234375,
+            "progressive": 9066.3125,
+            "incremental": 6553.4375
+          }
+        },
+        {
+          "profile": 2,
+          "decoded_bytes": 1048576,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.7293646982387254,
+            0.7122819790226111,
+            0.7089685898251247,
+            0.7198530869479022,
+            0.7285267423979711,
+            0.7095253534246293,
+            0.7234199283013308,
+            0.71469334996394,
+            0.7064765655877808,
+            0.7324089282318159,
+            0.72023287273795
+          ],
+          "median_speedup": 0.7198530869479022,
+          "median_ns_per_call": {
+            "transactional": 103227.0,
+            "progressive": 143535.5,
+            "incremental": 102856.25
+          }
+        },
+        {
+          "profile": 3,
+          "decoded_bytes": 4096,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.7450886102011375,
+            0.7536236640927247,
+            0.7516284209656885,
+            0.7480845677388157,
+            0.7364711403764516,
+            0.7288019446631379,
+            0.757775760483308,
+            0.7562061715097625,
+            0.7444685460258718,
+            0.7565047092409019,
+            0.7458341740358592
+          ],
+          "median_speedup": 0.7480845677388157,
+          "median_ns_per_call": {
+            "transactional": 515.5908203125,
+            "progressive": 686.6650390625,
+            "incremental": 646.8642578125
+          }
+        },
+        {
+          "profile": 3,
+          "decoded_bytes": 16384,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.7080798247748844,
+            0.7260308038650441,
+            0.7301913551745994,
+            0.7299593249561129,
+            0.7279990827491319,
+            0.7203458020641703,
+            0.7253136533771535,
+            0.7298551146657313,
+            0.8274369465970239,
+            0.7164107540949032,
+            0.7393862706841801
+          ],
+          "median_speedup": 0.7279990827491319,
+          "median_ns_per_call": {
+            "transactional": 1733.4609375,
+            "progressive": 2384.84375,
+            "incremental": 1859.36328125
+          }
+        },
+        {
+          "profile": 3,
+          "decoded_bytes": 65536,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.7152029879000281,
+            0.7213526395461426,
+            0.7270913047513949,
+            0.7286557023234075,
+            0.7119093715572038,
+            0.7119476521990621,
+            0.7293353004505762,
+            0.7277385844808469,
+            0.7179594180506387,
+            0.720032955085955,
+            0.7855296438908639
+          ],
+          "median_speedup": 0.7213526395461426,
+          "median_ns_per_call": {
+            "transactional": 6573.328125,
+            "progressive": 9090.09375,
+            "incremental": 6680.5625
+          }
+        },
+        {
+          "profile": 3,
+          "decoded_bytes": 1048576,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.7229281214052787,
+            0.7049748403228968,
+            0.7077769711649287,
+            0.7319378254307854,
+            0.7311679685054705,
+            0.7067326450813427,
+            0.6917120299574514,
+            0.7113086165392984,
+            0.7247938981696246,
+            0.7602632867967877,
+            0.652114967462039
+          ],
+          "median_speedup": 0.7113086165392984,
+          "median_ns_per_call": {
+            "transactional": 102858.75,
+            "progressive": 143891.25,
+            "incremental": 104041.0
+          }
+        }
+      ]
+    },
+    {
+      "features": "std,simd",
+      "repetition": 2,
+      "command": [
+        "cargo",
+        "+1.99.0",
+        "test",
+        "--locked",
+        "--offline",
+        "--release",
+        "--no-default-features",
+        "--features",
+        "std,simd",
+        "--lib",
+        "v2::ordinary_decode::progressive_candidate::benchmark::paired_complete_operations",
+        "--",
+        "--ignored",
+        "--exact",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "log": "plain-2.log",
+      "log_sha256": "fefa9c60294dd01430b98119a10409a964630fb8796c9f4a7211acb04254312a",
+      "rows": [
+        {
+          "profile": 0,
+          "decoded_bytes": 4096,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.7182307111146857,
+            0.8352896089343144,
+            0.6656428394142467,
+            0.7046774076253314,
+            0.7133056167219903,
+            0.7183616842440915,
+            0.7447802431352546,
+            0.748199574930282,
+            0.7661766493215035,
+            0.7485799001471111,
+            0.7568106245019042
+          ],
+          "median_speedup": 0.7447802431352546,
+          "median_ns_per_call": {
+            "transactional": 513.3310546875,
+            "progressive": 691.009765625,
+            "incremental": 579.5205078125
+          }
+        },
+        {
+          "profile": 0,
+          "decoded_bytes": 16384,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.7245598598925731,
+            0.72712100184821,
+            0.7280980179619665,
+            0.7296939231163236,
+            0.7149848269754236,
+            0.7203587514764281,
+            0.7213758022701852,
+            0.7234298300506398,
+            0.7196068907347908,
+            0.7288814173446821,
+            0.72533796533579
+          ],
+          "median_speedup": 0.7245598598925731,
+          "median_ns_per_call": {
+            "transactional": 1719.2578125,
+            "progressive": 2379.40625,
+            "incremental": 1785.90625
+          }
+        },
+        {
+          "profile": 0,
+          "decoded_bytes": 65536,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.7091494697363165,
+            0.7168309834029619,
+            0.7038514524294492,
+            0.7099941744911247,
+            0.7132539681182372,
+            0.7159079529405264,
+            0.7223256396486972,
+            0.71752917061135,
+            0.6969614208520085,
+            0.7082676771360386,
+            0.7163984081663248
+          ],
+          "median_speedup": 0.7132539681182372,
+          "median_ns_per_call": {
+            "transactional": 6516.5,
+            "progressive": 9136.296875,
+            "incremental": 6638.609375
+          }
+        },
+        {
+          "profile": 0,
+          "decoded_bytes": 1048576,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.7053710351040018,
+            0.7184053096458451,
+            0.7078451831212224,
+            0.7209140421339282,
+            0.7149395719236071,
+            0.6996061679941775,
+            0.709975687403613,
+            0.7094829108098705,
+            0.7132022922518747,
+            0.7126156372624697,
+            0.7014322306616372
+          ],
+          "median_speedup": 0.709975687403613,
+          "median_ns_per_call": {
+            "transactional": 103966.0,
+            "progressive": 146220.5,
+            "incremental": 103738.0
+          }
+        },
+        {
+          "profile": 1,
+          "decoded_bytes": 4096,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.7544583440476762,
+            0.7443299431732123,
+            0.7375456536593784,
+            0.7394601446678499,
+            0.7351919404901766,
+            0.7494252452568646,
+            0.7357133472544859,
+            0.7385551894120923,
+            0.750951524915031,
+            0.7394999834449877,
+            0.7414275840419826
+          ],
+          "median_speedup": 0.7394999834449877,
+          "median_ns_per_call": {
+            "transactional": 514.357421875,
+            "progressive": 694.8837890625,
+            "incremental": 660.8359375
+          }
+        },
+        {
+          "profile": 1,
+          "decoded_bytes": 16384,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.7162009925476813,
+            0.724821853122133,
+            0.704562109184586,
+            0.7125820863905098,
+            0.7213954706411468,
+            0.732745309178373,
+            0.7198299513006837,
+            0.7244001680526653,
+            0.7372577183342925,
+            0.7429739531383256,
+            0.7181721133647853
+          ],
+          "median_speedup": 0.7213954706411468,
+          "median_ns_per_call": {
+            "transactional": 1730.95703125,
+            "progressive": 2389.50390625,
+            "incremental": 1874.0390625
+          }
+        },
+        {
+          "profile": 1,
+          "decoded_bytes": 65536,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.7175634712387525,
+            0.7206097752955107,
+            0.7070360887897454,
+            0.7234215081019938,
+            0.7264017371534373,
+            0.728386534836721,
+            0.6831016584459448,
+            0.7139734529117399,
+            0.7107687604035737,
+            0.7154122422163258,
+            0.7132131183915207
+          ],
+          "median_speedup": 0.7154122422163258,
+          "median_ns_per_call": {
+            "transactional": 6580.203125,
+            "progressive": 9181.6875,
+            "incremental": 6728.78125
+          }
+        },
+        {
+          "profile": 1,
+          "decoded_bytes": 1048576,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.7290886669977906,
+            0.7105936465882586,
+            0.708288484046528,
+            0.7166750364601965,
+            0.7170769046930445,
+            0.7036733360777603,
+            0.6438400231493595,
+            0.7710645113330721,
+            0.6953206660319701,
+            0.730914591968923,
+            0.7731060114009619
+          ],
+          "median_speedup": 0.7166750364601965,
+          "median_ns_per_call": {
+            "transactional": 104574.75,
+            "progressive": 146964.5,
+            "incremental": 104484.5
+          }
+        },
+        {
+          "profile": 2,
+          "decoded_bytes": 4096,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.7431291274219498,
+            0.9077052292794477,
+            0.7476272443377036,
+            0.8426210737747072,
+            0.8641798013024186,
+            0.7729370159961385,
+            0.7513667240336246,
+            0.7388966382748251,
+            0.7245739291270434,
+            0.7604732049264397,
+            0.8170449051067384
+          ],
+          "median_speedup": 0.7604732049264397,
+          "median_ns_per_call": {
+            "transactional": 536.3828125,
+            "progressive": 704.8935546875,
+            "incremental": 592.591796875
+          }
+        },
+        {
+          "profile": 2,
+          "decoded_bytes": 16384,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.7211297230373462,
+            0.7348585366497676,
+            0.6844238980168585,
+            0.7887605408718183,
+            0.7402022313499292,
+            0.7478524325465054,
+            0.6856702063483359,
+            0.7425804851398956,
+            0.7166253181686374,
+            0.7734862999828652,
+            0.7306559077201596
+          ],
+          "median_speedup": 0.7348585366497676,
+          "median_ns_per_call": {
+            "transactional": 1785.7109375,
+            "progressive": 2424.765625,
+            "incremental": 1832.91015625
+          }
+        },
+        {
+          "profile": 2,
+          "decoded_bytes": 65536,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.7365974626525943,
+            0.7429572991735878,
+            0.707767334902288,
+            0.7019512462922328,
+            0.7199555471611567,
+            0.7080220225188746,
+            0.7392539988571061,
+            0.715562902562697,
+            0.6807880228714775,
+            0.7268680672211756,
+            0.7195613020613901
+          ],
+          "median_speedup": 0.7195613020613901,
+          "median_ns_per_call": {
+            "transactional": 6679.78125,
+            "progressive": 9265.4375,
+            "incremental": 6778.5625
+          }
+        },
+        {
+          "profile": 2,
+          "decoded_bytes": 1048576,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.6973386638832269,
+            0.7110953556451433,
+            0.8504010516235984,
+            0.5819550985928563,
+            0.714690524541436,
+            0.709102711322677,
+            0.6411649012559251,
+            0.8123446990320244,
+            0.7953033702114592,
+            0.681043630433918,
+            0.6969110241949233
+          ],
+          "median_speedup": 0.709102711322677,
+          "median_ns_per_call": {
+            "transactional": 106608.5,
+            "progressive": 147395.25,
+            "incremental": 106320.5
+          }
+        },
+        {
+          "profile": 3,
+          "decoded_bytes": 4096,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.7571482524635811,
+            0.7057705814065339,
+            0.7569884033895438,
+            0.6912735801826337,
+            0.7505382251398549,
+            0.6777810887337589,
+            0.8164250796662739,
+            0.7817713649503758,
+            0.7969806013224711,
+            0.7862780615821697,
+            0.7668382573805593
+          ],
+          "median_speedup": 0.7571482524635811,
+          "median_ns_per_call": {
+            "transactional": 539.3662109375,
+            "progressive": 704.2568359375,
+            "incremental": 660.7373046875
+          }
+        },
+        {
+          "profile": 3,
+          "decoded_bytes": 16384,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.6446448703494927,
+            0.7080038345536599,
+            0.7210558601264746,
+            0.6520023017288992,
+            0.7163834345451909,
+            0.7414544927162563,
+            0.7242653941980424,
+            0.7361433577788656,
+            0.7437844042680859,
+            0.7558575108193978,
+            0.7154744812949261
+          ],
+          "median_speedup": 0.7210558601264746,
+          "median_ns_per_call": {
+            "transactional": 1761.5625,
+            "progressive": 2432.5546875,
+            "incremental": 1906.9921875
+          }
+        },
+        {
+          "profile": 3,
+          "decoded_bytes": 65536,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.6256985570727274,
+            0.6871946097277074,
+            0.7069175680578942,
+            0.7405142883397686,
+            0.703867757086329,
+            0.7119721995996502,
+            0.7119544888557877,
+            0.7658541270352104,
+            0.7367962490116388,
+            0.7486981744317155,
+            0.7235162435537366
+          ],
+          "median_speedup": 0.7119721995996502,
+          "median_ns_per_call": {
+            "transactional": 6761.640625,
+            "progressive": 9343.390625,
+            "incremental": 6872.328125
+          }
+        },
+        {
+          "profile": 3,
+          "decoded_bytes": 1048576,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            0.7812706563647517,
+            0.7325804241288039,
+            0.725201074666889,
+            0.7043001625398576,
+            0.7252913534486948,
+            0.7762319789407641,
+            0.7363151262991433,
+            0.7025834439718232,
+            0.7001632144840235,
+            0.7440768976033649,
+            0.8324631146919527
+          ],
+          "median_speedup": 0.7325804241288039,
+          "median_ns_per_call": {
+            "transactional": 106553.25,
+            "progressive": 147124.75,
+            "incremental": 104732.5
+          }
+        }
+      ]
+    },
+    {
+      "features": "std,checked-backend",
+      "repetition": 0,
+      "command": [
+        "cargo",
+        "+1.99.0",
+        "test",
+        "--locked",
+        "--offline",
+        "--release",
+        "--no-default-features",
+        "--features",
+        "std,checked-backend",
+        "--lib",
+        "v2::ordinary_decode::progressive_candidate::benchmark::paired_complete_operations",
+        "--",
+        "--ignored",
+        "--exact",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "log": "checked-0.log",
+      "log_sha256": "d6098eda952cd6d590306965a50849770ca708fd63342adfcc607a293b5f1c88",
+      "rows": [
+        {
+          "profile": 0,
+          "decoded_bytes": 4096,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            8.097558213612523,
+            9.130547570528455,
+            9.240444709914984,
+            8.851070341580503,
+            9.029572216469319,
+            8.90089899660694,
+            8.714666632400176,
+            8.940828903395508,
+            8.947064494041205,
+            8.855743802648023,
+            8.849064234534614
+          ],
+          "median_speedup": 8.90089899660694,
+          "median_ns_per_call": {
+            "transactional": 126548.10546875,
+            "progressive": 14062.0986328125,
+            "incremental": 128869.453125
+          }
+        },
+        {
+          "profile": 0,
+          "decoded_bytes": 16384,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            8.42865699673217,
+            8.5193325032517,
+            8.528041977436319,
+            8.462966202202958,
+            8.514445600431715,
+            8.484369626153168,
+            8.533356014909945,
+            8.477819812161568,
+            8.505165174712527,
+            8.434131916150651,
+            8.434408340192146
+          ],
+          "median_speedup": 8.484369626153168,
+          "median_ns_per_call": {
+            "transactional": 493571.2890625,
+            "progressive": 58143.52734375,
+            "incremental": 494314.29296875
+          }
+        },
+        {
+          "profile": 0,
+          "decoded_bytes": 65536,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            8.370431955527154,
+            8.415273327736648,
+            8.448467538999305,
+            8.402299647817367,
+            8.414274210647482,
+            8.54185827242379,
+            8.423356949013952,
+            8.694028233722326,
+            8.419341676987123,
+            8.44220209044908,
+            8.368075101577013
+          ],
+          "median_speedup": 8.419341676987123,
+          "median_ns_per_call": {
+            "transactional": 1968528.703125,
+            "progressive": 233783.109375,
+            "incremental": 1966625.734375
+          }
+        },
+        {
+          "profile": 0,
+          "decoded_bytes": 1048576,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            8.338892825857464,
+            8.407263352169899,
+            8.40418572838806,
+            8.333674169145539,
+            8.400925183631108,
+            8.618866028423106,
+            8.27175651684393,
+            8.393997638593413,
+            8.63367141388592,
+            8.354188747012568,
+            8.476420328121954
+          ],
+          "median_speedup": 8.400925183631108,
+          "median_ns_per_call": {
+            "transactional": 31577822.5,
+            "progressive": 3761952.75,
+            "incremental": 31685507.75
+          }
+        },
+        {
+          "profile": 1,
+          "decoded_bytes": 4096,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            8.580644502371165,
+            8.561240673044413,
+            8.5893210587521,
+            8.581397730357004,
+            8.584371082000121,
+            8.749480345039597,
+            8.538996642686662,
+            8.513745687893895,
+            8.531665146199455,
+            8.563276164082259,
+            8.419975715901646
+          ],
+          "median_speedup": 8.563276164082259,
+          "median_ns_per_call": {
+            "transactional": 118966.345703125,
+            "progressive": 13884.7724609375,
+            "incremental": 118666.2490234375
+          }
+        },
+        {
+          "profile": 1,
+          "decoded_bytes": 16384,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            8.219388155907621,
+            8.254982622398371,
+            8.22769609841001,
+            8.130587475594263,
+            8.15949167368582,
+            8.17412018855823,
+            8.050737337954368,
+            8.111715115707897,
+            8.15692769444898,
+            8.383238813075884,
+            8.280733439355695
+          ],
+          "median_speedup": 8.17412018855823,
+          "median_ns_per_call": {
+            "transactional": 473932.71484375,
+            "progressive": 57680.390625,
+            "incremental": 471601.40625
+          }
+        },
+        {
+          "profile": 1,
+          "decoded_bytes": 65536,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            8.04360050397053,
+            8.109638433464276,
+            8.091681178233161,
+            8.065428531437036,
+            7.798347930273253,
+            8.031249088178157,
+            8.02041005930128,
+            7.96210277288114,
+            8.009004677699272,
+            8.05675554653657,
+            8.226815348364285
+          ],
+          "median_speedup": 8.04360050397053,
+          "median_ns_per_call": {
+            "transactional": 1903956.984375,
+            "progressive": 235273.890625,
+            "incremental": 1907447.953125
+          }
+        },
+        {
+          "profile": 1,
+          "decoded_bytes": 1048576,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            8.096488363712876,
+            8.066417086082549,
+            8.399616321892127,
+            8.236838951054061,
+            8.164387711941654,
+            7.890707894797024,
+            8.366624141644952,
+            8.151902281997586,
+            8.07595278510502,
+            8.170020527147864,
+            8.161124845045824
+          ],
+          "median_speedup": 8.161124845045824,
+          "median_ns_per_call": {
+            "transactional": 30522430.75,
+            "progressive": 3743748.5,
+            "incremental": 30367128.25
+          }
+        },
+        {
+          "profile": 2,
+          "decoded_bytes": 4096,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            9.08545339982739,
+            9.011375931740755,
+            8.874642975700754,
+            8.937178976837224,
+            8.84988492767868,
+            8.838912521470283,
+            8.87843065238367,
+            8.854313264051202,
+            8.934795354187017,
+            8.61202300944939,
+            8.88282096014582
+          ],
+          "median_speedup": 8.87843065238367,
+          "median_ns_per_call": {
+            "transactional": 123999.3759765625,
+            "progressive": 13900.181640625,
+            "incremental": 124435.82421875
+          }
+        },
+        {
+          "profile": 2,
+          "decoded_bytes": 16384,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            8.484268507316225,
+            8.440310192032488,
+            8.41779361726124,
+            8.437639717137998,
+            8.548475418697686,
+            8.510542596594284,
+            8.566480419050695,
+            8.527744288782767,
+            8.486518953353485,
+            8.505927845115309,
+            8.550750279017242
+          ],
+          "median_speedup": 8.505927845115309,
+          "median_ns_per_call": {
+            "transactional": 494385.55859375,
+            "progressive": 58122.47265625,
+            "incremental": 494087.61328125
+          }
+        },
+        {
+          "profile": 2,
+          "decoded_bytes": 65536,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            8.434937417372733,
+            8.423586279038423,
+            8.418315280005421,
+            8.421505565196561,
+            8.457202354506872,
+            8.43483310811904,
+            8.365748868621544,
+            8.213066730552903,
+            8.109001184627779,
+            8.367700609961377,
+            8.245346771109133
+          ],
+          "median_speedup": 8.418315280005421,
+          "median_ns_per_call": {
+            "transactional": 1963036.46875,
+            "progressive": 233541.25,
+            "incremental": 1966917.21875
+          }
+        },
+        {
+          "profile": 2,
+          "decoded_bytes": 1048576,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            8.288386135906741,
+            8.435376174572589,
+            8.327162971326674,
+            8.338437225371509,
+            8.64191330952648,
+            8.622762522307038,
+            8.450851617797344,
+            8.39594194600128,
+            8.405155189538238,
+            8.475438418414512,
+            8.420171322810123
+          ],
+          "median_speedup": 8.420171322810123,
+          "median_ns_per_call": {
+            "transactional": 31560284.25,
+            "progressive": 3746015.0,
+            "incremental": 31420703.75
+          }
+        },
+        {
+          "profile": 3,
+          "decoded_bytes": 4096,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            8.55767801253065,
+            8.577743961931958,
+            8.53026412116788,
+            8.59192065867587,
+            8.529699845883176,
+            8.52549102475228,
+            8.509994175111299,
+            8.579663146468528,
+            8.539890478332312,
+            8.556103579403647,
+            8.561475550263395
+          ],
+          "median_speedup": 8.556103579403647,
+          "median_ns_per_call": {
+            "transactional": 118264.798828125,
+            "progressive": 13828.40625,
+            "incremental": 118260.2978515625
+          }
+        },
+        {
+          "profile": 3,
+          "decoded_bytes": 16384,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            8.1625505505904,
+            8.183915560910206,
+            8.171395010865165,
+            8.204798200793544,
+            8.143039502776668,
+            8.225156223045833,
+            7.730075220977176,
+            8.147765495673085,
+            8.556199165909238,
+            8.537347036168224,
+            8.472858935079186
+          ],
+          "median_speedup": 8.183915560910206,
+          "median_ns_per_call": {
+            "transactional": 473449.6953125,
+            "progressive": 57697.65234375,
+            "incremental": 470759.47265625
+          }
+        },
+        {
+          "profile": 3,
+          "decoded_bytes": 65536,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            8.383723082919225,
+            8.108312926337629,
+            8.087531253833095,
+            8.06638620727762,
+            8.260610150046068,
+            8.137353703069515,
+            8.094006426944675,
+            8.160138027765816,
+            8.205011111925925,
+            8.061732465287895,
+            8.08584135482224
+          ],
+          "median_speedup": 8.108312926337629,
+          "median_ns_per_call": {
+            "transactional": 1890481.28125,
+            "progressive": 233010.5625,
+            "incremental": 1886922.390625
+          }
+        },
+        {
+          "profile": 3,
+          "decoded_bytes": 1048576,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            8.115869373926213,
+            8.163187906376635,
+            7.317423522088196,
+            8.143498445297082,
+            8.128698647426274,
+            8.330550432009748,
+            8.103711039113296,
+            8.028688852307484,
+            8.188966465515174,
+            8.108908051773406,
+            7.969444485942587
+          ],
+          "median_speedup": 8.115869373926213,
+          "median_ns_per_call": {
+            "transactional": 30326807.0,
+            "progressive": 3737073.25,
+            "incremental": 29961911.75
+          }
+        }
+      ]
+    },
+    {
+      "features": "std,checked-backend",
+      "repetition": 1,
+      "command": [
+        "cargo",
+        "+1.99.0",
+        "test",
+        "--locked",
+        "--offline",
+        "--release",
+        "--no-default-features",
+        "--features",
+        "std,checked-backend",
+        "--lib",
+        "v2::ordinary_decode::progressive_candidate::benchmark::paired_complete_operations",
+        "--",
+        "--ignored",
+        "--exact",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "log": "checked-1.log",
+      "log_sha256": "08d50baa09170c657863f7f0d033716f5691704eb0a8b2ff5de401eab409a804",
+      "rows": [
+        {
+          "profile": 0,
+          "decoded_bytes": 4096,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            9.236262657413558,
+            8.892748766238473,
+            8.857352148458244,
+            8.95969268693,
+            9.174132220211744,
+            8.83336891489735,
+            8.8190308963216,
+            8.910685218255008,
+            8.92655084955237,
+            8.876154849745456,
+            8.628678287581568
+          ],
+          "median_speedup": 8.892748766238473,
+          "median_ns_per_call": {
+            "transactional": 123059.4404296875,
+            "progressive": 13880.0078125,
+            "incremental": 124312.083984375
+          }
+        },
+        {
+          "profile": 0,
+          "decoded_bytes": 16384,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            8.854300823621516,
+            8.507028351917624,
+            8.55761904839065,
+            8.416860035349703,
+            8.454523807262413,
+            8.535640668577464,
+            8.460727637953093,
+            8.441658272504403,
+            8.45810947007771,
+            8.519010946917163,
+            8.632533397819975
+          ],
+          "median_speedup": 8.507028351917624,
+          "median_ns_per_call": {
+            "transactional": 490429.31640625,
+            "progressive": 57857.25,
+            "incremental": 490886.42578125
+          }
+        },
+        {
+          "profile": 0,
+          "decoded_bytes": 65536,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            8.465550819643108,
+            8.365295525355133,
+            8.387373961262956,
+            8.362694848038515,
+            8.307376198247301,
+            8.154933558035328,
+            8.442457521892607,
+            8.707614198249358,
+            8.437497110554988,
+            8.353429452810804,
+            8.7771162915776
+          ],
+          "median_speedup": 8.387373961262956,
+          "median_ns_per_call": {
+            "transactional": 1974804.578125,
+            "progressive": 233666.484375,
+            "incremental": 1953319.5625
+          }
+        },
+        {
+          "profile": 0,
+          "decoded_bytes": 1048576,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            8.982258523528923,
+            8.43461029541639,
+            8.382011015915126,
+            8.481996853977817,
+            8.397954748496138,
+            8.316085218853065,
+            8.399311036666987,
+            8.410446188477605,
+            8.817429253164272,
+            8.422043445869605,
+            8.570288497386247
+          ],
+          "median_speedup": 8.422043445869605,
+          "median_ns_per_call": {
+            "transactional": 31725583.5,
+            "progressive": 3767783.5,
+            "incremental": 31739667.25
+          }
+        },
+        {
+          "profile": 1,
+          "decoded_bytes": 4096,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            8.757189057792873,
+            8.824101915916907,
+            8.56105944880742,
+            8.479876691310432,
+            8.554416397735126,
+            8.516940218284265,
+            8.588182419163786,
+            8.523361293246415,
+            8.51381112252881,
+            8.751234009147137,
+            8.520355040833568
+          ],
+          "median_speedup": 8.554416397735126,
+          "median_ns_per_call": {
+            "transactional": 118690.5810546875,
+            "progressive": 13871.2802734375,
+            "incremental": 118261.677734375
+          }
+        },
+        {
+          "profile": 1,
+          "decoded_bytes": 16384,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            8.171734257147678,
+            8.140803873952805,
+            8.125167377530767,
+            8.172386929114559,
+            8.243023953989184,
+            8.134333840215861,
+            8.155210437904104,
+            8.120916434829107,
+            8.180743784108541,
+            8.160301466347276,
+            8.256014250053312
+          ],
+          "median_speedup": 8.160301466347276,
+          "median_ns_per_call": {
+            "transactional": 471241.39453125,
+            "progressive": 57631.390625,
+            "incremental": 471969.5625
+          }
+        },
+        {
+          "profile": 1,
+          "decoded_bytes": 65536,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            8.068540474093277,
+            8.17106784825468,
+            8.077683166703258,
+            7.706938795982803,
+            8.075325261814676,
+            8.146632068685339,
+            8.096662837233284,
+            8.05689766307794,
+            8.054395956641251,
+            8.067277306315251,
+            8.131816660505125
+          ],
+          "median_speedup": 8.075325261814676,
+          "median_ns_per_call": {
+            "transactional": 1885001.421875,
+            "progressive": 232834.609375,
+            "incremental": 1883189.734375
+          }
+        },
+        {
+          "profile": 1,
+          "decoded_bytes": 1048576,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            8.149988253953747,
+            8.371963049021717,
+            8.15613636461411,
+            8.115094049682787,
+            8.138967306345279,
+            8.134354320689278,
+            8.01145310787348,
+            8.099779260050603,
+            8.184688279980977,
+            8.072917310070787,
+            8.106693750871106
+          ],
+          "median_speedup": 8.134354320689278,
+          "median_ns_per_call": {
+            "transactional": 30219540.0,
+            "progressive": 3725721.75,
+            "incremental": 30230929.0
+          }
+        },
+        {
+          "profile": 2,
+          "decoded_bytes": 4096,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            8.866986028808086,
+            8.77542951434813,
+            8.89037143339965,
+            8.892830299061055,
+            8.894943081461033,
+            8.829759542467071,
+            8.833739821745192,
+            8.84815117134164,
+            8.828363184541587,
+            8.85005366306463,
+            8.878028537595325
+          ],
+          "median_speedup": 8.85005366306463,
+          "median_ns_per_call": {
+            "transactional": 122096.5615234375,
+            "progressive": 13787.2939453125,
+            "incremental": 122237.6875
+          }
+        },
+        {
+          "profile": 2,
+          "decoded_bytes": 16384,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            8.402247942138244,
+            8.504317223945803,
+            8.650946392282872,
+            8.533769383604472,
+            8.494204776304324,
+            8.611945895533893,
+            8.48880381413743,
+            8.219788275148819,
+            8.519388921819068,
+            8.582326956992272,
+            8.530403627791111
+          ],
+          "median_speedup": 8.519388921819068,
+          "median_ns_per_call": {
+            "transactional": 494568.28515625,
+            "progressive": 57740.73828125,
+            "incremental": 494060.61328125
+          }
+        },
+        {
+          "profile": 2,
+          "decoded_bytes": 65536,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            8.44660343273292,
+            8.45760976384889,
+            8.498006323109458,
+            8.348555881922929,
+            8.206681028408115,
+            8.387334754200797,
+            8.413185311237378,
+            8.458786753757696,
+            8.431276170293224,
+            8.445560540695887,
+            8.390125623418673
+          ],
+          "median_speedup": 8.431276170293224,
+          "median_ns_per_call": {
+            "transactional": 1964134.15625,
+            "progressive": 233622.34375,
+            "incremental": 1967478.59375
+          }
+        },
+        {
+          "profile": 2,
+          "decoded_bytes": 1048576,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            8.380764124962562,
+            8.411203865041236,
+            8.457929894800996,
+            8.436688437733393,
+            8.517521424464235,
+            8.45671694378738,
+            7.496815606112231,
+            8.610643829372531,
+            8.607706294200035,
+            8.514242860602916,
+            8.371462231754702
+          ],
+          "median_speedup": 8.45671694378738,
+          "median_ns_per_call": {
+            "transactional": 31945723.25,
+            "progressive": 3764567.5,
+            "incremental": 31789283.5
+          }
+        },
+        {
+          "profile": 3,
+          "decoded_bytes": 4096,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            8.32609595793467,
+            8.40449115605221,
+            8.482804613023125,
+            8.572566539087896,
+            8.51360156297356,
+            8.514628318655278,
+            8.581714187271182,
+            8.504719402409588,
+            8.51247331687575,
+            7.856131580661965,
+            8.653454219371191
+          ],
+          "median_speedup": 8.51247331687575,
+          "median_ns_per_call": {
+            "transactional": 118810.3876953125,
+            "progressive": 13990.029296875,
+            "incremental": 118657.70703125
+          }
+        },
+        {
+          "profile": 3,
+          "decoded_bytes": 16384,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            8.271468033362027,
+            8.134178810541494,
+            8.134843781725253,
+            8.106196632616262,
+            8.210037913248842,
+            8.292961903758213,
+            8.272814724810374,
+            8.219445252201604,
+            8.322658925446861,
+            8.322041251958535,
+            8.18730704529143
+          ],
+          "median_speedup": 8.219445252201604,
+          "median_ns_per_call": {
+            "transactional": 477099.859375,
+            "progressive": 57754.4765625,
+            "incremental": 476520.32421875
+          }
+        },
+        {
+          "profile": 3,
+          "decoded_bytes": 65536,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            8.090278842626054,
+            8.117966093870319,
+            7.953200400873431,
+            8.041323751450163,
+            8.053732097464382,
+            7.726369154864263,
+            8.048613590042551,
+            8.687182757961624,
+            8.19901255056611,
+            8.10904795250836,
+            8.01506464155425
+          ],
+          "median_speedup": 8.053732097464382,
+          "median_ns_per_call": {
+            "transactional": 1905626.859375,
+            "progressive": 236015.453125,
+            "incremental": 1896606.578125
+          }
+        },
+        {
+          "profile": 3,
+          "decoded_bytes": 1048576,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            8.081768215717107,
+            8.055672226747253,
+            8.136468727012755,
+            7.927088669257634,
+            8.054743855906477,
+            8.00198743494585,
+            8.114904174558454,
+            7.952063175809825,
+            8.075317101079904,
+            7.977814561777021,
+            8.075649903880638
+          ],
+          "median_speedup": 8.055672226747253,
+          "median_ns_per_call": {
+            "transactional": 30241879.5,
+            "progressive": 3744823.0,
+            "incremental": 30217831.75
+          }
+        }
+      ]
+    },
+    {
+      "features": "std,checked-backend",
+      "repetition": 2,
+      "command": [
+        "cargo",
+        "+1.99.0",
+        "test",
+        "--locked",
+        "--offline",
+        "--release",
+        "--no-default-features",
+        "--features",
+        "std,checked-backend",
+        "--lib",
+        "v2::ordinary_decode::progressive_candidate::benchmark::paired_complete_operations",
+        "--",
+        "--ignored",
+        "--exact",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "log": "checked-2.log",
+      "log_sha256": "f507b3b26735227fdbf17d72fc37578fcf7e12ff85fdb778508cb455e18e076a",
+      "rows": [
+        {
+          "profile": 0,
+          "decoded_bytes": 4096,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            9.084182391640528,
+            9.127033877966593,
+            8.762268855405859,
+            8.866885841874792,
+            8.700995464128765,
+            8.953901724422755,
+            8.833920841132738,
+            8.861078201233385,
+            8.78160598872519,
+            8.755437765675795,
+            8.747574461745982
+          ],
+          "median_speedup": 8.833920841132738,
+          "median_ns_per_call": {
+            "transactional": 124417.29296875,
+            "progressive": 14057.158203125,
+            "incremental": 124321.9169921875
+          }
+        },
+        {
+          "profile": 0,
+          "decoded_bytes": 16384,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            8.39601084296513,
+            8.492477547345,
+            8.57019600234641,
+            8.248015011165224,
+            8.334724429550507,
+            8.511428159390123,
+            8.509640348932567,
+            8.58872738611003,
+            8.5238320782622,
+            8.439280341456907,
+            8.285952898912285
+          ],
+          "median_speedup": 8.492477547345,
+          "median_ns_per_call": {
+            "transactional": 494059.046875,
+            "progressive": 58362.96484375,
+            "incremental": 495586.57421875
+          }
+        },
+        {
+          "profile": 0,
+          "decoded_bytes": 65536,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            8.413387451054797,
+            8.492244761736853,
+            8.74707421985615,
+            8.412307693509351,
+            8.373742573846272,
+            8.39550791604896,
+            8.361917390242995,
+            8.37459426235988,
+            8.616095686611143,
+            8.40861396275673,
+            8.37305753590007
+          ],
+          "median_speedup": 8.40861396275673,
+          "median_ns_per_call": {
+            "transactional": 2007002.140625,
+            "progressive": 238649.640625,
+            "incremental": 2001419.90625
+          }
+        },
+        {
+          "profile": 0,
+          "decoded_bytes": 1048576,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            8.391632108537086,
+            8.771889038293763,
+            8.516167041637196,
+            8.445420746891466,
+            8.525203461487648,
+            8.376691218780628,
+            8.377105407922764,
+            8.32781691718471,
+            8.441598556799013,
+            8.418928334189731,
+            8.418616627784852
+          ],
+          "median_speedup": 8.418928334189731,
+          "median_ns_per_call": {
+            "transactional": 31900405.5,
+            "progressive": 3798298.5,
+            "incremental": 32181705.75
+          }
+        },
+        {
+          "profile": 1,
+          "decoded_bytes": 4096,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            8.58859664042871,
+            8.36955713120391,
+            8.555756364965317,
+            8.568693908526948,
+            8.636547788915221,
+            8.631250252641784,
+            8.57179097607122,
+            8.516799525729457,
+            8.500278775158085,
+            8.5280404401499,
+            8.571167800993086
+          ],
+          "median_speedup": 8.568693908526948,
+          "median_ns_per_call": {
+            "transactional": 119646.162109375,
+            "progressive": 13939.6123046875,
+            "incremental": 119196.9365234375
+          }
+        },
+        {
+          "profile": 1,
+          "decoded_bytes": 16384,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            8.161477361114384,
+            8.283195865430779,
+            8.376434497313586,
+            8.496033183378657,
+            7.735172443183661,
+            8.21244561035702,
+            7.640861470252855,
+            8.200290507091216,
+            8.180732630944116,
+            8.139993908282447,
+            7.897726207481109
+          ],
+          "median_speedup": 8.180732630944116,
+          "median_ns_per_call": {
+            "transactional": 478635.4453125,
+            "progressive": 58171.39453125,
+            "incremental": 478018.77734375
+          }
+        },
+        {
+          "profile": 1,
+          "decoded_bytes": 65536,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            8.051913579507321,
+            8.138952343690416,
+            8.079140483054402,
+            8.136994584719881,
+            7.933666748669617,
+            8.098231723257221,
+            8.060194599232826,
+            8.124929665270576,
+            8.03314492921811,
+            8.028078312311678,
+            8.199897406275054
+          ],
+          "median_speedup": 8.079140483054402,
+          "median_ns_per_call": {
+            "transactional": 1884408.265625,
+            "progressive": 233146.59375,
+            "incremental": 1889561.109375
+          }
+        },
+        {
+          "profile": 1,
+          "decoded_bytes": 1048576,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            8.171074949337477,
+            8.08833294785924,
+            8.124248601284327,
+            8.119406509677782,
+            8.111646033791732,
+            8.123823939390714,
+            8.123340106447847,
+            8.138053036690495,
+            8.12156074932594,
+            8.169008577150288,
+            8.138327484318108
+          ],
+          "median_speedup": 8.123823939390714,
+          "median_ns_per_call": {
+            "transactional": 30514846.5,
+            "progressive": 3754035.25,
+            "incremental": 30524189.25
+          }
+        },
+        {
+          "profile": 2,
+          "decoded_bytes": 4096,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            8.952953386932966,
+            8.969911386702739,
+            8.852080592003787,
+            8.896407025480139,
+            8.863520088807327,
+            8.710116341306268,
+            8.60409087664824,
+            8.968737513090806,
+            9.407882029974523,
+            8.977154784750315,
+            8.610182713025674
+          ],
+          "median_speedup": 8.896407025480139,
+          "median_ns_per_call": {
+            "transactional": 125245.6025390625,
+            "progressive": 13975.1279296875,
+            "incremental": 125273.564453125
+          }
+        },
+        {
+          "profile": 2,
+          "decoded_bytes": 16384,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            8.432958675857583,
+            8.184320621653933,
+            8.480404460326426,
+            8.541538337595988,
+            8.586112988124077,
+            8.293656490371013,
+            8.473211855402921,
+            8.50666532698812,
+            8.765258449015102,
+            8.525627733798194,
+            8.565072969990085
+          ],
+          "median_speedup": 8.50666532698812,
+          "median_ns_per_call": {
+            "transactional": 493761.61328125,
+            "progressive": 57830.94921875,
+            "incremental": 495275.91015625
+          }
+        },
+        {
+          "profile": 2,
+          "decoded_bytes": 65536,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            8.319444616802835,
+            8.209692087580855,
+            8.675224543736833,
+            8.40798953768782,
+            8.465631496695007,
+            8.395630783733676,
+            8.425001240405937,
+            8.368799293324516,
+            8.392224939897785,
+            8.440175420576322,
+            8.804473410891301
+          ],
+          "median_speedup": 8.40798953768782,
+          "median_ns_per_call": {
+            "transactional": 1972045.46875,
+            "progressive": 234544.234375,
+            "incremental": 1986368.5625
+          }
+        },
+        {
+          "profile": 2,
+          "decoded_bytes": 1048576,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            8.573772455864752,
+            8.475886095700336,
+            8.519920477458223,
+            8.525083210597106,
+            8.299675784467308,
+            8.354938615577698,
+            8.41394059594572,
+            8.508937451617006,
+            8.388744090312253,
+            8.49022214062493,
+            8.222220749758408
+          ],
+          "median_speedup": 8.475886095700336,
+          "median_ns_per_call": {
+            "transactional": 31804319.25,
+            "progressive": 3748762.75,
+            "incremental": 31607979.25
+          }
+        },
+        {
+          "profile": 3,
+          "decoded_bytes": 4096,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            8.503949609593219,
+            8.414011949373453,
+            8.549436878981398,
+            8.5376666389924,
+            8.593897229183671,
+            8.589560863579182,
+            8.526809859232996,
+            8.538811592282139,
+            8.521455633180528,
+            8.652972104945366,
+            8.560433413051914
+          ],
+          "median_speedup": 8.538811592282139,
+          "median_ns_per_call": {
+            "transactional": 118952.4033203125,
+            "progressive": 13965.5498046875,
+            "incremental": 119020.5888671875
+          }
+        },
+        {
+          "profile": 3,
+          "decoded_bytes": 16384,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            8.197516562065273,
+            8.028985961552335,
+            8.090424539533222,
+            8.105458347900818,
+            8.072177354551878,
+            8.113131434520936,
+            8.434446184422763,
+            8.106127836511916,
+            7.450975184879795,
+            8.172056236621975,
+            7.829406110661975
+          ],
+          "median_speedup": 8.105458347900818,
+          "median_ns_per_call": {
+            "transactional": 474542.26171875,
+            "progressive": 58692.609375,
+            "incremental": 478883.2578125
+          }
+        },
+        {
+          "profile": 3,
+          "decoded_bytes": 65536,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            8.084406839595692,
+            8.0488218066423,
+            8.093207515777031,
+            8.075689918913934,
+            8.015657349427766,
+            8.046149578319351,
+            7.498636012158851,
+            8.033085953330588,
+            8.036771839263347,
+            8.030880107553465,
+            8.11107987925749
+          ],
+          "median_speedup": 8.046149578319351,
+          "median_ns_per_call": {
+            "transactional": 1892493.515625,
+            "progressive": 234488.03125,
+            "incremental": 1909782.1875
+          }
+        },
+        {
+          "profile": 3,
+          "decoded_bytes": 1048576,
+          "backend": "avx2",
+          "transactional_over_progressive": [
+            8.282696470968563,
+            7.984050026362721,
+            8.09720650110562,
+            8.209466739347455,
+            8.057053067543077,
+            8.058060383716002,
+            8.198175583554258,
+            7.959092229048153,
+            8.096070884019259,
+            8.027979916599625,
+            7.905065167956155
+          ],
+          "median_speedup": 8.058060383716002,
+          "median_ns_per_call": {
+            "transactional": 30303976.5,
+            "progressive": 3761173.75,
+            "incremental": 30316723.0
+          }
+        }
+      ]
+    }
+  ]
+}

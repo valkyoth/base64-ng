@@ -3,7 +3,11 @@
 
 import copy
 import importlib.util
+import os
 from pathlib import Path
+import subprocess
+import tempfile
+import tomllib
 import unittest
 from unittest.mock import patch
 
@@ -13,6 +17,46 @@ spec.loader.exec_module(module)
 
 
 class FeatureTests(unittest.TestCase):
+    def test_isolated_consumer_overrides_both_inherited_build_directories(self):
+        with patch.dict(os.environ, CARGO_TARGET_DIR="/wrong/target", CARGO_BUILD_BUILD_DIR="/wrong/build"), \
+                patch.object(module.subprocess, "run") as run:
+            module.run("1.90.0", Path("/tmp"), "check")
+            env = run.call_args.kwargs["env"]
+            target = module.ROOT / "target/companion-features/1.90.0"
+            self.assertEqual(env["CARGO_TARGET_DIR"], str(target))
+            self.assertEqual(env["CARGO_BUILD_BUILD_DIR"], str(target / "build"))
+
+    def test_workspace_commands_use_toolchain_specific_build_directories(self):
+        with tempfile.TemporaryDirectory(prefix="base64-companion-cache-") as directory:
+            work = Path(directory)
+            (work / "rust-toolchain.toml").write_bytes((module.ROOT / "rust-toolchain.toml").read_bytes())
+            bin_dir = work / "bin"
+            bin_dir.mkdir()
+            for tool in ("cargo", "python3", "rustup", "rustfmt"):
+                stub = bin_dir / tool
+                stub.write_text('#!/bin/sh\nif [ "${0##*/}" = cargo ]; then\n'
+                                'printf "%s|%s|%s\\n" "$1" "$CARGO_TARGET_DIR" "$CARGO_BUILD_BUILD_DIR" >> "$CALL_LOG"\n'
+                                'if [ "$FAIL_CARGO" = 1 ]; then exit 17; fi\nfi\n')
+                stub.chmod(0o700)
+            log = work / "calls"
+            env = dict(os.environ, PATH=str(bin_dir) + os.pathsep + os.environ["PATH"],
+                       CALL_LOG=str(log), FAIL_CARGO="0", CARGO_TARGET_DIR="/wrong/target",
+                       CARGO_BUILD_BUILD_DIR="/wrong/build")
+            command = ["sh", str(module.ROOT / "scripts/check-2.1-companion-features.sh")]
+            subprocess.run(command, cwd=work, env=env, check=True, capture_output=True, timeout=20)
+            compilers = set()
+            for line in log.read_text().splitlines():
+                compiler, target, build = line.split("|")
+                compilers.add(compiler[1:])
+                expected = work / "target/companion-workspace" / compiler[1:]
+                self.assertEqual(target, str(expected))
+                self.assertEqual(build, str(expected / "build"))
+            active = tomllib.loads((work / "rust-toolchain.toml").read_text())["toolchain"]["channel"]
+            self.assertEqual(compilers, {active, "1.90.0"})
+            env["FAIL_CARGO"] = "1"
+            result = subprocess.run(command, cwd=work, env=env, capture_output=True, timeout=20)
+            self.assertEqual(result.returncode, 17)
+
     def test_actual_contract(self):
         module.audit()
         self.assertEqual(module.expected_features("serde", [], False), set())

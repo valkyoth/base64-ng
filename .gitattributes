@@ -2,3 +2,5 @@
 /spec/multibase/upstream-README.md -text -diff
 /spec/password/SHA-crypt.txt -text -diff
 /spec/password/passlib-1.7.4-pbkdf2.rst -text -diff
+# Preserve captured benchmark bytes, including the test runner's final blank line.
+/docs/evidence/progressive-2.1/*.log -text whitespace=-blank-at-eof
