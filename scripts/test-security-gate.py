@@ -12,7 +12,7 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def run_gate(args, fail="", mutation=None):
+def run_gate(args, fail="", mutation=None, repeat=1, interrupt=""):
     with tempfile.TemporaryDirectory(prefix="base64-security-gate-") as directory:
         root = Path(directory)
         source = (ROOT / "scripts/check-2.1-security.sh").read_text()
@@ -23,10 +23,13 @@ def run_gate(args, fail="", mutation=None):
         (root / "gate.sh").write_text(source)
         (root / "rust-toolchain.toml").write_text('[toolchain]\nchannel = "1.99.0"\n')
         (root / "target/security-2.1").mkdir(parents=True)
+        stale = root / "target/security-2.1/miri/stale-artifact"
+        stale.parent.mkdir()
+        stale.write_text("/old-checkout/target/miri/runner")
         bin_dir = root / "bin"
         bin_dir.mkdir()
         stub = f'''#!{sys.executable}
-import json, os, sys
+import json, os, signal, sys
 from pathlib import Path
 record = [Path(sys.argv[0]).name, sys.argv[1:], os.environ.get("CARGO_TARGET_DIR"), os.environ.get("CARGO_BUILD_BUILD_DIR"), os.environ.get("CARGO_INCREMENTAL")]
 with open(os.environ["TEST_LOG"], "a") as log:
@@ -34,6 +37,18 @@ with open(os.environ["TEST_LOG"], "a") as log:
 if "miri" in sys.argv[1:]:
     if "CARGO_BUILD_BUILD_DIR" in os.environ or os.environ.get("CARGO_INCREMENTAL") != "0":
         sys.exit(18)
+    target = Path(os.environ["CARGO_TARGET_DIR"])
+    if not target.is_dir() or target.stat().st_mode & 0o777 != 0o700:
+        sys.exit(19)
+    if "--test" in sys.argv[1:]:
+        if list(target.iterdir()):
+            sys.exit(19)
+        (target / "runner-artifact").write_text(str(target))
+    elif not (target / "runner-artifact").is_file():
+        sys.exit(19)
+    if os.environ["MIRI_SIGNAL"]:
+        os.kill(os.getppid(), getattr(signal, os.environ["MIRI_SIGNAL"]))
+        sys.exit(0)
 if os.environ["FAIL_MATCH"] and os.environ["FAIL_MATCH"] in " ".join(sys.argv[1:]):
     sys.exit(17)
 '''
@@ -43,10 +58,13 @@ if os.environ["FAIL_MATCH"] and os.environ["FAIL_MATCH"] in " ".join(sys.argv[1:
             path.chmod(0o700)
         log = root / "calls.jsonl"
         env = dict(os.environ, PATH=str(bin_dir) + os.pathsep + os.environ["PATH"],
-                   TEST_LOG=str(log), FAIL_MATCH=fail,
+                   TEST_LOG=str(log), FAIL_MATCH=fail, MIRI_SIGNAL=interrupt,
                    CARGO_BUILD_BUILD_DIR=str(root / "inherited-build"), CARGO_INCREMENTAL="1")
-        result = subprocess.run(["/bin/sh", "gate.sh", *args], cwd=root, env=env,
-                                capture_output=True, text=True, timeout=30)
+        for _ in range(repeat):
+            result = subprocess.run(["/bin/sh", "gate.sh", *args], cwd=root, env=env,
+                                    capture_output=True, text=True, timeout=30)
+            assert not list((root / "target/security-2.1").glob("miri.*")), "Miri target leaked"
+            assert stale.read_text() == "/old-checkout/target/miri/runner", "Existing cache changed"
         calls = [json.loads(line) for line in log.read_text().splitlines()] if log.exists() else []
         return result, calls
 
@@ -78,10 +96,34 @@ class GateTests(unittest.TestCase):
         for args, failed in (([], "test-x86-validation-asm.py"),
                              ([], "--test decode_ref"),
                              (["--extended"], "miri test"),
+                             (["--extended"], "v2::ordinary_decode::retained::tests"),
+                             (["--extended"], "in_place_bulk_miri_preserved_source_and_scalar_repair"),
                              (["--extended"], "kani --no-default-features")):
             result, calls = run_gate(args, failed)
             self.assertEqual(result.returncode, 17, result.stdout + result.stderr)
             self.assertIn(failed, " ".join(calls[-1][1]))
+            self.assertNotIn("smokes passed", result.stdout)
+
+    def test_miri_targets_are_fresh_across_runs_in_the_same_checkout(self):
+        result, calls = run_gate(["--extended"], "kani --no-default-features", repeat=2)
+        self.assertEqual(result.returncode, 17, result.stdout + result.stderr)
+        targets = [target for tool, args, target, _, _ in calls
+                   if tool == "cargo" and "miri" in args]
+        self.assertEqual(len(targets), 6)
+        self.assertEqual(len(set(targets[:3])), 1)
+        self.assertEqual(len(set(targets[3:])), 1)
+        self.assertNotEqual(targets[0], targets[3])
+
+    def test_missing_miri_cleanup_is_rejected(self):
+        with self.assertRaisesRegex(AssertionError, "Miri target leaked"):
+            run_gate(["--extended"], "miri test",
+                     mutation=('trap \'rm -rf "$miri_target"\' EXIT', ":"))
+
+    def test_miri_interruptions_clean_up_and_stop_the_gate(self):
+        for signal, status in (("SIGINT", 130), ("SIGTERM", 143)):
+            result, calls = run_gate(["--extended"], interrupt=signal)
+            self.assertEqual(result.returncode, status, result.stdout + result.stderr)
+            self.assertIn("miri", calls[-1][1])
             self.assertNotIn("smokes passed", result.stdout)
 
     def test_bad_arguments_fail_before_tools(self):
@@ -100,7 +142,7 @@ class GateTests(unittest.TestCase):
             if tool != "cargo":
                 continue
             if "miri" in args:
-                self.assertTrue(target.endswith("/miri"))
+                self.assertTrue(Path(target).name.startswith("miri."))
                 self.assertIsNone(build)
                 self.assertEqual(incremental, "0")
             else:

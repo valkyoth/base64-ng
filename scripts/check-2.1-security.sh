@@ -46,8 +46,13 @@ python3 scripts/check-companion-features.py
 
 # Explicit local verification only; do not silently count unavailable tools as passes.
 (
-# Miri's runner must not inherit a custom build directory or incremental locks.
-export CARGO_TARGET_DIR="$root/target/security-2.1/miri"
+# Copied Miri caches can retain absolute runner paths from another checkout.
+mkdir -p "$root/target/security-2.1"
+miri_target="$(mktemp -d "$root/target/security-2.1/miri.XXXXXX")"
+trap 'rm -rf "$miri_target"' EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+export CARGO_TARGET_DIR="$miri_target"
 unset CARGO_BUILD_BUILD_DIR
 export CARGO_INCREMENTAL=0
 cargo +nightly miri test --locked --all-features --test decode_ref \

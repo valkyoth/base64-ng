@@ -45,10 +45,13 @@ Miri/rust-src, cargo-fuzz and compatible Kani (invoked via Rust 1.90.0), plus
 native x86_64 Linux for ASan. Missing tools fail; no installer or silent skip
 turns absence into a pass.
 
-Miri uses its own target cache with `CARGO_BUILD_BUILD_DIR` unset and
+Miri uses a fresh private target directory per gate run, removed on success,
+failure or handled interruption, with `CARGO_BUILD_BUILD_DIR` unset and
 `CARGO_INCREMENTAL=0`. This avoids runner incremental-lock failures on its
-read-only execution filesystem. These settings are scoped to Miri; subsequent
-ASan and fuzz commands retain their separate target and build directories.
+read-only execution filesystem and avoids reusing absolute runner paths from
+moved/copied checkouts. Existing Miri caches are left untouched. These settings
+are scoped to Miri; subsequent ASan and fuzz commands retain their separate
+target and build directories.
 Routing mutation tests reject either missing Miri environment control, but
 real Miri execution remains necessary to verify compiler/runner compatibility.
 
@@ -105,3 +108,13 @@ integration tests and both 1,000-run fuzz smokes. Five gate regression tests
 also passed, including inherited-environment handling, mutations removing
 either Miri control, and restoration of subsequent tools' build settings.
 This fix changes only tooling and documentation, not runtime code or dependencies.
+
+A second review found that the persistent Miri cache could retain runner paths
+after moving/copying a checkout. The gate now creates a private `0700` target
+directory per run and cleans it on success, failure, SIGINT or SIGTERM. On
+2026-10-06, the complete extended gate passed again with all four real Miri
+tests using the fresh directory; cleanup left no temporary Miri target behind.
+Eight gate regression tests passed, including repeated runs in the same
+checkout, preservation of a simulated stale cache, all three Miri failure
+points, signal handling and rejection of a removed cleanup trap. This is still
+a tooling-only change, with no runtime or dependency changes.
