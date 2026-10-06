@@ -21,6 +21,10 @@ add_ci_cargo_wrapper() {
     if [ -z "${GITHUB_PATH:-}" ]; then
         return
     fi
+    # PowerShell and Python need the native rustup cargo.exe proxy, not a sh file.
+    if [ "${RUNNER_OS:-}" = Windows ]; then
+        return
+    fi
 
     wrapper_dir="${RUNNER_TEMP:-/tmp}/base64-ng-rust-bin"
     mkdir -p "$wrapper_dir"

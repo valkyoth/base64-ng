@@ -47,6 +47,7 @@ if [ "$suite" = --development ]; then
 fi
 
 echo "checks: CI partition coverage"
+python3 scripts/test-ci-install-rust.py
 python3 scripts/test-check-partitions.py
 python3 scripts/check-companion-features.py --audit-only
 python3 scripts/test-companion-features.py
