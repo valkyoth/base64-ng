@@ -17,6 +17,7 @@ import tomllib
 from public_api_baseline import parse_sample, summarize
 from public_api_sandbox import Sandbox, bounded, BUILD_ENV, RUNTIME_ENV
 from public_api_sandbox import aggregate_limits, tool_inventory
+from public_api_policy import policy_cases, iterations as policy_iterations, operation
 
 ROOT = Path(__file__).resolve().parents[1]
 BASELINE = "816da2e1e4a66c913057c86d149068f1c88776bf"
@@ -113,6 +114,7 @@ def capture(args):
     if dirty and not args.allow_dirty_harness:
         raise ValueError("commit changes first, or use --allow-dirty-harness for a diagnostic run")
     candidate = output(["git", "rev-parse", f"{args.candidate}^{{commit}}"]).strip()
+    baseline = candidate if args.controls else BASELINE
     toolchain = tomllib.loads((ROOT / "rust-toolchain.toml").read_text())["toolchain"]["channel"]
     sandbox = Sandbox(toolchain)
     destination = Path(args.output).resolve()
@@ -120,14 +122,16 @@ def capture(args):
     source_files = [*sorted((ROOT / "perf/public-api/src").rglob("*.rs")), ROOT / "perf/public-api/Cargo.toml",
                     ROOT / "perf/public-api/Cargo.lock", ROOT / "perf/src/allocation.rs",
                     ROOT / "src/v2/rfc4648_oracle.rs", Path(__file__), ROOT / "scripts/public_api_baseline.py",
-                    ROOT / "scripts/public_api_sandbox.py", ROOT / "scripts/public_api_cgroup.py"]
+                    ROOT / "scripts/public_api_sandbox.py", ROOT / "scripts/public_api_cgroup.py",
+                    ROOT / "scripts/public_api_policy.py"]
     digests = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in source_files}
-    manifest = dict(schema=1, baseline=BASELINE, candidate=candidate, harness_commit=output(["git", "rev-parse", "HEAD"]).strip(),
+    manifest = dict(schema=1, baseline=baseline, candidate=candidate, harness_commit=output(["git", "rev-parse", "HEAD"]).strip(),
                     diagnostic_dirty_harness=bool(dirty), harness_sha256=digests,
                     rustc=sandbox.execute(["/toolchain/bin/rustc", "-Vv"], build=True).decode(),
                     cargo=sandbox.execute(["/toolchain/bin/cargo", "-V"], build=True).decode(), python=platform.python_version(), platform=platform.platform(),
                     machine=platform.machine(), features=args.features, samples=args.samples,
                     command=list(os.sys.argv), scope="exploratory paired baseline, not admission",
+                    policy_matrix=args.policy_matrix, comparison="same-source controls" if args.controls else "revisions",
                     binaries={}, build_environment=BUILD_ENV, runtime_environment=RUNTIME_ENV,
                     sandbox="bubblewrap: no network, no host home, readonly source; quota-limited tmpfs",
                     aggregate_limits=aggregate_limits(),
@@ -142,7 +146,7 @@ def capture(args):
     rows = []
     with tempfile.TemporaryDirectory(prefix="base64-ng-paired-") as temporary:
         trees = {}
-        for side, revision in [("baseline", BASELINE), ("candidate", candidate)]:
+        for side, revision in [("baseline", baseline), ("candidate", candidate)]:
             tree = Path(temporary) / side
             tree.mkdir()
             extract_revision(revision, tree)
@@ -154,7 +158,8 @@ def capture(args):
             available = {}
             for side, tree in trees.items():
                 binary = Path(temporary) / f"{feature}-{side}-benchmark"
-                binary.write_bytes(sandbox.compile(tree, FEATURES[feature]))
+                features = FEATURES[feature] + (",validation-policy" if args.controls else "")
+                binary.write_bytes(sandbox.compile(tree, features))
                 binary.chmod(0o700)
                 binaries[side] = binary
                 available[side] = sandbox.execute(["/benchmark", "list"], binary=binary).decode().splitlines()
@@ -171,13 +176,15 @@ def capture(args):
                 names = [n for n in names if n in ["canonical", "historical", "validate", "incremental", "sync", "bytes", "tokio"]]
             print(f"paired baseline: {feature}; {len(names)} operations", flush=True)
             with (destination / "samples.jsonl").open("a") as log:
-                for case in cases(names, args.smoke, args.full):
+                matrix = policy_cases(names, args.controls) if args.policy_matrix else cases(names, args.smoke, args.full)
+                for case in matrix:
                     size = int(case[3])
                     encoded = (size + 2) // 3 * 4 if case[2].endswith("p") else (size * 8 + 5) // 6
-                    iterations = 1 if case[-1] == "cold" else min(512, max(1, 16384 // max(size, 32)))
+                    iterations = policy_iterations(case) if args.policy_matrix else (
+                        1 if case[-1] == "cold" else min(512, max(1, 16384 // max(size, 32))))
                     for sample in range(args.samples):
                         for side in (["baseline", "candidate"] if sample % 2 == 0 else ["candidate", "baseline"]):
-                            raw = sandbox.execute(["/benchmark", *case[:-1], str(iterations), case[-1]], binary=binaries[side]).decode()
+                            raw = sandbox.execute(["/benchmark", operation(case, side), *case[1:-1], str(iterations), case[-1]], binary=binaries[side]).decode()
                             parsed = list(csv.DictReader(io.StringIO(raw)))
                             if len(parsed) != 1:
                                 raise ValueError("missing measurement")
@@ -206,10 +213,16 @@ def main():
     modes = parser.add_mutually_exclusive_group()
     modes.add_argument("--smoke", action="store_true")
     modes.add_argument("--full", action="store_true")
+    modes.add_argument("--policy-matrix", action="store_true", help="Commit 25 complete-operation review matrix; at least 15 pairs")
+    parser.add_argument("--controls", action="store_true", help="compare candidate reference/automatic, competitor and exact operations")
     parser.add_argument("--allow-dirty-harness", action="store_true")
     args = parser.parse_args()
     if not 1 <= args.samples <= 100:
         parser.error("samples must be 1..100")
+    if args.policy_matrix and args.samples < 15:
+        parser.error("policy matrix requires at least 15 paired samples")
+    if args.controls and (not args.policy_matrix or any(f not in {"simd", "checked", "adapters"} for f in args.features)):
+        parser.error("controls require --policy-matrix and simd, checked or adapters features")
     capture(args)
 
 

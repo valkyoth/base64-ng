@@ -48,6 +48,9 @@ fi
 
 echo "checks: CI partition coverage"
 python3 scripts/test-ci-install-rust.py
+python3 scripts/test-public-api-policy.py
+python3 scripts/test-native-policy-measurement.py
+python3 scripts/test-macos-policy-capture.py
 python3 scripts/test-check-partitions.py
 python3 scripts/check-companion-features.py --audit-only
 python3 scripts/test-companion-features.py

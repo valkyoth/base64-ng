@@ -197,4 +197,6 @@ register callbacks. The updated lightweight Windows gate passed end to end.
 The original 49-command capture remains historical evidence, not a rerun of
 the updated fixture. No production library, dependency or benchmark changed,
 so that follow-up did not repeat the full performance campaign. External retest
-and CI for the follow-up remain pending.
+passed at `1e7f1a3`. GitHub CI passed after the `b1ac680` installer fix, which
+keeps Windows' native Cargo proxy instead of shadowing it with a Unix script.
+Neither follow-up changes the library or grants performance admission.

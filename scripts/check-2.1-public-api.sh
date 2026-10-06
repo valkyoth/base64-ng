@@ -2,6 +2,9 @@
 set -eu
 
 python3 scripts/test-public-api-baseline.py
+python3 scripts/test-public-api-policy.py
+python3 scripts/test-native-policy-measurement.py
+python3 scripts/test-macos-policy-capture.py
 python3 scripts/test-public-api-sandbox.py
 manifest=perf/public-api/Cargo.toml
 export RUSTFLAGS="${RUSTFLAGS:+$RUSTFLAGS }--cfg base64_ng_perf_evidence"
