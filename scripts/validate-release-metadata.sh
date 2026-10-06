@@ -1146,10 +1146,8 @@ do
 done
 
 package_file_count="$(printf '%s\n' "$package_list" | wc -l)"
-# Commit 21 adds three test-only experiment files. Restore 237 in Commit 22
-# when the no-go prototype is removed, before publishing is enabled.
-if [ "$package_file_count" -gt 240 ]; then
-    echo "release metadata: core package contains $package_file_count files; maximum is 240" >&2
+if [ "$package_file_count" -gt 237 ]; then
+    echo "release metadata: core package contains $package_file_count files; maximum is 237" >&2
     exit 1
 fi
 

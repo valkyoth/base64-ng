@@ -7,7 +7,8 @@ for compiler in "$active" 1.90.0; do
     export CARGO_TARGET_DIR="$PWD/target/progressive-workspace/$compiler"
     export CARGO_BUILD_BUILD_DIR="$CARGO_TARGET_DIR/build"
     for features in std,simd std,checked-backend; do
-        cargo +"$compiler" test --locked --release --no-default-features --features "$features" --lib progressive_candidate
+        cargo +"$compiler" test --locked --release --no-default-features --features "$features" --lib
+        cargo +"$compiler" test --locked --release --no-default-features --features "$features" --test decode_validation --test incremental_bulk
         cargo +"$compiler" clippy --locked --no-default-features --features "$features" --lib --tests -- -D warnings
     done
     cargo +"$compiler" check --locked --no-default-features --lib
@@ -24,4 +25,4 @@ done
 sh scripts/validate-file-line-budget.sh
 sh scripts/validate-unsafe-boundary.sh
 sh scripts/validate-panic-policy.sh
-echo "2.1 progressive: private prototype contracts, MSRV and production exclusion passed"
+echo "2.1 progressive: no-go removal, retained evidence, transactional/incremental alternatives and MSRV passed"

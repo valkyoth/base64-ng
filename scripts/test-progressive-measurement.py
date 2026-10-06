@@ -1,16 +1,10 @@
 #!/usr/bin/env python3
 """Reject incomplete or malformed paired progressive decision measurements."""
-import importlib.util
 import hashlib
 import json
-from pathlib import Path
-import tempfile
 import unittest
-from unittest.mock import patch
 
-spec = importlib.util.spec_from_file_location("progressive_measurement", Path(__file__).with_name("measure-2.1-progressive.py"))
-module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(module)
+import progressive_measurement as module
 
 
 def fixture():
@@ -26,34 +20,21 @@ def fixture():
 
 
 class MeasurementTests(unittest.TestCase):
-    def test_redaction_precedence_repeated_paths_and_idempotence(self):
-        with patch.object(module, "ROOT", Path("/home/reviewer/project")), \
-                patch.object(module.Path, "home", return_value=Path("/home/reviewer")):
-            text = "build /home/reviewer/project\n/home/reviewer/.cargo/bin\n/home/reviewer/project/src/lib.rs\n"
-            expected = "build <REPOSITORY>\n<HOME>/.cargo/bin\n<REPOSITORY>/src/lib.rs\n"
-            self.assertEqual(module.redact_build_log(text), expected)
-            self.assertEqual(module.redact_build_log(expected), expected)
-            self.assertEqual(module.redact_build_log(fixture()), fixture())
-
-    def test_saved_log_and_digest_use_redacted_bytes_without_changing_samples(self):
-        with tempfile.TemporaryDirectory(prefix="base64-redaction-") as directory, \
-                patch.object(module, "ROOT", Path("/work/checkout")), \
-                patch.object(module.Path, "home", return_value=Path("/home/reviewer")):
-            text = "Compiling (/work/checkout)\n/home/reviewer/.rustup\n" + fixture() + "\n\n"
-            path = Path(directory) / "capture.log"
-            digest = module.write_log(path, text)
-            stored = path.read_bytes()
-            self.assertEqual(digest, hashlib.sha256(stored).hexdigest())
-            self.assertNotEqual(digest, hashlib.sha256(text.encode()).hexdigest())
-            self.assertNotIn(b"/work/checkout", stored)
-            self.assertNotIn(b"/home/reviewer", stored)
-            self.assertTrue(stored.endswith(b"\n\n"))
-            self.assertEqual(module.parse(stored.decode()), module.parse(text))
+    def test_no_go_removes_prototype_and_capture_driver(self):
+        for name in ("src/v2/ordinary_decode/progressive_candidate.rs",
+                     "src/v2/ordinary_decode/progressive_candidate/tests.rs",
+                     "src/v2/ordinary_decode/progressive_candidate/benchmark.rs",
+                     "scripts/measure-2.1-progressive.py"):
+            self.assertFalse((module.ROOT / name).exists(), name)
+        for path in (module.ROOT / "src").rglob("*.rs"):
+            self.assertNotIn("progressive_candidate", path.read_text(), str(path))
 
     def test_retained_capture_matches_raw_logs_and_complete_repetitions(self):
         directory = module.ROOT / "docs/evidence/progressive-2.1"
         record = json.loads((directory / "summary.json").read_text())
         self.assertEqual(record["schema"], 1)
+        self.assertEqual(record["log_redaction"],
+                         {"policy": "repository-home-v1", "applied": "after-capture"})
         self.assertEqual(len(record["runs"]), 6)
         self.assertEqual({(r["features"], r["repetition"]) for r in record["runs"]},
                          {(f, r) for f in ("std,simd", "std,checked-backend") for r in range(3)})

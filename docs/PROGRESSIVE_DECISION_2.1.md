@@ -5,16 +5,29 @@ The ordinary SIMD prototype misses the proposed 1.10x median speedup at two
 sizes of at least 4 KiB. This is a decision about the measured design, not a
 claim that every possible one-pass decoder must be slower.
 
-Commit 22 will remove the private experiment and retain this decision and its
-measurements. No future progressive API is promised. Existing transactional
-operations keep their all-or-nothing output contract. Existing `DecoderState`
+Commit 22 removes the private experiment and its capture driver, retaining
+this decision, raw measurements and read-only parser checks. No future
+progressive API is promised. Existing transactional operations keep their
+all-or-nothing output contract. Existing `DecoderState`
 already supplies bounded incremental progress without another public type.
 
-## Private Experiment
+For whole-input validation before output changes, use `Base64::decode_into`.
+For bounded input/output chunks, use `DecoderState::update` and `finish`, or
+the existing sync/Tokio stream adapters. Incremental progress is per call,
+not a whole-message transaction: callers must handle `OutputFull`, finalization
+and errors, and enforce message/output limits. See the
+[incremental contract](INCREMENTAL_BULK_2.1.md) and
+[adapter behavior](ADAPTER_BULK_2.1.md). These are ordinary-data APIs, not
+constant-time or automatically wiping secret storage.
 
-`src/v2/ordinary_decode/progressive_candidate.rs` is compiled only for tests
-with std and SIMD on x86_64. It adds no public item, runtime dependency, unsafe
-code, production routing, or change to secret/constant-time APIs.
+## Historical Private Experiment
+
+The following describes the removed prototype, not an available API.
+At `a5941d8`, `src/v2/ordinary_decode/progressive_candidate.rs` compiled only
+for tests with std and SIMD on x86_64. It added no public item, runtime
+dependency, unsafe code, production routing, or change to secret/constant-time
+APIs. The prototype and its test/benchmark modules are now absent from the
+source tree and crate package.
 
 The ordinary successful body is one pass: existing safe SIMD entry points
 classify and decode each 1,024-byte encoded block into 768 bytes of stack
@@ -122,23 +135,38 @@ measurement script and logs. `base_commit` identifies the parent; the source
 hashes identify the uncommitted prototype measured on top of it. It is not a
 signed release evidence bundle. Profile IDs 0-3 follow the table order.
 
-Log repository/home paths are replaced by `<REPOSITORY>`/`<HOME>` before saving
-new captures. The retained logs received this redaction after capture; their
-log hashes were updated, but timing lines, parsed samples and original source
+The historical capture driver at `a5941d8` replaces repository/home paths
+with `<REPOSITORY>`/`<HOME>` before saving logs. The retained logs received
+this redaction after capture; their log hashes were updated, but timing lines,
+parsed samples and original source
 hashes (including the original measurement script) were not changed. The
 `log_redaction` field records that distinction. Host, CPU and platform fields
 remain intentional benchmark metadata. Earlier published Git history may
 still contain the original paths; this update does not retract that disclosure.
 
+Check the retained samples, hashes and completed removal in the current tree:
+
 ```sh
-python3 scripts/measure-2.1-progressive.py --output target/progressive-new-capture
+python3 scripts/test-progressive-measurement.py
 sh scripts/check-2.1-progressive.sh
 ```
 
-The measurement command is explicit, bounded and never runs in routine CI.
-The correctness gate belongs to the already-deferred development suite.
+Historical reproduction requires a separate checkout of the accepted prototype
+and its redacting driver, on a native x86_64 host:
 
-## Verification
+```sh
+git worktree add --detach ../base64-ng-progressive-history a5941d8
+cd ../base64-ng-progressive-history
+python3 scripts/measure-2.1-progressive.py --output target/progressive-new-capture
+```
+
+New captures have their own source hashes and timings; they do not replace the
+retained historical source binding. The original pre-redaction capture driver
+is preserved at `004c7af`. Neither driver runs in current CI. The no-go
+correctness gate remains in the already-deferred development suite; it checks
+the existing alternatives rather than invoking a removed test filter.
+
+## Historical Verification
 
 The active/MSRV focused gate passed plain/checked prototype tests, Clippy with
 warnings denied, core-only compilation and production LLVM exclusion checks.
@@ -155,12 +183,28 @@ counts, nonpositive timings and scalar-backend captures. The companion cache
 follow-up has shell-level regression tests for both target/intermediate paths
 and failure propagation; it does not delete old caches.
 
-External pentest and independent CI review of this checkpoint remain pending.
+External pentest and independent CI passed for Commit 21 and its redaction
+follow-up at `a5941d8`.
 The full release workspace tests, workspace Clippy, unchanged public API
 snapshots and a focused Miri unavailable/suspect-block test also passed locally.
 The companion gate passed on both toolchains using the isolated directories.
-The development package file-count ceiling temporarily includes the three
-test-only prototype files; Commit 22 must remove that allowance along with
-the experiment before publication is enabled.
+
+## Removal Verification
+
+Commit 22 removes all three test-only prototype files and restores the package
+file-count ceiling to 237. The source-removal test rejects their reappearance,
+and the skeleton mutation suite rejects the retired oracle exemption. Retained
+sample hashes, parsed rows and redaction are still verified without rerunning
+the experiment. The retained evidence files are unchanged from `a5941d8`.
+
+The removal gate passed on Rust 1.99.0 and MSRV 1.90.0: plain/checked library
+tests, production-linked decode and incremental regressions, Clippy with
+warnings denied, core-only compilation and production LLVM exclusion. Full
+all-feature release workspace tests, all-target workspace Clippy with warnings
+denied and public API snapshots passed; the reviewed 2.1.0 API remains unchanged
+and frozen 2.0.4 compatibility is retained.
+Package metadata, formatting, CI routing, line-budget, unsafe-boundary and
+panic-policy checks passed. External review and CI for this removal are pending.
+
 No long fuzz, full QEMU, native ARM/Windows, or release evidence campaign was
 run or claimed for this private no-go experiment.

@@ -29,7 +29,7 @@ with tempfile.TemporaryDirectory(prefix="base64-ng-skeleton-") as directory:
     check(True)
     for parent in ("src/v2/ordinary_encode.rs", "src/v2/ordinary_decode.rs", "src/v2/ordinary_decode/ssse3_candidate.rs",
                    "src/v2/ordinary_decode/avx2_candidate.rs", "src/v2/ordinary_decode/avx512_candidate.rs",
-                   "src/v2/ordinary_decode/neon_candidate.rs", "src/v2/ordinary_decode/progressive_candidate.rs"):
+                   "src/v2/ordinary_decode/neon_candidate.rs"):
         path = fixture / parent
         original = path.read_text()
         declaration = "#[cfg(test)]\nmod tests;"
@@ -38,7 +38,7 @@ with tempfile.TemporaryDirectory(prefix="base64-ng-skeleton-") as directory:
         check(False)
         path.write_text(original)
     for parent in ("src/v2/ordinary_decode/avx2_candidate.rs", "src/v2/ordinary_decode/avx512_candidate.rs",
-                   "src/v2/ordinary_decode/neon_candidate.rs", "src/v2/ordinary_decode/progressive_candidate.rs"):
+                   "src/v2/ordinary_decode/neon_candidate.rs"):
         path = fixture / parent
         original = path.read_text()
         declaration = "#[cfg(test)]\nmod benchmark;"
@@ -46,15 +46,9 @@ with tempfile.TemporaryDirectory(prefix="base64-ng-skeleton-") as directory:
         path.write_text(original.replace(declaration, "mod benchmark;"))
         check(False)
         path.write_text(original)
-    path = fixture / "src/v2/ordinary_decode.rs"
-    original = path.read_text()
-    declaration = '#[cfg(all(test, feature = "std", feature = "simd", target_arch = "x86_64"))]\nmod progressive_candidate;'
-    assert declaration in original
-    path.write_text(original.replace(declaration, "mod progressive_candidate;"))
-    check(False)
-    path.write_text(original)
     # An arbitrary nested tests.rs must not inherit an exemption by filename.
-    for name in ("src/v2/production_oracle.rs", "src/v2/unreviewed/tests.rs"):
+    for name in ("src/v2/production_oracle.rs", "src/v2/unreviewed/tests.rs",
+                 "src/v2/ordinary_decode/progressive_candidate/tests.rs"):
         path = fixture / name
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("use crate::v2::rfc4648_oracle;\n")
