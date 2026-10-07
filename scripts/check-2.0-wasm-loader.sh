@@ -8,10 +8,17 @@ root="$(git rev-parse --show-toplevel)"
 install_dir="$(python3 - "$root" "${BASE64_NG_WASM_INSTALL_DIR:-target/wasm-loader-package}" <<'PY'
 from pathlib import Path
 import os
+import stat
 import sys
 
 root = Path(sys.argv[1]).resolve()
 target = root / "target"
+package = Path("packages/base64-ng-wasm-loader")
+cargo_caches = tuple(
+    base / package / ("target-" + flavor)
+    for base in (root, target / "release-evidence/wasm-loader/path-independent/repository")
+    for flavor in ("scalar", "simd128")
+)
 
 def fail(message):
     raise SystemExit("WASM install/output safety: " + str(message))
@@ -35,13 +42,26 @@ def safe_tree(raw, boundary):
         return resolved
     if not resolved.is_dir():
         fail("output tree is not a directory: " + str(resolved))
-    # Cached descendants include redirected evidence files, Cargo outputs and
-    # npm logs. os.walk never follows directory links; inspect and reject them.
+    linked = {}
+    # Inspect metadata without opening entries: a FIFO must never be read.
     for directory, dirs, files in os.walk(resolved, followlinks=False, onerror=fail):
         for name in dirs + files:
             child = Path(directory) / name
-            if child.is_symlink():
+            info = child.lstat()
+            if stat.S_ISLNK(info.st_mode):
                 fail("symlink output: " + str(child))
+            if stat.S_ISREG(info.st_mode):
+                if info.st_nlink != 1:
+                    linked.setdefault((info.st_dev, info.st_ino), []).append((child, info.st_nlink))
+            elif not stat.S_ISDIR(info.st_mode):
+                fail("non-regular output: " + str(child))
+    for aliases in linked.values():
+        # Cargo hard-links its final artifact to deps/. Permit this only when
+        # all inode links are accounted for inside one specific Cargo cache.
+        paths = [child for child, _ in aliases]
+        internal = any(all(cache in child.parents for child in paths) for cache in cargo_caches)
+        if not internal or any(count != len(aliases) for _, count in aliases):
+            fail("hard-linked output: " + str(paths[0]))
     return resolved
 
 install = safe_tree(sys.argv[2], target)

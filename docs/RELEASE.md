@@ -586,6 +586,9 @@ WASM evidence, path-independent rebuild, absolute npm cache, and package-owned
 artifact/build output trees. Inherited Cargo intermediate-directory overrides
 are cleared. This protects against stale redirected caches, not concurrent
 filesystem changes by another process running as the publishing user.
+Preflight also rejects special files and hard-linked outputs. Cargo's normal
+artifact aliases are permitted only when every inode link is accounted for
+inside the same designated Cargo cache; links outside that cache are rejected.
 
 The desktop path retains artifact hashes and `PROVENANCE.json` but does not
 claim npm CI provenance. Development builds may use a dirty checkout; their

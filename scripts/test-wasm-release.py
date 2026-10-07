@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import socket
 import subprocess
 import tempfile
 import unittest
@@ -283,6 +284,59 @@ class InstallPathTests(unittest.TestCase):
         self.env["CARGO_BUILD_BUILD_DIR"] = str(self.outside / "cargo-build")
         self.assertEqual(self.run_gate().returncode, 77)
         self.assertFalse((self.outside / "cargo-build").exists())
+
+    def test_rejects_external_hard_links_without_overwriting_source(self):
+        for name in (
+            "target/release-evidence/wasm-loader/artifacts-first.sha256",
+            "target/release-evidence/wasm-loader/node-benchmark.json",
+            "target/npm-cache/_logs/log",
+            "target/wasm-loader-package/packed/checked.sha256",
+            "packages/base64-ng-wasm-loader/artifacts/PROVENANCE.json",
+            "packages/base64-ng-wasm-loader/target-scalar/release/output",
+        ):
+            with self.subTest(name=name):
+                link = self.root / name
+                link.parent.mkdir(parents=True, exist_ok=True)
+                link.hardlink_to(self.outside / "keep.tgz")
+                self.assert_rejected(None)
+                link.unlink()
+
+    def test_rejects_fifo_and_socket_without_opening_them(self):
+        for name in ("target/release-evidence/wasm-loader/node-benchmark.json",
+                     "target/npm-cache/_logs/log",
+                     "packages/base64-ng-wasm-loader/target-scalar/release/output"):
+            with self.subTest(name=name):
+                path = self.root / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                os.mkfifo(path)
+                self.assert_rejected(None)
+                path.unlink()
+        path = self.root / "target/wasm-loader-package/socket"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with socket.socket(socket.AF_UNIX) as server:
+            server.bind(str(path))
+            self.assert_rejected(None)
+
+    def test_only_fully_contained_cargo_aliases_are_accepted(self):
+        for prefix in ("", "target/release-evidence/wasm-loader/path-independent/repository/"):
+            for flavor in ("scalar", "simd128"):
+                with self.subTest(prefix=prefix, flavor=flavor):
+                    cache = self.root / prefix / PACKAGE / ("target-" + flavor)
+                    first = cache / "release/deps/artifact.wasm"
+                    first.parent.mkdir(parents=True, exist_ok=True)
+                    first.write_bytes(b"cargo artifact")
+                    second = cache / "release/artifact.wasm"
+                    second.hardlink_to(first)
+                    self.assertEqual(self.run_gate().returncode, 77)
+                    outside = self.outside / "extra-link"
+                    outside.hardlink_to(first)
+                    self.assert_rejected(None)
+                    outside.unlink()
+                    self.assertEqual(self.run_gate().returncode, 77)
+        evidence = self.root / "target/release-evidence/wasm-loader"
+        (evidence / "first").write_text("evidence")
+        (evidence / "second").hardlink_to(evidence / "first")
+        self.assert_rejected(None)
 
 
 if __name__ == "__main__":
