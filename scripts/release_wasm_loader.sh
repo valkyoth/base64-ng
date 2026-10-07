@@ -3,9 +3,9 @@ set -eu
 
 mode="${1:-check}"
 case "$mode" in
-    check | dry-run | publish) ;;
+    check | dry-run | publish | publish-desktop) ;;
     *)
-        echo "usage: scripts/release_wasm_loader.sh [check|dry-run|publish]" >&2
+        echo "usage: scripts/release_wasm_loader.sh [check|dry-run|publish|publish-desktop]" >&2
         exit 2
         ;;
 esac
@@ -52,6 +52,29 @@ if [ "$mode" != "check" ] && [ "$npm_selected" != "true" ]; then
 fi
 head="$(git rev-parse --verify HEAD)"
 export BASE64_NG_SOURCE_COMMIT="$head"
+tag="v$rust_version"
+verify_source() {
+    if [ -n "$(git status --porcelain --untracked-files=all)" ]; then
+        echo "wasm loader release: refusing publication from a dirty worktree" >&2
+        exit 1
+    fi
+    if [ "$head" != "$(git rev-parse --verify HEAD)" ] ||
+        [ "$head" != "$(git rev-list -n 1 "$tag")" ]; then
+        echo "wasm loader release: HEAD changed or is not tagged as $tag" >&2
+        exit 1
+    fi
+    scripts/verify-release-tag.sh "$tag"
+}
+if [ "$mode" != "check" ]; then
+    verify_source
+    umask 077
+    mkdir -p target
+    release_dir="$(mktemp -d "$PWD/target/npm-release.XXXXXX")"
+    trap 'rm -rf "$release_dir"' EXIT
+    trap 'exit 130' INT
+    trap 'exit 143' TERM
+    export BASE64_NG_WASM_INSTALL_DIR="$release_dir"
+fi
 scripts/check-2.0-wasm-loader.sh
 
 if [ "$mode" = "check" ]; then
@@ -63,25 +86,22 @@ if [ "$mode" = "check" ]; then
     exit 0
 fi
 
-if [ -n "$(git status --porcelain --untracked-files=all)" ]; then
-    echo "wasm loader release: refusing publication from a dirty worktree" >&2
-    exit 1
-fi
-
-tag="v$rust_version"
-tagged="$(git rev-list -n 1 "$tag" 2>/dev/null || true)"
-if [ "$head" != "$tagged" ]; then
-    echo "wasm loader release: HEAD is not tagged as $tag" >&2
-    exit 1
-fi
-scripts/verify-release-tag.sh "$tag"
+# Publish the very archive extracted and tested by the gate, never rebuild it.
+tarball="$release_dir/packed/valkyoth-base64-ng-wasm-loader-$npm_version.tgz"
+test -s "$tarball"
+verify_source
+(cd "$release_dir/packed" && sha256sum -c checked.sha256)
 
 if [ "$mode" = "dry-run" ]; then
-    (cd "$package_dir" && npm publish --dry-run)
+    npm publish --dry-run --ignore-scripts --access public "$tarball"
     echo "wasm loader release: dry-run passed for $tag"
     exit 0
 fi
 
-(cd "$package_dir" && npm publish --provenance)
+if [ "$mode" = "publish-desktop" ]; then
+    npm publish --provenance=false --ignore-scripts --access public "$tarball"
+else
+    npm publish --provenance --ignore-scripts --access public "$tarball"
+fi
 
 echo "wasm loader release: published $npm_name@$npm_version from verified $tag"

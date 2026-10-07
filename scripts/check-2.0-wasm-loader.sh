@@ -3,7 +3,7 @@ set -eu
 
 package_dir="packages/base64-ng-wasm-loader"
 evidence_dir="target/release-evidence/wasm-loader"
-install_dir="target/wasm-loader-package"
+install_dir="${BASE64_NG_WASM_INSTALL_DIR:-target/wasm-loader-package}"
 pack_dir="$install_dir/packed"
 package_extract="$install_dir/package"
 npm_cache="target/npm-cache"
@@ -135,7 +135,8 @@ else
 fi
 
 echo "2.0 wasm loader: exact npm package and install smoke"
-tarball_name="$(cd "$package_dir" && npm pack --ignore-scripts --silent --pack-destination "../../$pack_dir")"
+pack_destination="$(cd "$pack_dir" && pwd)"
+tarball_name="$(cd "$package_dir" && npm pack --ignore-scripts --silent --pack-destination "$pack_destination")"
 tarball="$pack_dir/$tarball_name"
 test -s "$tarball"
 tar -xzf "$tarball" -C "$install_dir"
@@ -155,6 +156,7 @@ fi
 node scripts/wasm_loader_install_smoke.mjs "$package_extract"
 tar -tzf "$tarball" | sort >"$evidence_dir/npm-package-files.txt"
 sha256sum "$tarball" >"$evidence_dir/npm-package.sha256"
+(cd "$pack_dir" && sha256sum "$tarball_name" >checked.sha256)
 
 cp tests/wasm-loader-browser-smoke.html "$install_dir/browser-smoke.html"
 cp tests/wasm-loader-browser-smoke.mjs "$install_dir/browser-smoke.mjs"

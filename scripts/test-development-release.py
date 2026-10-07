@@ -125,6 +125,7 @@ def main():
             ([sys.executable, str(scripts / "release_crates.py"), "--dry-run"],
              "development-blocked"),
             ([str(scripts / "release_wasm_loader.sh"), "publish"], "not selected"),
+            ([str(scripts / "release_wasm_loader.sh"), "publish-desktop"], "not selected"),
             ([str(scripts / "release_wasm_loader.sh"), "dry-run"], "not selected"),
             ([str(scripts / "stable_release_gate.sh"), "candidate"], "development-blocked"),
             ([str(scripts / "stable_release_gate.sh"), "release"], "development-blocked"),

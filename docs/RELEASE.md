@@ -566,16 +566,25 @@ scripts/release_wasm_loader.sh publish
 
 The script's `publish` mode uses `npm publish --provenance` and requires a
 supported CI provenance provider; it is not the desktop publication command.
-For the maintainer's manual desktop workflow, first run the signed-tag `check`
-and `dry-run` commands above, then from the same unchanged checkout:
+For the maintainer's manual desktop workflow, use this from the repository root:
 
 ```sh
-cd packages/base64-ng-wasm-loader
-npm publish
+scripts/release_wasm_loader.sh publish-desktop
 ```
 
-This manual path retains artifact hashes and `PROVENANCE.json` but does not
-claim npm CI provenance. Do not fake CI environment variables to obtain an
+Both publication modes check the clean source and authorized signed tag before
+building and again immediately before publication. They publish the exact
+tarball extracted and tested by the gate, from a fresh private directory, with
+its checksum rechecked and lifecycle scripts disabled. They never rebuild after
+verification. Raw directory `npm publish` is deliberately rejected by the
+`prepublishOnly` hook; do not bypass it with `--ignore-scripts`.
+
+The desktop path retains artifact hashes and `PROVENANCE.json` but does not
+claim npm CI provenance. Development builds may use a dirty checkout; their
+HEAD record alone is not release provenance. Only the clean, tagged release
+wrapper establishes that binding. Do not run concurrent checkout edits during
+release preparation or expose the publishing account to untrusted processes.
+Do not fake CI environment variables to obtain an
 attestation. Never store an npm token in the repository. Both the scripted npm
 and crates.io publishers verify the containing signed Rust release tag against
 the exact SSH principal and public key in `security/release-signers`; a
