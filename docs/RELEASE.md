@@ -578,6 +578,9 @@ tarball extracted and tested by the gate, from a fresh private directory, with
 its checksum rechecked and lifecycle scripts disabled. They never rebuild after
 verification. Raw directory `npm publish` is deliberately rejected by the
 `prepublishOnly` hook; do not bypass it with `--ignore-scripts`.
+The gate's `BASE64_NG_WASM_INSTALL_DIR` override must resolve strictly beneath
+the repository's `target/`; symlink escapes and symlinked output paths are
+rejected before cleanup. The repository's `target/` itself must not be a symlink.
 
 The desktop path retains artifact hashes and `PROVENANCE.json` but does not
 claim npm CI provenance. Development builds may use a dirty checkout; their

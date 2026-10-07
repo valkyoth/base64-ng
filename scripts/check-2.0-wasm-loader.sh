@@ -3,7 +3,30 @@ set -eu
 
 package_dir="packages/base64-ng-wasm-loader"
 evidence_dir="target/release-evidence/wasm-loader"
-install_dir="${BASE64_NG_WASM_INSTALL_DIR:-target/wasm-loader-package}"
+root="$(git rev-parse --show-toplevel)"
+# Validate before mkdir, cleanup, tool installation, or artifact generation.
+install_dir="$(python3 - "$root" "${BASE64_NG_WASM_INSTALL_DIR:-target/wasm-loader-package}" <<'PY'
+from pathlib import Path
+import sys
+
+root = Path(sys.argv[1]).resolve()
+target = root / "target"
+path = Path(sys.argv[2])
+if not path.is_absolute():
+    path = root / path
+path = path.resolve()
+if target.resolve() != target or target not in path.parents:
+    raise SystemExit("WASM install directory must be a child of repository target/ (no target symlink)")
+# Cleanup must not follow an existing packed-directory link, and subsequent
+# writes must not follow links to unrelated files. Concurrent edits are unsupported.
+for name in ("packed", "package", "packed/checked.sha256",
+             "browser-smoke.html", "browser-smoke.mjs"):
+    child = path / name
+    if child.is_symlink() or child.resolve() != child:
+        raise SystemExit("WASM install output must not be a symlink: " + name)
+print(path)
+PY
+)"
 pack_dir="$install_dir/packed"
 package_extract="$install_dir/package"
 npm_cache="target/npm-cache"

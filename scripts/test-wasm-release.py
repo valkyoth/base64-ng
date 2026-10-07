@@ -142,5 +142,94 @@ PY
         self.assertIn("Direct npm publish is disabled", result.stdout + result.stderr)
 
 
+class InstallPathTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(prefix="wasm-install-path-")
+        self.addCleanup(self.temp.cleanup)
+        self.base = Path(self.temp.name)
+        self.root = self.base / "repository"
+        self.root.mkdir()
+        (self.root / "target").mkdir()
+        self.outside = self.base / "unrelated"
+        (self.outside / "package").mkdir(parents=True)
+        (self.outside / "package/keep").write_text("preserve package")
+        (self.outside / "keep.tgz").write_text("preserve archive")
+        bin_dir = self.base / "bin"
+        bin_dir.mkdir()
+        # Stop a valid invocation at its first HEAD lookup, before any real build.
+        git = bin_dir / "git"
+        git.write_text('#!/bin/sh\nif [ "$2" = --show-toplevel ]; then pwd -P; '
+                       'else echo path-accepted >&2; exit 77; fi\n')
+        git.chmod(0o700)
+        # Any attempt at destructive work before validation fails this fixture.
+        for name in ("rm", "mkdir", "rustup", "cargo", "npm"):
+            command = bin_dir / name
+            command.write_text('#!/bin/sh\necho unexpected-write >&2\nexit 99\n')
+            command.chmod(0o700)
+        self.env = {k: v for k, v in os.environ.items() if not k.startswith("BASE64_NG_")}
+        self.env["PATH"] = f"{bin_dir}:{os.environ['PATH']}"
+
+    def run_gate(self, path=None):
+        env = dict(self.env)
+        if path is not None:
+            env["BASE64_NG_WASM_INSTALL_DIR"] = str(path)
+        return subprocess.run(
+            ["sh", str(ROOT / "scripts/check-2.0-wasm-loader.sh")],
+            cwd=self.root, env=env, capture_output=True, text=True, timeout=10,
+        )
+
+    def assert_rejected(self, path):
+        result = self.run_gate(path)
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertIn("WASM install", result.stderr)
+        self.assertNotIn("path-accepted", result.stderr)
+        self.assertNotIn("unexpected-write", result.stderr)
+        self.assertEqual((self.outside / "package/keep").read_text(), "preserve package")
+        self.assertEqual((self.outside / "keep.tgz").read_text(), "preserve archive")
+
+    def test_accepts_default_relative_and_private_absolute_children(self):
+        for path in (None, "target/wasm-loader-package", self.root / "target/npm-release.test",
+                     "target/nested/../safe"):
+            with self.subTest(path=path):
+                result = self.run_gate(path)
+                self.assertEqual(result.returncode, 77, result.stderr)
+                self.assertIn("path-accepted", result.stderr)
+
+    def test_rejects_root_parent_outside_and_target_itself(self):
+        for path in ("/", "..", ".", self.root, self.outside, "target", "target/a/..",
+                     "target/../../unrelated", "target-sibling/output"):
+            with self.subTest(path=path):
+                self.assert_rejected(path)
+
+    def test_rejects_symlink_escapes_and_dangling_links(self):
+        link = self.root / "target/escape"
+        link.symlink_to(self.outside, target_is_directory=True)
+        self.assert_rejected(link)
+        self.assert_rejected(link / "nested")
+        link.unlink()
+        link.symlink_to(self.outside / "missing", target_is_directory=True)
+        self.assert_rejected(link)
+
+    def test_rejects_symlinked_target(self):
+        (self.root / "target").rmdir()
+        (self.root / "target").symlink_to(self.outside, target_is_directory=True)
+        self.assert_rejected("target/work")
+
+    def test_rejects_output_links_before_cleanup(self):
+        install = self.root / "target/work"
+        install.mkdir()
+        (install / "packed").mkdir()
+        for name in ("package", "packed/checked.sha256", "browser-smoke.html",
+                     "browser-smoke.mjs"):
+            with self.subTest(name=name):
+                link = install / name
+                link.symlink_to(self.outside)
+                self.assert_rejected(install)
+                link.unlink()
+        (install / "packed").rmdir()
+        (install / "packed").symlink_to(self.outside, target_is_directory=True)
+        self.assert_rejected(install)
+
+
 if __name__ == "__main__":
     unittest.main()
