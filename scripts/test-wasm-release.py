@@ -159,7 +159,8 @@ class InstallPathTests(unittest.TestCase):
         # Stop a valid invocation at its first HEAD lookup, before any real build.
         git = bin_dir / "git"
         git.write_text('#!/bin/sh\nif [ "$2" = --show-toplevel ]; then pwd -P; '
-                       'else echo path-accepted >&2; exit 77; fi\n')
+                       'else [ -z "${CARGO_BUILD_BUILD_DIR+x}" ] || exit 78; '
+                       'echo path-accepted >&2; exit 77; fi\n')
         git.chmod(0o700)
         # Any attempt at destructive work before validation fails this fixture.
         for name in ("rm", "mkdir", "rustup", "cargo", "npm"):
@@ -229,6 +230,59 @@ class InstallPathTests(unittest.TestCase):
         (install / "packed").rmdir()
         (install / "packed").symlink_to(self.outside, target_is_directory=True)
         self.assert_rejected(install)
+
+    def test_rejects_all_evidence_and_cache_symlink_components(self):
+        paths = (
+            "target/release-evidence",
+            "target/release-evidence/wasm-loader",
+            "target/release-evidence/wasm-loader/path-independent",
+            "target/release-evidence/wasm-loader/path-independent/repository",
+            "target/npm-cache",
+            "target/npm-cache/_logs",
+            "packages",
+            "packages/base64-ng-wasm-loader",
+            "packages/base64-ng-wasm-loader/artifacts",
+            "packages/base64-ng-wasm-loader/target-scalar",
+            "packages/base64-ng-wasm-loader/target-simd128",
+            "packages/base64-ng-wasm-loader/node_modules",
+        )
+        for name in paths:
+            with self.subTest(name=name):
+                link = self.root / name
+                link.parent.mkdir(parents=True, exist_ok=True)
+                link.symlink_to(self.outside, target_is_directory=True)
+                self.assert_rejected(None)
+                link.unlink()
+
+    def test_rejects_nested_output_file_links_and_internal_links(self):
+        for name in (
+            "target/release-evidence/wasm-loader/node-benchmark.json",
+            "target/release-evidence/wasm-loader/artifacts-first.sha256",
+            "target/npm-cache/_logs/log",
+            "packages/base64-ng-wasm-loader/target-scalar/release/output",
+        ):
+            for destination in (self.outside / "keep.tgz", self.outside / "missing",
+                                self.root / "target"):
+                with self.subTest(name=name, destination=destination):
+                    link = self.root / name
+                    link.parent.mkdir(parents=True, exist_ok=True)
+                    link.symlink_to(destination)
+                    self.assert_rejected(None)
+                    link.unlink()
+
+    def test_accepts_existing_regular_output_trees(self):
+        for name in ("target/release-evidence/wasm-loader/path-independent/repository/file",
+                     "target/npm-cache/_logs/log",
+                     "packages/base64-ng-wasm-loader/target-scalar/release/output"):
+            path = self.root / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("ordinary cached data")
+        self.assertEqual(self.run_gate().returncode, 77)
+
+    def test_clears_inherited_cargo_intermediate_override(self):
+        self.env["CARGO_BUILD_BUILD_DIR"] = str(self.outside / "cargo-build")
+        self.assertEqual(self.run_gate().returncode, 77)
+        self.assertFalse((self.outside / "cargo-build").exists())
 
 
 if __name__ == "__main__":

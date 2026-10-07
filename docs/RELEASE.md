@@ -581,6 +581,11 @@ verification. Raw directory `npm publish` is deliberately rejected by the
 The gate's `BASE64_NG_WASM_INSTALL_DIR` override must resolve strictly beneath
 the repository's `target/`; symlink escapes and symlinked output paths are
 rejected before cleanup. The repository's `target/` itself must not be a symlink.
+The same preflight rejects symlink components and cached descendants in the
+WASM evidence, path-independent rebuild, absolute npm cache, and package-owned
+artifact/build output trees. Inherited Cargo intermediate-directory overrides
+are cleared. This protects against stale redirected caches, not concurrent
+filesystem changes by another process running as the publishing user.
 
 The desktop path retains artifact hashes and `PROVENANCE.json` but does not
 claim npm CI provenance. Development builds may use a dirty checkout; their

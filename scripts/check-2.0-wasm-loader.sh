@@ -4,33 +4,61 @@ set -eu
 package_dir="packages/base64-ng-wasm-loader"
 evidence_dir="target/release-evidence/wasm-loader"
 root="$(git rev-parse --show-toplevel)"
-# Validate before mkdir, cleanup, tool installation, or artifact generation.
+# Validate every gate-owned output tree before any cleanup or writes.
 install_dir="$(python3 - "$root" "${BASE64_NG_WASM_INSTALL_DIR:-target/wasm-loader-package}" <<'PY'
 from pathlib import Path
+import os
 import sys
 
 root = Path(sys.argv[1]).resolve()
 target = root / "target"
-path = Path(sys.argv[2])
-if not path.is_absolute():
-    path = root / path
-path = path.resolve()
-if target.resolve() != target or target not in path.parents:
-    raise SystemExit("WASM install directory must be a child of repository target/ (no target symlink)")
-# Cleanup must not follow an existing packed-directory link, and subsequent
-# writes must not follow links to unrelated files. Concurrent edits are unsupported.
-for name in ("packed", "package", "packed/checked.sha256",
-             "browser-smoke.html", "browser-smoke.mjs"):
-    child = path / name
-    if child.is_symlink() or child.resolve() != child:
-        raise SystemExit("WASM install output must not be a symlink: " + name)
-print(path)
+
+def fail(message):
+    raise SystemExit("WASM install/output safety: " + str(message))
+
+def safe_tree(raw, boundary):
+    path = Path(raw)
+    if not path.is_absolute():
+        path = root / path
+    resolved = path.resolve()
+    if boundary not in resolved.parents:
+        fail("output must remain strictly below " + str(boundary))
+    # Reject links even when they currently resolve back inside the boundary.
+    for component in (path, *path.parents):
+        if component == root:
+            break
+        if component.is_symlink():
+            fail("symlink component: " + str(component))
+    try:
+        resolved.stat()
+    except FileNotFoundError:
+        return resolved
+    if not resolved.is_dir():
+        fail("output tree is not a directory: " + str(resolved))
+    # Cached descendants include redirected evidence files, Cargo outputs and
+    # npm logs. os.walk never follows directory links; inspect and reject them.
+    for directory, dirs, files in os.walk(resolved, followlinks=False, onerror=fail):
+        for name in dirs + files:
+            child = Path(directory) / name
+            if child.is_symlink():
+                fail("symlink output: " + str(child))
+    return resolved
+
+install = safe_tree(sys.argv[2], target)
+for name in ("target/release-evidence/wasm-loader", "target/npm-cache"):
+    safe_tree(name, target)
+for name in ("artifacts", "target-scalar", "target-simd128", "node_modules"):
+    safe_tree("packages/base64-ng-wasm-loader/" + name, root)
+print(install)
 PY
 )"
+evidence_dir="$root/$evidence_dir"
 pack_dir="$install_dir/packed"
 package_extract="$install_dir/package"
-npm_cache="target/npm-cache"
+npm_cache="$root/target/npm-cache"
 alternate_root="$evidence_dir/path-independent/repository"
+# Do not redirect Cargo intermediates outside the validated target trees.
+unset CARGO_BUILD_BUILD_DIR
 source_commit="$(git rev-parse HEAD)"
 export BASE64_NG_SOURCE_COMMIT="$source_commit"
 export npm_config_cache="$npm_cache"
