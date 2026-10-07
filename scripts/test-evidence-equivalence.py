@@ -158,6 +158,20 @@ with tempfile.TemporaryDirectory() as raw_temp:
     )
     assert "policy=metadata-only-v2" in accepted.stdout
 
+    (repo / "security/pentest").mkdir()
+    (repo / "security/pentest/v2.1.0.md").write_text("report-only fixture\n")
+    report = commit(repo, "2.1 report-only acceptance")
+    run(repo, "--evidence-commit", evidence, "--release-commit", report,
+        "--retained-manifest", str(retained), succeeds=True)
+
+    # A previous-release report is not metadata for this campaign.
+    (repo / "security/pentest/v2.0.0.md").write_text("wrong release\n")
+    wrong_report = commit(repo, "wrong release report")
+    run(repo, "--evidence-commit", evidence, "--release-commit", wrong_report,
+        "--retained-manifest", str(retained), succeeds=False)
+    (repo / "security/pentest/v2.0.0.md").unlink()
+    commit(repo, "remove wrong release report")
+
     tampered_artifact = repo / "target/release-evidence/miri/artifact.txt"
     original_artifact = tampered_artifact.read_bytes()
     tampered_artifact.write_text("tampered\n", encoding="utf-8")

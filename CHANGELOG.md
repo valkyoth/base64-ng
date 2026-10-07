@@ -2,63 +2,27 @@
 
 ## 2.1.0 - Unreleased
 
-- Commit 18 batches synchronous decoder writes within the existing queue and
-  preserves malformed-prefix progress. Add explicit decoder validation policy
-  to synchronous/Tokio adapters and fragmented Bytes updates, bounded queue
-  copies, file/duplex examples and end-to-end measurements. Fix pre-existing
-  finalization failure when a valid tail does not fit the remaining sync queue;
-  draining failures retain that tail for retry and invalid tails do not drain.
+- Accelerate ordinary strict Standard/URL-safe decoding with portable table
+  validation and admitted x86, NEON, WASM and exact-profile X60 RVV routes.
+  Retain full grammar checks, exact diagnostics and checked-backend recovery.
+- Add explicit Auto/reference validation, per-call decode execution reports,
+  static-token policy methods and reusable immutable `Base64Ref` views.
+- Accelerate canonical encoding, owned/append forwarding, incremental states,
+  sync/Tokio/Bytes adapters and staged in-place decoding without changing their
+  transactionality or progress contracts. Fix synchronous decoder finalization
+  retry when a valid tail does not fit the remaining queue.
+- Add opt-in SIMD/checked forwarding to Bytes, Tokio, Serde, Multibase, PEM and
+  OpenPGP. Defaults and secret/CT APIs remain unchanged. No progressive API ships.
+- Retain MSRV 1.90.0; use Rust 1.99.0 for the active release. Rebuild both WASM
+  artifacts with matching loader pins and generated source provenance.
+- Synchronize the Rust family and npm loader at 2.1.0. Freeze APIs, package
+  inventories, compiled examples and campaign tooling before final evidence.
+  No new ISA or automatic AVX-512 decode admission is made.
+- Document measured bulk gains and small/checked/rejected-input tradeoffs.
+  Final frozen-source campaigns, external acceptance and full-release CI are
+  still required. See the release notes and `docs/RELEASE_FREEZE_2.1.md`.
 
-- Commit 17 processes substantial ordinary incremental input in bulk, retaining
-  exact progress, per-call decode transactionality, pending output and scalar
-  terminal rules. Add `DecoderState::update_with_validation` for explicit
-  per-call reference validation; preserve checked recovery, tiny-buffer progress
-  and custom/legacy fallbacks. Secret state machines are unchanged.
-
-- Commit 16 adds `Base64Ref`, an immutable, codec-bound borrowed input with
-  exact decoded length and reusable transactional decoding. Reference policy
-  revalidates on every decode; cached Auto proofs retain health checks and
-  checked output comparison. Add fallible `Base64String` borrowing, lifetime
-  compile-fail tests, scan/allocation counters and bounded fuzz coverage.
-  Correct the internal selected-backend comment: writer eligibility is not
-  evidence that ScalarReference validation executed that backend.
-
-- Commit 15 adds per-call ordinary decode execution reports and transactional
-  static-token methods with explicit validation policy. Reports distinguish
-  actual validation, checked work, final output and scalar backend recovery.
-  Existing token methods, shared health latches and secret APIs are unchanged.
-  Retain alphabet classification in the private proof to avoid repeated work;
-  preserve reference validation on the empty-input fast path.
-
-- Commit 1: synchronize development package metadata at `2.1.0`, block Rust
-  and npm publication, and preserve the signed `v2.0.4` API/behavior baseline.
-- Update the active compiler to Rust `1.99.0` and retain MSRV `1.90.0`.
-- Add explicit ordinary `Auto`/`ScalarReference` validation policy and shared
-  transactional preflight. Eligible ordinary strict Standard/URL-safe calls
-  use portable table validation or health-gated x86/NEON vector validation,
-  with exact diagnostics, checked comparison and quarantine/recovery retained.
-- Commit 11 extends that ordinary route to WASM simd128 and rebuilds the npm
-  SIMD artifact without changing JavaScript contracts or the scalar artifact.
-  Add WASM active/MSRV fault and lane tests, expanded browser checks and paired
-  guest/loader benchmarks. Safari operator confirmation, external review and CI
-  passed.
-- Commit 12 extends shared ordinary validation/writing to the existing exact
-  Linux/SpacemiT X60 RVV profile, without broadening hardware admission. Add
-  variable-VL classification, production assembly checks, dual-VLEN/MSRV tests
-  and native paired measurements, including documented tiny-call tradeoffs.
-- Commit 13 routes canonical ordinary Standard/URL-safe encoding through existing
-  admitted kernels, retaining short/custom table fallback, checked recovery,
-  exact sizing and independent encode-padding policy. Batch owned String append
-  and internal formatting work without changing public sink progress contracts.
-- Rebuild both WASM artifacts with Rust 1.99.0. Extend the assembly checkers for
-  reviewed LLVM 23 code shapes with mutation tests; preserve MSRV 1.90.0.
-  Remaining APIs and optimizations follow the commit plan.
-- Commit 14 reuses private validation proofs through canonical decode append
-  and eligible historical owned decoding. Preserve allocation ordering, exact
-  errors, backend recovery and append rollback; audit owner and companion
-  forwarding without changing streaming, in-place or secret contracts.
-
-## 2.0.4 - Unreleased
+## 2.0.4 - 2026-09-06
 
 - Update the exact-pinned `sanitization` companion dependency from `2.0.4` to
   `2.1.0` and recheck its complete feature matrix.

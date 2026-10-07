@@ -13,7 +13,17 @@ baseline. New paths require the [2.1 checkpoints](2.1.0-release-plan.md).
 profile, not general RVV hardware. Its shared route reserves the final quantum
 before applying the existing 1024-byte decode threshold. Native checkpoint
 results and tiny-call tradeoffs are in [PERFORMANCE_2.1_RVV.md](PERFORMANCE_2.1_RVV.md);
-external review and CI for this development checkpoint are still pending.
+external review and CI passed through `0ef1dcb`.
+
+The 2.1 implementation freeze includes shared strict Auto validation on x86,
+NEON, WASM and exact X60 RVV, plus canonical encoding, incremental/adapters
+and in-place bulk processing. The shared route's size floors are recorded in
+[POLICY_2.1.md](POLICY_2.1.md); the historical released thresholds below are
+not a claim that every 2.1 public wrapper uses those floors. Reference validation
+and checked output remain explicit. No new automatic AVX-512 decode, SVE or
+broader RVV admission is made. Final frozen-source campaigns remain pending.
+Release status: `2.1.0` candidate, not yet published; the last released
+admission baseline remains 2.0.4.
 
 - Admitted backends: AVX-512 VBMI encode, AVX2 encode, SSSE3/SSE4.1 encode,
   NEON encode, AVX-512 VBMI strict decode, AVX2 strict decode,

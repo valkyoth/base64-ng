@@ -4,6 +4,11 @@ This dashboard is a concise adoption checklist for security-sensitive users.
 It describes the current release posture and should be refreshed before each
 stable release.
 
+The 2.1 source is an unreleased candidate. Its completed development checks and
+paired measurements do not replace final frozen-source campaigns; current
+status and remaining acceptance requirements are in
+[RELEASE_FREEZE_2.1.md](RELEASE_FREEZE_2.1.md) and [POLICY_2.1.md](POLICY_2.1.md).
+
 The README's **Backend Verification Status** table is the release-facing
 inventory of implementation, actual execution evidence, automatic-dispatch
 admission, and independent verification. Repository tests and pentests count

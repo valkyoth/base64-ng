@@ -2,6 +2,12 @@
 
 This checklist is for maintainers preparing a `base64-ng` release.
 
+For 2.1.0 use [RELEASE_FREEZE_2.1.md](RELEASE_FREEZE_2.1.md) and Commits 26-28
+of the [2.1 plan](2.1.0-release-plan.md). The API/package freeze precedes the
+distributed candidate campaigns. Publication metadata is prepared, not release
+authorization. The 2.0-specific examples and checkpoint numbers below are
+historical; use `v2.1.0` and its report-only final acceptance for this release.
+
 For 2.0.0, [`2.0_RELEASE_FREEZE.md`](2.0_RELEASE_FREEZE.md) records the exact
 candidate boundary. The synchronized publish plan does not authorize release
 without Commit 55, final pentest acceptance, green required CI, and the signed
@@ -275,9 +281,10 @@ Expected artifacts:
 - `base64-ng.spdx.json`
 - `base64-ng.cyclonedx.json`
 
-The published crate package includes the core release/check scripts, Rust
-toolchain pin, and cargo-deny policy so the documented gate can be inspected
-with the packaged source.
+Release/check scripts, toolchain pins, cargo-deny policy and evidence stay on
+GitHub, outside the lean crate archive. Inspect the signed source tag for the
+complete engineering gate; the crate includes runtime source, tests, examples,
+user-facing metadata and licenses.
 
 Fuzz-only dependencies are included in the standard local gate and can also be
 checked directly with:
@@ -557,9 +564,19 @@ scripts/release_wasm_loader.sh dry-run
 scripts/release_wasm_loader.sh publish
 ```
 
-Real npm publication always uses `npm publish --provenance`; provenance is not
-an optional release-manager toggle. Configure npm trusted publishing in the
-release environment. Never store an npm token in the repository. Both the npm
+The script's `publish` mode uses `npm publish --provenance` and requires a
+supported CI provenance provider; it is not the desktop publication command.
+For the maintainer's manual desktop workflow, first run the signed-tag `check`
+and `dry-run` commands above, then from the same unchanged checkout:
+
+```sh
+cd packages/base64-ng-wasm-loader
+npm publish
+```
+
+This manual path retains artifact hashes and `PROVENANCE.json` but does not
+claim npm CI provenance. Do not fake CI environment variables to obtain an
+attestation. Never store an npm token in the repository. Both the scripted npm
 and crates.io publishers verify the containing signed Rust release tag against
 the exact SSH principal and public key in `security/release-signers`; a
 signature that is merely valid under a maintainer's ambient keyring is

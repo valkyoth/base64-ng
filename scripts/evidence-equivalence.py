@@ -16,12 +16,12 @@ DEFAULT_ALLOWLIST = ROOT / "security/evidence-reuse-allowlist.txt"
 FULL_COMMIT = re.compile(r"[0-9a-f]{40}")
 HASH_LINE = re.compile(r"([0-9a-f]{64})  (target/release-evidence/.+)")
 PERMITTED_METADATA_PATHS = {
-    "docs/2.0.0-release-plan.md",
+    "docs/2.1.0-release-plan.md",
     "README.md",
-    "docs/2.0_RELEASE_FREEZE.md",
+    "docs/RELEASE_FREEZE_2.1.md",
     "docs/RELEASE.md",
     "docs/RELEASE_EVIDENCE.md",
-    "security/pentest/v2.0.0.md",
+    "security/pentest/v2.1.0.md",
 }
 RETAINED_CAMPAIGN_PREFIXES = (
     "target/release-evidence/miri/",

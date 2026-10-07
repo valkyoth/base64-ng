@@ -26,17 +26,20 @@ and allocating APIs, incremental and in-place transforms, optional admitted
 SIMD backends, and separately named compatibility policies.
 Zero external runtime or development dependencies in `Cargo.toml`.
 
-The current public release is `2.0.4`. Its unchanged companions and WASM loader
-remain at `2.0.3` .
-The development branch reports package version `2.1.0` across the family;
-publication is disabled by the `development-blocked` policy, Cargo manifests,
-and npm's private-package flag. See the [2.1 commit plan](docs/2.1.0-release-plan.md).
-The branch includes canonical scalar decode improvements and health-gated
-SSSE3/AVX2 and little-endian AArch64 NEON strict validation and decoding.
-Other vector-validation backends and release performance admission remain in progress; see
-[validation policies](docs/DECODE_VALIDATION.md).
+The current public release is `2.0.4`. The sanitization companion is also
+`2.0.4`; unchanged companions and the WASM loader remain at `2.0.3`.
+This source tree defines the synchronized `2.1.0` package family.
+It is an unreleased candidate: publication metadata is prepared, but final
+campaigns, external acceptance, full-release CI and a signed tag are still
+required. See the [2.1 commit plan](docs/2.1.0-release-plan.md).
+The branch includes portable table decoding and health-gated SSSE3/AVX2,
+little-endian AArch64 NEON, WASM simd128 and exact-profile X60 RVV strict
+validation and decoding. Final frozen-source campaigns remain pending;
+see [validation policies](docs/DECODE_VALIDATION.md) and the
+[measured benefits and costs](docs/POLICY_2.1.md).
 
-The examples below target published releases. To evaluate development code:
+The dependency examples below target 2.1.0 after publication. Until then,
+evaluate reviewed development code with a Git dependency:
 
 ```toml
 base64-ng = { git = "https://github.com/valkyoth/base64-ng", branch = "main" }
@@ -48,7 +51,7 @@ Pin a reviewed commit with `rev` instead of `branch` for reproducible evaluation
 
 ```toml
 [dependencies]
-base64-ng = "2.0.4"
+base64-ng = "2.1.0"
 ```
 
 For ordinary Standard Base64 with canonical padding:
@@ -107,6 +110,23 @@ behavior is available only through explicitly named APIs or companion crates.
 
 `base64_ng::prelude` contains the focused ordinary API imports. It deliberately
 does not import secret, compatibility, protocol, or historical surfaces.
+
+### 2.1 Policy Choices (Unreleased)
+
+| Need | Choice |
+| --- | --- |
+| Ordinary throughput with full grammar validation | Default `DecodeValidation::Auto`; opt into `simd` |
+| Reference validation on each operation | `DecodeValidation::ScalarReference`; writing may still use SIMD |
+| Independent backend validation/output comparison | Enable `checked-backend`; expect extra work |
+| Entirely scalar ordinary execution | Build without `simd` or features that enable it |
+| Reuse validated immutable input | `Base64Ref`; health and checked-output gates still apply |
+| Observe one successful decode | `decode_into_with_report`; distinguish validator from writer |
+
+All these are ordinary, non-constant-time, non-wiping APIs. `Auto` never means
+unchecked decoding. Feature unification can enable SIMD through companions;
+use the startup policy check in the [migration guide](docs/MIGRATION.md).
+The compiled [policy example](examples/decode_policy.rs) covers selection,
+reports and borrowed reuse. No progressive decoder API ships in 2.1.
 
 ## Caller-Owned Buffers
 
@@ -257,14 +277,14 @@ Disable defaults for core-only embedded use:
 
 ```toml
 [dependencies]
-base64-ng = { version = "2.0.4", default-features = false }
+base64-ng = { version = "2.1.0", default-features = false }
 ```
 
 Enable ordinary SIMD dispatch without changing the public codec API:
 
 ```toml
 [dependencies]
-base64-ng = { version = "2.0.4", features = ["simd"] }
+base64-ng = { version = "2.1.0", features = ["simd"] }
 ```
 
 Scalar by default; std x86/x86_64 encode selects SSSE3/SSE4.1, AVX2, or AVX-512 VBMI by length, strict decode selects SSSE3/SSE4.1 or AVX2. Admitted
@@ -283,7 +303,7 @@ bounded fixed-work API:
 
 ```toml
 [dependencies]
-base64-ng = { version = "2.0.4", default-features = false, features = ["secrets"] }
+base64-ng = { version = "2.1.0", default-features = false, features = ["secrets"] }
 ```
 
 ```rust
@@ -357,7 +377,7 @@ whole-crate formal proof, or a portable performance guarantee.
 | --- | --- | --- |
 | Portable scalar | Native x86-64, AArch64, RISC-V; QEMU big-endian targets | Admitted |
 | x86 SSSE3/SSE4.1, AVX2, AVX-512 VBMI | Native differential, kernel, assembly, and benchmark evidence | Admitted within documented thresholds |
-| AArch64 NEON | Apple Silicon and AWS Neoverse-N1 evidence | Admitted |
+| AArch64 NEON | Apple Silicon and AWS Neoverse-N1; 2.1 development also tested on Neoverse-V2 | Admitted within documented scope |
 | wasm `simd128` | Node, Wasmtime, Chromium, Firefox, and Safari evidence | Admitted artifact |
 | RISC-V RVV 1.0 | Native SpacemiT X60 plus QEMU vector-length evidence | Admitted only for the exact documented X60 profile |
 | AArch64 SVE | QEMU and assembly evidence only | Not admitted |
@@ -376,7 +396,7 @@ MSRV remains Rust `1.90.0`. The active release toolchain is Rust `1.99.0`.
 | --- | --- |
 | `1.90.0` | MSRV compatibility check |
 | `1.91.0` - `1.98.1` | `cargo check --all-features` |
-| `1.99.0` | Active release toolchain and full release checks |
+| `1.99.0` | Active toolchain; checkpoint gates passed, final release campaigns pending |
 
 New deployments should prefer the latest tested stable Rust.
 

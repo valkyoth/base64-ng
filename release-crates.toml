@@ -1,102 +1,102 @@
 [release]
 version = "2.1.0"
-policy = "development-blocked"
+policy = "synced-family"
 
 [npm]
 name = "@valkyoth/base64-ng-wasm-loader"
 previous_version = "2.0.3"
 version = "2.1.0"
-change = "metadata"
-publish = false
-reason = "Synchronized 2.1.0 development metadata only; publication is blocked until final acceptance."
+change = "code"
+publish = true
+reason = "Rebuilt scalar/SIMD artifacts and synchronized 2.1.0 loader; publish only after final acceptance."
 
 [crates."base64-ng"]
 previous_version = "2.0.4"
 version = "2.1.0"
-change = "metadata"
-publish = false
-reason = "Synchronized 2.1.0 development metadata only; publication is blocked until final acceptance."
+change = "code"
+publish = true
+reason = "Ordinary throughput, validation or feature-forwarding updates in the synchronized 2.1.0 family."
 
 [crates."base64-ng-sanitization"]
 previous_version = "2.0.4"
 version = "2.1.0"
-change = "metadata"
-publish = false
-reason = "Synchronized 2.1.0 development metadata only; publication is blocked until final acceptance."
+change = "dependency"
+publish = true
+reason = "Synchronized minor release against the 2.1.0 core; existing companion contracts remain unchanged."
 
 [crates."base64-ng-derive"]
 previous_version = "2.0.3"
 version = "2.1.0"
-change = "metadata"
-publish = false
-reason = "Synchronized 2.1.0 development metadata only; publication is blocked until final acceptance."
+change = "dependency"
+publish = true
+reason = "Synchronized minor release against the 2.1.0 core; existing companion contracts remain unchanged."
 
 [crates."base64-ng-imap"]
 previous_version = "2.0.3"
 version = "2.1.0"
-change = "metadata"
-publish = false
-reason = "Synchronized 2.1.0 development metadata only; publication is blocked until final acceptance."
+change = "dependency"
+publish = true
+reason = "Synchronized minor release against the 2.1.0 core; existing companion contracts remain unchanged."
 
 [crates."base64-ng-mime"]
 previous_version = "2.0.3"
 version = "2.1.0"
-change = "metadata"
-publish = false
-reason = "Synchronized 2.1.0 development metadata only; publication is blocked until final acceptance."
+change = "dependency"
+publish = true
+reason = "Synchronized minor release against the 2.1.0 core; existing companion contracts remain unchanged."
 
 [crates."base64-ng-multibase"]
 previous_version = "2.0.3"
 version = "2.1.0"
-change = "metadata"
-publish = false
-reason = "Synchronized 2.1.0 development metadata only; publication is blocked until final acceptance."
+change = "code"
+publish = true
+reason = "Ordinary throughput, validation or feature-forwarding updates in the synchronized 2.1.0 family."
 
 [crates."base64-ng-password"]
 previous_version = "2.0.3"
 version = "2.1.0"
-change = "metadata"
-publish = false
-reason = "Synchronized 2.1.0 development metadata only; publication is blocked until final acceptance."
+change = "dependency"
+publish = true
+reason = "Synchronized minor release against the 2.1.0 core; existing companion contracts remain unchanged."
 
 [crates."base64-ng-openpgp"]
 previous_version = "2.0.3"
 version = "2.1.0"
-change = "metadata"
-publish = false
-reason = "Synchronized 2.1.0 development metadata only; publication is blocked until final acceptance."
+change = "code"
+publish = true
+reason = "Ordinary throughput, validation or feature-forwarding updates in the synchronized 2.1.0 family."
 
 [crates."base64-ng-pem"]
 previous_version = "2.0.3"
 version = "2.1.0"
-change = "metadata"
-publish = false
-reason = "Synchronized 2.1.0 development metadata only; publication is blocked until final acceptance."
+change = "code"
+publish = true
+reason = "Ordinary throughput, validation or feature-forwarding updates in the synchronized 2.1.0 family."
 
 [crates."base64-ng-serde"]
 previous_version = "2.0.3"
 version = "2.1.0"
-change = "metadata"
-publish = false
-reason = "Synchronized 2.1.0 development metadata only; publication is blocked until final acceptance."
+change = "code"
+publish = true
+reason = "Ordinary throughput, validation or feature-forwarding updates in the synchronized 2.1.0 family."
 
 [crates."base64-ng-bytes"]
 previous_version = "2.0.3"
 version = "2.1.0"
-change = "metadata"
-publish = false
-reason = "Synchronized 2.1.0 development metadata only; publication is blocked until final acceptance."
+change = "code"
+publish = true
+reason = "Ordinary throughput, validation or feature-forwarding updates in the synchronized 2.1.0 family."
 
 [crates."base64-ng-subtle"]
 previous_version = "2.0.3"
 version = "2.1.0"
-change = "metadata"
-publish = false
-reason = "Synchronized 2.1.0 development metadata only; publication is blocked until final acceptance."
+change = "dependency"
+publish = true
+reason = "Synchronized minor release against the 2.1.0 core; existing companion contracts remain unchanged."
 
 [crates."base64-ng-tokio"]
 previous_version = "2.0.3"
 version = "2.1.0"
-change = "metadata"
-publish = false
-reason = "Synchronized 2.1.0 development metadata only; publication is blocked until final acceptance."
+change = "code"
+publish = true
+reason = "Ordinary throughput, validation or feature-forwarding updates in the synchronized 2.1.0 family."

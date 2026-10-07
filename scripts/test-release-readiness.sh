@@ -40,8 +40,8 @@ make_fixture() {
         printf 'fixture\n' >README.md
         printf '[release]\npolicy = "synced-family"\n' >release-crates.toml
         printf '/target/\n' >.gitignore
-        printf '# Release 2.0.0\n' >release-notes/RELEASE_NOTES_2.0.0.md
-        git add README.md release-crates.toml .gitignore release-notes/RELEASE_NOTES_2.0.0.md \
+        printf '# Release 2.1.0\n' >release-notes/RELEASE_NOTES_2.1.0.md
+        git add README.md release-crates.toml .gitignore release-notes/RELEASE_NOTES_2.1.0.md \
             scripts/validate-release-readiness.sh \
             scripts/evidence-equivalence.py \
             scripts/verify-release-evidence-signature.sh \
@@ -278,14 +278,14 @@ repo="$(make_fixture ready)"
 (
     cd "$repo"
     reviewed_commit="$(git rev-parse HEAD)"
-    write_release_notes "2.0.0"
+    write_release_notes "2.1.0"
     write_sbom
-    write_pentest "v2.0.0" "$reviewed_commit"
-    git add "security/pentest/v2.0.0.md"
+    write_pentest "v2.1.0" "$reviewed_commit"
+    git add "security/pentest/v2.1.0.md"
     git commit -q -m "report"
     write_evidence_index
 
-    scripts/validate-release-readiness.sh "v2.0.0"
+    scripts/validate-release-readiness.sh "v2.1.0"
 )
 
 repo="$(make_fixture metadata-equivalent)"
@@ -298,12 +298,12 @@ repo="$(make_fixture metadata-equivalent)"
     git commit -q -m "release metadata"
     reviewed_commit="$(git rev-parse HEAD)"
     write_sbom
-    write_pentest "v2.0.0" "$reviewed_commit"
-    git add "security/pentest/v2.0.0.md"
+    write_pentest "v2.1.0" "$reviewed_commit"
+    git add "security/pentest/v2.1.0.md"
     git commit -q -m "report"
     write_equivalent_evidence_index "$campaign_commit"
 
-    scripts/validate-release-readiness.sh "v2.0.0"
+    scripts/validate-release-readiness.sh "v2.1.0"
 )
 
 repo="$(make_fixture metadata-equivalent-runtime-change)"
@@ -316,8 +316,8 @@ repo="$(make_fixture metadata-equivalent-runtime-change)"
     git commit -q -m "runtime"
     reviewed_commit="$(git rev-parse HEAD)"
     write_sbom
-    write_pentest "v2.0.0" "$reviewed_commit"
-    git add "security/pentest/v2.0.0.md"
+    write_pentest "v2.1.0" "$reviewed_commit"
+    git add "security/pentest/v2.1.0.md"
     git commit -q -m "report"
     # Write the claimed index manually because the equivalence generator must
     # reject this range.
@@ -344,5 +344,5 @@ EOF
         target/release-evidence/FINAL-MANIFEST.txt >/dev/null
 
     assert_fails_with "non-metadata paths changed" \
-        scripts/validate-release-readiness.sh "v2.0.0"
+        scripts/validate-release-readiness.sh "v2.1.0"
 )

@@ -25,9 +25,10 @@
 
 # base64-ng-openpgp
 
-Development source: `2.1.0`, not published. Publication is blocked while the
-[2.1 commit plan](../../docs/2.1.0-release-plan.md) is in progress. Registry
-installation examples below refer to the existing published releases.
+Candidate source: `2.1.0`, not published. Publication metadata is prepared;
+final campaigns, review, CI and the signed tag remain required by the
+[2.1 commit plan](../../docs/2.1.0-release-plan.md). Dependency examples target
+2.1.0 after publication; use a reviewed Git revision or local path before then.
 
 ### Optional acceleration (2.1 development)
 

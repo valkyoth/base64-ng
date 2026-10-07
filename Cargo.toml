@@ -1,7 +1,6 @@
 [package]
 name = "base64-ng"
 version = "2.1.0"
-publish = false
 edition = "2024"
 rust-version = "1.90"
 license = "MIT OR Apache-2.0"
@@ -16,6 +15,7 @@ include = [
     "src/**",
     "tests/**",
     "examples/stream_file.rs",
+    "examples/decode_policy.rs",
     "Cargo.toml",
     "/README.md",
     "CHANGELOG.md",

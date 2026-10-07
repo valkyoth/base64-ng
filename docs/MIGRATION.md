@@ -1,4 +1,51 @@
-# Migrating To base64-ng 2.0
+# Migrating To base64-ng 2.x
+
+## From 2.0 To 2.1 (Unreleased)
+
+Existing calls and default features remain compatible; MSRV is still 1.90.
+The active compiler is 1.99.0. Use the development dependency shown in the
+README until 2.1.0 is published. All family versions are synchronized for this
+minor release; selective patch releases remain possible afterwards.
+
+- `Auto` keeps complete grammar validation and exact diagnostics, using the
+  portable table or an admitted vector validator where eligible. It does not
+  relax padding, alphabets, canonical trailing bits, or capacity checks.
+- Use `decode_into_with_validation(..., DecodeValidation::ScalarReference)`
+  when reference validation is required on each call. This chooses the
+  validator, not the writer, and does not promise constant-time processing.
+- `checked-backend` adds independent scalar validation/output checks to
+  accelerated work. Neither policy disables health checks or scalar recovery.
+- For all-scalar ordinary execution, disable `simd` and `checked-backend`
+  throughout the dependency graph, then enforce
+  `runtime::require_backend_policy(runtime::BackendPolicy::HighAssuranceScalarOnly)`
+  at startup. Cargo features are additive, including companion forwarding.
+- `decode_into_with_report` distinguishes the actual validator, writer,
+  checked work and recovery. `selected_backend()` alone is not execution proof.
+- `Base64Ref::parse` borrows immutable encoded bytes and retains their codec.
+  Repeated Auto decoding reuses grammar validation, with health revalidation
+  and checked output comparison retained. Reference-policy views revalidate
+  on every decode. Neither the view nor decoded output is secret storage.
+- Incremental, synchronous/Tokio, Bytes and in-place operations can use bulk
+  interiors without changing their progress or error contracts. One-shot
+  canonical output is transactional; a whole stream is not. Historical APIs
+  keep their historical error precedence and partial-write behavior.
+- Bytes, Tokio, Serde, Multibase, PEM and OpenPGP companions offer opt-in
+  `simd` and `checked-backend` forwarding. Their defaults and protocol grammar
+  are unchanged. No progressive decoder API is exposed.
+
+Run the compiled policy example with `cargo run --example decode_policy`,
+`cargo run --example decode_policy --features simd`, or
+`cargo run --example decode_policy --features checked-backend`.
+For file workflows see `examples/stream_file.rs`; for async duplex processing
+see the Tokio companion examples. Apply protocol input/output limits before
+untrusted allocation or streaming. Ordinary output is not automatically wiped;
+secret/CT APIs are unchanged and remain the appropriate secret boundary.
+
+See [validation](DECODE_VALIDATION.md), [reports](DECODE_COMPOSITION_2.1.md),
+[borrowed views](BORROWED_BASE64_2.1.md), [companion features](COMPANION_FEATURES_2.1.md)
+and [measured tradeoffs](POLICY_2.1.md) for complete contracts.
+
+## From 1.x Or Another Base64 Crate
 
 This guide covers migration from `base64-ng` 1.3.9 and from the `base64`
 crate's ordinary Standard and URL-safe engines. The 2.0 API makes strictness,
@@ -20,14 +67,14 @@ are not the recommended API for new 2.0 code.
 
 ```toml
 [dependencies]
-base64-ng = "2.0.4"
+base64-ng = "2.1.0"
 ```
 
 For `no_std` without allocation:
 
 ```toml
 [dependencies]
-base64-ng = { version = "2.0.4", default-features = false }
+base64-ng = { version = "2.1.0", default-features = false }
 ```
 
 Enable ordinary runtime SIMD with `features = ["simd"]`, synchronous
@@ -209,10 +256,10 @@ ecosystem integrations are separate synchronized packages:
 
 ```toml
 [dependencies]
-base64-ng = "2.0.4"
-base64-ng-tokio = "2.0.3"
-base64-ng-bytes = "2.0.3"
-base64-ng-serde = "2.0.3"
+base64-ng = "2.1.0"
+base64-ng-tokio = "2.1.0"
+base64-ng-bytes = "2.1.0"
+base64-ng-serde = "2.1.0"
 ```
 
 The Tokio and bytes state machines expose accepted/committed progress,

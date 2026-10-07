@@ -1,8 +1,9 @@
 # @valkyoth/base64-ng-wasm-loader
 
-Development source: `2.1.0`, not published. The current npm release is `2.0.3`.
-Publication is blocked while the 2.1 commit plan is in progress; registry
-installation examples below refer to the published package.
+Candidate source: `2.1.0`, not published. The current npm release is `2.0.3`.
+Publication metadata is prepared, but final campaigns, review, CI and the signed
+release tag remain required. Registry installation examples below still resolve
+to the published package until 2.1.0 is released.
 
 `@valkyoth/base64-ng-wasm-loader` is the supported JavaScript companion for
 [`base64-ng`](https://github.com/valkyoth/base64-ng). It selects a scalar or

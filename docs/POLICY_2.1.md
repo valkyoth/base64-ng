@@ -1,7 +1,7 @@
 # 2.1 Ordinary Policy Review
 
-Commit 25's implementation and development policy review are complete, pending
-external retest and CI. This record separates the selected 2.1 defaults from
+Commit 25's implementation and development policy review passed external retest
+and CI through `7bcdaf0`. This record separates the selected 2.1 defaults from
 final release admission. No ISA or threshold is admitted merely because a
 benchmark script returned successfully. Frozen-source release campaigns remain
 Commit 27; this checkpoint is not release approval.

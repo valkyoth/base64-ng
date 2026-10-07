@@ -29,6 +29,5 @@
     "type": "git",
     "url": "git+https://github.com/valkyoth/base64-ng.git",
     "directory": "packages/base64-ng-wasm-loader"
-  },
-  "private": true
+  }
 }

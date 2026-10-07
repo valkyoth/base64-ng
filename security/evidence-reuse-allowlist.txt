@@ -1,9 +1,9 @@
 # Paths that may change after an expensive release campaign without forcing
 # that campaign to run again. Every entry is exact; directories and globs are
 # intentionally unsupported.
-docs/2.0.0-release-plan.md
+docs/2.1.0-release-plan.md
 README.md
-docs/2.0_RELEASE_FREEZE.md
+docs/RELEASE_FREEZE_2.1.md
 docs/RELEASE.md
 docs/RELEASE_EVIDENCE.md
-security/pentest/v2.0.0.md
+security/pentest/v2.1.0.md

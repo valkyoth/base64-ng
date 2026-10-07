@@ -25,9 +25,10 @@
 
 # base64-ng-sanitization
 
-Development source: `2.1.0`, not published. Publication is blocked while the
-[2.1 commit plan](../../docs/2.1.0-release-plan.md) is in progress. Registry
-installation examples below refer to the existing published releases.
+Candidate source: `2.1.0`, not published. Publication metadata is prepared;
+final campaigns, review, CI and the signed tag remain required by the
+[2.1 commit plan](../../docs/2.1.0-release-plan.md). Dependency examples target
+2.1.0 after publication; use a reviewed Git revision or local path before then.
 
 This companion owns protected memory and secret processing, not ordinary bulk decoding; no SIMD forwarding feature is offered.
 See the [2.1 companion feature matrix](../../docs/COMPANION_FEATURES_2.1.md).
@@ -40,8 +41,8 @@ constant-time-oriented Base64 decode into clear-on-drop secret containers.
 
 ```toml
 [dependencies]
-base64-ng = { version = "2.0.3", default-features = false }
-base64-ng-sanitization = { version = "2.0.4", default-features = false }
+base64-ng = { version = "2.1.0", default-features = false }
+base64-ng-sanitization = { version = "2.1.0", default-features = false }
 ```
 
 ```rust
@@ -61,7 +62,7 @@ assert!(secret.sanitization_verify(
 Enable `alloc` for heap-backed `sanitization::SecretVec` helpers:
 
 ```toml
-base64-ng-sanitization = { version = "2.0.4", features = ["alloc"] }
+base64-ng-sanitization = { version = "2.1.0", features = ["alloc"] }
 ```
 
 The convenience `decode_secret_vec` and `decode_secret_vec_staged` methods
@@ -93,7 +94,7 @@ strict random canaries, and strict assembly comparison, and decodes directly
 into locked memory:
 
 ```toml
-base64-ng-sanitization = { version = "2.0.4", features = ["high-assurance"] }
+base64-ng-sanitization = { version = "2.1.0", features = ["high-assurance"] }
 ```
 
 ```rust
@@ -206,7 +207,7 @@ For deployments that want `sanitization`'s assembly-backed comparison checks,
 enable the passthrough features:
 
 ```toml
-base64-ng-sanitization = { version = "2.0.4", features = ["strict-compare"] }
+base64-ng-sanitization = { version = "2.1.0", features = ["strict-compare"] }
 ```
 
 The previous companion feature name `strict-ct` remains as an alias for

@@ -1146,8 +1146,8 @@ do
 done
 
 package_file_count="$(printf '%s\n' "$package_list" | wc -l)"
-if [ "$package_file_count" -gt 237 ]; then
-    echo "release metadata: core package contains $package_file_count files; maximum is 237" >&2
+if [ "$package_file_count" -gt 238 ]; then
+    echo "release metadata: core package contains $package_file_count files; maximum is 238" >&2
     exit 1
 fi
 

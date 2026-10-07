@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import shutil
+import os
 import subprocess
 import sys
 import tempfile
@@ -198,7 +199,7 @@ def main() -> None:
         assert 'scripts/ci_install_rust.sh' not in jobs.REMOTE_BOOTSTRAP
         assert "base64-ng-fuzz-$session-$target-$attempt" in jobs.REMOTE_BOOTSTRAP
         assert "missing_commands" in jobs.REMOTE_BOOTSTRAP
-        assert "for required in cc git curl python3" in jobs.REMOTE_BOOTSTRAP
+        assert "for required in cc c++ git curl python3" in jobs.REMOTE_BOOTSTRAP
         assert "build-essential pkg-config" in jobs.REMOTE_BOOTSTRAP
         assert "pkgconf-pkg-config" in jobs.REMOTE_BOOTSTRAP
         assert "run_root zypper --non-interactive" in jobs.REMOTE_BOOTSTRAP
@@ -207,6 +208,41 @@ def main() -> None:
             jobs.REMOTE_BOOTSTRAP.index("command -v rustup")
         )
         assert jobs.REMOTE_BOOTSTRAP.count('missing="$(missing_commands)"') == 2
+        # Execute the prerequisite boundary without installing or cloning anything.
+        prerequisite = jobs.REMOTE_BOOTSTRAP.split('if ! command -v rustup')[0]
+        for status in (0, 1):
+            probe = temporary / f"python-probe-{status}"
+            probe.mkdir()
+            marker = probe / "called"
+            python = probe / "python3"
+            python.write_text(f'#!/bin/sh\n: > "{marker}"\nexit {status}\n')
+            python.chmod(0o700)
+            # The probe replaces only Python; missing system commands still fail closed.
+            result = subprocess.run(
+                ["sh", "-s", "--", "decode", source.commit, "fixture",
+                 "https://example.invalid/repo", "no", "no", "attempt"],
+                input=prerequisite, text=True, capture_output=True,
+                env=dict(os.environ, HOME=str(temporary),
+                         PATH=f"{probe}:{os.environ['PATH']}"), check=False,
+            )
+            assert marker.exists(), result.stderr
+            assert result.returncode == (0 if status == 0 else 69), result.stderr
+            if status:
+                assert "Python 3.11+" in result.stderr
+        missing_cpp = temporary / "missing-cpp"
+        missing_cpp.mkdir()
+        for name in "cc git curl python3 tar gzip awk sed grep find wc".split():
+            command = missing_cpp / name
+            command.write_text("#!/bin/sh\nexit 99\n")
+            command.chmod(0o700)
+        result = subprocess.run(
+            ["/bin/sh", "-s", "--", "decode", source.commit, "fixture",
+             "https://example.invalid/repo", "no", "no", "attempt"],
+            input=prerequisite, text=True, capture_output=True,
+            env=dict(os.environ, HOME=str(temporary), PATH=str(missing_cpp)), check=False,
+        )
+        if result.returncode != 69 or "missing system prerequisites: c++" not in result.stderr:
+            raise AssertionError(f"missing C++ did not fail before bootstrap: {result.stderr}")
         subprocess.run(
             ["bash", "-n"], input=jobs.REMOTE_BOOTSTRAP, text=True, check=True
         )

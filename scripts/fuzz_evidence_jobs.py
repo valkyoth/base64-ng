@@ -42,7 +42,7 @@ export PATH="$HOME/.cargo/bin:$PATH"
 
 missing_commands() {
     missing=""
-    for required in cc git curl python3 tar gzip awk sed grep find wc; do
+    for required in cc c++ git curl python3 tar gzip awk sed grep find wc; do
         if ! command -v "$required" >/dev/null 2>&1; then
             missing="${missing}${missing:+ }$required"
         fi
@@ -94,6 +94,10 @@ fi
 missing="$(missing_commands)"
 if [ -n "$missing" ]; then
     echo "remote worker: prerequisites remain missing after installation: $missing" >&2
+    exit 69
+fi
+if ! python3 -c 'import sys, tomllib; sys.exit(0 if sys.version_info >= (3, 11) else 1)'; then
+    echo "remote worker: Python 3.11+ with tomllib is required; provision it before retrying" >&2
     exit 69
 fi
 if ! command -v rustup >/dev/null 2>&1; then

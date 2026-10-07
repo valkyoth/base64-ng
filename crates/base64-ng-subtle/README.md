@@ -25,9 +25,10 @@
 
 # base64-ng-subtle
 
-Development source: `2.1.0`, not published. Publication is blocked while the
-[2.1 commit plan](../../docs/2.1.0-release-plan.md) is in progress. Registry
-installation examples below refer to the existing published releases.
+Candidate source: `2.1.0`, not published. Publication metadata is prepared;
+final campaigns, review, CI and the signed tag remain required by the
+[2.1 commit plan](../../docs/2.1.0-release-plan.md). Dependency examples target
+2.1.0 after publication; use a reviewed Git revision or local path before then.
 
 This companion performs constant-time comparison and secret integration, not ordinary bulk decoding; no SIMD forwarding feature is offered.
 See the [2.1 companion feature matrix](../../docs/COMPANION_FEATURES_2.1.md).
@@ -45,8 +46,8 @@ and timing evidence.
 
 ```toml
 [dependencies]
-base64-ng = { version = "2.0.3", features = ["secrets"] }
-base64-ng-subtle = "2.0.3"
+base64-ng = { version = "2.1.0", features = ["secrets"] }
+base64-ng-subtle = "2.1.0"
 ```
 
 ```rust

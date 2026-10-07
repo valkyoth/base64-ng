@@ -2,6 +2,9 @@
 set -eu
 
 version="$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | sed -n '1p')"
+if [ "$version" = "2.1.0" ]; then
+    exec sh scripts/check-2.1-release-freeze.sh
+fi
 snapshot_dir="api-snapshots/v2.0.0"
 evidence_dir="target/release-evidence/commit-54"
 package_list_dir="$evidence_dir/package-lists"

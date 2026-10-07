@@ -247,6 +247,17 @@ def validate_plan_entry(
         if not publish:
             raise RuntimeError(f"{package_name} has code changes but publish is false")
     elif change in ("dependency", "metadata"):
+        if policy == "synced-family":
+            if (
+                planned_version != release_parts
+                or planned_version <= previous_version
+                or not publish
+            ):
+                raise RuntimeError(
+                    f"{package_name} synchronized dependency/metadata change must "
+                    "increase to the release version and publish"
+                )
+            return
         same_line = planned_version[:2] == previous_version[:2]
         patch_bump = planned_version[2] > previous_version[2]
         if not same_line or not patch_bump:

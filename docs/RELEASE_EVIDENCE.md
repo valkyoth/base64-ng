@@ -1,5 +1,11 @@
 # Release Evidence
 
+The current 2.1 candidate uses the existing collectors and signed manifests;
+see [the freeze/handoff](RELEASE_FREEZE_2.1.md) for exact-source and device
+requirements. The metadata-reuse allowlist now names the 2.1 plan, freeze and
+pentest report. Earlier 2.0 checkpoint records below remain historical evidence,
+not proof that a frozen 2.1 campaign ran. Commit 27 owns those final campaigns.
+
 Repository shell gates use baseline POSIX utilities and do not require
 `ripgrep`. Constant-time assembly symbol evidence recognizes both GNU/ELF and
 Apple/Mach-O function-definition labels; this parser is covered by

@@ -120,12 +120,25 @@ def test_dependency_only_changes_must_patch_bump() -> None:
         "reason": "test",
     }
     assert_fails(
-        "dependency-only bumps",
+        "same major/minor line",
         release_crates.validate_plan_entry,
         "base64-ng",
         entry,
         "1.1.0",
+        "selective-patch",
     )
+
+
+def test_synced_dependency_and_metadata_minor_bumps() -> None:
+    for change in ("dependency", "metadata"):
+        entry = dict(previous_version="2.0.3", version="2.1.0", change=change,
+                     publish=True, reason="synchronized minor release")
+        release_crates.validate_plan_entry("companion", entry, "2.1.0", "synced-family")
+        for field, value in (("publish", False), ("version", "2.0.4"),
+                             ("previous_version", "2.1.0")):
+            invalid = dict(entry, **{field: value})
+            assert_fails("must increase", release_crates.validate_plan_entry,
+                         "companion", invalid, "2.1.0", "synced-family")
 
 
 def test_metadata_only_changes_must_patch_bump_and_publish() -> None:
@@ -551,6 +564,7 @@ def run_tests() -> None:
         test_current_plan_accepts_unchanged_crates,
         test_code_changes_must_use_milestone_version,
         test_dependency_only_changes_must_patch_bump,
+        test_synced_dependency_and_metadata_minor_bumps,
         test_metadata_only_changes_must_patch_bump_and_publish,
         test_unchanged_crates_are_not_published,
         test_publish_plan_skips_unchanged_crates,
