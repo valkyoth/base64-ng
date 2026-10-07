@@ -34,6 +34,13 @@ for compiler in "$active" 1.90.0; do
     fi
     rustup component add --toolchain "$compiler" clippy
     rustup target add --toolchain "$compiler" "$target"
+    # Check the library directly: Cargo caps dependency warnings in perf builds.
+    for flags in '--cfg base64_ng_perf_evidence' \
+        '--cfg base64_ng_perf_evidence --cfg base64_ng_rvv_candidate'; do
+        env -u CARGO_ENCODED_RUSTFLAGS RUSTFLAGS="$flags" \
+            cargo +"$compiler" clippy --locked --target "$target" --no-default-features \
+            --features std,simd,stream --lib -- -D warnings
+    done
     for features in '' simd simd,checked-backend std,simd std,simd,checked-backend; do
         set -- --lib
         case "$features" in std,*) set -- --lib --tests ;; esac

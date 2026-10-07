@@ -100,7 +100,13 @@ mod sve_tests;
 
 #[cfg(all(feature = "simd", target_arch = "riscv64"))]
 mod rvv;
-#[cfg(all(feature = "simd", target_arch = "riscv64", base64_ng_perf_evidence))]
+#[cfg(all(
+    feature = "std",
+    feature = "simd",
+    target_arch = "riscv64",
+    base64_ng_perf_evidence,
+    base64_ng_rvv_candidate
+))]
 pub(crate) use rvv::candidate_available as rvv_candidate_available;
 #[cfg(all(feature = "simd", target_arch = "riscv64"))]
 pub(crate) use rvv::ordinary;
