@@ -108,6 +108,12 @@ scripts/test-neon-admission-bundle.py
 
 echo "checks: native RVV admission evidence policy"
 scripts/test-rvv-admission-bundle.py
+python3 scripts/test-rvv-admission-capture.py
+env -u CARGO_ENCODED_RUSTFLAGS RUSTFLAGS='--cfg base64_ng_perf_evidence' \
+    cargo test --locked --manifest-path perf/Cargo.toml rvv::tests
+env -u CARGO_ENCODED_RUSTFLAGS \
+    RUSTFLAGS='--cfg base64_ng_perf_evidence --cfg base64_ng_rvv_candidate' \
+    cargo test --locked --manifest-path perf/Cargo.toml rvv::tests
 
 echo "checks: Kani proof inventory"
 scripts/validate-kani-proof-inventory.py

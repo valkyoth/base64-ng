@@ -22,7 +22,7 @@ pub enum EvidenceBackend {
     Neon,
     /// WebAssembly `simd128` implementation.
     WasmSimd128,
-    /// RISC-V Vector 1.0 implementation under the project evidence cfg.
+    /// RISC-V Vector 1.0 with production detection unless the candidate cfg is set.
     Rvv,
 }
 
@@ -71,6 +71,12 @@ impl EvidenceBackend {
             Self::WasmSimd128 => crate::simd::wasm_simd128_decode_available(),
             #[cfg(all(feature = "simd", target_arch = "riscv64", base64_ng_rvv_candidate))]
             Self::Rvv => crate::simd::rvv_candidate_available(),
+            #[cfg(all(
+                feature = "simd",
+                target_arch = "riscv64",
+                not(base64_ng_rvv_candidate)
+            ))]
+            Self::Rvv => crate::simd::rvv_available(),
             _ => false,
         }
     }
@@ -155,7 +161,7 @@ where
         EvidenceBackend::WasmSimd128 if backend.is_available() => Some(
             crate::simd::encode_slice_wasm_simd128::<A, PAD>(input, output),
         ),
-        #[cfg(all(feature = "simd", target_arch = "riscv64", base64_ng_rvv_candidate))]
+        #[cfg(all(feature = "simd", target_arch = "riscv64"))]
         EvidenceBackend::Rvv if backend.is_available() => {
             Some(crate::simd::encode_slice_rvv::<A, PAD>(input, output))
         }
@@ -194,7 +200,7 @@ where
         EvidenceBackend::WasmSimd128 if backend.is_available() => Some(
             crate::simd::decode_slice_wasm_simd128::<A, PAD>(input, output),
         ),
-        #[cfg(all(feature = "simd", target_arch = "riscv64", base64_ng_rvv_candidate))]
+        #[cfg(all(feature = "simd", target_arch = "riscv64"))]
         EvidenceBackend::Rvv if backend.is_available() => {
             Some(crate::simd::decode_slice_rvv::<A, PAD>(input, output))
         }

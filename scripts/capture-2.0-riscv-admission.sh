@@ -1,6 +1,9 @@
 #!/usr/bin/env sh
 set -eu
 
+# Encoded flags override RUSTFLAGS, including the explicit correctness cfg.
+unset CARGO_ENCODED_RUSTFLAGS
+
 output_dir="${1:-target/release-evidence/riscv-native-admission}"
 samples="${BASE64_NG_RVV_SAMPLES:-15}"
 target_bytes="${BASE64_NG_RVV_TARGET_BYTES:-4194304}"
@@ -61,11 +64,11 @@ if ! scripts/check_riscv_hardware.sh >"$temporary/correctness.txt" 2>&1; then
 fi
 cat "$temporary/correctness.txt"
 
-echo "RVV admission capture: 15-sample exact-backend matrix"
+echo "RVV admission capture: production-detection exact-backend matrix"
 BASE64_NG_PERF_SAMPLES="$samples" \
 BASE64_NG_PERF_TARGET_BYTES="$target_bytes" \
-RUSTFLAGS='--cfg base64_ng_perf_evidence --cfg base64_ng_rvv_candidate' \
-    cargo run --quiet --release --manifest-path perf/Cargo.toml -- rvv \
+RUSTFLAGS='--cfg base64_ng_perf_evidence' \
+    cargo run --locked --quiet --release --manifest-path perf/Cargo.toml -- rvv \
     >"$temporary/rvv.csv"
 scripts/validate-rvv-performance.py "$temporary/rvv.csv"
 
@@ -99,12 +102,14 @@ for field in isa uarch mvendorid marchid mimpid; do
 done
 
 cat >"$temporary/MANIFEST.txt" <<EOF
-schema=base64-ng-rvv-native-admission-v2
+schema=base64-ng-rvv-native-admission-v3
 source_commit=$source_commit
 source_status=clean
 host=$host
 execution_environment=real-hardware
 admission_scope=linux-rvv-1.0-vlen256-spacemit-x60
+performance_rustflags=--cfg base64_ng_perf_evidence
+performance_detection=production-exact-profile-cached
 mvendorid=$mvendorid
 marchid=$marchid
 mimpid=$mimpid

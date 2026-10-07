@@ -64,12 +64,14 @@ def write_bundle(directory: Path) -> None:
     (directory / "MANIFEST.txt").write_text(
         "\n".join(
             (
-                "schema=base64-ng-rvv-native-admission-v2",
+                "schema=base64-ng-rvv-native-admission-v3",
                 f"source_commit={source}",
                 "source_status=clean",
                 "host=riscv64gc-unknown-linux-gnu",
                 "execution_environment=real-hardware",
                 "admission_scope=linux-rvv-1.0-vlen256-spacemit-x60",
+                "performance_rustflags=--cfg base64_ng_perf_evidence",
+                "performance_detection=production-exact-profile-cached",
                 "mvendorid=0x710",
                 "marchid=0x8000000058000001",
                 "mimpid=0x1000000049772200",
@@ -147,6 +149,21 @@ def main() -> None:
         valid = root / "valid"
         write_bundle(valid)
         run(valid, True)
+
+        for name, before, after in (
+            ("old-schema", "admission-v3", "admission-v2"),
+            ("candidate-flags", "performance_rustflags=--cfg base64_ng_perf_evidence",
+             "performance_rustflags=--cfg base64_ng_perf_evidence --cfg base64_ng_rvv_candidate"),
+            ("candidate-detection", "performance_detection=production-exact-profile-cached",
+             "performance_detection=candidate"),
+            ("missing-detection", "performance_detection=production-exact-profile-cached\n", ""),
+        ):
+            mutated = root / name
+            shutil.copytree(valid, mutated)
+            manifest = mutated / "MANIFEST.txt"
+            manifest.write_text(manifest.read_text().replace(before, after))
+            write_checksums(mutated)
+            run(mutated, False)
 
         tampered = root / "tampered"
         shutil.copytree(valid, tampered)

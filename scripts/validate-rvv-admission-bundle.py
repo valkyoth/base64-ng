@@ -30,6 +30,8 @@ KEYS = {
     "host",
     "execution_environment",
     "admission_scope",
+    "performance_rustflags",
+    "performance_detection",
     "mvendorid",
     "marchid",
     "mimpid",
@@ -83,10 +85,12 @@ def validate(directory: Path) -> None:
 
     manifest = parse_manifest(directory / "MANIFEST.txt")
     expected = {
-        "schema": "base64-ng-rvv-native-admission-v2",
+        "schema": "base64-ng-rvv-native-admission-v3",
         "source_status": "clean",
         "execution_environment": "real-hardware",
         "admission_scope": "linux-rvv-1.0-vlen256-spacemit-x60",
+        "performance_rustflags": "--cfg base64_ng_perf_evidence",
+        "performance_detection": "production-exact-profile-cached",
         "mvendorid": "0x710",
         "marchid": "0x8000000058000001",
         "mimpid": "0x1000000049772200",

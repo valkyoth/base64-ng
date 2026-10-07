@@ -130,6 +130,26 @@ The frozen host identity is Linux `riscv64`, `mvendorid=0x710`,
 that host can support only that exact profile; it cannot establish behavior or
 performance for other RVV implementations.
 
+The v3 admission bundle separates candidate correctness from performance.
+Correctness, signal, thread, and assembly checks retain the candidate cfg.
+The exact-backend performance matrix uses only
+`--cfg base64_ng_perf_evidence`, with the normal cached, per-thread X60
+availability check. The benchmark rejects candidate builds, and capture
+discards inherited encoded Rust flags that could override its explicit flags.
+The manifest records the performance flags and detection policy; v2 bundles
+are not accepted as v3 evidence. Sample counts, input crossovers, speedup
+requirements, and significance thresholds are unchanged.
+
+This distinction was verified during the 2.1 final campaign: on source
+`335dd35401bbf5fa2fc7a5c5379819ff10cd1377`, the candidate evidence path repeated
+uncached capability probes and achieved about 0.87 times scalar encode
+throughput at 384 bytes. A focused 15-pair same-binary diagnostic using normal
+production dispatch achieved 6.85 to 7.09 times scalar throughput across the
+four strict profiles. These are development diagnostics, not a replacement
+admission bundle. The evidence-tooling correction requires a new clean source
+commit and native capture; existing frozen-source campaigns must retain their
+original identities and cannot be silently relabeled as covering that commit.
+
 Real reports must follow
 `hardware-evidence/riscv/schema-v1.json` and be generated from a clean exact
 commit with `scripts/check_riscv_hardware.sh`. The report rejects QEMU and

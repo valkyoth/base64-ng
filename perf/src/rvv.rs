@@ -10,6 +10,7 @@ const DEFAULT_SAMPLES: usize = 15;
 const DEFAULT_TARGET_BYTES: usize = 4 * 1024 * 1024;
 
 pub fn run() {
+    require_production_build(cfg!(base64_ng_rvv_candidate));
     assert!(
         EvidenceBackend::Rvv.is_available(),
         "RVV evidence must run on native RISC-V Vector hardware"
@@ -25,17 +26,17 @@ pub fn run() {
             let encoded = codec::canonical_encoded(profile, &raw);
             for backend in [EvidenceBackend::Scalar, EvidenceBackend::Rvv] {
                 benchmark_encode(backend, profile, &raw, samples, target_bytes);
-                benchmark_decode(
-                    backend,
-                    profile,
-                    &encoded,
-                    input_len,
-                    samples,
-                    target_bytes,
-                );
+                benchmark_decode(backend, profile, &encoded, input_len, samples, target_bytes);
             }
         }
     }
+}
+
+fn require_production_build(candidate: bool) {
+    assert!(
+        !candidate,
+        "RVV performance admission rejects candidate builds; use production detection"
+    );
 }
 
 fn benchmark_encode(
@@ -114,9 +115,8 @@ fn benchmark(
             operation_once();
         }
         let elapsed = start.elapsed();
-        let throughput = input_len as f64 * iterations as f64
-            / (1024.0 * 1024.0)
-            / elapsed.as_secs_f64();
+        let throughput =
+            input_len as f64 * iterations as f64 / (1024.0 * 1024.0) / elapsed.as_secs_f64();
         println!(
             "{},{operation},{},{},{input_len},{sample_index},{iterations},{},{throughput:.6}",
             backend.as_str(),
@@ -131,4 +131,22 @@ fn env_usize(name: &str, default: usize) -> usize {
     std::env::var(name)
         .map(|value| value.parse().expect("performance integer is valid"))
         .unwrap_or(default)
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn admission_requires_production_detection() {
+        for candidate in [false, true] {
+            let result = std::panic::catch_unwind(|| super::require_production_build(candidate));
+            assert_eq!(result.is_err(), candidate);
+        }
+    }
+
+    #[test]
+    #[cfg(base64_ng_rvv_candidate)]
+    #[should_panic(expected = "RVV performance admission rejects candidate builds")]
+    fn candidate_entry_point_is_rejected_before_measurement() {
+        super::run();
+    }
 }
