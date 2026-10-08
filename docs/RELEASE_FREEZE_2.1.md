@@ -1,9 +1,10 @@
 # 2.1 Release Freeze
 
-Commit 26 prepares the API, documentation, packages and campaign tooling.
-This is not release authorization. Commit 25 through `7bcdaf0` passed the
-maintainer-supplied external retest and GitHub CI. Commit 26 still needs its
-own full-range review and CI acceptance before a campaign hash is frozen.
+Commit 26 prepared the API, documentation, packages and campaign tooling.
+This is not release authorization. Its follow-up `335dd35` passed the
+maintainer-supplied external retest and GitHub CI before the first campaigns.
+The subsequent RVV measurement corrections require their own review and CI;
+the revised campaign source and remaining work are recorded below.
 
 ## Shipping Surface
 
@@ -72,12 +73,12 @@ tests, harnesses, manifests, dependencies, tools or compiler during campaigns.
 
 | Assignment | Commit 27 work | Availability / status |
 | --- | --- | --- |
-| Local Linux x86 | Initial x86 fuzz, backend/checked tests, local deep gates | Workstation; not started |
-| Physical Linux X60 | First native RVV admission bundle | Reconfirm SSH/device before launch |
-| AWS AArch64 | NEON/checked native bundle and assigned portable fuzz targets | Reconfirm/provision host; not started |
-| Apple Silicon | NEON, assigned native fuzz, paired capture, Safari package smoke | Maintainer-run commands; not started |
-| Windows x86_64 MSVC | Frozen active/MSRV gate, ABI and performance bundle | New server required; prior server deleted |
-| Local/CI runtimes | Node, Wasmtime, Chromium, Firefox, QEMU compatibility | Final runs pending |
+| Local Linux x86 | x86 fuzz, backend/checked tests, local deep gates | Revised-source local preparation passed; full-duration fuzz pending |
+| Physical Linux X60 | Native RVV admission bundle | Exact revised-source capture passed and was collected |
+| AWS AArch64 | NEON/checked native bundle and portable fuzz | Old-source capture collected; revised-source work pending |
+| Apple Silicon | NEON, paired capture, Safari package smoke | Old-source capture collected and performance tradeoffs accepted; revised-source work pending |
+| Windows x86_64 MSVC | Active/MSRV gate, ABI and performance bundle | Old-source capture collected and scoped assembly reviewed; revised-source work pending |
+| Local/CI runtimes | Node, Wasmtime, Chromium, Firefox, QEMU compatibility | Revised-source core/runtime checks passed; full-release deep campaigns pending |
 
 Keep credentials/IPs in local manager state, not committed documentation.
 Fill in exact machine capabilities and the candidate hash before launching.
@@ -106,10 +107,108 @@ cgroup-v2 CPU/memory/PID controllers. Windows prerequisites are in
 
 New remote hosts are not live-tested by offline bootstrap fixtures. Check their
 prerequisites and exact source identity before accepting a launch as a campaign.
-The previously supplied AWS ARM endpoint timed out during Commit 26 preflight;
-no remote installation or candidate job was attempted.
+The earlier Commit 26 ARM endpoint timeout was only a provisioning check.
+Subsequent native ARM captures were completed on replacement hosts; no endpoint
+or credential is part of this committed handoff.
 
-## Local Verification
+## Revised Campaign Source
+
+The first campaign used
+`335dd35401bbf5fa2fc7a5c5379819ff10cd1377`. Native RVV correctness passed, but
+its performance harness repeatedly invoked candidate-only capability probes.
+The correction separates candidate correctness testing from production-cached
+performance detection; the encode/decode admission thresholds are unchanged.
+The follow-up also checks the root library directly under both evidence cfgs
+so dependency lint caps cannot hide warnings.
+
+The revised campaign source is
+`b3e493e64a583245f7aab542d983b7b914c67eb9`, tree
+`06f9e65432631d43f868a95bb6083c18a61a1f39`. Independent review must cover
+`335dd35..b3e493e`, followed by CI acceptance. Do not treat the first campaign's
+external PASS or green CI as review of these corrections.
+
+The source-equivalence validator rejects reuse of the first campaign across
+this range: protected Rust evidence hooks, a performance manifest, harnesses
+and tooling changed. The historical correction exception is not extended.
+Old captures remain useful diagnostics with their original identities, but
+are not automatically current-source release evidence. All 18 fuzz targets
+remain pending in the new session until captured against its exact source.
+Native ARM, Windows and macOS final captures also need that identity.
+
+The replacement RVV bundle already uses the revised source. Native tests,
+signal/thread/ABI checks, generated assembly and the full 15-sample performance
+matrix passed, without compiler warnings. Its archive SHA-256 is
+`780fed93ece37873251dd1b60f5414f9ef91e10738ca1a7b235008dc22671efb`.
+The archive and all bundle hashes were verified after download; the unchanged
+performance validator passed locally. No further RVV rerun is needed while
+the protected source stays unchanged.
+
+Keep the first manager database intact. The revised local database is
+`target/fuzz-manager/2.1.0-b3e493e.sqlite3`, session
+`b3e493e64a58-e4229995`. Its RVV entry contains the imported, revalidated
+exact-source bundle, not a relabeled earlier result. Run job operations from
+the detached `target/campaign-b3e493e` worktree; this prevents documentation
+edits in the main worktree from interrupting clean-source checks. From the main
+repository root, inspect status with:
+
+```sh
+python3 scripts/manage-fuzz-evidence.py \
+    --state target/fuzz-manager/2.1.0-b3e493e.sqlite3 --status
+```
+
+To launch or collect jobs, enter `target/campaign-b3e493e` and use
+`--state ../fuzz-manager/2.1.0-b3e493e.sqlite3` with the same manager script.
+
+Before provisioning paid workers, review/push the corrections and require green
+CI. Remote workers clone the exact commit from GitHub, so a local-only
+commit is not launch-ready. A practical allocation is eight Linux x86 workers
+for the 15 portable targets in two waves, one ARM worker for NEON/native checks,
+and one Windows worker. Keep the two AVX-512/VBMI fuzz targets on the verified
+local machine. Run performance captures without concurrent fuzzing or builds
+on that host. The full target assignment is retained locally in
+`target/fuzz-manager/aws-plan-b3e493e.json`; every target appears exactly once.
+
+### Retained Native Review
+
+The following reviews apply only to the first `335dd35` captures, not to the
+revised source or final release authorization:
+
+- ARM revisions contain 54,720 observations and 1,824 cells; controls contain
+  9,600 observations and 320 cells, all with 15 pairs. Artifact hashes and
+  recomputed summaries agree, with no timed allocation increases. The version
+  comparison has 858 improvement and 292 regression signals; controls compare
+  different operations and must not be counted as version regressions.
+- ARM default/SIMD/adapters have no large (at least 64 KiB), valid, warm
+  regression signals. The 24 large checked regressions are canonical/owned
+  encode and validation-only calls. All 24 also appeared in the earlier
+  Commit 25 capture at comparable ratios: canonical encode about 0.31x,
+  owned encode about 0.34x, validation about 0.94x. The documented independent
+  checks and diagnostic recovery remain intact; this is not blanket approval
+  of every small, cold or malformed-input result.
+- Windows scoped ABI/cleanup review covers 19 functions per compiler for
+  Rust 1.99 and 1.90, including both alphabet variants. Every recorded XMM
+  callee-save slot has a matching restore. After normalizing symbol and
+  read-only constant-label spelling, their instruction sequences match the
+  previous reviewed capture. Constant bytes are not proved by this comparison.
+  The ordinary stack-copy, rejected-first-block cleanup and incoming-register
+  limitations in [the Windows review](WINDOWS_2.1.md#native-assembly-review)
+  remain. This is not general assembly equivalence or a secret-erasure claim.
+- Windows performance summaries were recomputed from all 5,760 observations
+  (192 cells, 15 pairs). There are 157 improvement signals and 15 regression
+  signals, with no timed allocations. All 15 regressions compare 32-byte
+  historical/exact operations to scalar in the same source; they are not
+  version regressions or justification for changing admission thresholds.
+
+The Windows assembly SHA-256 values are
+`ff9173dee2a59625520e592cb2c0b64f38f6d447f54ec4bfb158e83cfeaf212f`
+(1.99) and
+`34a72d46d87afe4d591bd79be727700c674ab1076f83e806d671a6aa6944ca8a`
+(1.90). The local unsigned review record is
+`target/fuzz-manager/native-review-335dd35.json`. Raw captures are not shipped
+in the crate. The ARM/Windows AWS hosts were cleared for shutdown only after
+collection and verification; historical review does not require them to stay up.
+
+## Earlier Freeze Verification
 
 Completed freeze checks include all 13 API snapshots against 2.0.4, package
 inventories, a verified core archive/publish dry-run, active/MSRV policy-example
@@ -129,6 +228,71 @@ tests, default/all-feature/core-only tests, Clippy, doctests, dependency policy
 and RustSec scanning. Workspace rustdoc also passed with warnings denied.
 No full-duration fuzz, fresh native-device campaign or deferred full-release CI
 run is claimed by these local results.
+
+## Revised-Source Local Preparation
+
+On 2026-10-08, the clean detached `b3e493e` worktree completed:
+
+- `checks.sh --core`, all 13 API snapshots, the release-freeze gate, and
+  active 1.99/MSRV 1.90 validation and companion feature matrices. Strict
+  Clippy, package inventories, dependency policy and RustSec scanning passed.
+- The extended 2.1 security gate: four focused Miri tests, both Kani validator
+  and in-place geometry proofs, 13 AddressSanitizer integration tests with leak
+  detection enabled, and 1,000 seeded executions each for in-place and
+  incremental fuzz smoke. These are not the complete release-duration campaigns.
+- RVV production/candidate cross-build and generated-code checks. Local x86
+  does not execute RVV; native execution is covered by the separately collected
+  exact-source X60 bundle above.
+- WASM deterministic/path-independent artifacts, all 26 npm loader tests,
+  Wasmtime, Chromium and Firefox checks. This is not a fresh Safari result.
+- Workspace semver checks against `v2.0.4` using the supported Rust 1.98.1
+  rustdoc producer, SPDX/CycloneDX SBOM generation, reproducible library/package
+  checks and the core `cargo publish --locked --dry-run`. No upload occurred.
+- Fifteen-sample exact x86 encode/decode performance gates. Admitted kernels
+  met the unchanged 1.02x scalar threshold; automatically selected AVX-512
+  encode sizes also met 1.05x AVX2. AVX-512 decode remains observational/static.
+- SIMD assembly generation and its pattern checks for x86 and cross-built
+  NEON. This does not replace the complete final assembly review.
+
+The verified core package contains 238 files, 1.9 MiB unpacked and 378.9 KiB
+compressed. All 13 publishable Rust packages, the internal WASM artifact and
+the npm loader remain at 2.1.0. Optional external OpenPGP interoperability was
+skipped locally because the required GnuPG/Sequoia pairing was unavailable.
+Nightly Cargo emitted existing redundant-homepage manifest warnings; active
+and MSRV strict Clippy passed. Neither omission is relabeled as a completed test.
+
+The local revision comparison contains 54,720 observations (1,824 cells), and
+same-source controls contain 11,520 observations (384 cells), each with 15
+alternating pairs. Capture inventories, exact source/harness identities, tool
+hashes, sample counts and recomputed summaries were verified. Neither comparison
+increased timed allocations or changed diagnostic/destination outcomes.
+
+Revision results contain 813 improvement signals, 301 regression signals,
+597 within five percent, 97 noisy and 16 inconclusive cells. Default, SIMD and
+adapter groups have no large (at least 64 KiB), valid, warm regression signals.
+All 24 large checked regressions also occurred in the earlier Commit 25 local
+capture: canonical encode is about 0.45-0.46x, owned encode 0.47-0.49x, and
+incremental decode 0.82-0.84x baseline throughput. These are the existing
+[checked-mode tradeoffs](POLICY_2.1.md#explicit-tradeoffs), not new evidence
+that checks should be removed. Small, cold and rejected-input regressions remain
+in the complete results. Noisy or inconclusive cells are not counted as passes.
+Controls compare different operations in the same source and are not version
+regressions. These exploratory desktop measurements are not formal hardware
+admission or a claim about every deployment.
+
+Logs and captures are retained locally under
+`target/campaign-b3e493e/target/pre-aws` and `target/pre-aws-supplement` within
+that worktree. The unsigned analysis is
+`target/fuzz-manager/pre-aws-review-b3e493e.json`. These local paths are not
+shipped evidence or signed release authorization.
+
+Still required after external review and CI acceptance: all 18 one-hour fuzz
+targets on the revised source, fresh ARM/macOS/Windows captures, full Miri and
+normal/advanced Kani inventories, release sanitizer/timing campaigns, deferred
+QEMU/full-release CI, complete assembly review and strict evidence aggregation.
+Run collection against the detached frozen source. Any later metadata/report
+reuse must satisfy the existing signed-evidence equivalence procedure; do not
+simply overwrite source hashes in retained bundles.
 
 ## Final Acceptance
 
