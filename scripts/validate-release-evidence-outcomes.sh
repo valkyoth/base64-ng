@@ -106,11 +106,26 @@ if [ "$dudect_samples" -lt 20000 ] || [ "$dudect_iterations" -lt 64 ] || \
     echo "release evidence outcomes: dudect manifest lacks the release parameter floors" >&2
     exit 1
 fi
-grep -F -q 'neon_automatic_dispatch=retained-native-performance' \
-    "$root/commit-53/MANIFEST.txt" || {
-    echo "release evidence outcomes: retained native NEON evidence is incomplete" >&2
-    exit 1
-}
+neon_status="$(sed -n 's/^neon_automatic_dispatch=//p' "$root/commit-53/MANIFEST.txt")"
+case "$neon_status" in
+    exact-campaign-native-performance)
+        neon_source="$(sed -n 's/^neon_source_commit=//p' "$root/commit-53/MANIFEST.txt")"
+        require_exact_key "$root/riscv-native-admission/MANIFEST.txt" source_commit "$neon_source"
+        python3 scripts/validate-neon-campaign.py \
+            "$root/neon-native-admission" --source "$neon_source"
+        ;;
+    retained-native-performance)
+        # Compatibility for historical releases, never a 2.1 fallback.
+        if [ "$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | head -n 1)" = "2.1.0" ]; then
+            echo "release evidence outcomes: 2.1 requires exact-campaign NEON evidence" >&2
+            exit 1
+        fi
+        ;;
+    *)
+        echo "release evidence outcomes: native NEON evidence is incomplete" >&2
+        exit 1
+        ;;
+esac
 grep -F -q 'rvv=exact-linux-spacemit-x60-native-admission' \
     "$root/commit-53/MANIFEST.txt" || {
     echo "release evidence outcomes: exact native X60 RVV evidence is incomplete" >&2

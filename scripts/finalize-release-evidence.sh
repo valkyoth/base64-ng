@@ -41,6 +41,13 @@ if [ -n "$external_campaign_commit" ]; then
         --candidate "$external_candidate"
 fi
 
+# Only the explicitly reviewed 2.1 inventory correction retains every runtime
+# campaign. The older external-campaign exception remains fuzz/RVV-only.
+runtime_campaign="$campaign_commit"
+if [ "$external_campaign_commit" = "b3e493e64a583245f7aab542d983b7b914c67eb9" ]; then
+    runtime_campaign="$external_campaign_commit"
+fi
+
 rm -f "$manifest"
 manifest_tmp="$(mktemp "$root/.FINAL-MANIFEST.XXXXXX")"
 
@@ -60,6 +67,7 @@ require_source_manifest_for() {
     file="$1"
     expected_primary="$2"
     expected_secondary="${3:-}"
+    expected_third="${4:-}"
     require_file "$file"
     evidence_require_singleton_manifest_line \
         "$file" 'source:' 'source section' "final release evidence"
@@ -67,7 +75,8 @@ require_source_manifest_for() {
         "$file" tree_state clean "final release evidence"
     actual_commit="$(sed -n 's/^commit=//p' "$file")"
     if [ "$actual_commit" != "$expected_primary" ] && \
-        { [ -z "$expected_secondary" ] || [ "$actual_commit" != "$expected_secondary" ]; }
+        { [ -z "$expected_secondary" ] || [ "$actual_commit" != "$expected_secondary" ]; } && \
+        { [ -z "$expected_third" ] || [ "$actual_commit" != "$expected_third" ]; }
     then
         echo "final release evidence: invalid campaign commit in $file: ${actual_commit:-missing}" >&2
         exit 1
@@ -112,7 +121,7 @@ for file in \
     "$root/wasm-simd/MANIFEST.txt" \
     "$root/commit-53/MANIFEST.txt"
 do
-    require_source_manifest_for "$file" "$campaign_commit" "$EVIDENCE_SOURCE_COMMIT"
+    require_source_manifest_for "$file" "$campaign_commit" "$EVIDENCE_SOURCE_COMMIT" "$runtime_campaign"
 done
 
 if [ -n "$external_campaign_commit" ]; then
@@ -123,12 +132,12 @@ else
         "$root/fuzz/MANIFEST.txt" "$campaign_commit" "$EVIDENCE_SOURCE_COMMIT"
 fi
 
-require_report_key "$root/big-endian-qemu/report.txt" source_commit "$campaign_commit"
+require_report_key "$root/big-endian-qemu/report.txt" source_commit "$runtime_campaign"
 require_report_key "$root/big-endian-qemu/report.txt" s390x_result pass
 require_report_key "$root/big-endian-qemu/report.txt" powerpc64_result pass
-require_report_key "$root/riscv-qemu/report.txt" source_commit "$campaign_commit"
+require_report_key "$root/riscv-qemu/report.txt" source_commit "$runtime_campaign"
 require_report_key "$root/riscv-qemu/report.txt" result pass
-require_report_key "$root/sve-qemu/report.txt" source_commit "$campaign_commit"
+require_report_key "$root/sve-qemu/report.txt" source_commit "$runtime_campaign"
 require_report_key "$root/sve-qemu/report.txt" result pass
 
 rvv_native="$root/riscv-native-admission"
@@ -143,6 +152,12 @@ require_report_key \
     "$rvv_native/MANIFEST.txt" execution_environment real-hardware
 require_report_key \
     "$rvv_native/MANIFEST.txt" admission_scope linux-rvv-1.0-vlen256-spacemit-x60
+if [ "$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | head -n 1)" = "2.1.0" ]; then
+    require_report_key "$root/commit-53/MANIFEST.txt" \
+        neon_automatic_dispatch exact-campaign-native-performance
+    require_report_key "$root/commit-53/MANIFEST.txt" \
+        neon_source_commit "${external_campaign_commit:-$campaign_commit}"
+fi
 
 # Package composition can change when release-process files change. These
 # artifacts are therefore always regenerated for the tag candidate even when
@@ -183,6 +198,7 @@ fi
         echo "evidence_mode=metadata-equivalent"
     fi
     echo "campaign_commit=$campaign_commit"
+    echo "runtime_campaign_commit=$runtime_campaign"
     echo "release_commit=$EVIDENCE_SOURCE_COMMIT"
     if [ -n "$external_campaign_commit" ]; then
         echo "external_campaign_commit=$external_campaign_commit"

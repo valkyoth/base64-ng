@@ -1180,6 +1180,50 @@ include-list, or generated-file drift before release.
 
 ## Publishing
 
+### 2.1 Native Inventory Correction
+
+For the frozen `b3e493e64a583245f7aab542d983b7b914c67eb9` campaign, the
+maintainer-approved correction in
+[the freeze record](RELEASE_FREEZE_2.1.md#native-inventory-correction) accepts
+fresh native NEON bundles from both Apple Silicon and Linux ARM. Place them in
+`target/release-evidence/neon-native-admission/apple-silicon` and
+`target/release-evidence/neon-native-admission/aarch64-linux`. Each must contain
+exactly the six original admission-bundle files. Checksums, native platform,
+clean source, exact campaign identity, performance thresholds and source
+compatibility are revalidated. Linked/special entries are rejected. Missing
+fresh evidence cannot fall back to the historical 2.0 baselines in a 2.1 gate.
+
+The campaign-source validator recognizes only the pinned commit/tree and one
+complete enumerated tooling-correction commit, optionally accompanied by the
+two named evidence documents. It checks the entire linear history, not merely
+the final diff. Do not edit runtime source, tests, manifests, toolchains or
+benchmark/fuzz harnesses under this exception.
+
+After the correction is committed, verify it with:
+
+```sh
+python3 scripts/validate-campaign-source-equivalence.py \
+    --campaign b3e493e64a583245f7aab542d983b7b914c67eb9
+```
+
+When assembling the candidate evidence, set
+`BASE64_NG_CAMPAIGN_SOURCE_COMMIT` to that full frozen commit. Preserve original
+campaign manifests; regenerate the native inventory with
+`BASE64_NG_EXPECTED_RVV_SOURCE_COMMIT` set to that same commit and both
+`BASE64_NG_REQUIRE_COMMIT53_NATIVE=1` and `BASE64_NG_REQUIRE_RVV_NATIVE=1`.
+The RVV expected-source value binds both native NEON bundles too. Regenerate
+the SBOM and reproducible package records on the actual candidate, then run
+`scripts/finalize-release-evidence.sh`. This creates an unsigned index, not
+release authorization. Original Kani resource failures and the separately
+approved bound-5 capture must remain visible alongside the completed inventory.
+
+The final index distinguishes the runtime campaign from the candidate. Later
+metadata-only reuse verifies its signature, checks that correction again,
+validates QEMU source identities against the frozen campaign, and binds the
+complete retained native NEON directory. It does not rewrite old commit IDs.
+Independent review of the correction, final assembly/performance disposition,
+full-release CI and isolated evidence sealing remain mandatory.
+
 Before tagging:
 
 ```sh

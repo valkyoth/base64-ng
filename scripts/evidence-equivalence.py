@@ -146,12 +146,16 @@ def require_manifest_source(
     if commits != [evidence_commit] or states != ["clean"]:
         fail("retained FINAL-MANIFEST is not bound to the clean evidence commit")
 
+    runtime_campaign = retained_runtime_campaign(lines, evidence_commit)
     retained_hashes: dict[str, str] = {}
     for line in lines:
         match = HASH_LINE.fullmatch(line)
         if match is not None:
             retained_hashes[match.group(2)] = match.group(1)
-    for prefix in RETAINED_CAMPAIGN_PREFIXES:
+    prefixes = RETAINED_CAMPAIGN_PREFIXES
+    if runtime_campaign == "b3e493e64a583245f7aab542d983b7b914c67eb9":
+        prefixes += ("target/release-evidence/neon-native-admission/",)
+    for prefix in prefixes:
         recorded = {path: digest for path, digest in retained_hashes.items() if path.startswith(prefix)}
         if not recorded:
             fail(f"retained FINAL-MANIFEST lacks campaign artifacts under {prefix}")
@@ -172,7 +176,28 @@ def require_manifest_source(
             actual = hashlib.sha256((ROOT / relative_path).read_bytes()).hexdigest()
             if actual != expected:
                 fail(f"retained campaign artifact checksum changed: {relative_path}")
-    require_qemu_reports(evidence_commit)
+    require_qemu_reports(runtime_campaign)
+
+
+def retained_runtime_campaign(lines: list[str], evidence_commit: str) -> str:
+    """Resolve provenance only after the enclosing manifest signature is verified."""
+    values = [line.removeprefix("runtime_campaign_commit=") for line in lines
+              if line.startswith("runtime_campaign_commit=")]
+    if not values:
+        return evidence_commit
+    if len(values) != 1 or FULL_COMMIT.fullmatch(values[0]) is None:
+        fail("retained manifest has invalid runtime campaign provenance")
+    runtime = values[0]
+    if runtime != evidence_commit:
+        if runtime != "b3e493e64a583245f7aab542d983b7b914c67eb9":
+            fail("retained runtime campaign is outside the reviewed 2.1 correction")
+        result = subprocess.run([
+            sys.executable, str(ROOT / "scripts/validate-campaign-source-equivalence.py"),
+            "--campaign", runtime, "--candidate", evidence_commit,
+        ], cwd=ROOT, capture_output=True, text=True, check=False)
+        if result.returncode:
+            fail("retained runtime correction is invalid: " + result.stderr.strip())
+    return runtime
 
 
 def protected_listing(commit: str, allowlist: set[str]) -> str:

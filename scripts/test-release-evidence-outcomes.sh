@@ -44,9 +44,18 @@ EOF
 printf '%s\n' PASS >"$root/kani/normal/status.txt"
 printf '%s\n' PASS >"$root/kani/advanced/status.txt"
 cat >"$root/commit-53/MANIFEST.txt" <<'EOF'
-neon_automatic_dispatch=retained-native-performance
+neon_automatic_dispatch=exact-campaign-native-performance
 rvv=exact-linux-spacemit-x60-native-admission
 EOF
+echo "neon_source_commit=$(git rev-parse HEAD)" >>"$root/commit-53/MANIFEST.txt"
+python3 - "$root/neon-native-admission" <<'PY'
+import runpy
+import sys
+from pathlib import Path
+
+fixture = runpy.run_path("scripts/test-neon-campaign.py")
+fixture["write_campaign"](Path(sys.argv[1]))
+PY
 python3 - "$root/riscv-native-admission" <<'PY'
 import runpy
 import sys
@@ -68,6 +77,32 @@ do
 done
 
 scripts/validate-release-evidence-outcomes.sh "$root" >/dev/null
+
+cp "$root/commit-53/MANIFEST.txt" "$root/commit-53/MANIFEST.good"
+for mutation in historical wrong-source duplicate; do
+    cp "$root/commit-53/MANIFEST.good" "$root/commit-53/MANIFEST.txt"
+    case "$mutation" in
+        historical)
+            sed 's/exact-campaign-native-performance/retained-native-performance/' \
+                "$root/commit-53/MANIFEST.good" >"$root/commit-53/MANIFEST.txt" ;;
+        wrong-source)
+            sed 's/^neon_source_commit=.*/neon_source_commit=0000000000000000000000000000000000000000/' \
+                "$root/commit-53/MANIFEST.good" >"$root/commit-53/MANIFEST.txt" ;;
+        duplicate)
+            echo 'neon_automatic_dispatch=exact-campaign-native-performance' >>"$root/commit-53/MANIFEST.txt" ;;
+    esac
+    if scripts/validate-release-evidence-outcomes.sh "$root" >/dev/null 2>&1; then
+        echo "release evidence outcome tests: accepted $mutation NEON inventory" >&2
+        exit 1
+    fi
+done
+mv "$root/commit-53/MANIFEST.good" "$root/commit-53/MANIFEST.txt"
+mv "$root/neon-native-admission/apple-silicon" "$root/apple-silicon.good"
+if scripts/validate-release-evidence-outcomes.sh "$root" >/dev/null 2>&1; then
+    echo "release evidence outcome tests: accepted missing Apple NEON evidence" >&2
+    exit 1
+fi
+mv "$root/apple-silicon.good" "$root/neon-native-admission/apple-silicon"
 
 mv "$root/riscv-native-admission" "$root/riscv-native-admission.good"
 if scripts/validate-release-evidence-outcomes.sh "$root" >/dev/null 2>&1; then

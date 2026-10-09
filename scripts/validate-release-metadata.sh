@@ -694,7 +694,9 @@ if ! grep -F -q 'scripts/validate-rvv-admission-bundle.py "$rvv_native"' \
     echo "release metadata: final evidence index does not validate native RVV evidence" >&2
     exit 1
 fi
-if ! grep -F -q 'source_commit "$campaign_commit"' \
+if ! grep -F -q 'require_report_key "$rvv_native/MANIFEST.txt" source_commit \' \
+    scripts/finalize-release-evidence.sh || \
+    ! grep -F -q '    "${external_campaign_commit:-$campaign_commit}"' \
     scripts/finalize-release-evidence.sh; then
     echo "release metadata: reused native RVV evidence is not bound to the campaign commit" >&2
     exit 1

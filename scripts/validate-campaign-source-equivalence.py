@@ -11,6 +11,22 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 FULL_COMMIT = re.compile(r"[0-9a-f]{40}")
+FROZEN_21_COMMIT = "b3e493e64a583245f7aab542d983b7b914c67eb9"
+FROZEN_21_TREE = "06f9e65432631d43f868a95bb6083c18a61a1f39"
+NEON_21_CORRECTION = {
+    "scripts/check-2.0-memory-hardware-evidence.sh",
+    "scripts/checks.sh",
+    "scripts/evidence-equivalence.py",
+    "scripts/finalize-release-evidence.sh",
+    "scripts/test-campaign-source-equivalence.py",
+    "scripts/test-neon-campaign.py",
+    "scripts/test-release-evidence-outcomes.sh",
+    "scripts/validate-campaign-source-equivalence.py",
+    "scripts/validate-neon-campaign.py",
+    "scripts/validate-release-metadata.sh",
+    "scripts/validate-release-evidence-outcomes.sh",
+}
+NEON_21_METADATA = {"docs/RELEASE_FREEZE_2.1.md", "docs/RELEASE_EVIDENCE.md"}
 ALLOWED_TOOLING_CHANGES = {
     "docs/RELEASE.md",
     "docs/RELEASE_EVIDENCE.md",
@@ -83,7 +99,25 @@ def validate(campaign_revision: str, candidate_revision: str) -> tuple[str, str]
     )
     if not changed:
         fail("campaign-to-candidate range contains no changes")
-    if changed != ALLOWED_TOOLING_CHANGES:
+    if campaign == FROZEN_21_COMMIT:
+        if git("rev-parse", f"{campaign}^{{tree}}") != FROZEN_21_TREE:
+            fail("2.1 frozen tree does not match the reviewed campaign")
+        if changed - NEON_21_METADATA != NEON_21_CORRECTION:
+            fail("2.1 native-inventory correction inventory mismatch")
+        # Do not permit an intervening runtime change hidden by a later revert.
+        corrections = 0
+        for revision in git("rev-list", f"{campaign}..{candidate}").splitlines():
+            touched = set(git("diff-tree", "--no-commit-id", "--name-only", "-r", revision).splitlines())
+            if touched - NEON_21_CORRECTION - NEON_21_METADATA:
+                fail("2.1 correction history touches protected source")
+            tools = touched & NEON_21_CORRECTION
+            if tools:
+                if tools != NEON_21_CORRECTION:
+                    fail("2.1 tooling correction must be one complete reviewed commit")
+                corrections += 1
+        if corrections != 1:
+            fail("2.1 requires exactly one native-inventory tooling correction")
+    elif changed != ALLOWED_TOOLING_CHANGES:
         missing = sorted(ALLOWED_TOOLING_CHANGES - changed)
         unexpected = sorted(changed - ALLOWED_TOOLING_CHANGES)
         fail(f"correction inventory mismatch: missing={missing} unexpected={unexpected}")

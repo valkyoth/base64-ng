@@ -108,37 +108,50 @@ scripts/validate-x86-decode-performance.py \
 neon_apple="performance-baselines/dispatch-2.0-neon-apple-silicon"
 neon_linux="performance-baselines/dispatch-2.0-neon-aarch64-linux"
 neon_status="pending-native-performance"
-validate_neon_bundle() {
-    bundle=$1
-    platform=$2
-    if [ "${BASE64_NG_REQUIRE_COMMIT53_NATIVE:-0}" = "1" ]; then
-        scripts/validate-neon-admission-bundle.py "$bundle" --platform "$platform"
-    else
-        scripts/validate-neon-admission-bundle.py \
-            "$bundle" --platform "$platform" --allow-runtime-drift
+neon_source=""
+native_neon="$evidence_root/neon-native-admission"
+if [ -e "$native_neon" ] || [ -L "$native_neon" ]; then
+    python3 scripts/validate-neon-campaign.py "$native_neon" --source "$rvv_expected_commit"
+    neon_status="exact-campaign-native-performance"
+    neon_source="$rvv_expected_commit"
+elif [ "${BASE64_NG_REQUIRE_COMMIT53_NATIVE:-0}" = "1" ] && \
+    [ "$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | head -n 1)" = "2.1.0" ]; then
+    echo "2.0 memory/hardware evidence: 2.1 requires fresh Apple and Linux NEON campaign bundles" >&2
+    exit 1
+else
+    validate_neon_bundle() {
+        bundle=$1
+        platform=$2
+        if [ "${BASE64_NG_REQUIRE_COMMIT53_NATIVE:-0}" = "1" ]; then
+            scripts/validate-neon-admission-bundle.py "$bundle" --platform "$platform"
+        else
+            scripts/validate-neon-admission-bundle.py \
+                "$bundle" --platform "$platform" --allow-runtime-drift
+        fi
+    }
+    if [ -e "$neon_apple" ]; then
+        validate_neon_bundle "$neon_apple" apple-silicon
     fi
-}
-if [ -e "$neon_apple" ]; then
-    validate_neon_bundle "$neon_apple" apple-silicon
-fi
-if [ -e "$neon_linux" ]; then
-    validate_neon_bundle "$neon_linux" aarch64-linux
-fi
-if [ -d "$neon_apple" ] && [ -d "$neon_linux" ]; then
-    apple_source="$(sed -n 's/^source_commit=//p' "$neon_apple/MANIFEST.txt")"
-    linux_source="$(sed -n 's/^source_commit=//p' "$neon_linux/MANIFEST.txt")"
-    if [ "$apple_source" != "$linux_source" ]; then
-        echo "2.0 memory/hardware evidence: NEON bundles must test the same source commit" >&2
-        exit 1
+    if [ -e "$neon_linux" ]; then
+        validate_neon_bundle "$neon_linux" aarch64-linux
     fi
-    if [ "${BASE64_NG_REQUIRE_COMMIT53_NATIVE:-0}" = "1" ]; then
-        neon_status="retained-native-performance"
-    else
-        neon_status="historical-native-performance"
+    if [ -d "$neon_apple" ] && [ -d "$neon_linux" ]; then
+        apple_source="$(sed -n 's/^source_commit=//p' "$neon_apple/MANIFEST.txt")"
+        linux_source="$(sed -n 's/^source_commit=//p' "$neon_linux/MANIFEST.txt")"
+        if [ "$apple_source" != "$linux_source" ]; then
+            echo "2.0 memory/hardware evidence: NEON bundles must test the same source commit" >&2
+            exit 1
+        fi
+        if [ "${BASE64_NG_REQUIRE_COMMIT53_NATIVE:-0}" = "1" ]; then
+            neon_status="retained-native-performance"
+        else
+            neon_status="historical-native-performance"
+        fi
     fi
 fi
 if [ "${BASE64_NG_REQUIRE_COMMIT53_NATIVE:-0}" = "1" ] && \
-    [ "$neon_status" != "retained-native-performance" ]; then
+    [ "$neon_status" != "retained-native-performance" ] && \
+    [ "$neon_status" != "exact-campaign-native-performance" ]; then
     echo "2.0 memory/hardware evidence: release requires retained Apple and Linux NEON bundles" >&2
     exit 1
 fi
@@ -153,6 +166,9 @@ evidence_verify_source "2.0 memory and hardware evidence"
     echo "host=$(rustc -vV | sed -n 's/^host: //p')"
     echo "x86_automatic_dispatch=retained-native-correctness-and-performance"
     echo "neon_automatic_dispatch=$neon_status"
+    if [ -n "$neon_source" ]; then
+        echo "neon_source_commit=$neon_source"
+    fi
     echo "wasm_simd128=runtime-and-browser-evidence-not-hardware-attestation"
     echo "big_endian=scalar-qemu-portability-native-report-optional"
     echo "rvv=$rvv_status"

@@ -319,14 +319,69 @@ Run collection against the detached frozen source. Any later metadata/report
 reuse must satisfy the existing signed-evidence equivalence procedure; do not
 simply overwrite source hashes in retained bundles.
 
+## Native Inventory Correction
+
+The exact `b3e493e64a583245f7aab542d983b7b914c67eb9` campaigns have now
+completed all 18 one-hour fuzz targets, native ARM/macOS/Windows collection,
+the separate desktop Safari run, the five Miri groups, sanitizer and release
+timing runs, and full big-endian, RISC-V and SVE QEMU gates. The big-endian
+campaign ran on Ubuntu after the local PowerPC cross-linker prerequisite
+failed; both the original failure and complete replacement capture remain.
+The local backend, target-build and CT/RVV/SVE assembly-generation gates also
+passed. Generated assembly checks are not the complete manual assembly review.
+
+The 45-harness normal Kani inventory passed with one explicitly approved
+per-harness CLI unwind bound of 5 for
+`incremental_padded_decoder_progress_and_retry_are_bounded`; its original
+bound of 12 exhausted both 8 GiB and 16 GiB limits. All unwinding/safety checks
+remained enabled, and a bound-1 negative control failed. The other 44 harnesses
+retained their annotated bounds; all 19 configured advanced harnesses passed.
+This does not claim that the original unmodified bound-12 command passed.
+The original failures, negative control, override and full rerun are retained.
+
+Strict inventory assembly exposed a tooling error: Commit 53 still selected
+the historical 2.0 NEON bundles, which correctly failed source freshness.
+Fresh Apple Silicon and Linux ARM bundles have separately passed the original
+strict admission validator, on the exact frozen commit, without runtime-drift
+overrides. Both are now required under
+`target/release-evidence/neon-native-admission/`; historical tracked bundles
+are neither replaced nor relabeled as fresh evidence.
+
+The maintainer authorized a dedicated tooling correction and retention of the
+completed runtime campaigns. `validate-campaign-source-equivalence.py` pins
+both the frozen commit and tree and requires exactly one complete correction
+commit containing its enumerated inventory/validation/test scripts. Only the
+two named evidence documents may accompany that correction. Every intervening
+commit is checked, including changes later reverted. Runtime, dependencies,
+toolchains, tests, fuzz inputs, ABI code and benchmark harnesses remain outside
+the exception. The existing metadata-only allowlist is unchanged, and the
+historical 2.0 exception is not broadened.
+
+Final aggregation retains original per-artifact source identities and records
+`runtime_campaign_commit` separately from the release candidate. Candidate
+SBOM/package records must still be regenerated; all outcome, hash and signing
+requirements remain. The correction requires its own independent review
+before release acceptance, not a declaration that old commands passed.
+
+The Neoverse-V1 default in-place encode slowdown remains an explicit release
+disposition item: eight large cells were 5.9-9.8 percent slower than 2.0.4.
+Two focused fresh-build Neoverse-V2 repeats had no signals outside the existing
+five-percent band. Those V2 results neither invalidate V1 nor establish CPU
+differences as the sole cause. No allocation increases were observed.
+
+Still pending: independent correction review, complete assembly review,
+performance disposition, candidate-bound package/SBOM refresh, signed evidence
+aggregation, deferred full-release CI and final report-only acceptance.
+
 ## Final Acceptance
 
 Retain the signed candidate evidence before making the report-only commit.
 `security/evidence-reuse-allowlist.txt` names exact 2.1 metadata paths, not
 directories or globs; runtime, tests, harnesses, manifests and tooling cannot
 be changed under metadata-only reuse. The separate historical campaign-source
-correction exception remains specific to its old reviewed inventory; do not
-use it as a generic 2.1 bypass.
+correction exception remains specific to its old reviewed inventory. The
+separate pinned 2.1 native-inventory correction above is not a general waiver
+for future tooling changes.
 
 Commit 28's only change is `security/pentest/v2.1.0.md`, with PASS bound to its
 exact reviewed first parent. Rebuild candidate-bound package/SBOM records and
