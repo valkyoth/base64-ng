@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import runpy
 import shutil
+import socket
 import subprocess
 import sys
 import tempfile
@@ -90,6 +91,28 @@ class NativeCampaignTests(unittest.TestCase):
     def test_rejects_extra_directory(self):
         (self.apple / "extra").mkdir()
         self.run_gate(False)
+
+    def test_rejects_all_extra_root_entries(self):
+        extra = self.root / "extra"
+        for kind in ("directory", "file", "fifo", "socket", "hardlink"):
+            with self.subTest(kind=kind):
+                if kind == "directory":
+                    extra.mkdir()
+                elif kind == "file":
+                    extra.write_text("unindexed")
+                elif kind == "fifo":
+                    os.mkfifo(extra)
+                elif kind == "socket":
+                    with socket.socket(socket.AF_UNIX) as sock:
+                        sock.bind(str(extra))
+                else:
+                    extra.hardlink_to(self.apple / "cpu.txt")
+                self.run_gate(False)
+                if kind == "directory":
+                    extra.rmdir()
+                else:
+                    extra.unlink()
+        self.run_gate(True)
 
     def test_rejects_symlink_and_hardlink(self):
         file = self.apple / "cpu.txt"

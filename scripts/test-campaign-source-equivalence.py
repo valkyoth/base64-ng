@@ -40,15 +40,29 @@ def commit(repo: Path, path: str, content: str, message: str) -> str:
     return git(repo, "rev-parse", "HEAD")
 
 
-def run(repo: Path, campaign: str, success: bool) -> None:
+def configure_signing(repo: Path) -> None:
+    key = repo / ".git/fixture-key"
+    subprocess.run(["ssh-keygen", "-q", "-t", "ed25519", "-N", "", "-f", str(key)], check=True)
+    (repo / "security").mkdir(exist_ok=True)
+    (repo / "security/release-signers").write_text(
+        'fixture@example.invalid namespaces="git" ' + key.with_suffix(".pub").read_text())
+    git(repo, "config", "gpg.format", "ssh")
+    git(repo, "config", "user.signingkey", str(key))
+    git(repo, "config", "commit.gpgsign", "true")
+    git(repo, "add", "security/release-signers")
+
+
+def run(repo: Path, campaign: str, success: bool, reason: str | None = None) -> None:
     original = VALIDATOR_MODULE.ROOT
     VALIDATOR_MODULE.ROOT = repo
     try:
         try:
             VALIDATOR_MODULE.validate(campaign, "HEAD")
-        except SystemExit:
+        except SystemExit as error:
             if success:
                 raise
+            if reason is not None and reason not in str(error):
+                raise AssertionError(f"wrong rejection: {error}; expected {reason}") from error
         else:
             if not success:
                 raise SystemExit("campaign source equivalence mutation passed")
@@ -88,9 +102,12 @@ def main() -> None:
 
 def test_native_inventory_correction() -> None:
     module = VALIDATOR_MODULE
-    original_pin = module.FROZEN_21_COMMIT, module.FROZEN_21_TREE
+    original_pin = module.FROZEN_21_COMMIT, module.FROZEN_21_TREE, module.NEON_21_CORRECTION_COMMIT
     mutations = (
         "valid", "dirty", "wrong-tree", "wrong-pin", "missing-tool",
+        "alternate-correction", "unsigned-correction", "unsigned-policy", "wrong-signer",
+        "alternate-policy",
+        "missing-policy-anchor", "wrong-policy-anchor", "validator-drift", "split-correction",
         "second-correction", "reverted-runtime", "src/lib.rs", "Cargo.lock",
         "Cargo.toml", "rust-toolchain.toml", "fuzz/fuzz_targets/decode.rs",
         "tests/rfc4648.rs", "scripts/unchecked.py", "security/evidence-reuse-allowlist.txt",
@@ -103,6 +120,7 @@ def test_native_inventory_correction() -> None:
                 git(repo, "init", "-q")
                 git(repo, "config", "user.name", "fixture")
                 git(repo, "config", "user.email", "fixture@example.invalid")
+                configure_signing(repo)
                 campaign = commit(repo, "src/lib.rs", "original\n", "campaign")
                 module.FROZEN_21_COMMIT = campaign
                 module.FROZEN_21_TREE = git(repo, "rev-parse", "HEAD^{tree}")
@@ -114,8 +132,33 @@ def test_native_inventory_correction() -> None:
                     file = repo / path
                     file.parent.mkdir(parents=True, exist_ok=True)
                     file.write_text("reviewed correction\n")
+                if mutation == "split-correction":
+                    git(repo, "add", paths[0])
+                    git(repo, "commit", "-m", "first part of split correction")
                 git(repo, "add", ".")
-                git(repo, "commit", "-m", "native inventory correction")
+                git(repo, "-c", "commit.gpgsign=" + str(mutation != "unsigned-correction").lower(),
+                    "commit", "-m", "native inventory correction")
+                correction = git(repo, "rev-parse", "HEAD")
+                module.NEON_21_CORRECTION_COMMIT = correction
+                if mutation == "alternate-correction":
+                    # Same permitted path set does not authorize a different commit.
+                    git(repo, "commit", "--amend", "-m", "unapproved alternative")
+                for path in module.NEON_21_POLICY:
+                    file = repo / path
+                    file.parent.mkdir(parents=True, exist_ok=True)
+                    file.write_bytes(VALIDATOR.read_bytes() if path == module.POLICY_PATH
+                                     else b"reviewed policy hardening\n")
+                if mutation == "wrong-signer":
+                    other_key = repo / ".git/other-key"
+                    subprocess.run(["ssh-keygen", "-q", "-t", "ed25519", "-N", "", "-f",
+                                    str(other_key)], check=True)
+                    git(repo, "config", "user.signingkey", str(other_key))
+                git(repo, "add", ".")
+                git(repo, "-c", "commit.gpgsign=" + str(mutation != "unsigned-policy").lower(),
+                    "commit", "-m", "independently reviewed policy")
+                policy = git(repo, "rev-parse", "HEAD")
+                if mutation == "alternate-policy":
+                    git(repo, "commit", "--amend", "-m", "unapproved policy alternative")
                 if mutation == "dirty":
                     (repo / "src/lib.rs").write_text("dirty\n")
                 elif mutation == "wrong-tree":
@@ -124,14 +167,31 @@ def test_native_inventory_correction() -> None:
                     module.FROZEN_21_COMMIT = "0" * 40
                 elif mutation == "second-correction":
                     commit(repo, paths[0], "second edit\n", "unreviewed follow-up")
+                elif mutation == "validator-drift":
+                    commit(repo, module.POLICY_PATH, "arbitrary replacement\n", "replace verifier")
                 elif mutation == "reverted-runtime":
                     commit(repo, "src/lib.rs", "changed\n", "runtime change")
                     commit(repo, "src/lib.rs", "original\n", "runtime revert")
                 elif "/" in mutation or mutation.endswith((".lock", ".toml")):
                     commit(repo, mutation, "changed\n", "protected mutation")
-                run(repo, campaign, mutation == "valid")
+                anchor = "" if mutation == "missing-policy-anchor" else (
+                    correction if mutation == "wrong-policy-anchor" else policy)
+                with patch.dict(os.environ, {module.POLICY_ENV: anchor}), patch.object(
+                        module, "__file__", str(repo / module.POLICY_PATH)):
+                    reasons = {
+                        "unsigned-correction": "lacks an authorized signature",
+                        "unsigned-policy": "lacks an authorized signature",
+                        "wrong-signer": "lacks an authorized signature",
+                        "missing-policy-anchor": "independently reviewed policy commit",
+                        "wrong-policy-anchor": "executing validator differs",
+                        "validator-drift": "executing validator differs",
+                        "alternate-correction": "identity or inventory is not approved",
+                        "alternate-policy": "identity or inventory is not approved",
+                        "split-correction": "identity or inventory is not approved",
+                    }
+                    run(repo, campaign, mutation == "valid", reasons.get(mutation))
     finally:
-        module.FROZEN_21_COMMIT, module.FROZEN_21_TREE = original_pin
+        module.FROZEN_21_COMMIT, module.FROZEN_21_TREE, module.NEON_21_CORRECTION_COMMIT = original_pin
 
 
 def test_final_manifest_sources() -> None:
@@ -143,6 +203,7 @@ def test_final_manifest_sources() -> None:
         git(repo, "init", "-q")
         git(repo, "config", "user.name", "fixture")
         git(repo, "config", "user.email", "fixture@example.invalid")
+        configure_signing(repo)
         (repo / ".gitignore").write_text("target/\n")
         (repo / "Cargo.toml").write_text('version = "2.1.0"\n')
         (repo / "Cargo.lock").write_text("fixture lock\n")
@@ -166,6 +227,16 @@ def test_final_manifest_sources() -> None:
         outcomes.chmod(0o755)
         git(repo, "add", ".")
         git(repo, "commit", "-m", "complete correction fixture")
+        correction = git(repo, "rev-parse", "HEAD")
+        for name in VALIDATOR_MODULE.NEON_21_POLICY:
+            path = repo / name
+            if name == VALIDATOR_MODULE.POLICY_PATH:
+                path.write_text(path.read_text().replace(
+                    VALIDATOR_MODULE.NEON_21_CORRECTION_COMMIT, correction))
+            else:
+                path.write_text("hardened fixture\n")
+        git(repo, "add", ".")
+        git(repo, "commit", "-m", "separately approved policy fixture")
         candidate = git(repo, "rev-parse", "HEAD")
         evidence = repo / "target/release-evidence"
 
@@ -199,6 +270,7 @@ def test_final_manifest_sources() -> None:
             write(f"base64-ng.{name}.json", "{}\n")
         env = {key: value for key, value in os.environ.items() if not key.startswith("BASE64_NG_")}
         env["BASE64_NG_CAMPAIGN_SOURCE_COMMIT"] = campaign
+        env[VALIDATOR_MODULE.POLICY_ENV] = candidate
 
         def finalize(success):
             result = subprocess.run(["sh", "scripts/finalize-release-evidence.sh"],

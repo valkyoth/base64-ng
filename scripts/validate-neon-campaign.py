@@ -24,6 +24,10 @@ def validate(root: Path, source: str) -> None:
     for parent in (root, *root.parents):
         if parent.is_symlink():
             raise SystemExit("NEON campaign: symbolic-link directory")
+    if not stat.S_ISDIR(root.lstat().st_mode):
+        raise SystemExit("NEON campaign: root is not a regular directory")
+    if {path.name for path in root.iterdir()} != {"apple-silicon", "aarch64-linux"}:
+        raise SystemExit("NEON campaign: unexpected campaign root inventory")
     for platform in ("apple-silicon", "aarch64-linux"):
         bundle = root / platform
         if not stat.S_ISDIR(bundle.lstat().st_mode):

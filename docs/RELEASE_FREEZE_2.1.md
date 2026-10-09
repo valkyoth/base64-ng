@@ -349,8 +349,15 @@ are neither replaced nor relabeled as fresh evidence.
 
 The maintainer authorized a dedicated tooling correction and retention of the
 completed runtime campaigns. `validate-campaign-source-equivalence.py` pins
-both the frozen commit and tree and requires exactly one complete correction
-commit containing its enumerated inventory/validation/test scripts. Only the
+both the frozen commit and tree and the exact original correction
+`0ace376a0e737b0ead1926920e403a5b448e7988`. Independent review found that the
+original path-only correction check did not authenticate that identity. The
+hardening now requires a separate signed, independently reviewed policy commit,
+supplied out of band through `BASE64_NG_REVIEWED_CAMPAIGN_POLICY_COMMIT`.
+Only its six enumerated validator/test scripts can change, and both commits'
+signatures must verify under the frozen release-signer policy. The trusted
+bootstrap procedure is in `docs/RELEASE_EVIDENCE.md`; running a candidate's
+self-check is not itself a trust bootstrap. Only the
 two named evidence documents may accompany that correction. Every intervening
 commit is checked, including changes later reverted. Runtime, dependencies,
 toolchains, tests, fuzz inputs, ABI code and benchmark harnesses remain outside
@@ -382,6 +389,16 @@ be changed under metadata-only reuse. The separate historical campaign-source
 correction exception remains specific to its old reviewed inventory. The
 separate pinned 2.1 native-inventory correction above is not a general waiver
 for future tooling changes.
+
+The policy hardening also rejects extra native-NEON root entries and unindexed
+empty directories, linked files and special entries throughout retained
+campaigns. Regression fixtures cover signed correction identities and invalid
+signatures as well as FIFO/socket/hard-link inventory mutations. These are
+tooling changes only: original frozen runtime campaigns retain their identities.
+The unsigned `0ace376` index is superseded, not approved for sealing. Commit and
+independently review the hardening before selecting its exact policy hash and
+regenerating candidate-bound evidence. No tag or publication is authorized by
+these changes.
 
 Commit 28's only change is `security/pentest/v2.1.0.md`, with PASS bound to its
 exact reviewed first parent. Rebuild candidate-bound package/SBOM records and

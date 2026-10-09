@@ -4,8 +4,10 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import pathlib
 import shutil
+import socket
 import subprocess
 import tempfile
 
@@ -25,6 +27,7 @@ def run(repo: pathlib.Path, *arguments: str, succeeds: bool) -> subprocess.Compl
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
+        timeout=30,
     )
     if (result.returncode == 0) != succeeds:
         raise AssertionError(
@@ -118,6 +121,11 @@ with tempfile.TemporaryDirectory() as raw_temp:
         artifact.write_text(contents, encoding="utf-8")
         digest = hashlib.sha256(artifact.read_bytes()).hexdigest()
         artifact_lines.append(f"{digest}  {artifact.relative_to(repo).as_posix()}")
+        nested = artifact.parent / "nested/proof.txt"
+        nested.parent.mkdir()
+        nested.write_bytes(b"nested evidence\n")
+        artifact_lines.append(
+            f"{hashlib.sha256(nested.read_bytes()).hexdigest()}  {nested.relative_to(repo).as_posix()}")
     retained.write_text(
         "source:\n"
         f"commit={evidence}\n"
@@ -184,6 +192,48 @@ with tempfile.TemporaryDirectory() as raw_temp:
         succeeds=False,
     )
     tampered_artifact.write_bytes(original_artifact)
+
+    # These entries were invisible to the old file-only inventory. No attempt
+    # to read a FIFO/socket is allowed; the subprocess timeout catches blocking.
+    for directory in campaign_directories:
+        campaign = repo / "target/release-evidence" / directory
+        extra = campaign / "unindexed"
+        artifact = campaign / ("report.txt" if directory.endswith("qemu") else "artifact.txt")
+        for kind in ("directory", "fifo", "socket", "hardlink", "symlink"):
+            if kind == "directory":
+                extra.mkdir()
+            elif kind == "fifo":
+                os.mkfifo(extra)
+            elif kind == "socket":
+                with socket.socket(socket.AF_UNIX) as sock:
+                    sock.bind(str(extra))
+            elif kind == "hardlink":
+                # An external alias must be rejected even with identical bytes
+                # and no extra entry inside the campaign directory.
+                extra = root / "external-alias"
+                extra.hardlink_to(artifact)
+            else:
+                extra.symlink_to(artifact)
+            run(repo, "--evidence-commit", evidence, "--retained-manifest",
+                str(retained), succeeds=False)
+            if kind == "directory":
+                extra.rmdir()
+            else:
+                extra.unlink()
+            extra = campaign / "unindexed"
+        original = artifact.read_bytes()
+        for kind in ("fifo", "socket"):
+            artifact.unlink()
+            if kind == "fifo":
+                os.mkfifo(artifact)
+            else:
+                with socket.socket(socket.AF_UNIX) as sock:
+                    sock.bind(str(artifact))
+            run(repo, "--evidence-commit", evidence, "--retained-manifest",
+                str(retained), succeeds=False)
+            artifact.unlink()
+            artifact.write_bytes(original)
+    run(repo, "--evidence-commit", evidence, "--retained-manifest", str(retained), succeeds=True)
 
     for directory in campaign_directories:
         artifact_name = "report.txt" if directory.endswith("qemu") else "artifact.txt"

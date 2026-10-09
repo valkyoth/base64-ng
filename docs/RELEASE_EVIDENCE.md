@@ -1193,18 +1193,63 @@ clean source, exact campaign identity, performance thresholds and source
 compatibility are revalidated. Linked/special entries are rejected. Missing
 fresh evidence cannot fall back to the historical 2.0 baselines in a 2.1 gate.
 
-The campaign-source validator recognizes only the pinned commit/tree and one
-complete enumerated tooling-correction commit, optionally accompanied by the
-two named evidence documents. It checks the entire linear history, not merely
-the final diff. Do not edit runtime source, tests, manifests, toolchains or
-benchmark/fuzz harnesses under this exception.
+The campaign-source validator pins the frozen commit/tree and the exact original
+correction `0ace376a0e737b0ead1926920e403a5b448e7988`. A separate, independently
+reviewed policy-hardening commit must be supplied through
+`BASE64_NG_REVIEWED_CAMPAIGN_POLICY_COMMIT`. Neither an identical path inventory
+nor a valid signature alone authorizes a different correction. Both commits
+must have valid signatures under the release-signer policy from the frozen
+tree. The complete linear history is checked, including later-reverted edits;
+only the two named evidence documents may accompany the enumerated changes.
+Runtime source, tests, manifests, toolchains and benchmark/fuzz harnesses cannot
+change under this exception.
 
-After the correction is committed, verify it with:
+The operator-supplied policy hash is the trust anchor, not a constant selected
+by the candidate. Obtain it from independent review and retain it in protected
+release configuration, outside candidate-controlled workflows. Never derive it
+from HEAD, a branch name, candidate output, or the candidate's environment.
+The policy commit cannot contain its own hash. It must first be committed,
+signed and independently reviewed; until then campaign reuse fails closed.
+
+Before executing candidate release scripts, run this bootstrap from a trusted
+terminal (not a candidate-provided wrapper), substituting the approved hash:
 
 ```sh
+(
+set -eu
+export GIT_NO_REPLACE_OBJECTS=1
+export BASE64_NG_REVIEWED_CAMPAIGN_POLICY_COMMIT=FULL_POLICY_HASH_FROM_INDEPENDENT_REVIEW
+test -z "$(git status --porcelain --untracked-files=all)"
+signers="$(mktemp)"
+trap 'rm -f "$signers"' EXIT
+git show b3e493e64a583245f7aab542d983b7b914c67eb9:security/release-signers > "$signers"
+git -c gpg.format=ssh -c gpg.ssh.program=ssh-keygen \
+    -c gpg.ssh.allowedSignersFile="$signers" \
+    verify-commit "$BASE64_NG_REVIEWED_CAMPAIGN_POLICY_COMMIT"
+git diff --exit-code "$BASE64_NG_REVIEWED_CAMPAIGN_POLICY_COMMIT" -- \
+    scripts security .github
 python3 scripts/validate-campaign-source-equivalence.py \
     --campaign b3e493e64a583245f7aab542d983b7b914c67eb9
+# Run the remaining inventory/finalization gates here with this same anchor.
+)
 ```
+
+The bootstrap comparison may allow only the separately reviewed report-only
+`security/pentest/v2.1.0.md` delta at Commit 28; first verify that delta using the
+metadata-only gate from the approved policy checkout. Do not ignore other
+differences. The validator's self-comparison is defense against accidental
+drift, not protection against executing an already replaced validator. A
+candidate-controlled job cannot independently attest to its own policy.
+
+Retained campaign inventories require single-link regular files, real
+directories derived from indexed artifact paths, and no extra empty directories
+or special entries. The native NEON root must contain exactly the two platform
+directories. Keep the release account isolated during verification and sealing:
+these preflight checks do not prevent concurrent same-user filesystem mutation.
+The old unsigned assembly placed a convenience `registration.json` directly in
+the NEON root. Preserve the old bundle unchanged; in the new candidate assembly,
+retain that record outside `neon-native-admission/` and index its new location.
+The two platform captures themselves need no content changes.
 
 When assembling the candidate evidence, set
 `BASE64_NG_CAMPAIGN_SOURCE_COMMIT` to that full frozen commit. Preserve original
@@ -1213,7 +1258,9 @@ campaign manifests; regenerate the native inventory with
 `BASE64_NG_REQUIRE_COMMIT53_NATIVE=1` and `BASE64_NG_REQUIRE_RVV_NATIVE=1`.
 The RVV expected-source value binds both native NEON bundles too. Regenerate
 the SBOM and reproducible package records on the actual candidate, then run
-`scripts/finalize-release-evidence.sh`. This creates an unsigned index, not
+`scripts/finalize-release-evidence.sh` with the same approved policy anchor.
+Do not seal the superseded unsigned `0ace376` index: regenerate candidate-bound
+records and the final index after policy approval. This creates an unsigned index, not
 release authorization. Original Kani resource failures and the separately
 approved bound-5 capture must remain visible alongside the completed inventory.
 

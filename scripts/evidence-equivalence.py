@@ -5,8 +5,10 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import os
 import pathlib
 import re
+import stat
 import subprocess
 import sys
 
@@ -159,24 +161,49 @@ def require_manifest_source(
         recorded = {path: digest for path, digest in retained_hashes.items() if path.startswith(prefix)}
         if not recorded:
             fail(f"retained FINAL-MANIFEST lacks campaign artifacts under {prefix}")
-        campaign_root = ROOT / prefix
-        if campaign_root.is_symlink() or not campaign_root.is_dir():
-            fail(f"retained campaign root is not a regular directory: {prefix}")
-        entries = list(campaign_root.glob("**/*"))
-        if any(path.is_symlink() for path in entries):
-            fail(f"retained campaign contains a symbolic link under {prefix}")
-        current_files = {
-            file.relative_to(ROOT).as_posix()
-            for file in entries
-            if file.is_file()
-        }
-        if current_files != set(recorded):
-            fail(f"retained campaign artifact inventory changed under {prefix}")
+        require_campaign_inventory(prefix, set(recorded))
         for relative_path, expected in recorded.items():
             actual = hashlib.sha256((ROOT / relative_path).read_bytes()).hexdigest()
             if actual != expected:
                 fail(f"retained campaign artifact checksum changed: {relative_path}")
     require_qemu_reports(runtime_campaign)
+
+
+def require_campaign_inventory(prefix: str, recorded: set[str]) -> None:
+    """Check every entry before reading artifacts, including otherwise invisible ones."""
+    campaign_root = ROOT / prefix
+    expected_directories = set()
+    for relative in recorded:
+        path = pathlib.PurePosixPath(relative)
+        if path.as_posix() != relative or ".." in path.parts:
+            fail("non-canonical retained artifact path")
+        expected_directories.update(
+            str(parent) for parent in path.parents if str(parent).startswith(prefix)
+        )
+    files, directories = set(), set()
+
+    def walk_error(error: OSError) -> None:
+        fail(f"cannot inspect retained campaign: {error}")
+
+    try:
+        for parent in (campaign_root, *campaign_root.parents):
+            if not stat.S_ISDIR(parent.lstat().st_mode):
+                fail(f"retained campaign has a non-directory ancestor: {parent}")
+        for directory, dirs, names in os.walk(campaign_root, followlinks=False, onerror=walk_error):
+            for name in dirs + names:
+                path = pathlib.Path(directory) / name
+                info = path.lstat()
+                relative = path.relative_to(ROOT).as_posix()
+                if stat.S_ISDIR(info.st_mode):
+                    directories.add(relative)
+                elif stat.S_ISREG(info.st_mode) and info.st_nlink == 1:
+                    files.add(relative)
+                else:
+                    fail(f"retained campaign has a non-regular or linked entry: {relative}")
+    except OSError as error:
+        walk_error(error)
+    if files != recorded or directories != expected_directories:
+        fail(f"retained campaign artifact inventory changed under {prefix}")
 
 
 def retained_runtime_campaign(lines: list[str], evidence_commit: str) -> str:
