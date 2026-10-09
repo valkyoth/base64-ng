@@ -352,10 +352,16 @@ completed runtime campaigns. `validate-campaign-source-equivalence.py` pins
 both the frozen commit and tree and the exact original correction
 `0ace376a0e737b0ead1926920e403a5b448e7988`. Independent review found that the
 original path-only correction check did not authenticate that identity. The
-hardening now requires a separate signed, independently reviewed policy commit,
-supplied out of band through `BASE64_NG_REVIEWED_CAMPAIGN_POLICY_COMMIT`.
-Only its six enumerated validator/test scripts can change, and both commits'
-signatures must verify under the frozen release-signer policy. The trusted
+hardening in `427e938165fc9eef6fef02cf9131985d9714e1e2` changed six enumerated
+validator/test scripts. The later CI fix
+`a0dd4e9638f56100f0a790b199d052a00b3cedb3` changed only the fuzz-shard test fixture:
+it now supplies both exact-source NEON bundles instead of the historical marker.
+The final policy binds both follow-ups by exact identity, signature, order and
+file inventory, with only its own validator and regression test allowed to change.
+It requires a new independent review and an out-of-band full commit hash through
+`BASE64_NG_REVIEWED_CAMPAIGN_POLICY_COMMIT`; the old hardening anchor cannot
+authorize this extension. All four signatures must verify under the frozen
+release-signer policy. The trusted
 bootstrap procedure is in `docs/RELEASE_EVIDENCE.md`; running a candidate's
 self-check is not itself a trust bootstrap. Only the
 two named evidence documents may accompany that correction. Every intervening

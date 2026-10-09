@@ -102,11 +102,15 @@ def main() -> None:
 
 def test_native_inventory_correction() -> None:
     module = VALIDATOR_MODULE
-    original_pin = module.FROZEN_21_COMMIT, module.FROZEN_21_TREE, module.NEON_21_CORRECTION_COMMIT
+    original_pin = (module.FROZEN_21_COMMIT, module.FROZEN_21_TREE,
+                    module.NEON_21_CORRECTION_COMMIT, module.NEON_21_HARDENING_COMMIT,
+                    module.NEON_21_FIXTURE_COMMIT)
     mutations = (
         "valid", "dirty", "wrong-tree", "wrong-pin", "missing-tool",
         "alternate-correction", "unsigned-correction", "unsigned-policy", "wrong-signer",
         "alternate-policy",
+        "unsigned-hardening", "alternate-hardening", "unsigned-fixture", "alternate-fixture",
+        "extra-fixture-file", "reverted-fixture", "wrong-order",
         "missing-policy-anchor", "wrong-policy-anchor", "validator-drift", "split-correction",
         "second-correction", "reverted-runtime", "src/lib.rs", "Cargo.lock",
         "Cargo.toml", "rust-toolchain.toml", "fuzz/fuzz_targets/decode.rs",
@@ -143,6 +147,33 @@ def test_native_inventory_correction() -> None:
                 if mutation == "alternate-correction":
                     # Same permitted path set does not authorize a different commit.
                     git(repo, "commit", "--amend", "-m", "unapproved alternative")
+                for path in module.NEON_21_HARDENING:
+                    file = repo / path
+                    file.parent.mkdir(parents=True, exist_ok=True)
+                    file.write_text("reviewed inventory hardening\n")
+                git(repo, "add", ".")
+                git(repo, "-c", "commit.gpgsign=" + str(mutation != "unsigned-hardening").lower(),
+                    "commit", "-m", "inventory hardening")
+                module.NEON_21_HARDENING_COMMIT = git(repo, "rev-parse", "HEAD")
+                if mutation == "alternate-hardening":
+                    git(repo, "commit", "--amend", "-m", "unapproved hardening alternative")
+                for path in module.NEON_21_FIXTURE:
+                    (repo / path).write_text("exact-source NEON fixture\n")
+                if mutation == "extra-fixture-file":
+                    (repo / module.POLICY_PATH).write_text("unapproved validator edit\n")
+                git(repo, "add", ".")
+                git(repo, "-c", "commit.gpgsign=" + str(mutation != "unsigned-fixture").lower(),
+                    "commit", "-m", "CI fixture correction")
+                module.NEON_21_FIXTURE_COMMIT = git(repo, "rev-parse", "HEAD")
+                if mutation == "alternate-fixture":
+                    git(repo, "commit", "--amend", "-m", "unapproved fixture alternative")
+                if mutation == "reverted-fixture":
+                    fixture_path = next(iter(module.NEON_21_FIXTURE))
+                    commit(repo, fixture_path, "changed\n", "unreviewed fixture edit")
+                    commit(repo, fixture_path, "exact-source NEON fixture\n", "revert fixture edit")
+                if mutation == "wrong-order":
+                    module.NEON_21_HARDENING_COMMIT, module.NEON_21_FIXTURE_COMMIT = (
+                        module.NEON_21_FIXTURE_COMMIT, module.NEON_21_HARDENING_COMMIT)
                 for path in module.NEON_21_POLICY:
                     file = repo / path
                     file.parent.mkdir(parents=True, exist_ok=True)
@@ -181,17 +212,25 @@ def test_native_inventory_correction() -> None:
                     reasons = {
                         "unsigned-correction": "lacks an authorized signature",
                         "unsigned-policy": "lacks an authorized signature",
+                        "unsigned-hardening": "lacks an authorized signature",
+                        "unsigned-fixture": "lacks an authorized signature",
                         "wrong-signer": "lacks an authorized signature",
                         "missing-policy-anchor": "independently reviewed policy commit",
                         "wrong-policy-anchor": "executing validator differs",
                         "validator-drift": "executing validator differs",
                         "alternate-correction": "identity or inventory is not approved",
                         "alternate-policy": "identity or inventory is not approved",
+                        "alternate-hardening": "identity or inventory is not approved",
+                        "alternate-fixture": "identity or inventory is not approved",
+                        "extra-fixture-file": "identity or inventory is not approved",
+                        "reverted-fixture": "identity or inventory is not approved",
+                        "wrong-order": "identity or inventory is not approved",
                         "split-correction": "identity or inventory is not approved",
                     }
                     run(repo, campaign, mutation == "valid", reasons.get(mutation))
     finally:
-        module.FROZEN_21_COMMIT, module.FROZEN_21_TREE, module.NEON_21_CORRECTION_COMMIT = original_pin
+        (module.FROZEN_21_COMMIT, module.FROZEN_21_TREE, module.NEON_21_CORRECTION_COMMIT,
+         module.NEON_21_HARDENING_COMMIT, module.NEON_21_FIXTURE_COMMIT) = original_pin
 
 
 def test_final_manifest_sources() -> None:
@@ -228,13 +267,31 @@ def test_final_manifest_sources() -> None:
         git(repo, "add", ".")
         git(repo, "commit", "-m", "complete correction fixture")
         correction = git(repo, "rev-parse", "HEAD")
+        for name in VALIDATOR_MODULE.NEON_21_HARDENING:
+            (repo / name).write_text("hardened fixture\n")
+        git(repo, "add", ".")
+        git(repo, "commit", "-m", "inventory hardening fixture")
+        hardening = git(repo, "rev-parse", "HEAD")
+        for name in VALIDATOR_MODULE.NEON_21_FIXTURE:
+            (repo / name).write_text("exact-source NEON fixture\n")
+        git(repo, "add", ".")
+        git(repo, "commit", "-m", "CI fixture correction")
+        fixture = git(repo, "rev-parse", "HEAD")
         for name in VALIDATOR_MODULE.NEON_21_POLICY:
             path = repo / name
             if name == VALIDATOR_MODULE.POLICY_PATH:
-                path.write_text(path.read_text().replace(
-                    VALIDATOR_MODULE.NEON_21_CORRECTION_COMMIT, correction))
+                text = VALIDATOR.read_text()
+                for old, new in (
+                    (VALIDATOR_MODULE.FROZEN_21_COMMIT, campaign),
+                    (VALIDATOR_MODULE.FROZEN_21_TREE, tree),
+                    (VALIDATOR_MODULE.NEON_21_CORRECTION_COMMIT, correction),
+                    (VALIDATOR_MODULE.NEON_21_HARDENING_COMMIT, hardening),
+                    (VALIDATOR_MODULE.NEON_21_FIXTURE_COMMIT, fixture),
+                ):
+                    text = text.replace(old, new)
+                path.write_text(text)
             else:
-                path.write_text("hardened fixture\n")
+                path.write_text("reviewed fixture-binding policy\n")
         git(repo, "add", ".")
         git(repo, "commit", "-m", "separately approved policy fixture")
         candidate = git(repo, "rev-parse", "HEAD")

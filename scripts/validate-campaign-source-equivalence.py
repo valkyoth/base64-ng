@@ -16,10 +16,12 @@ FULL_COMMIT = re.compile(r"[0-9a-f]{40}")
 FROZEN_21_COMMIT = "b3e493e64a583245f7aab542d983b7b914c67eb9"
 FROZEN_21_TREE = "06f9e65432631d43f868a95bb6083c18a61a1f39"
 NEON_21_CORRECTION_COMMIT = "0ace376a0e737b0ead1926920e403a5b448e7988"
+NEON_21_HARDENING_COMMIT = "427e938165fc9eef6fef02cf9131985d9714e1e2"
+NEON_21_FIXTURE_COMMIT = "a0dd4e9638f56100f0a790b199d052a00b3cedb3"
 # Supplied by the release operator from independent review, never inferred from HEAD.
 POLICY_ENV = "BASE64_NG_REVIEWED_CAMPAIGN_POLICY_COMMIT"
 POLICY_PATH = "scripts/validate-campaign-source-equivalence.py"
-NEON_21_POLICY = {
+NEON_21_HARDENING = {
     POLICY_PATH,
     "scripts/evidence-equivalence.py",
     "scripts/validate-neon-campaign.py",
@@ -27,6 +29,8 @@ NEON_21_POLICY = {
     "scripts/test-evidence-equivalence.py",
     "scripts/test-neon-campaign.py",
 }
+NEON_21_FIXTURE = {"scripts/test-fuzz-shard-evidence.py"}
+NEON_21_POLICY = {POLICY_PATH, "scripts/test-campaign-source-equivalence.py"}
 NEON_21_CORRECTION = {
     "scripts/check-2.0-memory-hardware-evidence.sh",
     "scripts/checks.sh",
@@ -84,6 +88,18 @@ def resolve(revision: str, label: str) -> str:
     return commit
 
 
+def reviewed_corrections(policy: str) -> dict[str, set[str]]:
+    corrections = {
+        NEON_21_CORRECTION_COMMIT: NEON_21_CORRECTION,
+        NEON_21_HARDENING_COMMIT: NEON_21_HARDENING,
+        NEON_21_FIXTURE_COMMIT: NEON_21_FIXTURE,
+        policy: NEON_21_POLICY,
+    }
+    if len(corrections) != 4:
+        fail("policy must be separate from all three pinned corrections")
+    return corrections
+
+
 def require_reviewed_policy() -> str:
     policy = os.environ.get(POLICY_ENV, "")
     if FULL_COMMIT.fullmatch(policy) is None or resolve(policy, "reviewed policy") != policy:
@@ -97,7 +113,7 @@ def require_reviewed_policy() -> str:
     with tempfile.TemporaryDirectory(prefix="base64-campaign-signers-") as directory:
         signers = Path(directory) / "allowed-signers"
         signers.write_text(git("show", f"{FROZEN_21_COMMIT}:security/release-signers") + "\n")
-        for revision in (NEON_21_CORRECTION_COMMIT, policy):
+        for revision in reviewed_corrections(policy):
             result = subprocess.run([
                 "git", "-c", "gpg.format=ssh", "-c", "gpg.ssh.program=ssh-keygen",
                 "-c", f"gpg.ssh.allowedSignersFile={signers}",
@@ -141,25 +157,24 @@ def validate(campaign_revision: str, candidate_revision: str) -> tuple[str, str]
         if git("rev-parse", f"{campaign}^{{tree}}") != FROZEN_21_TREE:
             fail("2.1 frozen tree does not match the reviewed campaign")
         policy = require_reviewed_policy()
-        if policy == NEON_21_CORRECTION_COMMIT:
-            fail("policy must be a separately reviewed commit")
-        if changed - NEON_21_METADATA != NEON_21_CORRECTION | NEON_21_POLICY:
+        reviewed = reviewed_corrections(policy)
+        allowed_tools = set.union(*reviewed.values())
+        if changed - NEON_21_METADATA != allowed_tools:
             fail("2.1 native-inventory correction inventory mismatch")
         # Do not permit an intervening runtime change hidden by a later revert.
         corrections = []
         for revision in git("rev-list", "--reverse", f"{campaign}..{candidate}").splitlines():
             touched = set(git("diff-tree", "--no-commit-id", "--name-only", "-r", revision).splitlines())
-            if touched - NEON_21_CORRECTION - NEON_21_POLICY - NEON_21_METADATA:
+            if touched - allowed_tools - NEON_21_METADATA:
                 fail("2.1 correction history touches protected source")
             tools = touched - NEON_21_METADATA
             if tools:
-                expected = {NEON_21_CORRECTION_COMMIT: NEON_21_CORRECTION,
-                            policy: NEON_21_POLICY}.get(revision)
+                expected = reviewed.get(revision)
                 if tools != expected:
                     fail("2.1 tooling correction identity or inventory is not approved")
                 corrections.append(revision)
-        if corrections != [NEON_21_CORRECTION_COMMIT, policy]:
-            fail("2.1 requires the exact signed correction and reviewed policy, in order")
+        if corrections != list(reviewed):
+            fail("2.1 requires the exact signed corrections and reviewed policy, in order")
     elif changed != ALLOWED_TOOLING_CHANGES:
         missing = sorted(ALLOWED_TOOLING_CHANGES - changed)
         unexpected = sorted(changed - ALLOWED_TOOLING_CHANGES)

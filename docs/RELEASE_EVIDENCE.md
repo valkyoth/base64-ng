@@ -1193,13 +1193,20 @@ clean source, exact campaign identity, performance thresholds and source
 compatibility are revalidated. Linked/special entries are rejected. Missing
 fresh evidence cannot fall back to the historical 2.0 baselines in a 2.1 gate.
 
-The campaign-source validator pins the frozen commit/tree and the exact original
-correction `0ace376a0e737b0ead1926920e403a5b448e7988`. A separate, independently
-reviewed policy-hardening commit must be supplied through
-`BASE64_NG_REVIEWED_CAMPAIGN_POLICY_COMMIT`. Neither an identical path inventory
-nor a valid signature alone authorizes a different correction. Both commits
-must have valid signatures under the release-signer policy from the frozen
-tree. The complete linear history is checked, including later-reverted edits;
+The campaign-source validator pins the frozen commit/tree and these exact
+corrections, in order:
+
+- `0ace376a0e737b0ead1926920e403a5b448e7988`: original native-inventory correction.
+- `427e938165fc9eef6fef02cf9131985d9714e1e2`: reviewed provenance/inventory hardening.
+- `a0dd4e9638f56100f0a790b199d052a00b3cedb3`: CI fixture correction, changing only
+  `scripts/test-fuzz-shard-evidence.py` to supply exact-source NEON test bundles.
+
+The final policy commit binding this history must be independently reviewed and
+supplied through `BASE64_NG_REVIEWED_CAMPAIGN_POLICY_COMMIT`. Its tooling changes
+are limited to the campaign-source validator and its regression test. Neither
+an identical path inventory nor a valid signature alone authorizes a different
+correction. All four commits must have valid signatures under the release-signer
+policy from the frozen tree. The complete linear history is checked, including later-reverted edits;
 only the two named evidence documents may accompany the enumerated changes.
 Runtime source, tests, manifests, toolchains and benchmark/fuzz harnesses cannot
 change under this exception.
@@ -1208,7 +1215,8 @@ The operator-supplied policy hash is the trust anchor, not a constant selected
 by the candidate. Obtain it from independent review and retain it in protected
 release configuration, outside candidate-controlled workflows. Never derive it
 from HEAD, a branch name, candidate output, or the candidate's environment.
-The policy commit cannot contain its own hash. It must first be committed,
+The old `427e938` anchor does not authorize the CI follow-up or this policy
+update. The policy commit cannot contain its own hash. It must first be committed,
 signed and independently reviewed; until then campaign reuse fails closed.
 
 Before executing candidate release scripts, run this bootstrap from a trusted
