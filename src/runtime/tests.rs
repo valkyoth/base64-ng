@@ -86,17 +86,69 @@ fn scalar_execution_policy_rejects_transient_scalar_fallbacks() {
 fn initialize_runtime_backend_health() {
     let _ = crate::initialize_backends();
     #[cfg(all(feature = "std", feature = "simd"))]
-    for _ in 0..10_000 {
-        let report = backend_report();
-        if report.encode_backend.health_posture != super::BackendHealthPosture::Testing
-            && report.strict_decode_backend.health_posture != super::BackendHealthPosture::Testing
-        {
-            return;
+    {
+        let started = std::time::Instant::now();
+        while started.elapsed() < std::time::Duration::from_secs(10) {
+            // Candidate health can hide a lower tier still running its KAT:
+            // an AVX-512 candidate does not imply AVX2 decode is ready.
+            if runtime_backend_health_settled(|operation, backend| {
+                crate::v2::backend_health::snapshot(operation, backend).state
+            }) {
+                return;
+            }
+            std::thread::yield_now();
         }
-        std::thread::yield_now();
+        panic!("backend health initialization did not leave Testing");
     }
-    #[cfg(all(feature = "std", feature = "simd"))]
-    panic!("backend health initialization did not leave Testing");
+}
+
+#[cfg(all(feature = "std", feature = "simd"))]
+fn runtime_backend_health_settled(
+    mut state: impl FnMut(OperationKind, Backend) -> crate::BackendHealthState,
+) -> bool {
+    for backend in [
+        Backend::Avx512Vbmi,
+        Backend::Avx2,
+        Backend::Ssse3Sse41,
+        Backend::Neon,
+        Backend::WasmSimd128,
+        Backend::Rvv,
+    ] {
+        for operation in [OperationKind::Encode, OperationKind::StrictDecode] {
+            if state(operation, backend) == crate::BackendHealthState::Testing {
+                return false;
+            }
+        }
+    }
+    true
+}
+
+#[test]
+#[cfg(all(feature = "std", feature = "simd"))]
+fn initialization_waits_for_testing_tiers_hidden_by_candidate_reports() {
+    use crate::BackendHealthState::{Healthy, NeverRun, Quarantined, Testing};
+
+    let mut pairs = std::vec::Vec::new();
+    assert!(runtime_backend_health_settled(|operation, backend| {
+        pairs.push((operation, backend));
+        Healthy
+    }));
+    assert_eq!(pairs.len(), 12);
+    assert!(pairs.contains(&(OperationKind::StrictDecode, Backend::Avx2)));
+    for pending in &pairs {
+        assert!(!runtime_backend_health_settled(|operation, backend| {
+            if (operation, backend) == *pending {
+                Testing
+            } else {
+                Healthy
+            }
+        }));
+    }
+    // Unsupported and quarantined backends cannot become healthy later in this
+    // process; only an in-progress self-test requires waiting after initialization.
+    for settled in [NeverRun, Healthy, Quarantined] {
+        assert!(runtime_backend_health_settled(|_, _| settled));
+    }
 }
 
 #[test]
