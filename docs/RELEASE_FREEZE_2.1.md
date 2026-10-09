@@ -386,6 +386,25 @@ Still pending: independent correction review, complete assembly review,
 performance disposition, candidate-bound package/SBOM refresh, signed evidence
 aggregation, deferred full-release CI and final report-only acceptance.
 
+## Runtime Reporting Correction After Freeze
+
+Independent review of the reporting-test stabilization found a production
+policy defect: selected AVX2 health could be attributed to an AVX-512
+candidate, and a quarantined upper tier could hide a lower tier still
+initializing when checking `ScalarExecutionOnly`. The correction binds health
+to the named backend and captures terminal scalar status across every
+automatically available tier for each operation. Deterministic tests cover
+all three-tier state/availability combinations, both operations, selected
+health attribution and snapshot identifiers.
+
+This is a production reporting change, not a test-only or metadata-only
+correction. The existing pinned campaign-source exception does not authorize
+it. Preserve the original campaigns and their original source identities;
+the unsigned staged candidate collection is not final evidence for this
+runtime change. Release sealing remains blocked pending independent review
+and an explicit new campaign/evidence decision. No prior performance, fuzz,
+native, sanitizer or formal result is relabeled as a run of this correction.
+
 ## Final Acceptance
 
 Retain the signed candidate evidence before making the report-only commit.

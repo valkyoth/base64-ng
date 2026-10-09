@@ -1091,6 +1091,7 @@ impl core::marker::StructuralPartialEq for base64_ng::runtime::Backend
 pub base64_ng::runtime::BackendHealthPosture::Healthy
 pub base64_ng::runtime::BackendHealthPosture::NeverRun
 pub base64_ng::runtime::BackendHealthPosture::Quarantined
+pub base64_ng::runtime::BackendHealthPosture::ScalarFallback
 pub base64_ng::runtime::BackendHealthPosture::ScalarFixed
 pub base64_ng::runtime::BackendHealthPosture::SecretPolicyFixed
 pub base64_ng::runtime::BackendHealthPosture::SynchronizationUnavailable

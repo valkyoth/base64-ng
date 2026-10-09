@@ -81,15 +81,19 @@ impl OperationSecurityPosture {
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 #[non_exhaustive]
 pub enum BackendHealthPosture {
-    /// Scalar execution has no accelerated implementation to self-test.
+    /// Scalar selected; every automatically available accelerated tier is
+    /// quarantined, or acceleration is unavailable in this build/target.
     ScalarFixed,
-    /// The selected candidate has not completed its known-answer test.
+    /// Scalar selected temporarily; at least one automatically available tier
+    /// is not quarantined and may execute on a later call.
+    ScalarFallback,
+    /// The named backend has not completed its known-answer test.
     NeverRun,
-    /// A thread is currently running the candidate's known-answer test.
+    /// A thread is currently running the named backend's known-answer test.
     Testing,
-    /// The candidate passed its known-answer test.
+    /// The named backend passed its known-answer test.
     Healthy,
-    /// The candidate failed an integrity check and is permanently disabled.
+    /// The named backend failed an integrity check and is permanently disabled.
     Quarantined,
     /// This target cannot provide the atomic health latch required for SIMD.
     SynchronizationUnavailable,
@@ -104,6 +108,7 @@ impl BackendHealthPosture {
     pub const fn as_str(self) -> &'static str {
         match self {
             Self::ScalarFixed => "scalar-fixed",
+            Self::ScalarFallback => "scalar-fallback",
             Self::NeverRun => "never-run",
             Self::Testing => "testing",
             Self::Healthy => "healthy",
@@ -168,27 +173,42 @@ pub struct OperationBackendReport {
     pub backend: BackendIdentifier,
     /// Security classification for this operation only.
     pub security_posture: OperationSecurityPosture,
-    /// Honest current backend-health posture.
+    /// Health posture of the named backend. For scalar, distinguishes fixed
+    /// execution from fallback across all automatically available tiers.
     pub health_posture: BackendHealthPosture,
-    /// Context-independent admission generation.
+    /// Context-independent admission generation of the named backend.
     ///
     /// This generation is not an `AssuranceContext` generation.
     /// Allocation-gated reports carry those values separately.
     pub health_generation: usize,
-    /// Last backend integrity fault, if this operation was quarantined.
+    /// Last integrity fault of the named backend, not of a different candidate.
     pub backend_fault: Option<crate::BackendFault>,
 }
 
 impl OperationBackendReport {
-    pub(crate) fn ordinary(operation: OperationKind, backend: Backend, candidate: Backend) -> Self {
+    pub(crate) fn ordinary(operation: OperationKind, backend: Backend) -> Self {
+        let health = crate::v2::backend_health::snapshot(operation, backend);
+        let terminally_scalar = backend == Backend::Scalar
+            && crate::v2::backend_health::operation_is_terminally_scalar(operation);
+        Self::from_health(health, terminally_scalar)
+    }
+
+    pub(super) fn from_health(
+        health: crate::BackendHealthSnapshot,
+        terminally_scalar: bool,
+    ) -> Self {
+        let backend = health.backend;
         let security_posture = if matches!(backend, Backend::Scalar) {
             OperationSecurityPosture::OrdinaryScalar
         } else {
             OperationSecurityPosture::OrdinaryAccelerated
         };
-        let health = crate::v2::backend_health::snapshot(operation, candidate);
-        let health_posture = if candidate == Backend::Scalar {
-            BackendHealthPosture::ScalarFixed
+        let health_posture = if backend == Backend::Scalar {
+            if terminally_scalar {
+                BackendHealthPosture::ScalarFixed
+            } else {
+                BackendHealthPosture::ScalarFallback
+            }
         } else {
             match health.state {
                 crate::BackendHealthState::NeverRun => {
@@ -204,7 +224,7 @@ impl OperationBackendReport {
             }
         };
         Self {
-            operation,
+            operation: health.operation,
             backend: BackendIdentifier::ordinary(backend),
             security_posture,
             health_posture,

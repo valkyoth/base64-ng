@@ -416,6 +416,34 @@ pub(crate) fn snapshot(operation: OperationKind, backend: Backend) -> BackendHea
     }
 }
 
+pub(crate) fn operation_is_terminally_scalar(operation: OperationKind) -> bool {
+    #[cfg(all(feature = "simd", target_has_atomic = "ptr"))]
+    {
+        terminally_scalar(candidate_backends(), backend_available, |backend| {
+            snapshot(operation, backend).state
+        })
+    }
+    #[cfg(not(all(feature = "simd", target_has_atomic = "ptr")))]
+    {
+        let _ = operation;
+        true
+    }
+}
+
+#[cfg(any(test, all(feature = "simd", target_has_atomic = "ptr")))]
+pub(crate) fn terminally_scalar(
+    backends: &[Backend],
+    mut available: impl FnMut(Backend) -> bool,
+    mut state: impl FnMut(Backend) -> BackendHealthState,
+) -> bool {
+    // Quarantine is terminal. Sampling every available tier cannot turn an
+    // in-progress lower-tier KAT into a durable scalar-only assertion.
+    backends
+        .iter()
+        .copied()
+        .all(|backend| !available(backend) || state(backend) == BackendHealthState::Quarantined)
+}
+
 /// Runs KAT initialization for every accelerated backend available now.
 #[must_use]
 pub fn initialize_backends() -> BackendInitializationReport {

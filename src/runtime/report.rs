@@ -261,12 +261,7 @@ const fn stably_scalar(report: OperationBackendReport) -> bool {
     matches!(
         report.security_posture,
         OperationSecurityPosture::OrdinaryScalar
-    ) && matches!(
-        report.health_posture,
-        BackendHealthPosture::ScalarFixed
-            | BackendHealthPosture::Quarantined
-            | BackendHealthPosture::SynchronizationUnavailable
-    )
+    ) && matches!(report.health_posture, BackendHealthPosture::ScalarFixed)
 }
 
 /// Returns the runtime backend report for this build and target.
@@ -283,8 +278,6 @@ const fn stably_scalar(report: OperationBackendReport) -> bool {
 pub fn backend_report() -> BackendReport {
     let encode = active_backend();
     let strict_decode = active_decode_backend();
-    let encode_candidate = encode_candidate_backend();
-    let decode_candidate = decode_candidate_backend();
     let candidate = detected_candidate();
     let candidate_detection_mode = candidate_detection_mode();
     let accelerated_backend_active = encode != Backend::Scalar;
@@ -303,15 +296,10 @@ pub fn backend_report() -> BackendReport {
         active: encode,
         accelerated_backend_active,
         security_posture,
-        encode_backend: OperationBackendReport::ordinary(
-            OperationKind::Encode,
-            encode,
-            encode_candidate,
-        ),
+        encode_backend: OperationBackendReport::ordinary(OperationKind::Encode, encode),
         strict_decode_backend: OperationBackendReport::ordinary(
             OperationKind::StrictDecode,
             strict_decode,
-            decode_candidate,
         ),
         secret_decode_backend: OperationBackendReport::secret_decode(),
         candidate,
@@ -415,26 +403,6 @@ fn active_decode_backend() -> Backend {
 
 #[cfg(not(feature = "simd"))]
 const fn active_decode_backend() -> Backend {
-    Backend::Scalar
-}
-
-#[cfg(feature = "simd")]
-fn encode_candidate_backend() -> Backend {
-    crate::encode_backend::candidate_encode_backend().reported()
-}
-
-#[cfg(not(feature = "simd"))]
-const fn encode_candidate_backend() -> Backend {
-    Backend::Scalar
-}
-
-#[cfg(feature = "simd")]
-fn decode_candidate_backend() -> Backend {
-    crate::decode_backend::candidate_decode_backend().reported()
-}
-
-#[cfg(not(feature = "simd"))]
-const fn decode_candidate_backend() -> Backend {
     Backend::Scalar
 }
 

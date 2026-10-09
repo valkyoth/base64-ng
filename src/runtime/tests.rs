@@ -63,23 +63,172 @@ fn scalar_execution_policy_rejects_transient_scalar_fallbacks() {
     report.candidate = Backend::Avx2;
 
     for posture in [
+        super::BackendHealthPosture::ScalarFallback,
         super::BackendHealthPosture::NeverRun,
         super::BackendHealthPosture::Testing,
         super::BackendHealthPosture::Healthy,
+        super::BackendHealthPosture::Quarantined,
+        super::BackendHealthPosture::SynchronizationUnavailable,
     ] {
         report.encode_backend.health_posture = posture;
         report.strict_decode_backend.health_posture = posture;
         assert!(!report.satisfies(BackendPolicy::ScalarExecutionOnly));
     }
 
-    for posture in [
-        super::BackendHealthPosture::ScalarFixed,
-        super::BackendHealthPosture::Quarantined,
-        super::BackendHealthPosture::SynchronizationUnavailable,
-    ] {
-        report.encode_backend.health_posture = posture;
-        report.strict_decode_backend.health_posture = posture;
-        assert!(report.satisfies(BackendPolicy::ScalarExecutionOnly));
+    report.encode_backend.health_posture = super::BackendHealthPosture::ScalarFixed;
+    report.strict_decode_backend.health_posture = super::BackendHealthPosture::ScalarFixed;
+    assert!(report.satisfies(BackendPolicy::ScalarExecutionOnly));
+    report.ordinary_acceleration_active = true;
+    assert!(!report.satisfies(BackendPolicy::ScalarExecutionOnly));
+    report.ordinary_acceleration_active = false;
+    report.encode_backend.security_posture = OperationSecurityPosture::OrdinaryAccelerated;
+    assert!(!report.satisfies(BackendPolicy::ScalarExecutionOnly));
+    report.encode_backend.security_posture = OperationSecurityPosture::OrdinaryScalar;
+    report.strict_decode_backend.security_posture = OperationSecurityPosture::OrdinaryAccelerated;
+    assert!(!report.satisfies(BackendPolicy::ScalarExecutionOnly));
+}
+
+#[test]
+fn scalar_policy_checks_every_available_tier_for_each_operation() {
+    use crate::BackendHealthState::{Healthy, NeverRun, Quarantined, Testing};
+    let backends = [Backend::Avx512Vbmi, Backend::Avx2, Backend::Ssse3Sse41];
+    let states = [NeverRun, Testing, Healthy, Quarantined];
+    for operation in [OperationKind::Encode, OperationKind::StrictDecode] {
+        for availability in 0u8..8 {
+            for first in states {
+                for second in states {
+                    for third in states {
+                        let health = [first, second, third];
+                        let available = |backend| {
+                            let index = backends.iter().position(|b| *b == backend).unwrap();
+                            availability & (1 << index) != 0
+                        };
+                        let terminal = crate::v2::backend_health::terminally_scalar(
+                            &backends,
+                            available,
+                            |backend| {
+                                assert!(available(backend));
+                                health[backends.iter().position(|b| *b == backend).unwrap()]
+                            },
+                        );
+                        let expected = (0..3)
+                            .all(|i| availability & (1 << i) == 0 || health[i] == Quarantined);
+                        assert_eq!(terminal, expected);
+                        let mut report = scalar_report(CtGatePosture::HardwareSpeculationBarrier);
+                        report.candidate = Backend::Avx512Vbmi;
+                        report.simd_feature_enabled = true;
+                        let selected = OperationBackendReport::from_health(
+                            crate::v2::backend_health::snapshot(operation, Backend::Scalar),
+                            terminal,
+                        );
+                        match operation {
+                            OperationKind::Encode => report.encode_backend = selected,
+                            OperationKind::StrictDecode => report.strict_decode_backend = selected,
+                            OperationKind::SecretDecode => unreachable!(),
+                        }
+                        assert_eq!(
+                            report.satisfies(BackendPolicy::ScalarExecutionOnly),
+                            expected
+                        );
+                        assert_eq!(selected.backend.as_str(), "scalar");
+                        assert_eq!(selected.backend_fault, None);
+                        assert_eq!(selected.health_generation, 1);
+                        assert_eq!(
+                            selected.snapshot().health_posture,
+                            if expected {
+                                "scalar-fixed"
+                            } else {
+                                "scalar-fallback"
+                            }
+                        );
+                        // Policy evaluation uses captured evidence, never a fresh global read.
+                        assert_eq!(
+                            report.snapshot().encode_backend,
+                            report.encode_backend.snapshot()
+                        );
+                        assert_eq!(
+                            report.snapshot().strict_decode_backend,
+                            report.strict_decode_backend.snapshot()
+                        );
+                    }
+                }
+            }
+        }
+    }
+    assert!(crate::v2::backend_health::terminally_scalar(
+        &[],
+        |_| panic!("no backend"),
+        |_| panic!("no health")
+    ));
+}
+
+#[test]
+fn operation_health_is_attributed_to_the_named_backend() {
+    use crate::{BackendFault, BackendHealthSnapshot, BackendHealthState};
+    for operation in [OperationKind::Encode, OperationKind::StrictDecode] {
+        let upper = BackendHealthSnapshot {
+            operation,
+            backend: Backend::Avx512Vbmi,
+            state: BackendHealthState::Quarantined,
+            generation: 9,
+            fault: Some(BackendFault::SelfTestFailed),
+        };
+        let selected = BackendHealthSnapshot {
+            operation,
+            backend: Backend::Avx2,
+            state: BackendHealthState::Healthy,
+            generation: 3,
+            fault: None,
+        };
+        let upper_report = OperationBackendReport::from_health(upper, false);
+        let selected_report = OperationBackendReport::from_health(selected, false);
+        assert_eq!(upper_report.backend.as_str(), "avx512-vbmi");
+        assert_eq!(upper_report.health_generation, 9);
+        assert_eq!(upper_report.backend_fault, upper.fault);
+        assert_eq!(selected_report.backend.as_str(), "avx2");
+        assert_eq!(
+            selected_report.health_posture,
+            super::BackendHealthPosture::Healthy
+        );
+        assert_eq!(selected_report.health_generation, 3);
+        assert_eq!(selected_report.backend_fault, None);
+    }
+}
+
+#[test]
+fn live_selected_reports_use_their_own_health_snapshot() {
+    initialize_runtime_backend_health();
+    for operation in [OperationKind::Encode, OperationKind::StrictDecode] {
+        for backend in [
+            Backend::Scalar,
+            Backend::Avx512Vbmi,
+            Backend::Avx2,
+            Backend::Ssse3Sse41,
+            Backend::Neon,
+            Backend::WasmSimd128,
+            Backend::Rvv,
+        ] {
+            let health = crate::v2::backend_health::snapshot(operation, backend);
+            let report = OperationBackendReport::ordinary(operation, backend);
+            assert_eq!(report.operation, operation);
+            assert_eq!(report.backend.as_str(), backend.as_str());
+            assert_eq!(report.health_generation, health.generation);
+            assert_eq!(report.backend_fault, health.fault);
+            if backend == Backend::Scalar {
+                let terminal = crate::v2::backend_health::operation_is_terminally_scalar(operation);
+                assert_eq!(
+                    report.health_posture,
+                    if terminal {
+                        super::BackendHealthPosture::ScalarFixed
+                    } else {
+                        super::BackendHealthPosture::ScalarFallback
+                    }
+                );
+            }
+            if backend != Backend::Scalar && cfg!(target_has_atomic = "ptr") {
+                assert_eq!(report.health_posture.as_str(), health.state.as_str());
+            }
+        }
     }
 }
 
@@ -193,15 +342,13 @@ fn scalar_report(ct_gate_posture: CtGatePosture) -> BackendReport {
         active: Backend::Scalar,
         accelerated_backend_active: false,
         security_posture: SecurityPosture::ScalarOnly,
-        encode_backend: OperationBackendReport::ordinary(
-            OperationKind::Encode,
-            Backend::Scalar,
-            Backend::Scalar,
+        encode_backend: OperationBackendReport::from_health(
+            crate::v2::backend_health::snapshot(OperationKind::Encode, Backend::Scalar),
+            true,
         ),
-        strict_decode_backend: OperationBackendReport::ordinary(
-            OperationKind::StrictDecode,
-            Backend::Scalar,
-            Backend::Scalar,
+        strict_decode_backend: OperationBackendReport::from_health(
+            crate::v2::backend_health::snapshot(OperationKind::StrictDecode, Backend::Scalar),
+            true,
         ),
         secret_decode_backend: OperationBackendReport::secret_decode(),
         candidate: Backend::Scalar,
