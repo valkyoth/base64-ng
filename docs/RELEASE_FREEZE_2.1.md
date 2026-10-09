@@ -3,8 +3,9 @@
 Commit 26 prepared the API, documentation, packages and campaign tooling.
 This is not release authorization. Its follow-up `335dd35` passed the
 maintainer-supplied external retest and GitHub CI before the first campaigns.
-The subsequent RVV measurement corrections require their own review and CI;
-the revised campaign source and remaining work are recorded below.
+The subsequent RVV corrections passed the maintainer-supplied review through
+`a022372` and its routine GitHub CI. Final campaigns and release authorization
+are still pending; the accepted source and remaining work are recorded below.
 
 ## Shipping Surface
 
@@ -73,11 +74,11 @@ tests, harnesses, manifests, dependencies, tools or compiler during campaigns.
 
 | Assignment | Commit 27 work | Availability / status |
 | --- | --- | --- |
-| Local Linux x86 | x86 fuzz, backend/checked tests, local deep gates | Revised-source local preparation passed; old-source x86 fuzz reuse proposed |
+| Local Linux x86 | x86 fuzz, backend/checked tests, local deep gates | Revised-source local preparation passed; two one-hour x86 campaigns pending |
 | Physical Linux X60 | Native RVV admission bundle | Exact revised-source capture passed and was collected |
-| AWS AArch64 | NEON/checked native bundle and portable fuzz | Old-source native/NEON fuzz captures collected; scoped reuse proposed |
-| Apple Silicon | NEON, paired capture, Safari package smoke | Old-source capture collected and performance tradeoffs accepted; scoped reuse proposed |
-| Windows x86_64 MSVC | Active/MSRV gate, ABI and performance bundle | Old-source capture collected and scoped assembly reviewed; scoped reuse proposed |
+| AWS AArch64 | NEON/checked native bundle and portable fuzz | Fresh revised-source native capture and one-hour NEON fuzz pending |
+| Apple Silicon | NEON, paired capture, Safari package smoke | Fresh revised-source capture pending |
+| Windows x86_64 MSVC | Active/MSRV gate, ABI and performance bundle | Fresh revised-source capture pending |
 | Local/CI runtimes | Node, Wasmtime, Chromium, Firefox, QEMU compatibility | Revised-source core/runtime checks passed; full-release deep campaigns pending |
 
 Keep credentials/IPs in local manager state, not committed documentation.
@@ -123,19 +124,29 @@ so dependency lint caps cannot hide warnings.
 
 The revised campaign source is
 `b3e493e64a583245f7aab542d983b7b914c67eb9`, tree
-`06f9e65432631d43f868a95bb6083c18a61a1f39`. Independent review must cover
-`335dd35..b3e493e`, followed by CI acceptance. Do not treat the first campaign's
-external PASS or green CI as review of these corrections.
+`06f9e65432631d43f868a95bb6083c18a61a1f39`. On 2026-10-09, the maintainer
+supplied a clean external review of `335dd35..a022372`: no Critical, High,
+Medium or Low findings. That range includes all RVV corrections. The only
+change after `b3e493e` through the reviewed head is this freeze document;
+the protected implementation, tests, harnesses, dependencies and tools match.
+
+[Rust CI](https://github.com/valkyoth/base64-ng/actions/runs/37820778022) and
+[CodeQL](https://github.com/valkyoth/base64-ng/actions/runs/37820776864) both
+completed successfully for exact reviewed head
+`a022372e1e3e9be6840a6db34d704dfe158a3c79`. This is not a claim that CI ran on
+`b3e493e` itself. The push run deliberately skipped the 2.1 feature gates and
+big-endian/RVV/SVE QEMU jobs; final full-release CI remains mandatory.
 
 The source-equivalence validator rejects reuse of the first campaign across
 this range: protected Rust evidence hooks, a performance manifest, harnesses
 and tooling changed. The historical correction exception is not extended.
 Old captures retain their original identities and are not automatically
 current-source release evidence. All 18 fuzz targets currently remain pending
-in the new exact-source session. The scope assessment below proposes retaining
-the three completed non-RVV shards and native ARM/Windows/macOS captures instead
-of repeating them. Until independently approved and supported by per-artifact
-collection, the existing strict gate still rejects that reuse.
+in the new exact-source session. The maintainer chose fresh campaigns instead
+of adopting the proposed non-RVV exception. Repeat the three old-source
+architecture-specific shards and native ARM/Windows/macOS captures; run the
+15 portable shards for the first time. No collector integration for the proposed
+exception is planned, and no old-source result is relabeled.
 
 The replacement RVV bundle already uses the revised source. Native tests,
 signal/thread/ABI checks, generated assembly and the full 15-sample performance
@@ -161,14 +172,13 @@ python3 scripts/manage-fuzz-evidence.py \
 To launch or collect jobs, enter `target/campaign-b3e493e` and use
 `--state ../fuzz-manager/2.1.0-b3e493e.sqlite3` with the same manager script.
 
-Before provisioning paid workers, review/push the corrections and require green
-CI. Remote workers clone the exact commit from GitHub, so a local-only
-commit is not launch-ready. A practical allocation is eight Linux x86 workers
+The corrected campaign commit is available on GitHub, and the covering review
+and routine CI have passed. Remote workers must clone the literal `b3e493e`
+commit recorded above, not the moving documentation HEAD. A practical allocation
+is eight Linux x86 workers
 for the 15 portable targets in two waves, one ARM worker for NEON/native checks,
-and one Windows worker if native reuse is rejected. With the scoped exception
-approved and integrated, only the eight portable-fuzz workers are needed from
-this allocation: local x86/NEON fuzz and ARM/macOS/Windows captures can be retained.
-Run performance captures without concurrent fuzzing or builds
+and one Windows worker. The two x86-specific fuzz targets run locally; Apple
+Silicon capture remains maintainer-run. Run performance captures without concurrent fuzzing or builds
 on that host. The full target assignment is retained locally in
 `target/fuzz-manager/aws-plan-b3e493e.json`; every target appears exactly once.
 
@@ -212,62 +222,15 @@ The Windows assembly SHA-256 values are
 in the crate. The ARM/Windows AWS hosts were cleared for shutdown only after
 collection and verification; historical review does not require them to stay up.
 
-### Scoped Reuse Proposal
+### Reuse Proposal Not Adopted
 
-The earlier blanket rerun recommendation was a consequence of the current
-global source policy, not an identified non-RVV regression. A subsequent scope
-assessment proposes an exception only for the exact transition from `335dd35`
-to `b3e493e`, followed solely by the existing permitted metadata changes.
-It does not expand the historical v2.0 correction exception.
-
-The full correction has 11 changed paths and 1,128 unchanged tree entries,
-including file modes. Its two changed library files only alter RISC-V-gated
-evidence routing/imports. The performance manifest adds a cfg lint declaration;
-the changed benchmark body is RVV-only. Remaining changes concern RVV capture,
-validation, regression checks and documentation. Non-RVV runtime paths, test
-bodies, fuzz targets/helpers/seeds, dependency locks and toolchain are unchanged.
-The pinned binary Git diff SHA-256 is
-`340f5cff4dbfc3d2a7aafce6a04b3f2d77fef12799c6da9b642d4c23717bf3f1`.
-
-Proposed retained scopes are Linux AArch64 native/paired evidence, Apple Silicon
-native/paired/Safari evidence, Windows x86_64 MSVC evidence, and the completed
-`x86_encode`, `x86_decode` and `neon` fuzz shards. Their original source remains
-`335dd35`; a reuse mapping must never rewrite it to the candidate hash.
-All old RVV correctness, performance, codegen and admission claims are excluded.
-Use the already verified `b3e493e` RVV bundle instead.
-
-Both retained NEON bundles were revalidated in historical mode, including their
-unchanged performance thresholds. All three fuzz shards passed original-source,
-architecture, duration, corpus and log-hash checks. ARM, Windows and macOS
-archive digests match the collected originals; all 51 Windows command logs
-match their recorded hashes and successful exits. Historical validation does
-not itself grant candidate applicability, signatures or performance acceptance.
-This proposal claims source-scope applicability, not binary identity or identical
-performance on every host. Existing checked-mode tradeoffs remain explicit.
-
-The unsigned local proposal is
-`target/fuzz-manager/reuse-proposal-335dd35-b3e493e.json`, SHA-256
-`79f540228fbf15ca10ac70b54fc216eba10d87290de3d3735f87c9ca15e71027`.
-It binds original archive/shard hashes, exact source trees, the changed-file
-inventory and the local review-tool hashes. The supporting scope checker,
-eight-case regression suite and proposal builder are retained beside it, outside
-the frozen source. Tests passed under ordinary Python and `python3 -O` and
-reject wrong commits/trees, unsupported scopes/architectures including RVV,
-protected edits even when reverted, dirty candidates, metadata symlinks and merges.
-
-Independent review must explicitly accept this proposal before reuse. The final
-collector also needs a reviewed per-artifact source mapping that accepts the
-original non-RVV captures and the new RVV capture separately. The existing
-`BASE64_NG_CAMPAIGN_SOURCE_COMMIT` is not suitable: it binds fuzz and RVV to one
-source. No global override, release validator, signature policy, original bundle
-or manager completion record was changed for this assessment. Release acceptance
-remains blocked until the scoped integration and all other gates pass.
-
-The 15 portable one-hour fuzz campaigns have not run yet and remain new work,
-not reruns. Under the proposed exception no additional native AWS/macOS capture
-or repeat of the three completed architecture-specific fuzz campaigns is needed
-solely because of this RVV correction. Any further protected-source change
-invalidates this proposal and requires a fresh scope assessment or recapture.
+On 2026-10-09, the maintainer selected full exact-source campaigns instead of
+the scoped non-RVV reuse exception. The local proposal and earlier captures
+remain historical records, not release inputs for the revised campaign.
+No release validator, global override, signature policy or original bundle was
+changed. Do not enable `BASE64_NG_CAMPAIGN_SOURCE_COMMIT` for that proposal.
+The completed `b3e493e` RVV bundle and local checks already match the frozen
+source and do not need repeating solely because this decision was documented.
 
 ## Earlier Freeze Verification
 
@@ -347,11 +310,11 @@ that worktree. The unsigned analysis is
 `target/fuzz-manager/pre-aws-review-b3e493e.json`. These local paths are not
 shipped evidence or signed release authorization.
 
-Still required after external review and CI acceptance: the 15 pending one-hour
-fuzz targets, approval/integration of scoped reuse or recapture of the remaining
-three fuzz/native scopes, full Miri and normal/advanced Kani inventories, release
-sanitizer/timing campaigns, deferred QEMU/full-release CI, complete assembly
-review and strict evidence aggregation.
+Still required: all 18 one-hour fuzz targets on `b3e493e`, fresh ARM/macOS/Windows
+captures, full Miri and normal/advanced Kani inventories, release sanitizer/timing
+campaigns, deferred QEMU/full-release CI, complete assembly review and strict
+evidence aggregation. The clean scoped pentest and routine green CI above do
+not substitute for these campaigns or the final report-only release acceptance.
 Run collection against the detached frozen source. Any later metadata/report
 reuse must satisfy the existing signed-evidence equivalence procedure; do not
 simply overwrite source hashes in retained bundles.
