@@ -417,20 +417,16 @@ pub(crate) fn snapshot(operation: OperationKind, backend: Backend) -> BackendHea
 }
 
 pub(crate) fn operation_is_terminally_scalar(operation: OperationKind) -> bool {
-    #[cfg(all(feature = "simd", target_has_atomic = "ptr"))]
-    {
-        terminally_scalar(candidate_backends(), backend_available, |backend| {
-            snapshot(operation, backend).state
-        })
+    if !cfg!(all(feature = "simd", target_has_atomic = "ptr")) {
+        return true;
     }
-    #[cfg(not(all(feature = "simd", target_has_atomic = "ptr")))]
-    {
-        let _ = operation;
-        true
-    }
+    terminally_scalar(
+        automatic_backends(operation),
+        backend_available,
+        |backend| snapshot(operation, backend).state,
+    )
 }
 
-#[cfg(any(test, all(feature = "simd", target_has_atomic = "ptr")))]
 pub(crate) fn terminally_scalar(
     backends: &[Backend],
     mut available: impl FnMut(Backend) -> bool,
@@ -474,6 +470,16 @@ fn backend_available(backend: Backend) -> bool {
     {
         let _ = backend;
         false
+    }
+}
+
+/// Automatic eligibility; initialization also covers exact/static-only tiers.
+pub(crate) const fn automatic_backends(operation: OperationKind) -> &'static [Backend] {
+    match operation {
+        OperationKind::SecretDecode => &[],
+        #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+        OperationKind::StrictDecode => &[Backend::Avx2, Backend::Ssse3Sse41],
+        _ => candidate_backends(),
     }
 }
 

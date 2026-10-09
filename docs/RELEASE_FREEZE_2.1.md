@@ -397,6 +397,11 @@ automatically available tier for each operation. Deterministic tests cover
 all three-tier state/availability combinations, both operations, selected
 health attribution and snapshot identifiers.
 
+A follow-up review corrected an overly conservative inventory: automatic
+strict decode must exclude exact/static-only AVX-512 even when its KAT is
+healthy. The per-operation inventories are regression-tested against the
+x86 dispatch admission probes; explicit initialization retains all tiers.
+
 This is a production reporting change, not a test-only or metadata-only
 correction. The existing pinned campaign-source exception does not authorize
 it. Preserve the original campaigns and their original source identities;

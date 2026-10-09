@@ -80,3 +80,20 @@ fn every_rvv_decode_threshold_and_downgrade_edge_is_forced() {
         DecodeBackend::Scalar
     );
 }
+#[cfg(all(feature = "simd", any(target_arch = "x86", target_arch = "x86_64")))]
+#[test]
+fn automatic_inventory_matches_decode_admission_probes() {
+    use crate::runtime::{Backend, OperationKind};
+    let mut visited = [Backend::Scalar; 3];
+    let mut count = 0;
+    let selected = super::select_x86(super::DecodeBackend::Avx512Vbmi, usize::MAX, |backend| {
+        visited[count] = backend.reported();
+        count += 1;
+        false
+    });
+    assert_eq!(selected, super::DecodeBackend::Scalar);
+    assert_eq!(
+        &visited[..count],
+        crate::v2::backend_health::automatic_backends(OperationKind::StrictDecode)
+    );
+}

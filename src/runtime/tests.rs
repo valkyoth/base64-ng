@@ -163,6 +163,68 @@ fn scalar_policy_checks_every_available_tier_for_each_operation() {
 }
 
 #[test]
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+fn scalar_policy_ignores_static_only_avx512_decode_but_not_encode() {
+    use crate::BackendHealthState::{Healthy, NeverRun, Quarantined, Testing};
+    use crate::v2::backend_health::{automatic_backends, snapshot, terminally_scalar};
+
+    assert_eq!(
+        automatic_backends(OperationKind::Encode),
+        &[Backend::Avx512Vbmi, Backend::Avx2, Backend::Ssse3Sse41]
+    );
+    assert_eq!(
+        automatic_backends(OperationKind::StrictDecode),
+        &[Backend::Avx2, Backend::Ssse3Sse41]
+    );
+    assert_eq!(automatic_backends(OperationKind::SecretDecode), []);
+    for upper in [NeverRun, Testing, Healthy, Quarantined] {
+        for operation in [OperationKind::Encode, OperationKind::StrictDecode] {
+            let terminal = terminally_scalar(
+                automatic_backends(operation),
+                |_| true,
+                |backend| {
+                    if backend == Backend::Avx512Vbmi {
+                        upper
+                    } else {
+                        Quarantined
+                    }
+                },
+            );
+            let expected = operation == OperationKind::StrictDecode || upper == Quarantined;
+            assert_eq!(terminal, expected);
+            // The other operation is fixed scalar, so isolate this operation's policy result.
+            let mut report = scalar_report(CtGatePosture::HardwareSpeculationBarrier);
+            report.candidate = Backend::Avx512Vbmi;
+            report.simd_feature_enabled = true;
+            let selected =
+                OperationBackendReport::from_health(snapshot(operation, Backend::Scalar), terminal);
+            match operation {
+                OperationKind::Encode => report.encode_backend = selected,
+                OperationKind::StrictDecode => report.strict_decode_backend = selected,
+                OperationKind::SecretDecode => unreachable!(),
+            }
+            assert_eq!(
+                report.satisfies(BackendPolicy::ScalarExecutionOnly),
+                expected
+            );
+        }
+    }
+    for pending in [Backend::Avx2, Backend::Ssse3Sse41] {
+        for state in [NeverRun, Testing, Healthy] {
+            assert!(!terminally_scalar(
+                automatic_backends(OperationKind::StrictDecode),
+                |_| true,
+                |backend| if backend == pending {
+                    state
+                } else {
+                    Quarantined
+                }
+            ));
+        }
+    }
+}
+
+#[test]
 fn operation_health_is_attributed_to_the_named_backend() {
     use crate::{BackendFault, BackendHealthSnapshot, BackendHealthState};
     for operation in [OperationKind::Encode, OperationKind::StrictDecode] {

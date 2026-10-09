@@ -61,6 +61,12 @@ fn forced_direct_backends_pass_known_answers_when_available() {
 #[cfg(feature = "simd")]
 #[test]
 fn explicit_initialization_accounts_for_every_operation_pair() {
+    // Exact/static-only AVX-512 decode still needs explicit KAT initialization.
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    assert_eq!(
+        super::candidate_backends(),
+        &[Backend::Avx512Vbmi, Backend::Avx2, Backend::Ssse3Sse41]
+    );
     let report = super::initialize_backends();
     assert_eq!(
         report.tested + report.unavailable,
