@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import hashlib
 import importlib.util
+import runpy
 import shutil
 import subprocess
 import sys
@@ -30,6 +31,7 @@ assert RVV_SPEC is not None and RVV_SPEC.loader is not None
 RVV_FIXTURE = importlib.util.module_from_spec(RVV_SPEC)
 sys.modules[RVV_SPEC.name] = RVV_FIXTURE
 RVV_SPEC.loader.exec_module(RVV_FIXTURE)
+NEON_FIXTURE = runpy.run_path(str(ROOT / "scripts/test-neon-campaign.py"))
 
 
 def sha256(path: Path) -> str:
@@ -198,7 +200,8 @@ def main() -> None:
             "kani/normal/status.txt": "PASS\n",
             "kani/advanced/status.txt": "PASS\n",
             "commit-53/MANIFEST.txt": (
-                "neon_automatic_dispatch=retained-native-performance\n"
+                "neon_automatic_dispatch=exact-campaign-native-performance\n"
+                f"neon_source_commit={source.commit}\n"
                 "rvv=exact-linux-spacemit-x60-native-admission\n"
             ),
         }
@@ -207,12 +210,45 @@ def main() -> None:
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(content)
         RVV_FIXTURE.write_bundle(evidence / "riscv-native-admission")
-        subprocess.run(
-            [str(ROOT / "scripts" / "validate-release-evidence-outcomes.sh"), str(evidence)],
-            cwd=ROOT,
-            check=True,
-            stdout=subprocess.DEVNULL,
-        )
+        native_neon = evidence / "neon-native-admission"
+        if NEON_FIXTURE["write_campaign"](native_neon) != source.commit:
+            raise AssertionError("native and fuzz fixture source commits differ")
+
+        def check_outcomes(expected_error: str | None = None) -> None:
+            result = subprocess.run(
+                [str(ROOT / "scripts/validate-release-evidence-outcomes.sh"), str(evidence)],
+                cwd=ROOT, capture_output=True, text=True, timeout=30,
+            )
+            if expected_error is None:
+                if result.returncode != 0:
+                    raise AssertionError(result.stdout + result.stderr)
+            elif result.returncode == 0 or expected_error not in result.stderr:
+                raise AssertionError("wrong outcome for mutated native evidence:\n" +
+                                     result.stdout + result.stderr)
+
+        check_outcomes()
+        native_manifest = evidence / "commit-53/MANIFEST.txt"
+        original_manifest = native_manifest.read_text()
+        replace_key(native_manifest, "neon_automatic_dispatch", "retained-native-performance")
+        check_outcomes("2.1 requires exact-campaign NEON evidence")
+        native_manifest.write_text(original_manifest)
+        replace_key(native_manifest, "neon_source_commit", "0" * 40)
+        check_outcomes("invalid source_commit")
+        native_manifest.write_text(original_manifest)
+        for platform in ("apple-silicon", "aarch64-linux"):
+            bundle = native_neon / platform
+            saved = temporary / platform
+            bundle.rename(saved)
+            check_outcomes("unexpected campaign root inventory")
+            saved.rename(bundle)
+        apple_manifest = native_neon / "apple-silicon/MANIFEST.txt"
+        original_apple = apple_manifest.read_text()
+        replace_key(apple_manifest, "source_commit", "0" * 40)
+        NEON_FIXTURE["FIXTURE"]["write_checksums"](apple_manifest.parent)
+        check_outcomes("bundle does not match the exact campaign")
+        apple_manifest.write_text(original_apple)
+        NEON_FIXTURE["FIXTURE"]["write_checksums"](apple_manifest.parent)
+        check_outcomes()
 
         missing = temporary / "missing"
         shutil.copytree(collection, missing)
