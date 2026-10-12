@@ -429,6 +429,13 @@ both active Rust and MSRV when native execution or QEMU is available. Retain
 the failed capture; do not convert it to a successful result or silently omit
 that configuration from the replacement capture.
 
+The next no-`std` Apple Silicon run exposed a reporting-test race: its bounded
+initialization wait was enabled only by the crate's `std` feature, despite the
+unit-test harness already using threads. The test-only wait and its
+deterministic lower-tier regression now also run in no-`std` SIMD tests using
+the harness's standard library. Production initialization remains nonblocking;
+neither its algorithm nor its availability policy changes.
+
 The proposed impact assessment is:
 
 | Evidence | Required disposition |

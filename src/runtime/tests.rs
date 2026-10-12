@@ -1,3 +1,6 @@
+#[cfg(feature = "simd")]
+extern crate std;
+
 use super::{
     Backend, BackendPolicy, BackendReport, CandidateDetectionMode, CtGatePosture,
     OperationBackendReport, OperationKind, OperationSecurityPosture, SecurityPosture,
@@ -296,7 +299,7 @@ fn live_selected_reports_use_their_own_health_snapshot() {
 
 fn initialize_runtime_backend_health() {
     let _ = crate::initialize_backends();
-    #[cfg(all(feature = "std", feature = "simd"))]
+    #[cfg(feature = "simd")]
     {
         let started = std::time::Instant::now();
         while started.elapsed() < std::time::Duration::from_secs(10) {
@@ -313,7 +316,7 @@ fn initialize_runtime_backend_health() {
     }
 }
 
-#[cfg(all(feature = "std", feature = "simd"))]
+#[cfg(feature = "simd")]
 fn runtime_backend_health_settled(
     mut state: impl FnMut(OperationKind, Backend) -> crate::BackendHealthState,
 ) -> bool {
@@ -335,7 +338,7 @@ fn runtime_backend_health_settled(
 }
 
 #[test]
-#[cfg(all(feature = "std", feature = "simd"))]
+#[cfg(feature = "simd")]
 fn initialization_waits_for_testing_tiers_hidden_by_candidate_reports() {
     use crate::BackendHealthState::{Healthy, NeverRun, Quarantined, Testing};
 
