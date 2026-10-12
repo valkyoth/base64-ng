@@ -346,6 +346,61 @@ class PacketTests(unittest.TestCase):
         with patch.object(evidence, "MAX_BYTES", 2048):
             self.rejects("expanded archive", pin)
 
+    def test_long_path_packets_at_payload_and_entry_limits(self):
+        # Scale the payload budget, not the actual header geometry. This
+        # reproduces the near-2-GiB failure without a multi-gigabyte fixture.
+        for length in (1025, evidence.MAX_PAX_PATH - 11):
+            with self.subTest(path_bytes=length):
+                self.entries = [(f"{index:02d}" + "x" * (length - 2), b"x", tarfile.REGTYPE)
+                                for index in range(16)]
+                self.manifest["files"] = {name: digest(data) for name, data, _ in self.entries}
+                self.manifest["directories"] = []
+                pin = self.packet()
+                payload_limit = pin["manifest"]["bytes"] + len(self.entries)
+                entry_limit = len(self.entries) + 1
+                decoded_size = len(gzip.decompress(self.path.read_bytes()))
+                self.assertGreater(decoded_size,
+                                   payload_limit + entry_limit * 2048 + evidence.MAX_TAR_PADDING)
+                with patch.multiple(evidence, MAX_BYTES=payload_limit, MAX_ENTRIES=entry_limit):
+                    self.assertEqual(evidence.verify_packet(self.path, pin), self.manifest)
+                with patch.multiple(evidence, MAX_BYTES=payload_limit - 1, MAX_ENTRIES=entry_limit):
+                    self.rejects("expanded archive", pin)
+                with patch.multiple(evidence, MAX_BYTES=payload_limit, MAX_ENTRIES=entry_limit - 1):
+                    self.rejects("entry limit", pin)
+
+    def test_stream_expansion_cap_is_inclusive_and_chunk_independent(self):
+        with patch.multiple(evidence, MAX_BYTES=32, MAX_ENTRIES=1, MAX_TAR_PADDING=1024):
+            limit = (evidence.MAX_BYTES + evidence.MAX_ENTRIES * evidence.MAX_ENTRY_OVERHEAD
+                     + evidence.MAX_TAR_PADDING)
+            for chunk_size in (1, 512, limit + 1):
+                for excess in (0, 1):
+                    with self.subTest(chunk_size=chunk_size, excess=excess):
+                        reader = evidence.SingleGzipReader(io.BytesIO(compress(b"x" * (limit + excess))))
+
+                        def consume():
+                            size = 0
+                            while chunk := reader.read(chunk_size):
+                                size += len(chunk)
+                            return size
+
+                        if excess:
+                            with self.assertRaisesRegex(ValueError, "expanded transport"):
+                                consume()
+                        else:
+                            self.assertEqual(consume(), limit)
+
+    def test_overhead_bound_covers_canonical_header_and_padding_geometry(self):
+        overheads = []
+        for length in (1, 100, 101, 501, 502, 503, 1025, evidence.MAX_PAX_PATH - 11):
+            for size in (0, 1, 511, 512, 513):
+                member = tarfile.TarInfo("x" * length)
+                member.mode = 0o600
+                member.size = size
+                overhead = len(member.tobuf(tarfile.PAX_FORMAT)) + (-size % tarfile.BLOCKSIZE)
+                overheads.append(overhead)
+                self.assertLessEqual(overhead, evidence.MAX_ENTRY_OVERHEAD)
+        self.assertEqual(max(overheads), evidence.MAX_ENTRY_OVERHEAD)
+
     def test_manifest_limit(self):
         pin = self.packet()
         with patch.object(evidence, "MAX_MANIFEST", 1):

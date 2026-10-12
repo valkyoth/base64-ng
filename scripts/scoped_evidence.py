@@ -16,6 +16,9 @@ MAX_BYTES = 2 * 1024**3
 MAX_MANIFEST = 2 * 1024**2
 MAX_TAR_PADDING = tarfile.RECORDSIZE + tarfile.BLOCKSIZE
 MAX_PAX_PATH = 4096
+MAX_PADDED_PAX = ((MAX_PAX_PATH + tarfile.BLOCKSIZE - 1) // tarfile.BLOCKSIZE) * tarfile.BLOCKSIZE
+# PAX header, padded path record, member header, and worst-case payload padding.
+MAX_ENTRY_OVERHEAD = 2 * tarfile.BLOCKSIZE + MAX_PADDED_PAX + (tarfile.BLOCKSIZE - 1)
 SHA256 = re.compile(r"[0-9a-f]{64}")
 
 
@@ -47,7 +50,7 @@ class SingleGzipReader:
             self.pending = self.decoder.unconsumed_tail
             output.extend(chunk)
             self.total += len(chunk)
-            if self.total > MAX_BYTES + MAX_ENTRIES * 2048 + MAX_TAR_PADDING:
+            if self.total > MAX_BYTES + MAX_ENTRIES * MAX_ENTRY_OVERHEAD + MAX_TAR_PADDING:
                 raise ValueError("expanded transport exceeds byte limit")
         return bytes(output)
 

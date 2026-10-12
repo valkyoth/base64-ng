@@ -194,6 +194,19 @@
         "security/campaign-attestations-2.1.json",
         "security/campaign-claims-2.1.json"
       ]
+    },
+    {
+      "commit": "2d6269f3de9fed761e6f0ecde925451e017e3dee",
+      "tree": "89fcab615c2411ad48987dc8aca44b8375d081d7",
+      "paths": [
+        "docs/RELEASE_EVIDENCE.md",
+        "docs/RELEASE_FREEZE_2.1.md",
+        "scripts/scoped_campaign.py",
+        "scripts/scoped_evidence.py",
+        "scripts/test-scoped-campaign.py",
+        "scripts/test-scoped-evidence.py",
+        "security/campaign-claims-2.1.json"
+      ]
     }
   ],
   "sources": {

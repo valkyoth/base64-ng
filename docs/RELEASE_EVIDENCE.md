@@ -1394,6 +1394,10 @@ The policy separately pins the existing gzip header bytes, including the writer
 basename and timestamp. Comments, extra fields and other optional header forms
 are rejected. Updating only the outer transport hash cannot authorize metadata.
 These checks preserve both original archives and their manifest hashes unchanged.
+The expanded-transport cap reserves 5,631 structural bytes per entry: two
+512-byte headers, up to 4,096 padded PAX-record bytes, and up to 511 payload
+padding bytes. The separate 2-GiB payload, 10,000-entry, bounded PAX-record and
+tar-end-padding limits still apply; structural allowance is not payload budget.
 
 Claims require digest-pinned operator attestations, not merely existing paths.
 The attested commit/tree, campaign, result, disposition, scope and exclusions

@@ -28,9 +28,10 @@ POLICY_FILES = {
     "docs/RELEASE_EVIDENCE.md",
 }
 # The original preflight is now part of pinned history. Its unchanged entry
-# point, CI wiring and attestations are still byte-checked, but unchanged here.
+# point, CI wiring, attestations and history tests are byte-checked but unchanged here.
 POLICY_CHANGE_FILES = POLICY_FILES - {
     "scripts/checks.sh", "scripts/validate-scoped-campaign.py", ATTESTATIONS_PATH,
+    "scripts/test-scoped-campaign.py",
 }
 FULL_COMMIT = re.compile(r"[0-9a-f]{40}")
 

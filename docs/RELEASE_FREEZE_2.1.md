@@ -785,7 +785,7 @@ full-release CI, evidence index/signatures and final report-only acceptance.
 ### Scoped Policy Preflight Proposal
 
 `security/campaign-claims-2.1.json` inventories the exact signed history through
-`aae35b7`, three distinct source identities and fourteen narrowly scoped claims.
+`2d6269f`, three distinct source identities and fourteen narrowly scoped claims.
 It pins both complete private review transports, not only selected successful
 logs. Failed attempts, performance regressions and claim exclusions remain in
 the retained bytes. The recapture packet SHA-256 is
@@ -844,6 +844,10 @@ rejected. Existing gzip filename/timestamp headers are separately inventoried
 by exact header-byte pins. The original transports and claim attestations remain
 byte-identical; this correction does not recapture or relabel any campaign.
 The stricter preflight still cannot authorize finalization or independent review.
+The follow-up expansion-accounting fix derives per-entry overhead from the
+maximum accepted PAX record and block padding, so canonical long paths do not
+consume payload budget. Scaled boundary fixtures cover acceptance at the payload
+and entry limits and rejection beyond each limit and the decompression cap.
 
 ## Final Acceptance
 
