@@ -597,6 +597,85 @@ inventory mismatch`. No validator, workflow or evidence-acceptance rule was
 relaxed by this assessment. Final signing, full-release CI, independent final
 review, tagging and publication remain separate requirements.
 
+### Independent Review Disposition
+
+The maintainer supplied the separate reviewer session's completed
+`evidence_reuse_review`. This is independent process review by a session other
+than the evidence collector, not a third-party audit or certification. Its
+decision supersedes the pending proposal above only for the stated claims;
+it does not authorize release, waive recaptures or approve a new validator.
+
+The reviewed packet SHA-256 is
+`1f16c9c4ab1eea0d9758a46064a63ec0d6a3c0100451176de3a819e57ff395da`;
+its `MANIFEST.json` SHA-256 is
+`fd343d249af9774f1705abe121f06c3771e7880163eb4f39488857b4babd2ce6`.
+Both were independently recomputed against the collector's original retained
+packet, whose packet digest was recorded before receiving the review, rather
+than trusting a digest copied from the review alone. This is a local provenance
+cross-check, not a reviewer signature. The packet and supplements remain
+unsigned. The reviewer checked all 1,557 manifest-listed files; including the
+manifest itself, the transport has 1,558 files and 276 historical directories.
+The two supplement archive hashes are recorded in the preceding section.
+
+| Campaign | Reviewed disposition |
+| --- | --- |
+| All 18 one-hour codec fuzz campaigns | Accept scoped reuse of unchanged codec, format, incremental, adapter, kernel and assurance-model properties. Exclude the corrected reporting policy and report consumers. |
+| 45 normal and 19 advanced Kani harnesses | Accept original proof obligations and original bounds only. The incremental progress/retry proof remains unwind 5, not the unsuccessful bound 12. No proof of new reporting or native machine code is implied. |
+| Historical five-group Miri and fresh four-test reporting Miri | Accept scoped reuse plus the separately identified fresh supplement; not a complete current-source Miri campaign. |
+| Historical ASan and LSan | Accept unchanged codec, ownership and allocation coverage, not exact-current-binary coverage. |
+| Historical TSan plus fresh focused TSan | Accept original unchanged concurrency properties plus the fresh reporting/backend-health tests; not a full new sanitizer inventory. |
+| Five native reporting captures at `29cc6ef` | Accept the fresh focused results and explicit RISC-V compact/active-only limitation. They are not full native ABI or admission captures. |
+| Fresh assurance and companion checks | Accept the 36 assurance executions and 96 companion configurations/90 executions as supplements. |
+| Fresh Node/Wasmtime reporting smoke | Accept that smoke only, not final npm or browser artifact acceptance. |
+| Historical big-endian QEMU | Accept unchanged scalar/endian codec coverage only. |
+| Historical WASM SIMD kernel/codegen properties | Accept unchanged source-property coverage only, not a newly packaged browser artifact. |
+| Native ABI/cleanup and complete native/CT assembly review | Require recapture and review of generated output, especially Windows active/MSRV. |
+| Dudect/CT timing | Require a fresh exact-source release-binary timing campaign. |
+| Performance and native admission | Require native Windows, Linux ARM, Apple Silicon and RVV recaptures. Old results remain historical context, including the V1 regression. |
+| RVV and SVE QEMU | Require recapture because these suites contain reporting assertions. |
+| npm/WASM loader, Chromium, Firefox and Safari | Require newly generated, reproducible packages and runtime/browser checks. |
+| SPDX/CycloneDX, packages and reproducibility | Regenerate for the new candidate. The staged `af49843` records are not transferable. |
+| Exact-final-candidate full-release CI | Not reviewed; still required. |
+| Final evidence index and signatures | Not reviewed; still required after complete inventory validation. |
+
+The review retained the original frozen source/tree and fresh `29cc6ef`
+source/tree recorded above. Accepted historical results must never be relabeled
+as executions at the fresh source. Capture helpers and logs provide scoped
+development evidence; they do not authenticate compiler distributions, machine
+ownership or Cargo caches. Some follow-ups were not offline. Private operator
+path metadata in the WASM supplement needs review before public redistribution.
+
+### Required Recapture Source
+
+Use the fixed clean source `516f785294732bb3a61ebcf9c8eb9a52b17fdf09`, tree
+`7e502a7992120690e11aa2aca50b77a074b10281`, for the required recaptures. Its only
+change after the fresh tested source `29cc6ef` is the evidence-assessment
+documentation. Runtime, tests, harnesses, packages, tooling, dependencies and
+toolchain match the reviewed/tested source. Both ordinary Rust CI and CodeQL
+completed successfully for `516f785`; this is not the required final
+full-release CI run.
+
+Collectors must use separate clean checkouts and fresh output directories,
+preserving the old campaigns and failed attempts. The local pinned checkout is
+`target/recapture-516f785`; collector-generated evidence is under its own
+`target/release-evidence`. Local CT/subtle/x86 SIMD assembly generation and
+the WASM loader/package gate have passed there. These successes do not claim
+the complete manual assembly review, browsers, timing, emulation, native
+admission or final packaging inventory is complete.
+
+Use one Linux ARM and one Windows host in addition to the existing Apple
+Silicon and physical X60 hosts. Do not restart the 18 accepted fuzz campaigns
+or the accepted Kani inventory. Keep Safari separate when the SSH build user
+has no desktop session. Collect and verify each host's evidence before its
+shutdown; a remote script exit alone is not release acceptance.
+
+Record source identities for every recapture. Any later production, test,
+toolchain, harness or dependency change needs a new impact assessment. A
+future claim-specific reuse policy still requires independent review and an
+out-of-band anchor; this documentation does not extend the existing policy.
+Do not seal the mixed historical staging tree. Complete the required
+recaptures, final-candidate CI and reviewed inventory/signatures first.
+
 ## Final Acceptance
 
 Retain the signed candidate evidence before making the report-only commit.
