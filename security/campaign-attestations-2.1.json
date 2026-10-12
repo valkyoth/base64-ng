@@ -1,0 +1,704 @@
+{
+  "schema": 1,
+  "release_authorized": false,
+  "basis": "operator-assessment-requires-independent-review",
+  "status_meaning": "passed means the operator's recorded scope assessment passed, not universal benchmark success, independent approval or release authorization",
+  "attestations": {
+    "codec-fuzz": {
+      "campaign": "codec-fuzz",
+      "source_commit": "b3e493e64a583245f7aab542d983b7b914c67eb9",
+      "source_tree": "06f9e65432631d43f868a95bb6083c18a61a1f39",
+      "status": "passed",
+      "disposition": "historical-scoped-reuse",
+      "scope": "18 one-hour unchanged codec, format, incremental, adapter, SIMD-kernel and assurance-model campaigns.",
+      "excludes": "Not coverage of corrected reporting, health attribution, automatic-tier inventory or consumers.",
+      "evidence": [
+        {
+          "packet": "historical",
+          "path": "historical-staging/fuzz",
+          "packet_manifest": {
+            "bytes": 348078,
+            "sha256": "fd343d249af9774f1705abe121f06c3771e7880163eb4f39488857b4babd2ce6"
+          },
+          "inventory": {
+            "bytes": 14314,
+            "sha256": "30d1a7649977543917974177dbfb44bf8b1e175afe3fe603341480dfd6acd5b2"
+          }
+        }
+      ]
+    },
+    "bounded-proofs": {
+      "campaign": "bounded-proofs",
+      "source_commit": "b3e493e64a583245f7aab542d983b7b914c67eb9",
+      "source_tree": "06f9e65432631d43f868a95bb6083c18a61a1f39",
+      "status": "passed",
+      "disposition": "historical-scoped-reuse",
+      "scope": "45 normal and 19 advanced unchanged proof obligations at their original bounds.",
+      "excludes": "Incremental padded progress remains unwind 5; unsuccessful bound-12 attempts are not passing evidence. No reporting or native machine-code proof.",
+      "evidence": [
+        {
+          "packet": "historical",
+          "path": "historical-staging/kani",
+          "packet_manifest": {
+            "bytes": 348078,
+            "sha256": "fd343d249af9774f1705abe121f06c3771e7880163eb4f39488857b4babd2ce6"
+          },
+          "inventory": {
+            "bytes": 11216,
+            "sha256": "1a3a392b036e36e6e56fa41b1040a5cbbfdba1533b423298f38a8209ad62f544"
+          }
+        }
+      ]
+    },
+    "ownership-miri": {
+      "campaign": "ownership-miri",
+      "source_commit": "b3e493e64a583245f7aab542d983b7b914c67eb9",
+      "source_tree": "06f9e65432631d43f868a95bb6083c18a61a1f39",
+      "status": "passed",
+      "disposition": "historical-scoped-reuse",
+      "scope": "Historical five-group unchanged ownership/provenance coverage.",
+      "excludes": "Not a complete current-source Miri campaign; reporting needs the separate fresh supplement.",
+      "evidence": [
+        {
+          "packet": "historical",
+          "path": "historical-staging/miri",
+          "packet_manifest": {
+            "bytes": 348078,
+            "sha256": "fd343d249af9774f1705abe121f06c3771e7880163eb4f39488857b4babd2ce6"
+          },
+          "inventory": {
+            "bytes": 888,
+            "sha256": "1713c505ece72c3e2d97ad28ff318b8a01343f44bcbc43e54b94d4d1440b5b65"
+          }
+        }
+      ]
+    },
+    "memory-sanitizers": {
+      "campaign": "memory-sanitizers",
+      "source_commit": "b3e493e64a583245f7aab542d983b7b914c67eb9",
+      "source_tree": "06f9e65432631d43f868a95bb6083c18a61a1f39",
+      "status": "passed",
+      "disposition": "historical-scoped-reuse",
+      "scope": "Historical ASan/LSan and unchanged TSan coverage, supplemented by fresh reporting TSan.",
+      "excludes": "Not a complete current-binary sanitizer campaign; no inference from failed attempts.",
+      "evidence": [
+        {
+          "packet": "historical",
+          "path": "historical-staging/2.0-memory-sanitizers",
+          "packet_manifest": {
+            "bytes": 348078,
+            "sha256": "fd343d249af9774f1705abe121f06c3771e7880163eb4f39488857b4babd2ce6"
+          },
+          "inventory": {
+            "bytes": 683,
+            "sha256": "d2fd267731be87ea99699f95dfb0922f84c93779ef74eb594fae5805881ff4cc"
+          }
+        }
+      ]
+    },
+    "big-endian-codec": {
+      "campaign": "big-endian-codec",
+      "source_commit": "b3e493e64a583245f7aab542d983b7b914c67eb9",
+      "source_tree": "06f9e65432631d43f868a95bb6083c18a61a1f39",
+      "status": "passed",
+      "disposition": "historical-scoped-reuse",
+      "scope": "Unchanged scalar/endian codec behavior.",
+      "excludes": "Not updated reporting assertions, native ABI or timing.",
+      "evidence": [
+        {
+          "packet": "historical",
+          "path": "historical-staging/big-endian-qemu",
+          "packet_manifest": {
+            "bytes": 348078,
+            "sha256": "fd343d249af9774f1705abe121f06c3771e7880163eb4f39488857b4babd2ce6"
+          },
+          "inventory": {
+            "bytes": 203,
+            "sha256": "daf1cf486b790c2853f0b37b4e877c281996b37e787191cc4d563b1a6b5b9968"
+          }
+        }
+      ]
+    },
+    "wasm-kernel": {
+      "campaign": "wasm-kernel",
+      "source_commit": "b3e493e64a583245f7aab542d983b7b914c67eb9",
+      "source_tree": "06f9e65432631d43f868a95bb6083c18a61a1f39",
+      "status": "passed",
+      "disposition": "historical-scoped-reuse",
+      "scope": "Unchanged WASM SIMD kernel/codegen properties.",
+      "excludes": "Not the final npm artifact, browser execution or package provenance.",
+      "evidence": [
+        {
+          "packet": "historical",
+          "path": "historical-staging/wasm-simd",
+          "packet_manifest": {
+            "bytes": 348078,
+            "sha256": "fd343d249af9774f1705abe121f06c3771e7880163eb4f39488857b4babd2ce6"
+          },
+          "inventory": {
+            "bytes": 350,
+            "sha256": "cdb3195ed81a226c0110a48a95541e4fe2ad5b32df7e9f9099d04fbdbbcc4a0e"
+          }
+        }
+      ]
+    },
+    "reporting-native": {
+      "campaign": "reporting-native",
+      "source_commit": "29cc6ef2c4dd60f67e0692591b9dabf2753b0bc1",
+      "source_tree": "7688efc6fce5aab0a06bbc68b7af234ed178a601",
+      "status": "passed",
+      "disposition": "fresh-reporting-supplement",
+      "scope": "Five native reporting captures: x86/Windows 214 executions each, ARM/Apple 192 each, RISC-V compact 40.",
+      "excludes": "RISC-V compact is not MSRV, RVV hardware, performance, full native coverage or long fuzzing. Unsigned collector records.",
+      "evidence": [
+        {
+          "packet": "historical",
+          "path": "supplements/reporting-revalidation-29cc6ef.tar.gz",
+          "packet_manifest": {
+            "bytes": 348078,
+            "sha256": "fd343d249af9774f1705abe121f06c3771e7880163eb4f39488857b4babd2ce6"
+          },
+          "inventory": {
+            "bytes": 172,
+            "sha256": "320b40ce5b607cb8a6d25e0bbbf526ebc072d6cbff0f6c8c71e715f110370fc7"
+          },
+          "nested_summary": {
+            "archive": {
+              "bytes": 75852,
+              "sha256": "d3b3af1aabce3438d48065d26811ced55c6d257c91dddd5d3923903e79fd9830"
+            },
+            "complete_inventory": {
+              "bytes": 43103,
+              "sha256": "1f862969b70d3fd2eb1376099e370b5cb4604f13c49724b7f6a36744c3c16e09"
+            },
+            "file_count": 311,
+            "directory_count": 13,
+            "source_commit": "29cc6ef2c4dd60f67e0692591b9dabf2753b0bc1",
+            "source_tree": "7688efc6fce5aab0a06bbc68b7af234ed178a601",
+            "status": "passed",
+            "passed_reports": [
+              {
+                "path": "collected/reporting-recheck-1y7jjan5/report.json",
+                "record": {
+                  "bytes": 21453,
+                  "sha256": "bdf5f9e94f257fc7e7ec0a7de531ab362af7bef9be0f80e9937f9b6627baf12a"
+                },
+                "source_commit": "29cc6ef2c4dd60f67e0692591b9dabf2753b0bc1",
+                "source_tree": "7688efc6fce5aab0a06bbc68b7af234ed178a601",
+                "status": "passed"
+              },
+              {
+                "path": "collected/reporting-recheck-3tgpxepb/report.json",
+                "record": {
+                  "bytes": 23028,
+                  "sha256": "78aa6c4a625dc8b279d5fc67aa0a7b4c762db1f3d239cf231c1d178b8933751d"
+                },
+                "source_commit": "29cc6ef2c4dd60f67e0692591b9dabf2753b0bc1",
+                "source_tree": "7688efc6fce5aab0a06bbc68b7af234ed178a601",
+                "status": "passed"
+              },
+              {
+                "path": "collected/reporting-recheck-gbevyeh8/report.json",
+                "record": {
+                  "bytes": 21027,
+                  "sha256": "6f311b90e60228229fe00243b93e1075ffe3d8f6b6d1674acd37bbf47f6df252"
+                },
+                "source_commit": "29cc6ef2c4dd60f67e0692591b9dabf2753b0bc1",
+                "source_tree": "7688efc6fce5aab0a06bbc68b7af234ed178a601",
+                "status": "passed"
+              },
+              {
+                "path": "collected/reporting-recheck-jlpvidq3/report.json",
+                "record": {
+                  "bytes": 20708,
+                  "sha256": "6face16eb7ac212fe1c091821bce33d08d98ee5c8375053e9f865afbef5366d1"
+                },
+                "source_commit": "29cc6ef2c4dd60f67e0692591b9dabf2753b0bc1",
+                "source_tree": "7688efc6fce5aab0a06bbc68b7af234ed178a601",
+                "status": "passed"
+              },
+              {
+                "path": "collected/reporting-recheck-l7464_j2/report.json",
+                "record": {
+                  "bytes": 5431,
+                  "sha256": "53eada9705d90071c37cc08fbb6b9444e9bb35e074d474d6eb03c6f66b91d2ba"
+                },
+                "source_commit": "29cc6ef2c4dd60f67e0692591b9dabf2753b0bc1",
+                "source_tree": "7688efc6fce5aab0a06bbc68b7af234ed178a601",
+                "status": "passed"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "reporting-followups": {
+      "campaign": "reporting-followups",
+      "source_commit": "29cc6ef2c4dd60f67e0692591b9dabf2753b0bc1",
+      "source_tree": "7688efc6fce5aab0a06bbc68b7af234ed178a601",
+      "status": "passed",
+      "disposition": "fresh-reporting-supplement",
+      "scope": "Four reporting Miri tests, focused TSan, assurance (36), companions (96 configurations/90 executions), Node/Wasmtime reporting smoke.",
+      "excludes": "Initial failed Miri excluded. No whole-source Miri/sanitizer claim or final packaged WASM/browser claim. Private metadata retained.",
+      "evidence": [
+        {
+          "packet": "historical",
+          "path": "supplements/reporting-followup-29cc6ef.tar.gz",
+          "packet_manifest": {
+            "bytes": 348078,
+            "sha256": "fd343d249af9774f1705abe121f06c3771e7880163eb4f39488857b4babd2ce6"
+          },
+          "inventory": {
+            "bytes": 168,
+            "sha256": "5db006cd533e7829ce89bec4015f09f831da389768f4f9c53deae2598882fe1e"
+          },
+          "nested_summary": {
+            "archive": {
+              "bytes": 20599,
+              "sha256": "ddfac6c4a8f25141a18cb624217639065054e70f7631194b3d54248d0c1e5496"
+            },
+            "complete_inventory": {
+              "bytes": 5015,
+              "sha256": "767d2415d8ab42a7a1025b3c437567aa9b1d6e07eb70902f00e666841294b089"
+            },
+            "file_count": 35,
+            "directory_count": 7,
+            "source_commit": "29cc6ef2c4dd60f67e0692591b9dabf2753b0bc1",
+            "source_tree": "7688efc6fce5aab0a06bbc68b7af234ed178a601",
+            "status": "passed",
+            "passed_reports": [
+              {
+                "path": "reporting-followup/assurance-kgyrowlp/report.json",
+                "record": {
+                  "bytes": 2708,
+                  "sha256": "d99ea1d965bfff6b45f4e5d366c788c089f1a9b216568967ed44eb9763f9ceef"
+                },
+                "source_commit": "29cc6ef2c4dd60f67e0692591b9dabf2753b0bc1",
+                "source_tree": "7688efc6fce5aab0a06bbc68b7af234ed178a601",
+                "status": "passed"
+              },
+              {
+                "path": "reporting-followup/companions-plhzagan/report.json",
+                "record": {
+                  "bytes": 1025,
+                  "sha256": "3d1a2674871b1990da77a7abc78fee0736da36382f707cb8a547eb039add2cd4"
+                },
+                "source_commit": "29cc6ef2c4dd60f67e0692591b9dabf2753b0bc1",
+                "source_tree": "7688efc6fce5aab0a06bbc68b7af234ed178a601",
+                "status": "passed"
+              },
+              {
+                "path": "reporting-followup/miri-_zh8bnol/report.json",
+                "record": {
+                  "bytes": 2761,
+                  "sha256": "38f6880c553662d3de4e2b43b64fa1131ab242960bc3a86bd8172d55f60035aa"
+                },
+                "source_commit": "29cc6ef2c4dd60f67e0692591b9dabf2753b0bc1",
+                "source_tree": "7688efc6fce5aab0a06bbc68b7af234ed178a601",
+                "status": "passed"
+              },
+              {
+                "path": "reporting-followup/thread-3lqd7x4u/report.json",
+                "record": {
+                  "bytes": 2096,
+                  "sha256": "6c34ba04589d33a09ed4b64bfd327fe95db3bf02a8594959abeea636805b75bf"
+                },
+                "source_commit": "29cc6ef2c4dd60f67e0692591b9dabf2753b0bc1",
+                "source_tree": "7688efc6fce5aab0a06bbc68b7af234ed178a601",
+                "status": "passed"
+              },
+              {
+                "path": "reporting-followup/wasm-rpsch787/report.json",
+                "record": {
+                  "bytes": 1466,
+                  "sha256": "849d9d69693c27b9abd1d2d24ecb3d5b2e7b6ff3720588631b53b2f35013de28"
+                },
+                "source_commit": "29cc6ef2c4dd60f67e0692591b9dabf2753b0bc1",
+                "source_tree": "7688efc6fce5aab0a06bbc68b7af234ed178a601",
+                "status": "passed"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "native-abi-admission": {
+      "campaign": "native-abi-admission",
+      "source_commit": "516f785294732bb3a61ebcf9c8eb9a52b17fdf09",
+      "source_tree": "7e502a7992120690e11aa2aca50b77a074b10281",
+      "status": "passed",
+      "disposition": "fresh-recapture",
+      "scope": "Fresh Windows active/MSRV ABI, ARM/Apple NEON admission and physical X60 native validation/admission.",
+      "excludes": "Scoped ABI function review, not whole-binary certification. Windows performance controls are not version regression evidence; SVE is not admitted.",
+      "evidence": [
+        {
+          "packet": "recapture",
+          "path": "windows-native",
+          "packet_manifest": {
+            "bytes": 476475,
+            "sha256": "b41422afef25adae18a3ee3e61aa1e0e0afc0ade9f5083c2e770672809cf62e6"
+          },
+          "inventory": {
+            "bytes": 11937,
+            "sha256": "1d55d606576761631f3d295cb4123a8cfe8b8cef6fb82d63fc7425bc92335c17"
+          }
+        },
+        {
+          "packet": "recapture",
+          "path": "arm-native",
+          "packet_manifest": {
+            "bytes": 476475,
+            "sha256": "b41422afef25adae18a3ee3e61aa1e0e0afc0ade9f5083c2e770672809cf62e6"
+          },
+          "inventory": {
+            "bytes": 9705,
+            "sha256": "42704ec7f15e623e25b5200b96696b19238c91a1f1a3ca9df957e4eeeded4ba6"
+          }
+        },
+        {
+          "packet": "recapture",
+          "path": "macos-native",
+          "packet_manifest": {
+            "bytes": 476475,
+            "sha256": "b41422afef25adae18a3ee3e61aa1e0e0afc0ade9f5083c2e770672809cf62e6"
+          },
+          "inventory": {
+            "bytes": 326057,
+            "sha256": "55a717180852bf13c2c8123660c3722570ebad3ee8128dcd018c6671efea3d84"
+          }
+        },
+        {
+          "packet": "recapture",
+          "path": "riscv-native",
+          "packet_manifest": {
+            "bytes": 476475,
+            "sha256": "b41422afef25adae18a3ee3e61aa1e0e0afc0ade9f5083c2e770672809cf62e6"
+          },
+          "inventory": {
+            "bytes": 5656,
+            "sha256": "1a6c2973c3cbbb816fb6fea44ced20c4882fd07e763b66b52c873895166bed01"
+          }
+        },
+        {
+          "packet": "recapture",
+          "path": "staged-evidence/native-inventory-capture",
+          "packet_manifest": {
+            "bytes": 476475,
+            "sha256": "b41422afef25adae18a3ee3e61aa1e0e0afc0ade9f5083c2e770672809cf62e6"
+          },
+          "inventory": {
+            "bytes": 976,
+            "sha256": "0a4356e4c8f6bd3aaa266c7f7e6ddc6b07cf81cb24410a9a6b8da75ccff28a89"
+          }
+        },
+        {
+          "packet": "recapture",
+          "path": "staged-evidence/neon-native-admission",
+          "packet_manifest": {
+            "bytes": 476475,
+            "sha256": "b41422afef25adae18a3ee3e61aa1e0e0afc0ade9f5083c2e770672809cf62e6"
+          },
+          "inventory": {
+            "bytes": 2042,
+            "sha256": "e93d16638a65fd515792bb5374f7b5280787e7a832b58b30fda6371c49249fc5"
+          }
+        },
+        {
+          "packet": "recapture",
+          "path": "staged-evidence/riscv-native-admission",
+          "packet_manifest": {
+            "bytes": 476475,
+            "sha256": "b41422afef25adae18a3ee3e61aa1e0e0afc0ade9f5083c2e770672809cf62e6"
+          },
+          "inventory": {
+            "bytes": 1524,
+            "sha256": "6ad1e8eb9e0e92ec72ef1bb6ca0edd9234d4aa1eb9bd6cb3e65141c566831edc"
+          }
+        }
+      ]
+    },
+    "assembly": {
+      "campaign": "assembly",
+      "source_commit": "516f785294732bb3a61ebcf9c8eb9a52b17fdf09",
+      "source_tree": "7e502a7992120690e11aa2aca50b77a074b10281",
+      "status": "passed",
+      "disposition": "fresh-recapture",
+      "scope": "295 reviewed release/LTO and concrete CT-consumer bodies across configurations, plus 38 Windows bodies and nine RVV/five SVE leaf streams.",
+      "excludes": "Scoped operator review, not independent whole-binary or microarchitectural proof. Only corrected v4 comparison supports the record; intermediate failures remain retained.",
+      "evidence": [
+        {
+          "packet": "recapture",
+          "path": "staged-evidence/assembly-review-supplement",
+          "packet_manifest": {
+            "bytes": 476475,
+            "sha256": "b41422afef25adae18a3ee3e61aa1e0e0afc0ade9f5083c2e770672809cf62e6"
+          },
+          "inventory": {
+            "bytes": 11754,
+            "sha256": "8d578b285438d11367e40ef555fd1cd972aca4492b59e7a1e808aaaa17291d79"
+          }
+        },
+        {
+          "packet": "recapture",
+          "path": "staged-evidence/assembly-extra-cross",
+          "packet_manifest": {
+            "bytes": 476475,
+            "sha256": "b41422afef25adae18a3ee3e61aa1e0e0afc0ade9f5083c2e770672809cf62e6"
+          },
+          "inventory": {
+            "bytes": 525,
+            "sha256": "975bc20c60b469846edac1770bfb27aa8cd836e3ca801caaded23aad9025d176"
+          }
+        },
+        {
+          "packet": "recapture",
+          "path": "local-capture",
+          "packet_manifest": {
+            "bytes": 476475,
+            "sha256": "b41422afef25adae18a3ee3e61aa1e0e0afc0ade9f5083c2e770672809cf62e6"
+          },
+          "inventory": {
+            "bytes": 1204,
+            "sha256": "657d2fb5650d7aebe92b81a1797765dd8cf898f03ce1e8275150a6c214f6a12a"
+          }
+        },
+        {
+          "packet": "recapture",
+          "path": "windows-native",
+          "packet_manifest": {
+            "bytes": 476475,
+            "sha256": "b41422afef25adae18a3ee3e61aa1e0e0afc0ade9f5083c2e770672809cf62e6"
+          },
+          "inventory": {
+            "bytes": 11937,
+            "sha256": "1d55d606576761631f3d295cb4123a8cfe8b8cef6fb82d63fc7425bc92335c17"
+          }
+        }
+      ]
+    },
+    "timing": {
+      "campaign": "timing",
+      "source_commit": "516f785294732bb3a61ebcf9c8eb9a52b17fdf09",
+      "source_tree": "7e502a7992120690e11aa2aca50b77a074b10281",
+      "status": "passed",
+      "disposition": "fresh-recapture",
+      "scope": "Fresh Dudect: 12 cases, nine equal-work, maximum absolute t 2.275; existing 20000/64/1000/10 floors retained.",
+      "excludes": "Not a quiet-host run; unrelated workloads present. Public-length cases informational. Not a formal constant-time guarantee.",
+      "evidence": [
+        {
+          "packet": "recapture",
+          "path": "staged-evidence/dudect",
+          "packet_manifest": {
+            "bytes": 476475,
+            "sha256": "b41422afef25adae18a3ee3e61aa1e0e0afc0ade9f5083c2e770672809cf62e6"
+          },
+          "inventory": {
+            "bytes": 315,
+            "sha256": "652d158e75f0ee7e47e553ade4e81423ad3510afeb24776a75c2d19651bd04f4"
+          }
+        },
+        {
+          "packet": "recapture",
+          "path": "local-capture",
+          "packet_manifest": {
+            "bytes": 476475,
+            "sha256": "b41422afef25adae18a3ee3e61aa1e0e0afc0ade9f5083c2e770672809cf62e6"
+          },
+          "inventory": {
+            "bytes": 1204,
+            "sha256": "657d2fb5650d7aebe92b81a1797765dd8cf898f03ce1e8275150a6c214f6a12a"
+          }
+        }
+      ]
+    },
+    "paired-performance": {
+      "campaign": "paired-performance",
+      "source_commit": "516f785294732bb3a61ebcf9c8eb9a52b17fdf09",
+      "source_tree": "7e502a7992120690e11aa2aca50b77a074b10281",
+      "status": "passed",
+      "disposition": "fresh-recapture",
+      "scope": "Fresh ARM/Apple/x86 paired captures with unfavorable classifications retained; native admission separate.",
+      "excludes": "Accepted V1 and V2 limitations remain separate; V2 default in-place encode 5.26-5.74% slower. Checked encode/incremental and small/rejected-input costs remain disclosed. x86 host load caveat; same-source controls not version evidence.",
+      "evidence": [
+        {
+          "packet": "recapture",
+          "path": "performance-review",
+          "packet_manifest": {
+            "bytes": 476475,
+            "sha256": "b41422afef25adae18a3ee3e61aa1e0e0afc0ade9f5083c2e770672809cf62e6"
+          },
+          "inventory": {
+            "bytes": 339,
+            "sha256": "62a0bf83beb755a5f77360b3cc6863524972f625d4b56db037030671029c0c44"
+          }
+        },
+        {
+          "packet": "recapture",
+          "path": "x86-policy",
+          "packet_manifest": {
+            "bytes": 476475,
+            "sha256": "b41422afef25adae18a3ee3e61aa1e0e0afc0ade9f5083c2e770672809cf62e6"
+          },
+          "inventory": {
+            "bytes": 4098,
+            "sha256": "deac3e05e8877b7c6c4252a5c497aaf3c4012721c983808503ce02580963f63a"
+          }
+        },
+        {
+          "packet": "recapture",
+          "path": "arm-native",
+          "packet_manifest": {
+            "bytes": 476475,
+            "sha256": "b41422afef25adae18a3ee3e61aa1e0e0afc0ade9f5083c2e770672809cf62e6"
+          },
+          "inventory": {
+            "bytes": 9705,
+            "sha256": "42704ec7f15e623e25b5200b96696b19238c91a1f1a3ca9df957e4eeeded4ba6"
+          }
+        },
+        {
+          "packet": "recapture",
+          "path": "macos-native",
+          "packet_manifest": {
+            "bytes": 476475,
+            "sha256": "b41422afef25adae18a3ee3e61aa1e0e0afc0ade9f5083c2e770672809cf62e6"
+          },
+          "inventory": {
+            "bytes": 326057,
+            "sha256": "55a717180852bf13c2c8123660c3722570ebad3ee8128dcd018c6671efea3d84"
+          }
+        },
+        {
+          "packet": "recapture",
+          "path": "arm-collection/focused-verification.json",
+          "packet_manifest": {
+            "bytes": 476475,
+            "sha256": "b41422afef25adae18a3ee3e61aa1e0e0afc0ade9f5083c2e770672809cf62e6"
+          },
+          "inventory": {
+            "bytes": 162,
+            "sha256": "1f0f02a75d41a2a369c69ea9c8412bd4daa886134dc8dafac817e4aed8019a66"
+          }
+        }
+      ]
+    },
+    "rvv-sve-emulation": {
+      "campaign": "rvv-sve-emulation",
+      "source_commit": "516f785294732bb3a61ebcf9c8eb9a52b17fdf09",
+      "source_tree": "7e502a7992120690e11aa2aca50b77a074b10281",
+      "status": "passed",
+      "disposition": "fresh-recapture",
+      "scope": "Fresh complete RVV VLEN 128/256 and SVE 128/256/512 gates including affected reporting assertions.",
+      "excludes": "Emulation is not native timing, ABI or admission; SVE remains non-admitted.",
+      "evidence": [
+        {
+          "packet": "recapture",
+          "path": "emulation-capture",
+          "packet_manifest": {
+            "bytes": 476475,
+            "sha256": "b41422afef25adae18a3ee3e61aa1e0e0afc0ade9f5083c2e770672809cf62e6"
+          },
+          "inventory": {
+            "bytes": 563,
+            "sha256": "7f87cc6c059b99bf8f3b6bce811d5de4278535b12a4f969480e61e776c87babf"
+          }
+        },
+        {
+          "packet": "recapture",
+          "path": "staged-evidence/riscv-qemu",
+          "packet_manifest": {
+            "bytes": 476475,
+            "sha256": "b41422afef25adae18a3ee3e61aa1e0e0afc0ade9f5083c2e770672809cf62e6"
+          },
+          "inventory": {
+            "bytes": 186,
+            "sha256": "1c22871e7ea7f7cec620470c56bcc9ef5676ab96677eb892044a7b8cfe60e6c4"
+          }
+        },
+        {
+          "packet": "recapture",
+          "path": "staged-evidence/sve-qemu",
+          "packet_manifest": {
+            "bytes": 476475,
+            "sha256": "b41422afef25adae18a3ee3e61aa1e0e0afc0ade9f5083c2e770672809cf62e6"
+          },
+          "inventory": {
+            "bytes": 182,
+            "sha256": "a4c1755ce069a767df4117e438d40016d6fb51f39cfe5c38cd9b7bb5e0e8e684"
+          }
+        }
+      ]
+    },
+    "wasm-package-browsers": {
+      "campaign": "wasm-package-browsers",
+      "source_commit": "516f785294732bb3a61ebcf9c8eb9a52b17fdf09",
+      "source_tree": "7e502a7992120690e11aa2aca50b77a074b10281",
+      "status": "passed",
+      "disposition": "fresh-recapture",
+      "scope": "Fresh scalar/SIMD artifact, loader/Wasmtime, Chromium, Firefox and real Safari verification at the recorded recapture source.",
+      "excludes": "Not final-candidate package/SBOM/provenance. Initial Mac failure retained and excluded. Alternate-path Cargo working cache excluded from transport; resulting artifact bytes retained.",
+      "evidence": [
+        {
+          "packet": "recapture",
+          "path": "staged-evidence/wasm-loader",
+          "packet_manifest": {
+            "bytes": 476475,
+            "sha256": "b41422afef25adae18a3ee3e61aa1e0e0afc0ade9f5083c2e770672809cf62e6"
+          },
+          "inventory": {
+            "bytes": 1067,
+            "sha256": "e2227024bb209d169d747de42973b37b65f771ea208732a001466516e0b1ea8f"
+          }
+        },
+        {
+          "packet": "recapture",
+          "path": "wasm-alternate-artifacts",
+          "packet_manifest": {
+            "bytes": 476475,
+            "sha256": "b41422afef25adae18a3ee3e61aa1e0e0afc0ade9f5083c2e770672809cf62e6"
+          },
+          "inventory": {
+            "bytes": 598,
+            "sha256": "4522d9002aa6c5b713854b00985540218990d7455f596035415aa5359fb84f56"
+          }
+        },
+        {
+          "packet": "recapture",
+          "path": "safari",
+          "packet_manifest": {
+            "bytes": 476475,
+            "sha256": "b41422afef25adae18a3ee3e61aa1e0e0afc0ade9f5083c2e770672809cf62e6"
+          },
+          "inventory": {
+            "bytes": 4566,
+            "sha256": "9947d6549741d3e6f539626429ada4f36139234ef050d1aa086f952e7a05639d"
+          }
+        },
+        {
+          "packet": "recapture",
+          "path": "local-capture",
+          "packet_manifest": {
+            "bytes": 476475,
+            "sha256": "b41422afef25adae18a3ee3e61aa1e0e0afc0ade9f5083c2e770672809cf62e6"
+          },
+          "inventory": {
+            "bytes": 1204,
+            "sha256": "657d2fb5650d7aebe92b81a1797765dd8cf898f03ce1e8275150a6c214f6a12a"
+          }
+        },
+        {
+          "packet": "recapture",
+          "path": "macos-native",
+          "packet_manifest": {
+            "bytes": 476475,
+            "sha256": "b41422afef25adae18a3ee3e61aa1e0e0afc0ade9f5083c2e770672809cf62e6"
+          },
+          "inventory": {
+            "bytes": 326057,
+            "sha256": "55a717180852bf13c2c8123660c3722570ebad3ee8128dcd018c6671efea3d84"
+          }
+        }
+      ]
+    }
+  }
+}

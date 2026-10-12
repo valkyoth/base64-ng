@@ -165,6 +165,21 @@
       "paths": [
         "docs/RELEASE_FREEZE_2.1.md"
       ]
+    },
+    {
+      "commit": "636d3e88d9e68408c38954d401b5106d2253c085",
+      "tree": "8f14137ac906ff08cb4823651ac845f13647427d",
+      "paths": [
+        "docs/RELEASE_EVIDENCE.md",
+        "docs/RELEASE_FREEZE_2.1.md",
+        "scripts/checks.sh",
+        "scripts/scoped_campaign.py",
+        "scripts/scoped_evidence.py",
+        "scripts/test-scoped-campaign.py",
+        "scripts/test-scoped-evidence.py",
+        "scripts/validate-scoped-campaign.py",
+        "security/campaign-claims-2.1.json"
+      ]
     }
   ],
   "sources": {
@@ -183,7 +198,9 @@
   },
   "packets": {
     "historical": {
-      "implicit_directories": ["supplements"],
+      "implicit_directories": [
+        "supplements"
+      ],
       "archive": {
         "bytes": 168330465,
         "sha256": "1f16c9c4ab1eea0d9758a46064a63ec0d6a3c0100451176de3a819e57ff395da"
@@ -240,7 +257,11 @@
           "packet": "historical",
           "path": "historical-staging/fuzz"
         }
-      ]
+      ],
+      "attestation_record": {
+        "bytes": 705,
+        "sha256": "2d0869f70aa92be66718038dcaa59401451d8429f53f773dc3856575360d3a49"
+      }
     },
     {
       "id": "bounded-proofs",
@@ -253,7 +274,11 @@
           "packet": "historical",
           "path": "historical-staging/kani"
         }
-      ]
+      ],
+      "attestation_record": {
+        "bytes": 737,
+        "sha256": "64f471d8e4c895149a02a868feacb1d1be4bd35e8285825485757ff55539f424"
+      }
     },
     {
       "id": "ownership-miri",
@@ -266,7 +291,11 @@
           "packet": "historical",
           "path": "historical-staging/miri"
         }
-      ]
+      ],
+      "attestation_record": {
+        "bytes": 664,
+        "sha256": "b06f39f3fb5c43d0834610833f0386f5df90654b1ca47550e3b49fcd63d86c72"
+      }
     },
     {
       "id": "memory-sanitizers",
@@ -279,7 +308,11 @@
           "packet": "historical",
           "path": "historical-staging/2.0-memory-sanitizers"
         }
-      ]
+      ],
+      "attestation_record": {
+        "bytes": 702,
+        "sha256": "27c730853ad363b7446eb63546de6a76b2110b486b79a1f13bc89a8c7a1e61ac"
+      }
     },
     {
       "id": "big-endian-codec",
@@ -292,7 +325,11 @@
           "packet": "historical",
           "path": "historical-staging/big-endian-qemu"
         }
-      ]
+      ],
+      "attestation_record": {
+        "bytes": 618,
+        "sha256": "be12579d6071fbd4edd94d22007d9d52642540153de98035e0f3e7ee8ecca871"
+      }
     },
     {
       "id": "wasm-kernel",
@@ -305,7 +342,11 @@
           "packet": "historical",
           "path": "historical-staging/wasm-simd"
         }
-      ]
+      ],
+      "attestation_record": {
+        "bytes": 627,
+        "sha256": "6e27ecc8f491ca3b2bcd97873e5d5b970f711cbe1da001220fe6a9e883919e76"
+      }
     },
     {
       "id": "reporting-native",
@@ -318,7 +359,11 @@
           "packet": "historical",
           "path": "supplements/reporting-revalidation-29cc6ef.tar.gz"
         }
-      ]
+      ],
+      "attestation_record": {
+        "bytes": 2664,
+        "sha256": "d36fcf666a036249289e1f3faeea9375135e02378efd366921ae4a404b69bd83"
+      }
     },
     {
       "id": "reporting-followups",
@@ -331,7 +376,11 @@
           "packet": "historical",
           "path": "supplements/reporting-followup-29cc6ef.tar.gz"
         }
-      ]
+      ],
+      "attestation_record": {
+        "bytes": 2690,
+        "sha256": "f442d566444e7ee645c001e13672b40407ddd9f97b8abe4cbc6ec788fe3f3856"
+      }
     },
     {
       "id": "native-abi-admission",
@@ -368,7 +417,11 @@
           "packet": "recapture",
           "path": "staged-evidence/riscv-native-admission"
         }
-      ]
+      ],
+      "attestation_record": {
+        "bytes": 2380,
+        "sha256": "38d34a47fedcedb8f1f114903cbfcb1b003bd2a511f308794a1a27f835795cee"
+      }
     },
     {
       "id": "assembly",
@@ -393,7 +446,11 @@
           "packet": "recapture",
           "path": "windows-native"
         }
-      ]
+      ],
+      "attestation_record": {
+        "bytes": 1629,
+        "sha256": "bbd4a26463719ef386622327ad9c85dcc40ef7fde7e0a7b0548dce49f582ce47"
+      }
     },
     {
       "id": "timing",
@@ -410,7 +467,11 @@
           "packet": "recapture",
           "path": "local-capture"
         }
-      ]
+      ],
+      "attestation_record": {
+        "bytes": 985,
+        "sha256": "e9836f429ea502096379383059b3464ab338dc02fafeef916c9e3e7a8635d970"
+      }
     },
     {
       "id": "paired-performance",
@@ -437,9 +498,13 @@
         },
         {
           "packet": "recapture",
-          "path": "supplements/recapture-arm-516f785-collected/focused.tar.gz"
+          "path": "arm-collection/focused-verification.json"
         }
-      ]
+      ],
+      "attestation_record": {
+        "bytes": 1901,
+        "sha256": "1d1fdfd847bf8acdf91fe9c57c762d6d79ada12e6a97dc1aecc43d04d3d51a34"
+      }
     },
     {
       "id": "rvv-sve-emulation",
@@ -460,7 +525,11 @@
           "packet": "recapture",
           "path": "staged-evidence/sve-qemu"
         }
-      ]
+      ],
+      "attestation_record": {
+        "bytes": 1214,
+        "sha256": "000b09f66d0657236f6a56aa341575b9977c41a3b75d226342a122ee05ba6d03"
+      }
     },
     {
       "id": "wasm-package-browsers",
@@ -489,7 +558,11 @@
           "packet": "recapture",
           "path": "macos-native"
         }
-      ]
+      ],
+      "attestation_record": {
+        "bytes": 1865,
+        "sha256": "4f5f6e9cf54bc152d9537bdf1d06dcde3bc80ee89e8c7a87cce104395d07219c"
+      }
     }
   ],
   "pending": [
@@ -499,5 +572,12 @@
     "exact-candidate-full-release-ci",
     "signed-final-index",
     "release-authorization"
-  ]
+  ],
+  "attestations": {
+    "path": "security/campaign-attestations-2.1.json",
+    "record": {
+      "bytes": 28233,
+      "sha256": "16c36a364d1258a703e2526f6d9e0b05022c1242ce4fd21ecb3fa787cf32c20a"
+    }
+  }
 }

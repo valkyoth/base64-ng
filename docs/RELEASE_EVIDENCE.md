@@ -1375,12 +1375,31 @@ Reviewed mode omits `--inspect-proposal` and requires
 never from `HEAD`, an archive or candidate-controlled output. Before executing
 any candidate Python code, independently verify that commit's authorized SSH
 signature using the frozen signers and `GIT_NO_REPLACE_OBJECTS=1`, then compare
-the validator, both `scoped_*.py` modules and policy JSON with the approved
+the validator, both `scoped_*.py` modules, policy JSON and the separate
+`security/campaign-attestations-2.1.json` summary with the approved
 commit. Use a trusted isolated Python/Git environment and checkout. Internal
 signature and file comparisons are defense in depth, not bootstrap trust.
 
 Both modes hash bounded archives before parsing, check complete inventories and
-leave all evidence untouched. Approval of source-property reuse does not imply
+leave all evidence untouched. Gzip verification consumes exactly one member and
+its CRC/trailer, rejects all appended bytes/members, and inspects tar padding
+through the tar reader's prefetched buffer. Only bounded zero padding following
+two complete end-marker blocks is accepted. Member padding must also be zero.
+
+Claims require digest-pinned operator attestations, not merely existing paths.
+The attested commit/tree, campaign, result, disposition, scope and exclusions
+must match. Each evidence reference binds the exact packet manifest and entire
+required file/directory subset. Subset digests use ASCII JSON with sorted keys
+and compact separators, as implemented by `scoped_evidence.json_record`.
+Nested supplements use the same complete inner-inventory format plus exact
+passing-report digests, source identities and results in the top-level summary.
+Reviewed mode authenticates this summary through the independently anchored
+policy commit; it does not pretend to have recursively rerun nested campaigns.
+Proposal mode treats the summaries as unsigned assertions awaiting review and
+always emits `independent_claim_approval=false`. A `passed` scoped assessment
+is not blanket performance acceptance or release permission.
+
+Approval of source-property reuse does not imply
 approval of fresh assembly/performance review, final-candidate metadata or CI.
 The result always retains the remaining release requirements and
 `release_authorized=false`. Do not rename this JSON to `FINAL-MANIFEST.txt` or

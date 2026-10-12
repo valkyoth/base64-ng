@@ -785,7 +785,7 @@ full-release CI, evidence index/signatures and final report-only acceptance.
 ### Scoped Policy Preflight Proposal
 
 `security/campaign-claims-2.1.json` inventories the exact signed history through
-`25eea0e`, three distinct source identities and fourteen narrowly scoped claims.
+`636d3e8`, three distinct source identities and fourteen narrowly scoped claims.
 It pins both complete private review transports, not only selected successful
 logs. Failed attempts, performance regressions and claim exclusions remain in
 the retained bytes. The recapture packet SHA-256 is
@@ -797,8 +797,12 @@ The read-only `scripts/validate-scoped-campaign.py` preflight verifies this
 proposal without extracting archives, executing bundled code, copying records,
 changing the finalizer or approving release. It checks transport digests before
 parsing, bounded complete file/directory inventories, all indexed file hashes,
-source/status metadata and claim references. It rejects links, special entries,
-duplicate paths/JSON keys and non-canonical names. Ordinary CI runs synthetic
+source/status metadata and claim attestations. It consumes exactly one gzip
+member through its checksum and EOF, rejecting additional transport bytes,
+concatenated members, nonzero member padding, hidden tar trailers, missing end
+markers and excessive zero padding. It drains the tar reader's own buffer so
+prefetched trailing data cannot evade inspection. It rejects links, special
+entries, duplicate paths/JSON keys and non-canonical names. Ordinary CI runs synthetic
 mutation tests only, not the expensive historical or native campaigns.
 
 Proposal inspection is explicitly unapproved and makes no current-candidate
@@ -816,6 +820,22 @@ Independent review of the policy and recaptures must precede claim-aware final
 manifest integration. Final-candidate metadata, full-release CI, signatures and
 maintainer authorization remain required. Neither preflight mode emits a final
 manifest or reports `release_authorized=true`.
+
+The separate bounded `security/campaign-attestations-2.1.json` contains the
+operator's scope assessments. Each attestation binds a campaign, source commit
+and tree, disposition, exact scope/exclusions, result and required evidence
+inventory digest. The policy pins both the entire summary file and each
+canonical attestation. The reviewed policy signature binds these summaries;
+inspection mode only checks their consistency, not independent approval.
+Redirecting a native claim to historical fuzz evidence no longer satisfies it.
+
+Nested reporting supplements have top-level summaries of their complete inner
+inventories and the exact five passing report identities each. Earlier failed
+reports remain retained but excluded. These summaries were prepared by checking
+the retained archives, not by relabeling earlier runs. Their `passed` result
+means the recorded scoped operator assessment passed, not that every benchmark
+cell improved. Performance exceptions, failed attempts and independent-review
+requirements remain explicit. No unsigned summary can authorize finalization.
 
 ## Final Acceptance
 

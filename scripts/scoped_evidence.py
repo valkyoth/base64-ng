@@ -8,12 +8,74 @@ from pathlib import Path, PurePosixPath
 import re
 import stat
 import tarfile
+import zlib
 
 
 MAX_ENTRIES = 10_000
 MAX_BYTES = 2 * 1024**3
 MAX_MANIFEST = 2 * 1024**2
+MAX_TAR_PADDING = tarfile.RECORDSIZE + tarfile.BLOCKSIZE
 SHA256 = re.compile(r"[0-9a-f]{64}")
+
+
+class SingleGzipReader:
+    """Bounded streaming decompression with exactly one fully consumed gzip member."""
+
+    def __init__(self, stream):
+        self.stream = stream
+        self.decoder = zlib.decompressobj(16 + zlib.MAX_WBITS)
+        self.pending = b""
+        self.total = 0
+
+    def read(self, size):
+        if not 0 <= size <= 16 * 1024**2:
+            raise ValueError("invalid decompression read size")
+        output = bytearray()
+        while len(output) < size:
+            if self.decoder.eof:
+                if self.decoder.unused_data or self.stream.read(1):
+                    raise ValueError("data or extra gzip member after gzip EOF")
+                break
+            data = self.pending or self.stream.read(64 * 1024)
+            if not data:
+                raise ValueError("truncated gzip stream")
+            try:
+                chunk = self.decoder.decompress(data, size - len(output))
+            except zlib.error as error:
+                raise ValueError("invalid gzip stream or checksum") from error
+            self.pending = self.decoder.unconsumed_tail
+            output.extend(chunk)
+            self.total += len(chunk)
+            if self.total > MAX_BYTES + MAX_ENTRIES * 2048 + MAX_TAR_PADDING:
+                raise ValueError("expanded transport exceeds byte limit")
+        return bytes(output)
+
+
+class StrictTarInfo(tarfile.TarInfo):
+    @classmethod
+    def frombuf(cls, buf, encoding, errors):
+        # TarFile normally tolerates an invalid/truncated header after a member.
+        # Only a complete zero block may terminate this evidence archive.
+        if buf == bytes(tarfile.BLOCKSIZE):
+            raise tarfile.EOFHeaderError("end marker")
+        try:
+            return super().frombuf(buf, encoding, errors)
+        except tarfile.HeaderError as error:
+            raise tarfile.ReadError("invalid or missing tar end marker") from error
+
+
+def finish_tar(archive):
+    # Drain through TarFile's stream, not its underlying reader: the former may
+    # already hold prefetched bytes after the first tar end marker.
+    if archive.fileobj.tell() != archive.offset + tarfile.BLOCKSIZE:
+        raise ValueError("missing tar end marker")
+    padding = archive.fileobj.read(MAX_TAR_PADDING)
+    if (len(padding) < tarfile.BLOCKSIZE
+            or len(padding) > MAX_TAR_PADDING - tarfile.BLOCKSIZE
+            or len(padding) % tarfile.BLOCKSIZE or any(padding)):
+        raise ValueError("invalid or excessive data after tar end marker")
+    if archive.fileobj.read(1):
+        raise ValueError("data after tar end marker")
 
 
 def canonical(name):
@@ -40,6 +102,22 @@ def strict_json(raw):
         raise ValueError("non-finite JSON value: " + value)
 
     return json.loads(raw, object_pairs_hook=unique, parse_constant=invalid)
+
+
+def json_record(value):
+    raw = json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode()
+    return {"bytes": len(raw), "sha256": hashlib.sha256(raw).hexdigest()}
+
+
+def selected_inventory(manifest, path):
+    canonical(path)
+    files = {name: record for name, record in manifest["files"].items()
+             if name == path or name.startswith(path + "/")}
+    if not files:
+        raise ValueError("missing or empty attested evidence inventory")
+    directories = [name for name in manifest["directories"]
+                   if name == path or name.startswith(path + "/")]
+    return {"files": files, "directories": directories}
 
 
 @contextmanager
@@ -97,7 +175,8 @@ def verify_packet(path, pin):
         stream.seek(0)
         files, directories, seen = {}, [], set()
         total, manifest_raw = 0, None
-        with tarfile.open(fileobj=stream, mode="r|gz") as archive:
+        decoded = SingleGzipReader(stream)
+        with tarfile.open(fileobj=decoded, mode="r|", tarinfo=StrictTarInfo) as archive:
             for member in archive:
                 canonical(member.name)
                 if member.name in seen or len(seen) >= MAX_ENTRIES:
@@ -124,6 +203,10 @@ def verify_packet(path, pin):
                         files[member.name] = digest_stream(incoming, member.size)
                         if files[member.name]["bytes"] != member.size:
                             raise ValueError("truncated archive member")
+                padding = archive.fileobj.read(-member.size % tarfile.BLOCKSIZE)
+                if any(padding):
+                    raise ValueError("non-zero member padding")
+            finish_tar(archive)
         if manifest_raw is None:
             raise ValueError("missing manifest")
         actual = {"bytes": len(manifest_raw), "sha256": hashlib.sha256(manifest_raw).hexdigest()}

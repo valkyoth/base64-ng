@@ -2,6 +2,7 @@
 """Hostile transport and complete-inventory regressions; no real packets needed."""
 
 import copy
+import gzip
 import hashlib
 import io
 import json
@@ -54,6 +55,81 @@ class PacketTests(unittest.TestCase):
 
     def test_complete_packet(self):
         self.assertEqual(evidence.verify_packet(self.path, self.packet()), self.manifest)
+
+    def repin_transport(self, pin, raw):
+        self.path.write_bytes(raw)
+        pin["archive"] = digest(raw)
+        return pin
+
+    def test_raw_trailing_data_even_when_transport_is_repinned(self):
+        for trailing in (b"HIDDEN-UNINVENTORIED-DATA", bytes(64)):
+            with self.subTest(trailing=trailing):
+                pin = self.packet()
+                self.repin_transport(pin, self.path.read_bytes() + trailing)
+                self.rejects("gzip EOF", pin)
+
+    def test_concatenated_gzip_members_including_empty_member(self):
+        for payload in (b"hidden", b"", bytes(1024)):
+            with self.subTest(payload=payload):
+                pin = self.packet()
+                self.repin_transport(pin, self.path.read_bytes() + gzip.compress(payload))
+                self.rejects("gzip EOF", pin)
+
+    def test_data_after_tar_terminator_including_prefetch_buffer(self):
+        for tail in (b"hidden", b"X" * 512, b"X" * 20000):
+            with self.subTest(length=len(tail)):
+                pin = self.packet()
+                decoded = gzip.decompress(self.path.read_bytes())
+                # Five blocks precede the end marker in this fixture. Place
+                # hidden bytes inside the first 10-KiB TarFile read buffer.
+                for offset in (6 * 512, len(decoded)):
+                    self.repin_transport(pin, gzip.compress(decoded[:offset] + tail))
+                    self.rejects("after tar end", pin)
+
+    def test_second_tar_and_excessive_zero_padding(self):
+        for tail_kind in ("second-tar", "zero-bomb"):
+            with self.subTest(tail=tail_kind):
+                pin = self.packet()
+                decoded = gzip.decompress(self.path.read_bytes())
+                tail = decoded if tail_kind == "second-tar" else bytes(2 * 1024**2)
+                self.repin_transport(pin, gzip.compress(decoded + tail))
+                self.rejects("after tar end", pin)
+
+    def test_gzip_crc_and_truncated_trailer(self):
+        for mutation in ("crc", "truncate"):
+            with self.subTest(mutation=mutation):
+                pin = self.packet()
+                raw = bytearray(self.path.read_bytes())
+                if mutation == "crc":
+                    raw[-8] ^= 1
+                else:
+                    del raw[-4:]
+                self.repin_transport(pin, raw)
+                self.rejects("gzip", pin)
+
+    def test_missing_partial_or_invalid_tar_terminator(self):
+        for tail in (b"", bytes(511), bytes(512), b"X" * 512):
+            with self.subTest(length=len(tail)):
+                pin = self.packet()
+                decoded = gzip.decompress(self.path.read_bytes())
+                self.repin_transport(pin, gzip.compress(decoded[:5 * 512] + tail))
+                with self.assertRaises((ValueError, tarfile.ReadError)):
+                    evidence.verify_packet(self.path, pin)
+
+    def test_nonzero_member_padding(self):
+        pin = self.packet()
+        decoded = bytearray(gzip.decompress(self.path.read_bytes()))
+        decoded[2 * 512 + len(self.entries[1][1])] = 1
+        self.repin_transport(pin, gzip.compress(decoded))
+        self.rejects("member padding", pin)
+
+    def test_minimum_and_maximum_legal_tar_padding(self):
+        for size in (2 * 512, evidence.MAX_TAR_PADDING):
+            with self.subTest(size=size):
+                pin = self.packet()
+                payload = gzip.decompress(self.path.read_bytes())[:5 * 512]
+                self.repin_transport(pin, gzip.compress(payload + bytes(size)))
+                self.assertEqual(evidence.verify_packet(self.path, pin), self.manifest)
 
     def test_transport_is_hashed_before_tar_parsing(self):
         pin = self.packet()
