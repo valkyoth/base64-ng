@@ -251,7 +251,12 @@ where
 ///
 /// The caller must execute this function only when NEON is available on the
 /// current CPU. The input and output sizes are fixed by their array types.
-#[cfg(all(test, target_arch = "aarch64", target_endian = "little"))]
+#[cfg(all(
+    feature = "std",
+    test,
+    target_arch = "aarch64",
+    target_endian = "little"
+))]
 pub(crate) unsafe fn decode_16_bytes_neon<A, const PAD: bool>(
     input: &[u8; 16],
     output: &mut [u8; 12],
@@ -394,7 +399,12 @@ where
     (encode[62] == b'+' && encode[63] == b'/') || (encode[62] == b'-' && encode[63] == b'_')
 }
 
-#[cfg(all(test, target_arch = "aarch64", target_endian = "little"))]
+#[cfg(all(
+    feature = "std",
+    test,
+    target_arch = "aarch64",
+    target_endian = "little"
+))]
 pub(in crate::simd) fn test_direct_encode_12<A: Alphabet>(
     input: &[u8; 12],
     output: &mut [u8; 16],
@@ -411,7 +421,12 @@ pub(in crate::simd) fn test_direct_encode_12<A: Alphabet>(
     true
 }
 
-#[cfg(all(test, target_arch = "aarch64", target_endian = "little"))]
+#[cfg(all(
+    feature = "std",
+    test,
+    target_arch = "aarch64",
+    target_endian = "little"
+))]
 pub(in crate::simd) fn test_direct_decode_16<A: Alphabet>(
     input: &[u8; 16],
     output: &mut [u8; 12],

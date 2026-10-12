@@ -31,11 +31,15 @@ for compiler in "$active" 1.90.0; do
         rustup target add --toolchain "$compiler" "$target"
     fi
     for features in '' simd simd,checked-backend std,simd std,simd,checked-backend; do
-        set -- --lib
-        case "$features" in std,*) set -- --lib --tests ;; esac
         cargo +"$compiler" clippy --locked --target "$target" --no-default-features \
-            --features "$features" "$@" -- -D warnings
+            --features "$features" --lib --tests -- -D warnings
         case "$features" in
+            simd|simd,checked-backend)
+                if [ "$execute" -eq 1 ]; then
+                    cargo +"$compiler" test --locked --release --target "$target" \
+                        --no-default-features --features "$features" --lib \
+                        simd::tests::neon_encode_block_matches_scalar_when_available -- --exact
+                fi ;;
             std,*)
                 if [ "$execute" -eq 1 ]; then
                     BASE64_NG_REQUIRE_NEON_VALIDATION=1 \

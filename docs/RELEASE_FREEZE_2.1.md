@@ -410,6 +410,47 @@ runtime change. Release sealing remains blocked pending independent review
 and an explicit new campaign/evidence decision. No prior performance, fuzz,
 native, sanitizer or formal result is relabeled as a run of this correction.
 
+### Focused Revalidation Proposal (Not Authorization)
+
+The proposed reporting correction boundary is
+`498748bf57018d527de38077cc2da83388fdcc3f` through
+`f921e97184859bea4efe1fea410f3500c9a33cc7`, including the preceding reporting-test
+stabilization. Fresh native captures must bind their actual source commit and
+tree, compiler identities, feature combinations, executed test counts, command
+outcomes and log hashes. A clean checkout and fresh compiler-specific build
+directories prevent stale-cache results from being mistaken for new checks.
+
+The initial Apple Silicon capture exposed a separate test-build gap: the
+SIMD-only NEON unit test used a `std` printing macro, and three `std`-only test
+helpers had broader feature gates than their callers. The follow-up aligns
+these test gates without changing production kernels. The NEON gate now
+checks test targets without `std` and executes the affected encode test under
+both active Rust and MSRV when native execution or QEMU is available. Retain
+the failed capture; do not convert it to a successful result or silently omit
+that configuration from the replacement capture.
+
+The proposed impact assessment is:
+
+| Evidence | Required disposition |
+| --- | --- |
+| Runtime reports, scalar policy and backend-health state tests | Fresh native x86, Apple Silicon, Linux AArch64 and Windows MSVC checks on active Rust and MSRV; compact active-Rust RISC-V supplement with its scope explicit. |
+| NEON test-build correction | Fresh no-`std` SIMD and checked test builds and execution on ARM; retain QEMU as supplemental, not native evidence. |
+| Codec fuzzing, codec geometry proofs and secret/CT checks | Candidates for scoped reuse only after review confirms their implementation, harnesses, inputs and dependencies are unchanged. Reporting and health-dependent assertions are excluded from blanket reuse. |
+| Native ABI, assembly, sanitizer, timing and performance campaigns | Assess each campaign's dependency on changed reporting/health code and compiler output. Unchanged codec source alone is not proof of identical linked machine code or timing; rerun affected checks or record an explicitly reviewed limitation. |
+| SBOM, packages, reproducibility and final evidence index | Regenerate for the final candidate; never relabel older candidate-bound artifacts. |
+
+All historical captures retain their original identities. Focused captures
+are unsigned development evidence, not substitutes for the entire frozen
+campaign. Their private capture tooling must accompany the logs and be
+reviewed before admission. Compact RISC-V checks do not claim a full MSRV,
+RVV hardware, performance or long-fuzz campaign.
+
+Acceptance requires an independent decision on the exact correction commits
+and evidence inventory, followed by a separately reviewed validator policy
+with an out-of-band trust anchor. The current validator remains unchanged and
+fails closed for the reporting correction. No evidence has been sealed and no
+full-release CI, final review, signature or publication requirement is waived.
+
 ## Final Acceptance
 
 Retain the signed candidate evidence before making the report-only commit.

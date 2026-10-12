@@ -127,7 +127,12 @@ mod rvv_tests;
 
 #[cfg(any(target_arch = "aarch64", target_arch = "arm"))]
 mod neon;
-#[cfg(all(test, target_arch = "aarch64", target_endian = "little"))]
+#[cfg(all(
+    feature = "std",
+    test,
+    target_arch = "aarch64",
+    target_endian = "little"
+))]
 pub(in crate::simd) use neon::decode_16_bytes_neon;
 #[cfg(all(feature = "simd", target_arch = "aarch64", target_endian = "little"))]
 pub(crate) use neon::decode_slice_neon;
