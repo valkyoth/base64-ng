@@ -706,6 +706,82 @@ optimization. The cause is not established. This exception changes no routing,
 benchmark threshold, correctness check, security requirement or evidence-reuse
 policy, and does not authorize release or waive the remaining gates.
 
+### Corrected-Source Recapture Status
+
+The following recaptures use the fixed clean `516f785` source/tree recorded
+above. They are unsigned operator-retained evidence, not a new final manifest
+or authorization to reuse every historical campaign. The earlier collection
+notes remain historical; the results below supersede their pending statuses
+only within the stated scopes.
+
+| Required work | Current result and boundary |
+| --- | --- |
+| Windows AMD64 MSVC | Native active/MSRV tests, ABI probes and 192 same-source performance control cells completed. Download verified against its SSH transport digest, source inventory and indexed artifact/log hashes. The 38 reviewed ABI/cleanup function bodies cover 19 per compiler, not arbitrary linked code. Controls are not a Windows version-regression comparison. |
+| Linux ARM and Apple Silicon | Native validation, workspace checks, assembly capture and admission bundles completed. Both exact-source NEON bundles passed the existing two-percent admission floor. Full paired policy captures and unfavorable classifications are retained; the separate accepted ARM limitation above does not waive correctness or admission. |
+| Physical SpacemiT X60 | Native correctness, signal/thread/ABI checks, assembly and 15-sample admission capture completed and verified. The exact X60 profile remains required; no other RVV CPU is admitted. |
+| RVV and SVE QEMU | Both complete unmodified gates passed. RVV exercised VLEN 128/256 and SVE 128/256/512 plus fallback/static checks. These are emulation correctness results, not native timing, ABI or admission evidence. SVE remains non-admitted. |
+| Assembly review | Fresh release/LTO and concrete CT-consumer inventories were reviewed across x86, ARM, Apple Silicon, Windows, RISC-V, s390x and PowerPC64, with production WASM IR inspection. The comparison record covers 295 function bodies across configurations, plus the Windows scope and nine RVV/five SVE leaf instruction streams. This is scoped operator review, not an independent whole-binary or microarchitectural proof. |
+| Dudect | Fresh release run passed the existing floors: 20,000 samples per case, 64 iterations, 1,000 warmups and threshold 10. Nine equal-work cases among 12 total had maximum absolute t of 2.275. Unrelated VM/desktop activity was present; do not describe this as a controlled quiet-host campaign. Public-length cases are informational. |
+| WASM/npm and browsers | Fresh package, reproducibility/path-independence, 26 loader tests, Wasmtime, Chromium, Firefox and real Safari checks passed. Safari's sender-supplied archive digest matches the collected bytes and its artifacts match the native Mac package capture. |
+| SBOM and Rust reproducibility | SPDX/CycloneDX and reproducible build/package collectors passed at `516f785`. These records still must be regenerated for the final policy/tag candidate; they are not automatically transferable. |
+| Local x86 paired policy capture | Complete: 1,824 revision cells and 576 same-source control cells, each with 15 alternating pairs. Raw summaries, exact case/sample coverage, diagnostics, harness hashes and complete capture-file inventories verified. No allocation increases or large valid warm regression signals in default/SIMD/adapter revision groups. Unrelated host workloads were present; this is not a quiet-host admission campaign. |
+
+The collected transport SHA-256 values are:
+
+| Capture | SHA-256 |
+| --- | --- |
+| Windows complete | `45cf5830a103c86718fc6e2f27b9cbf36fe531fe86beae67807993c25b7956f1` |
+| Linux ARM complete | `e552a40ffecfe355dde475a0c1314c2745caec6079c32c02b6520645efcef433` |
+| Apple Silicon complete | `32553d5c42d350e6ba164aefb418b1d8d2235388de477f145df2348e02849f6f` |
+| Physical X60 complete | `e62a6b2fcd41ca562f3568ba3326acd3237be81a250e514cb2bf443843c40e88` |
+| Safari desktop session | `3161a818bf238d236bc30cd5f6d95ee3ee6e10a74b921abc72cb777cd565287c` |
+
+These hashes bind retained private archives, not signatures or public download
+locations. The Apple Silicon archive preserves its initial failed assembly
+invocation as well as the successful explicit-target follow-up. Intermediate
+assembly comparisons remain retained; only the corrected v4 inventory supports
+the manual comparison record. Private path and host metadata require review
+before public redistribution.
+
+The local x86 revision classifications are 795 improvement signals, 602 within
+the five-percent band, 289 regression signals, 120 noisy and 18 inconclusive.
+Retain all classifications. Large checked canonical encode ratios are
+0.455-0.469 (about 2.1-2.2 times the old latency); large checked incremental
+decode ratios are 0.815-0.822 (about 22 percent slower). These and the small,
+fragmented and rejected-input costs remain within the categories disclosed in
+[the explicit policy tradeoffs](POLICY_2.1.md#explicit-tradeoffs), not a promise
+that every call improves. No threshold, routing or verification change follows
+from this capture. The 576 controls compare operations on one source and must
+not be counted as version-regression evidence.
+
+Local review record `target/x86-policy-review-516f785.json`, SHA-256
+`c5a05b2c4ffb29822f7dc8ec682b0894e32c67d29f5f65c63354d01de9866681`,
+retains both complete capture inventories and every flagged cell. It is an
+unsigned review aid, not a release-admission result.
+
+The first local x86 attempt failed before measurement because its execution
+sandbox could not connect to the host user bus. Its log and failure report are
+retained separately. The successful host-access retry kept the existing
+candidate Bubblewrap sandbox and verified aggregate resource limits; it did
+not fall back to unrestricted candidate execution.
+
+Historical approved-property records were copied without rewriting their
+source IDs after checking the independent review packet's transport digest,
+manifest digest, complete file/directory inventory and all 1,557 indexed file
+hashes. The staged Miri, sanitizer, fuzz, Kani, big-endian and WASM SIMD records
+remain original-source evidence. Fresh reporting supplements retain `29cc6ef`;
+fresh native admission, timing, assembly and RVV/SVE reports retain `516f785`.
+An outcomes-checker success is not approval of this mixed-source collection.
+
+The old source-equivalence validator still rejects this history with
+`2.1 native-inventory correction inventory mismatch`. Do not bypass that failure
+or assign one global source identity to all campaigns. A separately reviewed,
+claim-specific policy must bind the exact correction history, original claims,
+fresh supplements, required recaptures and complete inventories. Remaining
+release steps include that policy's independent review/out-of-band anchor,
+final-candidate metadata refresh, exact-final-candidate
+full-release CI, evidence index/signatures and final report-only acceptance.
+
 ## Final Acceptance
 
 Retain the signed candidate evidence before making the report-only commit.
