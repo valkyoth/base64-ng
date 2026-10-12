@@ -458,6 +458,145 @@ with an out-of-band trust anchor. The current validator remains unchanged and
 fails closed for the reporting correction. No evidence has been sealed and no
 full-release CI, final review, signature or publication requirement is waived.
 
+### Completed Reporting Rechecks and Review Packet
+
+The following results bind the actual tested source
+`29cc6ef2c4dd60f67e0692591b9dabf2753b0bc1`, tree
+`7688efc6fce5aab0a06bbc68b7af234ed178a601`. They do not change the original
+campaign identity `b3e493e64a583245f7aab542d983b7b914c67eb9`, tree
+`06f9e65432631d43f868a95bb6083c18a61a1f39`.
+
+The maintainer supplied a clean independent SAST report for the inclusive
+range `f921e97^..29cc6ef`. That review included the production automatic-tier
+inventory correction and both test-only corrections. Its ARM checks were
+cross-build/codegen checks, not native execution. The separately collected
+native results below supply focused execution coverage. Neither the SAST
+report nor these captures approves reuse of the older campaigns.
+
+| Native platform | Toolchains | Passing test executions |
+| --- | --- | ---: |
+| Linux x86_64 | 1.99.0 and 1.90.0 | 214 |
+| Windows AMD64 MSVC | 1.99.0 and 1.90.0 | 214 |
+| Linux AArch64 | 1.99.0 and 1.90.0 | 192 |
+| macOS Apple Silicon | 1.99.0 and 1.90.0 | 192 |
+| Linux RISC-V | 1.99.0, compact supplement only | 40 |
+
+The total is 852 executions, including repeated tests across features and
+compilers, not 852 unique tests. The archive retains the earlier failed
+captures, intermediate successes, capture helpers and their regression tests.
+Only the final successful reports at the source above contribute to this
+table. Log hashes, report hashes, source trees, exit codes and execution counts
+were checked against the retained files. Local archive:
+`target/reporting-revalidation-29cc6ef.tar.gz`, SHA-256
+`d3b3af1aabce3438d48065d26811ced55c6d257c91dddd5d3923903e79fd9830`.
+
+Additional local checks use the same source, sanitized compiler environments
+and fresh private build directories:
+
+| Supplement | Result and scope |
+| --- | --- |
+| Miri | Four exact reporting/policy tests passed; not the complete Miri campaign. |
+| ThreadSanitizer | Ten runtime tests, one concurrent-first-use test and one assurance-report test passed; not the complete sanitizer inventory. |
+| Assurance | Eleven unit tests and seven integration tests passed on each of 1.99.0 and 1.90.0: 36 executions. |
+| Companion feature isolation | All six companions, eight configurations and both toolchains passed: 96 configurations, 90 test executions; the remaining configurations are compile-only. |
+| WASM reporting consumer | Fresh SIMD module built from a committed-source export; the runtime-dispatch smoke ran successfully in Node/V8 and Wasmtime. This is not a Safari rerun or an npm release gate. |
+
+Miri and ThreadSanitizer used nightly `a30aa9064` (2026-10-08), not the older
+campaign's nightly `c36f14571` (2026-10-01). These are supplemental results,
+not identical-toolchain or identical-binary evidence. The initial Miri attempt
+failed while creating its sysroot cache under a read-only sandbox; that failed
+report remains retained alongside the successful permitted retry.
+
+Local supplemental archive: `target/reporting-followup-29cc6ef.tar.gz`,
+SHA-256 `ddfac6c4a8f25141a18cb624217639065054e70f7631194b3d54248d0c1e5496`.
+It contains the supplemental capture helpers, their imported native helper,
+reports and logs, including the failed attempt. Both archives are unsigned,
+operator-retained development evidence, not repository-hosted or sealed release
+bundles. Supply the actual archives to the independent reviewer; hashes in this
+document alone do not establish correctness, provenance or approval. Review
+private command metadata before redistributing captures publicly.
+
+### Campaign Impact Assessment for Review
+
+The source comparison below is between the full frozen and tested commits
+above, not merely the last test-only commit. Exactly these protected Rust
+paths differ:
+
+```text
+src/decode_backend/policy/tests.rs
+src/encode_backend/policy/tests.rs
+src/runtime/mod.rs
+src/runtime/operation.rs
+src/runtime/report.rs
+src/runtime/tests.rs
+src/simd/mod.rs
+src/simd/neon.rs
+src/simd/tests.rs
+src/v2/backend_health.rs
+src/v2/backend_health/tests.rs
+```
+
+The production delta adds operation-specific terminal-scalar reporting and
+binds health, generation and faults to the named backend. Atomic health-state
+transitions, KATs, codec algorithms, dispatch admission, SIMD kernel bodies,
+secret processing and wiping implementations are unchanged. The NEON gate
+changes affect test compilation/execution, not production kernel instructions
+by construction; this is not a claim that every newly linked binary is equal.
+
+Git object equality was checked for `Cargo.toml`, `Cargo.lock`,
+`rust-toolchain.toml`, `crates/`, `fuzz/`, `kani/`, `dudect/`, `perf/`,
+`portability/`, `tests/` and `packages/`. Proof implementations under
+`src/kani*_proofs.rs` are also unchanged. Equality of these inputs does not
+establish equality of their entire linked dependency or machine-code closure:
+each still builds against the core crate, whose reporting implementation changed.
+
+| Retained campaign or artifact | Assessment and proposed disposition, pending approval |
+| --- | --- |
+| 18 one-hour codec fuzz campaigns | Harnesses, corpora, dependency locks and codec implementations are unchanged. Retain as historical coverage of those codec properties; do not claim the new reporting policy was fuzzed or that these binaries were built at `29cc6ef`. Recommend scoped reuse of codec coverage only. |
+| Kani codec, geometry, secret and assurance-model proofs | Proof sources and modeled algorithms are unchanged; source inspection found no calls to the changed reporting functions in the proof files. Recommend reuse of the original proof obligations with their exact original bounds and limitations, not a new proof of runtime reporting or linked native code. |
+| Miri and sanitizer campaigns | Retain old codec/ownership checks as historical coverage; add the fresh reporting Miri, concurrency TSan and assurance results above. The supplement does not rerun ASan/LSan, every Miri test or every target. Accepting the unchanged codec checks requires an explicit scope decision. |
+| Assurance-context reporting | `src/v2/assurance/report.rs` calls `runtime::backend_report()`. Refreshed unit/integration and focused TSan results are required; do not infer this consumer is unaffected merely because its own source is unchanged. |
+| Companion consumers | `portability/companion_features/common.rs` observes the runtime report. The refreshed isolated feature matrix above supersedes reliance on old reporting assertions, without claiming new package publication evidence. |
+| WASM and browser captures | The runtime-dispatch smoke calls `backend_report()` and has been refreshed in Node/Wasmtime. The old Safari and loader campaigns retain their original source/artifact identities. Final package provenance and hashes must be regenerated and checked; the supplement cannot authorize a different browser artifact. |
+| Performance and native admission | Both `perf/src/main.rs` and `perf/public-api/src/main.rs` collect runtime reports outside their measured loops. Preserve old measurements as historical threshold evidence, not freshly measured performance of this correction. Unchanged loops do not prove identical linked layout or timings. The accepted V1 slowdown remains disclosed. |
+| Native ABI, assembly and secret/CT timing | Original wrappers, kernels and timing harnesses are unchanged, but linked/compiler-output equivalence has not been established for this correction. Retain only with an explicitly reviewed original-source limitation, or recapture affected checks. The focused native reporting runs are not replacements for ABI or timing campaigns. |
+| QEMU and full-release CI | RVV/SVE tests contain reporting assertions. Require the final full-release workflow, including deferred emulation gates, on the exact final candidate. No old CI result substitutes for this run. |
+| SBOM, package inventories, reproducibility, final index and signatures | Regenerate candidate-bound records after policy approval. Never copy an old source identifier into a new artifact or seal the currently staged collection as final. |
+
+This is a source-impact assessment, not a formal call-graph proof. In
+particular, no binary/timing equivalence is inferred from a text search.
+
+### Required Independent Decision
+
+The recommendation is to reuse only the unchanged property coverage described
+above, preserve all original source/toolchain identities and bounds, and attach
+the fresh focused checks as a separately identified supplement. Native ABI,
+assembly, timing and performance limitations require explicit acceptance or
+recapture; they are not silently included in codec-source reuse.
+
+The reviewer needs the original retained campaign inventory, both supplemental
+archives, the source diff and this assessment. Review must cover the exact
+additional correction history: `c8ca4da`, `498748b`, `f921e97`, `6c8b109` and
+`29cc6ef`, as well as the already pinned historical corrections. A clean SAST
+verdict alone is not that decision. Record acceptance or required recaptures
+per campaign, including whether the capture helpers and their actual logs are
+admissible; do not approve evidence from this narrative alone.
+
+Only after that decision should a new scoped validator policy be implemented
+and independently reviewed, with an out-of-band policy anchor. It must bind
+exact signed correction identities/order, changed-file inventories, the fresh
+supplement source and hashes, complete file inventories, and each authorized
+claim. It must reject missing/failed supplements, source drift, substituted
+corrections and extra or linked evidence entries. Do not merely add runtime
+paths to the existing metadata exception or retain its assertion that runtime
+source is unchanged.
+
+The existing validator was retested: its mutation suite passes, and the actual
+frozen-to-`29cc6ef` check still fails with `2.1 native-inventory correction
+inventory mismatch`. No validator, workflow or evidence-acceptance rule was
+relaxed by this assessment. Final signing, full-release CI, independent final
+review, tagging and publication remain separate requirements.
+
 ## Final Acceptance
 
 Retain the signed candidate evidence before making the report-only commit.
