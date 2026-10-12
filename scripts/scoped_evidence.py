@@ -15,6 +15,7 @@ MAX_ENTRIES = 10_000
 MAX_BYTES = 2 * 1024**3
 MAX_MANIFEST = 2 * 1024**2
 MAX_TAR_PADDING = tarfile.RECORDSIZE + tarfile.BLOCKSIZE
+MAX_PAX_PATH = 4096
 SHA256 = re.compile(r"[0-9a-f]{64}")
 
 
@@ -52,6 +53,46 @@ class SingleGzipReader:
 
 
 class StrictTarInfo(tarfile.TarInfo):
+    @classmethod
+    def fromtarfile(cls, archive):
+        # Accept only the canonical writer's regular/directory headers and one
+        # necessary PAX path record. Generic PAX parsing silently loses duplicate
+        # keys, extension-header metadata and padding before yielding a member.
+        offset = archive.fileobj.tell()
+        raw = archive.fileobj.read(tarfile.BLOCKSIZE)
+        member = cls.frombuf(raw, "utf-8", "strict")
+        path = None
+        if member.type == tarfile.XHDTYPE:
+            if not 0 < member.size <= MAX_PAX_PATH:
+                raise ValueError("PAX path exceeds metadata limit")
+            payload = archive.fileobj.read(member.size + (-member.size % tarfile.BLOCKSIZE))
+            record = re.fullmatch(rb"([1-9][0-9]*) path=(.+)\n", payload[:member.size])
+            if record is None or int(record[1]) != member.size:
+                raise ValueError("non-canonical PAX path metadata")
+            path = record[2].decode("utf-8", "strict")
+            header = archive.fileobj.read(tarfile.BLOCKSIZE)
+            raw += payload + header
+            # A terminator here is not the end of the archive: a PAX record
+            # must be followed by its own regular/directory header.
+            if header == bytes(tarfile.BLOCKSIZE):
+                raise ValueError("missing member after PAX path")
+            member = cls.frombuf(header, "utf-8", "strict")
+        if member.type not in (tarfile.REGTYPE, tarfile.DIRTYPE) or member.size < 0:
+            raise ValueError("linked, sparse or special archive member")
+        if path is not None:
+            member.name = path.rstrip("/") if member.isdir() else path
+        canonical(member.name)
+        expected = tarfile.TarInfo(member.name)
+        expected.type = member.type
+        expected.mode = 0o700 if member.isdir() else 0o600
+        expected.size = member.size
+        if raw != expected.tobuf(format=tarfile.PAX_FORMAT, encoding="utf-8", errors="strict"):
+            raise ValueError("non-canonical tar metadata")
+        member.offset = offset
+        member.offset_data = archive.fileobj.tell()
+        archive.offset = member.offset_data + member.size + (-member.size % tarfile.BLOCKSIZE)
+        return member
+
     @classmethod
     def frombuf(cls, buf, encoding, errors):
         # TarFile normally tolerates an invalid/truncated header after a member.
@@ -165,6 +206,27 @@ def require_record(record):
         raise ValueError("invalid size/hash record")
 
 
+def verify_gzip_header(stream, pin):
+    # Existing transports contain their writer's basename and timestamp. Keep
+    # those bytes unchanged, but bind them explicitly rather than accepting any
+    # optional gzip metadata under a newly computed outer archive hash.
+    value = pin.get("gzip_header")
+    if not isinstance(value, str) or not re.fullmatch(r"[0-9a-f]{20,512}", value) or len(value) % 2:
+        raise ValueError("invalid pinned gzip metadata")
+    header = bytes.fromhex(value)
+    if (header[:3] != b"\x1f\x8b\x08" or header[3] not in (0, 8)
+            or header[8] != 2 or header[9] not in (3, 255)):
+        raise ValueError("unsupported gzip metadata")
+    if header[3] == 8:
+        if not re.fullmatch(rb"[A-Za-z0-9][A-Za-z0-9._-]*\x00", header[10:]):
+            raise ValueError("invalid pinned gzip filename")
+    elif len(header) != 10:
+        raise ValueError("unexpected pinned gzip metadata")
+    if stream.read(len(header)) != header:
+        raise ValueError("gzip metadata differs from reviewed pin")
+    stream.seek(0)
+
+
 def verify_packet(path, pin):
     """Hash before parsing; then verify every member against the pinned manifest."""
     require_record(pin["archive"])
@@ -173,6 +235,7 @@ def verify_packet(path, pin):
         if digest_stream(stream, MAX_BYTES) != pin["archive"]:
             raise ValueError("packet transport digest/size mismatch")
         stream.seek(0)
+        verify_gzip_header(stream, pin)
         files, directories, seen = {}, [], set()
         total, manifest_raw = 0, None
         decoded = SingleGzipReader(stream)

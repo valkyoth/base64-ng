@@ -180,6 +180,20 @@
         "scripts/validate-scoped-campaign.py",
         "security/campaign-claims-2.1.json"
       ]
+    },
+    {
+      "commit": "aae35b755ec9303efa0b50171f7ecabaeaa9ac63",
+      "tree": "12f17fb3276f20ca349589843ad1e5c454203db5",
+      "paths": [
+        "docs/RELEASE_EVIDENCE.md",
+        "docs/RELEASE_FREEZE_2.1.md",
+        "scripts/scoped_campaign.py",
+        "scripts/scoped_evidence.py",
+        "scripts/test-scoped-campaign.py",
+        "scripts/test-scoped-evidence.py",
+        "security/campaign-attestations-2.1.json",
+        "security/campaign-claims-2.1.json"
+      ]
     }
   ],
   "sources": {
@@ -198,6 +212,7 @@
   },
   "packets": {
     "historical": {
+      "gzip_header": "1f8b080885decc6a02ff7265766965772d7061636b65742e7461722e677a2e7061727469616c00",
       "implicit_directories": [
         "supplements"
       ],
@@ -220,6 +235,7 @@
     },
     "recapture": {
       "implicit_directories": [],
+      "gzip_header": "1f8b0808a72bcd6a02ff7265636170747572652d7265766965772e7461722e677a2e7061727469616c00",
       "archive": {
         "bytes": 638572543,
         "sha256": "e0742e369ac07826e2dc5ec16b0a5400578855d749f1ff58021609c857020997"

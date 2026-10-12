@@ -77,6 +77,12 @@ class CampaignTests(unittest.TestCase):
     def test_exact_signed_history_and_policy(self):
         self.check()
 
+    def test_gzip_metadata_pin_is_bound_to_reviewed_policy(self):
+        self.policy["packets"]["historical"]["gzip_header"] = "1f8b08000000000002ff"
+        self.write(campaign.POLICY_PATH, json.dumps(self.policy))
+        with self.assertRaisesRegex(ValueError, "dirty|drift"):
+            self.check()
+
     def test_proposal_does_not_claim_candidate_approval(self):
         campaign.verify_history(self.root, self.policy)
         with patch.object(campaign, "verify_packet", return_value={}), patch.object(campaign, "verify_claims"):

@@ -1385,6 +1385,15 @@ leave all evidence untouched. Gzip verification consumes exactly one member and
 its CRC/trailer, rejects all appended bytes/members, and inspects tar padding
 through the tar reader's prefetched buffer. Only bounded zero padding following
 two complete end-marker blocks is accepted. Member padding must also be zero.
+Tar headers must exactly match canonical PAX serialization: zero owner IDs and
+mtime, empty owner/group/link/device metadata, mode `0600` for regular files and
+`0700` for directories. Only a necessary, bounded, single `path` PAX record is
+accepted. Raw extension headers and padding are checked too, so discarded keys,
+duplicate records, global headers and unused header bytes cannot hide data.
+The policy separately pins the existing gzip header bytes, including the writer
+basename and timestamp. Comments, extra fields and other optional header forms
+are rejected. Updating only the outer transport hash cannot authorize metadata.
+These checks preserve both original archives and their manifest hashes unchanged.
 
 Claims require digest-pinned operator attestations, not merely existing paths.
 The attested commit/tree, campaign, result, disposition, scope and exclusions
