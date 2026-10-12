@@ -186,6 +186,13 @@ limit extrapolation to other machines. No competitor-wide performance ranking
 or new Windows, WASM, RVV or SVE performance claim follows from these Linux/Mac
 captures; their previous scoped evidence and final campaign obligations remain.
 
+Those results describe the earlier candidate named above. The corrected-source
+recapture at `516f785` later found a narrow Neoverse-V2 default-mode in-place
+encode slowdown. The maintainer accepted it as a documented 2.1 limitation;
+the [decision and evidence](RELEASE_FREEZE_2.1.md#accepted-neoverse-v2-performance-limitation)
+retain the unfavorable measurements and a targeted optimization follow-up.
+This does not broaden the five-percent band or relax any security checks.
+
 ## Explicit Tradeoffs
 
 - **Small encode:** The focused x86 repeat improves 192/193-byte encoding but

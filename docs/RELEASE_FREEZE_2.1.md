@@ -378,9 +378,11 @@ before release acceptance, not a declaration that old commands passed.
 
 The Neoverse-V1 default in-place encode slowdown remains an explicit release
 disposition item: eight large cells were 5.9-9.8 percent slower than 2.0.4.
-Two focused fresh-build Neoverse-V2 repeats had no signals outside the existing
-five-percent band. Those V2 results neither invalidate V1 nor establish CPU
-differences as the sole cause. No allocation increases were observed.
+Two focused fresh-build Neoverse-V2 repeats in that earlier campaign had no
+signals outside the existing five-percent band. Those historical V2 results
+neither invalidate V1 nor establish CPU differences as the sole cause. No
+allocation increases were observed. The later corrected-source V2 recapture
+has a separate [accepted limitation](#accepted-neoverse-v2-performance-limitation).
 
 Still pending: independent correction review, complete assembly review,
 performance disposition, candidate-bound package/SBOM refresh, signed evidence
@@ -675,6 +677,34 @@ future claim-specific reuse policy still requires independent review and an
 out-of-band anchor; this documentation does not extend the existing policy.
 Do not seal the mixed historical staging tree. Complete the required
 recaptures, final-candidate CI and reviewed inventory/signatures first.
+
+### Accepted Neoverse-V2 Performance Limitation
+
+The maintainer explicitly accepted the corrected-source Neoverse-V2 slowdown
+as a documented 2.1 performance limitation. This decision is separate from the
+earlier Neoverse-V1 acceptance and applies to source
+`516f785294732bb3a61ebcf9c8eb9a52b17fdf09` versus 2.0.4 on the measured host.
+
+Two fresh-build focused repeats each measured 48 cells with 15 alternating
+pairs per cell. They covered default and SIMD in-place, canonical and historical
+encoding, all four strict profiles, and 64 KiB/1 MiB random inputs with warm
+calls. Repeat one flagged four default-mode in-place encode cells at
+5.26-5.62 percent higher paired latency; repeat two flagged two at
+5.67-5.74 percent. No SIMD regression signals or allocation increases occurred
+in this focused set. This is not a claim that every ARM workload is unchanged.
+
+The retained focused archive SHA-256 is
+`77fc0d7f3e13914d24675fd32aead0159a9b006e511c3399321e4ede0917a19d`.
+Its transport digest, capture file hashes and recomputed summaries were checked.
+The unsigned raw captures and the unfavorable classifications remain intact;
+acceptance does not relabel these cells as passing the five-percent band.
+
+Retain the shared implementation rather than introducing an ARM-specific 2.0.4
+rollback. Follow up with a targeted investigation of default-mode in-place
+encoding, using these cases as the regression baseline before accepting an
+optimization. The cause is not established. This exception changes no routing,
+benchmark threshold, correctness check, security requirement or evidence-reuse
+policy, and does not authorize release or waive the remaining gates.
 
 ## Final Acceptance
 
