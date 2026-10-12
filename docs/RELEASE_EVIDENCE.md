@@ -1344,3 +1344,44 @@ cargo info base64-ng
 
 Do not move an existing release tag. If the tagged source is wrong, cut a new
 patch release.
+
+## Scoped 2.1 Review Preflight
+
+The corrected reporting implementation requires claim-specific provenance,
+not the old all-campaign source-equivalence exception. The proposal is in
+`security/campaign-claims-2.1.json`. Its read-only verifier preserves historical
+`b3e493e`, reporting supplement `29cc6ef` and recapture `516f785` identities.
+It is not connected to finalization and cannot authorize signing or publication.
+
+For local proposal inspection, with no reviewed-policy environment variable set:
+
+```sh
+python3 scripts/validate-scoped-campaign.py --inspect-proposal \
+  --historical-packet target/reporting-review-ezubg4k0/review-packet.tar.gz \
+  --recapture-packet target/recapture-review-algjifmr/recapture-review.tar.gz
+```
+
+This checks exact recorded history and packet integrity; it does not validate or
+approve the current working tree. The result explicitly states that no candidate
+has been validated. The recapture transport excludes the alternate-path WASM
+working checkout/cache only; resulting artifacts, comparison records and source
+bundle are retained. This exclusion is not permission to omit release evidence.
+The original historical tar omits an explicit `supplements/` directory header;
+that exact implicit archive parent is pinned separately. No file is omitted,
+no path is extracted, and filesystem/final-evidence inventory rules are unchanged.
+
+Reviewed mode omits `--inspect-proposal` and requires
+`BASE64_NG_REVIEWED_SCOPED_POLICY_COMMIT` from protected independent review,
+never from `HEAD`, an archive or candidate-controlled output. Before executing
+any candidate Python code, independently verify that commit's authorized SSH
+signature using the frozen signers and `GIT_NO_REPLACE_OBJECTS=1`, then compare
+the validator, both `scoped_*.py` modules and policy JSON with the approved
+commit. Use a trusted isolated Python/Git environment and checkout. Internal
+signature and file comparisons are defense in depth, not bootstrap trust.
+
+Both modes hash bounded archives before parsing, check complete inventories and
+leave all evidence untouched. Approval of source-property reuse does not imply
+approval of fresh assembly/performance review, final-candidate metadata or CI.
+The result always retains the remaining release requirements and
+`release_authorized=false`. Do not rename this JSON to `FINAL-MANIFEST.txt` or
+treat it as a signature. Finalizer integration needs a separate reviewed change.

@@ -1,0 +1,503 @@
+{
+  "schema": 1,
+  "release_authorized": false,
+  "purpose": "Claim-specific preflight proposal; not a replacement for finalization, signatures, independent review or final release CI.",
+  "history": [
+    {
+      "commit": "b3e493e64a583245f7aab542d983b7b914c67eb9",
+      "tree": "06f9e65432631d43f868a95bb6083c18a61a1f39",
+      "paths": [
+        "scripts/check-2.1-rvv-validation.sh",
+        "src/simd/mod.rs"
+      ]
+    },
+    {
+      "commit": "f2093c66c85c94e1c0e432c9b8d79aaa82901a7b",
+      "tree": "926afb2976274821d1f55005dc6d79ac4b302758",
+      "paths": [
+        "docs/RELEASE_FREEZE_2.1.md"
+      ]
+    },
+    {
+      "commit": "a022372e1e3e9be6840a6db34d704dfe158a3c79",
+      "tree": "f87c16079148371ef21b58eb45865cbf32c9a2e6",
+      "paths": [
+        "docs/RELEASE_FREEZE_2.1.md"
+      ]
+    },
+    {
+      "commit": "a28807c3080e5cc949beb8c558c949e9d5279119",
+      "tree": "b0e73db901eb03cd3adcd8719be6e8294f1f94aa",
+      "paths": [
+        "docs/RELEASE_FREEZE_2.1.md"
+      ]
+    },
+    {
+      "commit": "0ace376a0e737b0ead1926920e403a5b448e7988",
+      "tree": "5ec4ccbc809ab9b6fa2443f295bb5289b7139867",
+      "paths": [
+        "docs/RELEASE_EVIDENCE.md",
+        "docs/RELEASE_FREEZE_2.1.md",
+        "scripts/check-2.0-memory-hardware-evidence.sh",
+        "scripts/checks.sh",
+        "scripts/evidence-equivalence.py",
+        "scripts/finalize-release-evidence.sh",
+        "scripts/test-campaign-source-equivalence.py",
+        "scripts/test-neon-campaign.py",
+        "scripts/test-release-evidence-outcomes.sh",
+        "scripts/validate-campaign-source-equivalence.py",
+        "scripts/validate-neon-campaign.py",
+        "scripts/validate-release-evidence-outcomes.sh",
+        "scripts/validate-release-metadata.sh"
+      ]
+    },
+    {
+      "commit": "427e938165fc9eef6fef02cf9131985d9714e1e2",
+      "tree": "c3db93c7694a680234d50300041584ef83dd5634",
+      "paths": [
+        "docs/RELEASE_EVIDENCE.md",
+        "docs/RELEASE_FREEZE_2.1.md",
+        "scripts/evidence-equivalence.py",
+        "scripts/test-campaign-source-equivalence.py",
+        "scripts/test-evidence-equivalence.py",
+        "scripts/test-neon-campaign.py",
+        "scripts/validate-campaign-source-equivalence.py",
+        "scripts/validate-neon-campaign.py"
+      ]
+    },
+    {
+      "commit": "a0dd4e9638f56100f0a790b199d052a00b3cedb3",
+      "tree": "babec7a43251f639e9d80774fc845d40f3c23eb8",
+      "paths": [
+        "scripts/test-fuzz-shard-evidence.py"
+      ]
+    },
+    {
+      "commit": "af49843efe2b1ac97db8b9441c8d29dd9dfc7082",
+      "tree": "305c696d45392f824b8ee616b015f363c44ca685",
+      "paths": [
+        "docs/RELEASE_EVIDENCE.md",
+        "docs/RELEASE_FREEZE_2.1.md",
+        "scripts/test-campaign-source-equivalence.py",
+        "scripts/validate-campaign-source-equivalence.py"
+      ]
+    },
+    {
+      "commit": "c8ca4dac239e95b95c94758876f30dbca35aaa9f",
+      "tree": "8d352ce21eac4bc0ae391931bd9de622d00ce255",
+      "paths": [
+        "src/runtime/tests.rs"
+      ]
+    },
+    {
+      "commit": "498748bf57018d527de38077cc2da83388fdcc3f",
+      "tree": "91f725f1da923360ca86656afa06fd27c0bdf424",
+      "paths": [
+        "api-snapshots/v2.1.0/base64-ng.txt",
+        "docs/2.0_BACKEND_HEALTH.md",
+        "docs/2.0_OPERATION_REPORTING.md",
+        "docs/RELEASE_FREEZE_2.1.md",
+        "src/runtime/mod.rs",
+        "src/runtime/operation.rs",
+        "src/runtime/report.rs",
+        "src/runtime/tests.rs",
+        "src/v2/backend_health.rs"
+      ]
+    },
+    {
+      "commit": "f921e97184859bea4efe1fea410f3500c9a33cc7",
+      "tree": "6f5032c39372ab2e93c7ceaad96605c7d785426c",
+      "paths": [
+        "docs/2.0_BACKEND_HEALTH.md",
+        "docs/2.0_OPERATION_REPORTING.md",
+        "docs/RELEASE_FREEZE_2.1.md",
+        "src/decode_backend/policy/tests.rs",
+        "src/encode_backend/policy/tests.rs",
+        "src/runtime/tests.rs",
+        "src/v2/backend_health.rs",
+        "src/v2/backend_health/tests.rs"
+      ]
+    },
+    {
+      "commit": "6c8b109c3b3437425a661c9fe337691540fd9837",
+      "tree": "696e232357c6eac8da416a75fe31b120972880e7",
+      "paths": [
+        "docs/RELEASE_FREEZE_2.1.md",
+        "scripts/check-2.1-neon-validation.sh",
+        "src/simd/mod.rs",
+        "src/simd/neon.rs",
+        "src/simd/tests.rs"
+      ]
+    },
+    {
+      "commit": "29cc6ef2c4dd60f67e0692591b9dabf2753b0bc1",
+      "tree": "7688efc6fce5aab0a06bbc68b7af234ed178a601",
+      "paths": [
+        "docs/RELEASE_FREEZE_2.1.md",
+        "src/runtime/tests.rs"
+      ]
+    },
+    {
+      "commit": "516f785294732bb3a61ebcf9c8eb9a52b17fdf09",
+      "tree": "7e502a7992120690e11aa2aca50b77a074b10281",
+      "paths": [
+        "docs/RELEASE_FREEZE_2.1.md"
+      ]
+    },
+    {
+      "commit": "1429de8537b2ee6b69165aa5a2449e1c2650d5f7",
+      "tree": "5fba39a04f8a597ad8229288fe22ee4efc560d38",
+      "paths": [
+        "docs/RELEASE_FREEZE_2.1.md"
+      ]
+    },
+    {
+      "commit": "a55440a31478b9c9f23760f26fb3995c15361995",
+      "tree": "7cda953f2fabc16f0bbff8bb228087c6936d0398",
+      "paths": [
+        "docs/POLICY_2.1.md",
+        "docs/RELEASE_FREEZE_2.1.md"
+      ]
+    },
+    {
+      "commit": "25eea0e34f2fcf9c561740737eeb2a05510c5bb9",
+      "tree": "4b4a36508db632dfc5b6cc695cce1615d0bd400c",
+      "paths": [
+        "docs/RELEASE_FREEZE_2.1.md"
+      ]
+    }
+  ],
+  "sources": {
+    "frozen": {
+      "commit": "b3e493e64a583245f7aab542d983b7b914c67eb9",
+      "tree": "06f9e65432631d43f868a95bb6083c18a61a1f39"
+    },
+    "reporting": {
+      "commit": "29cc6ef2c4dd60f67e0692591b9dabf2753b0bc1",
+      "tree": "7688efc6fce5aab0a06bbc68b7af234ed178a601"
+    },
+    "recapture": {
+      "commit": "516f785294732bb3a61ebcf9c8eb9a52b17fdf09",
+      "tree": "7e502a7992120690e11aa2aca50b77a074b10281"
+    }
+  },
+  "packets": {
+    "historical": {
+      "implicit_directories": ["supplements"],
+      "archive": {
+        "bytes": 168330465,
+        "sha256": "1f16c9c4ab1eea0d9758a46064a63ec0d6a3c0100451176de3a819e57ff395da"
+      },
+      "manifest": {
+        "bytes": 348078,
+        "sha256": "fd343d249af9774f1705abe121f06c3771e7880163eb4f39488857b4babd2ce6"
+      },
+      "file_count": 1557,
+      "directory_count": 276,
+      "metadata": {
+        "assessment_commit": "516f785294732bb3a61ebcf9c8eb9a52b17fdf09",
+        "frozen_commit": "b3e493e64a583245f7aab542d983b7b914c67eb9",
+        "release_authorized": false,
+        "schema": 1
+      }
+    },
+    "recapture": {
+      "implicit_directories": [],
+      "archive": {
+        "bytes": 638572543,
+        "sha256": "e0742e369ac07826e2dc5ec16b0a5400578855d749f1ff58021609c857020997"
+      },
+      "manifest": {
+        "bytes": 476475,
+        "sha256": "b41422afef25adae18a3ee3e61aa1e0e0afc0ade9f5083c2e770672809cf62e6"
+      },
+      "file_count": 1854,
+      "directory_count": 344,
+      "metadata": {
+        "assessment_commit": "25eea0e34f2fcf9c561740737eeb2a05510c5bb9",
+        "excluded_working_directories": {
+          "staged-evidence": [
+            "wasm-loader/path-independent"
+          ]
+        },
+        "recapture_source": "516f785294732bb3a61ebcf9c8eb9a52b17fdf09",
+        "recapture_tree": "7e502a7992120690e11aa2aca50b77a074b10281",
+        "release_authorized": false,
+        "schema": 1,
+        "status": "unsigned-review-transport"
+      }
+    }
+  },
+  "claims": [
+    {
+      "id": "codec-fuzz",
+      "source": "frozen",
+      "disposition": "historical-scoped-reuse",
+      "scope": "18 one-hour unchanged codec, format, incremental, adapter, SIMD-kernel and assurance-model campaigns.",
+      "excludes": "Not coverage of corrected reporting, health attribution, automatic-tier inventory or consumers.",
+      "evidence": [
+        {
+          "packet": "historical",
+          "path": "historical-staging/fuzz"
+        }
+      ]
+    },
+    {
+      "id": "bounded-proofs",
+      "source": "frozen",
+      "disposition": "historical-scoped-reuse",
+      "scope": "45 normal and 19 advanced unchanged proof obligations at their original bounds.",
+      "excludes": "Incremental padded progress remains unwind 5; unsuccessful bound-12 attempts are not passing evidence. No reporting or native machine-code proof.",
+      "evidence": [
+        {
+          "packet": "historical",
+          "path": "historical-staging/kani"
+        }
+      ]
+    },
+    {
+      "id": "ownership-miri",
+      "source": "frozen",
+      "disposition": "historical-scoped-reuse",
+      "scope": "Historical five-group unchanged ownership/provenance coverage.",
+      "excludes": "Not a complete current-source Miri campaign; reporting needs the separate fresh supplement.",
+      "evidence": [
+        {
+          "packet": "historical",
+          "path": "historical-staging/miri"
+        }
+      ]
+    },
+    {
+      "id": "memory-sanitizers",
+      "source": "frozen",
+      "disposition": "historical-scoped-reuse",
+      "scope": "Historical ASan/LSan and unchanged TSan coverage, supplemented by fresh reporting TSan.",
+      "excludes": "Not a complete current-binary sanitizer campaign; no inference from failed attempts.",
+      "evidence": [
+        {
+          "packet": "historical",
+          "path": "historical-staging/2.0-memory-sanitizers"
+        }
+      ]
+    },
+    {
+      "id": "big-endian-codec",
+      "source": "frozen",
+      "disposition": "historical-scoped-reuse",
+      "scope": "Unchanged scalar/endian codec behavior.",
+      "excludes": "Not updated reporting assertions, native ABI or timing.",
+      "evidence": [
+        {
+          "packet": "historical",
+          "path": "historical-staging/big-endian-qemu"
+        }
+      ]
+    },
+    {
+      "id": "wasm-kernel",
+      "source": "frozen",
+      "disposition": "historical-scoped-reuse",
+      "scope": "Unchanged WASM SIMD kernel/codegen properties.",
+      "excludes": "Not the final npm artifact, browser execution or package provenance.",
+      "evidence": [
+        {
+          "packet": "historical",
+          "path": "historical-staging/wasm-simd"
+        }
+      ]
+    },
+    {
+      "id": "reporting-native",
+      "source": "reporting",
+      "disposition": "fresh-reporting-supplement",
+      "scope": "Five native reporting captures: x86/Windows 214 executions each, ARM/Apple 192 each, RISC-V compact 40.",
+      "excludes": "RISC-V compact is not MSRV, RVV hardware, performance, full native coverage or long fuzzing. Unsigned collector records.",
+      "evidence": [
+        {
+          "packet": "historical",
+          "path": "supplements/reporting-revalidation-29cc6ef.tar.gz"
+        }
+      ]
+    },
+    {
+      "id": "reporting-followups",
+      "source": "reporting",
+      "disposition": "fresh-reporting-supplement",
+      "scope": "Four reporting Miri tests, focused TSan, assurance (36), companions (96 configurations/90 executions), Node/Wasmtime reporting smoke.",
+      "excludes": "Initial failed Miri excluded. No whole-source Miri/sanitizer claim or final packaged WASM/browser claim. Private metadata retained.",
+      "evidence": [
+        {
+          "packet": "historical",
+          "path": "supplements/reporting-followup-29cc6ef.tar.gz"
+        }
+      ]
+    },
+    {
+      "id": "native-abi-admission",
+      "source": "recapture",
+      "disposition": "fresh-recapture",
+      "scope": "Fresh Windows active/MSRV ABI, ARM/Apple NEON admission and physical X60 native validation/admission.",
+      "excludes": "Scoped ABI function review, not whole-binary certification. Windows performance controls are not version regression evidence; SVE is not admitted.",
+      "evidence": [
+        {
+          "packet": "recapture",
+          "path": "windows-native"
+        },
+        {
+          "packet": "recapture",
+          "path": "arm-native"
+        },
+        {
+          "packet": "recapture",
+          "path": "macos-native"
+        },
+        {
+          "packet": "recapture",
+          "path": "riscv-native"
+        },
+        {
+          "packet": "recapture",
+          "path": "staged-evidence/native-inventory-capture"
+        },
+        {
+          "packet": "recapture",
+          "path": "staged-evidence/neon-native-admission"
+        },
+        {
+          "packet": "recapture",
+          "path": "staged-evidence/riscv-native-admission"
+        }
+      ]
+    },
+    {
+      "id": "assembly",
+      "source": "recapture",
+      "disposition": "fresh-recapture",
+      "scope": "295 reviewed release/LTO and concrete CT-consumer bodies across configurations, plus 38 Windows bodies and nine RVV/five SVE leaf streams.",
+      "excludes": "Scoped operator review, not independent whole-binary or microarchitectural proof. Only corrected v4 comparison supports the record; intermediate failures remain retained.",
+      "evidence": [
+        {
+          "packet": "recapture",
+          "path": "staged-evidence/assembly-review-supplement"
+        },
+        {
+          "packet": "recapture",
+          "path": "staged-evidence/assembly-extra-cross"
+        },
+        {
+          "packet": "recapture",
+          "path": "local-capture"
+        },
+        {
+          "packet": "recapture",
+          "path": "windows-native"
+        }
+      ]
+    },
+    {
+      "id": "timing",
+      "source": "recapture",
+      "disposition": "fresh-recapture",
+      "scope": "Fresh Dudect: 12 cases, nine equal-work, maximum absolute t 2.275; existing 20000/64/1000/10 floors retained.",
+      "excludes": "Not a quiet-host run; unrelated workloads present. Public-length cases informational. Not a formal constant-time guarantee.",
+      "evidence": [
+        {
+          "packet": "recapture",
+          "path": "staged-evidence/dudect"
+        },
+        {
+          "packet": "recapture",
+          "path": "local-capture"
+        }
+      ]
+    },
+    {
+      "id": "paired-performance",
+      "source": "recapture",
+      "disposition": "fresh-recapture",
+      "scope": "Fresh ARM/Apple/x86 paired captures with unfavorable classifications retained; native admission separate.",
+      "excludes": "Accepted V1 and V2 limitations remain separate; V2 default in-place encode 5.26-5.74% slower. Checked encode/incremental and small/rejected-input costs remain disclosed. x86 host load caveat; same-source controls not version evidence.",
+      "evidence": [
+        {
+          "packet": "recapture",
+          "path": "performance-review"
+        },
+        {
+          "packet": "recapture",
+          "path": "x86-policy"
+        },
+        {
+          "packet": "recapture",
+          "path": "arm-native"
+        },
+        {
+          "packet": "recapture",
+          "path": "macos-native"
+        },
+        {
+          "packet": "recapture",
+          "path": "supplements/recapture-arm-516f785-collected/focused.tar.gz"
+        }
+      ]
+    },
+    {
+      "id": "rvv-sve-emulation",
+      "source": "recapture",
+      "disposition": "fresh-recapture",
+      "scope": "Fresh complete RVV VLEN 128/256 and SVE 128/256/512 gates including affected reporting assertions.",
+      "excludes": "Emulation is not native timing, ABI or admission; SVE remains non-admitted.",
+      "evidence": [
+        {
+          "packet": "recapture",
+          "path": "emulation-capture"
+        },
+        {
+          "packet": "recapture",
+          "path": "staged-evidence/riscv-qemu"
+        },
+        {
+          "packet": "recapture",
+          "path": "staged-evidence/sve-qemu"
+        }
+      ]
+    },
+    {
+      "id": "wasm-package-browsers",
+      "source": "recapture",
+      "disposition": "fresh-recapture",
+      "scope": "Fresh scalar/SIMD artifact, loader/Wasmtime, Chromium, Firefox and real Safari verification at the recorded recapture source.",
+      "excludes": "Not final-candidate package/SBOM/provenance. Initial Mac failure retained and excluded. Alternate-path Cargo working cache excluded from transport; resulting artifact bytes retained.",
+      "evidence": [
+        {
+          "packet": "recapture",
+          "path": "staged-evidence/wasm-loader"
+        },
+        {
+          "packet": "recapture",
+          "path": "wasm-alternate-artifacts"
+        },
+        {
+          "packet": "recapture",
+          "path": "safari"
+        },
+        {
+          "packet": "recapture",
+          "path": "local-capture"
+        },
+        {
+          "packet": "recapture",
+          "path": "macos-native"
+        }
+      ]
+    }
+  ],
+  "pending": [
+    "independent-policy-review",
+    "independent-recapture-review",
+    "final-candidate-metadata",
+    "exact-candidate-full-release-ci",
+    "signed-final-index",
+    "release-authorization"
+  ]
+}

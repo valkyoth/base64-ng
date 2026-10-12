@@ -782,6 +782,41 @@ release steps include that policy's independent review/out-of-band anchor,
 final-candidate metadata refresh, exact-final-candidate
 full-release CI, evidence index/signatures and final report-only acceptance.
 
+### Scoped Policy Preflight Proposal
+
+`security/campaign-claims-2.1.json` inventories the exact signed history through
+`25eea0e`, three distinct source identities and fourteen narrowly scoped claims.
+It pins both complete private review transports, not only selected successful
+logs. Failed attempts, performance regressions and claim exclusions remain in
+the retained bytes. The recapture packet SHA-256 is
+`e0742e369ac07826e2dc5ec16b0a5400578855d749f1ff58021609c857020997`;
+its manifest SHA-256 is
+`b41422afef25adae18a3ee3e61aa1e0e0afc0ade9f5083c2e770672809cf62e6`.
+
+The read-only `scripts/validate-scoped-campaign.py` preflight verifies this
+proposal without extracting archives, executing bundled code, copying records,
+changing the finalizer or approving release. It checks transport digests before
+parsing, bounded complete file/directory inventories, all indexed file hashes,
+source/status metadata and claim references. It rejects links, special entries,
+duplicate paths/JSON keys and non-canonical names. Ordinary CI runs synthetic
+mutation tests only, not the expensive historical or native campaigns.
+
+Proposal inspection is explicitly unapproved and makes no current-candidate
+claim. Reviewed mode additionally requires an independently supplied exact
+policy commit, its authorized signature, exact parent/path inventory and a
+clean matching HEAD. No later commit, including a revert, is implicitly allowed.
+Follow the trusted bootstrap in `RELEASE_EVIDENCE.md`; the validator's own drift
+check is not a trust root. The release account must remain isolated from other
+same-user writers. Archives still contain private metadata and are not public
+release assets.
+
+The old blanket source-equivalence validator and finalizer remain unchanged and
+blocked. This preflight is deliberately not wired in as an acceptance bypass.
+Independent review of the policy and recaptures must precede claim-aware final
+manifest integration. Final-candidate metadata, full-release CI, signatures and
+maintainer authorization remain required. Neither preflight mode emits a final
+manifest or reports `release_authorized=true`.
+
 ## Final Acceptance
 
 Retain the signed candidate evidence before making the report-only commit.
