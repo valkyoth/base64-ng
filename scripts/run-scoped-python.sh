@@ -27,8 +27,14 @@ python3 -I -X "pycache_prefix=$cache_dir" -c '
 import signal
 import sys
 signal.signal(signal.SIGINT, signal.default_int_handler)
+import importlib.machinery
 import runpy
 scripts_dir, program, *arguments = sys.argv[1:]
+# A cache prefix does not exclude legacy module.pyc or native extensions.
+sys.path_importer_cache[scripts_dir] = importlib.machinery.FileFinder(
+    scripts_dir,
+    (importlib.machinery.SourceFileLoader, importlib.machinery.SOURCE_SUFFIXES),
+)
 sys.path.insert(0, scripts_dir)
 sys.argv = [program, *arguments]
 runpy.run_path(program, run_name="__main__")

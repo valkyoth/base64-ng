@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""Exercise isolated scoped launchers against real unchecked-hash bytecode."""
+"""Exercise scoped source imports against cached and sourceless bytecode."""
 
+import importlib.machinery
 import importlib.util
 import json
 import os
@@ -101,6 +102,62 @@ class LauncherTests(unittest.TestCase):
             result = subprocess.run(["sh", str(ROOT / "scripts/finalize-release-evidence.sh"), flag],
                                     cwd=self.root, env=self.env, capture_output=True, text=True, timeout=20)
             self.check_result(result, args)
+
+    def test_legacy_sourceless_bytecode_cannot_shadow_stdlib_or_supply_local_modules(self):
+        for name in ("tomllib", "json", "scoped_probe"):
+            with self.subTest(module=name):
+                evil = self.root / "evil.py"
+                evil.write_text(f"from pathlib import Path\nPath({str(self.marker)!r}).touch()\n")
+                legacy = self.scripts / (name + ".pyc")
+                py_compile.compile(str(evil), cfile=str(legacy), doraise=True,
+                                   invalidation_mode=py_compile.PycInvalidationMode.UNCHECKED_HASH)
+                evil.unlink()
+                original = legacy.read_bytes()
+                if name == "scoped_probe":
+                    self.module.unlink()
+                for program in ("scoped_index.py", "scoped_finalizer.py"):
+                    (self.scripts / program).write_text(f"import {name}\n" + self.program)
+                (self.root / ".gitignore").write_text("*.py[cod]\n__pycache__/\ncache parent/\nbin/\n")
+                for args in (["init", "-q"], ["add", "."],
+                             ["-c", "user.name=fixture", "-c", "user.email=test@example.invalid",
+                              "-c", "commit.gpgsign=false", "commit", "-qm", name]):
+                    subprocess.run(["git", *args], cwd=self.root, check=True, capture_output=True)
+                self.assertEqual(subprocess.check_output(
+                    ["git", "status", "--porcelain", "--untracked-files=all"], cwd=self.root), b"")
+                # A fresh cache prefix alone still executes legacy bytecode.
+                with tempfile.TemporaryDirectory(dir=self.cache_parent) as cache:
+                    control = subprocess.run([sys.executable, "-I", "-X", "pycache_prefix=" + cache,
+                                              "-c", "import importlib, sys; sys.path.insert(0, sys.argv[1]); "
+                                              "importlib.import_module(sys.argv[2])", str(self.scripts), name],
+                                             capture_output=True, timeout=10)
+                self.assertEqual(control.returncode, 0, control.stderr)
+                self.assertTrue(self.marker.exists())
+                self.marker.unlink()
+                for program, args in (("scoped_index.py", ["--write"]),
+                                      ("scoped_index.py", ["--verify"]),
+                                      ("scoped_finalizer.py", [])):
+                    result = self.run_launcher(program, *args)
+                    if name == "scoped_probe":
+                        self.assertNotEqual(result.returncode, 0)
+                        self.assertIn("ModuleNotFoundError", result.stderr)
+                        self.assertEqual(result.stdout, "")
+                    else:
+                        self.check_result(result, args)
+                    self.assertFalse(self.marker.exists())
+                    self.assertEqual(list(self.cache_parent.iterdir()), [])
+                    self.assertEqual(legacy.read_bytes(), original)
+                legacy.unlink()
+                if name == "scoped_probe":
+                    self.module.write_text("value = 'source'\n")
+
+    def test_repository_native_extensions_cannot_shadow_source_or_stdlib(self):
+        for name in ("tomllib", "json", "scoped_probe"):
+            for suffix in importlib.machinery.EXTENSION_SUFFIXES:
+                # The default extension loader fails on these invalid binaries;
+                # the source-only finder must never attempt to load them.
+                (self.scripts / (name + suffix)).write_bytes(b"invalid extension fixture")
+        (self.scripts / "scoped_index.py").write_text("import tomllib\n" + self.program)
+        self.check_result(self.run_launcher(), [])
 
     def test_hostile_python_environment_and_site_customization_are_ignored(self):
         hostile = self.root / "hostile"

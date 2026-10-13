@@ -1626,9 +1626,13 @@ check, then retains the artifact, SBOM/reproducibility and report-only checks.
 All scoped entry points, including read-only review, use the authenticated
 `run-scoped-python.sh` launcher. It starts Python with `-I` and a fresh private
 bytecode-cache prefix, ignoring inherited Python configuration and pre-existing
-repository bytecode caches. Disabling cache writes alone does not disable cache
-reads. The launcher removes its temporary cache on success, failure and handled
-HUP/INT/TERM, forwarding these signals to its Python child before cleanup. Do not
+repository bytecode caches. Before adding `scripts/` to the import path, it
+registers a source-only finder for that directory, excluding legacy sourceless
+`module.pyc` files and native extensions that could otherwise shadow standard
+library modules. The fresh cache prefix is still required for source imports;
+disabling cache writes alone does not disable cache reads. The launcher removes
+its temporary cache on success, failure and handled HUP/INT/TERM, forwarding
+these signals to its Python child before cleanup. Do not
 invoke the Python entry points directly for release verification. Independently
 authenticate the launcher and source bytes before execution, use a trusted
 interpreter/standard library and shell toolchain, and keep the release account

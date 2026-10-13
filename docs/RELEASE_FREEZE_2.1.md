@@ -891,6 +891,13 @@ failure/signal cleanup and invalid schema types. These are tooling-only fixes;
 they require review of the updated integration commit, not relabeling campaigns
 or authorizing finalization.
 
+The launcher also restricts imports from `scripts/` to Python source. A fresh
+cache prefix alone does not block legacy sourceless bytecode. Regression tests
+plant ignored `tomllib.pyc`, `json.pyc` and source-absent `scoped_probe.pyc` files,
+demonstrate the original execution path with a clean fixture worktree, and verify
+that scoped write, verify and read-only review modes never execute those files.
+Native-extension shadowing is rejected while genuine source imports still work.
+
 ## Final Acceptance
 
 For the older metadata-equivalent flow, retain signed candidate evidence before
