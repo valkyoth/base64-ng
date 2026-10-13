@@ -1,6 +1,24 @@
 #!/usr/bin/env sh
 set -eu
 
+# Scoped preparation is read-only and never falls through into finalization.
+case "${1:-}" in
+    --scoped-review)
+        shift
+        exec python3 scripts/scoped_finalizer.py "$@"
+        ;;
+    '')
+        if [ "$#" -ne 0 ]; then
+            echo "final release evidence: empty argument is not a mode" >&2
+            exit 2
+        fi
+        ;;
+    *)
+        echo "usage: finalize-release-evidence.sh [--scoped-review OPTIONS]" >&2
+        exit 2
+        ;;
+esac
+
 . scripts/evidence-source.sh
 evidence_capture_source "final release evidence"
 

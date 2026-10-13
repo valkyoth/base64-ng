@@ -1351,7 +1351,8 @@ The corrected reporting implementation requires claim-specific provenance,
 not the old all-campaign source-equivalence exception. The proposal is in
 `security/campaign-claims-2.1.json`. Its read-only verifier preserves historical
 `b3e493e`, reporting supplement `29cc6ef` and recapture `516f785` identities.
-It is not connected to finalization and cannot authorize signing or publication.
+This original preflight cannot authorize signing or publication. The separate
+review-only finalizer integration below consumes the approved review records.
 
 For local proposal inspection, with no reviewed-policy environment variable set:
 
@@ -1417,3 +1418,64 @@ approval of fresh assembly/performance review, final-candidate metadata or CI.
 The result always retains the remaining release requirements and
 `release_authorized=false`. Do not rename this JSON to `FINAL-MANIFEST.txt` or
 treat it as a signature. Finalizer integration needs a separate reviewed change.
+
+## Claim-Aware Finalizer Review
+
+The maintainer supplied separate-review acceptance of all fourteen scoped claims
+at policy commit `1065a1f34973a21ab67e80141e42eb2dbf0edb65`, tree
+`643c035113abf92691a0812c891e74fd9e8a9264`. That approval pins the review handoff
+SHA-256 `986d4e087acd5da0b677458efcd31ce26cefbbf4097f4fe30348fb6467ac6c70`
+and its seven selected record hashes. It does not approve the integration code,
+authorize finalization, or constitute third-party certification. The original
+handoff remains byte-identical, including its then-pending approval status.
+
+The first integration stage is deliberately read-only:
+
+```sh
+sh scripts/finalize-release-evidence.sh --scoped-review \
+  --reviews target/scoped-independent-review-1065a1f.vG6UGk \
+  --historical-packet target/reporting-review-ezubg4k0/review-packet.tar.gz \
+  --recapture-packet target/recapture-review-algjifmr/recapture-review.tar.gz
+```
+
+Run from a clean, signed integration commit. This prints a review-only JSON
+index to stdout; it never creates, removes or rewrites release evidence. Do not
+redirect it over an existing evidence file or a final manifest. Neither packet
+is extracted, and no bundled program or report is executed. The output is
+private review material, not a public release asset.
+
+Before running the integration, independently inspect its code and signature
+in an isolated checkout with `GIT_NO_REPLACE_OBJECTS=1` using the frozen signer
+policy. The hard-coded approval identity records the maintainer's out-of-band
+decision; a candidate's self-check is not a trust root. A future integration
+review must anchor the exact integration commit separately. Never infer that
+approval from the current HEAD, this output, or the existing policy approval.
+
+Preparation checks the original policy signature, tree, parent and path
+inventory, every pinned historical signature, and the complete signed linear
+integration history. Each intervening commit is limited to the six explicit
+integration paths in `scoped_finalizer.py`; a runtime change followed by a revert
+is rejected. The reviewed policy, attestations and parser implementations remain
+byte-identical. Dirty, hidden-index, unsigned and drifted inputs fail closed.
+All seven reviewed records must match the handoff, including both bounded
+assembly follow-ups. Their conditions remain binding: the identified bounded
+assembly gaps are closed, not all whole-program or constant-time questions.
+
+Both complete transports and all fourteen original attestations are validated
+again. Each output claim carries its original source commit/tree, disposition,
+scope, exclusions, evidence references, inventory digests and applicable review
+record hashes. Historical, reporting and recapture identities are never merged
+into a global campaign source. Unsigned operator summaries alone are insufficient
+to enter this path. The earlier 32-success/4-skipped CI record is retained only
+as reviewed policy evidence, never as final-candidate full-release CI.
+
+The mode is `scoped-review-only`, with `candidate_validated`,
+`finalizer_integration_approved`, `finalization_permitted` and
+`release_authorized` all false. A source-identified preparation is not candidate
+acceptance. The normal finalizer, signature/readiness gates and their rejection
+of unsupported evidence modes are unchanged. This change intentionally does not
+add a switch that activates mixed-source finalization. After separate integration
+review, final-index activation must still enforce exact-candidate metadata,
+package/SBOM/provenance/reproducibility records, full-release CI, complete retained
+inventory, signatures, report-only acceptance and explicit release authorization.
+No seal, tag or publication is permitted by a successful preparation.

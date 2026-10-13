@@ -849,6 +849,28 @@ maximum accepted PAX record and block padding, so canonical long paths do not
 consume payload budget. Scaled boundary fixtures cover acceptance at the payload
 and entry limits and rejection beyond each limit and the decompression cap.
 
+### Approved Claims and Integration Review
+
+Separate-review approval now binds all fourteen claims at policy commit
+`1065a1f34973a21ab67e80141e42eb2dbf0edb65`, tree
+`643c035113abf92691a0812c891e74fd9e8a9264`, to handoff SHA-256
+`986d4e087acd5da0b677458efcd31ce26cefbbf4097f4fe30348fb6467ac6c70`
+and its seven independently checked review-record hashes. The identified bounded
+assembly gaps are closed; whole-program, cleanup and constant-time exclusions
+remain. Approval does not broaden the ARM performance exceptions or any other
+claim. It is scoped process review, not formal third-party certification.
+
+`finalize-release-evidence.sh --scoped-review` now prepares a read-only claim
+index for the integration's own review. It authenticates the exact approved
+records, validates both transports again and preserves each original source and
+attestation. It neither writes a final manifest nor activates scoped sealing.
+The unchanged normal finalizer still rejects the old blanket-equivalence route.
+See `RELEASE_EVIDENCE.md` for the trusted bootstrap and invocation. Separate
+integration review and subsequent final-index activation remain necessary;
+candidate metadata, full-release CI, signatures and release authorization have
+not been supplied or waived. No native or long campaign was rerun for this
+tooling-only integration.
+
 ## Final Acceptance
 
 Retain the signed candidate evidence before making the report-only commit.
