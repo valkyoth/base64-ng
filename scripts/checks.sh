@@ -68,6 +68,7 @@ python3 scripts/test-campaign-source-equivalence.py
 python3 scripts/test-scoped-evidence.py
 python3 scripts/test-scoped-campaign.py
 python3 scripts/test-scoped-finalizer.py
+python3 scripts/test-scoped-index.py
 
 echo "checks: release evidence outcomes"
 scripts/test-release-evidence-outcomes.sh

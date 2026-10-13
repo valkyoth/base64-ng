@@ -1453,7 +1453,7 @@ approval from the current HEAD, this output, or the existing policy approval.
 
 Preparation checks the original policy signature, tree, parent and path
 inventory, every pinned historical signature, and the complete signed linear
-integration history. Each intervening commit is limited to the six explicit
+integration history. Each intervening commit is limited to the explicit
 integration paths in `scoped_finalizer.py`; a runtime change followed by a revert
 is rejected. The reviewed policy, attestations and parser implementations remain
 byte-identical. Dirty, hidden-index, unsigned and drifted inputs fail closed.
@@ -1469,13 +1469,160 @@ into a global campaign source. Unsigned operator summaries alone are insufficien
 to enter this path. The earlier 32-success/4-skipped CI record is retained only
 as reviewed policy evidence, never as final-candidate full-release CI.
 
-The mode is `scoped-review-only`, with `candidate_validated`,
+The preparation mode is `scoped-review-only`, with `candidate_validated`,
 `finalizer_integration_approved`, `finalization_permitted` and
 `release_authorized` all false. A source-identified preparation is not candidate
-acceptance. The normal finalizer, signature/readiness gates and their rejection
-of unsupported evidence modes are unchanged. This change intentionally does not
-add a switch that activates mixed-source finalization. After separate integration
-review, final-index activation must still enforce exact-candidate metadata,
-package/SBOM/provenance/reproducibility records, full-release CI, complete retained
-inventory, signatures, report-only acceptance and explicit release authorization.
-No seal, tag or publication is permitted by a successful preparation.
+acceptance. The normal exact and metadata-equivalent paths remain unchanged.
+The separately gated activation below does not treat preparation success as an
+approval. No seal, tag or publication is permitted by a successful preparation.
+
+### Scoped Index Activation Contract
+
+Activation is implemented for independent review, not authorized by its own
+implementation or ordinary green CI. Do not run the write operation until a
+protected review supplies both of these independent anchors:
+
+- `BASE64_NG_REVIEWED_SCOPED_FINALIZER_COMMIT`: the full, signed integration
+  commit reviewed after activation code was added. The earlier `1065a1f` policy
+  or `9528144` preparation review cannot approve new activation code.
+- `BASE64_NG_REVIEWED_CANDIDATE_RECORD_SHA256`: SHA-256 of the complete
+  `CANDIDATE-REVIEW.json`, independently reviewed against the candidate artifacts
+  and authenticated GitHub run. A hash computed by the collector is not approval.
+
+The candidate must be that exact integration commit, or its single signed child
+changing only `security/pentest/v2.1.0.md`. The latter remains subject to the
+existing report-only readiness checks. Every earlier integration commit must
+still be signed, linear and confined to the explicit tooling/documentation path
+inventory. Runtime, harness, package, dependency, workflow and signer-policy
+changes are not allowed. The executing files are checked against the candidate.
+
+For the scoped route, review the integration, create the report-only child, and
+then collect that child's metadata and full-release CI before finalization.
+There is no requirement to finalize or seal a parent index first: the approved
+original packets, exact signed source history and independent review anchors
+supply the scoped provenance. This avoids running the long CI twice solely for
+the report-only commit. The older metadata-equivalent route and its retained
+signed-parent requirement are unchanged.
+
+Stage the collection in a private `0700` `target/release-evidence` directory,
+without any existing `FINAL-MANIFEST.txt`, signature or `SCOPED-INDEX.json`.
+Do not combine it with legacy campaign-equivalence or dirty-evidence modes.
+Required paths include:
+
+```text
+scoped/historical.tar.gz                 original pinned historical transport
+scoped/recapture.tar.gz                  original pinned recapture transport
+scoped/reviews/review-handoff.json        unchanged approved handoff
+scoped/reviews/<seven selected records>  unchanged reviewed JSON records
+candidate/ci.json                        exact-candidate full-release GitHub snapshot
+candidate/rust-packages.json             candidate Rust family assessment
+candidate/rust/<crate>-2.1.0.crate        all thirteen publishable Rust crates
+candidate/rust/<crate>-files.txt         each package inventory
+candidate/wasm-npm.json                  candidate npm/WASM assessment
+candidate/npm/package.tgz                final npm package
+candidate/npm/files.txt                  its package inventory
+candidate/npm/PROVENANCE.json            generated exact-candidate provenance
+candidate/npm/base64-ng-scalar.wasm      exact reviewed kernel bytes
+candidate/npm/base64-ng-simd128.wasm     exact reviewed kernel bytes
+sbom-MANIFEST.txt                        exact-candidate SBOM manifest
+base64-ng.spdx.json                      SPDX-2.3
+base64-ng.cyclonedx.json                  CycloneDX 1.4
+reproducible/MANIFEST.txt                exact-candidate reproducibility manifest
+reproducible/<six compared artifacts>    outputs of reproducible_build_check.sh
+CANDIDATE-REVIEW.json                    independently approved candidate record
+```
+
+Retain all logs, failures and other records used in the candidate assessment as
+additional inventoried files. The candidate record uses this schema (placeholders
+are explanatory, not usable approvals):
+
+```json
+{
+  "schema": 1,
+  "candidate": {"commit": "<full candidate commit>", "tree": "<full tree>"},
+  "integration_commit": "<independently reviewed integration commit>",
+  "status": "approved-for-unsigned-index",
+  "release_authorized": false,
+  "checks": {
+    "rust-family-packages": "passed",
+    "wasm-npm-package-and-provenance": "passed",
+    "sbom": "passed",
+    "reproducibility": "passed",
+    "exact-candidate-full-release-ci": "passed"
+  },
+  "inventory": {
+    "files": {"<relative path>": {"bytes": 123, "sha256": "<SHA-256>"}},
+    "directories": ["<every relative directory, including empty ones>"]
+  }
+}
+```
+
+Inventory paths use canonical relative names containing only ASCII letters,
+digits, dots, underscores, hyphens and slashes. The sorted complete inventory
+excludes only `CANDIDATE-REVIEW.json` itself and the three generated index/signature
+paths. It includes the original packets and all eight review files, not just
+successful selections. Symlinks, hard links, special files, linked ancestors,
+unlisted directories and omitted files fail closed. The 10,000-entry and 2-GiB
+aggregate input limits apply, as do the existing archive limits. JSON inputs
+and generated index files are capped at 2 MiB. Never extract packet code or run
+it to satisfy metadata checks. Keep the account isolated from concurrent same-user
+writers; these checks are not a defense against a compromised release account.
+
+Both package assessment reports contain `schema: 1`, `source` equal to the exact
+candidate commit/tree object and `status: "passed"`. The Rust report's `packages`
+object must contain exactly the names in `release-crates.toml`. Each maps to
+`version: "2.1.0"`, `archive: "candidate/rust/<name>-2.1.0.crate"` and
+`inventory: "candidate/rust/<name>-files.txt"`. The npm report additionally names
+`package: "@valkyoth/base64-ng-wasm-loader"` and `version: "2.1.0"`.
+
+The candidate reviewer must inspect package composition, all-family package
+build results, npm installation tests and provenance, not approve hand-written
+`passed` fields alone. The finalizer does not rebuild or unpack packages: it
+authenticates the independently reviewed complete inventory and mechanically
+checks report source identities, required family entries, SBOM formats,
+manifest source/hash records, reproducible artifact-pair equality and WASM
+provenance. WASM bytes must still match the reviewed tracked kernels. Any kernel
+change requires a new source assessment and relevant recapture, not a new hash
+in a JSON assertion. Regenerate all candidate-bound metadata after a report-only
+commit; do not relabel earlier artifacts.
+
+Capture `candidate/ci.json` from the exact final-candidate `Rust CI` run using
+`gh run view <run-id> --json conclusion,event,headSha,jobs,url,workflowName`.
+The reviewer must confirm this run through authenticated GitHub access before
+approving the candidate record digest. The validator requires `workflow_dispatch`,
+the exact candidate SHA, a repository-specific run URL, and the complete job-name
+inventory from the approved workflow baseline, all completed successfully.
+In particular, all four deferred release-only jobs must actually pass; ordinary
+32-success/4-skipped push CI does not qualify. Workflow files are unchanged under
+this scoped source policy, so successful execution of the four gated jobs also
+requires the full-release dispatch. The pinned JSON snapshot is not itself a
+GitHub signature or remote attestation.
+
+Only after the above independent approvals and explicit maintainer permission,
+set `BASE64_NG_FINALIZE_SCOPED_COMMIT` to the authorized full candidate commit
+and invoke `sh scripts/finalize-release-evidence.sh --scoped-finalize`. None of
+the three authorization values may be inferred by the tool from HEAD or its own
+output. This write operation revalidates both complete packets, review hashes,
+fourteen original claims, metadata, CI and the approved filesystem inventory.
+It then publishes `SCOPED-INDEX.json` and an **unsigned** `FINAL-MANIFEST.txt`
+without overwriting any existing index or signature. Preparation's negative
+authorization fields remain nested historical preparation data, not assertions
+that supersede the separate activation review. The final index also retains
+`release_authorized=false`: evidence finalization is not release authorization.
+
+The final manifest uses `evidence_mode=scoped-claims-v1`, never one invented
+global campaign commit. Its hashes bind the full input files and the claim index;
+the claim index binds all directories, original sources, exclusions, reviewer
+hashes and approval identities. `python3 scripts/scoped_index.py --verify`
+reconstructs both indexes and rejects any drift. It requires the independent
+integration and candidate-record anchors, but not write authorization. Readiness
+runs this verification only after the existing authorized evidence-signature
+check, then retains the artifact, SBOM/reproducibility and report-only checks.
+`scoped-review-only` remains unsealable through readiness.
+
+An ordinary exception before final publication removes only the newly created
+claim index. A killed process may leave a private partial staging collection;
+quarantine it and rebuild a fresh reviewed collection instead of overriding
+existing files. Signing, tagging and publication remain separate explicitly
+authorized actions. No activation, sealing or publication was performed while
+implementing this gate; local tests use disposable synthetic collections.

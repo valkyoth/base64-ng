@@ -34,6 +34,8 @@ INTEGRATION_FILES = {
     "scripts/finalize-release-evidence.sh", "scripts/scoped_finalizer.py",
     "scripts/test-scoped-finalizer.py", "scripts/checks.sh",
     "docs/RELEASE_EVIDENCE.md", "docs/RELEASE_FREEZE_2.1.md",
+    "scripts/scoped_index.py", "scripts/scoped_candidate.py",
+    "scripts/test-scoped-index.py", "scripts/validate-release-readiness.sh",
 }
 FROZEN_POLICY_FILES = campaign.POLICY_FILES - INTEGRATION_FILES
 
@@ -52,8 +54,15 @@ def clean_head(root):
     return campaign.git(root, "rev-parse", "HEAD").decode().strip()
 
 
-def verify_candidate(root, policy):
+def verify_candidate(root, policy, integration=None):
     candidate = clean_head(root)
+    report = "security/pentest/v2.1.0.md"
+    if integration is not None:
+        campaign.commit_id(integration)
+        if candidate != integration:
+            parent = campaign.git(root, "show", "-s", "--format=%P", candidate).decode().strip()
+            if parent != integration or campaign.changed_paths(root, candidate) != [report]:
+                raise ValueError("candidate is neither reviewed integration nor its report-only child")
     if campaign.git(root, "rev-parse", POLICY_COMMIT + "^{tree}").decode().strip() != POLICY_TREE:
         raise ValueError("approved policy tree mismatch")
     for name in FROZEN_POLICY_FILES:
@@ -80,8 +89,11 @@ def verify_candidate(root, policy):
             if campaign.git(root, "show", "-s", "--format=%P", revision).decode().strip() != previous:
                 raise ValueError("integration history is not linear")
             paths = set(campaign.changed_paths(root, revision))
-            if not paths or not paths <= INTEGRATION_FILES:
+            report_only = integration is not None and revision == candidate and paths == {report}
+            if not paths or (not paths <= INTEGRATION_FILES and not report_only):
                 raise ValueError("integration history changed a protected path")
+            if report_only and read_regular(root / report) != campaign.git(root, "show", candidate + ":" + report):
+                raise ValueError("report-only child bytes differ from signed candidate")
             campaign.require_signature(root, revision, signers)
             previous = revision
     for name in INTEGRATION_FILES:
@@ -113,9 +125,9 @@ def verify_reviews(directory, policy):
     return handoff
 
 
-def prepare(root, reviews, paths):
+def prepare(root, reviews, paths, integration=None):
     policy = campaign.load_policy(root)
-    candidate = verify_candidate(root, policy)
+    candidate = verify_candidate(root, policy, integration)
     handoff = verify_reviews(reviews, policy)
     if set(paths) != set(policy["packets"]):
         raise ValueError("exact historical and recapture packets are required")

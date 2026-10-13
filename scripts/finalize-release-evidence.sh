@@ -3,6 +3,10 @@ set -eu
 
 # Scoped preparation is read-only and never falls through into finalization.
 case "${1:-}" in
+    --scoped-finalize)
+        shift
+        exec python3 scripts/scoped_index.py --write "$@"
+        ;;
     --scoped-review)
         shift
         exec python3 scripts/scoped_finalizer.py "$@"
@@ -14,7 +18,7 @@ case "${1:-}" in
         fi
         ;;
     *)
-        echo "usage: finalize-release-evidence.sh [--scoped-review OPTIONS]" >&2
+        echo "usage: finalize-release-evidence.sh [--scoped-review OPTIONS|--scoped-finalize]" >&2
         exit 2
         ;;
 esac

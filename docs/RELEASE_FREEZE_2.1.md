@@ -871,9 +871,27 @@ candidate metadata, full-release CI, signatures and release authorization have
 not been supplied or waived. No native or long campaign was rerun for this
 tooling-only integration.
 
+The next tooling change implements the activation gate for separate review.
+`--scoped-finalize` cannot use the old policy approval as authorization: it
+requires an independently reviewed integration commit, an independently reviewed
+complete candidate-record digest and explicit permission to finalize that exact
+candidate. It requires refreshed package/SBOM/provenance/reproducibility evidence
+and complete successful full-release CI. A report-only child is supported without
+changing any original campaign source identity. Readiness revalidates the scoped
+index after authorized signature verification; ordinary push CI and read-only
+preparation remain insufficient. Implementation/testing did not finalize or seal
+the real collection, dispatch long CI, or authorize release.
+
 ## Final Acceptance
 
-Retain the signed candidate evidence before making the report-only commit.
+For the older metadata-equivalent flow, retain signed candidate evidence before
+making the report-only commit. The scoped flow instead retains the independently
+approved original packets and review anchors, verifies the report-only child
+directly, and generates its own exact-candidate index. It does not require a
+separately finalized parent index. Review the activation implementation first,
+make the report-only child, then regenerate metadata and run full-release CI on
+that final child. This permits one final long CI run without relabeling evidence
+or waiving any final-candidate check.
 `security/evidence-reuse-allowlist.txt` names exact 2.1 metadata paths, not
 directories or globs; runtime, tests, harnesses, manifests and tooling cannot
 be changed under metadata-only reuse. The separate historical campaign-source
@@ -893,6 +911,7 @@ these changes.
 
 Commit 28's only change is `security/pentest/v2.1.0.md`, with PASS bound to its
 exact reviewed first parent. Rebuild candidate-bound package/SBOM records and
-verify the mechanical evidence-equivalence index, all hashes and signatures.
+verify the selected mechanical evidence-equivalence or scoped-claim index, all
+hashes and signatures.
 Require the full-release GitHub run on that exact commit. Only then, with
 maintainer authorization, sign/tag and publish through the release runbook.

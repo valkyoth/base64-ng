@@ -94,10 +94,12 @@ evidence_mode="$(exact_key "$evidence_manifest" evidence_mode)" || {
     echo "release evidence index has no singleton evidence_mode" >&2
     exit 1
 }
-campaign_commit="$(exact_key "$evidence_manifest" campaign_commit)" || {
-    echo "release evidence index has no singleton campaign_commit" >&2
-    exit 1
-}
+if [ "$evidence_mode" != scoped-claims-v1 ]; then
+    campaign_commit="$(exact_key "$evidence_manifest" campaign_commit)" || {
+        echo "release evidence index has no singleton campaign_commit" >&2
+        exit 1
+    }
+fi
 release_commit="$(exact_key "$evidence_manifest" release_commit)" || {
     echo "release evidence index has no singleton release_commit" >&2
     exit 1
@@ -108,6 +110,9 @@ if [ "$release_commit" != "$head_commit" ]; then
 fi
 
 case "$evidence_mode" in
+    scoped-claims-v1)
+        python3 scripts/scoped_index.py --verify
+        ;;
     exact)
         if [ "$campaign_commit" != "$head_commit" ]; then
             echo "exact evidence campaign_commit does not match HEAD ${head_commit}" >&2
