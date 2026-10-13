@@ -1574,6 +1574,8 @@ object must contain exactly the names in `release-crates.toml`. Each maps to
 `version: "2.1.0"`, `archive: "candidate/rust/<name>-2.1.0.crate"` and
 `inventory: "candidate/rust/<name>-files.txt"`. The npm report additionally names
 `package: "@valkyoth/base64-ng-wasm-loader"` and `version: "2.1.0"`.
+The schema version in these reports and `CANDIDATE-REVIEW.json` must be the JSON
+integer `1`, not a boolean, floating-point number, string or null.
 
 The candidate reviewer must inspect package composition, all-family package
 build results, npm installation tests and provenance, not approve hand-written
@@ -1613,12 +1615,25 @@ that supersede the separate activation review. The final index also retains
 The final manifest uses `evidence_mode=scoped-claims-v1`, never one invented
 global campaign commit. Its hashes bind the full input files and the claim index;
 the claim index binds all directories, original sources, exclusions, reviewer
-hashes and approval identities. `python3 scripts/scoped_index.py --verify`
+hashes and approval identities.
+`sh scripts/run-scoped-python.sh scoped_index.py --verify`
 reconstructs both indexes and rejects any drift. It requires the independent
 integration and candidate-record anchors, but not write authorization. Readiness
 runs this verification only after the existing authorized evidence-signature
 check, then retains the artifact, SBOM/reproducibility and report-only checks.
 `scoped-review-only` remains unsealable through readiness.
+
+All scoped entry points, including read-only review, use the authenticated
+`run-scoped-python.sh` launcher. It starts Python with `-I` and a fresh private
+bytecode-cache prefix, ignoring inherited Python configuration and pre-existing
+repository bytecode caches. Disabling cache writes alone does not disable cache
+reads. The launcher removes its temporary cache on success, failure and handled
+HUP/INT/TERM, forwarding these signals to its Python child before cleanup. Do not
+invoke the Python entry points directly for release verification. Independently
+authenticate the launcher and source bytes before execution, use a trusted
+interpreter/standard library and shell toolchain, and keep the release account
+isolated from concurrent same-user mutation. This is cache isolation, not a
+bootstrap of trust in candidate-controlled code or the host's Python installation.
 
 An ordinary exception before final publication removes only the newly created
 claim index. A killed process may leave a private partial staging collection;

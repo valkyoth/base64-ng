@@ -5,11 +5,11 @@ set -eu
 case "${1:-}" in
     --scoped-finalize)
         shift
-        exec python3 scripts/scoped_index.py --write "$@"
+        exec sh scripts/run-scoped-python.sh scoped_index.py --write "$@"
         ;;
     --scoped-review)
         shift
-        exec python3 scripts/scoped_finalizer.py "$@"
+        exec sh scripts/run-scoped-python.sh scoped_finalizer.py "$@"
         ;;
     '')
         if [ "$#" -ne 0 ]; then

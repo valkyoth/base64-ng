@@ -5,6 +5,7 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import py_compile
 import socket
 import subprocess
 import tempfile
@@ -161,6 +162,29 @@ class IndexTests(unittest.TestCase):
         self.assertEqual((self.evidence / index.FINAL).stat().st_nlink, 1)
         with self.assertRaisesRegex(ValueError, "refusing to replace"):
             self.activate()
+
+    def test_schema_requires_integer_one_in_every_candidate_record(self):
+        for name in (metadata.REVIEW, metadata.RUST, metadata.NPM):
+            original = json.loads((self.evidence / name).read_bytes())
+            invalid = [dict(original, schema=value) for value in
+                       (True, False, 1.0, "1", None, 0, 2)]
+            invalid.extend([{key: value for key, value in original.items() if key != "schema"},
+                            [], None, 1, "1"])
+            for value in invalid:
+                with self.subTest(name=name, value=value):
+                    self.json(name, value)
+                    if name == metadata.REVIEW:
+                        self.env[index.RECORD_ENV] = scoped.record(
+                            (self.evidence / name).read_bytes())["sha256"]
+                    else:
+                        self.approve()
+                    with self.assertRaisesRegex(ValueError, "integer schema version 1"):
+                        self.activate()
+                    self.assertFalse((self.evidence / index.FINAL).exists())
+                    self.assertFalse((self.evidence / index.INDEX).exists())
+            self.json(name, original)
+            self.approve()
+        self.activate()
 
     def test_missing_or_wrong_authorization_never_writes(self):
         original = dict(self.env)
@@ -397,7 +421,9 @@ class DispatchTests(unittest.TestCase):
                 "target/release-evidence/base64-ng.spdx.json": "{}",
                 "target/release-evidence/base64-ng.cyclonedx.json": "{}",
                 "scripts/verify-release-evidence-signature.sh": "#!/bin/sh\necho signature-stage\n",
-                "scripts/scoped_index.py": "import sys\nprint('scoped-stage', sys.argv[1:])\nsys.exit(17)\n",
+                "scripts/scoped_index.py": "import sys, scoped_probe\nprint('scoped-stage', sys.argv[1:])\nsys.exit(17)\n",
+                "scripts/scoped_probe.py": "# Authenticated source fixture.\n",
+                "scripts/run-scoped-python.sh": (ROOT / "scripts/run-scoped-python.sh").read_text(),
             }
             for name, content in files.items():
                 path = root / name
@@ -410,6 +436,11 @@ class DispatchTests(unittest.TestCase):
             scoped.campaign.git(root, "-c", "user.name=fixture", "-c", "user.email=fixture@example.invalid",
                                 "-c", "commit.gpgsign=false", "commit", "-qm", "fixture")
             commit = scoped.campaign.git(root, "rev-parse", "HEAD").decode().strip()
+            poison_source = root / ".git/poison.py"
+            poison_source.write_text("raise SystemExit(88)\n")
+            cache = importlib.util.cache_from_source(str(root / "scripts/scoped_probe.py"), optimization="")
+            py_compile.compile(str(poison_source), cfile=cache, doraise=True,
+                               invalidation_mode=py_compile.PycInvalidationMode.UNCHECKED_HASH)
             (root / "target/release-evidence/FINAL-MANIFEST.txt").write_text(
                 f"commit={commit}\ntree_state=clean\nevidence_mode=scoped-claims-v1\nrelease_commit={commit}\n")
             command = ["sh", str(ROOT / "scripts/validate-release-readiness.sh"), "v2.1.0"]
@@ -425,6 +456,8 @@ class DispatchTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix="base64-scoped-activation-") as directory:
             root = Path(directory)
             (root / "scripts").mkdir()
+            (root / "scripts/run-scoped-python.sh").write_bytes(
+                (ROOT / "scripts/run-scoped-python.sh").read_bytes())
             (root / "scripts/scoped_index.py").write_text(
                 "import sys\nprint(repr(sys.argv[1:]))\n")
             result = subprocess.run(["sh", str(ROOT / "scripts/finalize-release-evidence.sh"),

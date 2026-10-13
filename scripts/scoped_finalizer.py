@@ -36,6 +36,7 @@ INTEGRATION_FILES = {
     "docs/RELEASE_EVIDENCE.md", "docs/RELEASE_FREEZE_2.1.md",
     "scripts/scoped_index.py", "scripts/scoped_candidate.py",
     "scripts/test-scoped-index.py", "scripts/validate-release-readiness.sh",
+    "scripts/run-scoped-python.sh", "scripts/test-scoped-python.py",
 }
 FROZEN_POLICY_FILES = campaign.POLICY_FILES - INTEGRATION_FILES
 

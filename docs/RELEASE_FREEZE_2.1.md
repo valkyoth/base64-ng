@@ -882,6 +882,15 @@ index after authorized signature verification; ordinary push CI and read-only
 preparation remain insufficient. Implementation/testing did not finalize or seal
 the real collection, dispatch long CI, or authorize release.
 
+Activation hardening now routes write, verification and read-only preparation
+through isolated Python with a fresh private bytecode cache. This prevents ignored
+unchecked-hash repository bytecode from running before source validation. Candidate
+approval and package reports require integer schema version 1. Regression tests
+cover real poisoned caches, inherited Python configuration, argument forwarding,
+failure/signal cleanup and invalid schema types. These are tooling-only fixes;
+they require review of the updated integration commit, not relabeling campaigns
+or authorizing finalization.
+
 ## Final Acceptance
 
 For the older metadata-equivalent flow, retain signed candidate evidence before

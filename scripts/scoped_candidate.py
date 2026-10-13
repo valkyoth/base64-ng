@@ -19,6 +19,12 @@ REPRO_PAIRS = (
 )
 
 
+def require_schema_v1(value, label):
+    if (not isinstance(value, dict) or type(value.get("schema")) is not int
+            or value["schema"] != 1):
+        raise ValueError(label + " must use integer schema version 1")
+
+
 def exact_key(lines, key, value):
     if [line[len(key) + 1:] for line in lines if line.startswith(key + "=")] != [value]:
         raise ValueError("missing or duplicate metadata key: " + key)
@@ -49,7 +55,8 @@ def manifest(evidence, name, candidate, inventory, artifacts):
 def report(evidence, name, candidate, inventory):
     require_file(inventory, name)
     value = strict_json(read_regular(evidence / name))
-    if value["schema"] != 1 or value["source"] != candidate or value["status"] != "passed":
+    require_schema_v1(value, name)
+    if value["source"] != candidate or value["status"] != "passed":
         raise ValueError("candidate metadata report source/status mismatch: " + name)
     return value
 

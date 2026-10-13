@@ -296,7 +296,8 @@ class DispatchTests(unittest.TestCase):
             for name in ("FINAL-MANIFEST.txt", "FINAL-MANIFEST.txt.sig", "EQUIVALENCE-MANIFEST.txt"):
                 (evidence / name).write_bytes(b"unchanged sentinel")
             (root / "scripts").mkdir()
-            for name in ("scoped_finalizer.py", "scoped_campaign.py", "scoped_evidence.py"):
+            for name in ("scoped_finalizer.py", "scoped_campaign.py", "scoped_evidence.py",
+                         "run-scoped-python.sh"):
                 (root / "scripts" / name).write_bytes((ROOT / "scripts" / name).read_bytes())
             for args in (["--scoped-review"], ["--unknown"], [""],
                          ["--scoped-review", "--finalize"],
@@ -315,6 +316,8 @@ class DispatchTests(unittest.TestCase):
             root = Path(directory)
             (root / "scripts").mkdir()
             (root / "scripts/scoped_finalizer.py").write_text("print('review-only fixture')\n")
+            (root / "scripts/run-scoped-python.sh").write_bytes(
+                (ROOT / "scripts/run-scoped-python.sh").read_bytes())
             result = subprocess.run(["sh", str(ROOT / "scripts/finalize-release-evidence.sh"),
                                      "--scoped-review"], cwd=root, capture_output=True, timeout=10)
             self.assertEqual(result.returncode, 0, result.stderr)

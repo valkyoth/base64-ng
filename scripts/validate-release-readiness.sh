@@ -111,7 +111,7 @@ fi
 
 case "$evidence_mode" in
     scoped-claims-v1)
-        python3 scripts/scoped_index.py --verify
+        sh scripts/run-scoped-python.sh scoped_index.py --verify
         ;;
     exact)
         if [ "$campaign_commit" != "$head_commit" ]; then

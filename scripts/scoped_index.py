@@ -73,7 +73,8 @@ def approval(evidence, candidate, integration, env):
     if pin["sha256"] != expected:
         raise ValueError("reviewed candidate record digest mismatch")
     value = strict_json(raw)
-    if (value["schema"] != 1 or value["candidate"] != candidate
+    metadata.require_schema_v1(value, metadata.REVIEW)
+    if (value["candidate"] != candidate
             or value["integration_commit"] != integration
             or value["status"] != "approved-for-unsigned-index"
             or value["release_authorized"] is not False
