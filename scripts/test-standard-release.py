@@ -5,6 +5,7 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import signal
 import subprocess
 import tempfile
 import unittest
@@ -187,6 +188,107 @@ class CloseoutTests(unittest.TestCase):
             with self.assertRaises(OSError):
                 self.run_mode("write")
         self.assertFalse((self.evidence / standard.INDEX).exists())
+
+    def partial_index(self):
+        raw, _ = standard.render(self.root, self.evidence, self.env)
+        self.f.write(standard.INDEX, raw)
+        return raw
+
+    def test_matching_partial_index_resumes_with_explicit_authorization(self):
+        raw = self.partial_index()
+        with self.assertRaisesRegex(ValueError, "explicit maintainer"):
+            self.run_mode("write", {})
+        self.assertEqual((self.evidence / standard.INDEX).read_bytes(), raw)
+        self.run_mode("write")
+        self.run_mode("verify", {})
+
+    def test_stale_or_altered_partial_index_is_preserved(self):
+        raw = self.partial_index()
+        path = self.evidence / standard.INDEX
+        path.write_bytes(raw + b" ")
+        with self.assertRaisesRegex(ValueError, "partial index is stale or altered"):
+            self.run_mode("write")
+        self.assertEqual(path.read_bytes(), raw + b" ")
+        path.write_bytes(raw)
+        self.f.write("additional-evidence.log", b"new evidence")
+        with self.assertRaisesRegex(ValueError, "partial index is stale or altered"):
+            self.run_mode("write")
+        self.assertEqual(path.read_bytes(), raw)
+        self.assertFalse((self.evidence / standard.index.FINAL).exists())
+
+    def test_failed_resume_preserves_existing_index(self):
+        raw = self.partial_index()
+        with patch.object(standard.index, "publish_new", side_effect=OSError("disk failure")):
+            with self.assertRaises(OSError):
+                self.run_mode("write")
+        self.assertEqual((self.evidence / standard.INDEX).read_bytes(), raw)
+        self.assertFalse((self.evidence / standard.index.FINAL).exists())
+        self.run_mode("write")
+        self.run_mode("verify")
+
+    def test_resume_revalidates_evidence_and_source_without_removing_index(self):
+        raw = self.partial_index()
+        with patch.object(standard.scoped, "prepare_claims", side_effect=ValueError("bad packet")):
+            with self.assertRaisesRegex(ValueError, "bad packet"):
+                self.run_mode("write")
+        original = standard.candidate
+        calls = 0
+        def moving(root):
+            nonlocal calls
+            calls += 1
+            if calls >= 4:
+                return {"commit": "f" * 40, "tree": "f" * 40}
+            return original(root)
+        with patch.object(standard, "candidate", side_effect=moving):
+            with self.assertRaisesRegex(ValueError, "source changed"):
+                self.run_mode("write")
+        self.assertEqual((self.evidence / standard.INDEX).read_bytes(), raw)
+        self.assertFalse((self.evidence / standard.index.FINAL).exists())
+
+    def test_partial_resume_rejects_final_outputs_and_hostile_indexes(self):
+        raw = self.partial_index()
+        for name in (standard.index.FINAL, standard.index.FINAL + ".sig"):
+            path = self.evidence / name
+            for dangling in (False, True):
+                if dangling:
+                    path.symlink_to("missing")
+                else:
+                    path.write_bytes(b"existing output")
+                with self.assertRaisesRegex(ValueError, "refusing to replace"):
+                    self.run_mode("write")
+                self.assertTrue(os.path.lexists(path))
+                self.assertEqual((self.evidence / standard.INDEX).read_bytes(), raw)
+                path.unlink()
+        path = self.evidence / standard.INDEX
+        path.unlink()
+        for create in (lambda: path.symlink_to("missing"),
+                       lambda: path.hardlink_to(self.evidence / "candidate/ci.json"),
+                       lambda: os.mkfifo(path)):
+            create()
+            with self.assertRaisesRegex(ValueError, "linked or special"):
+                self.run_mode("write")
+            self.assertTrue(os.path.lexists(path))
+            path.unlink()
+
+    @unittest.skipUnless(hasattr(os, "fork"), "abrupt termination fixture requires fork")
+    def test_sigkill_between_publications_can_resume(self):
+        original = standard.index.publish_new
+        def publish(path, raw):
+            if path.name == standard.index.FINAL:
+                os.kill(os.getpid(), signal.SIGKILL)
+            original(path, raw)
+        pid = os.fork()
+        if pid == 0:
+            with patch.object(standard.index, "publish_new", side_effect=publish):
+                self.run_mode("write")
+            os._exit(1)
+        _, status = os.waitpid(pid, 0)
+        self.assertTrue(os.WIFSIGNALED(status))
+        self.assertEqual(os.WTERMSIG(status), signal.SIGKILL)
+        self.assertTrue((self.evidence / standard.INDEX).exists())
+        self.assertFalse((self.evidence / standard.index.FINAL).exists())
+        self.run_mode("write")
+        self.run_mode("verify")
 
 
 class SourceTests(unittest.TestCase):

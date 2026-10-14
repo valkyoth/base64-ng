@@ -114,8 +114,14 @@ BASE64_NG_FINALIZE_RELEASE_COMMIT=<approved-full-commit> \
   sh scripts/finalize-release-evidence.sh --standard --write
 ```
 
-This writes `RELEASE-INDEX.json` and an unsigned `FINAL-MANIFEST.txt` atomically
-without overwriting existing outputs. Both retain `release_authorized=false`.
+This publishes `RELEASE-INDEX.json` and an unsigned `FINAL-MANIFEST.txt` with
+atomic, no-overwrite publication of each file, not an atomic transaction across
+both files. If interrupted after publishing only the index, rerun the same
+command: it revalidates all inputs and resumes only when the existing index
+matches exactly. Stale or altered indexes and existing final manifests or
+signatures are rejected. A failed retry preserves a pre-existing index.
+This is interruption recovery, not a guarantee of power-loss durability.
+Both outputs retain `release_authorized=false`.
 No separate candidate-record hash approval is needed. Verification remains:
 
 ```sh

@@ -138,20 +138,28 @@ def run(root, evidence, env, mode):
     if mode == "write":
         if env.get(WRITE_ENV) != candidate(root)["commit"]:
             raise ValueError("explicit maintainer authorization for exact HEAD is required")
-        if any(os.path.lexists(evidence / name) for name in OUTPUTS):
+        if any(os.path.lexists(evidence / name) for name in (index.FINAL, index.FINAL + ".sig")):
             raise ValueError("refusing to replace an index or signature")
     raw, final = render(root, evidence, env)
     if mode == "verify":
         if read_regular(evidence / INDEX) != raw or read_regular(evidence / index.FINAL) != final:
             raise ValueError("standard release index is stale or altered")
     elif mode == "write":
-        index.publish_new(evidence / INDEX, raw)
+        index_path = evidence / INDEX
+        created_index = False
+        if os.path.lexists(index_path):
+            if read_regular(index_path) != raw:
+                raise ValueError("existing partial index is stale or altered")
+        else:
+            index.publish_new(index_path, raw)
+            created_index = True
         try:
             if candidate(root) != strict_json(raw)["candidate"]:
                 raise ValueError("source changed before index publication")
             index.publish_new(evidence / index.FINAL, final)
         except BaseException:
-            (evidence / INDEX).unlink()
+            if created_index:
+                index_path.unlink()
             raise
 
 
