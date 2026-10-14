@@ -1,5 +1,12 @@
 # Release Evidence
 
+For the current release, [standard closeout](RELEASE_STANDARD.md) supersedes the
+report-only commit and separate integration/candidate-digest approval procedure
+below. It uses the same bounded readers, retained claim checks, exact-candidate
+metadata, full CI and signed artifact inventory. Reports are evidence attachments,
+not new source commits. The older modes below remain opt-in high-assurance paths
+and historical provenance; they are not additional standard-mode approval steps.
+
 The current 2.1 candidate uses the existing collectors and signed manifests;
 see [the freeze/handoff](RELEASE_FREEZE_2.1.md) for exact-source and device
 requirements. The metadata-reuse allowlist now names the 2.1 plan, freeze and

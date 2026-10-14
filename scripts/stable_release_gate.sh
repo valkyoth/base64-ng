@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-mode="${1:-check}"
+mode="${1:-standard}"
 reuse_evidence_from="${BASE64_NG_REUSE_EVIDENCE_FROM:-}"
 campaign_source_commit="${BASE64_NG_CAMPAIGN_SOURCE_COMMIT:-}"
 unset BASE64_NG_EXPECTED_RVV_SOURCE_COMMIT
@@ -13,10 +13,13 @@ if [ -n "${BASE64_NG_EVIDENCE_SIGNING_KEY:-}" ]; then
 fi
 
 case "$mode" in
+    standard)
+        exec sh scripts/run-scoped-python.sh standard_release.py --check
+        ;;
     check | candidate | release)
         ;;
     *)
-        echo "usage: scripts/stable_release_gate.sh [check|candidate|release]" >&2
+        echo "usage: scripts/stable_release_gate.sh [standard|check|candidate|release]" >&2
         exit 2
         ;;
 esac

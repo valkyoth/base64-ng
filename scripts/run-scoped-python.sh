@@ -2,7 +2,7 @@
 # The interpreter and this launcher must be authenticated before execution.
 set -eu
 case "${1:-}" in
-    scoped_index.py|scoped_finalizer.py) program="$1"; shift ;;
+    scoped_index.py|scoped_finalizer.py|standard_release.py) program="$1"; shift ;;
     *) echo 'scoped Python: unsupported entry point' >&2; exit 2 ;;
 esac
 scripts_dir="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)"

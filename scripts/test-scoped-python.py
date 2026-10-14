@@ -52,7 +52,7 @@ class LauncherTests(unittest.TestCase):
             "print(json.dumps({'args': sys.argv[1:], 'value': scoped_probe.value,\n"
             " 'cache': str(cache), 'mode': stat.S_IMODE(cache.stat().st_mode),\n"
             " 'isolated': sys.flags.isolated, 'pid': os.getpid()}), flush=True)\n")
-        for name in ("scoped_index.py", "scoped_finalizer.py"):
+        for name in ("scoped_index.py", "scoped_finalizer.py", "standard_release.py"):
             (self.scripts / name).write_text(self.program)
 
     def run_launcher(self, program="scoped_index.py", *args, env=None):
@@ -91,6 +91,8 @@ class LauncherTests(unittest.TestCase):
         caches = set()
         for program, args in (("scoped_index.py", ["--write"]),
                               ("scoped_index.py", ["--verify"]),
+                              ("standard_release.py", ["--check"]),
+                              ("standard_release.py", ["--write"]),
                               ("scoped_finalizer.py", ["--reviews", "path with spaces", "", "$(false)"])):
             with self.subTest(program=program, args=args):
                 value = self.check_result(self.run_launcher(program, *args), args)
@@ -102,6 +104,16 @@ class LauncherTests(unittest.TestCase):
             result = subprocess.run(["sh", str(ROOT / "scripts/finalize-release-evidence.sh"), flag],
                                     cwd=self.root, env=self.env, capture_output=True, text=True, timeout=20)
             self.check_result(result, args)
+
+    def test_standard_dispatch_and_default_gate_are_read_only_until_explicit_write(self):
+        for mode in ("--template", "--check", "--write", "--verify"):
+            result = subprocess.run(["sh", str(ROOT / "scripts/finalize-release-evidence.sh"),
+                                     "--standard", mode], cwd=self.root, env=self.env,
+                                    capture_output=True, text=True, timeout=20)
+            self.check_result(result, [mode])
+        result = subprocess.run(["sh", str(ROOT / "scripts/stable_release_gate.sh")],
+                                cwd=self.root, env=self.env, capture_output=True, text=True, timeout=20)
+        self.check_result(result, ["--check"])
 
     def test_legacy_sourceless_bytecode_cannot_shadow_stdlib_or_supply_local_modules(self):
         for name in ("tomllib", "json", "scoped_probe"):
@@ -115,7 +127,7 @@ class LauncherTests(unittest.TestCase):
                 original = legacy.read_bytes()
                 if name == "scoped_probe":
                     self.module.unlink()
-                for program in ("scoped_index.py", "scoped_finalizer.py"):
+                for program in ("scoped_index.py", "scoped_finalizer.py", "standard_release.py"):
                     (self.scripts / program).write_text(f"import {name}\n" + self.program)
                 (self.root / ".gitignore").write_text("*.py[cod]\n__pycache__/\ncache parent/\nbin/\n")
                 for args in (["init", "-q"], ["add", "."],
@@ -135,6 +147,8 @@ class LauncherTests(unittest.TestCase):
                 self.marker.unlink()
                 for program, args in (("scoped_index.py", ["--write"]),
                                       ("scoped_index.py", ["--verify"]),
+                                      ("standard_release.py", ["--check"]),
+                                      ("standard_release.py", ["--write"]),
                                       ("scoped_finalizer.py", [])):
                     result = self.run_launcher(program, *args)
                     if name == "scoped_probe":

@@ -1,5 +1,16 @@
 # 2.1 Release Freeze
 
+## Current Closeout Policy
+
+Use [standard closeout](RELEASE_STANDARD.md) for the remaining 2.1.0 release work.
+This explicitly replaces report-only child commits and per-integration approval
+anchors with one external, exact-candidate checklist and maintainer decision.
+It does not grant release approval, change runtime code, discard failures, or
+broaden historical campaign claims. The records below preserve the earlier
+process and original evidence identities, not additional mandatory approval
+rounds. Refresh candidate artifacts and full-release CI after the last source
+edit; do not commit the resulting review report and start that cycle again.
+
 Commit 26 prepared the API, documentation, packages and campaign tooling.
 This is not release authorization. Its follow-up `335dd35` passed the
 maintainer-supplied external retest and GitHub CI before the first campaigns.

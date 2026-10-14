@@ -129,6 +129,11 @@ def verify_reviews(directory, policy):
 def prepare(root, reviews, paths, integration=None):
     policy = campaign.load_policy(root)
     candidate = verify_candidate(root, policy, integration)
+    return prepare_claims(root, reviews, paths, policy, candidate)
+
+
+def prepare_claims(root, reviews, paths, policy, candidate):
+    """Verify retained claims without assigning new-source execution or authority."""
     handoff = verify_reviews(reviews, policy)
     if set(paths) != set(policy["packets"]):
         raise ValueError("exact historical and recapture packets are required")

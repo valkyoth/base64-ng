@@ -539,8 +539,9 @@ def main() -> int:
         action="store_true",
         help=(
             "Run scripts/stable_release_gate.sh candidate before publishing. "
-            "By default, the publish helper assumes the full gate, including "
-            "Kani and final pentest readiness, already passed before tagging."
+            "This opts into the high-assurance campaign. By default, the publish "
+            "helper assumes standard or high-assurance release readiness was "
+            "completed before tagging; see docs/RELEASE_STANDARD.md."
         ),
     )
     parser.add_argument(

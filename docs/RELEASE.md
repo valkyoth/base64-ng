@@ -2,11 +2,15 @@
 
 This checklist is for maintainers preparing a `base64-ng` release.
 
-For 2.1.0 use [RELEASE_FREEZE_2.1.md](RELEASE_FREEZE_2.1.md) and Commits 26-28
-of the [2.1 plan](2.1.0-release-plan.md). The API/package freeze precedes the
-distributed candidate campaigns. Publication metadata is prepared, not release
-authorization. The 2.0-specific examples and checkpoint numbers below are
-historical; use `v2.1.0` and its report-only final acceptance for this release.
+For 2.1.0 follow the [standard closeout](RELEASE_STANDARD.md): freeze one source
+commit, attach its review outside Git history, verify CI/packages and retained
+campaigns, and make one maintainer closeout decision. The report-only commit and
+per-integration approval chain are not required in standard mode.
+
+The detailed campaign procedure below is the optional high-assurance route.
+It remains available, but is not the default release process. The
+[freeze record](RELEASE_FREEZE_2.1.md) retains original campaign identities and
+limitations; changing process does not relabel old binaries as new executions.
 
 For 2.0.0, [`2.0_RELEASE_FREEZE.md`](2.0_RELEASE_FREEZE.md) records the exact
 candidate boundary. The synchronized publish plan does not authorize release
@@ -34,7 +38,7 @@ are recorded under `[npm]` in `release-crates.toml`.
 - Confirm the wasm loader provenance binds its npm version, artifact digests,
   and exact Git source commit.
 
-## Required Gate
+## Optional High-Assurance Gate
 
 During development, run:
 

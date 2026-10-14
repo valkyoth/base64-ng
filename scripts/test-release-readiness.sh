@@ -346,3 +346,36 @@ EOF
     assert_fails_with "non-metadata paths changed" \
         scripts/validate-release-readiness.sh "v2.1.0"
 )
+
+# Standard closeout uses an external review, not another report-only commit.
+# Real metadata checks are covered by test-standard-release.py; this fixture
+# proves shell routing and that signature rejection precedes Python execution.
+repo="$(make_fixture standard-closeout)"
+(
+    cd "$repo"
+    printf '#!/bin/sh\nset -eu\ntest "$1" = standard_release.py\ntest "$2" = --verify\necho checked >> target/verified\nexit "${STANDARD_TEST_EXIT:-0}"\n' \
+        >scripts/run-scoped-python.sh
+    git add scripts/run-scoped-python.sh
+    git commit -q -m "standard routing fixture"
+    write_sbom
+    write_evidence_index
+    sed -i 's/evidence_mode=exact/evidence_mode=standard-checklist-v1/' \
+        target/release-evidence/FINAL-MANIFEST.txt
+    rm target/release-evidence/FINAL-MANIFEST.txt.sig
+    ssh-keygen -Y sign -f "$test_key" -n base64-ng-evidence-v2 \
+        target/release-evidence/FINAL-MANIFEST.txt >/dev/null
+    test ! -e security/pentest/v2.1.0.md
+    scripts/validate-release-readiness.sh v2.1.0
+    test "$(cat target/verified)" = checked
+    if STANDARD_TEST_EXIT=17 scripts/validate-release-readiness.sh v2.1.0; then
+        echo 'standard verifier failure was ignored' >&2
+        exit 1
+    fi
+    rm target/verified
+    printf 'tampered\n' >>target/release-evidence/FINAL-MANIFEST.txt
+    if scripts/validate-release-readiness.sh v2.1.0; then
+        echo 'standard signature failure was ignored' >&2
+        exit 1
+    fi
+    test ! -e target/verified
+)
