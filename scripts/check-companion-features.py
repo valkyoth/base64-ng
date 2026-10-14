@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tempfile
 import tomllib
 
@@ -71,8 +72,13 @@ def run(toolchain, work, *args, capture=False, coverage=False):
     if coverage:
         env["RUSTFLAGS"] = "-C instrument-coverage"
         env["LLVM_PROFILE_FILE"] = str(work / "coverage-%p-%m.profraw")
-    return subprocess.run(["cargo", f"+{toolchain}", *args, "--offline"], cwd=work,
-                          env=env, check=True, text=True, capture_output=capture)
+    try:
+        return subprocess.run(["cargo", f"+{toolchain}", *args, "--offline"], cwd=work,
+                              env=env, check=True, text=True, capture_output=capture)
+    except subprocess.CalledProcessError as error:
+        if capture and error.stderr:
+            sys.stderr.write(error.stderr)
+        raise
 
 
 def check(toolchain, name, selected, defaults, work, coverage=False, target=None):
@@ -169,7 +175,12 @@ def main():
     audit()
     if not args.audit_only:
         active = tomllib.loads((ROOT / "rust-toolchain.toml").read_text())["toolchain"]["channel"]
-        for toolchain in args.toolchain or [active, "1.90.0"]:
+        toolchains = args.toolchain or [active, "1.90.0"]
+        # Isolated consumers stay offline; a clean runner first needs the locked
+        # workspace dependencies, including Serde's test-only dependencies.
+        subprocess.run(["cargo", f"+{toolchains[0]}", "fetch", "--locked",
+                        "--manifest-path", str(ROOT / "Cargo.toml")], check=True)
+        for toolchain in toolchains:
             for name in args.companion or COMPANIONS:
                 with tempfile.TemporaryDirectory(prefix="base64-companion-") as directory:
                     modes = [(True, []), (False, []), (False, ["simd"]),

@@ -3,6 +3,7 @@
 
 import copy
 import importlib.util
+import io
 import os
 from pathlib import Path
 import subprocess
@@ -17,6 +18,58 @@ spec.loader.exec_module(module)
 
 
 class FeatureTests(unittest.TestCase):
+    def test_locked_fetch_precedes_all_offline_consumer_checks(self):
+        events = []
+        with patch.object(module.sys, "argv", ["check", "--companion", "serde"]), \
+                patch.object(module.subprocess, "run", side_effect=lambda *a, **k: events.append(("fetch", a, k))), \
+                patch.object(module, "check", side_effect=lambda *a, **k: events.append(("check", a, k))):
+            module.main()
+        active = tomllib.loads((module.ROOT / "rust-toolchain.toml").read_text())["toolchain"]["channel"]
+        self.assertEqual(events[0], ("fetch", (["cargo", f"+{active}", "fetch", "--locked",
+                         "--manifest-path", str(module.ROOT / "Cargo.toml")],), {"check": True}))
+        self.assertEqual([event[0] for event in events], ["fetch"] + ["check"] * 16)
+        self.assertEqual({event[1][0] for event in events[1:]}, {active, "1.90.0"})
+
+    def test_fetch_uses_requested_toolchain_and_failure_stops_matrix(self):
+        failure = subprocess.CalledProcessError(101, ["cargo", "fetch"])
+        with patch.object(module.sys, "argv", ["check", "--toolchain", "1.90.0"]), \
+                patch.object(module.subprocess, "run", side_effect=failure) as fetch, \
+                patch.object(module, "check") as check:
+            with self.assertRaises(subprocess.CalledProcessError) as raised:
+                module.main()
+            self.assertIs(raised.exception, failure)
+            self.assertEqual(fetch.call_args.args[0][1], "+1.90.0")
+            check.assert_not_called()
+
+    def test_audit_only_does_not_fetch_or_run_consumers(self):
+        with patch.object(module.sys, "argv", ["check", "--audit-only"]), \
+                patch.object(module.subprocess, "run") as fetch, \
+                patch.object(module, "check") as check:
+            module.main()
+            fetch.assert_not_called()
+            check.assert_not_called()
+
+    def test_captured_cargo_failure_displays_stderr_and_stays_offline(self):
+        failure = subprocess.CalledProcessError(101, ["cargo", "metadata"],
+                                              stderr="missing locked dependency\n")
+        diagnostic = io.StringIO()
+        with patch.object(module.subprocess, "run", side_effect=failure) as run, \
+                patch.object(module.sys, "stderr", diagnostic):
+            with self.assertRaises(subprocess.CalledProcessError) as raised:
+                module.run("1.99.0", Path("/tmp"), "metadata", capture=True)
+            self.assertIs(raised.exception, failure)
+            self.assertEqual(run.call_args.args[0], ["cargo", "+1.99.0", "metadata", "--offline"])
+        self.assertEqual(diagnostic.getvalue(), failure.stderr)
+
+    def test_uncaptured_failure_does_not_duplicate_diagnostics(self):
+        diagnostic = io.StringIO()
+        with patch.object(module.subprocess, "run", side_effect=subprocess.CalledProcessError(
+                101, ["cargo", "test"], stderr="already streamed\n")), \
+                patch.object(module.sys, "stderr", diagnostic):
+            with self.assertRaises(subprocess.CalledProcessError):
+                module.run("1.99.0", Path("/tmp"), "test")
+        self.assertEqual(diagnostic.getvalue(), "")
+
     def test_isolated_consumer_overrides_both_inherited_build_directories(self):
         with patch.dict(os.environ, CARGO_TARGET_DIR="/wrong/target", CARGO_BUILD_BUILD_DIR="/wrong/build"), \
                 patch.object(module.subprocess, "run") as run:
