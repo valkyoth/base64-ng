@@ -53,7 +53,10 @@ recapture the affected properties and reassess the reuse policy. This bounded
 
 The baseline is the reviewed maintenance commit `9a04542`, **not** the old
 compiler or binaries. Only the identified report and closeout documentation,
-validator and regression-test files may differ from that commit. A further
+validator and regression-test files may differ from that commit, plus the
+exact CI correction and its test: install locked cargo-deny from source and
+use Ubuntu 24.04 RISC-V guest libraries for the vector-disabled CPU. The
+required job matrix is unchanged. A further
 crate, compiler, workflow or codec change needs a new impact assessment.
 
 Start with an empty private evidence directory in a clean checkout of the

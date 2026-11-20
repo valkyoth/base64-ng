@@ -380,6 +380,28 @@ class SourceTests(unittest.TestCase):
                     self.git("revert", "--no-edit", "--no-gpg-sign", "HEAD")
 
 
+    def test_ci_correction_requires_both_exact_regular_files(self):
+        self.write("release-crates.toml", '[release]\nversion="2.1.1"\npolicy="selective-patch"')
+        anchor = self.commit()
+        workflow, regression = ".github/workflows/ci.yml", "scripts/test-ci-release-mode.py"
+        self.write(workflow, "corrected job")
+        self.commit()
+        self.write(regression, "regression coverage")
+        pins = {path: self.git("hash-object", path) for path in (workflow, regression)}
+        with patch.object(standard.standard_patch, "REVIEWED", anchor), \
+                patch.object(standard.standard_patch, "CI_CORRECTION", pins):
+            (self.root / regression).unlink()
+            with self.assertRaisesRegex(ValueError, "maintenance scope"):
+                self.assess()
+            self.write(regression, "regression coverage")
+            self.commit()
+            self.assertEqual(self.assess()[1]["paths"], sorted(pins))
+            self.write(workflow, "skip job")
+            self.commit()
+            with self.assertRaisesRegex(ValueError, "maintenance scope"):
+                self.assess()
+
+
 class PatchTests(unittest.TestCase):
     def setUp(self):
         self.f = fixtures.IndexTests()

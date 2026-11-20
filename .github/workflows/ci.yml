@@ -162,8 +162,11 @@ jobs:
       - name: Install dependency audit tools
         uses: taiki-e/install-action@75a7c0f87bd666af3cdb75c5b9e9d03ab6044e6f # v2.90.6
         with:
-          tool: cargo-audit@0.23.0,cargo-deny@0.22.0
+          tool: cargo-audit@0.23.0
           fallback: none
+
+      - name: Install cargo-deny
+        run: cargo install --locked cargo-deny --version 0.22.0
 
       - name: Install MSRV toolchain
         run: rustup toolchain install 1.90.0 --profile minimal --component clippy
@@ -382,7 +385,8 @@ jobs:
   riscv-qemu:
     name: RISC-V QEMU and RVV candidate evidence
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.full_release }}
-    runs-on: ubuntu-latest
+    # The 26.04 RISC-V dynamic loader requires V even before the test harness starts.
+    runs-on: ubuntu-24.04
     timeout-minutes: 90
 
     steps:

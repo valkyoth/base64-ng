@@ -59,6 +59,24 @@ class ReleaseModeTests(unittest.TestCase):
     def test_actual_workflow_keeps_full_suites_opt_in(self):
         validate(self.load())
 
+    def test_feature_gate_uses_core_jobs_locked_cargo_deny_install(self):
+        jobs = self.load()["jobs"]
+        core = [line.strip() for step in jobs["checks"]["steps"]
+                for line in step.get("run", "").splitlines()
+                if line.startswith("cargo install --locked cargo-deny --version ")]
+        self.assertEqual(len(core), 1)
+        steps = jobs["development-checks"]["steps"]
+        commands = [step.get("run", "") for step in steps]
+        self.assertLess(commands.index(core[0]), commands.index("scripts/checks.sh --development"))
+        self.assertFalse(any("cargo-deny" in step.get("with", {}).get("tool", "")
+                             for step in steps))
+
+    def test_scalar_riscv_job_uses_pre_rva23_guest_libraries(self):
+        job = self.load()["jobs"]["riscv-qemu"]
+        self.assertEqual(job["runs-on"], "ubuntu-24.04")
+        self.assertIn("sh scripts/check-2.1-rvv-validation.sh --qemu",
+                      [step.get("run") for step in job["steps"]])
+
     def test_windows_push_gate_excludes_native_campaign(self):
         steps = self.load()["jobs"]["platform"]["steps"]
         step = next(s for s in steps if s["name"] == "Check Windows public APIs and companion forwarding")

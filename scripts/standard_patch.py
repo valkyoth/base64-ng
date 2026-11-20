@@ -8,6 +8,12 @@ from scoped_evidence import read_regular
 
 RELEASE = {"version": "2.1.1", "policy": "selective-patch"}
 REVIEWED = "9a045427e28ad431c4405dfc5bf3ae6f4c5e7950"
+# Only these regular-file blobs may replace the original CI inputs. Keep
+# workflow paths out of CLOSEOUT_PATHS (which permits further content edits).
+CI_CORRECTION = {
+    ".github/workflows/ci.yml": "bdf95251ce5c7213910b7570ca0d90efe482084b",
+    "scripts/test-ci-release-mode.py": "a6abdfe3090e61023f2ac1506c1dfc3d5c66b93a",
+}
 CLOSEOUT_PATHS = {
     "security/pentest/v2.1.1.md", "docs/RELEASE_STANDARD.md",
     "scripts/scoped_candidate.py", "scripts/standard_patch.py", "scripts/standard_release.py",
@@ -25,17 +31,22 @@ def impact(root, current):
     git(root, "merge-base", "--is-ancestor", REVIEWED, current["commit"])
     paths = sorted(filter(None, git(root, "diff", "--no-renames", "--name-only", "-z",
                                     REVIEWED, current["commit"]).decode().split("\0")))
-    if set(paths) - CLOSEOUT_PATHS:
+    unexpected = set(paths) - CLOSEOUT_PATHS
+    if unexpected == CI_CORRECTION.keys() and all(
+        git(root, "ls-tree", current["commit"], "--", path).decode().rstrip("\n")
+        == f"100644 blob {blob}\t{path}" for path, blob in CI_CORRECTION.items()
+    ):
+        unexpected.clear()
+    if unexpected:
         raise ValueError("change outside the reviewed maintenance scope: " +
-                         ", ".join(sorted(set(paths) - CLOSEOUT_PATHS)))
+                         ", ".join(sorted(unexpected)))
     return {"baseline": {"commit": REVIEWED,
                          "tree": git(root, "rev-parse", REVIEWED + "^{tree}").decode().strip()},
             "paths": paths}
 
 
 def ci_jobs():
-    # Full-release matrix from the workflow at REVIEWED. That workflow cannot
-    # change between review and candidate; the submitted CI record is not policy.
+    # The pinned CI correction changes provisioning, not the required job matrix.
     jobs = {"Format, lint, test, and audit", "2.1 feature gates", "Miri",
             "Address, Leak, and Thread Sanitizers", "Big-endian QEMU functional evidence",
             "RISC-V QEMU and RVV candidate evidence", "AArch64 SVE QEMU candidate evidence"}
