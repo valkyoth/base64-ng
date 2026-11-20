@@ -62,10 +62,13 @@ def report(evidence, name, candidate, inventory):
 
 
 def verify_ci(evidence, candidate, inventory, reviews):
+    baseline = strict_json(read_regular(reviews / "github-ci.json"))
+    verify_ci_jobs(evidence, candidate, inventory, {job["name"] for job in baseline["jobs"]})
+
+
+def verify_ci_jobs(evidence, candidate, inventory, expected):
     require_file(inventory, CI)
     value = strict_json(read_regular(evidence / CI))
-    baseline = strict_json(read_regular(reviews / "github-ci.json"))
-    expected = {job["name"] for job in baseline["jobs"]}
     jobs = value["jobs"]
     if (value["headSha"] != candidate["commit"] or value["event"] != "workflow_dispatch"
             or value["conclusion"] != "success" or value["workflowName"] != "Rust CI"
@@ -78,27 +81,32 @@ def verify_ci(evidence, candidate, inventory, reviews):
 
 def verify_packages(root, evidence, candidate, inventory):
     plan = tomllib.loads(read_regular(root / "release-crates.toml").decode())
-    rust = report(evidence, RUST, candidate, inventory)
     if plan["release"] != {"version": "2.1.0", "policy": "synced-family"}:
         raise ValueError("scoped activation requires the reviewed synchronized 2.1.0 family")
-    if set(rust["packages"]) != set(plan["crates"]):
+    verify_package_set(root, evidence, candidate, inventory, plan, set(plan["crates"]))
+
+
+def verify_package_set(root, evidence, candidate, inventory, plan, selected):
+    version = plan["release"]["version"]
+    rust = report(evidence, RUST, candidate, inventory)
+    if set(rust["packages"]) != selected:
         raise ValueError("candidate Rust package family is incomplete")
     for name, item in rust["packages"].items():
-        expected = {"version": "2.1.0", "archive": f"candidate/rust/{name}-2.1.0.crate",
+        expected = {"version": version, "archive": f"candidate/rust/{name}-{version}.crate",
                     "inventory": f"candidate/rust/{name}-files.txt"}
-        if item != expected or plan["crates"][name]["version"] != "2.1.0":
+        if item != expected or plan["crates"][name]["version"] != version:
             raise ValueError("candidate Rust package identity mismatch")
         for key in ("archive", "inventory"):
             require_file(inventory, item[key])
     npm = report(evidence, NPM, candidate, inventory)
-    if npm["package"] != plan["npm"]["name"] or npm["version"] != "2.1.0":
+    if npm["package"] != plan["npm"]["name"] or npm["version"] != version:
         raise ValueError("candidate npm package identity mismatch")
     for name in ("package.tgz", "files.txt", "PROVENANCE.json"):
         require_file(inventory, "candidate/npm/" + name)
     provenance = strict_json(read_regular(evidence / "candidate/npm/PROVENANCE.json"))
     if (provenance["schema"] != "base64-ng-wasm-provenance-v1"
             or provenance["sourceCommit"] != candidate["commit"]
-            or provenance["package"] != npm["package"] or provenance["version"] != "2.1.0"):
+            or provenance["package"] != npm["package"] or provenance["version"] != version):
         raise ValueError("candidate WASM provenance mismatch")
     expected_artifacts = {"base64-ng-scalar.wasm", "base64-ng-simd128.wasm"}
     if set(provenance["artifacts"]) != expected_artifacts:
@@ -113,6 +121,11 @@ def verify_packages(root, evidence, candidate, inventory):
 
 def verify_metadata(root, evidence, candidate, inventory, reviews):
     verify_ci(evidence, candidate, inventory, reviews)
+    verify_build(evidence, candidate, inventory)
+    verify_packages(root, evidence, candidate, inventory)
+
+
+def verify_build(evidence, candidate, inventory):
     manifest(evidence, "sbom-MANIFEST.txt", candidate, inventory, SBOMS)
     spdx, cyclone = [strict_json(read_regular(evidence / path)) for path in SBOMS]
     if spdx["spdxVersion"] != "SPDX-2.3" or cyclone["bomFormat"] != "CycloneDX" \
@@ -124,4 +137,3 @@ def verify_metadata(root, evidence, candidate, inventory, reviews):
     for left, right in REPRO_PAIRS:
         if inventory["files"]["reproducible/" + left] != inventory["files"]["reproducible/" + right]:
             raise ValueError("candidate reproducibility pair mismatch")
-    verify_packages(root, evidence, candidate, inventory)

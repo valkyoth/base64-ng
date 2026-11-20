@@ -10,6 +10,7 @@ import tarfile
 import scoped_candidate as metadata
 import scoped_finalizer as scoped
 import scoped_index as index
+import standard_patch
 from scoped_evidence import MAX_MANIFEST, read_regular, strict_json
 
 
@@ -32,6 +33,11 @@ def candidate(root):
 
 
 def assessment(root, current):
+    release = standard_patch.plan(root)["release"]
+    if release == standard_patch.RELEASE:
+        return None, standard_patch.impact(root, current)
+    if release != {"version": "2.1.0", "policy": "synced-family"}:
+        raise ValueError("unsupported standard release plan")
     # Retain the already reviewed 2.1 claims and their original source identities.
     # This is not a generic permission to edit campaign policies or runtime code.
     for name in (scoped.campaign.POLICY_PATH, scoped.campaign.ATTESTATIONS_PATH):
@@ -60,11 +66,11 @@ def text(value, label):
         raise ValueError("missing " + label)
 
 
-def checklist(evidence, current, impact):
+def checklist(evidence, current, impact, checks):
     value = strict_json(read_regular(evidence / CHECKLIST))
     metadata.require_schema_v1(value, CHECKLIST)
     if (value["candidate"] != current
-            or value["checks"] != dict.fromkeys(sorted(CHECKS), "passed")
+            or value["checks"] != dict.fromkeys(sorted(checks), "passed")
             or value["change_assessment"]["baseline"] != impact["baseline"]
             or value["change_assessment"]["paths"] != impact["paths"]):
         raise ValueError("checklist source, change assessment or required checks mismatch")
@@ -92,17 +98,22 @@ def render(root, evidence, env):
     current = candidate(root)
     policy, impact = assessment(root, current)
     inputs = index.inventory_tree(evidence, OUTPUTS)
-    review = checklist(evidence, current, impact)
-    reviews = evidence / "scoped/reviews"
-    claims = scoped.prepare_claims(root, reviews, {
-        "historical": evidence / "scoped/historical.tar.gz",
-        "recapture": evidence / "scoped/recapture.tar.gz",
-    }, policy, current)
-    metadata.verify_metadata(root, evidence, current, inputs, reviews)
+    review = checklist(evidence, current, impact, standard_patch.CHECKS if policy is None else CHECKS)
+    if policy is None:
+        standard_patch.verify(root, evidence, current, inputs)
+        retained = {}
+    else:
+        reviews = evidence / "scoped/reviews"
+        claims = scoped.prepare_claims(root, reviews, {
+            "historical": evidence / "scoped/historical.tar.gz",
+            "recapture": evidence / "scoped/recapture.tar.gz",
+        }, policy, current)
+        metadata.verify_metadata(root, evidence, current, inputs, reviews)
+        retained = {key: claims[key] for key in CLAIM_FIELDS}
     value = {"schema": 1, "evidence_mode": MODE, "candidate": current,
              "release_authorized": False, "checklist": review,
              "input_inventory": inputs,
-             "retained_claims": {key: claims[key] for key in CLAIM_FIELDS},
+             "retained_claims": retained,
              "review_model": "one exact-candidate maintainer checklist; prior approval workflow is historical",
              "boundary": "maintainer-reviewed standard release; no high-assurance certification"}
     raw = (json.dumps(value, indent=2, sort_keys=True) + "\n").encode()
@@ -127,11 +138,11 @@ def run(root, evidence, env, mode):
         if any(os.path.lexists(evidence / name) for name in OUTPUTS):
             raise ValueError("refusing to modify a finalized collection")
         current = candidate(root)
-        _, impact = assessment(root, current)
+        policy, impact = assessment(root, current)
         index.inventory_tree(evidence, OUTPUTS)
         value = {"schema": 1, "candidate": current, "reviewer": "",
                  "security_review": "candidate/security-review.md",
-                 "checks": dict.fromkeys(sorted(CHECKS), "pending"),
+                 "checks": dict.fromkeys(sorted(standard_patch.CHECKS if policy is None else CHECKS), "pending"),
                  "change_assessment": dict(impact, rationale="")}
         index.publish_new(evidence / CHECKLIST, (json.dumps(value, indent=2) + "\n").encode())
         return
@@ -168,9 +179,12 @@ def main():
     modes = parser.add_mutually_exclusive_group(required=True)
     for mode in ("template", "check", "write", "verify"):
         modes.add_argument("--" + mode, action="store_const", const=mode, dest="mode")
+    parser.add_argument("--tag", help="require the verified release plan to match this tag")
     args = parser.parse_args()
     root = scoped.campaign.ROOT
     try:
+        if args.tag is not None and args.tag != "v" + standard_patch.plan(root)["release"]["version"]:
+            raise ValueError("requested tag does not match the candidate release plan")
         run(root, root / metadata.PREFIX, os.environ, args.mode)
     except (ValueError, OSError, KeyError, TypeError, tarfile.TarError, subprocess.TimeoutExpired) as error:
         parser.exit(1, "standard release: " + str(error) + "\n")

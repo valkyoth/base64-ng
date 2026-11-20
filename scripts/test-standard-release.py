@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import signal
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -300,6 +301,7 @@ class SourceTests(unittest.TestCase):
         self.git("config", "user.name", "Test")
         self.git("config", "user.email", "test@example.invalid")
         self.write("src/lib.rs", "runtime")
+        self.write("release-crates.toml", '[release]\nversion="2.1.0"\npolicy="synced-family"')
         self.base = self.commit()
         base_tree = self.git("rev-parse", "HEAD^{tree}")
         self.policy = {"sources": {"recapture": {"commit": self.base, "tree": base_tree}}}
@@ -356,6 +358,112 @@ class SourceTests(unittest.TestCase):
         self.commit()
         with self.assertRaisesRegex(ValueError, "retained campaign policy"):
             self.assess()
+
+    def test_patch_scope_is_bound_to_reviewed_ancestor_not_version_label(self):
+        self.write("release-crates.toml", '[release]\nversion="2.1.1"\npolicy="selective-patch"')
+        anchor = self.commit()
+        with patch.object(standard.standard_patch, "REVIEWED", anchor):
+            self.write("scripts/test-standard-release.py", "test change")
+            self.commit()
+            policy, impact = self.assess()
+            self.assertIsNone(policy)
+            self.assertEqual(impact["baseline"]["commit"], anchor)
+            self.assertEqual(impact["paths"], ["scripts/test-standard-release.py"])
+            for path in ("src/lib.rs", "Cargo.lock", ".github/workflows/ci.yml",
+                         "release-crates.toml", "rust-toolchain.toml", "packages/new.js"):
+                with self.subTest(path=path):
+                    self.write(path, (self.root / path).read_text() + "\n# edit"
+                               if (self.root / path).exists() else "edit")
+                    self.commit()
+                    with self.assertRaisesRegex(ValueError, "maintenance scope"):
+                        self.assess()
+                    self.git("revert", "--no-edit", "--no-gpg-sign", "HEAD")
+
+
+class PatchTests(unittest.TestCase):
+    def setUp(self):
+        self.f = fixtures.IndexTests()
+        self.addCleanup(self.f.doCleanups)
+        self.f.setUp()
+        self.root, self.evidence = self.f.root, self.f.evidence
+        (self.root / "release-crates.toml").write_text(
+            '[release]\nversion="2.1.1"\npolicy="selective-patch"\n'
+            '[npm]\nname="@valkyoth/base64-ng-wasm-loader"\nversion="2.1.1"\npublish=true\n'
+            '[crates.base64-ng]\nversion="2.1.1"\npublish=true\n'
+            '[crates.base64-ng-bytes]\nversion="2.1.1"\npublish=true\n'
+            '[crates.base64-ng-imap]\nversion="2.1.0"\npublish=false\n')
+        self.plan = standard.standard_patch.plan(self.root)
+        shutil.rmtree(self.evidence / "scoped")
+        shutil.rmtree(self.evidence / "candidate/rust")
+        (self.evidence / standard.metadata.REVIEW).unlink()
+        packages = {}
+        for name, entry in self.plan["crates"].items():
+            if entry["publish"]:
+                archive = f"candidate/rust/{name}-2.1.1.crate"
+                files = f"candidate/rust/{name}-files.txt"
+                packages[name] = dict(version="2.1.1", archive=archive, inventory=files)
+                self.f.write(archive, b"package")
+                self.f.write(files, b"Cargo.toml\n")
+        self.f.report(standard.metadata.RUST, packages=packages)
+        self.f.report(standard.metadata.NPM, package=self.plan["npm"]["name"], version="2.1.1")
+        provenance = "candidate/npm/PROVENANCE.json"
+        self.f.json(provenance, dict(json.loads((self.evidence / provenance).read_bytes()), version="2.1.1"))
+        ci = json.loads((self.evidence / standard.metadata.CI).read_bytes())
+        ci["jobs"] = [dict(name=name, status="completed", conclusion="success")
+                      for name in standard.standard_patch.ci_jobs()]
+        self.f.json(standard.metadata.CI, ci)
+        self.impact = {"baseline": {"commit": standard.standard_patch.REVIEWED, "tree": "c" * 40},
+                       "paths": ["scripts/standard_release.py"]}
+        scope = patch.object(standard.standard_patch, "impact", return_value=self.impact)
+        scope.start()
+        self.addCleanup(scope.stop)
+        self.env = {standard.WRITE_ENV: self.f.candidate["commit"]}
+        self.run_mode("template")
+        self.checklist = json.loads((self.evidence / standard.CHECKLIST).read_bytes())
+        self.f.write("candidate/security-review.md", (
+            "Status: PASS\nReviewed-Commit: " + self.f.candidate["commit"] +
+            "\nReviewed-Tree: " + self.f.candidate["tree"] + "\nTester: Test\nScope: Patch and finalizer\n").encode())
+
+    def run_mode(self, mode):
+        standard.run(self.root, self.evidence, self.env, mode)
+
+    def approve_fixture(self):
+        self.checklist.update(reviewer="Fixture", checks=dict.fromkeys(standard.standard_patch.CHECKS, "passed"))
+        self.checklist["change_assessment"]["rationale"] = "Fixture: patch evidence only."
+        self.f.json(standard.CHECKLIST, self.checklist)
+
+    def test_no_reuse_or_implicit_approval(self):
+        with self.assertRaisesRegex(ValueError, "checklist"):
+            self.run_mode("write")
+        self.approve_fixture()
+        self.run_mode("write")
+        self.run_mode("verify")
+        value = json.loads((self.evidence / standard.INDEX).read_bytes())
+        self.assertEqual(value["retained_claims"], {})
+        self.assertIs(value["release_authorized"], False)
+
+    def test_stale_artifacts_and_incomplete_ci_cannot_pass(self):
+        self.approve_fixture()
+        self.f.write("scoped/historical.tar.gz", b"old")
+        with self.assertRaisesRegex(ValueError, "unexpected files"):
+            self.run_mode("check")
+        (self.evidence / "scoped/historical.tar.gz").unlink()
+        (self.evidence / "scoped").rmdir()
+        for path, mutate in (
+                (standard.metadata.RUST, lambda r: r["packages"].pop("base64-ng-bytes")),
+                (standard.metadata.RUST, lambda r: r["packages"].update({"base64-ng-imap": {}})),
+                ("candidate/npm/PROVENANCE.json", lambda r: r.update(version="2.1.0")),
+                (standard.metadata.CI, lambda r: r["jobs"].pop()),
+                (standard.metadata.CI, lambda r: r.update(headSha="c" * 40)),
+                (standard.metadata.CI, lambda r: r["jobs"][0].update(conclusion="skipped"))):
+            with self.subTest(path=path):
+                original = (self.evidence / path).read_bytes()
+                data = json.loads(original)
+                mutate(data)
+                self.f.json(path, data)
+                with self.assertRaises(ValueError):
+                    self.run_mode("check")
+                self.f.write(path, original)
 
 
 if __name__ == "__main__":

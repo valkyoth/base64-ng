@@ -1,7 +1,7 @@
 # Standard Release Closeout
 
-This is the default maintainer process. The executable closeout currently covers
-the synchronized 2.1.0 family: all 13 Rust crates and the npm WASM loader.
+This is the default maintainer process. The executable closeout supports the
+synchronized 2.1.0 family and the reviewed 2.1.1 selective maintenance patch.
 The older detailed campaign gates remain available for explicitly requested
 high-assurance work. Neither process is a military or whole-program certification.
 
@@ -39,7 +39,7 @@ dependency checks. The final 2.1 candidate still needs the complete full-release
 Rust CI job inventory, including all four deferred jobs. Failed, cancelled,
 skipped or incomplete required jobs never count as passes.
 
-For this closeout, unchanged runtime/build/package inputs are compared against
+For **2.1.0**, unchanged runtime/build/package inputs are compared against
 the reviewed recapture source `516f785`. Unknown input paths fail closed. The
 original two packets, seven review records and fourteen claim dispositions are
 still verified, not replaced by a statement that everything passed at new HEAD.
@@ -49,19 +49,52 @@ irrelevant: if a changed collector alters flags, tests or generated binaries,
 recapture the affected properties and reassess the reuse policy. This bounded
 2.1 route will not accept new runtime inputs simply by editing checklist text.
 
+### 2.1.1 Maintenance Patch
+
+The baseline is the reviewed maintenance commit `9a04542`, **not** the old
+compiler or binaries. Only the identified report and closeout documentation,
+validator and regression-test files may differ from that commit. A further
+crate, compiler, workflow or codec change needs a new impact assessment.
+
+Start with an empty private evidence directory in a clean checkout of the
+final commit. Collect and stage only these records:
+
+- The exact commit's full-release CI snapshot (use the command below), both
+  SBOMs and their manifest, and the reproducible core build manifest and pairs.
+- The candidate Rust package report and archives/inventories for the five
+  publish-selected crates: core, bytes, serde, sanitization and Tokio. Use the
+  candidate artifact schema linked below, substituting 2.1.1 for 2.1.0.
+- The candidate npm report, tested tarball, file list, generated provenance
+  and both rebuilt WASM binaries. Inspect the tarball and check its contents
+  against the staged files. Keep detailed build logs outside this collection.
+- The exact-candidate review and checklist. The review may reference the
+  committed assessment of `9a04542` **plus** review of the final tooling delta.
+  Do not edit the older report to claim it reviewed a later commit.
+
+Use the same template, check, write, seal and verify commands below, with tag
+`v2.1.1`. For this route the third checklist entry is
+`compiler-and-dependency-validation`: inspect the compiler/MSRV tests,
+changed dependency integrations, relevant generated code and WASM checks.
+Do **not** copy the 2.1.0 scoped packets, claim approvals or old build outputs.
+The patch index retains no historical campaign claims. No repeat of the old
+one-hour fuzz or native performance campaigns is required by this closeout;
+it does not claim those properties were verified on the new binaries.
+
 ## Prepare The Collection
 
 Use a private `0700` `target/release-evidence` directory in the candidate checkout.
-Retain the existing `scoped/` packets/reviews unchanged. Generate the candidate
+For 2.1.0 only, retain the existing `scoped/` packets/reviews unchanged. Generate the candidate
 artifacts using the existing workspace package, WASM-loader, SBOM and
 reproducibility collectors. The layout and report schemas are the same as the
 [candidate artifact inventory](RELEASE_EVIDENCE.md#scoped-index-activation-contract).
 Retain build logs, failures and their resolutions. Do not overwrite a sealed
 collection, mix old manifests into it, or relabel a previous candidate's output.
 
-Capture the complete final CI snapshot into `candidate/ci.json` using:
+After pushing the frozen commit to `main`, dispatch full-release CI once.
+Capture the completed run (not the routine push run) into `candidate/ci.json`:
 
 ```sh
+gh workflow run ci.yml --ref main -f full_release=true
 gh run view RUN_ID --json conclusion,event,headSha,jobs,url,workflowName
 ```
 

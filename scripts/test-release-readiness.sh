@@ -353,7 +353,7 @@ EOF
 repo="$(make_fixture standard-closeout)"
 (
     cd "$repo"
-    printf '#!/bin/sh\nset -eu\ntest "$1" = standard_release.py\ntest "$2" = --verify\necho checked >> target/verified\nexit "${STANDARD_TEST_EXIT:-0}"\n' \
+    printf '#!/bin/sh\nset -eu\ntest "$1" = standard_release.py\ntest "$2" = --verify\ntest "$3" = --tag\ntest "$4" = "${EXPECT_TAG:-v2.1.0}"\necho checked >> target/verified\nexit "${STANDARD_TEST_EXIT:-0}"\n' \
         >scripts/run-scoped-python.sh
     git add scripts/run-scoped-python.sh
     git commit -q -m "standard routing fixture"
@@ -367,6 +367,8 @@ repo="$(make_fixture standard-closeout)"
     test ! -e security/pentest/v2.1.0.md
     scripts/validate-release-readiness.sh v2.1.0
     test "$(cat target/verified)" = checked
+    write_release_notes "2.1.1"
+    EXPECT_TAG=v2.1.1 scripts/validate-release-readiness.sh v2.1.1
     if STANDARD_TEST_EXIT=17 scripts/validate-release-readiness.sh v2.1.0; then
         echo 'standard verifier failure was ignored' >&2
         exit 1

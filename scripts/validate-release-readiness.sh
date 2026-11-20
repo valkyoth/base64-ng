@@ -53,12 +53,8 @@ fi
 # Standard closeout keeps the review outside Git history, bound to exact HEAD.
 # Legacy/high-assurance evidence retains the committed report-only contract below.
 if [ "$(exact_key "$evidence_manifest" evidence_mode 2>/dev/null || true)" = standard-checklist-v1 ]; then
-    if [ "$tag" != v2.1.0 ]; then
-        echo "standard closeout currently supports the synchronized 2.1.0 family" >&2
-        exit 1
-    fi
     scripts/verify-release-evidence-signature.sh "$evidence_manifest" "${evidence_manifest}.sig"
-    sh scripts/run-scoped-python.sh standard_release.py --verify
+    sh scripts/run-scoped-python.sh standard_release.py --verify --tag "$tag"
     scripts/verify-release-evidence-artifacts.py "$evidence_manifest" target/release-evidence
     echo "release readiness: standard checklist, signed inventory and candidate checks passed"
     exit 0
