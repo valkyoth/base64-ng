@@ -155,20 +155,33 @@ matches exactly. Stale or altered indexes and existing final manifests or
 signatures are rejected. A failed retry preserves a pre-existing index.
 This is interruption recovery, not a guarantee of power-loss durability.
 Both outputs retain `release_authorized=false`.
-No separate candidate-record hash approval is needed. Verification remains:
+No separate candidate-record hash approval is needed. Set the tag once in the
+release shell and use that same shell for the commands below. Verify that the
+index and release plan match the intended tag **before** using the evidence key:
 
 ```sh
-sh scripts/finalize-release-evidence.sh --standard --verify
+release_tag="v2.1.1"
+sh scripts/finalize-release-evidence.sh --standard --verify --tag "$release_tag"
 ```
 
-Use the existing isolated `seal-release-evidence.sh v2.1.0` procedure with the
-dedicated evidence key, then `validate-release-readiness.sh v2.1.0`. Signing is
-not performed during builds. Readiness verifies the authorized signature, all
-indexed files, the exact candidate, CI, packages and review. Never weaken a
-failed gate to make the checklist pass.
+After verification succeeds, seal with the dedicated evidence key. The sealing
+script calls `validate-release-readiness.sh` with the same tag and exits
+successfully only if the signed inventory and exact candidate pass readiness:
 
-Only after explicit publication authorization, create the authorized signed
-`v2.1.0` tag and follow the Rust-family and npm publishing commands in
+```sh
+BASE64_NG_EVIDENCE_SIGNING_KEY=/path/to/evidence-only-key \
+  scripts/seal-release-evidence.sh "${release_tag:?set and verify the release tag first}"
+```
+
+Only after full-release CI and sealing/readiness pass for the same commit, and
+the maintainer separately authorizes tagging, create and verify the local tag:
+
+```sh
+git tag -s "${release_tag:?set and verify the release tag first}" -m "base64-ng ${release_tag#v}"
+scripts/verify-release-tag.sh "$release_tag"
+```
+
+Tagging does not push or publish. For authorized publication follow
 [RELEASE.md](RELEASE.md). Publish the checked npm archive, not a different rebuild.
 Leave the evidence/report attachments outside source history and attach them to
 the release. The older `stable_release_gate.sh check|candidate|release` modes
