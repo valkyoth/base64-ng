@@ -116,7 +116,7 @@ case "$neon_status" in
         ;;
     retained-native-performance)
         # Compatibility for historical releases, never a 2.1 fallback.
-        if [ "$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | head -n 1)" = "2.1.0" ]; then
+        if [ "$(sed -n 's/^version = "\([0-9]*\.[0-9]*\)\.[0-9]*"$/\1/p' Cargo.toml | head -n 1)" = "2.1" ]; then
             echo "release evidence outcomes: 2.1 requires exact-campaign NEON evidence" >&2
             exit 1
         fi

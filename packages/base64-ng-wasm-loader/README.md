@@ -1,9 +1,7 @@
 # @valkyoth/base64-ng-wasm-loader
 
-Candidate source: `2.1.0`, not published. The current npm release is `2.0.3`.
-Publication metadata is prepared, but final campaigns, review, CI and the signed
-release tag remain required. Registry installation examples below still resolve
-to the published package until 2.1.0 is released.
+This README describes the 2.1.1 maintenance release. The scalar and SIMD
+artifacts were rebuilt with Rust 1.100.0.
 
 `@valkyoth/base64-ng-wasm-loader` is the supported JavaScript companion for
 [`base64-ng`](https://github.com/valkyoth/base64-ng). It selects a scalar or
@@ -46,7 +44,7 @@ selection reason, limits, and ABI version.
 The reviewed JavaScript embeds and verifies the SHA-256 digest of each shipped
 artifact before instantiation; `posture.artifactSha256` reports the selected
 digest. `artifacts/SHA256SUMS` records the same values for release tooling.
-`artifacts/PROVENANCE.json` binds development package version `2.1.0`, both artifact
+`artifacts/PROVENANCE.json` binds package version `2.1.1`, both artifact
 digests, and the exact source commit used by the package build. The release
 gate checks the provenance inside the packed npm tarball against tagged `HEAD`.
 Builds remap the repository source root to a stable virtual path so official

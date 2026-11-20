@@ -70,7 +70,7 @@ class GateTests(unittest.TestCase):
                    if not key.startswith("BASE64_NG_")}
             env["PATH"] = f"{bin_dir}:{env['PATH']}"
             gate = ["sh", str(scripts / "stable_release_gate.sh"), "release"]
-            for version in ("2.0.0", "2.1.0"):
+            for version in ("2.0.0", "2.1.0", "2.1.1"):
                 (fixture / "Cargo.toml").write_text(f'[package]\nversion = "{version}"\n')
                 result = subprocess.run(gate, cwd=fixture, env=env, capture_output=True, text=True)
                 self.assertEqual(result.returncode, 81, result.stderr)

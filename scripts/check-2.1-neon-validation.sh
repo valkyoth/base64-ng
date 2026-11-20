@@ -64,15 +64,15 @@ done
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT INT TERM
 for features in std,simd std,simd,checked-backend all; do
-    directory="$tmp/$features"
+    directory="$tmp/$(printf '%s' "$features" | tr , -)"
     case "$features" in
         all) set -- --all-features ;;
         *) set -- --no-default-features --features "$features" ;;
     esac
     CARGO_TARGET_DIR="$directory" cargo rustc --locked --release --target "$target" \
-        "$@" --lib -- --emit=llvm-ir,asm
-    python3 scripts/check-neon-validation-codegen.py "$directory/$target/release/deps" production
-    python3 scripts/check-neon-validation-codegen.py "$directory/$target/release/deps" assembly
+        "$@" --lib -- --emit="llvm-ir=$directory/base64_ng-validation.ll,asm=$directory/base64_ng-validation.s"
+    python3 scripts/check-neon-validation-codegen.py "$directory" production
+    python3 scripts/check-neon-validation-codegen.py "$directory" assembly
 done
 sh scripts/validate-unsafe-boundary.sh
 sh scripts/validate-panic-policy.sh

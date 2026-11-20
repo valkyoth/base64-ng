@@ -1,6 +1,6 @@
 [package]
 name = "base64-ng-tokio"
-version = "2.1.0"
+version = "2.1.1"
 edition = "2024"
 rust-version = "1.90"
 license = "MIT OR Apache-2.0"
@@ -25,11 +25,11 @@ checked-backend = ["simd", "base64-ng/checked-backend"]
 default = []
 
 [dependencies]
-base64-ng = { version = "2.1.0", path = "../..", default-features = false, features = ["alloc", "std"] }
-tokio = { version = "1.53.1", default-features = false, features = ["io-util", "rt"] }
+base64-ng = { version = "2.1.1", path = "../..", default-features = false, features = ["alloc", "std"] }
+tokio = { version = "1.54.1", default-features = false, features = ["io-util", "rt"] }
 
 [dev-dependencies]
-tokio = { version = "1.53.1", default-features = false, features = ["io-util", "macros", "rt"] }
+tokio = { version = "1.54.1", default-features = false, features = ["io-util", "macros", "rt"] }
 
 [lints.rust]
 unsafe_code = "deny"

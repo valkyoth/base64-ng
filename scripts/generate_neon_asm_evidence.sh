@@ -15,14 +15,9 @@ echo "NEON asm evidence: AArch64 release library assembly"
 CARGO_INCREMENTAL=0 \
 CARGO_TARGET_DIR="$audit_root/build" \
     cargo rustc --locked --target "$target" --release \
-    --all-features --lib -- --emit=asm
+    --all-features --lib -- --emit=asm="$audit_root/base64_ng-neon.s"
 
-set -- "$audit_root"/build/"$target"/release/deps/base64_ng-*.s
-if [ "$#" -ne 1 ] || [ ! -f "$1" ]; then
-    echo "NEON asm evidence: expected one fresh assembly artifact" >&2
-    exit 1
-fi
-cp "$1" "$output_dir/base64_ng-neon-aarch64.s"
+cp "$audit_root/base64_ng-neon.s" "$output_dir/base64_ng-neon-aarch64.s"
 assembly="$output_dir/base64_ng-neon-aarch64.s"
 
 require_pattern() {

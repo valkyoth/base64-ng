@@ -178,7 +178,7 @@ require_report_key \
     "$rvv_native/MANIFEST.txt" execution_environment real-hardware
 require_report_key \
     "$rvv_native/MANIFEST.txt" admission_scope linux-rvv-1.0-vlen256-spacemit-x60
-if [ "$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | head -n 1)" = "2.1.0" ]; then
+if [ "$(sed -n 's/^version = "\([0-9]*\.[0-9]*\)\.[0-9]*"$/\1/p' Cargo.toml | head -n 1)" = "2.1" ]; then
     require_report_key "$root/commit-53/MANIFEST.txt" \
         neon_automatic_dispatch exact-campaign-native-performance
     require_report_key "$root/commit-53/MANIFEST.txt" \

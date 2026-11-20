@@ -90,9 +90,9 @@ def check(toolchain, name, selected, defaults, work, coverage=False, target=None
     dependencies = f'''companion = {{ package = "{package}", path = {json.dumps(str(path))}, default-features = {str(defaults).lower()}, features = {json.dumps(selected)} }}
 base64-ng = {{ path = {json.dumps(str(ROOT))}, default-features = false }}
 '''
-    extra = {"bytes": 'bytes = { version = "1.12.1", default-features = false }',
-             "tokio": 'tokio = { version = "1.53.1", default-features = false, features = ["rt", "io-util"] }',
-             "serde": 'serde_json = "1.0.151"'}.get(name, "")
+    extra = {"bytes": 'bytes = { version = "1.12.2", default-features = false }',
+             "tokio": 'tokio = { version = "1.54.1", default-features = false, features = ["rt", "io-util"] }',
+             "serde": 'serde_json = "1.0.154"'}.get(name, "")
     (work / "Cargo.toml").write_text(f'''[package]
 name = "companion-feature-consumer"
 version = "0.0.0"

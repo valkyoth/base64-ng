@@ -37,16 +37,11 @@ CARGO_TARGET_DIR="$audit_root/target" \
 RUSTFLAGS='-C target-feature=+simd128' \
     cargo rustc --locked --target "$wasm_target" --release \
         --features simd \
-        --lib -- --emit=llvm-ir --test
+        --lib -- --emit=llvm-ir="$audit_root/base64_ng-wasm.ll" --test
 
-set -- "$audit_root"/target/*/release/deps/base64_ng-*.ll
-if [ "$#" -ne 1 ] || [ ! -f "$1" ]; then
-    echo "wasm simd evidence: expected exactly one fresh LLVM IR file" >&2
-    exit 1
-fi
 
 artifact="$output_dir/base64_ng-wasm-simd128-test.ll"
-cp "$1" "$artifact"
+cp "$audit_root/base64_ng-wasm.ll" "$artifact"
 test -s "$artifact"
 
 require_pattern "$artifact" 'target triple = "wasm32-unknown-unknown"' "wasm32 target triple"

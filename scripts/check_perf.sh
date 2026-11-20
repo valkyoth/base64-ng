@@ -170,7 +170,7 @@ for feature_set in default no-default-features simd secrets checked-backend; do
             cargo build --quiet --release --features checked-backend --target-dir "$target_dir"
             ;;
     esac
-    library="$(find "$target_dir/release/deps" -name 'libbase64_ng-*.rlib' -print -quit)"
+    library="$target_dir/release/libbase64_ng.rlib"
     bytes="$(wc -c <"$library" | tr -d ' ')"
     symbols="$(nm -C "$library" 2>/dev/null | grep -c 'base64_ng::' || true)"
     printf '1,%s,%s,%s,nm-and-file-size\n' \

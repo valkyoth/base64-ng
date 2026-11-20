@@ -54,23 +54,9 @@ env \
     CARGO_INCREMENTAL=0 \
     CARGO_TARGET_DIR="$audit_root/build" \
     CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER="$linker" \
-    cargo test --locked --target "$target" --release --all-features --lib --no-run
+    cargo test --locked --target "$target" --release --all-features --lib --no-run --message-format=json >"$audit_root/messages.jsonl"
 
-set -- "$audit_root"/build/"$target"/release/deps/base64_ng-*
-binary=""
-for candidate in "$@"; do
-    if [ -f "$candidate" ] && [ -x "$candidate" ]; then
-        if [ -n "$binary" ]; then
-            echo "SVE asm evidence: expected one fresh test binary" >&2
-            exit 1
-        fi
-        binary="$candidate"
-    fi
-done
-if [ -z "$binary" ]; then
-    echo "SVE asm evidence: fresh test binary not found" >&2
-    exit 1
-fi
+binary="$(python3 scripts/cargo-test-executable.py "$audit_root/messages.jsonl" "$audit_root/build")"
 
 symbols="base64_ng_sve_encode_standard_12 base64_ng_sve_encode_url_safe_12 base64_ng_sve_decode_standard_16 base64_ng_sve_decode_url_safe_16 base64_ng_sve_vector_length"
 : >"$output_dir/disassembly.txt"

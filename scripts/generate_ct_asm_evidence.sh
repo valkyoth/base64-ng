@@ -20,20 +20,6 @@ mkdir -p "$output_dir"
 . scripts/ct-asm-symbols.sh
 evidence_capture_source "ct asm evidence"
 
-copy_single_asm() {
-    target_dir="$1"
-    output_file="$2"
-    set -- "$target_dir"/base64_ng-*.s
-
-    if [ "$#" -ne 1 ] || [ ! -f "$1" ]; then
-        echo "ct asm evidence: expected exactly one fresh assembly file under $target_dir" >&2
-        exit 1
-    fi
-
-    cp "$1" "$output_file"
-    test -s "$output_file"
-}
-
 require_symbol() {
     assembly_file="$1"
     symbol_len="$2"
@@ -48,15 +34,6 @@ require_symbol() {
 
     echo "ct asm evidence: missing non-inlined ${symbol_name} symbol in $assembly_file" >&2
     exit 1
-}
-
-release_deps_dir() {
-    target_dir="$1"
-    if [ -n "$target" ]; then
-        printf '%s' "$target_dir/$target/release/deps"
-    else
-        printf '%s' "$target_dir/release/deps"
-    fi
 }
 
 require_reviewed_symbols() {
@@ -109,13 +86,13 @@ if [ -n "$target" ]; then
     CARGO_INCREMENTAL=0 \
     CARGO_TARGET_DIR="$audit_root/no-default" \
         cargo rustc --locked --release --lib --no-default-features \
-        --target "$target" -- --emit=asm
+        --target "$target" -- --emit=asm="$audit_root/current.s"
 else
     CARGO_INCREMENTAL=0 \
     CARGO_TARGET_DIR="$audit_root/no-default" \
-        cargo rustc --locked --release --lib --no-default-features -- --emit=asm
+        cargo rustc --locked --release --lib --no-default-features -- --emit=asm="$audit_root/current.s"
 fi
-copy_single_asm "$(release_deps_dir "$audit_root/no-default")" \
+mv "$audit_root/current.s" \
     "$output_dir/base64_ng-no-default-features.s"
 
 echo "ct asm evidence: all-features release assembly"
@@ -123,13 +100,13 @@ if [ -n "$target" ]; then
     CARGO_INCREMENTAL=0 \
     CARGO_TARGET_DIR="$audit_root/all-features" \
         cargo rustc --locked --release --lib --all-features \
-        --target "$target" -- --emit=asm
+        --target "$target" -- --emit=asm="$audit_root/current.s"
 else
     CARGO_INCREMENTAL=0 \
     CARGO_TARGET_DIR="$audit_root/all-features" \
-        cargo rustc --locked --release --lib --all-features -- --emit=asm
+        cargo rustc --locked --release --lib --all-features -- --emit=asm="$audit_root/current.s"
 fi
-copy_single_asm "$(release_deps_dir "$audit_root/all-features")" \
+mv "$audit_root/current.s" \
     "$output_dir/base64_ng-all-features.s"
 require_reviewed_symbols "$output_dir/base64_ng-all-features.s"
 
@@ -139,14 +116,14 @@ if [ -n "$target" ]; then
     CARGO_TARGET_DIR="$audit_root/all-features-lto" \
     RUSTFLAGS="-C lto=fat -C embed-bitcode=yes" \
         cargo rustc --locked --release --lib --all-features \
-        --target "$target" -- --emit=asm
+        --target "$target" -- --emit=asm="$audit_root/current.s"
 else
     CARGO_INCREMENTAL=0 \
     CARGO_TARGET_DIR="$audit_root/all-features-lto" \
     RUSTFLAGS="-C lto=fat -C embed-bitcode=yes" \
-        cargo rustc --locked --release --lib --all-features -- --emit=asm
+        cargo rustc --locked --release --lib --all-features -- --emit=asm="$audit_root/current.s"
 fi
-copy_single_asm "$(release_deps_dir "$audit_root/all-features-lto")" \
+mv "$audit_root/current.s" \
     "$output_dir/base64_ng-all-features-lto.s"
 require_reviewed_symbols "$output_dir/base64_ng-all-features-lto.s"
 evidence_verify_source "ct asm evidence"

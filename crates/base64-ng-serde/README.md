@@ -25,10 +25,7 @@
 
 # base64-ng-serde
 
-Candidate source: `2.1.0`, not published. Publication metadata is prepared;
-final campaigns, review, CI and the signed tag remain required by the
-[2.1 commit plan](../../docs/2.1.0-release-plan.md). Dependency examples target
-2.1.0 after publication; use a reviewed Git revision or local path before then.
+This README describes the 2.1.1 maintenance release of this companion.
 
 ### Optional acceleration (2.1 development)
 

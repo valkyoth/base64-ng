@@ -26,19 +26,15 @@ and allocating APIs, incremental and in-place transforms, optional admitted
 SIMD backends, and separately named compatibility policies.
 Zero external runtime or development dependencies in `Cargo.toml`.
 
-The current public release is `2.0.4`. The sanitization companion is also
-`2.0.4`; unchanged companions and the WASM loader remain at `2.0.3`.
-This source tree defines the synchronized `2.1.0` package family.
-It is an unreleased candidate: publication metadata is prepared, but final
-campaigns, external acceptance, full-release CI and a signed tag are still
-required. See the [2.1 commit plan](docs/2.1.0-release-plan.md).
+This source tree defines the `base64-ng` `2.1.1` maintenance release.
+The core, bytes, serde, Tokio and sanitization crates and the npm WASM loader
+are selected for this patch. Other companions use their 2.1.0 releases.
 The branch includes portable table decoding and health-gated SSSE3/AVX2,
 little-endian AArch64 NEON, WASM simd128 and exact-profile X60 RVV strict
-validation and decoding. Final frozen-source campaigns remain pending;
-see [validation policies](docs/DECODE_VALIDATION.md) and the
+validation and decoding. See [validation policies](docs/DECODE_VALIDATION.md) and the
 [measured benefits and costs](docs/POLICY_2.1.md).
 
-The dependency examples below target 2.1.0 after publication. Until then,
+The dependency examples below target 2.1.1 after publication. Until then,
 evaluate reviewed development code with a Git dependency:
 
 ```toml
@@ -51,7 +47,7 @@ Pin a reviewed commit with `rev` instead of `branch` for reproducible evaluation
 
 ```toml
 [dependencies]
-base64-ng = "2.1.0"
+base64-ng = "2.1.1"
 ```
 
 For ordinary Standard Base64 with canonical padding:
@@ -277,14 +273,14 @@ Disable defaults for core-only embedded use:
 
 ```toml
 [dependencies]
-base64-ng = { version = "2.1.0", default-features = false }
+base64-ng = { version = "2.1.1", default-features = false }
 ```
 
 Enable ordinary SIMD dispatch without changing the public codec API:
 
 ```toml
 [dependencies]
-base64-ng = { version = "2.1.0", features = ["simd"] }
+base64-ng = { version = "2.1.1", features = ["simd"] }
 ```
 
 Scalar by default; std x86/x86_64 encode selects SSSE3/SSE4.1, AVX2, or AVX-512 VBMI by length, strict decode selects SSSE3/SSE4.1 or AVX2. Admitted
@@ -303,7 +299,7 @@ bounded fixed-work API:
 
 ```toml
 [dependencies]
-base64-ng = { version = "2.1.0", default-features = false, features = ["secrets"] }
+base64-ng = { version = "2.1.1", default-features = false, features = ["secrets"] }
 ```
 
 ```rust
@@ -390,13 +386,13 @@ and [dispatch matrix](https://github.com/valkyoth/base64-ng/blob/main/docs/2.0_D
 
 ## Rust Support
 
-MSRV remains Rust `1.90.0`. The active release toolchain is Rust `1.99.0`.
+The minimum supported Rust version is `1.90.0`. The active release toolchain is `1.100.0`.
 
 | Rust | Evidence |
 | --- | --- |
 | `1.90.0` | MSRV compatibility check |
-| `1.91.0` - `1.98.1` | `cargo check --all-features` |
-| `1.99.0` | Active toolchain; checkpoint gates passed, final release campaigns pending |
+| `1.91.0` - `1.99.1` | CI compatibility matrix |
+| `1.100.0` | Active release toolchain |
 
 New deployments should prefer the latest tested stable Rust.
 

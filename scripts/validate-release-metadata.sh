@@ -374,6 +374,10 @@ for evidence_generator in \
     scripts/generate_simd_asm_evidence.sh \
     scripts/generate_wasm_simd_evidence.sh
 do
+    case "$evidence_generator" in
+        *wasm_simd*) output_flag='--emit=llvm-ir="$audit_root/base64_ng-wasm.ll"' ;;
+        *) output_flag='--emit=asm="$audit_root/current.s"' ;;
+    esac
     for required_evidence_text in \
         'mktemp -d' \
         '. scripts/evidence-source.sh' \
@@ -381,7 +385,7 @@ do
         'evidence_verify_source' \
         'CARGO_INCREMENTAL=0' \
         'cargo rustc --locked' \
-        'expected exactly one fresh'
+        "$output_flag"
     do
         if ! grep -F -q -- "$required_evidence_text" "$evidence_generator"; then
             echo "release metadata: $evidence_generator is missing fresh evidence control: $required_evidence_text" >&2

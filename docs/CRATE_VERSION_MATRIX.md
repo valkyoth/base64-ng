@@ -5,6 +5,12 @@ crate remains the stable user entry point; companion crates are optional
 integration packages for applications that explicitly admit their dependency
 sets.
 
+## 2.1.1 Selective Patch Release
+
+Publish the core, bytes, serde, sanitization and Tokio crates at 2.1.1.
+The npm loader also moves to 2.1.1 with rebuilt WASM artifacts. All other
+2.1 companions keep version 2.1.0.
+
 ## 2.0.4 Selective Patch Release
 
 Only packages with release-relevant changes move to `2.0.4`. This maintenance

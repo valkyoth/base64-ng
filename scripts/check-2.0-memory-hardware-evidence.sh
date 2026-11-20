@@ -115,7 +115,7 @@ if [ -e "$native_neon" ] || [ -L "$native_neon" ]; then
     neon_status="exact-campaign-native-performance"
     neon_source="$rvv_expected_commit"
 elif [ "${BASE64_NG_REQUIRE_COMMIT53_NATIVE:-0}" = "1" ] && \
-    [ "$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | head -n 1)" = "2.1.0" ]; then
+    [ "$(sed -n 's/^version = "\([0-9]*\.[0-9]*\)\.[0-9]*"$/\1/p' Cargo.toml | head -n 1)" = "2.1" ]; then
     echo "2.0 memory/hardware evidence: 2.1 requires fresh Apple and Linux NEON campaign bundles" >&2
     exit 1
 else

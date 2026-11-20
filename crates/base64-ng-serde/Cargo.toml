@@ -1,6 +1,6 @@
 [package]
 name = "base64-ng-serde"
-version = "2.1.0"
+version = "2.1.1"
 edition = "2024"
 rust-version = "1.90"
 license = "MIT OR Apache-2.0"
@@ -27,12 +27,12 @@ std = ["alloc", "base64-ng/std", "serde/std"]
 secrets = ["alloc", "base64-ng/secrets"]
 
 [dependencies]
-base64-ng = { version = "2.1.0", path = "../..", default-features = false }
+base64-ng = { version = "2.1.1", path = "../..", default-features = false }
 serde = { version = "1.0.229", default-features = false }
 
 [dev-dependencies]
 serde = { version = "1.0.229", features = ["derive"], default-features = false }
-serde_json = "1.0.151"
+serde_json = "1.0.154"
 
 [lints.rust]
 unsafe_code = "deny"

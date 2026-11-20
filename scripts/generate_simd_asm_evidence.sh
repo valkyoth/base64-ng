@@ -10,28 +10,6 @@ mkdir -p "$output_dir"
 . scripts/evidence-source.sh
 evidence_capture_source "simd asm evidence"
 
-copy_single_asm() {
-    target_dir="$1"
-    output_file="$2"
-    set -- "$target_dir"/*/release/deps/base64_ng-*.s "$target_dir"/release/deps/base64_ng-*.s
-    found=""
-    count=0
-    for candidate in "$@"; do
-        if [ -f "$candidate" ]; then
-            found="$candidate"
-            count=$((count + 1))
-        fi
-    done
-
-    if [ "$count" -ne 1 ]; then
-        echo "simd asm evidence: expected exactly one fresh assembly file under $target_dir" >&2
-        exit 1
-    fi
-
-    cp "$found" "$output_file"
-    test -s "$output_file"
-}
-
 require_pattern() {
     file="$1"
     pattern="$2"
@@ -84,8 +62,8 @@ echo "simd asm evidence: SSSE3/SSE4.1 release test assembly"
 CARGO_INCREMENTAL=0 \
 CARGO_TARGET_DIR="$audit_root/ssse3-sse41" \
 RUSTFLAGS="-C target-feature=+ssse3,+sse4.1" \
-    cargo rustc --locked --release --all-features --lib -- --emit=asm --test
-copy_single_asm "$audit_root/ssse3-sse41" "$output_dir/base64_ng-ssse3-sse41-test.s"
+    cargo rustc --locked --release --all-features --lib -- --emit=asm="$audit_root/current.s" --test
+mv "$audit_root/current.s" "$output_dir/base64_ng-ssse3-sse41-test.s"
 require_pattern "$output_dir/base64_ng-ssse3-sse41-test.s" "vpshufb" "SSSE3 byte-shuffle instruction"
 require_pattern "$output_dir/base64_ng-ssse3-sse41-test.s" "vpmaddubsw" "SSSE3 strict-decode byte packing"
 require_pattern "$output_dir/base64_ng-ssse3-sse41-test.s" "vpmaddwd" "SSSE3 strict-decode word packing"
@@ -96,8 +74,8 @@ echo "simd asm evidence: AVX2 release test assembly"
 CARGO_INCREMENTAL=0 \
 CARGO_TARGET_DIR="$audit_root/avx2" \
 RUSTFLAGS="-C target-feature=+avx2" \
-    cargo rustc --locked --release --all-features --lib -- --emit=asm --test
-copy_single_asm "$audit_root/avx2" "$output_dir/base64_ng-avx2-test.s"
+    cargo rustc --locked --release --all-features --lib -- --emit=asm="$audit_root/current.s" --test
+mv "$audit_root/current.s" "$output_dir/base64_ng-avx2-test.s"
 require_pattern "$output_dir/base64_ng-avx2-test.s" "vpshufb" "AVX2 byte-shuffle instruction"
 require_pattern "$output_dir/base64_ng-avx2-test.s" "vpmaddubsw" "AVX2 strict-decode byte packing"
 require_pattern "$output_dir/base64_ng-avx2-test.s" "vpmaddwd" "AVX2 strict-decode word packing"
@@ -109,8 +87,8 @@ echo "simd asm evidence: AVX-512 VBMI release test assembly"
 CARGO_INCREMENTAL=0 \
 CARGO_TARGET_DIR="$audit_root/avx512-vbmi" \
 RUSTFLAGS="-C target-feature=+avx512f,+avx512bw,+avx512vl,+avx512vbmi" \
-    cargo rustc --locked --release --all-features --lib -- --emit=asm --test
-copy_single_asm "$audit_root/avx512-vbmi" "$output_dir/base64_ng-avx512-vbmi-test.s"
+    cargo rustc --locked --release --all-features --lib -- --emit=asm="$audit_root/current.s" --test
+mv "$audit_root/current.s" "$output_dir/base64_ng-avx512-vbmi-test.s"
 require_pattern "$output_dir/base64_ng-avx512-vbmi-test.s" "vpermb" "AVX-512 VBMI byte-permute instruction"
 require_pattern "$output_dir/base64_ng-avx512-vbmi-test.s" "vpmaddubsw" "AVX-512 strict-decode byte packing"
 require_pattern "$output_dir/base64_ng-avx512-vbmi-test.s" "vpmaddwd" "AVX-512 strict-decode word packing"
@@ -126,16 +104,16 @@ if rustup target list --installed 2>/dev/null | grep -F -x -q "aarch64-unknown-l
         echo "simd asm evidence: AArch64 NEON release test assembly"
         CARGO_INCREMENTAL=0 \
         CARGO_TARGET_DIR="$audit_root/neon-aarch64" \
-            cargo rustc --locked --target aarch64-unknown-linux-gnu --release --all-features --lib -- --emit=asm --test
+            cargo rustc --locked --target aarch64-unknown-linux-gnu --release --all-features --lib -- --emit=asm="$audit_root/current.s" --test
         neon_decode_status="generated"
     else
         echo "simd asm evidence: AArch64 NEON release library assembly"
         CARGO_INCREMENTAL=0 \
         CARGO_TARGET_DIR="$audit_root/neon-aarch64" \
-            cargo rustc --locked --target aarch64-unknown-linux-gnu --release --all-features --lib -- --emit=asm
+            cargo rustc --locked --target aarch64-unknown-linux-gnu --release --all-features --lib -- --emit=asm="$audit_root/current.s"
         neon_decode_status="skipped-cross-host-test-link"
     fi
-    copy_single_asm "$audit_root/neon-aarch64" "$output_dir/base64_ng-neon-aarch64-test.s"
+    mv "$audit_root/current.s" "$output_dir/base64_ng-neon-aarch64-test.s"
     require_pattern "$output_dir/base64_ng-neon-aarch64-test.s" "tbl" "AArch64 NEON table lookup instruction"
     require_pattern "$output_dir/base64_ng-neon-aarch64-test.s" "bsl" "AArch64 NEON bit-select instruction"
     require_pattern "$output_dir/base64_ng-neon-aarch64-test.s" "eor[[:space:]]+v0\\.16b" "NEON register cleanup sequence"

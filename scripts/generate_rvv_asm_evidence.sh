@@ -35,23 +35,9 @@ env \
     CARGO_INCREMENTAL=0 \
     CARGO_TARGET_DIR="$audit_root/build" \
     CARGO_TARGET_RISCV64GC_UNKNOWN_LINUX_GNU_LINKER="$linker" \
-    cargo test --locked --target "$target" --release --all-features --lib --no-run
+    cargo test --locked --target "$target" --release --all-features --lib --no-run --message-format=json >"$audit_root/messages.jsonl"
 
-set -- "$audit_root"/build/"$target"/release/deps/base64_ng-*
-binary=""
-for candidate in "$@"; do
-    if [ -f "$candidate" ] && [ -x "$candidate" ]; then
-        if [ -n "$binary" ]; then
-            echo "RVV asm evidence: expected one fresh test binary" >&2
-            exit 1
-        fi
-        binary="$candidate"
-    fi
-done
-if [ -z "$binary" ]; then
-    echo "RVV asm evidence: fresh test binary not found" >&2
-    exit 1
-fi
+binary="$(python3 scripts/cargo-test-executable.py "$audit_root/messages.jsonl" "$audit_root/build")"
 
 cat >"$audit_root/rvv-attributes.s" <<'EOF'
 .attribute arch, "rv64gcv"

@@ -21,9 +21,9 @@ and in-place bulk processing. The shared route's size floors are recorded in
 [POLICY_2.1.md](POLICY_2.1.md); the historical released thresholds below are
 not a claim that every 2.1 public wrapper uses those floors. Reference validation
 and checked output remain explicit. No new automatic AVX-512 decode, SVE or
-broader RVV admission is made. Final frozen-source campaigns remain pending.
-Release status: `2.1.0` candidate, not yet published; the last released
-admission baseline remains 2.0.4.
+broader RVV admission is made.
+Release status: `2.1.1` candidate. The 2.1.0 tag records the preceding
+release, including its compiler-specific evidence.
 
 - Admitted backends: AVX-512 VBMI encode, AVX2 encode, SSSE3/SSE4.1 encode,
   NEON encode, AVX-512 VBMI strict decode, AVX2 strict decode,

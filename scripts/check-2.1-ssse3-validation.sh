@@ -26,8 +26,8 @@ done
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT INT TERM
 CARGO_TARGET_DIR="$tmp" RUSTFLAGS='-C target-feature=+ssse3,+sse4.1' \
-    cargo rustc --locked --release --all-features --lib -- --emit=asm --test
-python3 scripts/check-x86-validation-asm.py "$tmp/release/deps"
+    cargo rustc --locked --release --all-features --lib -- --emit=asm="$tmp/base64_ng-validation.s" --test
+python3 scripts/check-x86-validation-asm.py "$tmp"
 sh scripts/validate-unsafe-boundary.sh
 sh scripts/validate-panic-policy.sh
 echo "2.1 SSSE3 validation: classifier/candidate semantics, bounds, MSRV and assembly ok"

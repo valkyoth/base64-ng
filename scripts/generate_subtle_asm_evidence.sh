@@ -16,14 +16,9 @@ echo "subtle asm evidence: no-default-features release assembly"
 CARGO_INCREMENTAL=0 \
 CARGO_TARGET_DIR="$audit_root/build" \
     cargo rustc --locked --release -p base64-ng-subtle \
-        --no-default-features --lib -- --emit=asm
+        --no-default-features --lib -- --emit=asm="$audit_root/base64_ng_subtle-release.s"
 
-set -- "$audit_root"/build/release/deps/base64_ng_subtle-*.s
-if [ "$#" -ne 1 ] || [ ! -f "$1" ]; then
-    echo "subtle asm evidence: expected exactly one fresh assembly file" >&2
-    exit 1
-fi
-cp "$1" "$output_file"
+cp "$audit_root/base64_ng_subtle-release.s" "$output_file"
 test -s "$output_file"
 
 if ! ct_asm_symbol_is_defined "$output_file" "23" "subtle_ct_eq_public_len"; then

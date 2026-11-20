@@ -35,8 +35,8 @@ def validate_inventory(package, files):
 
 def main():
     plan = release_plan(DEFAULT_PLAN)
-    if plan["version"] != "2.1.0":
-        raise SystemExit("2.1 package freeze requires release version 2.1.0")
+    if plan["version"].rsplit(".", 1)[0] != "2.1":
+        raise SystemExit("2.1 package freeze requires a 2.1 release")
     output = ROOT / "target/release-evidence/2.1-freeze/package-lists"
     output.mkdir(parents=True, exist_ok=True)
     for package in plan["crates"]:

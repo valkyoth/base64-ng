@@ -26,11 +26,11 @@ done
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT INT TERM
 CARGO_TARGET_DIR="$tmp/production" \
-    cargo rustc --locked --release --all-features --lib -- --emit=llvm-ir
-python3 scripts/check-x86-validation-ir.py "$tmp/production/release/deps"
+    cargo rustc --locked --release --all-features --lib -- --emit=llvm-ir="$tmp/production/base64_ng-validation.ll"
+python3 scripts/check-x86-validation-ir.py "$tmp/production"
 CARGO_TARGET_DIR="$tmp/test" RUSTFLAGS='-C target-feature=+ssse3,+sse4.1' \
-    cargo rustc --locked --release --all-features --lib -- --emit=asm --test
-python3 scripts/check-x86-validation-asm.py "$tmp/test/release/deps" avx2
+    cargo rustc --locked --release --all-features --lib -- --emit=asm="$tmp/test/base64_ng-validation.s" --test
+python3 scripts/check-x86-validation-asm.py "$tmp/test" avx2
 sh scripts/validate-unsafe-boundary.sh
 sh scripts/validate-panic-policy.sh
 echo "2.1 AVX2 validation: classifier/candidate semantics, bounds, MSRV and assembly ok"

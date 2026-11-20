@@ -52,6 +52,7 @@ python3 scripts/test-public-api-policy.py
 python3 scripts/test-native-policy-measurement.py
 python3 scripts/test-macos-policy-capture.py
 python3 scripts/test-check-partitions.py
+python3 scripts/test-cargo-test-executable.py
 python3 scripts/check-companion-features.py --audit-only
 python3 scripts/test-companion-features.py
 

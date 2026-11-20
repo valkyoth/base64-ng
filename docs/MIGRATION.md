@@ -67,7 +67,7 @@ are not the recommended API for new 2.0 code.
 
 ```toml
 [dependencies]
-base64-ng = "2.1.0"
+base64-ng = "2.1.1"
 ```
 
 For `no_std` without allocation:
@@ -256,10 +256,10 @@ ecosystem integrations are separate synchronized packages:
 
 ```toml
 [dependencies]
-base64-ng = "2.1.0"
-base64-ng-tokio = "2.1.0"
-base64-ng-bytes = "2.1.0"
-base64-ng-serde = "2.1.0"
+base64-ng = "2.1.1"
+base64-ng-tokio = "2.1.1"
+base64-ng-bytes = "2.1.1"
+base64-ng-serde = "2.1.1"
 ```
 
 The Tokio and bytes state machines expose accepted/committed progress,

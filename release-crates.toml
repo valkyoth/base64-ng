@@ -1,102 +1,102 @@
 [release]
-version = "2.1.0"
-policy = "synced-family"
+version = "2.1.1"
+policy = "selective-patch"
 
 [npm]
 name = "@valkyoth/base64-ng-wasm-loader"
-previous_version = "2.0.3"
-version = "2.1.0"
+previous_version = "2.1.0"
+version = "2.1.1"
 change = "code"
 publish = true
-reason = "Rebuilt scalar/SIMD artifacts and synchronized 2.1.0 loader; publish only after final acceptance."
+reason = "Rebuild the WASM binaries with Rust 1.100.0."
 
 [crates."base64-ng"]
-previous_version = "2.0.4"
-version = "2.1.0"
-change = "code"
+previous_version = "2.1.0"
+version = "2.1.1"
+change = "metadata"
 publish = true
-reason = "Ordinary throughput, validation or feature-forwarding updates in the synchronized 2.1.0 family."
+reason = "Refresh the release toolchain and package documentation."
 
 [crates."base64-ng-sanitization"]
-previous_version = "2.0.4"
-version = "2.1.0"
+previous_version = "2.1.0"
+version = "2.1.1"
 change = "dependency"
 publish = true
-reason = "Synchronized minor release against the 2.1.0 core; existing companion contracts remain unchanged."
+reason = "Update the exact sanitization pin to 2.2.0."
 
 [crates."base64-ng-derive"]
-previous_version = "2.0.3"
+previous_version = "2.1.0"
 version = "2.1.0"
-change = "dependency"
-publish = true
-reason = "Synchronized minor release against the 2.1.0 core; existing companion contracts remain unchanged."
+change = "unchanged"
+publish = false
+reason = "No package changes since 2.1.0."
 
 [crates."base64-ng-imap"]
-previous_version = "2.0.3"
+previous_version = "2.1.0"
 version = "2.1.0"
-change = "dependency"
-publish = true
-reason = "Synchronized minor release against the 2.1.0 core; existing companion contracts remain unchanged."
+change = "unchanged"
+publish = false
+reason = "No package changes since 2.1.0."
 
 [crates."base64-ng-mime"]
-previous_version = "2.0.3"
+previous_version = "2.1.0"
 version = "2.1.0"
-change = "dependency"
-publish = true
-reason = "Synchronized minor release against the 2.1.0 core; existing companion contracts remain unchanged."
+change = "unchanged"
+publish = false
+reason = "No package changes since 2.1.0."
 
 [crates."base64-ng-multibase"]
-previous_version = "2.0.3"
+previous_version = "2.1.0"
 version = "2.1.0"
-change = "code"
-publish = true
-reason = "Ordinary throughput, validation or feature-forwarding updates in the synchronized 2.1.0 family."
+change = "unchanged"
+publish = false
+reason = "No package changes since 2.1.0."
 
 [crates."base64-ng-password"]
-previous_version = "2.0.3"
+previous_version = "2.1.0"
 version = "2.1.0"
-change = "dependency"
-publish = true
-reason = "Synchronized minor release against the 2.1.0 core; existing companion contracts remain unchanged."
+change = "unchanged"
+publish = false
+reason = "No package changes since 2.1.0."
 
 [crates."base64-ng-openpgp"]
-previous_version = "2.0.3"
+previous_version = "2.1.0"
 version = "2.1.0"
-change = "code"
-publish = true
-reason = "Ordinary throughput, validation or feature-forwarding updates in the synchronized 2.1.0 family."
+change = "unchanged"
+publish = false
+reason = "No package changes since 2.1.0."
 
 [crates."base64-ng-pem"]
-previous_version = "2.0.3"
+previous_version = "2.1.0"
 version = "2.1.0"
-change = "code"
-publish = true
-reason = "Ordinary throughput, validation or feature-forwarding updates in the synchronized 2.1.0 family."
+change = "unchanged"
+publish = false
+reason = "No package changes since 2.1.0."
 
 [crates."base64-ng-serde"]
-previous_version = "2.0.3"
-version = "2.1.0"
-change = "code"
-publish = true
-reason = "Ordinary throughput, validation or feature-forwarding updates in the synchronized 2.1.0 family."
-
-[crates."base64-ng-bytes"]
-previous_version = "2.0.3"
-version = "2.1.0"
-change = "code"
-publish = true
-reason = "Ordinary throughput, validation or feature-forwarding updates in the synchronized 2.1.0 family."
-
-[crates."base64-ng-subtle"]
-previous_version = "2.0.3"
-version = "2.1.0"
+previous_version = "2.1.0"
+version = "2.1.1"
 change = "dependency"
 publish = true
-reason = "Synchronized minor release against the 2.1.0 core; existing companion contracts remain unchanged."
+reason = "Update the serde_json test dependency to 1.0.154."
+
+[crates."base64-ng-bytes"]
+previous_version = "2.1.0"
+version = "2.1.1"
+change = "dependency"
+publish = true
+reason = "Update bytes to 1.12.2."
+
+[crates."base64-ng-subtle"]
+previous_version = "2.1.0"
+version = "2.1.0"
+change = "unchanged"
+publish = false
+reason = "No package changes since 2.1.0."
 
 [crates."base64-ng-tokio"]
-previous_version = "2.0.3"
-version = "2.1.0"
-change = "code"
+previous_version = "2.1.0"
+version = "2.1.1"
+change = "dependency"
 publish = true
-reason = "Ordinary throughput, validation or feature-forwarding updates in the synchronized 2.1.0 family."
+reason = "Update Tokio to 1.54.1."

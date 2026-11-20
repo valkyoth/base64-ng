@@ -1,6 +1,12 @@
 # Changelog
 
-## 2.1.0 - Unreleased
+## 2.1.1 - Unreleased
+
+- Build with Rust 1.100.0 and test compatibility down to Rust 1.90.
+- Update bytes, Tokio, sanitization and Serde test dependencies, refresh CI
+  tool pins and rebuild the scalar and SIMD WebAssembly artifacts.
+
+## 2.1.0 - 2026-10-14
 
 - Accelerate ordinary strict Standard/URL-safe decoding with portable table
   validation and admitted x86, NEON, WASM and exact-profile X60 RVV routes.

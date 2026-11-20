@@ -47,10 +47,10 @@ for compiler in "$active" 1.90.0; do
         cargo +"$compiler" clippy --locked --target "$target" --no-default-features \
             --features "$features" "$@" -- -D warnings
         case "$features" in std,*) ;; *) continue ;; esac
-        directory="$tmp/$compiler/$features"
+        directory="$tmp/$compiler/$(printf '%s' "$features" | tr , -)"
         CARGO_TARGET_DIR="$directory" cargo +"$compiler" rustc --locked --release \
-            --target "$target" --no-default-features --features "$features" --lib -- --emit=asm
-        python3 scripts/check-rvv-validation-codegen.py "$directory/$target/release/deps"
+            --target "$target" --no-default-features --features "$features" --lib -- --emit=asm="$directory/base64_ng-validation.s"
+        python3 scripts/check-rvv-validation-codegen.py "$directory"
         if [ "$execute" -eq 0 ]; then continue; fi
         if [ "$mode" = --qemu ]; then vlens='128 256'; else vlens=native; fi
         for vlen in $vlens; do

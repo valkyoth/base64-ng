@@ -23,7 +23,9 @@ class ReleaseTests(unittest.TestCase):
         (self.root / "scripts").mkdir()
         (self.root / "bin").mkdir()
         (self.root / PACKAGE).mkdir(parents=True)
-        shutil.copy2(ROOT / PACKAGE / "package.json", self.root / PACKAGE / "package.json")
+        package = json.loads((ROOT / PACKAGE / "package.json").read_text())
+        package["version"] = "2.1.0"  # Match the simulated release plan below.
+        (self.root / PACKAGE / "package.json").write_text(json.dumps(package))
         shutil.copy2(ROOT / "scripts/release_wasm_loader.sh", self.root / "scripts/release_wasm_loader.sh")
         (self.root / "Cargo.toml").write_text('[package]\nversion = "2.1.0"\n')
         self.env = {k: v for k, v in os.environ.items() if not k.startswith("BASE64_NG_")}
